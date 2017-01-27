@@ -5,13 +5,14 @@ KOKKOS_ARCH = "SNB,Kepler35"
 # To enable Trilinos you need to copy TpetraKernels_config.h and TpetraKernels_ETIHelperMacros.h 
 # from an appropriately configure Trilinos build directory (you don't need to build).
 # The rest is accessed from Trilinos source.
-BUILD_TRILINOS = 0
+BUILD_TRILINOS = 1
 BUILD_CUSPARSE = 0
 BUILD_MKL = 0
 
 #Path settings
 TRILINOS_PATH = ${HOME}/Trilinos
-KOKKOS_PATH = ${TRILINOS_PATH}/packages/kokkos
+KOKKOS_PATH = ${HOME}/kokkos
+KOKKOS_KERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
 
 #MKL_PATH=/home/projects/install/rhel6-x86_64/sems/compiler/intel/16.0.1/base/mkl
 #On Sandia Testbeds this should work:
@@ -20,8 +21,8 @@ KOKKOS_PATH = ${TRILINOS_PATH}/packages/kokkos
 MKL_PATH=${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS=-L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 
-SRC = ${TRILINOS_PATH}/packages/tpetra/kernels/perf_test/spmv/test_crsmatrix.cpp 
-HEADERS = $(wildcard ${TRILINOS_PATH}/packages/tpetra/kernels/perf_test/spmv/*.hpp) 
+SRC = ${KOKKOS_KERNELS_PATH}/perf_test/spmv/test_crsmatrix.cpp 
+HEADERS = $(wildcard ${KOKKOS_KERNELS_PATH}/perf_test/spmv/*.hpp) 
 
 default: build
 	echo "Start Build"
@@ -31,7 +32,7 @@ config_headers:
 	touch TpetraKernels_config.h
 
 
-CXXFLAGS = -DMAKE_BUILD -g -O3 -I./converter -I./ -I${TRILINOS_PATH}/packages/tpetra/kernels/perf_test/spmv -I${TRILINOS_PATH}/packages/tpetra/kernels/src -I${TRILINOS_PATH}/packages/tpetra/kernels/src/impl
+CXXFLAGS = -DMAKE_BUILD -g -O3 -I./converter -I./ -I${KOKKOS_KERNELS_PATH}/perf_test/spmv -I${KOKKOS_KERNELS_PATH}/src -I${KOKKOS_KERNELS_PATH}/src/impl
 LINKFLAGS = -O3
 LIB = 
 
@@ -52,7 +53,7 @@ endif
 
 ifeq (${BUILD_TRILINOS}, 1)
 CXXFLAGS += -DHAVE_TRILINOS
-SRC += $(wildcard ${TRILINOS_PATH}/packages/tpetra/kernels/src/impl/*spmv*.cpp)
+SRC += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/*spmv*.cpp)
 endif
 
 

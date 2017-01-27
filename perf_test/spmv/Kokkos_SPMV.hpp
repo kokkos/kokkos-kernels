@@ -50,13 +50,11 @@ template<class AMatrix,
          class XVector,
          class YVector,
          int dobeta,
-         bool conjugate,
-         typename SizeType>
+         bool conjugate>
 struct SPMV_Functor {
   typedef typename AMatrix::execution_space            execution_space;
   typedef typename AMatrix::non_const_ordinal_type     ordinal_type;
   typedef typename AMatrix::non_const_value_type       value_type;
-  typedef SizeType                                     size_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type            team_member;
   typedef Kokkos::Details::ArithTraits<value_type>     ATV;
@@ -177,7 +175,7 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
 
   double s_a = 1.0;
   double s_b = 0.0;
-  SPMV_Functor<matrix_type,x_type,y_type,0,false,int> func (s_a,A,x,s_b,y,rows_per_team);
+  SPMV_Functor<matrix_type,x_type,y_type,0,false> func (s_a,A,x,s_b,y,rows_per_team);
 
   int worksets = (y.dimension_0()+rows_per_team-1)/rows_per_team;
 

@@ -70,7 +70,7 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
+enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
 
 typedef Kokkos::DefaultExecutionSpace execution_space;
@@ -113,7 +113,7 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
 }
 
 template<typename AType, typename XType, typename YType>
-void matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length, int test, int schedule) {
+void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int vector_length, int test, int schedule) {
 
 	switch(test) {
 	
@@ -160,6 +160,14 @@ void matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int v
 	case KK_KERNELS:
 		kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
 		break;
+  case KK_KERNELS_INSP:
+    if(A.graph.row_block_offsets.data()==NULL) {
+      printf("PTR: %p\n",A.graph.row_block_offsets.data());
+      A.graph.create_block_partitioning(AType::execution_space::concurrency());
+      printf("PTR2: %p\n",A.graph.row_block_offsets.data());
+    }
+    kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+    break;
 #endif
 	default:
 		fprintf(stderr, "Selected test is not available.\n");
@@ -341,6 +349,8 @@ int main(int argc, char **argv)
       test = CUSPARSE;
     if((strcmp(argv[i],"kk-kernels")==0))
       test = KK_KERNELS;
+    if((strcmp(argv[i],"kk-kernels-insp")==0))
+      test = KK_KERNELS_INSP;
     if((strcmp(argv[i],"kk-insp")==0))
       test = KK_INSP;
 #ifdef _OPENMP
