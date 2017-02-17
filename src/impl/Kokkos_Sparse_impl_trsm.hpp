@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//               KokkosKernels: Linear Algebra and Graph Kernels
-//                 Copyright 2016 Sandia Corporation
+//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
+//                 Copyright 2017 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
