@@ -1,8 +1,10 @@
-The Kernels subpackage of Tpetra ("TpetraKernels"/"KokkosKernels")
- contains local computational kernels.  "Local" means no MPI or other
- distributed-memory communication.  "Computational kernels" are coarse-grained
- operations; they take a lot of work and make sense to parallelize inside using
- Kokkos.  Computational kernels in this subpackage include the following:
+KokkosKernels provides dense and sparse linear algebra as well graph computing
+local computational kernels using the Kokkos programming model.  
+"Local" means no MPI or other distributed-memory communication.  
+"Computational kernels" are coarse-grained operations; they take a lot of work 
+and make sense to parallelize inside using Kokkos.  
+
+Computational kernels in this subpackage include the following:
 
   - (Multi)vector dot products, norms, and updates (AXPY-like
     operations that add vectors together entry-wise)
@@ -10,6 +12,9 @@ The Kernels subpackage of Tpetra ("TpetraKernels"/"KokkosKernels")
     vector kernels
   - Other operations that the Core subpackage of Tpetra (TpetraCore)
     needs
+
+Kokkos is licensed under standard 3-clause BSD terms of use. For specifics
+see the LICENSE file contained in the repository or distribution.
 
 We organize this directory as follows:
 
