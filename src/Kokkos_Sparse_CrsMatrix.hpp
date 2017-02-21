@@ -70,23 +70,23 @@ namespace KokkosSparse {
 // for variable attributes.  Be careful also of compilers that define
 // the __GNUC__ macro but might not necessarily actually be GCC
 // compliant.
-#if defined(__GNUC__) && ! defined(TPETRAKERNELS_UNUSED_ATTRIBUTE)
-#  define TPETRAKERNELS_UNUSED_ATTRIBUTE __attribute__((unused))
+#if defined(__GNUC__) && ! defined(KOKKOSKERNELS_UNUSED_ATTRIBUTE)
+#  define KOKKOSKERNELS_UNUSED_ATTRIBUTE __attribute__((unused))
 #else
-#  define TPETRAKERNELS_UNUSED_ATTRIBUTE
+#  define KOKKOSKERNELS_UNUSED_ATTRIBUTE
 #endif // __GNUC__
 
 //! String that tells sparse kernels to use the transpose of the matrix.
-static char TPETRAKERNELS_UNUSED_ATTRIBUTE Transpose[] = "T";
+static char KOKKOSKERNELS_UNUSED_ATTRIBUTE Transpose[] = "T";
 /// \brief String that tells sparse kernels to use the conjugate (NOT
 ///   transpose) of the matrix.
-static char TPETRAKERNELS_UNUSED_ATTRIBUTE Conjugate[] = "C";
+static char KOKKOSKERNELS_UNUSED_ATTRIBUTE Conjugate[] = "C";
 /// \brief String that tells sparse kernels to use the conjugate
 ///   transpose of the matrix.
-static char TPETRAKERNELS_UNUSED_ATTRIBUTE ConjugateTranspose[] = "H";
+static char KOKKOSKERNELS_UNUSED_ATTRIBUTE ConjugateTranspose[] = "H";
 /// \brief String that tells sparse kernels not to use the transpose
 ///   or conjugate of the matrix.
-static char TPETRAKERNELS_UNUSED_ATTRIBUTE NoTranspose[] = "N";
+static char KOKKOSKERNELS_UNUSED_ATTRIBUTE NoTranspose[] = "N";
 
 template<class DeviceType>
 inline int RowsPerThread(const int NNZPerRow) {

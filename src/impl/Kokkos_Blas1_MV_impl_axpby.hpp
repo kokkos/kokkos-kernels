@@ -43,7 +43,7 @@
 #ifndef KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_
 #define KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_
 
-#include "TpetraKernels_config.h"
+#include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 
@@ -51,7 +51,7 @@
 #define KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY 2
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
 
-#ifdef HAVE_TPETRAKERNELS_ETI_ONLY
+#ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
 #define KOKKOSBLAS_ETI_ONLY
 #endif
 
@@ -2065,7 +2065,7 @@ struct Axpby<SCALAR, \
 // directory.
 //
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
@@ -2075,9 +2075,9 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Ko
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
@@ -2087,9 +2087,9 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Ko
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
@@ -2099,9 +2099,9 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, K
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
@@ -2111,7 +2111,7 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokk
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 //
 // Macro for definition of full specialization of

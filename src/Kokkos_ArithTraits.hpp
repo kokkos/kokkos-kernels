@@ -47,12 +47,12 @@
 /// \file Kokkos_ArithTraits.hpp
 /// \brief Declaration and definition of Kokkos::Details::ArithTraits
 
-#include <TpetraKernels_config.h>
+#include <KokkosKernels_config.h>
 #include <Kokkos_Complex.hpp>
 
-#ifdef HAVE_TPETRAKERNELS_QUADMATH
+#ifdef HAVE_KOKKOSKERNELS_QUADMATH
 #  include <quadmath.h>
-#endif // HAVE_TPETRAKERNELS_QUADMATH
+#endif // HAVE_KOKKOSKERNELS_QUADMATH
 
 #include <cfloat>
 #include <climits>
@@ -1084,7 +1084,7 @@ public:
   }
 };
 
-#ifdef HAVE_TPETRAKERNELS_QUADMATH
+#ifdef HAVE_KOKKOSKERNELS_QUADMATH
 
 // CUDA does not support __float128 in device functions, so none of
 // the class methods in this specialization are marked as device
@@ -1206,7 +1206,7 @@ public:
     return FLT128_MAX; // ??? // should be (base^emax)*(1-eps)
   }
 };
-#endif // HAVE_TPETRAKERNELS_QUADMATH
+#endif // HAVE_KOKKOSKERNELS_QUADMATH
 
 template<>
 class ArithTraits< ::Kokkos::complex<float> > {

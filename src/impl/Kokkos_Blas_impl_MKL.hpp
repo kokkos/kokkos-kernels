@@ -43,18 +43,18 @@
 #ifndef KOKKOS_BLAS_IMPL_MKL_HPP_
 #define KOKKOS_BLAS_IMPL_MKL_HPP_
 
-#include "TpetraKernels_config.h"
+#include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 #  include "mkl.h"
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
 namespace KokkosBlas {
 namespace Impl {
 
-#if ! defined(HAVE_TPETRAKERNELS_MKL)
+#if ! defined(HAVE_KOKKOSKERNELS_MKL)
 
 template<class AViewType,
          class XViewType,
@@ -585,7 +585,7 @@ struct TryMklCblas<AViewType,
   }
 };
 
-#endif // defined(HAVE_TPETRAKERNELS_MKL)
+#endif // defined(HAVE_KOKKOSKERNELS_MKL)
 
 template<class AViewType,
          class XViewType,

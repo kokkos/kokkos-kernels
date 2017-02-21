@@ -49,7 +49,7 @@
 #include "Kokkos_Blas1_MV.hpp"
 #include "impl/Kokkos_Sparse_impl_spmv_omp.hpp"
 
-#ifdef HAVE_TPETRAKERNELS_ETI_ONLY
+#ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
 #define KOKKOSSPARSE_ETI_ONLY
 #endif
 

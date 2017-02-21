@@ -2,7 +2,7 @@
 KOKKOS_DEVICES = "OpenMP"
 KOKKOS_ARCH = "SNB,Kepler35"
 
-# To enable Trilinos you need to copy TpetraKernels_config.h and TpetraKernels_ETIHelperMacros.h 
+# To enable Trilinos you need to copy KokkosKernels_config.h and KokkosKernels_ETIHelperMacros.h 
 # from an appropriately configure Trilinos build directory (you don't need to build).
 # The rest is accessed from Trilinos source.
 BUILD_TRILINOS = 1
@@ -28,8 +28,8 @@ default: build
 	echo "Start Build"
 
 config_headers: 
-	touch TpetraKernels_ETIHelperMacros.h
-	touch TpetraKernels_config.h
+	touch KokkosKernels_ETIHelperMacros.h
+	touch KokkosKernels_config.h
 
 
 CXXFLAGS = -DMAKE_BUILD -g -O3 -I./converter -I./ -I${KOKKOS_KERNELS_PATH}/perf_test/spmv -I${KOKKOS_KERNELS_PATH}/src -I${KOKKOS_KERNELS_PATH}/src/impl
@@ -77,7 +77,7 @@ $(EXE): $(OBJ) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(KOKKOS_LDFLAGS) $(LINKFLAGS) $(EXTRA_PATH) $(OBJ) $(KOKKOS_LIBS) $(LIB) -o $(EXE)
 
 clean: kokkos-clean 
-	rm -f *.o *.cuda *.host TpetraKernels_config.h TpetraKernels_ETIHelperMacros.h
+	rm -f *.o *.cuda *.host KokkosKernels_config.h KokkosKernels_ETIHelperMacros.h
 
 # Compilation rules
 

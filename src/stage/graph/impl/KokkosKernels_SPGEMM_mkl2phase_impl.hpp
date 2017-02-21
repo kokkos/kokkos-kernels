@@ -44,10 +44,10 @@
 #ifndef _KOKKOSSPGEMMMKL2_HPP
 #define _KOKKOSSPGEMMMKL2_HPP
 
-//#define HAVE_TPETRAKERNELS_MKL
+//#define HAVE_KOKKOSKERNELS_MKL
 
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 #include "mkl.h"
 #endif
 
@@ -85,7 +85,7 @@ void mkl2phase_symbolic(
     cin_row_index_view_type row_mapC,
     bool verbose = false){
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 
   typedef typename KernelHandle::nnz_lno_t idx;
   typedef typename KernelHandle::size_type size_type;
@@ -220,7 +220,7 @@ void mkl2phase_symbolic(
       cin_nonzero_value_view_type &valuesC,
       bool verbose = false){
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 
     typedef typename KernelHandle::nnz_lno_t idx;
     typedef typename KernelHandle::size_type size_type;

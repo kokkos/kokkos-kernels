@@ -45,7 +45,7 @@
 #ifndef KOKKOS_BLAS3_IMPL_HPP_
 #define KOKKOS_BLAS3_IMPL_HPP_
 
-#include <TpetraKernels_config.h>
+#include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #ifdef KOKKOS_USE_MKL

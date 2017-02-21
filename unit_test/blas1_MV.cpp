@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <TpetraKernels_Blas1_MV_UnitTests.hpp>
+#include <KokkosKernels_Blas1_MV_UnitTests.hpp>
 #include <Teuchos_Comm.hpp>
 #ifdef HAVE_MPI
 #  include <Teuchos_DefaultMpiComm.hpp>

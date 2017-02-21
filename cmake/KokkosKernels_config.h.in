@@ -1,32 +1,32 @@
-#ifndef TPETRAKERNELS_CONFIG_H
-#define TPETRAKERNELS_CONFIG_H
+#ifndef KOKKOSKERNELS_CONFIG_H
+#define KOKKOSKERNELS_CONFIG_H
 
 /* Define if building in debug mode */
-#cmakedefine HAVE_TPETRAKERNELS_DEBUG
+#cmakedefine HAVE_KOKKOSKERNELS_DEBUG
 
 /* Define this macro if the quadmath TPL is enabled */
-#cmakedefine HAVE_TPETRAKERNELS_QUADMATH
+#cmakedefine HAVE_KOKKOSKERNELS_QUADMATH
 
 /* Define this macro if the MKL TPL is enabled.  This is different
    than just linking against the MKL to get the BLAS and LAPACK; it
    requires (a) header file(s) as well, and may use functions other
    than just BLAS and LAPACK functions.  */
-#cmakedefine HAVE_TPETRAKERNELS_MKL
+#cmakedefine HAVE_KOKKOSKERNELS_MKL
 
 /* Define this macro if experimental features of Kokkoskernels are enabled */
-#cmakedefine HAVE_TPETRAKERNELS_EXPERIMENTAL
+#cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
 
 /* Define this macro to disallow instantiations of kernels which are not covered by ETI */
-#cmakedefine HAVE_TPETRAKERNELS_ETI_ONLY
+#cmakedefine HAVE_KOKKOSKERNELS_ETI_ONLY
 
 /* Whether to build kernels for execution space Kokkos::Cuda */
-#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
 /* Whether to build kernels for execution space Kokkos::OpenMP */
-#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 /* Whether to build kernels for execution space Kokkos::Threads */
-#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 /* Whether to build kernels for execution space Kokkos::Serial */
-#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+#cmakedefine KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
 /*
  * "Optimization level" for computational kernels in this subpackage.
@@ -37,4 +37,4 @@
  */
 #define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
 
-#endif // TPETRAKERNELS_CONFIG_H
+#endif // KOKKOSKERNELS_CONFIG_H

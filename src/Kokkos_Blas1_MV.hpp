@@ -69,9 +69,9 @@
 // useful for figuring out whether they are using the right
 // specialization of the kernel.
 //
-// #define TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO 1
+// #define KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO 1
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 #  include <cxxabi.h>
 
 namespace {
@@ -88,7 +88,7 @@ namespace {
     return abi::__cxa_demangle (typeid (t).name (), 0, 0, &status);
   }
 }
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
 
 namespace KokkosBlas {
@@ -203,7 +203,7 @@ dot (const RV& R, const XMV& X, const YMV& Y,
   XMV_Internal X_internal = X;
   YMV_Internal Y_internal = Y;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::dot:" << endl
@@ -211,7 +211,7 @@ dot (const RV& R, const XMV& X, const YMV& Y,
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << "  YMV_Internal: " << demangledTypeName (Y_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Dot_MV<RV_Internal, XMV_Internal, YMV_Internal>::dot (R_internal, X_internal, Y_internal);
 }
@@ -307,14 +307,14 @@ nrm2_squared (const RV& R, const XMV& X)
   RV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::nrm2_squared:" << endl
        << "  RV_Internal: " << demangledTypeName (R_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Nrm2_MV<RV_Internal, XMV_Internal>::nrm2_squared (R_internal, X_internal);
 }
@@ -376,14 +376,14 @@ nrm1 (const RV& R, const XMV& X)
   RV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::nrm1:" << endl
        << "  RV_Internal: " << demangledTypeName (R_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Nrm1_MV<RV_Internal, XMV_Internal>::nrm1 (R_internal, X_internal);
 }
@@ -444,14 +444,14 @@ nrmInf (const RV& R, const XMV& X)
   RV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::nrmInf:" << endl
        << "  RV_Internal: " << demangledTypeName (R_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::NrmInf_MV<RV_Internal, XMV_Internal>::nrmInf (R_internal, X_internal);
 }
@@ -544,7 +544,7 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
   BV_Internal  b_internal = b;
   YMV_Internal Y_internal = Y;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::axpby:" << endl
@@ -553,7 +553,7 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
        << "  BV_Internal: " << demangledTypeName (b_internal) << endl
        << "  YMV_Internal: " << demangledTypeName (Y_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   return Impl::Axpby<AV_Internal, XMV_Internal, BV_Internal,
     YMV_Internal>::axpby (a_internal, X_internal, b_internal, Y_internal);
@@ -614,7 +614,7 @@ scal (const RMV& R, const AV& a, const XMV& X)
   AV_Internal  a_internal = a;
   XMV_Internal X_internal = X;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::scal:" << endl
@@ -622,7 +622,7 @@ scal (const RMV& R, const AV& a, const XMV& X)
        << "  AV_Internal: " << demangledTypeName (a_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Scal<RMV_Internal, AV_Internal, XMV_Internal>::scal (R_internal, a_internal, X_internal);
 }
@@ -687,14 +687,14 @@ abs (const RMV& R, const XMV& X)
   RMV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::abs:" << endl
        << "  RMV_Internal: " << demangledTypeName (R_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Abs<RMV_Internal, XMV_Internal>::abs (R_internal, X_internal);
 }
@@ -780,7 +780,7 @@ update (const typename XMV::non_const_value_type& alpha, const XMV& X,
   YMV_Internal Y_internal = Y;
   ZMV_Internal Z_internal = Z;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::update:" << endl
@@ -788,7 +788,7 @@ update (const typename XMV::non_const_value_type& alpha, const XMV& X,
        << "  YMV_Internal: " << demangledTypeName (Y_internal) << endl
        << "  ZMV_Internal: " << demangledTypeName (Z_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   return Impl::Update<XMV_Internal, YMV_Internal,
     ZMV_Internal>::update (alpha, X_internal, beta, Y_internal,
@@ -850,14 +850,14 @@ reciprocal (const RMV& R, const XMV& X)
   RMV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::reciprocal:" << endl
        << "  RMV_Internal: " << demangledTypeName (R_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Reciprocal<RMV_Internal, XMV_Internal>::reciprocal (R_internal, X_internal);
 }
@@ -911,14 +911,14 @@ sum (const RV& R, const XMV& X)
   RV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::sum:" << endl
        << "  RV_Internal: " << demangledTypeName (R_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Sum<RV_Internal, XMV_Internal>::sum (R_internal, X_internal);
 }
@@ -983,14 +983,14 @@ nrm2w_squared (const RV& R, const XMV& X, const XMV& W)
   XMV_Internal X_internal = X;
   XMV_Internal W_internal = W;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::nrm2w_squared:" << endl
        << "  RV_Internal: " << demangledTypeName (R_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Nrm2w<RV_Internal, XMV_Internal>::nrm2w_squared (R_internal, X_internal, W_internal);
 }
@@ -1058,7 +1058,7 @@ mult (typename CMV::const_value_type& c,
   AV_Internal A_internal = A;
   BMV_Internal B_internal = B;
 
-#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::mult:" << endl
@@ -1066,7 +1066,7 @@ mult (typename CMV::const_value_type& c,
        << "  AV_Internal: " << demangledTypeName (A_internal) << endl
        << "  BMV_Internal: " << demangledTypeName (B_internal) << endl
        << endl;
-#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Mult<CMV_Internal, AV_Internal, BMV_Internal>::mult (c, C_internal, ab,
                                                              A_internal, B_internal);

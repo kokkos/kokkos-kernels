@@ -41,9 +41,9 @@
 //@HEADER
 */
 
-#include "TpetraKernels_config.h"
+#include "KokkosKernels_config.h"
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
 #include "Kokkos_Blas1_MV_impl_update.hpp"
 
 namespace KokkosBlas {
@@ -52,13 +52,13 @@ namespace Impl {
 #define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF_CUDA( SCALAR ) \
   KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( SCALAR, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-TPETRAKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF_CUDA )
+KOKKOSKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF_CUDA )
 
 #undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF_CUDA
 
 } // namespace Impl
 } // namespace KokkosBlas
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 

@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#  include "TpetraKernels_ETIHelperMacros.h"
+#  include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
@@ -244,7 +244,7 @@ void test_spgemm(KokkosKernels::Experimental::Graph::SPGEMMAlgorithm spgemm_algo
 
   case KokkosKernels::Experimental::Graph::SPGEMM_MKL:
     algo = "SPGEMM_MKL";
-#ifndef HAVE_TPETRAKERNELS_MKL
+#ifndef HAVE_KOKKOSKERNELS_MKL
     is_expected_to_fail = true;
 #endif
     //MKL requires scalar to be either float or double
@@ -349,8 +349,8 @@ TEST (SPGEMM_TEST, SPGEMM) {
 #endif
 
 
-  TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
-  TPETRAKERNELS_INSTANTIATE_SLD(INSTMACRO)
+  KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()
+  KOKKOSKERNELS_INSTANTIATE_SLD(INSTMACRO)
 
 #if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::finalize( );

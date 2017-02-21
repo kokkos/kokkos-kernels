@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <TpetraKernels_Blas2_MV_GEMV_MKL.hpp>
+#include <KokkosKernels_Blas2_MV_GEMV_MKL.hpp>
 #include <Teuchos_Comm.hpp>
 #ifdef HAVE_MPI
 #  include <Teuchos_DefaultMpiComm.hpp>

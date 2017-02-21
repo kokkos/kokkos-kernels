@@ -221,7 +221,7 @@ struct InnerProductSpaceTraits<std::complex<T> >
   }
 };
 
-#ifdef HAVE_TPETRAKERNELS_QUADMATH
+#ifdef HAVE_KOKKOSKERNELS_QUADMATH
 
 /// \brief Partial specialization for __float128.
 ///
@@ -243,7 +243,7 @@ struct InnerProductSpaceTraits<__float128>
   }
 };
 
-#endif // HAVE_TPETRAKERNELS_QUADMATH
+#endif // HAVE_KOKKOSKERNELS_QUADMATH
 
 // dd_real and qd_real are floating-point types provided by the QD
 // library of David Bailey (LBNL):

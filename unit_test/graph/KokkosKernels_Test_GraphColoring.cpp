@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#  include "TpetraKernels_ETIHelperMacros.h"
+#  include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
@@ -186,8 +186,8 @@ TEST (COLORING_TEST, GC) {
   Kokkos::Cuda::initialize( );
 #endif
 
-  TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
-  TPETRAKERNELS_INSTANTIATE_SLD(INSTMACRO)
+  KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()
+  KOKKOSKERNELS_INSTANTIATE_SLD(INSTMACRO)
 #if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::finalize( );
 #endif

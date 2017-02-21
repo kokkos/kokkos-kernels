@@ -153,13 +153,13 @@ struct TestMklSparseMatrixHandle {
 
     out << "Attempt to make MKL handle" << endl;
     std::shared_ptr<handle_type> handle;
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     TEST_NOTHROW( handle = std::shared_ptr<handle_type> (new handle_type (A, false)) );
     TEST_ASSERT( handle.get () != NULL );
 #else
     TEST_THROW( handle = std::shared_ptr<handle_type> (new handle_type (A, false)), std::runtime_error );
     TEST_ASSERT( handle.get () == NULL );
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
     return handle;
   }
 };
@@ -194,10 +194,10 @@ testAllScalars (bool& success,
     typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
     static_assert (std::is_same<converter_type::value_type, value_type>::value,
                    "RawTplMatrixHandle<double>::value_type != double");
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     static_assert (std::is_same<converter_type::internal_value_type, double>::value,
                    "RawTplMatrixHandle<double>::interval_value_type != double");
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
     const value_type x_our (3.0);
     const auto x_mkl = converter_type::convertToInternalValue (x_our);
@@ -218,10 +218,10 @@ testAllScalars (bool& success,
     typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
     static_assert (std::is_same<converter_type::value_type, value_type>::value,
                    "RawTplMatrixHandle<float>::value_type != float");
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     static_assert (std::is_same<converter_type::internal_value_type, float>::value,
                    "RawTplMatrixHandle<float>::interval_value_type != float");
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
     const value_type x_our (3.0);
     const auto x_mkl = converter_type::convertToInternalValue (x_our);
@@ -244,10 +244,10 @@ testAllScalars (bool& success,
     typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
     static_assert (std::is_same<converter_type::value_type, value_type>::value,
                    "RawTplMatrixHandle<Kokkos::complex<double> >::value_type != Kokkos::complex<double>");
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     static_assert (std::is_same<converter_type::internal_value_type, MKL_Complex16>::value,
                    "RawTplMatrixHandle<Kokkos::complex<double> >::interval_value_type != MKL_Complex16");
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
     const value_type x_our (3.0, -4.0);
     const auto x_mkl = converter_type::convertToInternalValue (x_our);
@@ -270,10 +270,10 @@ testAllScalars (bool& success,
     typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
     static_assert (std::is_same<converter_type::value_type, value_type>::value,
                    "RawTplMatrixHandle<Kokkos::complex<float> >::value_type != Kokkos::complex<float>");
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     static_assert (std::is_same<converter_type::internal_value_type, MKL_Complex8>::value,
                    "RawTplMatrixHandle<Kokkos::complex<float> >::interval_value_type != MKL_Complex8");
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
     const value_type x_our (3.0, -4.0);
     const auto x_mkl = converter_type::convertToInternalValue (x_our);

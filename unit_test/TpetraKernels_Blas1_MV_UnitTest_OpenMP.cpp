@@ -40,25 +40,25 @@
 // ************************************************************************
 //@HEADER
 */
-#include <TpetraKernels_Blas1_MV_UnitTests.hpp>
+#include <KokkosKernels_Blas1_MV_UnitTests.hpp>
 
 #ifdef KOKKOS_HAVE_OPENMP
 
 namespace KokkosBlas {
 namespace Impl {
 
-#define TPETRAKERNELS_BLAS1_MV_DEVICE Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>
+#define KOKKOSKERNELS_BLAS1_MV_DEVICE Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>
 
 template<>
 bool
-testOverScalarsAndLayouts<TPETRAKERNELS_BLAS1_MV_DEVICE> (std::ostream& out,
+testOverScalarsAndLayouts<KOKKOSKERNELS_BLAS1_MV_DEVICE> (std::ostream& out,
                                                           const char deviceName[],
                                                           const int numCols,
                                                           const bool oneCol,
                                                           const bool testComplex)
 {
   using std::endl;
-  typedef TPETRAKERNELS_BLAS1_MV_DEVICE device_type;
+  typedef KOKKOSKERNELS_BLAS1_MV_DEVICE device_type;
   bool success = true;
 
   if (device_type::execution_space::is_initialized ()) {
@@ -86,7 +86,7 @@ testOverScalarsAndLayouts<TPETRAKERNELS_BLAS1_MV_DEVICE> (std::ostream& out,
   return success;
 }
 
-#undef TPETRAKERNELS_BLAS1_MV_DEVICE
+#undef KOKKOSKERNELS_BLAS1_MV_DEVICE
 
 } // namespace Impl
 } // namespace KokkosBlas

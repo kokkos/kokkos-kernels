@@ -45,18 +45,18 @@
 #include <climits>
 
 
-#ifndef TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
-#  define TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET 1
+#ifndef KOKKOSKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+#  define KOKKOSKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET 1
 #endif
 
-#ifdef TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+#ifdef KOKKOSKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
 #  include <cstring> // for memset (see Kokkos::Serial specialization below)
-#endif // TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+#endif // KOKKOSKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
 
 namespace KokkosBlas {
 namespace Impl {
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
@@ -73,7 +73,7 @@ fill (const XMV& X, const XMV::non_const_value_type& val)
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
-#ifdef TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+#ifdef KOKKOSKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
 
   // Don't call one of the special cases (memset or 1-D fill) unless
   // the memory in X is contiguous.
@@ -113,7 +113,7 @@ fill (const XMV& X, const XMV::non_const_value_type& val)
   //   Kokkos::Impl::ViewFill<XMV> (X, val);
   //
 
-#endif // TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+#endif // KOKKOSKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
 
   // The first condition helps avoid overflow with the
   // multiplication in the second condition.
@@ -129,28 +129,28 @@ fill (const XMV& X, const XMV::non_const_value_type& val)
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #undef KOKKOSBLAS_IMPL_MV_SCALAR
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
   KOKKOSBLAS_IMPL_MV_FILL_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
   KOKKOSBLAS_IMPL_MV_FILL_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
   KOKKOSBLAS_IMPL_MV_FILL_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 } // namespace Impl
 } // namespace KokkosBlas

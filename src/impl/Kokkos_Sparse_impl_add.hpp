@@ -42,7 +42,7 @@
 */
 #define KOKKOSSPARSE_IMPL_ADD_HPP
 
-#include <TpetraKernels_config.h>
+#include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 #include <functional> // std::plus
 #include <ssstream>

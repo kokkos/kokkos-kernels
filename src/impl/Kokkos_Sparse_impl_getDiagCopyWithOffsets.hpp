@@ -44,7 +44,7 @@
 #ifndef KOKKOS_SPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
 #define KOKKOS_SPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
 
-#include "TpetraKernels_config.h"
+#include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"

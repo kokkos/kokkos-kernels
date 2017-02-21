@@ -42,27 +42,27 @@
 */
 #include <Kokkos_Blas1_MV.hpp>
 
-#ifndef TPETRAKERNELS_BLAS1_MV_UNITTESTS_HPP
-#define TPETRAKERNELS_BLAS1_MV_UNITTESTS_HPP
+#ifndef KOKKOSKERNELS_BLAS1_MV_UNITTESTS_HPP
+#define KOKKOSKERNELS_BLAS1_MV_UNITTESTS_HPP
 
 namespace { // (anonymous)
 
 enum EWhichNorm {
-  TPETRAKERNELS_TEST_NORM_INF = 0,
-  TPETRAKERNELS_TEST_NORM_ONE = 1,
-  TPETRAKERNELS_TEST_NORM_TWO = 2,
-  TPETRAKERNELS_TEST_NORM_INVALID = 3
+  KOKKOSKERNELS_TEST_NORM_INF = 0,
+  KOKKOSKERNELS_TEST_NORM_ONE = 1,
+  KOKKOSKERNELS_TEST_NORM_TWO = 2,
+  KOKKOSKERNELS_TEST_NORM_INVALID = 3
 };
 
 template<class RV, class XMV>
 void
 kokkosNorm (const RV& norms, const XMV& X, const EWhichNorm whichNorm)
 {
-  if (whichNorm == TPETRAKERNELS_TEST_NORM_INF) {
+  if (whichNorm == KOKKOSKERNELS_TEST_NORM_INF) {
     KokkosBlas::nrmInf (norms, X);
-  } else if (whichNorm == TPETRAKERNELS_TEST_NORM_ONE) {
+  } else if (whichNorm == KOKKOSKERNELS_TEST_NORM_ONE) {
     KokkosBlas::nrm1 (norms, X);
-  } else if (whichNorm == TPETRAKERNELS_TEST_NORM_TWO) {
+  } else if (whichNorm == KOKKOSKERNELS_TEST_NORM_TWO) {
     KokkosBlas::nrm2_squared (norms, X);
   }
 }
@@ -799,11 +799,11 @@ testAnyNorm (std::ostream& out, const EWhichNorm whichNorm,
   typename norms_type::HostMirror X_norms_h = Kokkos::create_mirror_view (X_norms);
 
   out << "Testing properties common to all norms, for norm ";
-  if (whichNorm == TPETRAKERNELS_TEST_NORM_INF) {
+  if (whichNorm == KOKKOSKERNELS_TEST_NORM_INF) {
     out << "inf";
-  } else if (whichNorm == TPETRAKERNELS_TEST_NORM_ONE) {
+  } else if (whichNorm == KOKKOSKERNELS_TEST_NORM_ONE) {
     out << "1";
-  } else if (whichNorm == TPETRAKERNELS_TEST_NORM_TWO) {
+  } else if (whichNorm == KOKKOSKERNELS_TEST_NORM_TWO) {
     out << "2";
   }
   out << endl;
@@ -1082,8 +1082,8 @@ testMV (std::ostream& out, const int numCols, const bool oneCol)
   success = success && curSuccess;
 
   // The compiler frowns upon looping with enums, so we cast to int.
-  for (int wn = static_cast<int> (TPETRAKERNELS_TEST_NORM_INF);
-       wn < static_cast<int> (TPETRAKERNELS_TEST_NORM_INVALID);
+  for (int wn = static_cast<int> (KOKKOSKERNELS_TEST_NORM_INF);
+       wn < static_cast<int> (KOKKOSKERNELS_TEST_NORM_INVALID);
        ++wn) {
     const EWhichNorm whichNorm = static_cast<EWhichNorm> (wn);
     curSuccess = testAnyNorm<Scalar, Layout, Device> (out, whichNorm, numCols);
@@ -1222,4 +1222,4 @@ testOverScalarsAndLayouts<Kokkos::Device<Kokkos::Cuda,
 } // namespace Impl
 } // namespace KokkosBlas
 
-#endif // TPETRAKERNELS_BLAS1_MV_UNITTESTS_HPP
+#endif // KOKKOSKERNELS_BLAS1_MV_UNITTESTS_HPP

@@ -44,13 +44,13 @@
 #ifndef KOKKOS_SPARSE_IMPL_MKL_HPP_
 #define KOKKOS_SPARSE_IMPL_MKL_HPP_
 
-#include "TpetraKernels_config.h"
+#include "KokkosKernels_config.h"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_Sparse_impl_copyIntegers.hpp"
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 #  include "mkl_spblas.h"
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
 #include <cstring> // memcpy
 #include <sstream>
@@ -59,7 +59,7 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Mkl {
 
-#ifndef HAVE_TPETRAKERNELS_MKL
+#ifndef HAVE_KOKKOSKERNELS_MKL
 typedef int MKL_INT;
 typedef int sparse_diag_type_t;
 typedef int sparse_fill_mode_t;
@@ -77,7 +77,7 @@ struct matrix_descr {
   sparse_fill_mode_t mode;
   sparse_diag_type_t diag;
 };
-#endif // NOT HAVE_TPETRAKERNELS_MKL
+#endif // NOT HAVE_KOKKOSKERNELS_MKL
 
 //! Human-readable string representation of MKL's "index base" enum.
 std::string
@@ -121,49 +121,49 @@ struct SupportsValueType {
   /// \brief Whether MKL supports operations with sparse matrices
   ///   whose entries have type \c ValueType.
   static const bool value =
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     std::is_same<ValueType, double>::value ||
     std::is_same<ValueType, float>::value ||
     std::is_same<ValueType, ::Kokkos::complex<double> >::value ||
     std::is_same<ValueType, ::Kokkos::complex<float> >::value;
 #else
     false;
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 };
 
 //! Value returned by an MKL operation indicating success.
 constexpr sparse_status_t tplStatusSuccessful () {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   return SPARSE_STATUS_SUCCESS;
 #else
   return 0; // the usual *nix convention for success
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 /// \brief Value returned by an MKL operation indicating that the
 ///   operation is not supported.
 constexpr sparse_status_t tplStatusNotSupported () {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   return SPARSE_STATUS_NOT_SUPPORTED;
 #else
   return -1; // must not be the same as "success" (see above)
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 /// \brief Value returned by an MKL operation indicating that the
 ///   matrix is not initialized.
 constexpr sparse_status_t tplStatusNotInitialized () {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   return SPARSE_STATUS_NOT_INITIALIZED;
 #else
   return -2; // must not be the same as "success" (see above)
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 /// \brief Convert "status" return value of an MKL operation into a
 ///   human-readable string.
 std::string tplStatusToString (const sparse_status_t status) {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   // All strings but the last (default case) come directly from
   // Intel's MKL documentation:
   // https://software.intel.com/en-us/node/590115
@@ -194,7 +194,7 @@ std::string tplStatusToString (const sparse_status_t status) {
   }
 #else
   return "Invalid status value.";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 /// \brief Operations on a "raw" MKL sparse matrix handle.
@@ -312,21 +312,21 @@ struct RawTplMatrixHandle<double> {
           MKL_INT* colInd,
           value_type* values)
   {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_d_create_csr (handle, indexing, numRows, numCols,
                                     rowBeg, rowEnd, colInd, values);
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 
   //! Destroy "raw" MKL sparse matrix handle.
   static status_type destroy (handle_type handle) {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_destroy (handle);
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 };
 
@@ -358,20 +358,20 @@ struct RawTplMatrixHandle<float> {
           MKL_INT* colInd,
           value_type* values)
   {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_s_create_csr (handle, indexing, numRows, numCols,
                                     rowBeg, rowEnd, colInd, values);
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 
   static status_type destroy (handle_type handle) {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_destroy (handle);
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 };
 
@@ -379,11 +379,11 @@ struct RawTplMatrixHandle<float> {
 template<>
 struct RawTplMatrixHandle< ::Kokkos::complex<double> > {
   typedef ::Kokkos::complex<double> value_type;
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   typedef MKL_Complex16 internal_value_type;
 #else
   typedef value_type internal_value_type;
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   typedef sparse_matrix_t handle_type;
   typedef sparse_status_t status_type;
 
@@ -414,21 +414,21 @@ struct RawTplMatrixHandle< ::Kokkos::complex<double> > {
           MKL_INT* colInd,
           value_type* values)
   {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_z_create_csr (handle, indexing, numRows, numCols,
                                     rowBeg, rowEnd, colInd,
                                     reinterpret_cast<internal_value_type*> (values));
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 
   static status_type destroy (handle_type handle) {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_destroy (handle);
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 };
 
@@ -436,11 +436,11 @@ struct RawTplMatrixHandle< ::Kokkos::complex<double> > {
 template<>
 struct RawTplMatrixHandle< ::Kokkos::complex<float> > {
   typedef ::Kokkos::complex<float> value_type;
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   typedef MKL_Complex8 internal_value_type;
 #else
   typedef value_type internal_value_type;
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   typedef sparse_matrix_t handle_type;
   typedef sparse_status_t status_type;
 
@@ -471,21 +471,21 @@ struct RawTplMatrixHandle< ::Kokkos::complex<float> > {
           MKL_INT* colInd,
           value_type* values)
   {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_c_create_csr (handle, indexing, numRows, numCols,
                                     rowBeg, rowEnd, colInd,
                                     reinterpret_cast<internal_value_type*> (values));
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 
   static status_type destroy (handle_type handle) {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     return mkl_sparse_destroy (handle);
 #else
     return tplStatusNotSupported ();
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   }
 };
 
@@ -578,11 +578,11 @@ public:
   void
   setMatrix (const MatrixType& A, const bool reuseGraph)
   {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
     sparse_index_base_t indexing = SPARSE_INDEX_BASE_ZERO;
 #else
     sparse_index_base_t indexing = 0;
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
     // Get the matrix's dimensions.  Make sure that we can cast them
     // to MKL_INT without overflow.

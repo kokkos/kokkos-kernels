@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef TPETRAKERNELS_BLAS2_MV_GEMV_HPP
-#define TPETRAKERNELS_BLAS2_MV_GEMV_HPP
+#ifndef KOKKOSKERNELS_BLAS2_MV_GEMV_HPP
+#define KOKKOSKERNELS_BLAS2_MV_GEMV_HPP
 
 #include "Kokkos_Blas1_MV.hpp"
 #include "Kokkos_Blas2_MV.hpp"
@@ -49,9 +49,9 @@
 #include <sstream>
 #include <stdexcept>
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 #  include "mkl.h"
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
 namespace { // (anonymous)
 
@@ -338,7 +338,7 @@ testGemvOne (std::ostream& curOut,
 
   bool ranMklTest = false;
   mag_type infNormMkl = ArithTraits<mag_type>::zero ();
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   if (numRows != 0 && numCols != 0 &&
       (typeid (Layout) == typeid (Kokkos::LayoutLeft) ||
        typeid (Layout) == typeid (Kokkos::LayoutRight)) &&
@@ -439,7 +439,7 @@ testGemvOne (std::ostream& curOut,
       }
     }
   }
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 
   {
     os << ", infNorm (hand): " << infNorm << (infNorm <= tol ? " <= " : " > ") << tol;
@@ -662,4 +662,4 @@ testScalarsLayouts (std::ostream& out,
 
 } // namespace (anonymous)
 
-#endif // TPETRAKERNELS_BLAS2_MV_GEMV_HPP
+#endif // KOKKOSKERNELS_BLAS2_MV_GEMV_HPP

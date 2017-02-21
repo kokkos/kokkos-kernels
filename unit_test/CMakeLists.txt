@@ -25,11 +25,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   blas1_MV_unit
   SOURCES
     blas1_MV
-    TpetraKernels_Blas1_MV_UnitTest_Cuda.cpp
-    TpetraKernels_Blas1_MV_UnitTest_OpenMP.cpp
-    TpetraKernels_Blas1_MV_UnitTest_Serial.cpp
-    TpetraKernels_Blas1_MV_UnitTests.hpp
-    TpetraKernels_Blas1_MV_UnitTest_Threads.cpp
+    KokkosKernels_Blas1_MV_UnitTest_Cuda.cpp
+    KokkosKernels_Blas1_MV_UnitTest_OpenMP.cpp
+    KokkosKernels_Blas1_MV_UnitTest_Serial.cpp
+    KokkosKernels_Blas1_MV_UnitTests.hpp
+    KokkosKernels_Blas1_MV_UnitTest_Threads.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -39,7 +39,7 @@ IF (Kokkos_ENABLE_Cuda)
     blas2_MV_Cuda
     SOURCES
       blas2_MV_Cuda
-      TpetraKernels_Blas2_MV_GEMV.hpp
+      KokkosKernels_Blas2_MV_GEMV.hpp
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -50,7 +50,7 @@ IF (Kokkos_ENABLE_OpenMP)
     blas2_MV_OpenMP
     SOURCES
       blas2_MV_OpenMP
-      TpetraKernels_Blas2_MV_GEMV.hpp
+      KokkosKernels_Blas2_MV_GEMV.hpp
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -61,7 +61,7 @@ IF (Kokkos_ENABLE_Serial)
     blas2_MV_Serial
     SOURCES
       blas2_MV_Serial
-      TpetraKernels_Blas2_MV_GEMV.hpp
+      KokkosKernels_Blas2_MV_GEMV.hpp
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -72,7 +72,7 @@ IF (Kokkos_ENABLE_Pthread)
     blas2_MV_Threads
     SOURCES
       blas2_MV_Threads
-      TpetraKernels_Blas2_MV_GEMV.hpp
+      KokkosKernels_Blas2_MV_GEMV.hpp
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -84,7 +84,7 @@ IF (${PACKAGE_NAME}_ENABLE_MKL)
     blas2_MV_unit_MKL
     SOURCES
       blas2_MV_MKL
-      TpetraKernels_Blas2_MV_GEMV_MKL.hpp
+      KokkosKernels_Blas2_MV_GEMV_MKL.hpp
     COMM serial mpi
     NUM_MPI_PROCS 1
     )

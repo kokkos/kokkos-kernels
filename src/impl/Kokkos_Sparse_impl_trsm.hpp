@@ -47,7 +47,7 @@
 /// \file Kokkos_Sparse_impl_trsm.hpp
 /// \brief Implementation(s) of sparse triangular solve.
 
-#include <TpetraKernels_config.h>
+#include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 #include <vector> // temporarily
 

@@ -13,7 +13,7 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 # template instantiation (ETI).
 TRIBITS_ADD_ETI_SUPPORT()
 
-# If building in debug mode, define the HAVE_TPETRAKERNELS_DEBUG macro.
+# If building in debug mode, define the HAVE_KOKKOSKERNELS_DEBUG macro.
 TRIBITS_ADD_DEBUG_OPTION()
 
 #
@@ -21,7 +21,7 @@ TRIBITS_ADD_DEBUG_OPTION()
 #
 
 #
-# "Optimization level" for TpetraKernels computational kernels.  The
+# "Optimization level" for KokkosKernels computational kernels.  The
 # higher the level, the more code variants get generated, and thus the
 # longer the compile times.  However, more code variants mean both
 # better performance overall, and more uniform performance for corner
@@ -29,7 +29,7 @@ TRIBITS_ADD_DEBUG_OPTION()
 #
 TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
   KOKKOSLINALG_OPT_LEVEL
-  "Optimization level for TpetraKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems."
+  "Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems."
   "1"
   )
 
@@ -37,36 +37,36 @@ TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
 # time. Default is no.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
-  HAVE_TPETRAKERNELS_EXPERIMENTAL
-  "Enable building and installation of experimental TpetraKernels features."
+  HAVE_KOKKOSKERNELS_EXPERIMENTAL
+  "Enable building and installation of experimental KokkosKernels features."
   NO )
 
 
 ASSERT_DEFINED (Tpetra_INST_CUDA)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA
-  TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
   "Whether to build kernels for the execution space Kokkos::Cuda.  This option is Tpetra_INST_CUDA=${Tpetra_INST_CUDA} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_CUDA is enabled will make Tpetra build times longer."
   ${Tpetra_INST_CUDA}
   )
 ASSERT_DEFINED (Tpetra_INST_OPENMP)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP
-  TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
   "Whether to build kernels for the execution space Kokkos::OpenMP.  This option is Tpetra_INST_OPENMP=${Tpetra_INST_OPENMP} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_OPENMP is enabled will make Tpetra build times longer."
   ${Tpetra_INST_OPENMP}
   )
 ASSERT_DEFINED (Tpetra_INST_PTHREAD)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD
-  TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
   "Whether to build kernels for the execution space Kokkos::Threads.  This option is Tpetra_INST_PTHREAD=${Tpetra_INST_PTHREAD} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_PTHREAD is enabled will make Tpetra build times longer."
   ${Tpetra_INST_PTHREAD}
   )
 ASSERT_DEFINED (Tpetra_INST_SERIAL)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL
-  TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+  KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
   "Whether to build kernels for the execution space Kokkos::Serial.  This option is Tpetra_INST_SERIAL=${Tpetra_INST_SERIAL} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_SERIAL is enabled will make Tpetra build times longer."
   ${Tpetra_INST_SERIAL}
   )

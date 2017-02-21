@@ -44,10 +44,10 @@
 #ifndef _KOKKOSSPGEMMMKL_HPP
 #define _KOKKOSSPGEMMMKL_HPP
 
-//#define HAVE_TPETRAKERNELS_MKL
+//#define HAVE_KOKKOSKERNELS_MKL
 
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 #include "mkl_spblas.h"
 #include "mkl.h"
 #endif
@@ -95,7 +95,7 @@ namespace Impl{
       cin_nonzero_value_view_type &valuesC,
       bool verbose = false){
 
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
 
     typedef typename KernelHandle::nnz_lno_t idx;
     typedef typename KernelHandle::size_type size_type;

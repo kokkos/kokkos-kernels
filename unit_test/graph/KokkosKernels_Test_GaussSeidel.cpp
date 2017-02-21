@@ -52,7 +52,7 @@
 #include <Kokkos_Sparse.hpp>
 #include <Kokkos_Blas1_MV.hpp>
 
-#include "TpetraKernels_ETIHelperMacros.h"
+#include "KokkosKernels_ETIHelperMacros.h"
 #include <cstdlib>
 #include <iostream>
 #include <complex>
@@ -250,8 +250,8 @@ TEST (GAUSSSEIDEL_TEST, GS) {
 
 
 
-  TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
-  TPETRAKERNELS_INSTANTIATE_SLD_NO_ORDINAL_SCALAR(INSTMACRO)
+  KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()
+  KOKKOSKERNELS_INSTANTIATE_SLD_NO_ORDINAL_SCALAR(INSTMACRO)
 
 #if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::finalize( );

@@ -44,7 +44,7 @@
 #ifndef KOKKOS_SPARSE_IMPL_COPYINTEGERS_HPP_
 #define KOKKOS_SPARSE_IMPL_COPYINTEGERS_HPP_
 
-#include "TpetraKernels_config.h"
+#include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include <sstream>
 #include <stdexcept>

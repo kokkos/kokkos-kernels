@@ -51,7 +51,7 @@ namespace Mkl {
 std::string
 sparseIndexBaseToString (const sparse_index_base_t base)
 {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   if (base == SPARSE_INDEX_BASE_ZERO) {
     return "SPARSE_INDEX_BASE_ZERO";
   }
@@ -63,13 +63,13 @@ sparseIndexBaseToString (const sparse_index_base_t base)
   }
 #else
   return "DID NOT BUILD WITH MKL";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 std::string
 sparseOperationToString (const sparse_operation_t op)
 {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   if (op == SPARSE_OPERATION_NON_TRANSPOSE) {
     return "SPARSE_OPERATION_NON_TRANSPOSE";
   }
@@ -84,13 +84,13 @@ sparseOperationToString (const sparse_operation_t op)
   }
 #else
   return "DID NOT BUILD WITH MKL";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 std::string
 sparseMatrixTypeToString (const sparse_matrix_type_t type)
 {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   if (type == SPARSE_MATRIX_TYPE_GENERAL) {
     return "SPARSE_MATRIX_TYPE_GENERAL";
   }
@@ -117,13 +117,13 @@ sparseMatrixTypeToString (const sparse_matrix_type_t type)
   }
 #else
   return "DID NOT BUILD WITH MKL";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 std::string
 sparseFillModeToString (const sparse_fill_mode_t mode)
 {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   if (mode == SPARSE_FILL_MODE_LOWER) {
     return "SPARSE_FILL_MODE_LOWER";
   }
@@ -135,13 +135,13 @@ sparseFillModeToString (const sparse_fill_mode_t mode)
   }
 #else
   return "DID NOT BUILD WITH MKL";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 std::string
 sparseDiagTypeToString (const sparse_diag_type_t diag)
 {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   if (diag == SPARSE_DIAG_NON_UNIT) {
     return "SPARSE_DIAG_NON_UNIT";
   }
@@ -153,7 +153,7 @@ sparseDiagTypeToString (const sparse_diag_type_t diag)
   }
 #else
   return "DID NOT BUILD WITH MKL";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 std::string
@@ -185,11 +185,11 @@ matrixDescriptorToString (const matrix_descr& descr,
   }
 
   out << indent << "Built with MKL: ";
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   out << "YES";
 #else
   out << "NO";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
   if (oneLine) {
     out << ", ";
   }
@@ -227,7 +227,7 @@ matrixDescriptorToString (const matrix_descr& descr,
 std::string
 sparseLayoutToString (const sparse_layout_t layout)
 {
-#ifdef HAVE_TPETRAKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL
   if (layout == SPARSE_LAYOUT_COLUMN_MAJOR) {
     return "SPARSE_LAYOUT_COLUMN_MAJOR";
   }
@@ -239,7 +239,7 @@ sparseLayoutToString (const sparse_layout_t layout)
   }
 #else
   return "DID NOT BUILD WITH MKL";
-#endif // HAVE_TPETRAKERNELS_MKL
+#endif // HAVE_KOKKOSKERNELS_MKL
 }
 
 } // namespace Mkl
