@@ -1,9 +1,9 @@
 INCLUDE(TribitsETISupport)
 
 #
-# Define the subpackage
+# Define the package
 #
-TRIBITS_SUBPACKAGE(Kernels)
+TRIBITS_PACKAGE(KokkosKernels)
 
 # Define ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION,
 # which defaults to ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION.
