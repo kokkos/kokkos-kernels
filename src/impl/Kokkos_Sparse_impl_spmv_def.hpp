@@ -286,18 +286,18 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
   SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
 
   if(A.nnz()>10000000) {
-    Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
     if(team_size<0)
-      policy = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
     else
-      policy = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
     Kokkos::parallel_for(policy,func);
   } else {
-    Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static> > policy(1,1);
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
     if(team_size<0)
-      policy = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
     else
-      policy = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
     Kokkos::parallel_for(policy,func);
   }
 }
@@ -515,17 +515,25 @@ spmv (const char mode[], \
   typedef Kokkos::Details::ArithTraits<coefficient_type> KAT; \
   \
   if (alpha == KAT::zero ()) { \
-    spmv_alpha<AMatrix, XVector, YVector, 0> (mode, alpha, A, x, beta, y); \
+    if (beta != KAT::one ()) { \
+      KokkosBlas::scal (y, beta, y); \
+    } \
+    return; \
   } \
-  else if (alpha == KAT::one ()) { \
-    spmv_alpha<AMatrix, XVector, YVector, 1> (mode, alpha, A, x, beta, y); \
+  \
+  if (beta == KAT::zero ()) { \
+    spmv_beta<AMatrix, XVector, YVector, 0> (mode, alpha, A, x, beta, y); \
   } \
-  else if (alpha == -KAT::one ()) { \
-    spmv_alpha<AMatrix, XVector, YVector, -1> (mode, alpha, A, x, beta, y); \
+  else if (beta == KAT::one ()) { \
+    spmv_beta<AMatrix, XVector, YVector, 1> (mode, alpha, A, x, beta, y); \
+  } \
+  else if (beta == -KAT::one ()) { \
+    spmv_beta<AMatrix, XVector, YVector, -1> (mode, alpha, A, x, beta, y); \
   } \
   else { \
-    spmv_alpha<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y); \
+    spmv_beta<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y); \
   } \
+  \
 }
 
 
