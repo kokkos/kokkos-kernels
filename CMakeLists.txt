@@ -42,69 +42,79 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   NO )
 
 
-ASSERT_DEFINED (Tpetra_INST_CUDA)
+ASSERT_DEFINED (Kokkos_ENABLE_Cuda)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_CUDA
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
   "Whether to build kernels for the execution space Kokkos::Cuda.  This option is Tpetra_INST_CUDA=${Tpetra_INST_CUDA} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_CUDA is enabled will make Tpetra build times longer."
-  ${Tpetra_INST_CUDA}
+  ${Kokkos_ENABLE_Cuda}
   )
-ASSERT_DEFINED (Tpetra_INST_OPENMP)
+ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_OPENMP
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
   "Whether to build kernels for the execution space Kokkos::OpenMP.  This option is Tpetra_INST_OPENMP=${Tpetra_INST_OPENMP} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_OPENMP is enabled will make Tpetra build times longer."
-  ${Tpetra_INST_OPENMP}
+  ${Kokkos_ENABLE_OpenMP}
   )
-ASSERT_DEFINED (Tpetra_INST_PTHREAD)
+ASSERT_DEFINED (Kokkos_ENABLE_Pthread)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_PTHREAD
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
   "Whether to build kernels for the execution space Kokkos::Threads.  This option is Tpetra_INST_PTHREAD=${Tpetra_INST_PTHREAD} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_PTHREAD is enabled will make Tpetra build times longer."
-  ${Tpetra_INST_PTHREAD}
+  ${Kokkos_ENABLE_Pthread}
   )
-ASSERT_DEFINED (Tpetra_INST_SERIAL)
+ASSERT_DEFINED (Kokkos_ENABLE_Serial)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXECUTION_SPACE_SERIAL
   KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
   "Whether to build kernels for the execution space Kokkos::Serial.  This option is Tpetra_INST_SERIAL=${Tpetra_INST_SERIAL} by default.  If expliict template instantiation (ETI) is enabled in Trilinos, disabling this when Tpetra_INST_SERIAL is enabled will make Tpetra build times longer."
-  ${Tpetra_INST_SERIAL}
+  ${Kokkos_ENABLE_Serial}
   )
 
 # ==================================================================
 # Explicit template instantiation (ETI) and test instantiation logic
 # ==================================================================
+SET(${PACKAGE_NAME}_ETI_SCALARS "")
+SET(${PACKAGE_NAME}_ETI_LORDS "")
+SET(${PACKAGE_NAME}_ETI_DEVICES "")
 
-# tpetra/CMakeLists.txt (the package's CMake logic) defines these
-# variables.  Despite "ETI" in their names, they exist whether or not
-# ETI is defined.  If ETI is defined, these variables govern the set
-# of template parameter combinations over which Tpetra instantiates.
-# Whether or not ETI is defined, the variables govern the set of
-# template parameter combinations over which Tpetra runs tests.
+# ============================================================
+# Kokkos execution space types
+# ============================================================
 
-ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS)
-ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS_NO_ORDS)
-ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS_ORDS)
-ASSERT_DEFINED (Tpetra_ETI_LORDS)
-ASSERT_DEFINED (Tpetra_ETI_DEVICES)
 
-# mfh 11 Oct 2016: Use Kokkos versions of Scalar types for ETI.
-# In particular, use Kokkos::complex<T> in place of std::complex<T>.
-SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS_KOKKOS}")
-# Exclude all ordinal types (GlobalOrdinal and int).
-SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_KOKKOS_NO_ORDS}")
-# Include ONLY ordinal types (GlobalOrdinal and int).
-SET(${PACKAGE_NAME}_ETI_SCALARS_ORDS "${Tpetra_ETI_SCALARS_KOKKOS_ORDS}")
-SET(${PACKAGE_NAME}_ETI_LORDS "${Tpetra_ETI_LORDS}")
-SET(${PACKAGE_NAME}_ETI_DEVICES "${Tpetra_ETI_DEVICES}")
+#
+# Construct the list of enabled Device types.
+#
+IF(KokkosKernels_ENABLE_EXECUTION_SPACE_SERIAL) 
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
+ENDIF()
+IF(KokkosKernels_ENABLE_EXECUTION_SPACE_PTHREAD) 
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
+ENDIF()
+IF(KokkosKernels_ENABLE_EXECUTION_SPACE_OPENMP) 
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
+ENDIF()
+IF(KokkosKernels_ENABLE_EXECUTION_SPACE_CUDA) 
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
+ENDIF()
+
+# ============================================================
+# LocalOrdinal types
+# ============================================================
+
+# FIXME (mfh 16 Oct 2015) Tpetra currently only supports LocalOrdinal
+# = int.  At some point, the list of allowed LocalOrdinal types will
+# expand to include 64-bit signed integer types.
+
+LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
+LIST (APPEND ${PACKAGE_NAME}_ETI_SCALARS "double")
 
 # "Export" the names for use in the ETI system.
 # If we don't do this, ETI won't see these variables.
 
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
-GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
-GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_ORDS})
-GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})
 
