@@ -235,7 +235,6 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
     int64_t nnz_per_team = 4096;
     int64_t conc = execution_space::concurrency();
     while((conc * nnz_per_team * 4> nnz)&&(nnz_per_team>256)) nnz_per_team/=2;
-    int64_t nnz_per_row = nnz/numRows;
     rows_per_team = (nnz_per_team+nnz_per_row - 1)/nnz_per_row;
   }
 
@@ -262,14 +261,12 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
     return;
   }
 
-  typedef typename AMatrix::size_type size_type;
-
   #ifdef KOKKOS_ENABLE_OPENMP
   if((std::is_same<execution_space,Kokkos::OpenMP>::value) &&
      (std::is_same<typename std::remove_cv<typename AMatrix::value_type>::type,double>::value) &&
      (std::is_same<typename XVector::non_const_value_type,double>::value) &&
      (std::is_same<typename YVector::non_const_value_type,double>::value) &&
-     (A.graph.row_block_offsets.dimension_0()==omp_get_max_threads()+1) &&
+     ((int) A.graph.row_block_offsets.dimension_0() == (int) omp_get_max_threads()+1) &&
      (((uintptr_t)(const void*)(x.data())%64)==0) && (((uintptr_t)(const void*)(y.data())%64)==0)
      ) {
     spmv_raw_openmp_no_transpose<AMatrix,XVector,YVector>(alpha,A,x,beta,y);
