@@ -706,7 +706,7 @@ struct Update<XV, YV, ZV, 1>
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_UPDATE_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Update<Kokkos::View<const SCALAR**, \
                            LAYOUT, \
@@ -745,55 +745,11 @@ struct Update<Kokkos::View<const SCALAR**, \
           const ZMV::non_const_value_type& gamma, const ZMV& Z); \
 };
 
-//
-// Declarations of full specializations of Impl::Update for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_SERIAL( SCALAR ) \
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-KOKKOSKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_SERIAL )
-
-#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_SERIAL
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_OPENMP( SCALAR ) \
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-KOKKOSKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_OPENMP )
-
-#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_OPENMP
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_PTHREAD( SCALAR ) \
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-KOKKOSKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_PTHREAD )
-
-#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_PTHREAD
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_CUDA( SCALAR ) \
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-KOKKOSKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_CUDA )
-
-#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_CUDA
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-//
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Update for rank == 2.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_UPDATE_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Update<Kokkos::View<const SCALAR**, \
                     LAYOUT, \
@@ -869,7 +825,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X, \
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_V_UPDATE_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Update<Kokkos::View<const SCALAR*, \
                            LAYOUT, \
@@ -908,49 +864,11 @@ struct Update<Kokkos::View<const SCALAR*, \
           const ZV::non_const_value_type& gamma, const ZV& Z); \
 };
 
-//
-// Declarations of full specializations of Impl::Update for rank == 1.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-//
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Update for rank == 1.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_V_UPDATE_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Update<Kokkos::View<const SCALAR*, \
                     LAYOUT, \
@@ -1023,4 +941,6 @@ update (const XV::non_const_value_type& alpha, const XV& X, \
 } // namespace Impl
 } // namespace KokkosBlas
 
+#include<generated_specializations/KokkosBlas1_impl_V_update_decl_specializations.hpp>
+#include<generated_specializations/KokkosBlas1_impl_MV_update_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_

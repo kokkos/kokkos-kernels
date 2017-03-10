@@ -1986,7 +1986,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_AXPBY_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Axpby<SCALAR, \
              Kokkos::View<const SCALAR**, \
@@ -2027,7 +2027,7 @@ struct Axpby<SCALAR, \
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_V_AXPBY_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Axpby<SCALAR, \
              Kokkos::View<const SCALAR*, \
@@ -2060,60 +2060,6 @@ struct Axpby<SCALAR, \
 };
 
 //
-// Declarations of full specializations of Impl::Axpby for rank == 2
-// and rank == 1.  Their definitions go in .cpp file(s) in this source
-// directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-//
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Axpby for rank == 2.  This is NOT for users!!!
 // We use this macro in one or more .cpp files in this directory.
@@ -2121,7 +2067,7 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, K
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
-#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Axpby<SCALAR, \
       Kokkos::View<const SCALAR**, \
@@ -2171,7 +2117,7 @@ axpby (const XMV::non_const_value_type& alpha, \
 
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
-#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Axpby<SCALAR, \
       Kokkos::View<const SCALAR**, \
@@ -2241,7 +2187,7 @@ axpby (const XMV::non_const_value_type& alpha, \
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
-#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_V_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Axpby<SCALAR, \
       Kokkos::View<const SCALAR*, \
@@ -2296,7 +2242,7 @@ axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
 
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
-#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_V_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Axpby<SCALAR, \
       Kokkos::View<const SCALAR*, \
@@ -2365,5 +2311,8 @@ axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
 
 } // namespace Impl
 } // namespace KokkosBlas
+
+#include<generated_specializations/KokkosBlas1_impl_V_axpby_decl_specializations.hpp>
+#include<generated_specializations/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_

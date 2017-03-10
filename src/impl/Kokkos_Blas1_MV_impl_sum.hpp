@@ -302,7 +302,7 @@ struct Sum<RV, XV, 1> {
 // more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_SUM_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_SUM_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Sum<Kokkos::View<SCALAR*, \
                         EXEC_SPACE::array_layout, \
@@ -326,40 +326,11 @@ struct Sum<Kokkos::View<SCALAR*, \
 };
 
 //
-// Declarations of full specializations of Impl::Sum for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_SUM_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_SUM_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_SUM_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_SUM_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-//
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Sum for rank == 2.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_SUM_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_SUM_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Sum<Kokkos::View<SCALAR*, \
                  EXEC_SPACE::array_layout, \
@@ -388,4 +359,5 @@ sum (const RV& r, const XMV& X) \
 } // namespace Impl
 } // namespace KokkosBlas
 
+#include<generated_specializations/KokkosBlas1_impl_MV_sum_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_SUM_HPP_

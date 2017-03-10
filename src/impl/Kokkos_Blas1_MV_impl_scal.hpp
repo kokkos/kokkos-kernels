@@ -907,7 +907,7 @@ struct Scal<RMV, typename RMV::non_const_value_type, XMV, 1>
 // definitions (see _DEF macro below) across one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_SCAL_MULTICOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Scal<Kokkos::View<SCALAR**, \
                          LAYOUT, \
@@ -950,7 +950,7 @@ struct Scal<Kokkos::View<SCALAR**, \
 // definitions (see _DEF macro below) across one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_SCAL_SINGLECOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Scal<Kokkos::View<SCALAR**, \
                          LAYOUT, \
@@ -987,7 +987,7 @@ struct Scal<Kokkos::View<SCALAR**, \
 // definitions (see _DEF macro below) across one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_V_SCAL_SINGLECOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Scal<Kokkos::View<SCALAR*, \
                          LAYOUT, \
@@ -1017,80 +1017,12 @@ struct Scal<Kokkos::View<SCALAR*, \
 };
 
 //
-// Declarations of full specializations of Impl::Scal for rank == 2
-// and a single scalar coefficient.  Their definitions go in .cpp
-// file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-//
-// Declarations of full specializations of Impl::Scal for rank == 1
-// and a single scalar coefficient.  Their definitions go in .cpp
-// file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-//
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Scalar for rank == 2 and a single scalar
 // coefficient.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_SCAL_SINGLECOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Scal<Kokkos::View<SCALAR**, \
                   LAYOUT, \
@@ -1136,7 +1068,7 @@ scal (const RMV& R, const AV& alpha, const XMV& X) \
 // coefficients.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_SCAL_RANK2_MULTICOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_SCAL_MULTICOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Scal<Kokkos::View<SCALAR**, \
                   LAYOUT, \
@@ -1186,7 +1118,7 @@ scal (const RMV& R, const AV& av, const XMV& X) \
 // coefficient.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_SCAL_RANK1_SINGLECOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_V_SCAL_SINGLECOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Scal<Kokkos::View<SCALAR*, \
                   LAYOUT, \
@@ -1234,5 +1166,9 @@ scal (const RV& R, const AV& alpha, const XV& X) \
 
 } // namespace Impl
 } // namespace KokkosBlas
+
+#include<generated_specializations/KokkosBlas1_impl_MV_scal_multicoeff_decl_specializations.hpp>
+#include<generated_specializations/KokkosBlas1_impl_MV_scal_singlecoeff_decl_specializations.hpp>
+#include<generated_specializations/KokkosBlas1_impl_V_scal_singlecoeff_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_SCAL_HPP_
