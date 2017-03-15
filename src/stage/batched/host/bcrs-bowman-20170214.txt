@@ -1,0 +1,70 @@
+bcrs
+1thread
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+    + Timer: 50 MVP = 14.5011
+    + Timer: extract_block_tridiag = 1.74905
+    + Timer: factor = 0.479659
+    + Timer: 50 solves = 11.5287
+   extract/mvp = 6.03077
+    factor/mvp = 1.65388
+     solve/mvp = 0.795022
+
+2thread
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+    + Timer: 50 MVP = 7.2887
+    + Timer: extract_block_tridiag = 0.878695
+    + Timer: factor = 0.23989
+    + Timer: 50 solves = 5.81219
+   extract/mvp = 6.02779
+    factor/mvp = 1.64562
+     solve/mvp = 0.797426
+
+4thread
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+    + Timer: 50 MVP = 3.67612
+    + Timer: extract_block_tridiag = 0.442694
+    + Timer: factor = 0.120263
+    + Timer: 50 solves = 2.92257
+   extract/mvp = 6.02122
+    factor/mvp = 1.63573
+     solve/mvp = 0.795016
+
+8thread
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+    + Timer: 50 MVP = 1.84197
+    + Timer: extract_block_tridiag = 0.222139
+    + Timer: factor = 0.060236
+    + Timer: 50 solves = 1.4711
+   extract/mvp = 6.02994
+    factor/mvp = 1.63507
+     solve/mvp = 0.798659
+
+16thread
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+    + Timer: 50 MVP = 0.925079
+    + Timer: extract_block_tridiag = 0.111471
+    + Timer: factor = 0.030543
+    + Timer: 50 solves = 0.739944
+   extract/mvp = 6.02489
+    factor/mvp = 1.65078
+     solve/mvp = 0.799871
+
+34thread
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+    + Timer: 50 MVP = 0.450726
+    + Timer: extract_block_tridiag = 0.053215
+    + Timer: factor = 0.014777
+    + Timer: 50 solves = 0.363104
+   extract/mvp = 5.90325
+    factor/mvp = 1.63924
+     solve/mvp = 0.805596
+
+68thread
+<I> ni 32 nj 32 nk 128 bs 5 nrhs 1 sc 0
+    + Timer: 50 MVP = 0.23066
+    + Timer: extract_block_tridiag = 0.027148
+    + Timer: factor = 0.007635
+    + Timer: 50 solves = 0.227985
+   extract/mvp = 5.88466
+    factor/mvp = 1.65504
+     solve/mvp = 0.988403

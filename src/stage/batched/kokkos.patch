@@ -1,0 +1,60 @@
+diff --git a/core/src/Cuda/Kokkos_Cuda_Parallel.hpp b/core/src/Cuda/Kokkos_Cuda_Parallel.hpp
+index edb4090..e477b6f 100644
+--- a/core/src/Cuda/Kokkos_Cuda_Parallel.hpp
++++ b/core/src/Cuda/Kokkos_Cuda_Parallel.hpp
+@@ -1481,6 +1481,12 @@ namespace Impl {
+     end( count ),
+     increment( blockDim.x )
+     {}
++    __device__ inline
++    ThreadVectorRangeBoundariesStruct (const iType& count):
++    start( threadIdx.x ),
++    end( count ),
++    increment( blockDim.x )
++    {}
+ #else
+     KOKKOS_INLINE_FUNCTION
+     ThreadVectorRangeBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+@@ -1488,6 +1494,12 @@ namespace Impl {
+       end( count ),
+       increment( 1 )
+     {}
++    KOKKOS_INLINE_FUNCTION
++    ThreadVectorRangeBoundariesStruct (const iType& count):
++      start( 0 ),
++      end( count ),
++      increment( 1 )
++    {}
+ #endif
+     };
+ 
+diff --git a/core/src/Kokkos_ExecPolicy.hpp b/core/src/Kokkos_ExecPolicy.hpp
+index 3115ec6..2656a79 100644
+--- a/core/src/Kokkos_ExecPolicy.hpp
++++ b/core/src/Kokkos_ExecPolicy.hpp
+@@ -508,6 +508,9 @@ struct ThreadVectorRangeBoundariesStruct {
+ 
+   KOKKOS_INLINE_FUNCTION
+   ThreadVectorRangeBoundariesStruct ( const TeamMemberType& thread, const iType& count ) : end( count ) {}
++
++  KOKKOS_INLINE_FUNCTION
++  ThreadVectorRangeBoundariesStruct ( const iType& count ) : end( count ) {}
+ };
+ 
+ template<class TeamMemberType>
+diff --git a/core/src/Kokkos_Serial.hpp b/core/src/Kokkos_Serial.hpp
+index 914edbc..c7ba4d3 100644
+--- a/core/src/Kokkos_Serial.hpp
++++ b/core/src/Kokkos_Serial.hpp
+@@ -897,6 +897,11 @@ struct TeamThreadRangeBoundariesStruct<iType,SerialTeamMember> {
+     ThreadVectorRangeBoundariesStruct (const SerialTeamMember& thread, const iType& count):
+       end( count )
+     {}
++
++    KOKKOS_INLINE_FUNCTION
++    ThreadVectorRangeBoundariesStruct (const iType& count):
++      end( count )
++    {}
+   };
+ 
+ } // namespace Impl
