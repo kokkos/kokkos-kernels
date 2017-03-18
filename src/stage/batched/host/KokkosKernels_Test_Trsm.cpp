@@ -488,81 +488,81 @@ namespace KokkosKernels {
 
 #endif
 
-      ///
-      /// Plain version (comparable to micro BLAS version)
-      ///
-      {
-        Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
-          a("a", N*VectorLength, BlkSize, BlkSize),
-          b("b", N*VectorLength, BlkSize, NumCols);
+      // ///
+      // /// Plain version (comparable to micro BLAS version)
+      // ///
+      // {
+      //   Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
+      //     a("a", N*VectorLength, BlkSize, BlkSize),
+      //     b("b", N*VectorLength, BlkSize, NumCols);
 
-        {
-          double tavg = 0, tmin = tmax;
-          for (int iter=iter_begin;iter<iter_end;++iter) {
-            // flush
-            flush.run();
+      //   {
+      //     double tavg = 0, tmin = tmax;
+      //     for (int iter=iter_begin;iter<iter_end;++iter) {
+      //       // flush
+      //       flush.run();
 
-            // initialize matrices
-            Kokkos::deep_copy(a, amat);
-            Kokkos::deep_copy(b, bmat);
+      //       // initialize matrices
+      //       Kokkos::deep_copy(a, amat);
+      //       Kokkos::deep_copy(b, bmat);
 
-            DeviceSpaceType::fence();
-            timer.reset();
+      //       DeviceSpaceType::fence();
+      //       timer.reset();
 
-            Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
-            Kokkos::parallel_for
-              (policy,
-               KOKKOS_LAMBDA(const int k) {
-                auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
-                auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
+      //       Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
+      //       Kokkos::parallel_for
+      //         (policy,
+      //          KOKKOS_LAMBDA(const int k) {
+      //           auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+      //           auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
 
-                switch (test) {
-                case 0:
-                  Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-                    invoke(1.0, aa, bb);
-                  break;
-                case 1:
-                  Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                    invoke(1.0, aa, bb);
-                  break;
-                case 2:
-                  Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-                    invoke(1.0, aa, bb);
-                  break;
-                case 3:
-                  Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                    invoke(1.0, aa, bb);
-                  break;
-                case 4:
-                  Serial::Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                    invoke(1.0, aa, bb);
-                  break;
-                }
-              });
+      //           switch (test) {
+      //           case 0:
+      //             Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
+      //               invoke(1.0, aa, bb);
+      //             break;
+      //           case 1:
+      //             Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+      //               invoke(1.0, aa, bb);
+      //             break;
+      //           case 2:
+      //             Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
+      //               invoke(1.0, aa, bb);
+      //             break;
+      //           case 3:
+      //             Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+      //               invoke(1.0, aa, bb);
+      //             break;
+      //           case 4:
+      //             Serial::Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+      //               invoke(1.0, aa, bb);
+      //             break;
+      //           }
+      //         });
 
-            DeviceSpaceType::fence();
-            const double t = timer.seconds();
-            tmin = std::min(tmin, t);
-            tavg += (iter >= 0)*t;
-          }
-          tavg /= iter_end;
+      //       DeviceSpaceType::fence();
+      //       const double t = timer.seconds();
+      //       tmin = std::min(tmin, t);
+      //       tavg += (iter >= 0)*t;
+      //     }
+      //     tavg /= iter_end;
 
-          double diff = 0;
-          for (int i=0;i<bref.dimension(0);++i)
-            for (int j=0;j<bref.dimension(1);++j)
-              for (int k=0;k<bref.dimension(2);++k)
-                diff += std::abs(bref(i,j,k) - b(i,j,k));
+      //     double diff = 0;
+      //     for (int i=0;i<bref.dimension(0);++i)
+      //       for (int j=0;j<bref.dimension(1);++j)
+      //         for (int k=0;k<bref.dimension(2);++k)
+      //           diff += std::abs(bref(i,j,k) - b(i,j,k));
 
-          std::cout << std::setw(10) << "Plain"
-                    << " BlkSize = " << std::setw(3) << BlkSize
-                    << " NumCols = " << std::setw(3) << NumCols
-                    << " time = " << std::scientific << tmin
-                    << " avg flop/s = " << (flop/tavg)
-                    << " max flop/s = " << (flop/tmin)
-                    << " diff to ref = " << diff
-                    << std::endl;
-        }
-      }
+      //     std::cout << std::setw(10) << "Plain"
+      //               << " BlkSize = " << std::setw(3) << BlkSize
+      //               << " NumCols = " << std::setw(3) << NumCols
+      //               << " time = " << std::scientific << tmin
+      //               << " avg flop/s = " << (flop/tavg)
+      //               << " max flop/s = " << (flop/tmin)
+      //               << " diff to ref = " << diff
+      //               << std::endl;
+      //   }
+      // }
 
       ///
       /// SIMD with appropriate data layout
@@ -733,6 +733,9 @@ int main(int argc, char *argv[]) {
 
     std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Trsm::Blocked\n";
     run<VectorTag<AVX<double>,VectorLength>,Algo::Trsm::Blocked>(N/VectorLength);
+
+    // std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Trsm::CompactMKL\n";
+    // run<VectorTag<AVX<double>,VectorLength>,Algo::Trsm::CompactMKL>(N/VectorLength);
   }
 
   Kokkos::finalize();

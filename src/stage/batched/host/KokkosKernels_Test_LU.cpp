@@ -205,57 +205,57 @@ namespace KokkosKernels {
 #endif
 
 #endif
-      ///
-      /// Plain version (comparable to micro BLAS version)
-      ///
+      // ///
+      // /// Plain version (comparable to micro BLAS version)
+      // ///
 
-      {
-        Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
-          a("a", N*VectorLength, BlkSize, BlkSize);
+      // {
+      //   Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
+      //     a("a", N*VectorLength, BlkSize, BlkSize);
 
-        {
-          double tavg = 0, tmin = tmax;
-          for (int iter=iter_begin;iter<iter_end;++iter) {
-            // flush
-            flush.run();
+      //   {
+      //     double tavg = 0, tmin = tmax;
+      //     for (int iter=iter_begin;iter<iter_end;++iter) {
+      //       // flush
+      //       flush.run();
 
-            // initialize matrix
-            Kokkos::deep_copy(a, amat);
+      //       // initialize matrix
+      //       Kokkos::deep_copy(a, amat);
 
-            DeviceSpaceType::fence();
-            timer.reset();
+      //       DeviceSpaceType::fence();
+      //       timer.reset();
 
-            Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
-            Kokkos::parallel_for
-              (policy,
-               KOKKOS_LAMBDA(const int k) {
-                auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+      //       Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
+      //       Kokkos::parallel_for
+      //         (policy,
+      //          KOKKOS_LAMBDA(const int k) {
+      //           auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
 
-                Serial::LU<AlgoTagType>::invoke(aa);
-              });
+      //           Serial::LU<AlgoTagType>::invoke(aa);
+      //         });
 
-            DeviceSpaceType::fence();
-            const double t = timer.seconds();
-            tmin = std::min(tmin, t);
-            tavg += (iter >= 0)*t;
-          }
-          tavg /= iter_end;
+      //       DeviceSpaceType::fence();
+      //       const double t = timer.seconds();
+      //       tmin = std::min(tmin, t);
+      //       tavg += (iter >= 0)*t;
+      //     }
+      //     tavg /= iter_end;
 
-          double diff = 0;
-          for (int i=0;i<aref.dimension(0);++i)
-            for (int j=0;j<aref.dimension(1);++j)
-              for (int k=0;k<aref.dimension(2);++k)
-                diff += std::abs(aref(i,j,k) - a(i,j,k));
+      //     double diff = 0;
+      //     for (int i=0;i<aref.dimension(0);++i)
+      //       for (int j=0;j<aref.dimension(1);++j)
+      //         for (int k=0;k<aref.dimension(2);++k)
+      //           diff += std::abs(aref(i,j,k) - a(i,j,k));
 
-          std::cout << std::setw(10) << "Plain"
-                    << " BlkSize = " << std::setw(3) << BlkSize
-                    << " time = " << std::scientific << tmin
-                    << " avg flop/s = " << (flop/tavg)
-                    << " max flop/s = " << (flop/tmin)
-                    << " diff to ref = " << diff
-                    << std::endl;
-        }
-      }
+      //     std::cout << std::setw(10) << "Plain"
+      //               << " BlkSize = " << std::setw(3) << BlkSize
+      //               << " time = " << std::scientific << tmin
+      //               << " avg flop/s = " << (flop/tavg)
+      //               << " max flop/s = " << (flop/tmin)
+      //               << " diff to ref = " << diff
+      //               << std::endl;
+      //   }
+      // }
 
       ///
       /// SIMD with appropriate data layout
@@ -363,6 +363,9 @@ int main(int argc, char *argv[]) {
     
     std::cout << "\n Testing AVX-" << VectorLength << " and Algo::LU::Blocked\n";
     run<VectorTag<AVX<double>,VectorLength>,Algo::LU::Blocked>(N/VectorLength);
+
+    // std::cout << "\n Testing AVX-" << VectorLength << " and Algo::LU::CompactMKL\n";
+    // run<VectorTag<AVX<double>,VectorLength>,Algo::LU::CompactMKL>(N/VectorLength);
   }
 
   Kokkos::finalize();

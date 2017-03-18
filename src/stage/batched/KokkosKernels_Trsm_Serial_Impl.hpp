@@ -13,6 +13,8 @@ namespace KokkosKernels {
 
   namespace Serial {
 
+
+
     template<int bmn>
     template<typename ValueType>
     KOKKOS_INLINE_FUNCTION
@@ -668,6 +670,35 @@ namespace KokkosKernels {
       return 0;
     }
 
+    template<typename ArgDiag>
+    struct Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
+      template<typename ScalarType,
+               typename AViewType,
+               typename BViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const ScalarType alpha,
+             const AViewType &A,
+             const BViewType &B) {
+        typedef typename BViewType::value_type vector_type;
+        typedef typename vector_type::value_type value_type;
+        
+        const int
+          m = B.dimension(0),
+          n = B.dimension(1),
+          vl = vector_type::vector_length;
+
+        // no error check
+        cblas_dtrsm_compact(CblasRowMajor, 
+                            CblasLeft, CblasLower, CblasNoTrans, 
+                            ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+                            m, n, 
+                            alpha, 
+                            (const double*)A.data(), A.stride_0(), 
+                            (double*)B.data(), B.stride_0(), 
+                            (MKL_INT)vl, (MKL_INT)1);
+      }
+    };
     
     template<typename ArgDiag>
     struct Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,ArgDiag,Algo::Trsm::Unblocked> {
@@ -813,6 +844,36 @@ namespace KokkosKernels {
           }
         }
         return 0;
+      }
+    };
+
+    template<typename ArgDiag>
+    struct Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
+      template<typename ScalarType,
+               typename AViewType,
+               typename BViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const ScalarType alpha,
+             const AViewType &A,
+             const BViewType &B) {
+        typedef typename BViewType::value_type vector_type;
+        typedef typename vector_type::value_type value_type;
+        
+        const int
+          m = B.dimension(0),
+          n = B.dimension(1),
+          vl = vector_type::vector_length;
+
+        // no error check
+        cblas_dtrsm_compact(CblasRowMajor, 
+                            CblasRight, CblasUpper, CblasNoTrans, 
+                            ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+                            m, n, 
+                            alpha, 
+                            (const double*)A.data(), A.stride_0(), 
+                            (double*)B.data(), B.stride_0(), 
+                            (MKL_INT)vl, (MKL_INT)1);
       }
     };
 
@@ -964,6 +1025,36 @@ namespace KokkosKernels {
         return 0;
       }
       
+    };
+
+    template<typename ArgDiag>
+    struct Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
+      template<typename ScalarType,
+               typename AViewType,
+               typename BViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const ScalarType alpha,
+             const AViewType &A,
+             const BViewType &B) {
+        typedef typename BViewType::value_type vector_type;
+        typedef typename vector_type::value_type value_type;
+        
+        const int
+          m = B.dimension(0),
+          n = B.dimension(1),
+          vl = vector_type::vector_length;
+
+        // no error check
+        cblas_dtrsm_compact(CblasRowMajor, 
+                            CblasLeft, CblasUpper, CblasNoTrans, 
+                            ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+                            m, n, 
+                            alpha, 
+                            (const double*)A.data(), A.stride_0(), 
+                            (double*)B.data(), B.stride_0(), 
+                            (MKL_INT)vl, (MKL_INT)1);
+      }
     };
 
     template<typename ArgDiag>

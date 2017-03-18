@@ -22,7 +22,7 @@ MKL_ROOT = /home/kyukim/Work/kokkoskernels-internal/code/bcrs/batched/mkl/mkl_co
 MKL_CFLAG = -I${MKL_ROOT}/include
 KOKKOS=/home/kyukim/Work/lib/kokkos/install/knl/intel/release
 KOKKOS_USE_TPLS=experimental_memkind
-CXXFLAGS=-O3 -g -restrict -qopt-report=5 -D__KOKKOSKERNELS_INTEL_MKL__ -D__KOKKOSKERNELS_INTEL_MKL_BATCHED__ -D__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__ -DMIMIC_SPARC -D__KOKKOSKERNELS_LIBXSMM__ -I${LIBXSMM_ROOT}/include 
+CXXFLAGS=-O3 -g -restrict -qopt-report=5 -D__KOKKOSKERNELS_INTEL_MKL__ -D__KOKKOSKERNELS_INTEL_MKL_BATCHED__ -D__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__ -DMIMIC_SPARC -DFAST_MATRIX_FILL -D__KOKKOSKERNELS_LIBXSMM__ -I${LIBXSMM_ROOT}/include 
 #LIBS = -lm -lnuma
 LIBS = ${LIBXSMM_ROOT}/lib/libxsmm.a -lm -lnuma -Wl,--start-group ${MKL_ROOT}/lib/intel64/libmkl_intel_lp64.a ${MKL_ROOT}/lib/intel64/libmkl_intel_thread.a ${MKL_ROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 
 endif

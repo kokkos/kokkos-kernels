@@ -44,14 +44,14 @@ namespace KokkosKernels {
           _xs0(xs0), 
           _ys0(ys0) {}
 
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int invoke(const ScalarType alpha,
-                 const ValueType *__restrict__ A,
-                 const ValueType *__restrict__ x,
-                 const int n,
-                 /**/  ValueType *__restrict__ y);
+      // template<typename ScalarType,
+      //          typename ValueType>
+      // KOKKOS_INLINE_FUNCTION
+      // int invoke(const ScalarType alpha,
+      //            const ValueType *__restrict__ A,
+      //            const ValueType *__restrict__ x,
+      //            const int n,
+      //            /**/  ValueType *__restrict__ y);
       
       template<typename ScalarType,
                typename ValueType>

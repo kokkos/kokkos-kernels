@@ -338,6 +338,19 @@ namespace KokkosKernels {
           ::invoke(AA);
       }
 
+      double FlopCount(const block_tridiag_matrices_type T) {
+        const int 
+          ntridiag = T.NumTridiagMatrices(),
+          m = T.NumRows(),
+          blocksize = T.BlockSize();
+        
+        return ntridiag*( (m-1)*(LU_FlopCount(blocksize, blocksize) + 
+                                 Trsm_Lower_FlopCountLower(blocksize, blocksize) +
+                                 Trsm_Upper_FlopCountUpper(blocksize, blocksize) +
+                                 Gemm_FlopCount(blocksize, blocksize, blocksize)) +
+                          LU_FlopCount(blocksize, blocksize) );
+      }
+
       // for batched blas check
       void run(const block_tridiag_matrices_type T, const bool fake = false) { 
         _ntridiag = T.NumTridiagMatrices();
@@ -724,7 +737,15 @@ namespace KokkosKernels {
       deep_copy(T_org_device, T_device);
       
       // Test Block TriDiag Factorization
-      if (!test_mkl) {
+      if (test_mkl) {
+        FactorizeBlockTridiagMatrices<DeviceSpace,
+                                      ValueType,
+                                      Algo::LU::CompactMKL,
+                                      Algo::Trsm::CompactMKL,
+                                      Algo::Gemm::CompactMKL> factorblk;
+        factorblk.run(T_device);
+        TEST_ASSERT(factorblk.check(T_org_device), success);
+      } else {
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType,
                                       Algo::LU::Blocked,
@@ -732,150 +753,10 @@ namespace KokkosKernels {
                                       Algo::Gemm::Blocked> factorblk;
         factorblk.run(T_device);
         TEST_ASSERT(factorblk.check(T_org_device), success);
-      } else {
-#if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
-        const int ntridiags = adjustDimension<ValueType>(mesh.ni*mesh.nj), nrows = mesh.nk;
-        Kokkos::View<ValueType****,DeviceSpace> TA("TA_mkl", nrows,   ntridiags, blocksize, blocksize);
-        Kokkos::View<ValueType****,DeviceSpace> TB("TB_mkl", nrows-1, ntridiags, blocksize, blocksize);
-        Kokkos::View<ValueType****,DeviceSpace> TC("TC_mkl", nrows-1, ntridiags, blocksize, blocksize);
-
-        // change the order to store the matrix
-        for (int i=0;i<nrows;++i)
-          for (int j=0;j<ntridiags;++j)
-            for (int k=0;k<blocksize;++k)
-              for (int l=0;l<blocksize;++l) {
-                TA(i,j,k,l) = T_device.A()(j,i,k,l);
-                if (i<(nrows-1)) {
-                  TB(i,j,k,l) = T_device.B()(j,i,k,l);
-                  TC(i,j,k,l) = T_device.C()(j,i,k,l);
-                }
-              }
-        
-        // matrix factorization
-        {
-          MKL_INT blksize[1] = { blocksize };
-          MKL_INT lda[1] = { TA.stride_2() };
-          MKL_INT ldb[1] = { TB.stride_2() };
-          MKL_INT ldc[1] = { TC.stride_2() };
-          MKL_INT size_per_grp[1] = { ntridiags*(sizeof(ValueType)/sizeof(double)) };
-
-          struct {
-            CBLAS_SIDE side[1] = {CblasLeft};
-            CBLAS_UPLO uplo[1] = {CblasLower};
-            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-            CBLAS_DIAG diag[1] = {CblasUnit};
-            double alpha[1] = { 1.0 };
-          } trsm_lower_params;
-
-          struct {
-            CBLAS_SIDE side[1] = {CblasRight};
-            CBLAS_UPLO uplo[1] = {CblasUpper};
-            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-            CBLAS_DIAG diag[1] = {CblasNonUnit};
-            double alpha[1] = { 1.0 };
-          } trsm_upper_params;
-
-          struct {
-            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-            CBLAS_TRANSPOSE transB[1] = {CblasNoTrans};
-            double alpha[1] = { -1.0 };
-            double beta[1] = { 1.0 };
-          } gemm_params;
-
-          compact_t A_p, B_p, C_p;
-          A_p.layout = CblasRowMajor; 
-          A_p.rows = blksize;
-          A_p.cols = blksize;
-          A_p.stride = lda;
-          A_p.group_count = 1;
-          A_p.size_per_group = size_per_grp;
-          A_p.format = sizeof(ValueType)/sizeof(double);
-
-          B_p.layout = CblasRowMajor;
-          B_p.rows = blksize;
-          B_p.cols = blksize;
-          B_p.stride = ldb;
-          B_p.group_count = 1;
-          B_p.size_per_group = size_per_grp;
-          B_p.format = sizeof(ValueType)/sizeof(double);
-
-          C_p.layout = CblasRowMajor;
-          C_p.rows = blksize;
-          C_p.cols = blksize;
-          C_p.stride = ldb;
-          C_p.group_count = 1;
-          C_p.size_per_group = size_per_grp;
-          C_p.format = sizeof(ValueType)/sizeof(double);
-
-          const int iend = nrows - 1;
-          for (int i=0;i<iend;++i) {
-            A_p.mat = (double*)&TA(i, 0, 0, 0);
-            LAPACKE_dgetrf_compute_batch(&A_p);
-
-            B_p.mat = (double*)&TB(i, 0, 0, 0);
-            cblas_dtrsm_compute_batch(trsm_lower_params.side,
-                                      trsm_lower_params.uplo, 
-                                      trsm_lower_params.transA, 
-                                      trsm_lower_params.diag,
-                                      trsm_lower_params.alpha,
-                                      &A_p,
-                                      &B_p);
-
-            C_p.mat = (double*)&TC(i, 0, 0, 0);
-            cblas_dtrsm_compute_batch(trsm_upper_params.side,
-                                      trsm_upper_params.uplo, 
-                                      trsm_upper_params.transA, 
-                                      trsm_upper_params.diag,
-                                      trsm_upper_params.alpha,
-                                      &A_p,
-                                      &C_p);
-
-            A_p.mat = (double*)&TA(i+1, 0, 0, 0);
-            cblas_dgemm_compute_batch(gemm_params.transA,
-                                      gemm_params.transB,
-                                      gemm_params.alpha,
-                                      &C_p,
-                                      &B_p,
-                                      gemm_params.beta,
-                                      &A_p);            
-          }
-          A_p.mat = (double*)&TA(iend, 0, 0, 0);
-          LAPACKE_dgetrf_compute_batch(&A_p);
-        }
-
-        // put back to original matrix for checking
-        for (int i=0;i<nrows;++i)
-          for (int j=0;j<ntridiags;++j)
-            for (int k=0;k<blocksize;++k)
-              for (int l=0;l<blocksize;++l) {
-                T_device.A()(j,i,k,l) = TA(i,j,k,l);
-                if (i<(nrows-1)) {
-                  T_device.B()(j,i,k,l) = TB(i,j,k,l);
-                  T_device.C()(j,i,k,l) = TC(i,j,k,l);
-                }
-              }
-
-        // checking 
-        {
-          FactorizeBlockTridiagMatrices<DeviceSpace,
-                                        ValueType,
-                                        Algo::LU::Blocked,
-                                        Algo::Trsm::Blocked,
-                                        Algo::Gemm::Blocked> factorblk;
-          const bool fake = true;
-          factorblk.run(T_device, fake);
-          TEST_ASSERT(factorblk.check(T_org_device), success);
-        }
-#endif
       }
 
       // Test Block TriDiag Solve
       {
-        SolveBlockTridiagMatrices<DeviceSpace,
-          ValueType,
-          Algo::Trsv::Blocked,
-          Algo::Gemv::Blocked> solveblk;
-        
         PartitionedBlockMultiVector<HostSpace,ValueType> b_host
           = create_partitioned_block_multi_vector<HostSpace,ValueType>(mesh.ni*mesh.nj, 
                                                                        nrhs,
@@ -891,9 +772,23 @@ namespace KokkosKernels {
                                                                          nrhs,
                                                                          mesh.nk, 
                                                                          blocksize);
-
-        solveblk.run(T_device, x_device, b_device);
-        TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
+        if (test_mkl) {
+          SolveBlockTridiagMatrices<DeviceSpace,
+                                    ValueType,
+                                    Algo::Trsv::CompactMKL,
+                                    Algo::Gemv::CompactMKL> solveblk;
+          
+          solveblk.run(T_device, x_device, b_device);
+          TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
+        } else {
+          SolveBlockTridiagMatrices<DeviceSpace,
+                                    ValueType,
+                                    Algo::Trsv::Blocked,
+                                    Algo::Gemv::Blocked> solveblk;
+          
+          solveblk.run(T_device, x_device, b_device);
+          TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
+        }
       }
 
       if (!success)
@@ -925,26 +820,45 @@ namespace KokkosKernels {
 
       // something is not copyable ... don't know why yet...
       BlockCrsMatrix<DeviceSpace> A_device;
+      double t_fill_block_crs_matrix = 0.0, t_fill_graph = 0.0;
       {
         const StencilShape::Enum stencil_shape = input.stencil_shape;
-        const CrsGraph<HostSpace> graph_host = create_graph_host_for_structured_block(mesh, stencil_shape);
+        CrsGraph<HostSpace> graph_host;
+        {
+          Timer timer("Fill Graph");
+          timer.reset();
+          graph_host = create_graph_host_for_structured_block(mesh, stencil_shape);
+          t_fill_graph = timer.seconds();
+        }
         BlockCrsMatrix<HostSpace> A_host(graph_host, blocksize);
-        fill_block_crs_matrix_host(A_host);      
-        
+        {
+          Timer timer("Fill Block CRS Matrix");
+          timer.reset();
+          fill_block_crs_matrix_host(A_host);       
+          t_fill_block_crs_matrix = timer.seconds();       
+        }
         A_device = create_mirror<DeviceSpace>(A_host);
         deep_copy(A_device, A_host);
       }
+
+      // memory size
+      const double memsize_A = A_device.Values().dimension_0()*blocksize*blocksize*8;
       
       ///
       /// matrix vector multiplication test
       ///
       double t_matvec = 0.0;
+      double t_fill_block_multi_vector = 0.0;
       {
         const ordinal_type m = mesh.size();
 
         BlockMultiVector<HostSpace> x_host(nrhs, m, blocksize);
-        fill_block_multi_vector_host(x_host);
-
+        {
+          Timer timer("Fill Block Multi Vector");
+          timer.reset();
+          fill_block_multi_vector_host(x_host);
+          t_fill_block_multi_vector = timer.seconds();
+        }
         auto x_device = create_mirror<DeviceSpace>(x_host);
         deep_copy(x_device, x_host);
         
@@ -967,6 +881,8 @@ namespace KokkosKernels {
       ///
       /// block tridiag extraction test
       ///
+      const double memsize_T = ni*nj*(3*(nk-1)*blocksize*blocksize + blocksize*blocksize)*8;
+
       double t_extract = 0.0;
       BlockTridiagMatrices<DeviceSpace,ValueType> T_device
         = create_block_tridiag_matrices<DeviceSpace,ValueType>(ni*nj, nk, blocksize);
@@ -990,13 +906,15 @@ namespace KokkosKernels {
       ///
       /// block tridiag factorization test
       ///
-      double t_factorize = 0.0;
-      FactorizeBlockTridiagMatrices<DeviceSpace,
-                                    ValueType,
-                                    Algo::LU::Blocked,
-                                    Algo::Trsm::Blocked,
-                                    Algo::Gemm::Blocked> factorblk;
-      if (!test_mkl) {
+      double t_factorize = 0.0, f_factorize = 0.0;
+      if (test_mkl) {
+        FactorizeBlockTridiagMatrices<DeviceSpace,
+                                      ValueType,
+                                      Algo::LU::CompactMKL,
+                                      Algo::Trsm::CompactMKL,
+                                      Algo::Gemm::CompactMKL> factorblk;
+        
+        f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
         {
           Timer timer("FactorizeBlockTridiagMatrices");
           timer.reset();
@@ -1005,138 +923,26 @@ namespace KokkosKernels {
         }
         if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
       } else {
-#if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
-        const int ntridiags = adjustDimension<ValueType>(mesh.ni*mesh.nj), nrows = mesh.nk;
-        Kokkos::View<ValueType****,DeviceSpace> TA("TA_mkl", nrows,   ntridiags, blocksize, blocksize);
-        Kokkos::View<ValueType****,DeviceSpace> TB("TB_mkl", nrows-1, ntridiags, blocksize, blocksize);
-        Kokkos::View<ValueType****,DeviceSpace> TC("TC_mkl", nrows-1, ntridiags, blocksize, blocksize);
-
-        // change the order to store the matrix
-        for (int i=0;i<nrows;++i)
-          for (int j=0;j<ntridiags;++j)
-            for (int k=0;k<blocksize;++k)
-              for (int l=0;l<blocksize;++l) {
-                TA(i,j,k,l) = T_device.A()(j,i,k,l);
-                if (i<(nrows-1)) {
-                  TB(i,j,k,l) = T_device.B()(j,i,k,l);
-                  TC(i,j,k,l) = T_device.C()(j,i,k,l);
-                }
-              }
+        FactorizeBlockTridiagMatrices<DeviceSpace,
+                                      ValueType,
+                                      Algo::LU::Blocked,
+                                      Algo::Trsm::Blocked,
+                                      Algo::Gemm::Blocked> factorblk;
         
-        // matrix factorization
+        f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
         {
           Timer timer("FactorizeBlockTridiagMatrices");
-
-          MKL_INT blksize[1] = { blocksize };
-          MKL_INT lda[1] = { TA.stride_2() };
-          MKL_INT ldb[1] = { TB.stride_2() };
-          MKL_INT ldc[1] = { TC.stride_2() };
-          MKL_INT size_per_grp[1] = { ntridiags*sizeof(ValueType)/sizeof(double) };
-
-          struct {
-            CBLAS_SIDE side[1] = {CblasLeft};
-            CBLAS_UPLO uplo[1] = {CblasLower};
-            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-            CBLAS_DIAG diag[1] = {CblasUnit};
-            double alpha[1] = { 1.0 };
-          } trsm_lower_params;
-
-          struct {
-            CBLAS_SIDE side[1] = {CblasRight};
-            CBLAS_UPLO uplo[1] = {CblasUpper};
-            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-            CBLAS_DIAG diag[1] = {CblasNonUnit};
-            double alpha[1] = { 1.0 };
-          } trsm_upper_params;
-
-          struct {
-            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-            CBLAS_TRANSPOSE transB[1] = {CblasNoTrans};
-            double alpha[1] = { -1.0 };
-            double beta[1] = { 1.0 };
-          } gemm_params;
-
-          compact_t A_p, B_p, C_p;
-          A_p.layout = CblasRowMajor; 
-          A_p.rows = blksize;
-          A_p.cols = blksize;
-          A_p.stride = lda;
-          A_p.group_count = 1;
-          A_p.size_per_group = size_per_grp;
-          A_p.format = sizeof(ValueType)/sizeof(double);
-
-          B_p.layout = CblasRowMajor;
-          B_p.rows = blksize;
-          B_p.cols = blksize;
-          B_p.stride = ldb;
-          B_p.group_count = 1;
-          B_p.size_per_group = size_per_grp;
-          B_p.format = sizeof(ValueType)/sizeof(double);
-
-          C_p.layout = CblasRowMajor;
-          C_p.rows = blksize;
-          C_p.cols = blksize;
-          C_p.stride = ldb;
-          C_p.group_count = 1;
-          C_p.size_per_group = size_per_grp;
-          C_p.format = sizeof(ValueType)/sizeof(double);
-
-          const int iend = nrows - 1;
-          for (int i=0;i<iend;++i) {
-            A_p.mat = (double*)&TA(i, 0, 0, 0);
-            B_p.mat = (double*)&TB(i, 0, 0, 0);
-            C_p.mat = (double*)&TC(i, 0, 0, 0);
-
-            LAPACKE_dgetrf_compute_batch(&A_p);
-            cblas_dtrsm_compute_batch(trsm_lower_params.side,
-                                      trsm_lower_params.uplo, 
-                                      trsm_lower_params.transA, 
-                                      trsm_lower_params.diag,
-                                      trsm_lower_params.alpha,
-                                      &A_p,
-                                      &B_p);
-            cblas_dtrsm_compute_batch(trsm_upper_params.side,
-                                      trsm_upper_params.uplo, 
-                                      trsm_upper_params.transA, 
-                                      trsm_upper_params.diag,
-                                      trsm_upper_params.alpha,
-                                      &A_p,
-                                      &C_p);
-            cblas_dgemm_compute_batch(gemm_params.transA,
-                                      gemm_params.transB,
-                                      gemm_params.alpha,
-                                      &A_p,
-                                      &B_p,
-                                      gemm_params.beta,
-                                      &C_p);            
-          }
-          A_p.mat = (double*)&TA(iend, 0, 0, 0);
-          LAPACKE_dgetrf_compute_batch(&A_p);
+          timer.reset();
+          factorblk.run(T_device);
           t_factorize = timer.seconds();
         }
-
-        // put back to original matrix for checking
-        for (int i=0;i<nrows;++i)
-          for (int j=0;j<ntridiags;++j)
-            for (int k=0;k<blocksize;++k)
-              for (int l=0;l<blocksize;++l) {
-                T_device.A()(j,i,k,l) = TA(i,j,k,l);
-                if (i<(nrows-1)) {
-                  T_device.B()(j,i,k,l) = TB(i,j,k,l);
-                  T_device.C()(j,i,k,l) = TC(i,j,k,l);
-                }
-              }
-#endif
+        if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
       }
 
       ///
       /// block tridiag solve test
       ///
       double t_solve = 0.0;
-      SolveBlockTridiagMatrices<DeviceSpace,
-        ValueType,
-        Algo::Trsv::Blocked,
-        Algo::Gemv::Blocked> solveblk;
       {
         PartitionedBlockMultiVector<HostSpace,ValueType> b_host
           = create_partitioned_block_multi_vector<HostSpace,ValueType>(ni*nj, 
@@ -1153,23 +959,49 @@ namespace KokkosKernels {
                                                                        nrhs,
                                                                        nk, 
                                                                        blocksize);
-        {
-          Timer timer("50 SolveBlockTridiagMatrices");
-          timer.reset();
-          for (ordinal_type i=0;i<niter;++i) {
-            solveblk.run(T_device, x_device, b_device);
-            dontopt += i;
-          }          
-          t_solve = timer.seconds();
+        if (test_mkl) {
+          SolveBlockTridiagMatrices<DeviceSpace,
+                                    ValueType,
+                                    Algo::Trsv::CompactMKL,
+                                    Algo::Gemv::CompactMKL> solveblk;
+          {
+            Timer timer("50 SolveBlockTridiagMatrices");
+            timer.reset();
+            for (ordinal_type i=0;i<niter;++i) {
+              solveblk.run(T_device, x_device, b_device);
+              dontopt += i;
+            }          
+            t_solve = timer.seconds();
+          }
+          if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_host), success);
+        } else {
+          SolveBlockTridiagMatrices<DeviceSpace,
+                                    ValueType,
+                                    Algo::Trsv::Blocked,
+                                    Algo::Gemv::Blocked> solveblk;
+          {
+            Timer timer("50 SolveBlockTridiagMatrices");
+            timer.reset();
+            for (ordinal_type i=0;i<niter;++i) {
+              solveblk.run(T_device, x_device, b_device);
+              dontopt += i;
+            }          
+            t_solve = timer.seconds();
+          }
+          if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_host), success);
         }
-        if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_host), success);
       }
 
       const double t_matvec_per_iter = t_matvec/double(niter), t_solve_per_iter = t_solve/double(niter);
-      std::cout << " matvec  = " << t_matvec_per_iter << std::endl; 
-      std::cout << " extract = " << t_extract        << " extract/matvec = " << (t_extract/t_matvec_per_iter) << std::endl; 
-      std::cout << "  factor = " << t_factorize      << "  factor/matvec = " << (t_factorize/t_matvec_per_iter) << std::endl; 
-      std::cout << "   solve = " << t_solve_per_iter << "   solve/matvec = " << (t_solve_per_iter/t_matvec_per_iter) << std::endl; 
+      // std::cout << "KokkosKernels:: time fill graph = " << t_fill_graph << std::endl; 
+      // std::cout << "KokkosKernels:: time fill crs   = " << t_fill_block_crs_matrix << std::endl; 
+      // std::cout << "KokkosKernels:: time fill mv    = " << t_fill_block_multi_vector << std::endl; 
+      std::cout << " matvec     = " << t_matvec_per_iter << std::endl; 
+      std::cout << " extract    = " << t_extract        << " extract/matvec = " << (t_extract/t_matvec_per_iter) << std::endl; 
+      std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << std::endl; 
+      //std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << " flop = " << f_factorize << " flop/s = " << (f_factorize/t_factorize) << std::endl; 
+      std::cout << " solve      = " << t_solve_per_iter << "  solve/matvec  = " << (t_solve_per_iter/t_matvec_per_iter) << std::endl; 
+      //std::cout << " memory used     = " << (memsize_A + memsize_T) << std::endl; 
 
       return dontopt;
     }

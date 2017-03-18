@@ -35,17 +35,17 @@ int main (int argc, char *argv[]) {
   std::cout << std::endl;
 
   // Unit tests
-  std::cout << " Unit Test::Flat :: Begin\n";
-  {
-    Test::run<DeviceSpace>( 3,  4,  2, 25, 2);
-    Test::run<DeviceSpace>(44, 63, 15,  4, 1);
-    Test::run<DeviceSpace>( 2,  2, 15,  3, 3);
-    Test::run<DeviceSpace>( 1,  1,  2, 63, 8);
+  // std::cout << " Unit Test::Flat :: Begin\n";
+  // {
+  //   Test::run<DeviceSpace>( 3,  4,  2, 25, 2);
+  //   Test::run<DeviceSpace>(44, 63, 15,  4, 1);
+  //   Test::run<DeviceSpace>( 2,  2, 15,  3, 3);
+  //   Test::run<DeviceSpace>( 1,  1,  2, 63, 8);
 
-    for (int nrhs=1;nrhs<=33;++nrhs)
-      Test::run<DeviceSpace>(2, 2, 15, 3, nrhs);
-  }
-  std::cout << " Unit Test::Flat :: End\n";
+  //   for (int nrhs=1;nrhs<=33;++nrhs)
+  //     Test::run<DeviceSpace>(2, 2, 15, 3, nrhs);
+  // }
+  // std::cout << " Unit Test::Flat :: End\n";
 
   std::cout << " Unit Test::Vector :: Begin\n";
   {
@@ -91,14 +91,14 @@ int main (int argc, char *argv[]) {
   std::cout << " Unit Test::MKL :: End\n";
 #endif
 
-  // Performance tests
-  std::cout << " Perf Test::Flat :: Begin\n";
-  {
-    const Test::Input input(argc, argv);
-    int r_val = Test::run<DeviceSpace>(input);
-    r_val = 0;
-  } 
-  std::cout << " Perf Test::Flat :: End\n";
+  // // Performance tests
+  // std::cout << " Perf Test::Flat :: Begin\n";
+  // {
+  //   const Test::Input input(argc, argv);
+  //   int r_val = Test::run<DeviceSpace>(input);
+  //   r_val = 0;
+  // } 
+  // std::cout << " Perf Test::Flat :: End\n";
 
   std::cout << " Perf Test::Vector :: Begin\n";
   {

@@ -12,7 +12,40 @@ namespace KokkosKernels {
   /// Serial Impl
   /// ===========
   namespace Serial {
-    
+
+    template<>
+    template<typename ScalarType,
+             typename AViewType,
+             typename BViewType,
+             typename CViewType>
+    KOKKOS_INLINE_FUNCTION
+    int
+    Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::CompactMKL>::
+    invoke(const ScalarType alpha,
+           const AViewType &A,
+           const BViewType &B,
+           const ScalarType beta,
+           const CViewType &C) {
+      typedef typename CViewType::value_type vector_type;
+      typedef typename vector_type::value_type value_type;
+
+      const int
+        m = C.dimension(0),
+        n = C.dimension(1),
+        k = A.dimension(1),
+        vl = vector_type::vector_length;
+
+      // no error check
+      cblas_dgemm_compact(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                          m, n, k, 
+                          alpha, 
+                          (const double*)A.data(), A.stride_0(), 
+                          (const double*)B.data(), B.stride_0(), 
+                          beta,
+                          (double*)C.data(), C.stride_0(),
+                          (MKL_INT)vl, (MKL_INT)1);
+    }
+
     template<>
     template<typename ScalarType,
              typename AViewType,

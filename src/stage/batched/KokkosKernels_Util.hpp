@@ -187,6 +187,7 @@ namespace KokkosKernels {
 	enum : int { mb = 4,
 		     nb = 4 };
       };
+      struct CompactMKL {};
     };
 
     struct Trsm {
@@ -194,6 +195,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct CompactMKL {};
     };
 
     struct LU {
@@ -201,6 +203,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct CompactMKL {};
     };
 
     struct Gemv { 
@@ -208,6 +211,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct CompactMKL {};
     };
 
     struct Trsv { 
@@ -215,6 +219,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct CompactMKL {};
     };
 
   };

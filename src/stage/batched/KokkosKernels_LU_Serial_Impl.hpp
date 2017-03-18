@@ -90,6 +90,25 @@ namespace KokkosKernels {
 
       return 0;
     }
+
+    template<>
+    template<typename AViewType>
+    KOKKOS_INLINE_FUNCTION
+    int
+    LU<Algo::LU::CompactMKL>::
+    invoke(const AViewType &A) {
+      typedef typename AViewType::value_type vector_type;
+      typedef typename vector_type::value_type value_type;
+
+      const int
+        m = A.dimension(0),
+        n = A.dimension(1),
+        vl = vector_type::vector_length;
+      LAPACKE_dgetrf_compact(CblasRowMajor, 
+                             m, n, 
+                             (double*)A.data(), A.stride_0(), 
+                             (MKL_INT)vl, (MKL_INT)1);
+    }
     
     template<>
     template<typename AViewType>

@@ -317,6 +317,37 @@ namespace KokkosKernels {
     }
 
     template<typename ArgDiag>
+    struct Trsv<Uplo::Lower,Trans::NoTranspose,ArgDiag,Algo::Trsv::CompactMKL> {
+      template<typename ScalarType,
+               typename AViewType,
+               typename bViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const ScalarType alpha,
+             const AViewType &A,
+             const bViewType &b) {
+        typedef typename bViewType::value_type vector_type;
+        typedef typename vector_type::value_type value_type;
+        
+        const int
+          m = b.dimension_0(),
+          n = 1,
+          vl = vector_type::vector_length;
+
+        // no error check
+        cblas_dtrsm_compact(CblasRowMajor, 
+                            CblasLeft, CblasLower, CblasNoTrans, 
+                            ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+                            m, n, 
+                            alpha, 
+                            (const double*)A.data(), A.stride_0(), 
+                            (double*)b.data(), b.stride_0(), 
+                            (MKL_INT)vl, (MKL_INT)1);
+
+      }
+    };
+
+    template<typename ArgDiag>
     struct Trsv<Uplo::Lower,Trans::NoTranspose,ArgDiag,Algo::Trsv::Unblocked> {
       template<typename ScalarType,
                typename AViewType,
@@ -422,7 +453,7 @@ namespace KokkosKernels {
             
             // gemv update
             for (int i=p+mb;i<mm;i+=mb)
-              gemv_n.invoke(-1, &A(i,p), &b(p), mb, &b(i));
+              gemv_n.invoke(-1, &A(i,p), &b(p), mb, mb, &b(i));
           }
 
           // remainder
@@ -436,6 +467,37 @@ namespace KokkosKernels {
           }
         }
         return 0;
+      }
+    };
+
+    template<typename ArgDiag>
+    struct Trsv<Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsv::CompactMKL> {
+      template<typename ScalarType,
+               typename AViewType,
+               typename bViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const ScalarType alpha,
+             const AViewType &A,
+             const bViewType &b) {
+        typedef typename bViewType::value_type vector_type;
+        typedef typename vector_type::value_type value_type;
+        
+        const int
+          m = b.dimension_0(),
+          n = 1,
+          vl = vector_type::vector_length;
+
+        // no error check
+        cblas_dtrsm_compact(CblasRowMajor, 
+                            CblasLeft, CblasUpper, CblasNoTrans, 
+                            ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+                            m, n, 
+                            alpha, 
+                            (const double*)A.data(), A.stride_0(), 
+                            (double*)b.data(), b.stride_0(), 
+                            (MKL_INT)vl, (MKL_INT)1);
+
       }
     };
 
@@ -547,7 +609,7 @@ namespace KokkosKernels {
             
             // gemm update
             for (int i=(p-mb);i>=0;i-=mb)
-              gemv_n.invoke(-1, &A(i,p), &b(p), mb, &b(i));
+              gemv_n.invoke(-1, &A(i,p), &b(p), mb, mb, &b(i));
           }
           
           // remainder

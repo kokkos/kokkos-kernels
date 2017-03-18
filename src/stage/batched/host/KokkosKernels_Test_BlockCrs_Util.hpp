@@ -21,7 +21,38 @@ namespace KokkosKernels {
     typedef int ordinal_type;
     typedef int size_type;
     typedef double scalar_type;
+
+#define FLOP_MUL 1.0
+#define FLOP_ADD 1.0
     
+    double LU_FlopCount(int mm, int nn) {
+      double m = (double)mm;    double n = (double)nn;
+      if (m > n)
+        return (FLOP_MUL*(0.5*m*n*n-(1.0/6.0)*n*n*n+0.5*m*n-0.5*n*n+(2.0/3.0)*n) +
+                FLOP_ADD*(0.5*m*n*n-(1.0/6.0)*n*n*n-0.5*m*n+        (1.0/6.0)*n));
+      else
+        return (FLOP_MUL*(0.5*n*m*m-(1.0/6.0)*m*m*m+0.5*n*m-0.5*m*m+(2.0/3.0)*m) +
+                FLOP_ADD*(0.5*n*m*m-(1.0/6.0)*m*m*m-0.5*n*m+        (1.0/6.0)*m));
+    }
+
+    double Trsm_Lower_FlopCountLower(int mm, int nn) {
+      double m = (double)mm;    double n = (double)nn;
+      return (FLOP_MUL*(0.5*m*n*(n+1.0)) +
+              FLOP_ADD*(0.5*m*n*(n-1.0)));
+    }
+
+    double Trsm_Upper_FlopCountUpper(int mm, int nn) {
+      double m = (double)mm;    double n = (double)nn;
+      return (FLOP_MUL*(0.5*m*n*(n+1.0)) +
+              FLOP_ADD*(0.5*m*n*(n-1.0)));
+    }
+
+    double Gemm_FlopCount(int mm, int nn, int kk) {
+      double m = (double)mm;    double n = (double)nn;    double k = (double)kk;
+      return (FLOP_MUL*(m*n*k) +
+              FLOP_ADD*(m*n*k));
+    }
+
     template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
     using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::Unmanaged |
                                               MemoryTraitsType::RandomAccess |
@@ -280,40 +311,57 @@ namespace KokkosKernels {
       const auto values = A.Values();
       const ordinal_type blocksize = A.BlockSize();
 
-      scalar_type tmp[blocksize*blocksize];
-
-      // random number generator (-1, 1)
+      scalar_type 
+        tmp[blocksize*blocksize], 
+        diag_block[blocksize][blocksize], 
+        offdiag_block[blocksize][blocksize];
+      
       Random random;
+
+      // for diagonal block, make spd
+      {
+        const ordinal_type iend = blocksize*blocksize;
+        for (ordinal_type i=0;i<iend;++i) 
+          tmp[i] = 2*(random.value() - 0.5);
+        
+        for (ordinal_type i=0;i<blocksize;++i) 
+          for (ordinal_type j=i;j<blocksize;++j) {
+            diag_block[i][j] = 0;
+            for (ordinal_type k=0;k<blocksize;++k) 
+              diag_block[i][j] += tmp[i*blocksize+k]*tmp[j*blocksize+k];
+            if (i != j) diag_block[j][i]  = diag_block[i][j];    // symmetrize
+            else        diag_block[i][j] *= 0.5*blocksize; // improve condition
+          }
+      } 
+      
+      {
+        // for off diagonal; down-weight off-diag blocks to improve conditioning.
+        for (ordinal_type i=0;i<blocksize;++i)
+          for (ordinal_type j=0;j<blocksize;++j) 
+            offdiag_block[i][j] = 0.1 * 2*(random.value() - 0.5);
+      }
       
       for (ordinal_type r=0;r<graph.NumRows();++r) {
+        // random number generator (-1, 1)
         const ordinal_type cbegin = graph.rowptr(r), cend = graph.rowptr(r+1);
         for (ordinal_type c=cbegin;c<cend;++c) {
           auto block = Kokkos::subview(values, c, Kokkos::ALL(), Kokkos::ALL());
           
           if (graph.colidx(c) == r) {
-            // for diagonal block, make spd
-            const ordinal_type iend = blocksize*blocksize;
-            for (ordinal_type i=0;i<iend;++i) 
-              tmp[i] = 2*(random.value() - 0.5);
-            
             for (ordinal_type i=0;i<blocksize;++i) 
-              for (ordinal_type j=i;j<blocksize;++j) {
-                block(i,j) = 0;
-                for (ordinal_type k=0;k<blocksize;++k) 
-                  block(i,j) += tmp[i*blocksize+k]*tmp[j*blocksize+k];
-                if (i != j) block(j,i)  = block(i,j);    // symmetrize
-                else        block(i,j) *= 0.5*blocksize; // improve condition
-              }
+              for (ordinal_type j=i;j<blocksize;++j) 
+                block(i,j) = diag_block[i][j];
           } else {
             // for off diagonal; down-weight off-diag blocks to improve conditioning.
             for (ordinal_type i=0;i<blocksize;++i)
               for (ordinal_type j=0;j<blocksize;++j) 
-                block(i,j) = 0.1 * 2*(random.value() - 0.5);
+                block(i,j) = offdiag_block[i][j];
           }
+          
         }
       }
     }
-
+    
     // nrhs should go after blocksize to match matrix dimensions consistently
     template <typename ExeSpace>
     class BlockMultiVector {
@@ -362,15 +410,15 @@ namespace KokkosKernels {
         jend = B.NumVectors(), 
         iend = B.NumRows(), 
         kend = B.BlockSize();
-
+      
       auto B_val = B.Values();
-
+      
       for (ordinal_type j=0;j<jend;++j) 
         for (ordinal_type i=0;i<iend;++i) 
           for (ordinal_type k=0;k<kend;++k) 
             B_val(j, i, k) = static_cast<double>((i+j+k)%7) - 3;
     }
-
+    
     template <typename ExecSpace, typename ValueType>
     class BlockTridiagMatrices {
     public:
