@@ -98,28 +98,28 @@ namespace KokkosKernels {
       return 0;
     }
 
-    // template<int mb>
-    // template<typename ScalarType,
-    //          typename ValueType>
-    // KOKKOS_INLINE_FUNCTION
-    // int 
-    // InnerMultipleDotProduct<mb>::
-    // invoke(const ScalarType alpha,
-    //        const ValueType *__restrict__ A,
-    //        const ValueType *__restrict__ x,
-    //        const int m, const int n, 
-    //        /**/  ValueType *__restrict__ y) {
-    //   if (!(m>0 && n>0)) return 0;
+    template<int mb>
+    template<typename ScalarType,
+             typename ValueType>
+    KOKKOS_INLINE_FUNCTION
+    int 
+    InnerMultipleDotProduct<mb>::
+    invoke(const ScalarType alpha,
+           const ValueType *__restrict__ A,
+           const ValueType *__restrict__ x,
+           const int m, const int n, 
+           /**/  ValueType *__restrict__ y) {
+      if (!(m && n)) return 0;
 
-    //   for (int i=0;i<m;++i) {
-    //     ValueType t(0);
-    //     const ValueType
-    //       *__restrict__ tA = A + i*_as0;
-    //     for (int j=0;j<n;++j)
-    //       t += tA[j*_as1]*x[j*_xs0];
-    //     y[i*_ys0] += alpha*t;
-    //   }
-    // }
+      for (int i=0;i<m;++i) {
+        ValueType t(0);
+        const ValueType
+          *__restrict__ tA = A + i*_as0;
+        for (int j=0;j<n;++j)
+          t += tA[j*_as1]*x[j*_xs0];
+        y[i*_ys0] += alpha*t;
+      }
+    }
 
     template<>
     template<typename ScalarType,
@@ -130,9 +130,9 @@ namespace KokkosKernels {
     invoke(const ScalarType alpha,
            const ValueType *__restrict__ A,
            const ValueType *__restrict__ x,
-           const int m, const int n, 
+           const int n, 
            /**/  ValueType *__restrict__ y) {
-      if (!(m>0 && n>0)) return 0;
+      if (!n) return 0;
 
       const int 
         i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0;
@@ -146,73 +146,51 @@ namespace KokkosKernels {
         const int jj = j*_as1;
         const ValueType x_j = x[j*_xs0];
 
-        switch (m) {
-        case 4: y_3 += A[i3+jj]*x_j;
-        case 3: y_2 += A[i2+jj]*x_j;
-        case 2: y_1 += A[i1+jj]*x_j;
-        case 1: y_0 += A[i0+jj]*x_j;
-        }
-      }
-      
-      switch (m) {
-      case 4: y[3*_ys0] += alpha*y_3;
-      case 3: y[2*_ys0] += alpha*y_2;
-      case 2: y[1*_ys0] += alpha*y_1;
-      case 1: y[0*_ys0] += alpha*y_0;
+        y_0 += A[i0+jj]*x_j;
+        y_1 += A[i1+jj]*x_j;
+        y_2 += A[i2+jj]*x_j;
+        y_3 += A[i3+jj]*x_j;
       }
 
-      return 0;
-    }
+      y[0*_ys0] += alpha*y_0;
+      y[1*_ys0] += alpha*y_1;
+      y[2*_ys0] += alpha*y_2;
+      y[3*_ys0] += alpha*y_3;
 
-    template<>
-    template<typename ScalarType,
-             typename ValueType>
-    KOKKOS_INLINE_FUNCTION
-    int 
-    InnerMultipleDotProduct<8>::
-    invoke(const ScalarType alpha,
-           const ValueType *__restrict__ A,
-           const ValueType *__restrict__ x,
-           const int m, const int n, 
-           /**/  ValueType *__restrict__ y) {
-      if (!(m>0 && n>0)) return 0;
+      // // unroll by rows and cols
 
-      const int 
-        i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
-        i4 = 4*_as0, i5 = 5*_as0, i6 = 6*_as0, i7 = 7*_as0;
+      // ValueType
+      //   y_00 = 0, y_10 = 0, y_20 = 0, y_30 = 0,
+      //   y_01 = 0, y_11 = 0, y_21 = 0, y_31 = 0;
 
-      // unroll by rows
+      // const int nn = (n/2)*2;
+      // for (int j=0;j<nn;j+=2) {
+      //   const int j0 = j*_as1, j1 = (j+1)*_as1;
+      //   const ValueType x_j0 = x[j*_xs0], x_j1 = x[(j+1)*_xs0];
+        
+      //   y_00 += A[i0+j0]*x_j0;
+      //   y_10 += A[i1+j0]*x_j0;
+      //   y_20 += A[i2+j0]*x_j0;
+      //   y_30 += A[i3+j0]*x_j0;
 
-      ValueType
-        y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0,
-        y_4 = 0, y_5 = 0, y_6 = 0, y_7 = 0;
-            
-      for (int j=0;j<n;++j) {
-        const int jj = j*_as1;
-        const ValueType x_j = x[j*_xs0];
-
-        switch (m) {
-        case 8: y_7 += A[i7+jj]*x_j;
-        case 7: y_6 += A[i6+jj]*x_j;
-        case 6: y_5 += A[i5+jj]*x_j;
-        case 5: y_4 += A[i4+jj]*x_j;
-        case 4: y_3 += A[i3+jj]*x_j;
-        case 3: y_2 += A[i2+jj]*x_j;
-        case 2: y_1 += A[i1+jj]*x_j;
-        case 1: y_0 += A[i0+jj]*x_j;
-        }
-      }
-      
-      switch (m) {
-      case 8: y[7*_ys0] += alpha*y_7;
-      case 7: y[6*_ys0] += alpha*y_6;
-      case 6: y[5*_ys0] += alpha*y_5;
-      case 5: y[4*_ys0] += alpha*y_4;
-      case 4: y[3*_ys0] += alpha*y_3;
-      case 3: y[2*_ys0] += alpha*y_2;
-      case 2: y[1*_ys0] += alpha*y_1;
-      case 1: y[0*_ys0] += alpha*y_0;
-      }
+      //   y_01 += A[i0+j1]*x_j1;
+      //   y_11 += A[i1+j1]*x_j1;
+      //   y_21 += A[i2+j1]*x_j1;
+      //   y_31 += A[i3+j1]*x_j1;
+      // }
+      // if (n%2) {
+      //   const int j0 = nn*_as1;
+      //   const ValueType x_j0 = x[nn*_xs0];
+      //   y_00 += A[i0+j0]*x_j0;
+      //   y_10 += A[i1+j0]*x_j0;
+      //   y_20 += A[i2+j0]*x_j0;
+      //   y_30 += A[i3+j0]*x_j0;
+      // }
+        
+      // y[0*_ys0] += alpha*(y_00+=y_01);
+      // y[1*_ys0] += alpha*(y_10+=y_11);
+      // y[2*_ys0] += alpha*(y_20+=y_21);
+      // y[3*_ys0] += alpha*(y_30+=y_31);
 
       return 0;
     }
@@ -261,10 +239,12 @@ namespace KokkosKernels {
         const value_type
           *__restrict__ pX = &x(0);
         
-        for (int i=0;i<m;i+=mb) {
-          const int mi = (m - i), mp = (mi > mb ? mb : mi);
-          inner.invoke(alpha, &A(i,0), pX, mp, n, &y(i));
-        }
+        const int mm = (m/mb)*mb;
+        for (int i=0;i<mm;i+=mb) 
+          inner.invoke(alpha, &A(i,0), pX, n, &y(i));
+        
+        const int mp = (m%mb);
+        if (mp) inner.invoke(alpha, &A(mm,0), pX, mp, n, &y(mm));
       }
       return 0;
     }
