@@ -202,19 +202,11 @@ struct Fill<XV, 1> {
 //
 
 #define KOKKOSBLAS1_IMPL_MV_FILL_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Fill<Kokkos::View<SCALAR**, \
-                         LAYOUT, \
-                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            2> \
-{ \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  static void fill (const XMV& X, const XMV::non_const_value_type& val); \
-};
+extern template struct Fill<Kokkos::View<SCALAR**, \
+                              LAYOUT, \
+                              Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                            2>;
 
 //
 // KokkosBlas::Impl::Fill for rank == 2.  This is NOT for users!!!  We
@@ -223,27 +215,11 @@ struct Fill<Kokkos::View<SCALAR**, \
 //
 
 #define KOKKOSBLAS1_IMPL_MV_FILL_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Fill<Kokkos::View<SCALAR**, \
-                  LAYOUT, \
-                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                  2>:: \
-fill (const XMV& X, const XMV::non_const_value_type& val) \
-{ \
-  typedef XMV::size_type size_type; \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
- \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    MV_Fill_Invoke<XMV, int> (X, val); \
-  } \
-  else { \
-    MV_Fill_Invoke<XMV, size_type> (X, val); \
-  } \
-}
-
+template struct Fill<Kokkos::View<SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                     2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
