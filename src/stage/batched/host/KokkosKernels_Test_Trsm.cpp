@@ -517,7 +517,7 @@ namespace KokkosKernels {
       //           auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
 
       //           switch (test) {
-      //           case 0:
+      //           case 0: 
       //             Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
       //               invoke(1.0, aa, bb);
       //             break;
@@ -662,31 +662,31 @@ void run(const int N) {
 
   /// Left, Lower, NoTrans, UnitDiag (used in LU factorization and LU solve)
 
+  Test::Trsm<0, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
   Test::Trsm<0, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::Trsm<0, 9, 9, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<0,10,10, ExecSpace,VectorType,AlgoTagType>(N);
   Test::Trsm<0,15,15, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::Trsm<0,20,20, ExecSpace,VectorType,AlgoTagType>(N);
 
   // /// Left, Lower, NoTrans, NonUnitDiag
 
+  // Test::Trsm<1, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Trsm<1, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<1, 9, 9, ExecSpace,VectorType,AlgoTagType>(N);
+  // Test::Trsm<1,10,10, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Trsm<1,15,15, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<1,20,20, ExecSpace,VectorType,AlgoTagType>(N);
 
   // /// Right, Upper, NoTrans, UnitDiag
 
+  // Test::Trsm<2, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Trsm<2, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<2, 9, 9, ExecSpace,VectorType,AlgoTagType>(N);
+  // Test::Trsm<2,10,10, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Trsm<2,15,15, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<2,20,20, ExecSpace,VectorType,AlgoTagType>(N);
 
   // /// Right, Upper, NoTrans, NonUnitDiag (used in LU factorization)
 
+  // Test::Trsm<3, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Trsm<3, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<3, 9, 9, ExecSpace,VectorType,AlgoTagType>(N);
+  // Test::Trsm<3,10,10, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Trsm<3,15,15, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<3,20,20, ExecSpace,VectorType,AlgoTagType>(N);
 
   // std::cout << "\n\n Used for Solve \n\n";
 
@@ -709,7 +709,12 @@ int main(int argc, char *argv[]) {
 
   Kokkos::initialize(argc, argv);
 
-  const int N = 128*128;
+  int N = 128*128;
+
+  for (int i=1;i<argc;++i) {
+    const std::string& token = argv[i];
+    if (token == std::string("-N")) N = std::atoi(argv[++i]);
+  }
 
 #if defined(__AVX512F__)
   constexpr int VectorLength = 8;

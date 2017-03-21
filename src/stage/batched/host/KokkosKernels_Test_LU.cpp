@@ -324,22 +324,22 @@ void run(const int N) {
   else
     ExecSpace::print_configuration(std::cout, false);
 
+  Test::LU< 3, ExecSpace,VectorType,AlgoTagType>(N);
   Test::LU< 5, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::LU< 9, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::LU<10, ExecSpace,VectorType,AlgoTagType>(N);
   Test::LU<15, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::LU<20, ExecSpace,VectorType,AlgoTagType>(N);
-
-  // Test::LU< 4, ExecSpace,VectorType,AlgoTagType>();
-  // Test::LU< 8, ExecSpace,VectorType,AlgoTagType>();
-  // Test::LU<16, ExecSpace,VectorType,AlgoTagType>();
-  // Test::LU<20, ExecSpace,VectorType,AlgoTagType>();
 }
 
 int main(int argc, char *argv[]) {
 
   Kokkos::initialize(argc, argv);
 
-  const int N = 128*128;
+  int N = 128*128;
+
+  for (int i=1;i<argc;++i) {
+    const std::string& token = argv[i];
+    if (token == std::string("-N")) N = std::atoi(argv[++i]);
+  }
 
 #if defined(__AVX512F__)
   constexpr int VectorLength = 8;

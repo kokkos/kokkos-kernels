@@ -602,10 +602,10 @@ void run(const int N) {
   // Test::Gemm<32, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Gemm<64, ExecSpace,VectorType,AlgoTagType>(N);
 
+  Test::Gemm< 3, ExecSpace,VectorType,AlgoTagType>(N);
   Test::Gemm< 5, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::Gemm< 9, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Gemm<10, ExecSpace,VectorType,AlgoTagType>(N);
   Test::Gemm<15, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::Gemm<20, ExecSpace,VectorType,AlgoTagType>(N);
 }
 
 int main(int argc, char *argv[]) {
@@ -614,7 +614,12 @@ int main(int argc, char *argv[]) {
 
   const int ntest = 1;
   //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
-  const int N[1] = { 128*128 };
+  int N[1] = { 128*128 };
+
+  for (int i=1;i<argc;++i) {
+    const std::string& token = argv[i];
+    if (token == std::string("-N")) N[0] = std::atoi(argv[++i]);
+  }
 
 #if defined(__AVX512F__)
   constexpr int VectorLength = 8;

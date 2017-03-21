@@ -825,14 +825,14 @@ namespace KokkosKernels {
         const StencilShape::Enum stencil_shape = input.stencil_shape;
         CrsGraph<HostSpace> graph_host;
         {
-          Timer timer("Fill Graph");
+          Timer timer("Fill Graph _______________");
           timer.reset();
           graph_host = create_graph_host_for_structured_block(mesh, stencil_shape);
           t_fill_graph = timer.seconds();
         }
         BlockCrsMatrix<HostSpace> A_host(graph_host, blocksize);
         {
-          Timer timer("Fill Block CRS Matrix");
+          Timer timer("Fill Block CRS Matrix_______________");
           timer.reset();
           fill_block_crs_matrix_host(A_host);       
           t_fill_block_crs_matrix = timer.seconds();       
@@ -854,7 +854,7 @@ namespace KokkosKernels {
 
         BlockMultiVector<HostSpace> x_host(nrhs, m, blocksize);
         {
-          Timer timer("Fill Block Multi Vector");
+          Timer timer("Fill Block Multi Vector______________");
           timer.reset();
           fill_block_multi_vector_host(x_host);
           t_fill_block_multi_vector = timer.seconds();
