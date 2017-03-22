@@ -18,7 +18,7 @@ ifneq (,$(findstring bowman,$(HOST)))
 #CXX=icpc
 #MKL_CFLAG = -mkl #:sequential
 LIBXSMM_ROOT = /home/kyukim/Work/lib/libxsmm/1.7.1/intel
-MKL_ROOT = /home/kyukim/Work/kokkoskernels-internal/code/bcrs/batched/mkl/mkl_compact_lnx32e/mkl
+MKL_ROOT = /home/kyukim/Work/lib/mkl/mkl_compact_lnx32e/mkl
 MKL_CFLAG = -I${MKL_ROOT}/include
 KOKKOS=/home/kyukim/Work/lib/kokkos/install/knl/intel/release
 KOKKOS_USE_TPLS=experimental_memkind
