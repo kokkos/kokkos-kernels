@@ -237,8 +237,7 @@ struct Nrm2w<R, XV, 1> {
 //
 
 #define KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*, \
+extern template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*, \
                           EXEC_SPACE::array_layout, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -246,50 +245,7 @@ struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::ma
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-             2 > \
-{ \
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*, \
-                       EXEC_SPACE::array_layout, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef XMV::execution_space execution_space; \
-  typedef XMV::size_type size_type; \
- \
-  static void nrm2w_squared (const RV& r, const XMV& X, const XMV& W); \
-};
-
-//
-// Declarations of full specializations of Impl::Nrm2w for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
+                             2 >;
 
 //
 // Macro for declaration of full specialization of
@@ -297,8 +253,7 @@ KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, K
 //
 
 #define KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*, \
+template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*, \
                    EXEC_SPACE::array_layout, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -306,28 +261,7 @@ Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2 >:: \
-nrm2w_squared (const RV& r, const XMV& X, const XMV& W) \
-{ \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
- \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef MV_Nrm2w_Functor<RV, XMV, int> functor_type; \
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows); \
-    functor_type op (r, X, W); \
-    Kokkos::parallel_reduce (policy, op); \
-  } \
-  else { \
-    typedef MV_Nrm2w_Functor<RV, XMV, size_type> functor_type; \
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows); \
-    functor_type op (r, X, W); \
-    Kokkos::parallel_reduce (policy, op); \
-  } \
-}
-
-
+                      2 >;
 
 } // namespace Impl
 } // namespace KokkosBlas
