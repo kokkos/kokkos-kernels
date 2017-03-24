@@ -164,133 +164,28 @@ struct Dot {
 // Macro that declares a full specialization of the Dot struct.
 //
 #define KOKKOSBLAS_IMPL_V_DOT_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Dot<const SCALAR*, \
+extern template struct Dot<const SCALAR*, \
            LAYOUT, \
            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
            Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
            const SCALAR*, \
            LAYOUT, \
            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-           Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
-{ \
-  typedef const SCALAR* XT; \
-  typedef LAYOUT XL; \
-  typedef Kokkos::Device<EXEC_SPACE, MEM_SPACE> XD; \
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM; \
-  typedef Kokkos::View<XT,XL,XD,XM> XVector; \
-  typedef const SCALAR* YT; \
-  typedef LAYOUT YL; \
-  typedef Kokkos::Device<EXEC_SPACE, MEM_SPACE> YD; \
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM; \
-  typedef Kokkos::View<YT,YL,YD,YM> YVector; \
-  typedef Kokkos::Details::InnerProductSpaceTraits<XVector::non_const_value_type>::dot_type dot_type; \
- \
-  static dot_type \
-  dot (const XVector& x, const XVector& y); \
- \
-  static dot_type \
-  dot (const std::string& label, const XVector& x, const XVector& y); \
-};
-
-//
-// Declare full specializations of the Dot struct.
-//
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-  KOKKOSBLAS_IMPL_V_DOT_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-  KOKKOSBLAS_IMPL_V_DOT_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-  KOKKOSBLAS_IMPL_V_DOT_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-  KOKKOSBLAS_IMPL_V_DOT_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOSKERNELS_BUILD_EXECUTION_SPACE_CUDA
+           Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
 //
 // Macro that defines a full specialization of the Dot struct.
 // This macro is invoked in one or more .cpp files in this directory.
 //
 #define KOKKOSBLAS_IMPL_V_DOT_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-Dot<const SCALAR*, \
+template struct Dot<const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
     Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
     const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> >::dot_type \
-Dot<const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
-    const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
-dot (const XVector& x, const XVector& y) \
-{ \
-  dot_type result; \
-  if (x.dimension_0 () < XVector::size_type (INT_MAX)) { \
-    Kokkos::RangePolicy<XVector::execution_space, int> policy (0, x.dimension_0 ()); \
-    typedef DotFunctor<XVector, YVector, int> functor_type; \
-    Kokkos::parallel_reduce (policy, functor_type (x, y), result); \
-  } \
-  else { \
-    typedef XVector::size_type size_type; \
-    Kokkos::RangePolicy<XVector::execution_space, size_type> policy (0, x.dimension_0 ()); \
-    typedef DotFunctor<XVector, YVector, size_type> functor_type; \
-    Kokkos::parallel_reduce (policy, functor_type (x, y), result); \
-  } \
-  return result; \
-} \
- \
-Dot<const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
-    const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> >::dot_type \
-Dot<const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
-    const SCALAR*, \
-    LAYOUT, \
-    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
-dot (const std::string& label, const XVector& x, const XVector& y) \
-{ \
-  dot_type result; \
-  if (x.dimension_0 () < XVector::size_type (INT_MAX)) { \
-    Kokkos::RangePolicy<XVector::execution_space, int> policy (0, x.dimension_0 ()); \
-    typedef DotFunctor<XVector, YVector, int> functor_type; \
-    Kokkos::parallel_reduce (label, policy, functor_type (x, y), result); \
-  } \
-  else { \
-    typedef XVector::size_type size_type; \
-    Kokkos::RangePolicy<XVector::execution_space, size_type> policy (0, x.dimension_0 ()); \
-    typedef DotFunctor<XVector, YVector, size_type> functor_type; \
-    Kokkos::parallel_reduce (label, policy, functor_type (x, y), result); \
-  } \
-  return result; \
-}
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
 } // namespace Impl
 } // namespace KokkosBlas
