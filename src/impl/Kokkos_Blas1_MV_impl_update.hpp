@@ -46,10 +46,9 @@
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
-#include "KokkosKernels_ETIHelperMacros.h"
 
 #ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
-#define KOKKOSBLAS_ETI_ONLY
+#define KOKKOSKERNELS_ETI_ONLY
 #endif
 
 namespace KokkosBlas {
@@ -536,12 +535,12 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
 ///
 /// with special cases for alpha, beta, or gamma = 0.
 template<class XMV, class YMV, class ZMV, int rank = ZMV::rank>
-struct Update {};
+struct Update;
 
 // Partial specialization for XMV, YMV, and ZMV rank-2 Views.
 template<class XMV, class YMV, class ZMV>
 struct Update<XMV, YMV, ZMV, 2>
-#ifndef KOKKOSBLAS_ETI_ONLY
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
@@ -630,7 +629,7 @@ struct Update<XMV, YMV, ZMV, 2>
 // Partial specialization for XV, YV, and ZV rank-1 Views.
 template<class XV, class YV, class ZV>
 struct Update<XV, YV, ZV, 1>
-#ifndef KOKKOSBLAS_ETI_ONLY
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename XV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
@@ -785,6 +784,6 @@ template struct Update<Kokkos::View<const SCALAR*, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/update/KokkosBlas1_impl_V_update_decl_specializations.hpp>
-#include<generated_specializations/update/KokkosBlas1_impl_MV_update_decl_specializations.hpp>
+#include<generated_specializations_hpp/update/KokkosBlas1_impl_V_update_decl_specializations.hpp>
+#include<generated_specializations_hpp/update/KokkosBlas1_impl_MV_update_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_

@@ -180,11 +180,13 @@ template<class XMV,
          false
 #endif // KOKKOS_HAVE_SERIAL
          >
-struct Fill {};
+struct Fill;
 
 // Specialization for multivectors (2-D Views), not using memset at all.
 template<class XMV>
-struct Fill<XMV, 2, false> {
+struct Fill<XMV, 2, false>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void fill (const XMV& X, const typename XMV::non_const_value_type& val)
   {
     typedef typename XMV::size_type size_type;
@@ -201,11 +203,15 @@ struct Fill<XMV, 2, false> {
       MV_Fill_Invoke<XMV, size_type> (X, val);
     }
   }
-};
+}
+#endif
+;
 
 // Specialization for multivectors (2-D Views), using memset if possible.
 template<class XMV>
-struct Fill<XMV, 2, true> {
+struct Fill<XMV, 2, true>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void fill (const XMV& X, const typename XMV::non_const_value_type& val)
   {
     typedef typename XMV::size_type size_type;
@@ -258,11 +264,15 @@ struct Fill<XMV, 2, true> {
       }
     }
   }
-};
+}
+#endif
+;
 
 // Specialization for single vectors (1-D Views), not using memset at all.
 template<class XV>
-struct Fill<XV, 1, false> {
+struct Fill<XV, 1, false>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void fill (const XV& X, const typename XV::non_const_value_type& val)
   {
     typedef typename XV::size_type size_type;
@@ -275,11 +285,15 @@ struct Fill<XV, 1, false> {
       V_Fill_Invoke<XV, size_type> (X, val);
     }
   }
-};
+}
+#endif
+;
 
 // Specialization for single vectors (1-D Views), using memset if possible.
 template<class XV>
-struct Fill<XV, 1, true> {
+struct Fill<XV, 1, true>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void fill (const XV& X, const typename XV::non_const_value_type& val)
   {
     typedef typename XV::non_const_value_type SC;
@@ -293,7 +307,9 @@ struct Fill<XV, 1, true> {
       Kokkos::deep_copy (X, val);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -327,5 +343,5 @@ template struct Fill<Kokkos::View<SCALAR**, \
 } // namespace KokkosBlas
 
 
-#include<generated_specializations/fill/KokkosBlas1_impl_MV_fill_decl_specializations.hpp>
+#include<generated_specializations_hpp/fill/KokkosBlas1_impl_MV_fill_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_FILL_HPP_

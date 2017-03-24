@@ -172,11 +172,13 @@ struct V_Nrm2w_Functor
 /// \brief Implementation of KokkosBlas::nrm2w_squared for
 ///   multivectors and single vectors.
 template<class RV, class XMV, int rank = XMV::rank>
-struct Nrm2w {};
+struct Nrm2w;
 
 //! Specialization for multivectors.
 template<class RV, class XMV>
-struct Nrm2w<RV, XMV, 2> {
+struct Nrm2w<RV, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef typename XMV::execution_space execution_space;
   typedef typename XMV::size_type size_type;
 
@@ -200,11 +202,15 @@ struct Nrm2w<RV, XMV, 2> {
       Kokkos::parallel_reduce (policy, op);
     }
   }
-};
+}
+#endif
+;
 
 //! Specialization for single vectors.
 template<class R, class XV>
-struct Nrm2w<R, XV, 1> {
+struct Nrm2w<R, XV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef typename XV::execution_space execution_space;
   typedef typename XV::size_type size_type;
 
@@ -226,7 +232,9 @@ struct Nrm2w<R, XV, 1> {
       Kokkos::parallel_reduce (policy, op);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -266,6 +274,6 @@ template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCA
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/nrm2w/KokkosBlas1_impl_MV_nrm2w_decl_specializations.hpp>
+#include<generated_specializations_hpp/nrm2w/KokkosBlas1_impl_MV_nrm2w_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_NORMW_HPP_

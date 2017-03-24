@@ -250,12 +250,14 @@ MV_Sum_Invoke (const RV& r, const XMV& X)
 /// \brief Implementation of KokkosBlas::sum for multivectors and
 ///   single vectors.
 template<class RV, class XMV, int rank = XMV::rank>
-struct Sum {};
+struct Sum;
 
 
 //! Special case for multivectors (rank-2 Views).
 template<class RV, class XMV>
-struct Sum<RV, XMV, 2> {
+struct Sum<RV, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the sums of the entries of the column(s) of the
   ///   multivector (2-D View) X, and store result(s) in r.
   static void sum (const RV& r, const XMV& X)
@@ -273,12 +275,16 @@ struct Sum<RV, XMV, 2> {
       MV_Sum_Invoke<RV, XMV, size_type> (r, X);
     }
   }
-};
+}
+#endif
+;
 
 
 //! Special case for single vectors (rank-1 Views).
 template<class RV, class XV>
-struct Sum<RV, XV, 1> {
+struct Sum<RV, XV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the sum of the entries of the vector (1-D View)
   ///   X, and store the result in the 0-D View r.
   static void sum (const RV& r, const XV& X)
@@ -292,7 +298,9 @@ struct Sum<RV, XV, 1> {
       V_Sum_Invoke<RV, XV, size_type> (r, X);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -332,5 +340,5 @@ template struct Sum<Kokkos::View<SCALAR*, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/sum/KokkosBlas1_impl_MV_sum_decl_specializations.hpp>
+#include<generated_specializations_hpp/sum/KokkosBlas1_impl_MV_sum_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_SUM_HPP_

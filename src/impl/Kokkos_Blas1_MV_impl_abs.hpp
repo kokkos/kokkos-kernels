@@ -239,6 +239,7 @@ V_Abs_Generic (const RV& R, const XV& X)
 template<class RMV, class XMV, int rank = RMV::rank>
 struct Abs {};
 
+#
 template<class RMV, class XMV>
 struct Abs<RMV, XMV, 2> {
   typedef typename XMV::size_type size_type;
@@ -335,6 +336,6 @@ template struct Abs<Kokkos::View<SCALAR**, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/abs/KokkosBlas1_impl_MV_abs_decl_specializations.hpp>
+#include<generated_specializations_hpp/abs/KokkosBlas1_impl_MV_abs_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_

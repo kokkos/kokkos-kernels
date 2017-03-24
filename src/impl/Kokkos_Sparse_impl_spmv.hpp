@@ -49,9 +49,6 @@
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 
 #include "Kokkos_Sparse_impl_spmv_omp.hpp"
-#ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
-#define KOKKOSSPARSE_ETI_ONLY
-#endif
 
 namespace KokkosSparse {
 namespace Impl {
@@ -141,21 +138,7 @@ template<class AT, class AO, class AD, class AM, class AS,
          class YT, class YL, class YD, class YM,
          const bool integerScalarType =
            std::is_integral<typename std::decay<AT>::type>::value>
-struct SPMV_MV
-{
-  typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
-  typedef Kokkos::View<XT,XL,XD,XM> XVector;
-  typedef Kokkos::View<YT,YL,YD,YM> YVector;
-  typedef typename YVector::non_const_value_type coefficient_type;
-
-  static void
-  spmv_mv (const char mode[],
-           const coefficient_type& alpha,
-           const AMatrix& A,
-           const XVector& x,
-           const coefficient_type& beta,
-           const YVector& y);
-};
+struct SPMV_MV;
 
 
 // This TransposeFunctor is functional, but not necessarily performant.
@@ -485,12 +468,13 @@ spmv_beta (const char mode[],
 
 
 
-#ifndef KOKKOSSPARSE_ETI_ONLY
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class YT, class YL, class YD, class YM>
 struct
-SPMV {
+SPMV
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
   typedef Kokkos::View<XT,XL,XD,XM> XVector;
   typedef Kokkos::View<YT,YL,YD,YM> YVector;
@@ -529,8 +513,9 @@ spmv (const char mode[],
     spmv_beta<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y);
   }
 }
-};
-#endif // KOKKOSSPARSE_ETI_ONLY
+}
+#endif
+;
 
 //
 // Macro for defining (not declaring; for the declaration macro, see
@@ -1259,8 +1244,6 @@ spmv_alpha_mv (const char mode[],
   }
 }
 
-#ifndef KOKKOSSPARSE_ETI_ONLY
-
 // Partial specialization for integerScalarType=false
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
@@ -1269,6 +1252,7 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
                XT, XL, XD, XM,
                YT, YL, YD, YM,
                false>
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
   typedef Kokkos::View<XT,XL,XD,XM> XVector;
@@ -1298,7 +1282,9 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
       spmv_alpha_mv<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y);
     }
   }
-};
+}
+#endif
+;
 
 // Partial specialization for integerScalarType=true
 template<class AT, class AO, class AD, class AM, class AS,
@@ -1308,6 +1294,7 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
                XT, XL, XD, XM,
                YT, YL, YD, YM,
                true>
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
   typedef Kokkos::View<XT,XL,XD,XM> XVector;
@@ -1333,9 +1320,9 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
       impl_type::spmv (mode, alpha, A, x_j, beta, y_j);
     }
   }
-};
-
-#endif // KOKKOSSPARSE_ETI_ONLY
+}
+#endif
+;
 
 //
 // Macros for defining and declaring
@@ -1384,7 +1371,7 @@ SPMV_MV<const SCALAR_TYPE, \
 } // namespace Impl
 } // namespace KokkosSparse
 
-#include<generated_specializations/spmv/KokkosSparse_impl_MV_spmv_decl_specializations.hpp>
-#include<generated_specializations/spmv/KokkosSparse_impl_V_spmv_decl_specializations.hpp>
+#include<generated_specializations_hpp/spmv/KokkosSparse_impl_MV_spmv_decl_specializations.hpp>
+#include<generated_specializations_hpp/spmv/KokkosSparse_impl_V_spmv_decl_specializations.hpp>
 
 #endif // KOKKOS_SPARSE_IMPL_SPMV_DEF_HPP_

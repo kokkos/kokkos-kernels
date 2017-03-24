@@ -107,7 +107,9 @@ struct DotFunctor
 /// directory.
 template<class XT, class XL, class XD, class XM,
          class YT, class YL, class YD, class YM>
-struct Dot {
+struct Dot
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef Kokkos::View<XT,XL,XD,XM> XVector;
   typedef Kokkos::View<YT,YL,YD,YM> YVector;
   typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot_type;
@@ -158,7 +160,9 @@ struct Dot {
     }
     return result;
   }
-};
+}
+#endif
+;
 
 //
 // Macro that declares a full specialization of the Dot struct.

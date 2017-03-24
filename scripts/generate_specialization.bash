@@ -1,6 +1,7 @@
 #!/bin/bash
 KOKKOSKERNELS_PATH=$1
-mkdir generated_specializations
+mkdir generated_specializations_hpp
+mkdir generated_specializations_cpp
 #abs
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash abs KokkosBlas1_impl_MV_abs Kokkos_Blas1_MV_impl_abs.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 

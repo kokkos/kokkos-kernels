@@ -474,11 +474,13 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
 /// The fourth template parameter \c rank is the rank of XMV (and
 /// YMV).  If 2, they are multivectors; if 1, they are single vectors.
 template<class RV, class XMV, class YMV, int rank = XMV::rank>
-struct Dot_MV {};
+struct Dot_MV;
 
 //! Partial specialization for rank = 2 (MultiVectors).
 template<class RV, class XMV, class YMV>
-struct Dot_MV<RV, XMV, YMV, 2> {
+struct Dot_MV<RV, XMV, YMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the dot product(s) of the column(s) of the
   ///   multivectors (2-D views) x and y, and store result(s) in the
   ///   1-D View r.
@@ -496,11 +498,15 @@ struct Dot_MV<RV, XMV, YMV, 2> {
       MV_Dot_Invoke<RV, XMV, YMV, size_type> (r, X, Y);
     }
   }
-};
+}
+#endif
+;
 
 //! Partial specialization for rank = 1 (single vectors).
 template<class RV, class XV, class YV>
-struct Dot_MV<RV, XV, YV, 1> {
+struct Dot_MV<RV, XV, YV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the dot product of the single vectors X and Y,
   ///   and store result in the 0-D View r.
   static void
@@ -520,7 +526,9 @@ struct Dot_MV<RV, XV, YV, 1> {
       Kokkos::parallel_reduce (numRows, op);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -604,7 +612,7 @@ template struct Dot_MV<Kokkos::View<SCALAR, \
 } // namespace KokkosBlas
 
 #include<Kokkos_Blas1_V_impl_dot.hpp>
-#include<generated_specializations/dot/KokkosBlas1_impl_V_dot_decl_specializations.hpp>
-#include<generated_specializations/dot/KokkosBlas1_impl_MV_dot_decl_specializations.hpp>
+#include<generated_specializations_hpp/dot/KokkosBlas1_impl_V_dot_decl_specializations.hpp>
+#include<generated_specializations_hpp/dot/KokkosBlas1_impl_MV_dot_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

@@ -755,7 +755,7 @@ MV_Scal_Invoke_Right (const RMV& r, const aVector& av, const XMV& x, int a = 2)
 /// Only the specializations for rank == 2 or rank == 1 have
 /// valid and meaningful definitions.
 template<class RMV, class AV, class XMV, int rank = RMV::rank>
-struct Scal {};
+struct Scal;
 
 /// \brief Partial specialization of Scal for 2-D Views and 1-D View AV.
 ///
@@ -764,7 +764,9 @@ struct Scal {};
 /// 1. R(i,j) = a*X(i,j) for a in -1,0,1
 /// 2. R(i,j) = alpha(j)*X(i,j)
 template<class RMV, class AV, class XMV>
-struct Scal<RMV, AV, XMV, 2> {
+struct Scal<RMV, AV, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef typename XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
 
@@ -797,7 +799,9 @@ struct Scal<RMV, AV, XMV, 2> {
       MV_Scal_Invoke_Left<RMV, AV, XMV, index_type> (R, av, X, a);
     }
   }
-};
+}
+#endif
+;
 
 /// \brief Partial specialization of Scal for 2-D Views and scalar AV.
 ///
@@ -806,7 +810,9 @@ struct Scal<RMV, AV, XMV, 2> {
 /// 1. R(i,j) = a*X(i,j) for a in -1,0,1
 /// 2. R(i,j) = alpha*X(i,j)
 template<class RMV, class XMV>
-struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2> {
+struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef typename XMV::non_const_value_type AV;
   typedef typename XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
@@ -848,7 +854,9 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2> {
         index_type> (R, alpha, X, a);
     }
   }
-};
+}
+#endif
+;
 
 /// \brief Partial specialization of Scal for scalar AV (instead of
 ///   1-D View) and 1-D RMV and XMV.
@@ -859,6 +867,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2> {
 /// 2. R(i) = alpha*X(i)
 template<class RMV, class XMV>
 struct Scal<RMV, typename RMV::non_const_value_type, XMV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename XMV::non_const_value_type AV;
   typedef typename XMV::size_type size_type;
@@ -897,7 +906,9 @@ struct Scal<RMV, typename RMV::non_const_value_type, XMV, 1>
       V_Scal_Generic<RMV, AV, XMV, index_type> (R, alpha, X, a);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -1022,8 +1033,8 @@ template struct Scal<Kokkos::View<SCALAR*, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/scal/KokkosBlas1_impl_MV_scal_multicoeff_decl_specializations.hpp>
-#include<generated_specializations/scal/KokkosBlas1_impl_MV_scal_singlecoeff_decl_specializations.hpp>
-#include<generated_specializations/scal/KokkosBlas1_impl_V_scal_singlecoeff_decl_specializations.hpp>
+#include<generated_specializations_hpp/scal/KokkosBlas1_impl_MV_scal_multicoeff_decl_specializations.hpp>
+#include<generated_specializations_hpp/scal/KokkosBlas1_impl_MV_scal_singlecoeff_decl_specializations.hpp>
+#include<generated_specializations_hpp/scal/KokkosBlas1_impl_V_scal_singlecoeff_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_SCAL_HPP_

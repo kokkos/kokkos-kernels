@@ -235,10 +235,12 @@ V_Reciprocal_Generic (const RV& R, const XV& X)
 
 //! Implementation of KokkosBlas::reciprocal for (multi)vectors.
 template<class RMV, class XMV, int rank = RMV::rank>
-struct Reciprocal {};
+struct Reciprocal;
 
 template<class RMV, class XMV>
-struct Reciprocal<RMV, XMV, 2> {
+struct Reciprocal<RMV, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   typedef typename XMV::size_type size_type;
 
   static void reciprocal (const RMV& R, const XMV& X)
@@ -264,11 +266,14 @@ struct Reciprocal<RMV, XMV, 2> {
       MV_Reciprocal_Generic<RMV, XMV, index_type> (R, X);
     }
   }
-};
+}
+#endif
+;
 
 //! Partial specialization of Reciprocal for single vectors (1-D Views).
 template<class RMV, class XMV>
 struct Reciprocal<RMV, XMV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename XMV::size_type size_type;
 
@@ -294,7 +299,9 @@ struct Reciprocal<RMV, XMV, 1>
       V_Reciprocal_Generic<RMV, XMV, index_type> (R, X);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -333,5 +340,5 @@ template struct Reciprocal<Kokkos::View<SCALAR**, \
 
 } // namespace Impl
 } // namespace KokkosBlas
-#include<generated_specializations/recip/KokkosBlas1_impl_MV_recip_decl_specializations.hpp>
+#include<generated_specializations_hpp/recip/KokkosBlas1_impl_MV_recip_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_RECIPROCAL_HPP_

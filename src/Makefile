@@ -31,10 +31,6 @@ MKL_LIBS=-L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_cor
 default: build
 	echo "Start Build"
 
-config_headers: 
-	touch KokkosKernels_ETIHelperMacros.h
-	touch KokkosKernels_config.h
-
 
 CXXFLAGS = -g -O3 -I./ -I${KOKKOS_KERNELS_PATH}/src -I${KOKKOS_KERNELS_PATH}/src/impl
 LINKFLAGS = -g -O3

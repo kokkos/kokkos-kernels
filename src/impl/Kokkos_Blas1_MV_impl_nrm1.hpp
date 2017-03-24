@@ -255,12 +255,14 @@ MV_Nrm1_Invoke (const RV& r, const XMV& X)
 /// \brief Implementation of KokkosBlas::nrm1 for multivectors and
 ///   single vectors.
 template<class RV, class XMV, int rank = XMV::rank>
-struct Nrm1_MV {};
+struct Nrm1_MV;
 
 
 //! Special case for multivectors (rank-2 Views).
 template<class RV, class XMV>
-struct Nrm1_MV<RV, XMV, 2> {
+struct Nrm1_MV<RV, XMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the 1-norm(s) of the column(s) of the multivector
   ///   (2-D View) X, and store result(s) in r.
   static void nrm1 (const RV& r, const XMV& X)
@@ -278,12 +280,16 @@ struct Nrm1_MV<RV, XMV, 2> {
       MV_Nrm1_Invoke<RV, XMV, size_type> (r, X);
     }
   }
-};
+}
+#endif
+;
 
 
 //! Special case for single vectors (rank-1 Views).
 template<class RV, class XV>
-struct Nrm1_MV<RV, XV, 1> {
+struct Nrm1_MV<RV, XV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   /// \brief Compute the 1-norm of the vector (1-D View) X, and store
   ///   the result in the 0-D View r.
   static void nrm1 (const RV& r, const XV& X)
@@ -301,7 +307,9 @@ struct Nrm1_MV<RV, XV, 1> {
       V_Nrm1_Invoke<RV, XV, size_type> (r, X);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -341,5 +349,5 @@ template struct Nrm1_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SC
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/nrm1/KokkosBlas1_impl_MV_nrm1_decl_specializations.hpp>
+#include<generated_specializations_hpp/nrm1/KokkosBlas1_impl_MV_nrm1_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_NRM1_HPP_

@@ -51,9 +51,6 @@
 #define KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY 2
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
 
-#ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
-#define KOKKOSBLAS_ETI_ONLY
-#endif
 
 namespace KokkosBlas {
 namespace Impl {
@@ -1778,7 +1775,7 @@ struct Axpby {};
 // Partial specialization for XMV and YMV rank-2 Views.
 template<class AV, class XMV, class BV, class YMV>
 struct Axpby<AV, XMV, BV, YMV, 2>
-#ifndef KOKKOSBLAS_ETI_ONLY
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename YMV::size_type size_type;
 
@@ -1828,7 +1825,7 @@ struct Axpby<AV, XMV, BV, YMV, 2>
 template<class XMV, class YMV>
 struct Axpby<typename XMV::non_const_value_type, XMV,
              typename YMV::non_const_value_type, YMV, 2>
-#ifndef KOKKOSBLAS_ETI_ONLY
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename XMV::non_const_value_type AV;
   typedef typename YMV::non_const_value_type BV;
@@ -1909,7 +1906,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
 template<class XV, class YV>
 struct Axpby<typename XV::non_const_value_type, XV,
              typename YV::non_const_value_type, YV, 1>
-#ifndef KOKKOSBLAS_ETI_ONLY
+#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   typedef typename XV::non_const_value_type AV;
   typedef typename YV::non_const_value_type BV;
@@ -2099,7 +2096,7 @@ template struct Axpby<SCALAR, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/axpby/KokkosBlas1_impl_V_axpby_decl_specializations.hpp>
-#include<generated_specializations/axpby/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp>
+#include<generated_specializations_hpp/axpby/KokkosBlas1_impl_V_axpby_decl_specializations.hpp>
+#include<generated_specializations_hpp/axpby/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_

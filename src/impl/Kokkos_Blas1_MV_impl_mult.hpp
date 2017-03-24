@@ -306,7 +306,7 @@ MV_Mult_Generic (typename CMV::const_value_type& c,
 /// to the implementation.  The specializations for rank == 1 and rank
 /// == 2 have meaningful content.
 template<class CMV, class AV, class BMV, int rank = CMV::rank>
-struct Mult {};
+struct Mult;
 
 /// \brief Implementation of entry-wise multiply of multivectors, that
 ///   dispatches to MV_Mult_Generic.
@@ -319,7 +319,9 @@ struct Mult {};
 /// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
 /// BLAS update rules.
 template<class CMV, class AV, class BMV>
-struct Mult<CMV, AV, BMV, 2> {
+struct Mult<CMV, AV, BMV, 2>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void
   mult (typename CMV::const_value_type& c,
         const CMV& C,
@@ -339,7 +341,9 @@ struct Mult<CMV, AV, BMV, 2> {
       MV_Mult_Generic<CMV, AV, BMV, size_type> (c, C, ab, A, B);
     }
   }
-};
+}
+#endif
+;
 
 /// \brief Implementation of entry-wise multiply of vectors, that
 ///   dispatches to V_Mult_Generic.
@@ -352,7 +356,9 @@ struct Mult<CMV, AV, BMV, 2> {
 /// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual
 /// BLAS update rules.
 template<class CV, class AV, class BV>
-struct Mult<CV, AV, BV, 1> {
+struct Mult<CV, AV, BV, 1>
+#ifndef KOKKOSKERNELS_ETI_ONLY
+{
   static void
   mult (typename CV::const_value_type& c,
         const CV& C,
@@ -370,7 +376,9 @@ struct Mult<CV, AV, BV, 1> {
       V_Mult_Generic<CV, AV, BV, size_type> (c, C, ab, A, B);
     }
   }
-};
+}
+#endif
+;
 
 //
 // Macro for declaration of full specialization of
@@ -419,5 +427,5 @@ template struct Mult<Kokkos::View<SCALAR**, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/mult/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
+#include<generated_specializations_hpp/mult/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_MULT_HPP_
