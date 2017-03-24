@@ -14,6 +14,9 @@ KOKKOS_KERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
 KOKKOS_KERNELS_INSTALL_PATH = ${HOME}/Kokkos/kokkos-kernels-install
 
 #What to instantiate
+#
+# TODO CMake: Connect CMake to these variables
+#
 KOKKOS_KERNELS_SCALARS = double
 KOKKOS_KERNELS_LAYOUTS = LayoutRight,LayoutLeft
 KOKKOS_KERNELS_SPACES = Serial,HostSpace
@@ -75,6 +78,9 @@ KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_SERIAL=$(strip $(shell echo $(KOKKOS_KERN
 #ETI Macros Memory Spaces
 KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "HostSpace" | wc -l))
 
+#
+# TODO CMake: create macros corresponding to CMake options
+#
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_DOUBLE), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_DOUBLE" >> KokkosKernels_config.tmp )
 endif
@@ -91,6 +97,9 @@ ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_EXECSPACE_SERIAL" >> KokkosKernels_config.tmp )
 endif
 
+#
+# TODO CMake: use MEMSPACE here, not EXECSPACE
+#
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_EXECSPACE_HOSTSPACE" >> KokkosKernels_config.tmp )
 endif
