@@ -197,6 +197,7 @@ install: build-lib
 	mkdir -p $(KOKKOS_KERNELS_INSTALL_PATH)
 	mkdir -p $(KOKKOS_KERNELS_INSTALL_PATH)/include
 	mkdir -p $(KOKKOS_KERNELS_INSTALL_PATH)/lib
+	cp $(COPY_FLAG) KokkosKernels_config.h $(KOKKOS_KERNELS_INSTALL_PATH)/include
 	cp $(COPY_FLAG) ${KOKKOS_KERNELS_PATH}/src/*.hpp $(KOKKOS_KERNELS_INSTALL_PATH)/include
 	cp $(COPY_FLAG) ${KOKKOS_KERNELS_PATH}/src/impl/*.hpp $(KOKKOS_KERNELS_INSTALL_PATH)/include
 	cp $(COPY_FLAG) -r ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_hpp $(KOKKOS_KERNELS_INSTALL_PATH)/include
