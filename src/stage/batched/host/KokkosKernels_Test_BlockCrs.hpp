@@ -667,7 +667,7 @@ namespace KokkosKernels {
     void run(const ordinal_type ni, const ordinal_type nj, const ordinal_type nk, 
              const ordinal_type blocksize, 
              const ordinal_type nrhs,
-             const bool test_mkl = false) {
+             const int test_mkl = 0) {
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
       bool success = true;
       StructuredBlock mesh(ni, nj, nk);
@@ -737,15 +737,8 @@ namespace KokkosKernels {
       deep_copy(T_org_device, T_device);
       
       // Test Block TriDiag Factorization
-      if (test_mkl) {
-        FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType,
-                                      Algo::LU::CompactMKL,
-                                      Algo::Trsm::CompactMKL,
-                                      Algo::Gemm::CompactMKL> factorblk;
-        factorblk.run(T_device);
-        TEST_ASSERT(factorblk.check(T_org_device), success);
-      } else {
+      switch (test_mkl) {
+      case 0: {
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType,
                                       Algo::LU::Blocked,
@@ -753,6 +746,152 @@ namespace KokkosKernels {
                                       Algo::Gemm::Blocked> factorblk;
         factorblk.run(T_device);
         TEST_ASSERT(factorblk.check(T_org_device), success);
+        break;
+      }
+      case 1: {
+        FactorizeBlockTridiagMatrices<DeviceSpace,
+                                      ValueType,
+                                      Algo::LU::CompactMKL,
+                                      Algo::Trsm::CompactMKL,
+                                      Algo::Gemm::CompactMKL> factorblk;
+        factorblk.run(T_device);
+        TEST_ASSERT(factorblk.check(T_org_device), success);
+        break;
+      }
+      case 2: {
+        const int ntridiags = adjustDimension<ValueType>(mesh.ni*mesh.nj), nrows = mesh.nk;
+        Kokkos::View<ValueType****,DeviceSpace> TA("TA_mkl", nrows,   ntridiags, blocksize, blocksize);
+        Kokkos::View<ValueType****,DeviceSpace> TB("TB_mkl", nrows-1, ntridiags, blocksize, blocksize);
+        Kokkos::View<ValueType****,DeviceSpace> TC("TC_mkl", nrows-1, ntridiags, blocksize, blocksize);
+        
+        // change the order to store the matrix
+        for (int i=0;i<nrows;++i)
+          for (int j=0;j<ntridiags;++j)
+            for (int k=0;k<blocksize;++k)
+              for (int l=0;l<blocksize;++l) {
+                TA(i,j,k,l) = T_device.A()(j,i,k,l);
+                if (i<(nrows-1)) {
+                  TB(i,j,k,l) = T_device.B()(j,i,k,l);
+                  TC(i,j,k,l) = T_device.C()(j,i,k,l);
+                }
+              }
+        
+        // matrix factorization
+        {
+          MKL_INT blksize[1] = { blocksize };
+          MKL_INT lda[1] = { TA.stride_2() };
+          MKL_INT ldb[1] = { TB.stride_2() };
+          MKL_INT ldc[1] = { TC.stride_2() };
+          MKL_INT size_per_grp[1] = { ntridiags*(sizeof(ValueType)/sizeof(double)) };
+          
+          struct {
+            CBLAS_SIDE side[1] = {CblasLeft};
+            CBLAS_UPLO uplo[1] = {CblasLower};
+            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
+            CBLAS_DIAG diag[1] = {CblasUnit};
+            double alpha[1] = { 1.0 };
+          } trsm_lower_params;
+          
+          struct {
+            CBLAS_SIDE side[1] = {CblasRight};
+            CBLAS_UPLO uplo[1] = {CblasUpper};
+            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
+            CBLAS_DIAG diag[1] = {CblasNonUnit};
+            double alpha[1] = { 1.0 };
+          } trsm_upper_params;
+          
+          struct {
+            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
+            CBLAS_TRANSPOSE transB[1] = {CblasNoTrans};
+            double alpha[1] = { -1.0 };
+            double beta[1] = { 1.0 };
+          } gemm_params;
+          
+          compact_t A_p, B_p, C_p;
+          A_p.layout = CblasRowMajor;
+          A_p.rows = blksize;
+          A_p.cols = blksize;
+          A_p.stride = lda;
+          A_p.group_count = 1;
+          A_p.size_per_group = size_per_grp;
+          A_p.format = sizeof(ValueType)/sizeof(double);
+          
+          B_p.layout = CblasRowMajor;
+          B_p.rows = blksize;
+          B_p.cols = blksize;
+          B_p.stride = ldb;
+          B_p.group_count = 1;
+          B_p.size_per_group = size_per_grp;
+          B_p.format = sizeof(ValueType)/sizeof(double);
+          
+          C_p.layout = CblasRowMajor;
+          C_p.rows = blksize;
+          C_p.cols = blksize;
+          C_p.stride = ldb;
+          C_p.group_count = 1;
+          C_p.size_per_group = size_per_grp;
+          C_p.format = sizeof(ValueType)/sizeof(double);
+          
+          const int iend = nrows - 1;
+          for (int i=0;i<iend;++i) {
+            A_p.mat = (double*)&TA(i, 0, 0, 0);
+            LAPACKE_dgetrf_compute_batch(&A_p);
+            
+            B_p.mat = (double*)&TB(i, 0, 0, 0);
+            cblas_dtrsm_compute_batch(trsm_lower_params.side,
+                                      trsm_lower_params.uplo,
+                                      trsm_lower_params.transA,
+                                      trsm_lower_params.diag,
+                                      trsm_lower_params.alpha,
+                                      &A_p,
+                                      &B_p);
+            
+            C_p.mat = (double*)&TC(i, 0, 0, 0);
+            cblas_dtrsm_compute_batch(trsm_upper_params.side,
+                                      trsm_upper_params.uplo,
+                                      trsm_upper_params.transA,
+                                      trsm_upper_params.diag,
+                                      trsm_upper_params.alpha,
+                                      &A_p,
+                                      &C_p);
+            
+            A_p.mat = (double*)&TA(i+1, 0, 0, 0);
+            cblas_dgemm_compute_batch(gemm_params.transA,
+                                      gemm_params.transB,
+                                      gemm_params.alpha,
+                                      &C_p,
+                                      &B_p,
+                                      gemm_params.beta,
+                                      &A_p);
+          }
+          A_p.mat = (double*)&TA(iend, 0, 0, 0);
+          LAPACKE_dgetrf_compute_batch(&A_p);
+        }
+        // put back to original matrix for checking
+        for (int i=0;i<nrows;++i)
+          for (int j=0;j<ntridiags;++j)
+            for (int k=0;k<blocksize;++k)
+              for (int l=0;l<blocksize;++l) {
+                T_device.A()(j,i,k,l) = TA(i,j,k,l);
+                if (i<(nrows-1)) {
+                  T_device.B()(j,i,k,l) = TB(i,j,k,l);
+                  T_device.C()(j,i,k,l) = TC(i,j,k,l);
+                }
+              }
+        
+        // checking
+        {
+          FactorizeBlockTridiagMatrices<DeviceSpace,
+                                        ValueType,
+                                        Algo::LU::Blocked,
+                                        Algo::Trsm::Blocked,
+                                        Algo::Gemm::Blocked> factorblk;
+          const bool fake = true;
+          factorblk.run(T_device, fake);
+          TEST_ASSERT(factorblk.check(T_org_device), success);
+        }
+        break;
+      }
       }
 
       // Test Block TriDiag Solve
@@ -799,7 +938,7 @@ namespace KokkosKernels {
     
     // performance tests
     template<typename DeviceSpace, typename ValueType = scalar_type>
-    int run(const Input &input, const bool test_mkl = false) { 
+    int run(const Input &input, const int test_mkl = 0) { 
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
 
       const ordinal_type niter = 50;      
@@ -907,22 +1046,8 @@ namespace KokkosKernels {
       /// block tridiag factorization test
       ///
       double t_factorize = 0.0, f_factorize = 0.0;
-      if (test_mkl) {
-        FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType,
-                                      Algo::LU::CompactMKL,
-                                      Algo::Trsm::CompactMKL,
-                                      Algo::Gemm::CompactMKL> factorblk;
-        
-        f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
-        {
-          Timer timer("FactorizeBlockTridiagMatrices");
-          timer.reset();
-          factorblk.run(T_device);
-          t_factorize = timer.seconds();
-        }
-        if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
-      } else {
+      switch (test_mkl) {
+      case 0: {
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType,
                                       Algo::LU::Blocked,
@@ -937,8 +1062,150 @@ namespace KokkosKernels {
           t_factorize = timer.seconds();
         }
         if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
+        break;
       }
+      case 1: {
+        FactorizeBlockTridiagMatrices<DeviceSpace,
+                                      ValueType,
+                                      Algo::LU::CompactMKL,
+                                      Algo::Trsm::CompactMKL,
+                                      Algo::Gemm::CompactMKL> factorblk;
+        
+        f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
+        {
+          Timer timer("FactorizeBlockTridiagMatrices");
+          timer.reset();
+          factorblk.run(T_device);
+          t_factorize = timer.seconds();
+        }
+        if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
+        break;
+      }
+      case 2: {
+        const int ntridiags = adjustDimension<ValueType>(mesh.ni*mesh.nj), nrows = mesh.nk;
+        Kokkos::View<ValueType****,DeviceSpace> TA("TA_mkl", nrows,   ntridiags, blocksize, blocksize);
+        Kokkos::View<ValueType****,DeviceSpace> TB("TB_mkl", nrows-1, ntridiags, blocksize, blocksize);
+        Kokkos::View<ValueType****,DeviceSpace> TC("TC_mkl", nrows-1, ntridiags, blocksize, blocksize);
+        
+        // change the order to store the matrix
+        for (int i=0;i<nrows;++i)
+          for (int j=0;j<ntridiags;++j)
+            for (int k=0;k<blocksize;++k)
+              for (int l=0;l<blocksize;++l) {
+                TA(i,j,k,l) = T_device.A()(j,i,k,l);
+                if (i<(nrows-1)) {
+                  TB(i,j,k,l) = T_device.B()(j,i,k,l);
+                  TC(i,j,k,l) = T_device.C()(j,i,k,l);
+                }
+              }
+        {
+          // matrix factorization
+          Timer timer("FactorizeBlockTridiagMatrices");
 
+          MKL_INT blksize[1] = { blocksize };
+          MKL_INT lda[1] = { TA.stride_2() };
+          MKL_INT ldb[1] = { TB.stride_2() };
+          MKL_INT ldc[1] = { TC.stride_2() };
+          MKL_INT size_per_grp[1] = { ntridiags*sizeof(ValueType)/sizeof(double) };
+          
+          struct {
+            CBLAS_SIDE side[1] = {CblasLeft};
+            CBLAS_UPLO uplo[1] = {CblasLower};
+            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
+            CBLAS_DIAG diag[1] = {CblasUnit};
+            double alpha[1] = { 1.0 };
+          } trsm_lower_params;
+          
+          struct {
+            CBLAS_SIDE side[1] = {CblasRight};
+            CBLAS_UPLO uplo[1] = {CblasUpper};
+            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
+            CBLAS_DIAG diag[1] = {CblasNonUnit};
+            double alpha[1] = { 1.0 };
+          } trsm_upper_params;
+          
+          struct {
+            CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
+            CBLAS_TRANSPOSE transB[1] = {CblasNoTrans};
+            double alpha[1] = { -1.0 };
+            double beta[1] = { 1.0 };
+          } gemm_params;
+          
+          compact_t A_p, B_p, C_p;
+          A_p.layout = CblasRowMajor;
+          A_p.rows = blksize;
+          A_p.cols = blksize;
+          A_p.stride = lda;
+          A_p.group_count = 1;
+          A_p.size_per_group = size_per_grp;
+          A_p.format = sizeof(ValueType)/sizeof(double);
+          
+          B_p.layout = CblasRowMajor;
+          B_p.rows = blksize;
+          B_p.cols = blksize;
+          B_p.stride = ldb;
+          B_p.group_count = 1;
+          B_p.size_per_group = size_per_grp;
+          B_p.format = sizeof(ValueType)/sizeof(double);
+          
+          C_p.layout = CblasRowMajor;
+          C_p.rows = blksize;
+          C_p.cols = blksize;
+          C_p.stride = ldb;
+          C_p.group_count = 1;
+          C_p.size_per_group = size_per_grp;
+          C_p.format = sizeof(ValueType)/sizeof(double);
+
+          timer.reset();                    
+          const int iend = nrows - 1;
+          for (int i=0;i<iend;++i) {
+            A_p.mat = (double*)&TA(i, 0, 0, 0);
+            B_p.mat = (double*)&TB(i, 0, 0, 0);
+            C_p.mat = (double*)&TC(i, 0, 0, 0);
+            
+            LAPACKE_dgetrf_compute_batch(&A_p);
+            cblas_dtrsm_compute_batch(trsm_lower_params.side,
+                                      trsm_lower_params.uplo,
+                                      trsm_lower_params.transA,
+                                      trsm_lower_params.diag,
+                                      trsm_lower_params.alpha,
+                                      &A_p,
+                                      &B_p);
+            cblas_dtrsm_compute_batch(trsm_upper_params.side,
+                                      trsm_upper_params.uplo,
+                                      trsm_upper_params.transA,
+                                      trsm_upper_params.diag,
+                                      trsm_upper_params.alpha,
+                                      &A_p,
+                                      &C_p);
+            cblas_dgemm_compute_batch(gemm_params.transA,
+                                      gemm_params.transB,
+                                      gemm_params.alpha,
+                                      &A_p,
+                                      &B_p,
+                                      gemm_params.beta,
+                                      &C_p);
+          }
+          A_p.mat = (double*)&TA(iend, 0, 0, 0);
+          LAPACKE_dgetrf_compute_batch(&A_p);
+          t_factorize = timer.seconds();
+        }
+
+        // put back to original matrix for checking
+        for (int i=0;i<nrows;++i)
+          for (int j=0;j<ntridiags;++j)
+            for (int k=0;k<blocksize;++k)
+              for (int l=0;l<blocksize;++l) {
+                T_device.A()(j,i,k,l) = TA(i,j,k,l);
+                if (i<(nrows-1)) {
+                  T_device.B()(j,i,k,l) = TB(i,j,k,l);
+                  T_device.C()(j,i,k,l) = TC(i,j,k,l);
+                }
+              }
+        //if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
+      }
+      }
+        
       ///
       /// block tridiag solve test
       ///

@@ -18,6 +18,8 @@
 #include "KokkosKernels_Gemm_Serial_Impl.hpp"
 #include "KokkosKernels_Gemm_Team_Impl.hpp"
 
+bool hot = false;
+
 namespace KokkosKernels {
 
   namespace Test {
@@ -95,11 +97,14 @@ namespace KokkosKernels {
           double tavg = 0, tmin = tmax;
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            flush.run();
+            if (!hot)
+              flush.run();
 
             // initialize matrices
-            Kokkos::deep_copy(a, amat);
-            Kokkos::deep_copy(b, bmat);
+            if (!hot && iter == iter_begin) {
+              Kokkos::deep_copy(a, amat);
+              Kokkos::deep_copy(b, bmat);
+            }
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -174,11 +179,14 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            flush.run();
+            if (!hot)
+              flush.run();
 
             // initialize matrices
-            Kokkos::deep_copy(a, amat);
-            Kokkos::deep_copy(b, bmat);
+            if (!hot && iter == iter_begin) {
+              Kokkos::deep_copy(a, amat);
+              Kokkos::deep_copy(b, bmat);
+            }
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -269,11 +277,14 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            flush.run();
+            if (!hot)
+              flush.run();
 
             // initialize matrices
-            Kokkos::deep_copy(a, amat_simd);
-            Kokkos::deep_copy(b, bmat_simd);
+            if (!hot && iter == iter_begin) {
+              Kokkos::deep_copy(a, amat_simd);
+              Kokkos::deep_copy(b, bmat_simd);
+            }
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -338,11 +349,14 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            flush.run();
+            if (!hot)
+              flush.run();
 
             // initialize matrices
-            Kokkos::deep_copy(a, amat);
-            Kokkos::deep_copy(b, bmat);
+            if (!hot && iter == iter_begin) {
+              Kokkos::deep_copy(a, amat);
+              Kokkos::deep_copy(b, bmat);
+            }
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -468,11 +482,14 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            flush.run();
+            if (!hot)
+              flush.run();
 
             // initialize matrices
-            Kokkos::deep_copy(a, amat_simd);
-            Kokkos::deep_copy(b, bmat_simd);
+            if (!hot && iter == iter_begin) {
+              Kokkos::deep_copy(a, amat_simd);
+              Kokkos::deep_copy(b, bmat_simd);
+            }
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -619,6 +636,7 @@ int main(int argc, char *argv[]) {
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
     if (token == std::string("-N")) N[0] = std::atoi(argv[++i]);
+    if (token == std::string("-hot-cache")) hot = true;
   }
 
 #if defined(__AVX512F__)
