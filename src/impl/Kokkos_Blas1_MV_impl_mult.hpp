@@ -381,8 +381,7 @@ struct Mult<CV, AV, BV, 1> {
 //
 
 #define KOKKOSBLAS1_IMPL_MV_MULT_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Mult<Kokkos::View<SCALAR**, \
+extern template struct Mult<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -394,29 +393,7 @@ struct Mult<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            2> \
-{ \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CMV; \
-  typedef Kokkos::View<const SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BMV; \
- \
-  static void \
-  mult (CMV::const_value_type& c, \
-        const CMV& C, \
-        AV::const_value_type& ab, \
-        const AV& A, \
-        const BMV& B); \
-};
-
+                            2>;
 
 //
 // Macro for definition of full specialization of
@@ -425,8 +402,7 @@ struct Mult<Kokkos::View<SCALAR**, \
 // this directory.
 //
 #define KOKKOSBLAS1_IMPL_MV_MULT_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Mult<Kokkos::View<SCALAR**, \
+template struct Mult<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -438,25 +414,7 @@ Mult<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     2>:: \
-mult (CMV::const_value_type& c, \
-      const CMV& C, \
-      AV::const_value_type& ab, \
-      const AV& A, \
-      const BMV& B) \
-{ \
-  typedef CMV::size_type size_type; \
- \
-  const size_type numRows = C.dimension_0 (); \
-  const size_type numCols = C.dimension_1 (); \
-  if (numRows < static_cast<int> (INT_MAX) && \
-      numRows * numCols < static_cast<int> (INT_MAX)) { \
-    MV_Mult_Generic<CMV, AV, BMV, int> (c, C, ab, A, B); \
-  } \
-  else { \
-    MV_Mult_Generic<CMV, AV, BMV, size_type> (c, C, ab, A, B); \
-  } \
-}
+                     2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
