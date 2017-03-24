@@ -28,7 +28,7 @@ KOKKOS_KERNELS_SPACES = Serial,HostSpace
 MKL_PATH=${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS=-L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 
-default: build
+default: build-lib
 	echo "Start Build"
 
 
@@ -191,7 +191,16 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 LIBRARY=libkokkos_kernels.a
 
-build: $(LIBRARY)
+build-lib: $(LIBRARY)
+
+install: build-lib
+	mkdir -p $(KOKKOS_KERNELS_INSTALL_PATH)
+	mkdir -p $(KOKKOS_KERNELS_INSTALL_PATH)/include
+	mkdir -p $(KOKKOS_KERNELS_INSTALL_PATH)/lib
+	cp $(COPY_FLAG) ${KOKKOS_KERNELS_PATH}/src/*.hpp $(KOKKOS_KERNELS_INSTALL_PATH)/include
+	cp $(COPY_FLAG) ${KOKKOS_KERNELS_PATH}/src/impl/*.hpp $(KOKKOS_KERNELS_INSTALL_PATH)/include
+	cp $(COPY_FLAG) -r ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_hpp $(KOKKOS_KERNELS_INSTALL_PATH)/include
+	cp $(COPY_FLAG) libkokkos_kernels.a $(KOKKOS_KERNELS_INSTALL_PATH)/lib
 
 $(LIBRARY): $(OBJ_SPARSE) $(OBJ_BLAS) 
 	ar cr ${LIBRARY} $(OBJ_SPARSE) $(OBJ_BLAS)
