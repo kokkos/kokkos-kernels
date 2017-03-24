@@ -1270,64 +1270,80 @@ spmv_alpha_mv (const char mode[],
 
 #ifndef KOKKOSSPARSE_ETI_ONLY
 
-template<class AT, class AO, class AD, class AM, class AS,
-         class XT, class XL, class XD, class XM,
-         class YT, class YL, class YD, class YM,
-         const bool integerScalarType>
-void
-SPMV_MV<AT, AO, AD, AM, AS,
-        XT, XL, XD, XM,
-        YT, YL, YD, YM,
-        integerScalarType>::
-spmv_mv (const char mode[],
-         const coefficient_type& alpha,
-         const AMatrix& A,
-         const XVector& x,
-         const coefficient_type& beta,
-         const YVector& y)
-{
-  typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
-
-  if (alpha == KAT::zero ()) {
-    spmv_alpha_mv<AMatrix, XVector, YVector, 0> (mode, alpha, A, x, beta, y);
-  }
-  else if (alpha == KAT::one ()) {
-    spmv_alpha_mv<AMatrix, XVector, YVector, 1> (mode, alpha, A, x, beta, y);
-  }
-  else if (alpha == -KAT::one ()) {
-    spmv_alpha_mv<AMatrix, XVector, YVector, -1> (mode, alpha, A, x, beta, y);
-  }
-  else {
-    spmv_alpha_mv<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y);
-  }
-}
-
+// Partial specialization for integerScalarType=false
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class YT, class YL, class YD, class YM>
-void
-SPMV_MV<AT, AO, AD, AM, AS,
-        XT, XL, XD, XM,
-        YT, YL, YD, YM,
-        true>::
-spmv_mv (const char mode[],
-         const coefficient_type& alpha,
-         const AMatrix& A,
-         const XVector& x,
-         const coefficient_type& beta,
-         const YVector& y)
+struct SPMV_MV<AT, AO, AD, AM, AS,
+               XT, XL, XD, XM,
+               YT, YL, YD, YM,
+               false>
 {
-  static_assert (std::is_integral<AT>::value,
-    "This implementation is only for integer Scalar types.");
-  typedef SPMV<AT, AO, AD, AM, AS,
-               XT*, XL, XD, XM,
-               YT*, YL, YD, YM> impl_type;
-  for (AS j = 0; j < x.dimension_1 (); ++j) {
-    auto x_j = Kokkos::subview (x, Kokkos::ALL (), j);
-    auto y_j = Kokkos::subview (y, Kokkos::ALL (), j);
-    impl_type::spmv (mode, alpha, A, x_j, beta, y_j);
+  typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
+  typedef Kokkos::View<XT,XL,XD,XM> XVector;
+  typedef Kokkos::View<YT,YL,YD,YM> YVector;
+  typedef typename YVector::non_const_value_type coefficient_type;
+
+  static void
+  spmv_mv (const char mode[],
+           const coefficient_type& alpha,
+           const AMatrix& A,
+           const XVector& x,
+           const coefficient_type& beta,
+           const YVector& y)
+  {
+    typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
+
+    if (alpha == KAT::zero ()) {
+      spmv_alpha_mv<AMatrix, XVector, YVector, 0> (mode, alpha, A, x, beta, y);
+    }
+    else if (alpha == KAT::one ()) {
+      spmv_alpha_mv<AMatrix, XVector, YVector, 1> (mode, alpha, A, x, beta, y);
+    }
+    else if (alpha == -KAT::one ()) {
+      spmv_alpha_mv<AMatrix, XVector, YVector, -1> (mode, alpha, A, x, beta, y);
+    }
+    else {
+      spmv_alpha_mv<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y);
+    }
   }
-}
+};
+
+// Partial specialization for integerScalarType=true
+template<class AT, class AO, class AD, class AM, class AS,
+         class XT, class XL, class XD, class XM,
+         class YT, class YL, class YD, class YM>
+struct SPMV_MV<AT, AO, AD, AM, AS,
+               XT, XL, XD, XM,
+               YT, YL, YD, YM,
+               true>
+{
+  typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
+  typedef Kokkos::View<XT,XL,XD,XM> XVector;
+  typedef Kokkos::View<YT,YL,YD,YM> YVector;
+  typedef typename YVector::non_const_value_type coefficient_type;
+
+  static void
+  spmv_mv (const char mode[],
+           const coefficient_type& alpha,
+           const AMatrix& A,
+           const XVector& x,
+           const coefficient_type& beta,
+           const YVector& y)
+  {
+    static_assert (std::is_integral<AT>::value,
+                   "This implementation is only for integer Scalar types.");
+    typedef SPMV<AT, AO, AD, AM, AS,
+      XT*, XL, XD, XM,
+      YT*, YL, YD, YM> impl_type;
+    for (AS j = 0; j < x.dimension_1 (); ++j) {
+      auto x_j = Kokkos::subview (x, Kokkos::ALL (), j);
+      auto y_j = Kokkos::subview (y, Kokkos::ALL (), j);
+      impl_type::spmv (mode, alpha, A, x_j, beta, y_j);
+    }
+  }
+};
+
 #endif // KOKKOSSPARSE_ETI_ONLY
 
 //
