@@ -28,11 +28,6 @@ KOKKOS_KERNELS_SPACES = Serial,HostSpace
 MKL_PATH=${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS=-L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 
-SRC_BLAS = $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*.cpp)
-SRC_SPARSE = $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*.cpp)
-HEADERS = $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/*.hpp) 
-HEADERS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/*.hpp) 
-
 default: build
 	echo "Start Build"
 
@@ -63,6 +58,10 @@ CXXFLAGS += -I${CUDA_ROOT}/include -DHAVE_CUSPARSE -DKOKKOS_USE_CUSPARSE
 LIB += -lcusparse
 endif
 
+#-------------------------------------------------------------------------
+#-----Generate KokkosKernels_config.h-------------------------------------
+#-------------------------------------------------------------------------
+
 tmp := $(shell echo "/* ---------------------------------------------" > KokkosKernels_config.tmp)
 tmp := $(shell echo "Makefile constructed configuration:" >> KokkosKernels_config.tmp)
 tmp := $(shell date >> KokkosKernels_config.tmp)
@@ -70,13 +69,9 @@ tmp := $(shell echo "----------------------------------------------*/" >> Kokkos
 
 #ETI Macros Scalars
 KOKKOS_KERNELS_INTERNAL_INST_SCALAR_DOUBLE=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "double" | wc -l))
-#ETI Macros Layouts
-KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTLEFT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutLeft" | wc -l))
-KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTRIGHT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutRight" | wc -l))
-#ETI Macros Execution Spaces
-KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_SERIAL=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "Serial" | wc -l))
-#ETI Macros Memory Spaces
-KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "HostSpace" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_SCALAR_FLOAT=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "double" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_DOUBLE_=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "complex<double>" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_FLOAT_=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "complex<double>" | wc -l))
 
 #
 # TODO CMake: create macros corresponding to CMake options
@@ -84,24 +79,67 @@ KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE=$(strip $(shell echo $(KOKKOS_KE
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_DOUBLE), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_DOUBLE" >> KokkosKernels_config.tmp )
 endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_FLOAT), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_FLOAT" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_DOUBLE_), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_COMPLEX_DOUBLE_" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_FLOAT_), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_COMPLEX_FLOAT_" >> KokkosKernels_config.tmp )
+endif
+
+
+#ETI Macros Layouts
+KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTLEFT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutLeft" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTRIGHT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutRight" | wc -l))
 
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTLEFT), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_LAYOUT_LAYOUTLEFT" >> KokkosKernels_config.tmp )
 endif
-
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTRIGHT), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_LAYOUT_LAYOUTRIGHT" >> KokkosKernels_config.tmp )
 endif
 
+#ETI Macros Execution Spaces
+KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_SERIAL=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "Serial" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_OPENMP=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "OpenMP" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_THREADS=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "Pthread" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_CUDA=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "Cuda" | wc -l))
+
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_EXECSPACE_SERIAL" >> KokkosKernels_config.tmp )
 endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_OPENMP), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_EXECSPACE_OPENMP" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_THREADS), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_EXECSPACE_THREADS" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_EXECSPACE_CUDA" >> KokkosKernels_config.tmp )
+endif
+
+#ETI Macros Memory Spaces
+KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "HostSpace" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HBWSPACE=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "HBWSpace" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "CudaSpace" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE=$(strip $(shell echo $(KOKKOS_KERNELS_SPACES) | grep "CudaUVMSpace" | wc -l))
 
 #
 # TODO CMake: use MEMSPACE here, not EXECSPACE
 #
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE), 1)
-  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_EXECSPACE_HOSTSPACE" >> KokkosKernels_config.tmp )
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_HBWSPACE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE" >> KokkosKernels_config.tmp )
 endif
 
 KOKKOS_KERNELS_INTERNAL_LS_CONFIG := $(shell ls KokkosKernels_config.h)
@@ -115,6 +153,34 @@ ifneq ($(KOKKOS_KERNELS_INTERNAL_NEW_CONFIG), 0)
   tmp := $(shell cp KokkosKernels_config.tmp KokkosKernels_config.h)
 endif
 
+
+#-------------------------------------------------------------------------
+#-----Add src Files-------------------------------------
+#-------------------------------------------------------------------------
+
+SRC_BLAS = 
+SRC_SPARSE = 
+
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*Serial*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*Serial*.cpp)
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_OPENMP), 1)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*OpenMP*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*OpenMP*.cpp)
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_THREADS), 1)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*Threads*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*Threads*.cpp)
+endif
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*Cuda*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*Cuda*.cpp)
+endif
+
+HEADERS = $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/*.hpp) 
+HEADERS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/*.hpp) 
+
 vpath %.cpp $(sort $(dir $(SRC_SPARSE)))
 vpath %.cpp $(sort $(dir $(SRC_BLAS)))
 
@@ -127,7 +193,7 @@ OBJ_SPARSE = $(SRC_SPARSE_NODIR:.cpp=.o)
 
 include $(KOKKOS_PATH)/Makefile.kokkos
 
-LIBRARY=kokkos_kernels.a
+LIBRARY=libkokkos_kernels.a
 
 build: $(LIBRARY)
 

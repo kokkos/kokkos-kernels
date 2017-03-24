@@ -31,7 +31,7 @@ echo "namespace Impl {" >> ${filename_cpp}
 echo "#if defined (KOKKOSKERNELS_INST_SCALAR_${Scalar_UpperCase}) \\" >> ${filename_cpp} 
 echo " && defined (KOKKOSKERNELS_INST_LAYOUT_${Layout_UpperCase}) \\" >> ${filename_cpp} 
 echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${ExecSpace_UpperCase}) \\" >> ${filename_cpp} 
-echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${MemSpace_UpperCase})" >> ${filename_cpp} 
+echo " && defined (KOKKOSKERNELS_INST_MEMSPACE_${MemSpace_UpperCase})" >> ${filename_cpp} 
 echo " ${Macro}_DEF(${Scalar}, int, ${OffsetType}, Kokkos::${Layout}, Kokkos::${ExecSpace}, Kokkos::${MemSpace})" >> ${filename_cpp}
 echo "#endif" >> ${filename_cpp}
 echo "} // Impl" >> ${filename_cpp} 
@@ -41,6 +41,6 @@ echo "" >> ${filename_hpp}
 echo "#if defined (KOKKOSKERNELS_INST_SCALAR_${Scalar_UpperCase}) \\" >> ${filename_hpp}
 echo " && defined (KOKKOSKERNELS_INST_LAYOUT_${Layout_UpperCase}) \\" >> ${filename_hpp}
 echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${ExecSpace_UpperCase}) \\" >> ${filename_hpp}
-echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${MemSpace_UpperCase})" >> ${filename_hpp}
+echo " && defined (KOKKOSKERNELS_INST_MEMSPACE_${MemSpace_UpperCase})" >> ${filename_hpp}
 echo " ${Macro}_DECL(${Scalar}, int, ${OffsetType}, Kokkos::${Layout}, Kokkos::${ExecSpace}, Kokkos::${MemSpace})" >> ${filename_hpp}
 echo "#endif" >> ${filename_hpp}
