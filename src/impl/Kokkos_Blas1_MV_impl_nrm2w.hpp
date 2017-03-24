@@ -236,7 +236,7 @@ struct Nrm2w<R, XV, 1> {
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_NRM2W_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*, \
                           EXEC_SPACE::array_layout, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -252,7 +252,7 @@ extern template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTrai
 // KokkosBlas::Impl::Nrm2w for rank == 2.  This is NOT for users!!!
 //
 
-#define KOKKOSBLAS_IMPL_MV_NRM2W_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IMPL_MV_NRM2W_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCALAR >::mag_type*, \
                    EXEC_SPACE::array_layout, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -266,6 +266,6 @@ template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCA
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/nrm2/KokkosBlas1_impl_MV_nrm2_decl_specializations.hpp>
+#include<generated_specializations/nrm2w/KokkosBlas1_impl_MV_nrm2w_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_NORMW_HPP_
