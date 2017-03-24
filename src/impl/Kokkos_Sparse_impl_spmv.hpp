@@ -567,7 +567,7 @@ SPMV<const SCALAR_TYPE, \
      SCALAR_TYPE*, \
      LAYOUT_TYPE, \
      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-     Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
 #define KOKKOSSPARSE_IMPL_V_SPMV_DEF( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
 template struct  \
@@ -583,7 +583,7 @@ SPMV<const SCALAR_TYPE, \
      SCALAR_TYPE*, \
      LAYOUT_TYPE, \
      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-     Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
 // Functor for implementing transpose and conjugate transpose sparse
 // matrix-vector multiply with multivector (2-D View) input and
@@ -1316,21 +1316,21 @@ spmv_mv (const char mode[],
          const coefficient_type& beta,
          const YVector& y)
 {
-  static_assert (std::is_integral<AT>::value, 
-    "This implementation is only for integer Scalar types."); 
-  typedef SPMV<AT, AO, AD, AM, AS, 
-               XT*, XL, XD, XM, 
-               YT*, YL, YD, YM> impl_type; 
-  for (AS j = 0; j < x.dimension_1 (); ++j) { 
-    auto x_j = Kokkos::subview (x, Kokkos::ALL (), j); 
-    auto y_j = Kokkos::subview (y, Kokkos::ALL (), j); 
-    impl_type::spmv (mode, alpha, A, x_j, beta, y_j); 
+  static_assert (std::is_integral<AT>::value,
+    "This implementation is only for integer Scalar types.");
+  typedef SPMV<AT, AO, AD, AM, AS,
+               XT*, XL, XD, XM,
+               YT*, YL, YD, YM> impl_type;
+  for (AS j = 0; j < x.dimension_1 (); ++j) {
+    auto x_j = Kokkos::subview (x, Kokkos::ALL (), j);
+    auto y_j = Kokkos::subview (y, Kokkos::ALL (), j);
+    impl_type::spmv (mode, alpha, A, x_j, beta, y_j);
   }
 }
 #endif // KOKKOSSPARSE_ETI_ONLY
 
 //
-// Macros for defining and declaring 
+// Macros for defining and declaring
 // a full specialization of the SPMV_MV struct
 //
 // SCALAR_TYPE: The type of each entry in the sparse matrix
@@ -1356,7 +1356,7 @@ SPMV_MV<const SCALAR_TYPE, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
 #define KOKKOSSPARSE_IMPL_SPMV_MV_DEF( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
 template struct \
@@ -1372,7 +1372,7 @@ SPMV_MV<const SCALAR_TYPE, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
 } // namespace Impl
 } // namespace KokkosSparse
