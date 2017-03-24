@@ -303,8 +303,7 @@ struct Sum<RV, XV, 1> {
 //
 
 #define KOKKOSBLAS1_IMPL_MV_SUM_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Sum<Kokkos::View<SCALAR*, \
+extern template struct Sum<Kokkos::View<SCALAR*, \
                         EXEC_SPACE::array_layout, \
                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -312,18 +311,7 @@ struct Sum<Kokkos::View<SCALAR*, \
                         LAYOUT, \
                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-           2> \
-{ \
-  typedef Kokkos::View<SCALAR*, \
-                       EXEC_SPACE::array_layout, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  static void sum (const RV& r, const XMV& X); \
-};
+                           2>;
 
 //
 // Macro for definition of full specialization of
@@ -331,8 +319,7 @@ struct Sum<Kokkos::View<SCALAR*, \
 //
 
 #define KOKKOSBLAS1_IMPL_MV_SUM_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Sum<Kokkos::View<SCALAR*, \
+template struct Sum<Kokkos::View<SCALAR*, \
                  EXEC_SPACE::array_layout, \
                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -340,21 +327,7 @@ Sum<Kokkos::View<SCALAR*, \
                  LAYOUT, \
                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-    2>:: \
-sum (const RV& r, const XMV& X) \
-{ \
-  typedef XMV::size_type size_type; \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
- \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    MV_Sum_Invoke<RV, XMV, int> (r, X); \
-  } \
-  else { \
-    MV_Sum_Invoke<RV, XMV, size_type> (r, X); \
-  } \
-}
+                    2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
