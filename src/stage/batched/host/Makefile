@@ -9,14 +9,9 @@ info:
 
 EXEC  = KokkosKernels_Test_BlockCrs
 EXECS = \
-	KokkosKernels_Test_Vector_Arithmatic \
 	KokkosKernels_Test_Gemm \
-	KokkosKernels_Test_Gemm_Complex \
-	KokkosKernels_Test_Gemv \
 	KokkosKernels_Test_Trsm \
-	KokkosKernels_Test_Trsv \
 	KokkosKernels_Test_LU \
-	KokkosKernels_Test_Opt \
 	KokkosKernels_Test_BlockCrs
 
 include $(KOKKOS)/Makefile.kokkos
