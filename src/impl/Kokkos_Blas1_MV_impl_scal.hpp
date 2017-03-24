@@ -908,8 +908,7 @@ struct Scal<RMV, typename RMV::non_const_value_type, XMV, 1>
 //
 
 #define KOKKOSBLAS1_IMPL_MV_SCAL_MULTICOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Scal<Kokkos::View<SCALAR**, \
+extern template struct Scal<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -921,26 +920,7 @@ struct Scal<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            2> \
-{ \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RMV; \
-  typedef Kokkos::View<const SCALAR*, \
-          EXEC_SPACE::array_layout, \
-          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> > AV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef XMV::size_type size_type; \
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
- \
-  static void \
-  scal (const RMV& R, const AV& av, const XMV& X); \
-};
+                            2>;
 
 //
 // Macro for declaration of full specialization of
@@ -951,8 +931,7 @@ struct Scal<Kokkos::View<SCALAR**, \
 //
 
 #define KOKKOSBLAS1_IMPL_MV_SCAL_SINGLECOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Scal<Kokkos::View<SCALAR**, \
+extern template struct Scal<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -961,23 +940,7 @@ struct Scal<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            2> \
-{ \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RMV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef XMV::non_const_value_type AV; \
-  typedef XMV::size_type size_type; \
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
- \
-  static void \
-  scal (const RMV& R, const AV& alpha, const XMV& X); \
-};
+                            2>;
 
 //
 // Macro for declaration of full specialization of
@@ -988,8 +951,7 @@ struct Scal<Kokkos::View<SCALAR**, \
 //
 
 #define KOKKOSBLAS1_IMPL_V_SCAL_SINGLECOEFF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Scal<Kokkos::View<SCALAR*, \
+extern template struct Scal<Kokkos::View<SCALAR*, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -998,23 +960,7 @@ struct Scal<Kokkos::View<SCALAR*, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            1> \
-{ \
-  typedef Kokkos::View<SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
-  typedef XV::non_const_value_type AV; \
-  typedef XV::size_type size_type; \
-  typedef Kokkos::Details::ArithTraits<XV::non_const_value_type> ATA; \
- \
-  static void \
-  scal (const RV& R, const AV& alpha, const XV& X); \
-};
+                            1>;
 
 //
 // Macro for definition of full specialization of
@@ -1023,8 +969,7 @@ struct Scal<Kokkos::View<SCALAR*, \
 //
 
 #define KOKKOSBLAS1_IMPL_MV_SCAL_SINGLECOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Scal<Kokkos::View<SCALAR**, \
+template struct Scal<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -1032,35 +977,8 @@ Scal<Kokkos::View<SCALAR**, \
      Kokkos::View<const SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2>:: \
-scal (const RMV& R, const AV& alpha, const XMV& X) \
-{ \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  int a; \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  else if (alpha == -ATA::one ()) { \
-    a = -1; \
-  } \
-  else if (alpha == ATA::one ()) { \
-    a = 1; \
-  } \
-  else { \
-    a = 2; \
-  } \
- \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    MV_Scal_Invoke_Left<RMV, AV, XMV, index_type> (R, alpha, X, a); \
-  } \
-  else { \
-    typedef XMV::size_type index_type; \
-    MV_Scal_Invoke_Left<RMV, AV, XMV, index_type> (R, alpha, X, a); \
-  } \
-}
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     2>;
 
 //
 // Macro for definition of full specialization of
@@ -1069,8 +987,7 @@ scal (const RMV& R, const AV& alpha, const XMV& X) \
 //
 
 #define KOKKOSBLAS1_IMPL_MV_SCAL_MULTICOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Scal<Kokkos::View<SCALAR**, \
+template struct Scal<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -1082,35 +999,7 @@ Scal<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     2>::                                          \
-scal (const RMV& R, const AV& av, const XMV& X) \
-{ \
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::" \
-                 "Scal<2-D>: RMV is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<AV>::value, "KokkosBlas::Impl::" \
-                 "Scal<2-D>: AV is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::" \
-                 "Scal<2-D>: XMV is not a Kokkos::View."); \
-  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Scal<2-D>: " \
-                 "RMV is not rank 2."); \
-  static_assert (AV::rank == 1, "KokkosBlas::Impl::Scal<2-D>: " \
-                 "AV is not rank 1."); \
-  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Scal<2-D>: " \
-                 "XMV is not rank 2."); \
- \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  const int a = (av.dimension_0 () == 0) ? 0 : 2; \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    MV_Scal_Invoke_Left<RMV, AV, XMV, index_type> (R, av, X, a); \
-  } \
-  else { \
-    typedef XMV::size_type index_type; \
-    MV_Scal_Invoke_Left<RMV, AV, XMV, index_type> (R, av, X, a); \
-  } \
-}
+                     2>;
 
 //
 // Macro for definition of full specialization of
@@ -1119,8 +1008,7 @@ scal (const RMV& R, const AV& av, const XMV& X) \
 //
 
 #define KOKKOSBLAS1_IMPL_V_SCAL_SINGLECOEFF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Scal<Kokkos::View<SCALAR*, \
+template struct Scal<Kokkos::View<SCALAR*, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -1129,40 +1017,7 @@ Scal<Kokkos::View<SCALAR*, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     1>:: \
-scal (const RV& R, const AV& alpha, const XV& X) \
-{ \
-  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::" \
-                 "Scal<1-D>: RV is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::" \
-                 "Scal<1-D>: XV is not a Kokkos::View."); \
-  static_assert (RV::rank == 1, "KokkosBlas::Impl::Scal<1-D>: " \
-                 "RV is not rank 1."); \
-  static_assert (XV::rank == 1, "KokkosBlas::Impl::Scal<1-D>: " \
-                 "XV is not rank 1."); \
- \
-  const size_type numRows = X.dimension_0 (); \
-  int a = 2; \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  else if (alpha == -ATA::one ()) { \
-    a = -1; \
-  } \
-  else if (alpha == ATA::one ()) { \
-    a = 1; \
-  } \
- \
-  if (numRows < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    V_Scal_Generic<RV, AV, XV, index_type> (R, alpha, X, a); \
-  } \
-  else { \
-    typedef XV::size_type index_type; \
-    V_Scal_Generic<RV, AV, XV, index_type> (R, alpha, X, a); \
-  } \
-}
-
+                     1>;
 
 } // namespace Impl
 } // namespace KokkosBlas
