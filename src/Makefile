@@ -158,24 +158,24 @@ SRC_BLAS =
 SRC_SPARSE = 
 
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
-SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*Serial*.cpp)
-SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*Serial*.cpp)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*Serial*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*Serial*.cpp)
 endif
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_OPENMP), 1)
-SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*OpenMP*.cpp)
-SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*OpenMP*.cpp)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*OpenMP*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*OpenMP*.cpp)
 endif
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_THREADS), 1)
-SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*Threads*.cpp)
-SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*Threads*.cpp)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*Threads*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*Threads*.cpp)
 endif
 ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
-SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosBlas*Cuda*.cpp)
-SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/KokkosSparse*Cuda*.cpp)
+SRC_BLAS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*Cuda*.cpp)
+SRC_SPARSE += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*Cuda*.cpp)
 endif
 
 HEADERS = $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/*.hpp) 
-HEADERS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/*/*.hpp) 
+HEADERS += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations_hpp/*/*.hpp) 
 
 vpath %.cpp $(sort $(dir $(SRC_SPARSE)))
 vpath %.cpp $(sort $(dir $(SRC_BLAS)))
@@ -197,8 +197,8 @@ $(LIBRARY): $(OBJ_SPARSE) $(OBJ_BLAS)
 	ar cr ${LIBRARY} $(OBJ_SPARSE) $(OBJ_BLAS)
 	ranlib ${LIBRARY}
 
-clean: kokkos-clean 
-	rm -f *.o *.cuda *.host KokkosKernels_config.h KokkosKernels_ETIHelperMacros.h
+clean: 
+	rm -f *.o libkokkos_kernels.a KokkosKernels_config.h 
 
 # Compilation rules
 
