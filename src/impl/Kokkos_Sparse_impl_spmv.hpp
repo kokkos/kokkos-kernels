@@ -48,6 +48,7 @@
 #include "Kokkos_Blas1_MV.hpp"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 
+#include "Kokkos_Sparse_impl_spmv_omp.hpp"
 #ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
 #define KOKKOSSPARSE_ETI_ONLY
 #endif
@@ -96,22 +97,7 @@ struct GetCoeffView<Kokkos::View<IT*,IL,ID,IM,IS>,DeviceType> {
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class YT, class YL, class YD, class YM>
-struct SPMV
-{
-  typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
-  typedef Kokkos::View<XT,XL,XD,XM> XVector;
-  typedef Kokkos::View<YT,YL,YD,YM> YVector;
-  typedef typename YVector::non_const_value_type coefficient_type;
-
-  static void
-  spmv (const char mode[],
-        const coefficient_type& alpha,
-        const AMatrix& A,
-        const XVector& x,
-        const coefficient_type& beta,
-        const YVector& y);
-};
-
+struct SPMV;
 
 /// \brief Implementation of KokkosBlas::spmv (sparse matrix - dense
 ///   vector multiply) for multiple vectors at a time (multivectors)
@@ -503,10 +489,14 @@ spmv_beta (const char mode[],
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class YT, class YL, class YD, class YM>
-void
-SPMV<AT, AO, AD, AM, AS,
-     XT, XL, XD, XM,
-     YT, YL, YD, YM>::
+struct
+SPMV {
+  typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
+  typedef Kokkos::View<XT,XL,XD,XM> XVector;
+  typedef Kokkos::View<YT,YL,YD,YM> YVector;
+  typedef typename YVector::non_const_value_type coefficient_type;
+
+  static void
 spmv (const char mode[],
       const coefficient_type& alpha,
       const AMatrix& A,
@@ -539,6 +529,7 @@ spmv (const char mode[],
     spmv_beta<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y);
   }
 }
+};
 #endif // KOKKOSSPARSE_ETI_ONLY
 
 //
@@ -1394,8 +1385,7 @@ SPMV_MV<const SCALAR_TYPE, \
 } // namespace Impl
 } // namespace KokkosSparse
 
-#include "Kokkos_Sparse_impl_spmv_omp.hpp"
-#include<generated_specializations/spmv/KokkosSparse_impl_V_spmv_decl_specializations.hpp>
 #include<generated_specializations/spmv/KokkosSparse_impl_MV_spmv_decl_specializations.hpp>
+#include<generated_specializations/spmv/KokkosSparse_impl_V_spmv_decl_specializations.hpp>
 
 #endif // KOKKOS_SPARSE_IMPL_SPMV_DEF_HPP_
