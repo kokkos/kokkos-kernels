@@ -707,8 +707,7 @@ struct Update<XV, YV, ZV, 1>
 //
 
 #define KOKKOSBLAS1_IMPL_MV_UPDATE_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Update<Kokkos::View<const SCALAR**, \
+extern template struct Update<Kokkos::View<const SCALAR**, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -720,38 +719,14 @@ struct Update<Kokkos::View<const SCALAR**, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-              2> \
-{ \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV; \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > ZMV; \
-  typedef XMV::size_type size_type; \
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB; \
-  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC; \
- \
-  static void \
-  update (const XMV::non_const_value_type& alpha, const XMV& X, \
-          const YMV::non_const_value_type& beta, const YMV& Y, \
-          const ZMV::non_const_value_type& gamma, const ZMV& Z); \
-};
+                              2>;
 
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Update for rank == 2.  This is NOT for users!!!
 //
 
 #define KOKKOSBLAS1_IMPL_MV_UPDATE_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Update<Kokkos::View<const SCALAR**, \
+template struct Update<Kokkos::View<const SCALAR**, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -763,59 +738,7 @@ Update<Kokkos::View<const SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2>:: \
-update (const XMV::non_const_value_type& alpha, const XMV& X, \
-        const YMV::non_const_value_type& beta, const YMV& Y, \
-        const ZMV::non_const_value_type& gamma, const ZMV& Z) \
-{ \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  int a = 2, b = 2, c = 2; \
- \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  else { \
-    a = 2; \
-  } \
-  if (beta == ATB::zero ()) { \
-    b = 0; \
-  } \
-  else { \
-    b = 2; \
-  } \
-  if (gamma == ATC::zero ()) { \
-    c = 0; \
-  } \
-  else { \
-    c = 2; \
-  } \
- \
-  if (numCols == static_cast<size_type> (1)) { \
-    auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0); \
-    auto Y_0 = Kokkos::subview (Y, Kokkos::ALL (), 0); \
-    auto Z_0 = Kokkos::subview (Z, Kokkos::ALL (), 0); \
- \
-    if (numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-      typedef int index_type; \
-      V_Update_Generic<decltype (X_0), decltype (Y_0), decltype (Z_0), index_type> (alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c); \
-    } \
-    else { \
-      typedef typename XMV::size_type index_type; \
-      V_Update_Generic<decltype (X_0), decltype (Y_0), decltype (Z_0), index_type> (alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c); \
-    } \
-  } \
-  else { \
-    if (numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-      typedef int index_type; \
-      MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
-    } \
-    else { \
-      typedef typename XMV::size_type index_type; \
-      MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
-    } \
-  } \
-}
+                       2>;
 
 //
 // Macro for declaration of full specialization of
@@ -826,8 +749,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X, \
 //
 
 #define KOKKOSBLAS1_IMPL_V_UPDATE_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Update<Kokkos::View<const SCALAR*, \
+extern template struct Update<Kokkos::View<const SCALAR*, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -839,38 +761,14 @@ struct Update<Kokkos::View<const SCALAR*, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-              1> \
-{ \
-  typedef Kokkos::View<const SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
-  typedef Kokkos::View<const SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
-  typedef Kokkos::View<SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > ZV; \
-  typedef XV::size_type size_type; \
-  typedef Kokkos::Details::ArithTraits<XV::non_const_value_type> ATA; \
-  typedef Kokkos::Details::ArithTraits<YV::non_const_value_type> ATB; \
-  typedef Kokkos::Details::ArithTraits<ZV::non_const_value_type> ATC; \
- \
-  static void \
-  update (const XV::non_const_value_type& alpha, const XV& X, \
-          const YV::non_const_value_type& beta, const YV& Y, \
-          const ZV::non_const_value_type& gamma, const ZV& Z); \
-};
+                              1>;
 
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Update for rank == 1.  This is NOT for users!!!
 //
 
 #define KOKKOSBLAS1_IMPL_V_UPDATE_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Update<Kokkos::View<const SCALAR*, \
+template struct Update<Kokkos::View<const SCALAR*, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -882,61 +780,7 @@ Update<Kokkos::View<const SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1>:: \
-update (const XV::non_const_value_type& alpha, const XV& X, \
-        const YV::non_const_value_type& beta, const YV& Y, \
-        const ZV::non_const_value_type& gamma, const ZV& Z) \
-{ \
-  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::" \
-                 "Update<rank 1>::update: X is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::" \
-                 "Update<rank 1>::update: Y is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::" \
-                 "Update<rank 1>::update: Z is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_same<ZV::value_type, \
-                 ZV::non_const_value_type>::value, \
-                 "KokkosBlas::Impl::Update<rank 1>::update: Z is const.  " \
-                 "It must be nonconst, because it is an output argument " \
-                 "(we have to be able to write to its entries)."); \
-  static_assert ((int) ZV::rank == (int) XV::rank && (int) ZV::rank == (int) YV::rank, \
-                 "KokkosBlas::Impl::Update<rank 1>::update: " \
-                 "X, Y, and Z must have the same rank."); \
-  static_assert (ZV::rank == 1, "KokkosBlas::Impl::Update<rank 1>::update: " \
-                 "XV, YV, and ZV must have rank 1."); \
- \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  int a = 2, b = 2, c = 2; \
- \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  else { \
-    a = 2; \
-  } \
-  if (beta == ATB::zero ()) { \
-    b = 0; \
-  } \
-  else { \
-    b = 2; \
-  } \
-  if (gamma == ATC::zero ()) { \
-    c = 0; \
-  } \
-  else { \
-    c = 2; \
-  } \
- \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    V_Update_Generic<XV, YV, ZV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
-  } \
-  else { \
-    typedef XV::size_type index_type; \
-    V_Update_Generic<XV, YV, ZV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
-  } \
-}
+                       1>;
 
 } // namespace Impl
 } // namespace KokkosBlas
