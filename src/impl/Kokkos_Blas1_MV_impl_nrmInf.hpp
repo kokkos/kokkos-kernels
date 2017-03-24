@@ -318,8 +318,7 @@ struct NrmInf_MV<RV, XV, 1> {
 //
 
 #define KOKKOSBLAS1_IMPL_MV_NRMINF_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+extern template struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
                             EXEC_SPACE::array_layout, \
                             Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -327,18 +326,7 @@ struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::
                             LAYOUT, \
                             Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-               2> \
-{ \
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
-                       EXEC_SPACE::array_layout, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  static void nrmInf (const RV& r, const XMV& X); \
-};
+                                 2>;
 
 //
 // Macro for declaration of full specialization of
@@ -346,8 +334,7 @@ struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::
 //
 
 #define KOKKOSBLAS1_IMPL_MV_NRMINF_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+template struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
                        EXEC_SPACE::array_layout, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -355,21 +342,7 @@ NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_typ
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          2>:: \
-nrmInf (const RV& r, const XMV& X) \
-{ \
-  typedef XMV::size_type size_type; \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
- \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    MV_NrmInf_Invoke<RV, XMV, int> (r, X); \
-  } \
-  else { \
-    MV_NrmInf_Invoke<RV, XMV, size_type> (r, X); \
-  } \
-}
+                          2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
