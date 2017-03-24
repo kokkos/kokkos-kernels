@@ -9,7 +9,7 @@ ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
 ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Pthread,HostSpace Serial,HostSpace"
 
-mkdir generated_specilizations/${Function}
+mkdir generated_specializations/${Function}
 filename_hpp=generated_specializations/${Function}/${FunctionExtended}_decl_specialization.hpp
 Function_UpperCase=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 
