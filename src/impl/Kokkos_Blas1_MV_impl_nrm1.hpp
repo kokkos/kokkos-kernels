@@ -369,5 +369,5 @@ nrm1 (const RV& r, const XMV& X) \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_MV_nrm1_decl_specializations.hpp>
+#include<generated_specializations/nrm1/KokkosBlas1_impl_MV_nrm1_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_NRM1_HPP_

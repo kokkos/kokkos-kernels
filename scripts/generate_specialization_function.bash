@@ -1,16 +1,17 @@
 #!/bin/bash
 
-Function=$1
-MasterHeader=$2
-NameSpace=$3
-KokkosKernelsPath=$4
+Function=$1             #e.g. abs: function name
+FunctionExtended=$2     #e.g. KokkosBlas1_impl_MV_abs: prefix for files etc.
+MasterHeader=$3         #e.g. Kokkos_Blas1_MV_impl_abs.hpp: where the actual function definition and declaration lives 
+NameSpace=$4            #e.g. KokkosBlas: namespace it lives in 
+KokkosKernelsPath=$5
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
 ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Pthread,HostSpace Serial,HostSpace"
 
-
-filename_hpp=generated_specializations/${Function}_decl_specialization.hpp
-Function_UpperCase=`echo ${Function} | awk '{print toupper($0)}'`
+mkdir generated_specilizations/${Function}
+filename_hpp=generated_specializations/${Function}/${FunctionExtended}_decl_specialization.hpp
+Function_UpperCase=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 
 
 echo "#ifndef ${Function_UpperCase}_DECL_SPECIALISATION_HPP_" > ${filename_hpp}
@@ -27,8 +28,8 @@ for ExecMemSpace in ${ExecMemSpaceList}; do
    ExecMemSpaceArray=(${ExecMemSpace//,/ })
    ExecSpace=${ExecMemSpaceArray[0]}
    MemSpace=${ExecMemSpaceArray[1]}
-   echo "Generate: " ${Function} " " ${Scalar} " " ${Layout} " " ${ExecSpace} " " ${MemSpace}
-   ${KokkosKernelsPath}/scripts/generate_specialization_type.bash ${Function} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
+   echo "Generate: " ${FunctionExtended} " " ${Scalar} " " ${Layout} " " ${ExecSpace} " " ${MemSpace}
+   ${KokkosKernelsPath}/scripts/generate_specialization_type.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
 done
 done
 done

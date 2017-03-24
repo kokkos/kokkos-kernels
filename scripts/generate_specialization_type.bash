@@ -1,22 +1,23 @@
 #!/bin/bash
-Function=$1
-Scalar=$2
-Layout=$3
-ExecSpace=$4
-MemSpace=$5
-filename_master_hpp=$6
-NameSpace=$7
-KokkosKernelsPath=$8
+Function=$1                 #e.g. abs: function name
+FunctionExtended=$2         #e.g. KokkosBlas1_impl_MV_abs: prefix for files etc.
+Scalar=$3                   #e.g. double
+Layout=$4                   #e.g. LayoutLeft
+ExecSpace=$5                #e.g. OpenMP
+MemSpace=$6                 #e.g. HostSpace
+filename_master_hpp=$7      #e.g. Kokkos_Blas1_MV_impl_abs.hpp: where the actual function definition and declaration lives 
+NameSpace=$8                #e.g. KokkosBlas: namespace it lives in
+KokkosKernelsPath=$8        
 
-Macro=`echo ${Function} | awk '{print toupper($0)}'`
+Macro=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 Scalar_UpperCase=`echo ${Scalar} | awk '{print toupper($0)}' | sed 's|\:\:|\_|g' | sed 's|<|_|g' | sed 's|>|_|g'`
 Scalar_FileName=`echo ${Scalar} | sed 's|\:\:|\_|g' | sed 's|<|_|g' | sed 's|>|_|g'`
 Layout_UpperCase=`echo ${Layout} | awk '{print toupper($0)}'`
 ExecSpace_UpperCase=`echo ${ExecSpace} | awk '{print toupper($0)}'`
 MemSpace_UpperCase=`echo ${MemSpace} | awk '{print toupper($0)}'`
 
-filename_cpp=generated_specializations/${Function}_inst_specialization_${Scalar_FileName}_${Layout}_${ExecSpace}_${MemSpace}.cpp
-filename_hpp=generated_specializations/${Function}_decl_specialization.hpp
+filename_cpp=generated_specializations/${Function}/${FunctionExtended}_inst_specialization_${Scalar_FileName}_${Layout}_${ExecSpace}_${MemSpace}.cpp
+filename_hpp=generated_specializations/${Function}/${FunctionExtended}_decl_specialization.hpp
 
 
 cat ${KokkosKernelsPath}/scripts/header > ${filename_cpp}

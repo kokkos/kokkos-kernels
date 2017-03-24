@@ -461,5 +461,5 @@ mult (CMV::const_value_type& c, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
+#include<generated_specializations/mult/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_MULT_HPP_

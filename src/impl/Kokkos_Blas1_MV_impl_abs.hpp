@@ -374,6 +374,6 @@ abs (const RMV& R, const XMV& X) \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_MV_abs_decl_specializations.hpp>
+#include<generated_specializations/abs/KokkosBlas1_impl_MV_abs_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_

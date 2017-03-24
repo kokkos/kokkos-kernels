@@ -1167,8 +1167,8 @@ scal (const RV& R, const AV& alpha, const XV& X) \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_MV_scal_multicoeff_decl_specializations.hpp>
-#include<generated_specializations/KokkosBlas1_impl_MV_scal_singlecoeff_decl_specializations.hpp>
-#include<generated_specializations/KokkosBlas1_impl_V_scal_singlecoeff_decl_specializations.hpp>
+#include<generated_specializations/scal/KokkosBlas1_impl_MV_scal_multicoeff_decl_specializations.hpp>
+#include<generated_specializations/scal/KokkosBlas1_impl_MV_scal_singlecoeff_decl_specializations.hpp>
+#include<generated_specializations/scal/KokkosBlas1_impl_V_scal_singlecoeff_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_SCAL_HPP_

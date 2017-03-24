@@ -2312,7 +2312,7 @@ axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_V_axpby_decl_specializations.hpp>
-#include<generated_specializations/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp>
+#include<generated_specializations/axpby/KokkosBlas1_impl_V_axpby_decl_specializations.hpp>
+#include<generated_specializations/axpby/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_

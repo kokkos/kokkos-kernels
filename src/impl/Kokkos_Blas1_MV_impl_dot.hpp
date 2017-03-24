@@ -671,7 +671,8 @@ dot (const RV& r, const XV& X, const XV& Y) \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_V_dot_decl_specializations.hpp>
-#include<generated_specializations/KokkosBlas1_impl_MV_dot_decl_specializations.hpp>
+#include<Kokkos_Blas1_V_impl_dot.hpp>
+#include<generated_specializations/dot/KokkosBlas1_impl_V_dot_decl_specializations.hpp>
+#include<generated_specializations/dot/KokkosBlas1_impl_MV_dot_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

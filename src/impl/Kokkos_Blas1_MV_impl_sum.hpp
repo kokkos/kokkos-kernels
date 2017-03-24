@@ -359,5 +359,5 @@ sum (const RV& r, const XMV& X) \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_MV_sum_decl_specializations.hpp>
+#include<generated_specializations/sum/KokkosBlas1_impl_MV_sum_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_SUM_HPP_

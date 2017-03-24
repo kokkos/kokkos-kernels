@@ -371,5 +371,5 @@ reciprocal (const RMV& R, const XMV& X) \
 
 } // namespace Impl
 } // namespace KokkosBlas
-#include<generated_specializations/KokkosBlas1_impl_MV_recip_decl_specializations.hpp>
+#include<generated_specializations/recip/KokkosBlas1_impl_MV_recip_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_RECIPROCAL_HPP_

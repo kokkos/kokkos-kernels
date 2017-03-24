@@ -332,4 +332,6 @@ nrm2w_squared (const RV& r, const XMV& X, const XMV& W) \
 } // namespace Impl
 } // namespace KokkosBlas
 
+#include<generated_specializations/nrm2/KokkosBlas1_impl_MV_nrm2_decl_specializations.hpp>
+
 #endif // KOKKOS_BLAS1_MV_IMPL_NORMW_HPP_

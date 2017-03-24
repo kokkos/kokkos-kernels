@@ -941,6 +941,6 @@ update (const XV::non_const_value_type& alpha, const XV& X, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations/KokkosBlas1_impl_V_update_decl_specializations.hpp>
-#include<generated_specializations/KokkosBlas1_impl_MV_update_decl_specializations.hpp>
+#include<generated_specializations/update/KokkosBlas1_impl_V_update_decl_specializations.hpp>
+#include<generated_specializations/update/KokkosBlas1_impl_MV_update_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_
