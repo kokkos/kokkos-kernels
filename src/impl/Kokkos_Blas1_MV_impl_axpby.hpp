@@ -1987,37 +1987,17 @@ struct Axpby<typename XV::non_const_value_type, XV,
 //
 
 #define KOKKOSBLAS1_IMPL_MV_AXPBY_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Axpby<SCALAR, \
-             Kokkos::View<const SCALAR**, \
-                          LAYOUT, \
-                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-             SCALAR, \
+extern template struct Axpby<SCALAR, \
+                             Kokkos::View<const SCALAR**, \
+                               LAYOUT, \
+                               Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                             SCALAR, \
              Kokkos::View<SCALAR**, \
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-             2> \
-{ \
-  typedef SCALAR AV; \
-  typedef Kokkos::View<const SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
-  typedef SCALAR BV; \
-  typedef Kokkos::View<SCALAR**, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV; \
-  typedef YMV::size_type size_type; \
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB; \
-  \
-  static void \
-  axpby (const XMV::non_const_value_type& alpha, const XMV& X, \
-         const YMV::non_const_value_type& beta, const YMV& Y); \
-};
+                             2>;
 
 //
 // Macro for declaration of full specialization of
@@ -2028,8 +2008,7 @@ struct Axpby<SCALAR, \
 //
 
 #define KOKKOSBLAS1_IMPL_V_AXPBY_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template<> \
-struct Axpby<SCALAR, \
+extern template struct Axpby<SCALAR, \
              Kokkos::View<const SCALAR*, \
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -2039,25 +2018,7 @@ struct Axpby<SCALAR, \
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-             1> \
-{ \
-  typedef SCALAR AV; \
-  typedef Kokkos::View<const SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
-  typedef SCALAR BV; \
-  typedef Kokkos::View<SCALAR*, \
-                       LAYOUT, \
-                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
-  typedef YV::size_type size_type; \
-  typedef Kokkos::Details::ArithTraits<XV::non_const_value_type> ATA; \
-  typedef Kokkos::Details::ArithTraits<YV::non_const_value_type> ATB; \
-  \
-  static void \
-  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y); \
-};
+                             1>;
 
 //
 // Macro for definition of full specialization of
@@ -2068,8 +2029,7 @@ struct Axpby<SCALAR, \
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
 #define KOKKOSBLAS1_IMPL_MV_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Axpby<SCALAR, \
+template struct Axpby<SCALAR, \
       Kokkos::View<const SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -2079,47 +2039,12 @@ Axpby<SCALAR, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2>:: \
-axpby (const XMV::non_const_value_type& alpha, \
-       const XMV& X, const YMV::non_const_value_type& beta, \
-       const YMV& Y) \
-{ \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  int a, b; \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  else { \
-    a = 2; \
-  } \
-  if (beta == ATB::zero ()) { \
-    b = 0; \
-  } \
-  else { \
-    b = 2; \
-  } \
-  \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
-      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
-                                                   beta, Y, a, b); \
-  } \
-  else { \
-    typedef XMV::size_type index_type; \
-    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
-      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
-                                                   beta, Y, a, b); \
-  } \
-}
+                      2>;
 
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
 #define KOKKOSBLAS1_IMPL_MV_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Axpby<SCALAR, \
+template struct Axpby<SCALAR, \
       Kokkos::View<const SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -2129,53 +2054,7 @@ Axpby<SCALAR, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2>:: \
-axpby (const XMV::non_const_value_type& alpha, \
-       const XMV& X, const YMV::non_const_value_type& beta, \
-       const YMV& Y) \
-{ \
-  const size_type numRows = X.dimension_0 (); \
-  const size_type numCols = X.dimension_1 (); \
-  int a, b; \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  else if (alpha == -ATA::one ()) { \
-    a = -1; \
-  } \
-  else if (alpha == ATA::one ()) { \
-    a = 1; \
-  } \
-  else { \
-    a = 2; \
-  } \
-  if (beta == ATB::zero ()) { \
-    b = 0; \
-  } \
-  else if (beta == -ATB::one ()) { \
-    b = -1; \
-  } \
-  else if (beta == ATB::one ()) { \
-    b = 1; \
-  } \
-  else { \
-    b = 2; \
-  } \
-  \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
-      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
-                                                   beta, Y, a, b); \
-  } \
-  else { \
-    typedef XMV::size_type index_type; \
-    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
-      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
-                                                   beta, Y, a, b); \
-  } \
-}
+                      2>;
 
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
 
@@ -2188,8 +2067,7 @@ axpby (const XMV::non_const_value_type& alpha, \
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
 #define KOKKOSBLAS1_IMPL_V_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Axpby<SCALAR, \
+template struct Axpby<SCALAR, \
       Kokkos::View<const SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -2199,52 +2077,12 @@ Axpby<SCALAR, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1>:: \
-axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
-{ \
-  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::" \
-                 "Axpby<rank-1>::axpby: X is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::" \
-                 "Axpby<rank-1>::axpby: Y is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_same<YV::value_type, \
-                 YV::non_const_value_type>::value, \
-                 "KokkosBlas::Impl::Axpby<rank-1>::axpby: Y is const.  " \
-                 "It must be nonconst, because it is an output argument " \
-                 "(we have to be able to write to its entries)."); \
-  static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::" \
-                 "Axpby<rank-1>::axpby: X and Y must have the same rank."); \
-  static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: " \
-                 "X and Y must have rank 1."); \
- \
-  const size_type numRows = X.dimension_0 (); \
-  int a = 2; \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  int b = 2; \
-  if (beta == ATB::zero ()) { \
-    b = 0; \
-  } \
- \
-  if (numRows < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    V_Axpby_Generic<XV::non_const_value_type, XV, \
-      YV::non_const_value_type, YV, \
-      index_type> (alpha, X, beta, Y, 0, a, b); \
-  } \
-  else { \
-    typedef XV::size_type index_type; \
-    V_Axpby_Generic<XV::non_const_value_type, XV, \
-      YV::non_const_value_type, YV, \
-      index_type> (alpha, X, beta, Y, 0, a, b); \
-  } \
-}
+                      1>;
 
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
 #define KOKKOSBLAS1_IMPL_V_AXPBY_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-void \
-Axpby<SCALAR, \
+template struct Axpby<SCALAR, \
       Kokkos::View<const SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -2254,58 +2092,7 @@ Axpby<SCALAR, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1>:: \
-axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
-{ \
-  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::" \
-                 "Axpby<rank-1>::axpby: X is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::" \
-                 "Axpby<rank-1>::axpby: Y is not a Kokkos::View."); \
-  static_assert (Kokkos::Impl::is_same<YV::value_type, \
-                 YV::non_const_value_type>::value, \
-                 "KokkosBlas::Impl::Axpby<rank-1>::axpby: Y is const.  " \
-                 "It must be nonconst, because it is an output argument " \
-                 "(we have to be able to write to its entries)."); \
-  static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::" \
-                 "Axpby<rank-1>::axpby: X and Y must have the same rank."); \
-  static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: " \
-                 "X and Y must have rank 1."); \
- \
-  const size_type numRows = X.dimension_0 (); \
-  int a = 2; \
-  if (alpha == ATA::zero ()) { \
-    a = 0; \
-  } \
-  else if (alpha == -ATA::one ()) { \
-    a = -1; \
-  } \
-  else if (alpha == ATA::one ()) { \
-    a = 1; \
-  } \
-  int b = 2; \
-  if (beta == ATB::zero ()) { \
-    b = 0; \
-  } \
-  else if (beta == -ATB::one ()) { \
-    b = -1; \
-  } \
-  else if (beta == ATB::one ()) { \
-    b = 1; \
-  } \
- \
-  if (numRows < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    V_Axpby_Generic<XV::non_const_value_type, XV, \
-      YV::non_const_value_type, YV, \
-      index_type> (alpha, X, beta, Y, 0, a, b); \
-  } \
-  else { \
-    typedef XV::size_type index_type; \
-    V_Axpby_Generic<XV::non_const_value_type, XV, \
-      YV::non_const_value_type, YV, \
-      index_type> (alpha, X, beta, Y, 0, a, b); \
-  } \
-}
+                      1>;
 
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
 
