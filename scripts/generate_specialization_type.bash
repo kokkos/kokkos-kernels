@@ -7,7 +7,7 @@ ExecSpace=$5                #e.g. OpenMP
 MemSpace=$6                 #e.g. HostSpace
 filename_master_hpp=$7      #e.g. Kokkos_Blas1_MV_impl_abs.hpp: where the actual function definition and declaration lives 
 NameSpace=$8                #e.g. KokkosBlas: namespace it lives in
-KokkosKernelsPath=$8        
+KokkosKernelsPath=$9        
 
 Macro=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 Scalar_UpperCase=`echo ${Scalar} | awk '{print toupper($0)}' | sed 's|\:\:|\_|g' | sed 's|<|_|g' | sed 's|>|_|g'`

@@ -35,6 +35,6 @@ done
 done
 
 echo "} // Impl" >> ${filename_hpp}
-echo "} // $3" >> ${filename_hpp}
+echo "} // ${NameSpace}" >> ${filename_hpp}
 echo "#endif // ${Function_UpperCase}_DECL_SPECIALISATION_HPP_" >> ${filename_hpp}
 
