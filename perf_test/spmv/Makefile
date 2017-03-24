@@ -5,13 +5,12 @@ KOKKOS_ARCH = "SNB,Kepler35"
 # To enable Trilinos you need to copy KokkosKernels_config.h and KokkosKernels_ETIHelperMacros.h 
 # from an appropriately configure Trilinos build directory (you don't need to build).
 # The rest is accessed from Trilinos source.
-BUILD_TRILINOS = 1
+BUILD_KK_KERNELS = 1
 BUILD_CUSPARSE = 0
 BUILD_MKL = 0
 
 #Path settings
-TRILINOS_PATH = ${HOME}/Trilinos
-KOKKOS_PATH = ${HOME}/kokkos
+KOKKOS_PATH = ${HOME}/Kokkos/kokkos
 KOKKOS_KERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
 
 #MKL_PATH=/home/projects/install/rhel6-x86_64/sems/compiler/intel/16.0.1/base/mkl
@@ -51,9 +50,10 @@ CXXFLAGS += -I${MKL_PATH}/include -DHAVE_MKL -mkl
 LIB += ${MKL_LIBS} -mkl
 endif
 
-ifeq (${BUILD_TRILINOS}, 1)
-CXXFLAGS += -DHAVE_TRILINOS
-SRC += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/*spmv*.cpp)
+ifeq (${BUILD_KK_KERNELS}, 1)
+CXXFLAGS += -DHAVE_KK_KERNELS -DKOKKOSKERNELS_INST_SCALAR_DOUBLE -DKOKKOSKERNELS_INST_LAYOUT_LAYOUTRIGHT 
+CXXFLAGS += -DKOKKOSKERNELS_INST_EXECSPACE_SERIAL -DKOKKOSKERNELS_INST_EXECSPACE_HOSTSPACE
+SRC += $(wildcard ${KOKKOS_KERNELS_PATH}/src/impl/generated_specializations/spmv/*spmv*.cpp)
 endif
 
 

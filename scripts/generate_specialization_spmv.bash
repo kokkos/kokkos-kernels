@@ -7,6 +7,7 @@ NameSpace=$4            #e.g. KokkosBlas: namespace it lives in
 KokkosKernelsPath=$5
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
+OffsetType="int size_t"
 ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Pthread,HostSpace Serial,HostSpace"
 
 mkdir generated_specializations/${Function}
@@ -25,11 +26,13 @@ echo "namespace Impl {" >> ${filename_hpp}
 for Scalar in ${ScalarList}; do
 for Layout in ${LayoutList}; do
 for ExecMemSpace in ${ExecMemSpaceList}; do
+for Offset in ${OffsetType}; do
    ExecMemSpaceArray=(${ExecMemSpace//,/ })
    ExecSpace=${ExecMemSpaceArray[0]}
    MemSpace=${ExecMemSpaceArray[1]}
-   echo "Generate: " ${FunctionExtended} " " ${Scalar} " " ${Layout} " " ${ExecSpace} " " ${MemSpace}
-   ${KokkosKernelsPath}/scripts/generate_specialization_type.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
+   echo "Generate: " ${FunctionExtended} " " ${Scalar} " " ${Layout} " " ${ExecSpace} " " ${MemSpace} " " ${Offset}
+   ${KokkosKernelsPath}/scripts/generate_specialization_spmv_type.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${Offset} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
+done
 done
 done
 done
@@ -37,4 +40,3 @@ done
 echo "} // Impl" >> ${filename_hpp}
 echo "} // ${NameSpace}" >> ${filename_hpp}
 echo "#endif // ${Function_UpperCase}_DECL_SPECIALISATION_HPP_" >> ${filename_hpp}
-

@@ -282,7 +282,7 @@ template<class XV>
 struct Fill<XV, 1, true> {
   static void fill (const XV& X, const typename XV::non_const_value_type& val)
   {
-    typedef typename XMV::non_const_value_type SC;
+    typedef typename XV::non_const_value_type SC;
     typedef typename XV::size_type size_type;
     const size_type numRows = X.dimension_0 ();
 

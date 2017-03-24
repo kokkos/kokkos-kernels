@@ -46,6 +46,7 @@
 
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Kokkos_Blas1_MV.hpp"
+#include "Kokkos_Sparse_CrsMatrix.hpp"
 
 #ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
 #define KOKKOSSPARSE_ETI_ONLY
@@ -1378,7 +1379,7 @@ SPMV_MV<const SCALAR_TYPE, \
 } // namespace KokkosSparse
 
 #include "Kokkos_Sparse_impl_spmv_omp.hpp"
-#include<generated_specializations/spmv/KokkosSparse_impl_V_spmv_decl_specialization.hpp>
-#include<generated_specializations/spmv/KokkosSparse_impl_MV_spmv_decl_specialization.hpp>
+#include<generated_specializations/spmv/KokkosSparse_impl_V_spmv_decl_specializations.hpp>
+#include<generated_specializations/spmv/KokkosSparse_impl_MV_spmv_decl_specializations.hpp>
 
 #endif // KOKKOS_SPARSE_IMPL_SPMV_DEF_HPP_

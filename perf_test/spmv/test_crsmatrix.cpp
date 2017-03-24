@@ -156,7 +156,7 @@ void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int 
 		cusparse_matvec(A, x, y, rows_per_thread, team_size, vector_length);
 		break;
 #endif
-#ifdef HAVE_TRILINOS
+#ifdef HAVE_KK_KERNELS
 	case KK_KERNELS:
 		kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
 		break;
