@@ -17,7 +17,8 @@ Layout_UpperCase=`echo ${Layout} | awk '{print toupper($0)}'`
 ExecSpace_UpperCase=`echo ${ExecSpace} | awk '{print toupper($0)}'`
 MemSpace_UpperCase=`echo ${MemSpace} | awk '{print toupper($0)}'`
 
-filename_cpp=generated_specializations/${Function}/${FunctionExtended}_inst_specialization_${Scalar_FileName}_${Layout}_${ExecSpace}_${MemSpace}.cpp
+OffsetType_FileName=`echo ${OffsetType} | sed 's|\ |\_|g'`
+filename_cpp=generated_specializations/${Function}/${FunctionExtended}_inst_specialization_${Scalar_FileName}_${OffsetType_FileName}_${Layout}_${ExecSpace}_${MemSpace}.cpp
 filename_hpp=generated_specializations/${Function}/${FunctionExtended}_decl_specializations.hpp
 
 
