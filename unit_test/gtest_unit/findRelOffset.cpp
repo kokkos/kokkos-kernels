@@ -41,10 +41,12 @@
 //@HEADER
 */
 
-#include "Teuchos_UnitTestHarness.hpp"
+//#include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_Sparse_findRelOffset.hpp"
 #include "Kokkos_Core.hpp"
 #include <vector>
+#include <iostream>
+#include <gtest/gtest.h>
 
 namespace { // (anonymous)
   using std::endl;
@@ -53,16 +55,16 @@ namespace { // (anonymous)
   //
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
-  void generalTest (bool& success, Teuchos::FancyOStream& out)
+  void generalTest (bool& success, std::ostream &out)
   {
     using KokkosSparse::findRelOffset;
     typedef int LO;
     typedef Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space> DT;
     typedef Kokkos::View<const LO*, DT> IVT;
 
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "Test findRelOffset" << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     out << "Test empty arrays" << endl;
 
@@ -77,10 +79,13 @@ namespace { // (anonymous)
         LO offset =
           findRelOffset<LO, const LO* > (indsToSearch, numEnt,
                                          indToFind, hint, true);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
         offset = findRelOffset<LO, const LO* > (indsToSearch, numEnt,
                                                 indToFind, hint, false);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
       }
     }
 
@@ -99,14 +104,17 @@ namespace { // (anonymous)
         LO offset =
           findRelOffset<LO, const LO* > (indsToSearch, numEnt,
                                          indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
         offset = findRelOffset<LO, const LO* > (indsToSearch, numEnt,
                                                 indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test all indices that are in the array.
         for (LO k = 0; k < numEnt; ++k) {
@@ -118,11 +126,16 @@ namespace { // (anonymous)
             // 1 is a duplicate in this example.  Treat it as a special
             // case.  We don't specify which instance of duplicates the
             // function must return, so either one is fine.
+
+        	ASSERT_TRUE( (  offset == static_cast<LO> (0) || offset == static_cast<LO> (1) ));
+        	/*
             TEST_ASSERT( offset == static_cast<LO> (0) ||
                          offset == static_cast<LO> (1) );
+                         */
           }
           else {
-            TEST_EQUALITY( offset, k );
+        	EXPECT_TRUE( (offset == k ));
+            //TEST_EQUALITY( offset, k );
           }
         }
       }
@@ -148,14 +161,16 @@ namespace { // (anonymous)
         LO indNotThere = 4;
         LO offset = findRelOffset<LO, IVT> (indsToSearch, numEnt,
                                             indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
         offset = findRelOffset<LO, IVT> (indsToSearch, numEnt,
                                          indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test all indices that are in the array.
         for (LO k = 0; k < numEnt; ++k) {
@@ -166,11 +181,14 @@ namespace { // (anonymous)
             // 1 is a duplicate in this example.  Treat it as a special
             // case.  We don't specify which instance of duplicates the
             // function must return, so either one is fine.
-            TEST_ASSERT( offset == static_cast<LO> (0) ||
-                         offset == static_cast<LO> (1) );
+          	ASSERT_TRUE( (  offset == static_cast<LO> (0) || offset == static_cast<LO> (1) ));
+
+            //TEST_ASSERT( offset == static_cast<LO> (0) ||
+            //             offset == static_cast<LO> (1) );
           }
           else {
-            TEST_EQUALITY( offset, k );
+          	EXPECT_TRUE( (offset == k ));
+            //TEST_EQUALITY( offset, k );
           }
         }
       }
@@ -191,14 +209,16 @@ namespace { // (anonymous)
         LO offset =
           findRelOffset<LO, const LO* > (indsToSearch, numEnt,
                                          indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
         offset = findRelOffset<LO, const LO* > (indsToSearch, numEnt,
                                                 indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test all indices that are in the array.
         for (LO k = 0; k < numEnt; ++k) {
@@ -209,11 +229,13 @@ namespace { // (anonymous)
             // 1 is a duplicate in this example.  Treat it as a special
             // case.  We don't specify which instance of duplicates the
             // function must return, so either one is fine.
-            TEST_ASSERT( offset == static_cast<LO> (1) ||
-                         offset == static_cast<LO> (3) );
+           	ASSERT_TRUE( (  offset == static_cast<LO> (1) || offset == static_cast<LO> (3) ));
+            //TEST_ASSERT( offset == static_cast<LO> (1) ||
+            //             offset == static_cast<LO> (3) );
           }
           else {
-            TEST_EQUALITY( offset, k );
+        	EXPECT_TRUE( (offset == k ));
+            //TEST_EQUALITY( offset, k );
           }
         }
       }
@@ -239,14 +261,16 @@ namespace { // (anonymous)
         LO indNotThere = 4;
         LO offset = findRelOffset<LO, IVT> (indsToSearch, numEnt,
                                             indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
         offset = findRelOffset<LO, IVT> (indsToSearch, numEnt,
                                          indNotThere, hint, isSorted);
-        TEST_EQUALITY( offset, numEnt ); // not in the array
+        EXPECT_TRUE( (offset == numEnt ));
+        //TEST_EQUALITY( offset, numEnt ); // not in the array
 
         // Test all indices that are in the array.
         for (LO k = 0; k < numEnt; ++k) {
@@ -257,11 +281,16 @@ namespace { // (anonymous)
             // 1 is a duplicate in this example.  Treat it as a special
             // case.  We don't specify which instance of duplicates the
             // function must return, so either one is fine.
+        	ASSERT_TRUE( (  offset == static_cast<LO> (1) || offset == static_cast<LO> (3) ));
+        	/*
             TEST_ASSERT( offset == static_cast<LO> (1) ||
                          offset == static_cast<LO> (3) );
+            */
           }
           else {
-            TEST_EQUALITY( offset, k );
+            EXPECT_TRUE( (offset == k ));
+
+            //TEST_EQUALITY( offset, k );
           }
         }
       }
@@ -281,14 +310,14 @@ namespace { // (anonymous)
   //
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
-  void testLongArray (bool& success, Teuchos::FancyOStream& out)
+  void testLongArray (bool& success, std::ostream &out)
   {
     using KokkosSparse::findRelOffset;
     typedef long LO; // just for a change
 
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "Test findRelOffset with a long array" << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     // Start with the array [0, 1, 2, ..., 2n], where the number of
     // entries N = 2n+1 for natural numbers n.  Permute every other
@@ -325,11 +354,14 @@ namespace { // (anonymous)
         const LO offset0 =
           findRelOffset<LO, std::vector<LO> > (indsToSearch, N, indToFind,
                                                correctHint, false);
-        TEST_EQUALITY( offset0, expectedOffset );
+
+        EXPECT_TRUE( (offset0 == expectedOffset ));
+        //TEST_EQUALITY( offset0, expectedOffset );
         const LO offset1 =
           findRelOffset<LO, std::vector<LO> > (indsToSearch, N, indToFind,
                                                wrongHint, false);
-        TEST_EQUALITY( offset1, expectedOffset );
+        EXPECT_TRUE( (offset1 == expectedOffset ));
+        //TEST_EQUALITY( offset1, expectedOffset );
       }
       {
         // This is the "index not in array" case.  We only need to
@@ -339,7 +371,8 @@ namespace { // (anonymous)
         const LO offset0 =
           findRelOffset<LO, std::vector<LO> > (indsToSearch, N, indToFind,
                                                hint, false);
-        TEST_EQUALITY( offset0, N );
+        EXPECT_TRUE( (offset0 == N ));
+        //TEST_EQUALITY( offset0, N );
       }
     }
   }
@@ -350,14 +383,16 @@ int
 main (int argc, char* argv[])
 {
   using std::endl;
+  std::ostream &out = std::cout;
 
+  /*
   Teuchos::RCP<Teuchos::FancyOStream> outPtr =
     Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   Teuchos::FancyOStream& out = *outPtr;
-
-  Teuchos::OSTab tab0 (out);
+  */
+  //Teuchos::OSTab tab0 (out);
   out << "Test KokkosSparse::findRelOffset" << endl;
-  Teuchos::OSTab tab1 (out);
+  //Teuchos::OSTab tab1 (out);
 
   out << "Call Kokkos::initialize" << endl;
   Kokkos::initialize (argc, argv);

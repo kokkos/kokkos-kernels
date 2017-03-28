@@ -41,15 +41,16 @@
 //@HEADER
 */
 
-#include "Teuchos_UnitTestHarness.hpp"
+//#include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_Sparse_impl_MKL.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
+//#include "Teuchos_TypeNameTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <memory>
 
+#include "KokkosKernels_Test_Macros.hpp"
 namespace { // (anonymous)
 
-using Teuchos::TypeNameTraits;
+//using Teuchos::TypeNameTraits;
 using std::endl;
 typedef ::Kokkos::View<int*>::HostMirror::execution_space host_execution_space;
 typedef ::Kokkos::Device<host_execution_space, Kokkos::HostSpace> host_device_type;
@@ -64,7 +65,8 @@ struct TestMklSparseMatrixHandle {
 
   static void
   makeTestMatrixArrays (bool& success,
-                        Teuchos::FancyOStream& out,
+                        //Teuchos::FancyOStream& out,
+                        std::ostream &out,
                         Kokkos::View<OffsetType*, host_device_type>& ptr,
                         Kokkos::View<LocalOrdinalType*, host_device_type>& ind,
                         Kokkos::View<val_type*, host_device_type>& val,
@@ -72,10 +74,10 @@ struct TestMklSparseMatrixHandle {
                         const LocalOrdinalType numCols)
   {
     out << "Make test matrix:" << endl;
-    Teuchos::OSTab tab0 (out);
-    out << "ScalarType: " << TypeNameTraits<ScalarType>::name () << endl
-        << "LocalOrdinalType: " << TypeNameTraits<LocalOrdinalType>::name () << endl
-        << "OffsetType: " << TypeNameTraits<OffsetType>::name () << endl;
+    //Teuchos::OSTab tab0 (out);
+    out << "ScalarType: " << KokkosKernels::TypeNameTraits<ScalarType>::name () << endl
+        << "LocalOrdinalType: " << KokkosKernels::TypeNameTraits<LocalOrdinalType>::name () << endl
+        << "OffsetType: " << KokkosKernels::TypeNameTraits<OffsetType>::name () << endl;
 
     const OffsetType numEnt = (numRows <= 2) ? (2*numRows) : (3*(numRows - 2) + 4);
     out << "numRows: " << numRows << ", numEnt: " << numEnt << endl;
@@ -138,7 +140,8 @@ struct TestMklSparseMatrixHandle {
   // Create a test matrix, and attempt to wrap it in an MKL TPL handle.
   static std::shared_ptr<handle_type>
   makeHandle (bool& success,
-              Teuchos::FancyOStream& out,
+              //Teuchos::FancyOStream& out,
+			  std::ostream &out,
               const LocalOrdinalType numRows,
               const LocalOrdinalType numCols)
   {
@@ -154,11 +157,16 @@ struct TestMklSparseMatrixHandle {
     out << "Attempt to make MKL handle" << endl;
     std::shared_ptr<handle_type> handle;
 #ifdef HAVE_KOKKOSKERNELS_MKL
-    TEST_NOTHROW( handle = std::shared_ptr<handle_type> (new handle_type (A, false)) );
-    TEST_ASSERT( handle.get () != NULL );
+    //TEST_NOTHROW( handle = std::shared_ptr<handle_type> (new handle_type (A, false)) );
+    KK_TEST_NOTHROW( handle = std::shared_ptr<handle_type> (new handle_type (A, false)), out, success );
+    const bool l_result = handle.get () != NULL;
+    //TEST_ASSERT( handle.get () != NULL );
+    KK_TEST_ASSERT( l_result );
 #else
-    TEST_THROW( handle = std::shared_ptr<handle_type> (new handle_type (A, false)), std::runtime_error );
-    TEST_ASSERT( handle.get () == NULL );
+    //TEST_THROW( handle = std::shared_ptr<handle_type> (new handle_type (A, false)), std::runtime_error );
+    KK_TEST_THROW(  handle = std::shared_ptr<handle_type> (new handle_type (A, false)), std::runtime_error , out, success);
+    //TEST_ASSERT( handle.get () == NULL );
+    KK_TEST_ASSERT( handle.get () != NULL );
 #endif // HAVE_KOKKOSKERNELS_MKL
     return handle;
   }
@@ -167,7 +175,8 @@ struct TestMklSparseMatrixHandle {
 template<class ScalarType, class LocalOrdinalType, class OffsetType>
 void
 testMklSparseMatrixHandleOneCase (bool& success,
-                                  Teuchos::FancyOStream& out,
+                                  //Teuchos::FancyOStream& out,
+								  std::ostream &out,
                                   const LocalOrdinalType numRows,
                                   const LocalOrdinalType numCols)
 {
@@ -178,14 +187,15 @@ testMklSparseMatrixHandleOneCase (bool& success,
 template<class LocalOrdinalType, class OffsetType>
 void
 testAllScalars (bool& success,
-                Teuchos::FancyOStream& out,
+                //Teuchos::FancyOStream& out,
+				std::ostream &out,
                 const LocalOrdinalType numRows,
                 const LocalOrdinalType numCols)
 {
   {
     typedef double scalar_type;
     out << "Test ScalarType=double" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
 
     out << "Test conversion between our value_type and internal_value_type" << endl;
@@ -206,12 +216,14 @@ testAllScalars (bool& success,
     const auto x_back = converter_type::convertFromInternalValue (x_mkl);
     static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
                    "RawTplMatrixHandle<double>::convertFromInternalValue returns the wrong type");
-    TEST_EQUALITY( x_back, x_our );
+    //TEST_EQUALITY( x_back, x_our );
+    EXPECT_TRUE( (x_back == x_our ));
+
   }
   {
     typedef float scalar_type;
     out << "Test ScalarType=float" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
 
     typedef Kokkos::Details::ArithTraits<scalar_type>::val_type value_type;
@@ -230,12 +242,13 @@ testAllScalars (bool& success,
     const auto x_back = converter_type::convertFromInternalValue (x_mkl);
     static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
                    "RawTplMatrixHandle<float>::convertFromInternalValue returns the wrong type");
-    TEST_EQUALITY( x_back, x_our );
+    EXPECT_TRUE( (x_back == x_our ));
+    //TEST_EQUALITY( x_back, x_our );
   }
   {
     typedef std::complex<double> scalar_type;
     out << "Test ScalarType=std::complex<double>" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
 
     out << "Test conversion between our value_type and internal_value_type" << endl;
@@ -256,12 +269,13 @@ testAllScalars (bool& success,
     const auto x_back = converter_type::convertFromInternalValue (x_mkl);
     static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
                    "RawTplMatrixHandle<Kokkos::complex<double> >::convertFromInternalValue returns the wrong type");
-    TEST_EQUALITY( x_back, x_our );
+    EXPECT_TRUE( (x_back == x_our ));
+    //TEST_EQUALITY( x_back, x_our );
   }
   {
     typedef std::complex<float> scalar_type;
     out << "Test ScalarType=std::complex<float>" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
 
     out << "Test conversion between our value_type and internal_value_type" << endl;
@@ -282,38 +296,40 @@ testAllScalars (bool& success,
     const auto x_back = converter_type::convertFromInternalValue (x_mkl);
     static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
                    "RawTplMatrixHandle<Kokkos::complex<float> >::convertFromInternalValue returns the wrong type");
-    TEST_EQUALITY( x_back, x_our );
+    //TEST_EQUALITY( x_back, x_our );
+    EXPECT_TRUE( (x_back == x_our ));
+
   }
 }
 
 template<class OffsetType>
 void
-testAllScalarsAndLocalOrdinals (bool& success,
-                                Teuchos::FancyOStream& out)
+testAllScalarsAndLocalOrdinals (bool& success,std::ostream &out)
+                                //Teuchos::FancyOStream& out)
 {
   {
     typedef int LO;
     out << "Test LocalOrdinalType=int" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     {
       const LO numRows = 30;
       const LO numCols = 15;
       out << "Test numRows=" << numRows << ", numCols=" << numCols << endl;
-      Teuchos::OSTab tab1 (out);
+      //Teuchos::OSTab tab1 (out);
       testAllScalars<LO, OffsetType> (success, out, numRows, numCols);
     }
     {
       const LO numRows = 1;
       const LO numCols = 3;
       out << "Test numRows=" << numRows << ", numCols=" << numCols << endl;
-      Teuchos::OSTab tab1 (out);
+      //Teuchos::OSTab tab1 (out);
       testAllScalars<LO, OffsetType> (success, out, numRows, numCols);
     }
     {
       const LO numRows = 2;
       const LO numCols = 3;
       out << "Test numRows=" << numRows << ", numCols=" << numCols << endl;
-      Teuchos::OSTab tab1 (out);
+      //Teuchos::OSTab tab1 (out);
       testAllScalars<LO, OffsetType> (success, out, numRows, numCols);
     }
   }
@@ -321,51 +337,51 @@ testAllScalarsAndLocalOrdinals (bool& success,
   {
     typedef long long LO;
     out << "Test LocalOrdinalType=long long" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     {
       const LO numRows = 30;
       const LO numCols = 15;
       out << "Test numRows=" << numRows << ", numCols=" << numCols << endl;
-      Teuchos::OSTab tab1 (out);
+      //Teuchos::OSTab tab1 (out);
       testAllScalars<LO, OffsetType> (success, out, numRows, numCols);
     }
     {
       const LO numRows = 1;
       const LO numCols = 3;
       out << "Test numRows=" << numRows << ", numCols=" << numCols << endl;
-      Teuchos::OSTab tab1 (out);
+      //Teuchos::OSTab tab1 (out);
       testAllScalars<LO, OffsetType> (success, out, numRows, numCols);
     }
     {
       const LO numRows = 2;
       const LO numCols = 3;
       out << "Test numRows=" << numRows << ", numCols=" << numCols << endl;
-      Teuchos::OSTab tab1 (out);
+      //Teuchos::OSTab tab1 (out);
       testAllScalars<LO, OffsetType> (success, out, numRows, numCols);
     }
   }
 }
 
 void
-testEverything (bool& success,
-                Teuchos::FancyOStream& out)
+testEverything (bool& success, std::ostream &out)
+                //Teuchos::FancyOStream& out)
 {
   {
     typedef int offset_type;
     out << "Test OffsetType=int" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     testAllScalarsAndLocalOrdinals<offset_type> (success, out);
   }
   {
     typedef size_t offset_type;
     out << "Test OffsetType=size_t" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     testAllScalarsAndLocalOrdinals<offset_type> (success, out);
   }
   {
     typedef ptrdiff_t offset_type;
     out << "Test OffsetType=ptrdiff_t" << endl;
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     testAllScalarsAndLocalOrdinals<offset_type> (success, out);
   }
 }
@@ -376,10 +392,13 @@ int
 main (int argc, char* argv[])
 {
   using std::endl;
+  std::ostream &out = std::cout;
 
+  /*
   Teuchos::RCP<Teuchos::FancyOStream> outPtr =
     Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   Teuchos::FancyOStream& out = *outPtr;
+  */
 
   out << "Call Kokkos::initialize" << endl;
   Kokkos::initialize (argc, argv);

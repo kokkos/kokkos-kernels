@@ -41,9 +41,12 @@
 //@HEADER
 */
 
-#include "Teuchos_UnitTestHarness.hpp"
+//#include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include <gtest/gtest.h>
+#include "KokkosKernels_Test_Macros.hpp"
+
 
 // mfh 21 Jun 2016: CUDA 7.5 with GCC 4.8.4 gives me funny build
 // errors if I put this functor in an anonymous namespace.  If I name
@@ -152,7 +155,8 @@ namespace { // (anonymous)
   template<class CrsMatrixType>
   void
   testOneCase (bool& success,
-               Teuchos::FancyOStream& out,
+               //Teuchos::FancyOStream& out,
+          	   std::ostream &out,
                const CrsMatrixType& A,
                const bool replace,
                const bool sorted,
@@ -161,7 +165,7 @@ namespace { // (anonymous)
     using Kokkos::Details::ArithTraits;
     typedef typename CrsMatrixType::value_type value_type;
 
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "replace: " << (replace ? "true" : "false")
         << ", sorted: " << (sorted ? "true" : "false")
         << ", atomic: " << (atomic ? "true" : "false")
@@ -170,7 +174,7 @@ namespace { // (anonymous)
     modifyEvenNumberedRows (A, replace, sorted, atomic);
     const bool lclSuccess =
       checkWhetherEvenNumberedRowsWereModified (A, replace, sorted, atomic);
-    TEST_ASSERT( lclSuccess ); // this modifies 'success' and prints to 'out'
+    KK_TEST_ASSERT( lclSuccess ); // this modifies 'success' and prints to 'out'
     // Restore original values.
     Kokkos::deep_copy (A.values, ArithTraits<value_type>::one ());
   }
@@ -179,16 +183,17 @@ namespace { // (anonymous)
   //
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
-  void generalTest (bool& success, Teuchos::FancyOStream& out)
+  void generalTest (bool& success, std::ostream &out)
+		  	  	  	  	  	  	  //Teuchos::FancyOStream& out)
   {
     typedef double SC;
     typedef int LO;
     typedef Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space> DT;
     typedef KokkosSparse::CrsMatrix<SC, LO, DT> matrix_type;
 
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "Test KokkosSparse::CrsMatrix::{replace,sumInto}Values*" << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     out << "Create a diagonal matrix as a test problem" << endl;
 
@@ -245,10 +250,12 @@ main (int argc, char* argv[])
 {
   using std::endl;
 
+  /*
   Teuchos::RCP<Teuchos::FancyOStream> outPtr =
     Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   Teuchos::FancyOStream& out = *outPtr;
-
+  */
+  std::ostream &out = std::cout;
   out << "Call Kokkos::initialize" << endl;
   Kokkos::initialize (argc, argv);
 

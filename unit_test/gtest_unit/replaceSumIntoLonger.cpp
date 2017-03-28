@@ -41,11 +41,11 @@
 //@HEADER
 */
 
-#include "Teuchos_UnitTestHarness.hpp"
+//#include "Teuchos_UnitTestHarness.hpp"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <sstream>
-
+#include "KokkosKernels_Test_Macros.hpp"
 // mfh 21 Jun 2016: CUDA 7.5 with GCC 4.8.4 gives me funny build
 // errors if I put this functor in an anonymous namespace.  If I name
 // the namespace, it builds just fine.
@@ -131,14 +131,15 @@ namespace { // (anonymous)
   template<class CrsMatrixType, const int numEntToModify>
   void
   modifyEntries (bool& success,
-                 Teuchos::FancyOStream& outRef, // see notes
+		  	  	  std::ostream &outRef,
+                 //Teuchos::FancyOStream& outRef, // see notes
                  const CrsMatrixType& A,
                  const bool replace,
                  const bool sorted,
                  const bool atomic,
                  const bool debug = false)
   {
-    using Teuchos::RCP;
+    //using Teuchos::RCP;
     typedef typename CrsMatrixType::device_type::execution_space execution_space;
     typedef typename CrsMatrixType::ordinal_type ordinal_type;
     typedef Kokkos::RangePolicy<execution_space, ordinal_type> policy_type;
@@ -153,14 +154,13 @@ namespace { // (anonymous)
     // 'out'.  They expect the variable to have that name.  That's why
     // the input argument to this function has a different name -- so
     // we can replace it here.
-    RCP<std::ostringstream> dbgOutPtr;
+    std::ostringstream *dbgOutPtr;
     if (! debug) {
-      dbgOutPtr = Teuchos::rcp (new std::ostringstream ());
+      dbgOutPtr = new std::ostringstream ();
     }
-    RCP<Teuchos::FancyOStream> outPtr = debug ?
-      Teuchos::rcpFromRef (outRef) :
-      Teuchos::getFancyOStream (dbgOutPtr);
-    Teuchos::FancyOStream& out = *outPtr;
+    std::ostream *outPtr = debug ?
+      &outRef: dbgOutPtr;
+    //Teuchos::FancyOStream& out = *outPtr;
 
     functor_type functor (A, replace, sorted, atomic);
     ordinal_type numModified = 0;
@@ -171,24 +171,29 @@ namespace { // (anonymous)
       static_cast<ordinal_type> (numEntToModify) <= A.numCols () ?
       static_cast<ordinal_type> (numEntToModify) :
       A.numCols ();
-    TEST_EQUALITY( numModified, numEntShouldModify );
+    //TEST_EQUALITY( numModified, numEntShouldModify );
+    EXPECT_TRUE( (numModified == numEntShouldModify) );
 
     if (! success && ! debug) {
       outRef << dbgOutPtr->str ();
+    }
+    if (! debug) {
+      delete dbgOutPtr;
     }
   }
 
   template<class CrsMatrixType, const int numEntToModify>
   void
   checkWhetherEntriesWereModified (bool& success,
-                                   Teuchos::FancyOStream& outRef, // see notes
+		  	  	  	  	  	  	   std::ostream &outRef,
+								   //Teuchos::FancyOStream& outRef, // see notes
                                    const CrsMatrixType& A,
                                    const bool replace,
                                    const bool /* sorted */,
                                    const bool /* atomic */,
                                    const bool debug = false)
   {
-    using Teuchos::RCP;
+    //using Teuchos::RCP;
     typedef typename CrsMatrixType::value_type value_type;
     typedef typename CrsMatrixType::ordinal_type ordinal_type;
     typedef Kokkos::Details::ArithTraits<value_type> KAT;
@@ -202,15 +207,13 @@ namespace { // (anonymous)
     // 'out'.  They expect the variable to have that name.  That's why
     // the input argument to this function has a different name -- so
     // we can replace it here.
-    RCP<std::ostringstream> dbgOutPtr;
+    std::ostringstream *dbgOutPtr;
     if (! debug) {
-      dbgOutPtr = Teuchos::rcp (new std::ostringstream ());
+      dbgOutPtr = new std::ostringstream ();
     }
-    RCP<Teuchos::FancyOStream> outPtr = debug ?
-      Teuchos::rcpFromRef (outRef) :
-      Teuchos::getFancyOStream (dbgOutPtr);
-    Teuchos::FancyOStream& out = *outPtr;
-
+    std::ostream *outPtr = debug ?
+      &outRef: dbgOutPtr;
+    std::ostream &out = *outPtr;
     const value_type ONE = KAT::one ();
     const ordinal_type ncol =
       A.numCols () < static_cast<ordinal_type> (numEntToModify) ?
@@ -222,14 +225,14 @@ namespace { // (anonymous)
     // ordinal_type.
     const ordinal_type lowerBound = A.numCols () - ncol;
 
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "check: "
         << "{numCols: " << A.numCols ()
         << ", numEntToModify: " << numEntToModify
         << ", ncol: " << ncol
         << ", lowerBound: " << lowerBound
         << "}" << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     auto val_h = Kokkos::create_mirror_view (A.values);
     Kokkos::deep_copy (val_h, A.values);
@@ -237,7 +240,9 @@ namespace { // (anonymous)
     Kokkos::deep_copy (ind_h, A.graph.entries);
 
     const ordinal_type numRows = A.numRows ();
-    TEST_EQUALITY( numRows, static_cast<ordinal_type> (1) );
+    //TEST_EQUALITY( numRows, static_cast<ordinal_type> (1) );
+    EXPECT_TRUE( (numRows == static_cast<ordinal_type> (1)) );
+
     if (numRows != static_cast<ordinal_type> (1)) {
       return; // stop the test early
     }
@@ -276,12 +281,16 @@ namespace { // (anonymous)
     if (! success && ! debug) {
       outRef << dbgOutPtr->str ();
     }
+    if (! debug) {
+      delete dbgOutPtr;
+    }
   }
 
   template<class CrsMatrixType, const int numEntriesToModify>
   void
   testOneCaseImpl (bool& success,
-                   Teuchos::FancyOStream& out,
+		  	  	   std::ostream &out,
+				   //Teuchos::FancyOStream& out,
                    const CrsMatrixType& A,
                    const bool replace,
                    const bool sorted,
@@ -292,14 +301,14 @@ namespace { // (anonymous)
     typedef typename CrsMatrixType::ordinal_type ordinal_type;
 
     if (A.numCols () >= static_cast<ordinal_type> (numEntriesToModify)) {
-      Teuchos::OSTab tab0 (out);
+      //Teuchos::OSTab tab0 (out);
       out << "numEntriesToModify: " << numEntriesToModify << endl;
       bool lclSuccess = true;
       modifyEntries<CrsMatrixType, numEntriesToModify> (lclSuccess, out, A, replace, sorted, atomic, debug);
       // If modifyEntries didn't work, no need to test further.
       if (lclSuccess) {
         checkWhetherEntriesWereModified<CrsMatrixType, numEntriesToModify> (lclSuccess, out, A, replace, sorted, atomic, debug);
-        TEST_ASSERT( lclSuccess ); // this modifies 'success' and prints to 'out'
+        KK_TEST_ASSERT( lclSuccess ); // this modifies 'success' and prints to 'out'
       }
 
       // Restore original values.
@@ -318,7 +327,8 @@ namespace { // (anonymous)
   struct TestOneCase {
     static void
     test (bool& success,
-          Teuchos::FancyOStream& out,
+    	  std::ostream &out,
+		  //Teuchos::FancyOStream& out,
           const CrsMatrixType& A,
           const bool replace,
           const bool sorted,
@@ -339,7 +349,8 @@ namespace { // (anonymous)
   struct TestOneCase<CrsMatrixType, 1> {
     static void
     test (bool& success,
-          Teuchos::FancyOStream& out,
+    	  std::ostream &out,
+		  //Teuchos::FancyOStream& out,
           const CrsMatrixType& A,
           const bool replace,
           const bool sorted,
@@ -359,7 +370,8 @@ namespace { // (anonymous)
   struct TestOneCase<CrsMatrixType, 0> {
     static void
     test (bool& /* success */,
-          Teuchos::FancyOStream& /* out */,
+    	  std::ostream &out,
+		  //Teuchos::FancyOStream& /* out */,
           const CrsMatrixType& /* A */,
           const bool /* replace */,
           const bool /* sorted */,
@@ -371,19 +383,20 @@ namespace { // (anonymous)
   template<class CrsMatrixType>
   void
   testOneCase (bool& success,
-               Teuchos::FancyOStream& out,
+		  	   std::ostream &out,
+			   //Teuchos::FancyOStream& out,
                const CrsMatrixType& A,
                const bool replace,
                const bool sorted,
                const bool atomic,
                const bool debug = false)
   {
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "replace: " << (replace ? "true" : "false")
         << ", sorted: " << (sorted ? "true" : "false")
         << ", atomic: " << (atomic ? "true" : "false")
         << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     constexpr int maxNumEntriesToModify = 128;
     // Invoke template recursion.
@@ -393,11 +406,11 @@ namespace { // (anonymous)
   template<class CrsMatrixType>
   void
   testOneSize (bool& success,
-               Teuchos::FancyOStream& out,
+		  	  std::ostream &out,//Teuchos::FancyOStream& out,
                const CrsMatrixType& A,
                const bool debug = false)
   {
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "testOneSize: {numRows: " << A.numRows ()
         << ", numCols: " << A.numCols () << "}" << endl;
 
@@ -423,7 +436,7 @@ namespace { // (anonymous)
   template<class CrsMatrixType>
   void
   testAllSizes (bool& success,
-                Teuchos::FancyOStream& out,
+		  	    std::ostream &out, //Teuchos::FancyOStream& out,
                 const typename CrsMatrixType::size_type maxNumEnt,
                 const bool debug = false)
   {
@@ -433,9 +446,9 @@ namespace { // (anonymous)
     typedef typename matrix_type::size_type size_type;
     const value_type ONE = Kokkos::Details::ArithTraits<value_type>::one ();
 
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "maxNumEnt: " << maxNumEnt << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     // This directory already has a test (replaceSumInto.cpp) for
     // matrices with more than one row.  Thus, for this test, we can
@@ -488,7 +501,7 @@ namespace { // (anonymous)
   // those names.
   void
   generalTest (bool& success,
-               Teuchos::FancyOStream& out,
+		  	   std::ostream &out, //Teuchos::FancyOStream& out,
                const bool debug = false)
   {
     typedef double SC;
@@ -496,9 +509,9 @@ namespace { // (anonymous)
     typedef Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space> DT;
     typedef KokkosSparse::CrsMatrix<SC, LO, DT> matrix_type;
 
-    Teuchos::OSTab tab0 (out);
+    //Teuchos::OSTab tab0 (out);
     out << "Test KokkosSparse::CrsMatrix::{replace,sumInto}Values*" << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     const matrix_type::size_type maxNumEnt = 1024;
     testAllSizes<matrix_type> (success, out, maxNumEnt, debug);
@@ -510,11 +523,12 @@ int
 main (int argc, char* argv[])
 {
   using std::endl;
-
+  std::ostream &out = std::cout;
+/*
   Teuchos::RCP<Teuchos::FancyOStream> outPtr =
     Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   Teuchos::FancyOStream& out = *outPtr;
-
+*/
   out << "Call Kokkos::initialize" << endl;
   Kokkos::initialize (argc, argv);
 

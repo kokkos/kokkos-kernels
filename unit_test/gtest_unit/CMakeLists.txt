@@ -16,6 +16,67 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
   TESTONLY
   )
+  
+ TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrixUnitTest
+  SOURCES TestCrsMatrix.cpp UnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  FAIL_REGULAR_EXPRESSION "  FAILED  "
+  TESTONLYLIBS  kokkoskernels_gtest
+  )
+  
+  
+# This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  copyIntegers
+  SOURCES copyIntegers.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  TESTONLYLIBS  kokkoskernels_gtest   
+  )
+  
+# This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  findRelOffset
+  SOURCES findRelOffset.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  TESTONLYLIBS  kokkoskernels_gtest
+  )
+  
+  # This test needs to be able to control when Kokkos gets initialized,
+	# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MKL_sparseMatrixHandle
+  SOURCES MKL_sparseMatrixHandle.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  TESTONLYLIBS  kokkoskernels_gtest  
+  )
+
+# This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  replaceSumInto
+  SOURCES replaceSumInto.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  TESTONLYLIBS  kokkoskernels_gtest
+  )
+  
+# This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  replaceSumIntoLonger
+  SOURCES replaceSumIntoLonger.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  TESTONLYLIBS  kokkoskernels_gtest  
+  )
+    
 
 #
 # Disabled test temporarily; see #978.

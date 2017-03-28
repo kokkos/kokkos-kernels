@@ -50,6 +50,8 @@
 #include <typeinfo>
 #include <utility> // std::pair
 #include <vector>
+#include <gtest/gtest.h>
+#include "KokkosKernels_Test_Macros.hpp"
 
 // CUDA 7.5 with GCC 4.8.4 doesn't always accept functors in an
 // anonymous namespace.  If I name the namespace, it builds just fine.
@@ -148,7 +150,8 @@ template<class OutputIntegerType,
          class InputDeviceType>
 void
 testCopyIntegersOneCase (bool& success,
-                         Teuchos::FancyOStream& out,
+                         //Teuchos::FancyOStream& out,
+                         std::ostream &out,
                          const std::string& outputIntegerType,
                          const std::string& outputDeviceType,
                          const std::string& inputIntegerType,
@@ -161,7 +164,7 @@ testCopyIntegersOneCase (bool& success,
       << ", OutputIntegerType: " << outputIntegerType
       << ", InputIntegerType: " << inputIntegerType
       << endl;
-  Teuchos::OSTab tab0 (out);
+  //Teuchos::OSTab tab0 (out);
   // out << "Min OutputIntegerType: "
   //     << std::numeric_limits<OutputIntegerType>::min () << endl
   //     << "Min InputIntegerType: "
@@ -185,12 +188,12 @@ testCopyIntegersOneCase (bool& success,
   {
     out << "Test the no-overflow case: values in "
       "[0, 1, 2, ..., " << (len-1) << "]" << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     iota (inView); // fill out with [0, 1, 2, ..., len-1]
     iota (outView_expected);
-    TEST_NOTHROW( copyIntegers (outView, inView) );
-    TEST_ASSERT( viewsEqual (outView, outView_expected) );
+    KK_TEST_NOTHROW( copyIntegers (outView, inView), out, success   );
+    KK_TEST_ASSERT( viewsEqual (outView, outView_expected) );
   }
 
   // If possible given the two integer types, test the overflow case.
@@ -206,7 +209,7 @@ testCopyIntegersOneCase (bool& success,
         << ", but max allowed output value is "
         << std::numeric_limits<OutputIntegerType>::max ()
         << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     iota (inView); // same as before, except...
     { // ... last entry gets a number too big to fit in InputIntegerType.
@@ -216,17 +219,17 @@ testCopyIntegersOneCase (bool& success,
       Kokkos::deep_copy (inView, inView_host);
     }
     // The function should catch overflow.
-    TEST_THROW( copyIntegers (outView, inView), std::runtime_error );
+    KK_TEST_THROW( copyIntegers (outView, inView), std::runtime_error, out, success);
   }
 
   if (std::is_signed<InputIntegerType>::value &&
       ! std::is_signed<OutputIntegerType>::value) {
     out << "Test that casts of negative signed numbers to unsigned also throw"
         << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
 
     iota (inView, true);
-    TEST_THROW( copyIntegers (outView, inView), std::runtime_error );
+    KK_TEST_THROW( copyIntegers (outView, inView), std::runtime_error, out, success );
   }
 }
 
@@ -234,7 +237,8 @@ template<class OutputIntegerType,
          class InputIntegerType>
 void
 testCopyIntegersAllDevices (bool& success,
-                            Teuchos::FancyOStream& out,
+                            //Teuchos::FancyOStream& out,
+                            std::ostream &out,
                             const std::string& outputIntegerType,
                             const std::string& inputIntegerType,
                             const bool testOnlyDefaultDevice)
@@ -310,9 +314,11 @@ testCopyIntegersAllDevices (bool& success,
 #  endif // defined(KOKKOS_HAVE_SERIAL)
 #endif // KOKKOS_HAVE_CUDA
 
-  TEUCHOS_TEST_FOR_EXCEPTION
+
+  KK_TEST_FOR_EXCEPTION
     (deviceType == "" || otherDeviceType == "", std::logic_error,
      "Failed to select two execution spaces for the test!");
+
 
   if (testOnlyDefaultDevice) {
     typedef Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space> device_type;
@@ -361,7 +367,8 @@ testCopyIntegersAllDevices (bool& success,
 
 void
 testCopyIntegers (bool& success,
-                  Teuchos::FancyOStream& out,
+                  //Teuchos::FancyOStream& out,
+                  std::ostream &out,
                   const bool testOnlyDefaultDevice)
 {
   // output, input
@@ -593,7 +600,7 @@ testCopyIntegers (bool& success,
 
   if (failedTypePairs.size () != 0) {
     out << "The following (output type, input type) pairs FAILED:" << endl;
-    Teuchos::OSTab tab1 (out);
+    //Teuchos::OSTab tab1 (out);
     for (size_t k = 0; k < failedTypePairs.size (); ++k) {
       out << "(" << failedTypePairs[k].first << ","
           << failedTypePairs[k].second << ")" << endl;
@@ -607,10 +614,12 @@ int
 main (int argc, char* argv[])
 {
   using std::endl;
-
+  std::ostream &out = std::cout;
+  /*
   Teuchos::RCP<Teuchos::FancyOStream> outPtr =
     Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   Teuchos::FancyOStream& out = *outPtr;
+  */
 
   out << "Call Kokkos::initialize" << endl;
   Kokkos::initialize (argc, argv);
