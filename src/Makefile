@@ -64,37 +64,43 @@ tmp := $(shell date >> KokkosKernels_config.tmp)
 tmp := $(shell echo "----------------------------------------------*/" >> KokkosKernels_config.tmp)
 
 #ETI Macros Scalars
-KOKKOS_KERNELS_INTERNAL_INST_SCALAR_DOUBLE=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "double" | wc -l))
-KOKKOS_KERNELS_INTERNAL_INST_SCALAR_FLOAT=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "double" | wc -l))
-KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_DOUBLE_=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "complex<double>" | wc -l))
-KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_FLOAT_=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "complex<double>" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_DOUBLE=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "double" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_FLOAT=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "double" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_COMPLEX_DOUBLE_=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "complex<double>" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_COMPLEX_FLOAT_=$(strip $(shell echo $(KOKKOS_KERNELS_SCALARS) | grep "complex<double>" | wc -l))
 
 #
 # TODO CMake: create macros corresponding to CMake options
 #
-ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_DOUBLE), 1)
-  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_DOUBLE" >> KokkosKernels_config.tmp )
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_DOUBLE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_DOUBLE" >> KokkosKernels_config.tmp )
 endif
-ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_FLOAT), 1)
-  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_FLOAT" >> KokkosKernels_config.tmp )
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_FLOAT), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_FLOAT" >> KokkosKernels_config.tmp )
 endif
-ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_DOUBLE_), 1)
-  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_COMPLEX_DOUBLE_" >> KokkosKernels_config.tmp )
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_COMPLEX_DOUBLE" >> KokkosKernels_config.tmp )
 endif
-ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_SCALAR_COMPLEX_FLOAT_), 1)
-  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_SCALAR_COMPLEX_FLOAT_" >> KokkosKernels_config.tmp )
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_COMPLEX_FLOAT" >> KokkosKernels_config.tmp )
 endif
+tmp := $(shell echo "\#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)" >> KokkosKernels_config.tmp )
+tmp := $(shell echo "\#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_)" >> KokkosKernels_config.tmp )
+tmp := $(shell echo "\#endif" >> KokkosKernels_config.tmp )
+tmp := $(shell echo "\#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)" >> KokkosKernels_config.tmp )
+tmp := $(shell echo "\#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_)" >> KokkosKernels_config.tmp )
+tmp := $(shell echo "\#endif" >> KokkosKernels_config.tmp )
 
 
 #ETI Macros Layouts
-KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTLEFT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutLeft" | wc -l))
-KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTRIGHT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutRight" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_LAYOUTLEFT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutLeft" | wc -l))
+KOKKOS_KERNELS_INTERNAL_INST_LAYOUTRIGHT=$(strip $(shell echo $(KOKKOS_KERNELS_LAYOUTS) | grep "LayoutRight" | wc -l))
 
-ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTLEFT), 1)
-  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_LAYOUT_LAYOUTLEFT" >> KokkosKernels_config.tmp )
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_LAYOUTLEFT), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_LAYOUTLEFT" >> KokkosKernels_config.tmp )
 endif
-ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_LAYOUT_LAYOUTRIGHT), 1)
-  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_LAYOUT_LAYOUTRIGHT" >> KokkosKernels_config.tmp )
+ifeq ($(KOKKOS_KERNELS_INTERNAL_INST_LAYOUTRIGHT), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_LAYOUTRIGHT" >> KokkosKernels_config.tmp )
 endif
 
 #ETI Macros Execution Spaces

@@ -1,5 +1,6 @@
 #!/bin/bash
 KOKKOSKERNELS_PATH=$1
+cd ${KOKKOSKERNELS_PATH}/src/impl
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp
 #abs

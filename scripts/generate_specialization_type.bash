@@ -24,10 +24,16 @@ cat ${KokkosKernelsPath}/scripts/header > ${filename_cpp}
 echo "" >> ${filename_cpp}
 echo "#include \"${filename_master_hpp}\"" >> ${filename_cpp}
 echo "" >> ${filename_cpp}
+echo "// Turning off the KOKKOSKERNELS_ETI_ONLY macro" >> ${filename_cpp}
+echo "// since the core cpp files have to be build always." >> ${filename_cpp}
+echo "#ifdef KOKKOSKERNELS_ETI_ONLY" >> ${filename_cpp}
+echo "#undef KOKKOSKERNELS_ETI_ONLY" >> ${filename_cpp}
+echo "#endif" >> ${filename_cpp}
+echo "" >> ${filename_cpp}
 echo "namespace ${NameSpace} {" >> ${filename_cpp}
 echo "namespace Impl {" >> ${filename_cpp}
-echo "#if defined (KOKKOSKERNELS_INST_SCALAR_${Scalar_UpperCase}) \\" >> ${filename_cpp} 
-echo " && defined (KOKKOSKERNELS_INST_LAYOUT_${Layout_UpperCase}) \\" >> ${filename_cpp} 
+echo "#if defined (KOKKOSKERNELS_INST_${Scalar_UpperCase}) \\" >> ${filename_cpp} 
+echo " && defined (KOKKOSKERNELS_INST_${Layout_UpperCase}) \\" >> ${filename_cpp} 
 echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${ExecSpace_UpperCase}) \\" >> ${filename_cpp} 
 echo " && defined (KOKKOSKERNELS_INST_MEMSPACE_${MemSpace_UpperCase})" >> ${filename_cpp} 
 echo " ${Macro}_DEF(${Scalar}, Kokkos::${Layout}, Kokkos::${ExecSpace}, Kokkos::${MemSpace})" >> ${filename_cpp}
@@ -36,8 +42,8 @@ echo "} // Impl" >> ${filename_cpp}
 echo "} // ${NameSpace}" >> ${filename_cpp}
 
 echo "" >> ${filename_hpp}
-echo "#if defined (KOKKOSKERNELS_INST_SCALAR_${Scalar_UpperCase}) \\" >> ${filename_hpp}
-echo " && defined (KOKKOSKERNELS_INST_LAYOUT_${Layout_UpperCase}) \\" >> ${filename_hpp}
+echo "#if defined (KOKKOSKERNELS_INST_${Scalar_UpperCase}) \\" >> ${filename_hpp}
+echo " && defined (KOKKOSKERNELS_INST_${Layout_UpperCase}) \\" >> ${filename_hpp}
 echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${ExecSpace_UpperCase}) \\" >> ${filename_hpp}
 echo " && defined (KOKKOSKERNELS_INST_MEMSPACE_${MemSpace_UpperCase})" >> ${filename_hpp}
 echo " ${Macro}_DECL(${Scalar}, Kokkos::${Layout}, Kokkos::${ExecSpace}, Kokkos::${MemSpace})" >> ${filename_hpp}

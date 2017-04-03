@@ -47,10 +47,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 
-#ifdef HAVE_KOKKOSKERNELS_ETI_ONLY
-#define KOKKOSKERNELS_ETI_ONLY
-#endif
-
 namespace KokkosBlas {
 namespace Impl {
 
