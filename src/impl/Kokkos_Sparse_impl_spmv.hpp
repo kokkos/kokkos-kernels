@@ -1312,8 +1312,8 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
     static_assert (std::is_integral<AT>::value,
                    "This implementation is only for integer Scalar types.");
     typedef SPMV<AT, AO, AD, AM, AS,
-      XT*, XL, XD, XM,
-      YT*, YL, YD, YM> impl_type;
+      typename XVector::value_type*, XL, XD, XM,
+      typename YVector::value_type*, YL, YD, YM> impl_type;
     for (AS j = 0; j < x.dimension_1 (); ++j) {
       auto x_j = Kokkos::subview (x, Kokkos::ALL (), j);
       auto y_j = Kokkos::subview (y, Kokkos::ALL (), j);
