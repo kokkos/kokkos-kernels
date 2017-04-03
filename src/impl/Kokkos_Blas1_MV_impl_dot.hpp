@@ -695,6 +695,7 @@ template<class RV, class XMV, class YMV,
          const int YMV_rnak = YMV::rank>
 struct Dot_MV;
 
+template<class RV, class XMV, class YMV>
 struct Dot_MV<RV, XMV, YMV, 2, 2> 
 #ifndef KOKKOSKERNELS_ETI_ONLY
 {
@@ -773,6 +774,7 @@ struct Dot_MV<RV, XV, YMV, 1, 2> {
 
 /// \brief Partial specialization for XMV_rank == 1 and YMV_rank == 1
 ///   (both X and Y are single vectors).
+template<class RV, class XV, class YV>
 struct Dot_MV<RV, XV, YV, 1, 1> 
 #ifndef KOKKOSKERNELS_ETI_ONLY
 {
@@ -819,7 +821,7 @@ extern template struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTra
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                           2, 2>; \ 
+                           2, 2>; \
 extern template struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
                            EXEC_SPACE::array_layout, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
