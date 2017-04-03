@@ -92,7 +92,6 @@ struct TypeNameTraits
             << typeid (except).name () << ", which is a subclass of " \
             << "std::exception.  The exception's message is:\n\n"; \
       { \
-        Teuchos::OSTab l_tab (out); \
         l_out << except.what () << "\n\n"; \
       } \
       l_out << "failed\n"; \
