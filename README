@@ -44,8 +44,10 @@ We organize this directory as follows:
   3. Correctness tests live in the unit_test/ subdirectory, and
      performance tests live in the perf_test/ subdirectory
 
-Please do not use or rely on anything in the KokkosBlas::Impl
-namespace, or on anything in the impl/ subdirectory.
+  4. Compact batched BLAS: Refer the README in src/stage/batched/.
+
+Do NOT use or rely on anything in the KokkosBlas::Impl namespace, or
+on anything in the impl/ subdirectory.
 
 This separation of interface and implementation lets the interface
 assign the users' Views to View types with the desired attributes
