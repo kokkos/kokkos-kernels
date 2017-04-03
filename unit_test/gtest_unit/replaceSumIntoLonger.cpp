@@ -154,13 +154,10 @@ namespace { // (anonymous)
     // 'out'.  They expect the variable to have that name.  That's why
     // the input argument to this function has a different name -- so
     // we can replace it here.
-    std::ostringstream *dbgOutPtr;
+    std::ostringstream *dbgOutPtr = NULL;
     if (! debug) {
       dbgOutPtr = new std::ostringstream ();
     }
-    std::ostream *outPtr = debug ?
-      &outRef: dbgOutPtr;
-    //Teuchos::FancyOStream& out = *outPtr;
 
     functor_type functor (A, replace, sorted, atomic);
     ordinal_type numModified = 0;
@@ -207,7 +204,7 @@ namespace { // (anonymous)
     // 'out'.  They expect the variable to have that name.  That's why
     // the input argument to this function has a different name -- so
     // we can replace it here.
-    std::ostringstream *dbgOutPtr;
+    std::ostringstream *dbgOutPtr = NULL;
     if (! debug) {
       dbgOutPtr = new std::ostringstream ();
     }

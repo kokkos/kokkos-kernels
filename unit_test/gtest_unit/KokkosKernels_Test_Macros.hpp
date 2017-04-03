@@ -54,7 +54,7 @@ struct TypeNameTraits
         return typeid(T).name();
     }
 };
-};
+}
 
 
 //MNDEVEC: CODES ARE COPY PASTED FROM TEUCHOS
