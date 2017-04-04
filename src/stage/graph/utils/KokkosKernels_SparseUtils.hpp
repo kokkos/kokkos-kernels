@@ -141,7 +141,7 @@ struct TransposeMatrix{
 
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,team_row_begin,team_row_end), [&] (const nnz_lno_t& row_index) {
-    const nnz_lno_t teamsize = teamMember.team_size();
+    //const nnz_lno_t teamsize = teamMember.team_size();
     //for (nnz_lno_t row_index = team_row_begin + teamMember.team_rank(); row_index < team_row_end; row_index += teamsize){
       const size_type col_begin = xadj[row_index];
       const size_type col_end = xadj[row_index + 1];
