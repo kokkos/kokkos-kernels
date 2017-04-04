@@ -909,7 +909,7 @@ template struct Dot_MV<Kokkos::View<SCALAR, \
 } // namespace KokkosBlas
 
 #include<Kokkos_Blas1_V_impl_dot.hpp>
-#include<generated_specializations_hpp/dot/KokkosBlas1_impl_V_dot_decl_specializations.hpp>
-#include<generated_specializations_hpp/dot/KokkosBlas1_impl_MV_dot_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_V_dot_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_dot_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

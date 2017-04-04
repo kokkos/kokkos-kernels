@@ -343,5 +343,5 @@ template struct Fill<Kokkos::View<SCALAR**, \
 } // namespace KokkosBlas
 
 
-#include<generated_specializations_hpp/fill/KokkosBlas1_impl_MV_fill_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_fill_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_FILL_HPP_

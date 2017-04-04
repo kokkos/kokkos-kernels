@@ -2096,7 +2096,7 @@ template struct Axpby<SCALAR, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/axpby/KokkosBlas1_impl_V_axpby_decl_specializations.hpp>
-#include<generated_specializations_hpp/axpby/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_V_axpby_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_

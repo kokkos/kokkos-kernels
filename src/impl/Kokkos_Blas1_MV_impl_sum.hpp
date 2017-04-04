@@ -340,5 +340,5 @@ template struct Sum<Kokkos::View<SCALAR*, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/sum/KokkosBlas1_impl_MV_sum_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_sum_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_SUM_HPP_

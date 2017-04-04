@@ -427,5 +427,5 @@ template struct Mult<Kokkos::View<SCALAR**, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/mult/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_MULT_HPP_

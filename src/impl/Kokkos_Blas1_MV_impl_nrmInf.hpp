@@ -355,5 +355,5 @@ template struct NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/nrmInf/KokkosBlas1_impl_MV_nrmInf_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_nrmInf_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_NRMINF_HPP_

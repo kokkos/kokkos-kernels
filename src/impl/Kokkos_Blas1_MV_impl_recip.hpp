@@ -340,5 +340,5 @@ template struct Reciprocal<Kokkos::View<SCALAR**, \
 
 } // namespace Impl
 } // namespace KokkosBlas
-#include<generated_specializations_hpp/recip/KokkosBlas1_impl_MV_recip_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_recip_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_RECIPROCAL_HPP_

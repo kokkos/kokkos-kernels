@@ -336,6 +336,6 @@ template struct Abs<Kokkos::View<SCALAR**, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/abs/KokkosBlas1_impl_MV_abs_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_abs_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_

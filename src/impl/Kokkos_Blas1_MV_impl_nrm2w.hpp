@@ -274,6 +274,6 @@ template struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< SCA
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/nrm2w/KokkosBlas1_impl_MV_nrm2w_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_nrm2w_decl_specializations.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_NORMW_HPP_

@@ -780,6 +780,6 @@ template struct Update<Kokkos::View<const SCALAR*, \
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/update/KokkosBlas1_impl_V_update_decl_specializations.hpp>
-#include<generated_specializations_hpp/update/KokkosBlas1_impl_MV_update_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_V_update_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_impl_MV_update_decl_specializations.hpp>
 #endif // KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_

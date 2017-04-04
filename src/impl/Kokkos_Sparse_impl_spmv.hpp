@@ -1371,7 +1371,7 @@ SPMV_MV<const SCALAR_TYPE, \
 } // namespace Impl
 } // namespace KokkosSparse
 
-#include<generated_specializations_hpp/spmv/KokkosSparse_impl_MV_spmv_decl_specializations.hpp>
-#include<generated_specializations_hpp/spmv/KokkosSparse_impl_V_spmv_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosSparse_impl_MV_spmv_decl_specializations.hpp>
+#include<generated_specializations_hpp/KokkosSparse_impl_V_spmv_decl_specializations.hpp>
 
 #endif // KOKKOS_SPARSE_IMPL_SPMV_DEF_HPP_
