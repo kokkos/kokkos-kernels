@@ -50,7 +50,7 @@
 #include "KokkosKernels_SPGEMM_mkl_impl.hpp"
 #include "KokkosKernels_SPGEMM_mkl2phase_impl.hpp"
 #include "KokkosKernels_SPGEMM_impl.hpp"
-
+#include "KokkosKernels_SPGEMM_impl_seq.hpp"
 namespace KokkosKernels{
 
 namespace Experimental{
