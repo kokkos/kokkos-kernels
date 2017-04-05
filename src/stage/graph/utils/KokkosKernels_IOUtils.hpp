@@ -52,6 +52,7 @@
 
 
 #include <Kokkos_Core.hpp>
+#include "KokkosKernels_SimpleUtils.hpp"
 
 namespace KokkosKernels{
 namespace Experimental{
@@ -202,32 +203,32 @@ void read_edgelist_bin(
 
 
 
-template <typename idx, typename wt>
-void write_graph_bin(idx nv, idx ne,const idx *xadj,const  idx *adj,const  wt *ew,const  char *filename){
+template <typename lno_t, typename size_type, typename scalar_t>
+void write_graph_bin(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
   std::ofstream myFile (filename, std::ios::out | std::ios::binary);
-  myFile.write((char *) &nv, sizeof(idx));
-  myFile.write((char *) &ne, sizeof(idx));
-  myFile.write((char *) xadj, sizeof(idx) * (nv + 1));
-  myFile.write((char *) adj, sizeof(idx) * (ne));
-  myFile.write((char *) ew, sizeof(wt) * (ne));
+  myFile.write((char *) &nv, sizeof(lno_t));
+  myFile.write((char *) &ne, sizeof(size_type));
+  myFile.write((char *) xadj, sizeof(size_type) * (nv + 1));
+  myFile.write((char *) adj, sizeof(lno_t) * (ne));
+  myFile.write((char *) ew, sizeof(scalar_t) * (ne));
   myFile.close();
 }
 
 
 
-template <typename idx, typename wt>
-void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, const char *filename){
+template <typename lno_t, typename size_type, typename scalar_t>
+void read_graph_bin(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scalar_t **ew, const char *filename){
 
   std::ifstream myFile (filename, std::ios::in | std::ios::binary);
 
-  myFile.read((char *) nv, sizeof(idx));
-  myFile.read((char *) ne, sizeof(idx));
-  md_malloc<idx>(xadj, *nv+1);
-  md_malloc<idx>(adj, *ne);
-  md_malloc<wt> (ew, *ne);
-  myFile.read((char *) *xadj, sizeof(idx) * (*nv + 1));
-  myFile.read((char *) *adj, sizeof(idx) * (*ne));
-  myFile.read((char *) *ew, sizeof(wt) * (*ne));
+  myFile.read((char *) nv, sizeof(lno_t));
+  myFile.read((char *) ne, sizeof(size_type));
+  md_malloc<size_type>(xadj, *nv+1);
+  md_malloc<lno_t>(adj, *ne);
+  md_malloc<scalar_t> (ew, *ne);
+  myFile.read((char *) *xadj, sizeof(size_type) * (*nv + 1));
+  myFile.read((char *) *adj, sizeof(lno_t) * (*ne));
+  myFile.read((char *) *ew, sizeof(scalar_t) * (*ne));
   myFile.close();
 }
 
@@ -242,11 +243,11 @@ inline bool endswith (std::string const &fullString, std::string const &ending) 
 }
 
 
-template <typename idx, typename wt>
+template <typename lno_t, typename size_type, typename scalar_t>
 int read_mtx (
     const char *fileName,
-    idx *nv, idx *ne,
-    idx **xadj, idx **adj, wt **ew,
+    lno_t *nv, size_type *ne,
+    size_type **xadj, lno_t **adj, scalar_t **ew,
     bool symmetrize = false, bool remove_diagonal = true,
     bool transpose = false){
 
@@ -326,23 +327,25 @@ int read_mtx (
     if(fline[0] != '%') break;
   }
   std::stringstream ss (fline);
-  idx nr = 0, nc = 0, nnz = 0;
+  lno_t nr = 0, nc = 0;
+  size_type nnz = 0;
 
   ss >> nr >> nc >> nnz;
 
 
   //if (nr != nc) {std::cerr << "NON-SQUARE MATRIX TYPE NOT HANDLED YET"<< std::endl; return (1); }
-  idx noEdges = nnz;
+  size_type noEdges = nnz;
   if (mtx_sym == 1 || symmetrize) noEdges = 2 * nnz;
 
-  std::vector <struct Edge<idx, wt> > edges (noEdges);
-  idx nE = 0, noDiagonal = 0;
-  for (idx i = 0; i < nnz; ++i){
+  std::vector <struct Edge<lno_t, scalar_t> > edges (noEdges);
+  size_type nE = 0;
+  lno_t noDiagonal = 0;
+  for (size_type i = 0; i < nnz; ++i){
     getline(mmf, fline);
     std::stringstream ss2 (fline);
-    struct Edge<idx, wt> tmp;
-    idx s,d;
-    wt w;
+    struct Edge<lno_t, scalar_t> tmp;
+    lno_t s,d;
+    scalar_t w;
     ss2 >> s >> d >> w;
     if (!transpose){
       tmp.src = s - 1;
@@ -364,7 +367,7 @@ int read_mtx (
     }
     edges[nE++] = tmp;
     if (mtx_sym == 1 || symmetrize){
-      struct Edge<idx, wt> tmp2;
+      struct Edge<lno_t, scalar_t> tmp2;
       tmp2.src = tmp.dst;
       tmp2.dst = tmp.src;
       tmp2.ew = tmp.ew;
@@ -377,7 +380,7 @@ int read_mtx (
   std::sort (edges.begin(), edges.begin() + nE);
 
   if (transpose){
-    idx tmp = nr;
+    lno_t tmp = nr;
     nr = nc;
     nc = tmp;
   }
@@ -388,15 +391,15 @@ int read_mtx (
 
   *ne = nE;
   //*xadj = new idx[nr + 1];
-  md_malloc<idx>(xadj, nr+1);
+  md_malloc<lno_t>(xadj, nr+1);
   //*adj = new idx[nE];
-  md_malloc<idx>(adj, nE);
+  md_malloc<lno_t>(adj, nE);
   //*ew = new wt[nE];
-  md_malloc<wt>(ew, nE);
+  md_malloc<scalar_t>(ew, nE);
 
-  idx eind = 0;
-  idx actual = 0;
-  for (idx i = 0; i < nr; ++i){
+  size_type eind = 0;
+  size_type actual = 0;
+  for (lno_t i = 0; i < nr; ++i){
     (*xadj)[i] = actual;
     bool is_first = true;
     while (edges[eind].src == i){
@@ -415,8 +418,8 @@ int read_mtx (
   return 0;
 }
 
-template <typename idx, typename wt>
-void read_matrix(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, const char *filename){
+template <typename lno_t, typename size_type, typename scalar_t>
+void read_matrix(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scalar_t **ew, const char *filename){
 
   std::string strfilename(filename);
   if (endswith(strfilename, ".mtx")){
@@ -442,9 +445,15 @@ crsMat_t read_kokkos_crst_matrix(const char * filename_){
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
   typedef typename crsMat_t::values_type::non_const_type values_view_t;
 
-  size_t  nv, *xadj, *adj, nnzA;
-  double *values;
-  read_matrix<size_t, double>(
+  typedef typename row_map_view_t::value_type size_type;
+  typedef typename cols_view_t::value_type   lno_t;
+  typedef typename values_view_t::value_type scalar_t;
+
+
+  lno_t nv, *adj;
+  size_type *xadj, nnzA;
+  scalar_t *values;
+  read_matrix<lno_t, size_type, scalar_t>(
       &nv, &nnzA, &xadj, &adj, &values, filename_);
 
   row_map_view_t rowmap_view("rowmap_view", nv+1);
@@ -457,11 +466,11 @@ crsMat_t read_kokkos_crst_matrix(const char * filename_){
     typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
     typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
 
-    for (size_t i = 0; i <= nv; ++i){
+    for (lno_t i = 0; i <= nv; ++i){
       hr(i) = xadj[i];
     }
 
-    for (size_t i = 0; i < nnzA; ++i){
+    for (size_type i = 0; i < nnzA; ++i){
       hc(i) = adj[i];
       hv(i) = values[i];
     }
@@ -470,11 +479,17 @@ crsMat_t read_kokkos_crst_matrix(const char * filename_){
     Kokkos::deep_copy (values_view , hv);
   }
 
+  lno_t ncols = 0;
+  KokkosKernels::Experimental::Util::kk_view_reduce_max
+      <cols_view_t, typename crsMat_t::execution_space>(nnzA, columns_view, ncols);
+  ncols += 1;
+
   graph_t static_graph (columns_view, rowmap_view);
-  crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+  crsMat_t crsmat("CrsMatrix", ncols, values_view, static_graph);
   delete [] xadj; delete [] adj; delete [] values;
   return crsmat;
 }
+
 
 
 

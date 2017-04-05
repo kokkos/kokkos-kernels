@@ -74,7 +74,7 @@ int main (int argc, char ** argv){
   idx *xadj, *adj;
   wt *ew;
 
-  KokkosKernels::Experimental::Util::read_matrix<idx, wt> (
+  KokkosKernels::Experimental::Util::read_matrix<idx, idx, wt> (
       &nr, &ne, &xadj, &adj, &ew, argv[1]);
   delete [] ew;
 

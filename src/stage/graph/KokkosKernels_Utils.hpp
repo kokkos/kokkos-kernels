@@ -1200,44 +1200,11 @@ void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename vie
   Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
 }
 
-template<typename view_type>
-struct ReduceMaxFunctor{
 
-  view_type view_to_reduce;
-  typedef typename view_type::non_const_value_type value_type;
-  const value_type min_val;
-  ReduceMaxFunctor(
-      view_type view_to_reduce_): view_to_reduce(view_to_reduce_),
-          min_val((std::numeric_limits<value_type>::lowest())){
-  }
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t &i, value_type &max_reduction) const {
-    value_type val = view_to_reduce(i);
-    if (max_reduction < val) { max_reduction = val;}
-
-  }
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type& dst,const volatile value_type& src) const {
-    if (dst < src) { dst = src;}
-  }
-
-
-  KOKKOS_INLINE_FUNCTION
-  void init (value_type& dst) const
-  {
-    // The identity under max is -Inf.
-    // Kokkos does not come with a portable way to access
-    // floating -point Inf and NaN. Trilinos does , however;
-    // see Kokkos :: ArithTraits in the Tpetra package.
-    dst = min_val;
-  }
-
-};
 
 template <typename view_type , typename MyExecSpace>
 void view_reduce_max(size_t num_elements, view_type view_to_reduce, typename view_type::non_const_value_type &max_reduction){
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceMaxFunctor<view_type>(view_to_reduce), max_reduction);
+  kk_view_reduce_max<view_type, MyExecSpace>(num_elements, view_to_reduce, max_reduction);
 }
 
 

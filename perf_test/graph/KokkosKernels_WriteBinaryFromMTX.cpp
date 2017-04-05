@@ -45,7 +45,7 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include <string.h>
 
-
+typedef int size_type;
 typedef int idx;
 typedef double wt;
 
@@ -82,13 +82,15 @@ int main (int argc, char ** argv){
     exit(1);
   }
 
-  idx nv = 0, ne = 0;
-  idx *xadj, *adj;
+  idx nv = 0;
+  size_type ne = 0;
+  size_type *xadj;
+  idx *adj;
   wt *ew;
-  KokkosKernels::Experimental::Util::read_mtx<idx,wt>
+  KokkosKernels::Experimental::Util::read_mtx<idx,size_type, wt>
       (in_mtx, &nv, &ne, &xadj, &adj, &ew, symmetrize, remove_diagonal, transpose);
 
-  KokkosKernels::Experimental::Util::write_graph_bin<idx, wt> (nv, ne, xadj, adj, ew, out_bin);
+  KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, adj, ew, out_bin);
 
   delete [] xadj;
   delete [] adj;
