@@ -114,7 +114,7 @@ namespace Experiment{
           else {
             c_fast_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,fast_crstmat_t,fast_crstmat_t, sbm_mem_space, sbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,fast_crstmat_t,fast_crstmat_t, sbm_mem_space, sbm_mem_space>
                   (a_fast_crsmat, b_fast_crsmat, params);
           }
 
