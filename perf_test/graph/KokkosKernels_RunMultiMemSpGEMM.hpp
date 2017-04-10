@@ -108,7 +108,7 @@ namespace Experiment{
           if (params.work_mem_space == 1){
             c_fast_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,fast_crstmat_t,fast_crstmat_t, hbm_mem_space, hbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,fast_crstmat_t,fast_crstmat_t, hbm_mem_space, hbm_mem_space>
                   (a_fast_crsmat, b_fast_crsmat, params);
           }
           else {
@@ -124,13 +124,13 @@ namespace Experiment{
           if (params.work_mem_space == 1){
             c_slow_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,fast_crstmat_t,slow_crstmat_t, hbm_mem_space, hbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,fast_crstmat_t,slow_crstmat_t, hbm_mem_space, hbm_mem_space>
                   (a_fast_crsmat, b_fast_crsmat, params);
           }
           else {
             c_slow_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,fast_crstmat_t,slow_crstmat_t, sbm_mem_space, sbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,fast_crstmat_t,slow_crstmat_t, sbm_mem_space, sbm_mem_space>
                   (a_fast_crsmat, b_fast_crsmat, params);
           }
         }
@@ -141,13 +141,13 @@ namespace Experiment{
           if (params.work_mem_space == 1){
             c_fast_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,slow_crstmat_t,fast_crstmat_t, hbm_mem_space, hbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,slow_crstmat_t,fast_crstmat_t, hbm_mem_space, hbm_mem_space>
                   (a_fast_crsmat, b_slow_crsmat, params);
           }
           else {
             c_fast_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,slow_crstmat_t,fast_crstmat_t, sbm_mem_space, sbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,slow_crstmat_t,fast_crstmat_t, sbm_mem_space, sbm_mem_space>
                   (a_fast_crsmat, b_slow_crsmat, params);
           }
 
@@ -157,13 +157,13 @@ namespace Experiment{
           if (params.work_mem_space == 1){
             c_slow_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,slow_crstmat_t,slow_crstmat_t, hbm_mem_space, hbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,slow_crstmat_t,slow_crstmat_t, hbm_mem_space, hbm_mem_space>
                   (a_fast_crsmat, b_slow_crsmat, params);
           }
           else {
             c_slow_crsmat =
                 KokkosKernels::Experiment::run_experiment
-                  <myExecSpace, slow_crstmat_t,slow_crstmat_t,slow_crstmat_t, sbm_mem_space, sbm_mem_space>
+                  <myExecSpace, fast_crstmat_t,slow_crstmat_t,slow_crstmat_t, sbm_mem_space, sbm_mem_space>
                   (a_fast_crsmat, b_slow_crsmat, params);
           }
         }
@@ -266,7 +266,8 @@ namespace Experiment{
         slow_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.dimension_0());
         slow_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.dimension_0());
 
-        KokkosKernels::Experimental::Util::kk_sort_graph<const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t, slow_cols_view_t, slow_values_view_t, myExecSpace>(
+        KokkosKernels::Experimental::Util::kk_sort_graph<
+        const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t, slow_cols_view_t, slow_values_view_t, myExecSpace>(
             c_slow_crsmat.graph.row_map,
             c_slow_crsmat.graph.entries,
             c_slow_crsmat.values, sorted_adj, sorted_vals);
