@@ -58,9 +58,9 @@ void KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_numeric(
-      c_row_view_t rowmapC_,
-      c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_){
+      c_row_view_t &rowmapC_,
+      c_lno_nnz_view_t &entriesC_,
+      c_scalar_nnz_view_t &valuesC_){
 
     //get the algorithm and execution space.
     SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
@@ -73,7 +73,6 @@ void KokkosSPGEMM
     if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED)
     {
       this->KokkosSPGEMM_numeric_speed(rowmapC_, entriesC_, valuesC_, my_exec_space);
-
     }
     else if ( spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
               spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
@@ -82,6 +81,9 @@ void KokkosSPGEMM
     }
     else if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY2){
         this->KokkosSPGEMM_numeric_hash2(rowmapC_, entriesC_, valuesC_, my_exec_space);
+    }
+    else if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_OUTERMULTIMEM ){
+      this->KokkosSPGEMM_numeric_outer(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }
     else {
       this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_, my_exec_space);

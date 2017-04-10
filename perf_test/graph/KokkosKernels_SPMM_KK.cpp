@@ -219,6 +219,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "MULTIMEM" ) ) {
         params.algorithm = 14;
       }
+      else if ( 0 == strcasecmp( argv[i] , "OUTER" ) ) {
+        params.algorithm = 15;
+      }
       else {
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
         print_options();

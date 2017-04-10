@@ -1431,7 +1431,7 @@ void transpose_matrix(
     in_scalar_view_t vals,
     out_row_view_t t_xadj, //pre-allocated -- initialized with 0
     out_nnz_view_t t_adj,  //pre-allocated -- no need for initialize
-    out_nnz_view_t t_vals,  //pre-allocated -- no need for initialize
+    out_scalar_view_t t_vals,  //pre-allocated -- no need for initialize
     typename in_nnz_view_t::non_const_value_type team_row_work_size = 256
     ){
   //first count the number of entries in each column

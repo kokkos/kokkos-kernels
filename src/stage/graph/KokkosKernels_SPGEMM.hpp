@@ -240,6 +240,7 @@ namespace Graph{
     case SPGEMM_KK_MULTICOLOR:
     case SPGEMM_KK_MULTICOLOR2:
     case SPGEMM_KK_MULTIMEM:
+    case SPGEMM_KK_OUTERMULTIMEM:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,

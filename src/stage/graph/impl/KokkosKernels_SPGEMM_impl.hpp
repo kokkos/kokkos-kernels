@@ -323,6 +323,53 @@ private:
         c_lno_nnz_view_t entriesC_,
         c_scalar_nnz_view_t valuesC_,
         KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space);
+#if defined( KOKKOS_HAVE_OPENMP )
+#ifdef KOKKOSKERNELS_HAVE_OUTER
+  //OUTER PRODUCT CODES
+  struct Triplet;
+
+  template <typename a_col_view_t, typename a_nnz_view_t, typename a_scalar_view_t,
+            typename b_row_view_t, typename b_nnz_view_t, typename b_scalar_view_t,
+            typename flop_row_view_t>
+  struct OuterProduct;
+
+  template <typename triplet_view_t>
+  void sort_triplets(triplet_view_t triplets, size_t num_triplets);
+
+  template <typename host_triplet_view_t>
+  void merge_triplets_on_slow_memory(
+      host_triplet_view_t *triplets,
+      size_t num_blocks,
+      size_t overall_size,
+      host_triplet_view_t output_triplets);
+
+  template <typename triplet_view_t,
+            typename c_row_view_t,
+            typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+  size_t final_collapse_triplets_omp(
+      triplet_view_t triplets,
+      size_t num_triplets,
+      c_row_view_t &rowmapC_,
+      c_lno_nnz_view_t &entriesC_,
+      c_scalar_nnz_view_t &valuesC_);
+
+  template <typename triplet_view_t>
+  size_t collapse_triplets(triplet_view_t triplets, size_t num_triplets);
+
+  template <typename triplet_view_t>
+  size_t collapse_triplets_omp(triplet_view_t triplets, size_t num_triplets, triplet_view_t out_triplets);
+
+  template <typename a_row_view_t, typename b_row_view_t, typename flop_row_view_t>
+  struct FlopsPerRow;
+#endif
+#endif
+
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
+    void KokkosSPGEMM_numeric_outer(
+          c_row_view_t &rowmapC_,
+          c_lno_nnz_view_t &entriesC_,
+          c_scalar_nnz_view_t &valuesC_,
+          KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space);
   //////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////
 
@@ -390,7 +437,9 @@ public:
   ////DECL IS AT _def.hpp
   //////////////////////////////////////////////////////////////////////////
   template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_);
+  void KokkosSPGEMM_numeric(c_row_view_t &rowmapC_, c_lno_nnz_view_t &entriesC_, c_scalar_nnz_view_t &valuesC_);
+  //TODO: These are references only for outer product algorithm.
+  //If the algorithm is removed, then remove the references.
 
 
   /**
@@ -502,7 +551,6 @@ public:
       b_oldrow_view_t row_pointers_begin_B,
       b_row_view_t row_pointers_end_B)
   {
-
     //get the execution space type.
     //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
     int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA_.dimension_0());
@@ -878,6 +926,7 @@ public:
 }
 }
 }
+#include "KokkosKernels_SPGEMM_imp_outer.hpp"
 #include "KokkosKernels_SPGEMM_impl_memaccess.hpp"
 #include "KokkosKernels_SPGEMM_impl_kkmem.hpp"
 #include "KokkosKernels_SPGEMM_impl_color.hpp"

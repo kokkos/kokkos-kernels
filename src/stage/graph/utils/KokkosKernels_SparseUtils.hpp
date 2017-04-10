@@ -91,7 +91,7 @@ struct TransposeMatrix{
   in_scalar_view_t vals;
   out_row_view_t t_xadj; //allocated
   out_nnz_view_t t_adj;  //allocated
-  out_nnz_view_t t_vals;  //allocated
+  out_scalar_view_t t_vals;  //allocated
   tempwork_row_view_t tmp_txadj;
   bool transpose_values;
   nnz_lno_t team_work_size;
@@ -104,7 +104,7 @@ struct TransposeMatrix{
       in_scalar_view_t vals_,
       out_row_view_t t_xadj_,
       out_nnz_view_t t_adj_,
-      out_nnz_view_t t_vals_,
+      out_scalar_view_t t_vals_,
       tempwork_row_view_t tmp_txadj_,
       bool transpose_values_,
       nnz_lno_t team_row_work_size_):

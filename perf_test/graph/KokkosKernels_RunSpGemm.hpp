@@ -186,12 +186,12 @@ crsMat_t3 run_experiment(
   int calculate_read_write_cost = params.calculate_read_write_cost;
   char *coloring_input_file = params.coloring_input_file;
   char *coloring_output_file = params.coloring_output_file;
-  char spgemm_step = params.spgemm_step;
+  //char spgemm_step = params.spgemm_step;
   int vector_size = params.vector_size;
   int check_output = params.check_output;
   int mkl_sort_option = params.mkl_sort_option;
   int mkl_keep_output = params.mkl_keep_output;
-  spgemm_step++;
+  //spgemm_step++;
   typedef typename crsMat_t3::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t3::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
   typedef typename crsMat_t3::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
@@ -346,6 +346,9 @@ crsMat_t3 run_experiment(
   case 14:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTIMEM);
     break;
+  case 15:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_OUTERMULTIMEM);
+    break;
 
   default:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
@@ -358,10 +361,10 @@ crsMat_t3 run_experiment(
   kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
 
   if (coloring_input_file){
-    kh.get_spgemm_handle()->coloring_input_file = std::string(&spgemm_step) + "_" + std::string(coloring_input_file);
+    kh.get_spgemm_handle()->coloring_input_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_input_file);
   }
   if (coloring_output_file){
-    kh.get_spgemm_handle()->coloring_output_file = std::string(&spgemm_step) + "_" + std::string(coloring_output_file);
+    kh.get_spgemm_handle()->coloring_output_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_output_file);
   }
 
   for (int i = 0; i < repeat; ++i){
