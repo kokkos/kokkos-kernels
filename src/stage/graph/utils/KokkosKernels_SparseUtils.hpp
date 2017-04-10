@@ -605,21 +605,22 @@ void kk_sort_graph(
   lno_t nrows = in_xadj.dimension_0() - 1;
   std::vector <KokkosKernels::Experimental::Util::Edge<lno_t, scalar_t> > edges(in_adj.dimension_0());
 
+  size_type row_size = 0;
   for (lno_t i = 0; i < nrows; ++i){
-    size_type row_size = 0;
     for (size_type j = hr(i); j < hr(i + 1); ++j){
       edges[row_size].src = i;
       edges[row_size].dst = he(j);
       edges[row_size++].ew = hv(j);
     }
-    std::sort (edges.begin(), edges.begin() + row_size);
-
-    size_type row_ind = 0;
-    for (size_type j = hr(i); j < hr(i + 1); ++j){
-      heo(j) = edges[row_ind].dst;
-      hvo(j) = edges[row_ind++].ew;
-    }
   }
+
+  std::sort (edges.begin(), edges.begin() + row_size);
+
+  for(size_type i = 0; i < in_adj.dimension_0(); ++i){
+    out_adj(i) = edges[i].dst;
+    out_vals(i) = edges[i].ew;
+  }
+
 
   Kokkos::deep_copy (out_adj, heo);
   Kokkos::deep_copy (out_vals, hvo);
