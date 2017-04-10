@@ -537,12 +537,12 @@ template <typename a_row_view_t, typename b_row_view_t, typename flop_row_view_t
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-  FlopsPerRow{
+  FlopsPerRowOuter{
   nnz_lno_t n; //num rows
   a_row_view_t row_mapA;  //row pointers of a
   b_row_view_t row_mapB;
   flop_row_view_t flop_per_row;
-  FlopsPerRow(
+  FlopsPerRowOuter(
       nnz_lno_t n_,
       a_row_view_t row_mapA_,
       b_row_view_t row_mapB_,
@@ -622,7 +622,7 @@ void KokkosSPGEMM
 
   MyExecSpace::fence();
   if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\t\tTranspose FlopsPerRowCal BlockPartition FastAllocation";
+    std::cout << "\t\tTranspose FlopsPerRowOuterCal BlockPartition FastAllocation";
     std::cout << " Outer Sort Collapse CopyToSLOW MultiWayMerge FinalCollapse Overall"<<std::endl;
   }
   if (KOKKOSKERNELS_VERBOSE){
@@ -640,7 +640,7 @@ void KokkosSPGEMM
   timer1.reset();
   typedef Kokkos::View <size_t *,  mySlowMemory> size_t_view_t;
   size_t_view_t flop_per_row (Kokkos::ViewAllocateWithoutInitializing("flops per row"), b_row_cnt);
-  FlopsPerRow<
+  FlopsPerRowOuter<
   row_lno_temp_work_view_t,
   const_b_lno_row_view_t,
   size_t_view_t> fpr(b_row_cnt, transpose_col_xadj, row_mapB, flop_per_row);
@@ -661,7 +661,7 @@ void KokkosSPGEMM
 
     std::cout << timer1.seconds() << " ";
     //std::cout << "\t\tnum_required_flops:" << num_required_flops << std::endl;
-    //std::cout << "\t\tFlopsPerRow TIME:" << timer1.seconds() << std::endl;
+    //std::cout << "\t\tFlopsPerRowOuter TIME:" << timer1.seconds() << std::endl;
   }
 
 

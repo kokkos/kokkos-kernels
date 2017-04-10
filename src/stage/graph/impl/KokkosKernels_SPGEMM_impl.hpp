@@ -360,7 +360,7 @@ private:
   size_t collapse_triplets_omp(triplet_view_t triplets, size_t num_triplets, triplet_view_t out_triplets);
 
   template <typename a_row_view_t, typename b_row_view_t, typename flop_row_view_t>
-  struct FlopsPerRow;
+  struct FlopsPerRowOuter;
 #endif
 #endif
 
