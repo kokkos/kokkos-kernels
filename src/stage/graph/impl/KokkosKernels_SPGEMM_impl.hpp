@@ -183,6 +183,8 @@ public:
   typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_numeric2_policy_t ;
   typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_numeric3_policy_t ;
 
+  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_policy_t ;
+
 
 private:
   HandleType *handle;
