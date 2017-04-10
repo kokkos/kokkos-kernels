@@ -57,10 +57,14 @@ typedef double wt;
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;
+
   std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
-  std::cerr << "\t[Required] INPUT MATRICES: 'amtx [path_to_a_matrix_market_file.mtx]'  'pmtx [path_to_p_matrix_market_file.mtx]' 'rmtx [path_to_r_matrix_market_file.mtx]'" << std::endl;
-  std::cerr << "\t[Required] 'algorithm [KKMEM|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
-  std::cerr << "\t[Required] Multiplication mode: 'mmmode [0|1|2]' --> 0:AxA, 1:Rx(AP), 2:(RA)xP" << std::endl;
+
+  std::cerr << "\t[Required] INPUT MATRICES: 'amtx [left_hand_side.mtx]'  'bmtx [righ_hand_side.mtx]'" << std::endl;
+
+  std::cerr << "\t[Required] 'algorithm [KKMEM|OUTER|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
+  std::cerr << "\t[Optional] OUTPUT MATRICES: 'cmtx [output_matrix.mtx]'" << std::endl;
+
   std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
   std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
   std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
