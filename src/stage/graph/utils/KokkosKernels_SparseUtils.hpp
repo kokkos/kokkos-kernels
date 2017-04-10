@@ -627,6 +627,10 @@ void kk_sort_graph(
   else {
 
 
+    typedef typename lno_view_t::non_const_value_type size_type;
+    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+    typedef typename scalar_view_t::non_const_value_type scalar_t;
+
     lno_t nrows = in_xadj.dimension_0() - 1;
     std::vector <KokkosKernels::Experimental::Util::Edge<lno_t, scalar_t> > edges(in_adj.dimension_0());
 
