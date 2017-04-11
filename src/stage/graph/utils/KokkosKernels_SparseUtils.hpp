@@ -585,44 +585,72 @@ void kk_sort_graph(
 
     out_nnz_view_t out_adj,
     out_scalar_view_t out_vals){
+  KokkosKernels::Experimental::Util::ExecSpaceType exec = KokkosKernels::Experimental::Util::kk_get_exec_space_type<MyExecSpace>();
+
+  if (exec == KokkosKernels::Experimental::Util::Exec_CUDA){
+    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
+    Kokkos::deep_copy (hr, in_xadj);
+    typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
+    Kokkos::deep_copy (he, in_adj);
+    typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
+    Kokkos::deep_copy (hv, in_vals);
+
+    typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
+    typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
 
 
-  typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
-  Kokkos::deep_copy (hr, in_xadj);
-  typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
-  Kokkos::deep_copy (he, in_adj);
-  typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
-  Kokkos::deep_copy (hv, in_vals);
+    typedef typename lno_view_t::non_const_value_type size_type;
+    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+    typedef typename scalar_view_t::non_const_value_type scalar_t;
 
-  typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
-  typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
+    lno_t nrows = in_xadj.dimension_0() - 1;
+    std::vector <KokkosKernels::Experimental::Util::Edge<lno_t, scalar_t> > edges(in_adj.dimension_0());
 
-
-  typedef typename lno_view_t::non_const_value_type size_type;
-  typedef typename lno_nnz_view_t::non_const_value_type lno_t;
-  typedef typename scalar_view_t::non_const_value_type scalar_t;
-
-  lno_t nrows = in_xadj.dimension_0() - 1;
-  std::vector <KokkosKernels::Experimental::Util::Edge<lno_t, scalar_t> > edges(in_adj.dimension_0());
-
-  for (lno_t i = 0; i < nrows; ++i){
     size_type row_size = 0;
-    for (size_type j = hr(i); j < hr(i + 1); ++j){
-      edges[row_size].src = i;
-      edges[row_size].dst = he(j);
-      edges[row_size++].ew = hv(j);
+    for (lno_t i = 0; i < nrows; ++i){
+      for (size_type j = hr(i); j < hr(i + 1); ++j){
+        edges[row_size].src = i;
+        edges[row_size].dst = he(j);
+        edges[row_size++].ew = hv(j);
+      }
     }
     std::sort (edges.begin(), edges.begin() + row_size);
-
-    size_type row_ind = 0;
-    for (size_type j = hr(i); j < hr(i + 1); ++j){
-      heo(j) = edges[row_ind].dst;
-      hvo(j) = edges[row_ind++].ew;
+    for(size_type i = 0; i < in_adj.dimension_0(); ++i){
+      out_adj(i) = edges[i].dst;
+      out_vals(i) = edges[i].ew;
     }
-  }
 
-  Kokkos::deep_copy (out_adj, heo);
-  Kokkos::deep_copy (out_vals, hvo);
+
+    Kokkos::deep_copy (out_adj, heo);
+    Kokkos::deep_copy (out_vals, hvo);
+  }
+  else {
+
+
+    typedef typename lno_view_t::non_const_value_type size_type;
+    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+    typedef typename scalar_view_t::non_const_value_type scalar_t;
+
+    lno_t nrows = in_xadj.dimension_0() - 1;
+    std::vector <KokkosKernels::Experimental::Util::Edge<lno_t, scalar_t> > edges(in_adj.dimension_0());
+
+    size_type row_size = 0;
+    for (lno_t i = 0; i < nrows; ++i){
+      for (size_type j = in_xadj(i); j < in_xadj(i + 1); ++j){
+        edges[row_size].src = i;
+        edges[row_size].dst = in_adj(j);
+        edges[row_size++].ew = in_vals(j);
+      }
+    }
+    std::sort (edges.begin(), edges.begin() + row_size);
+    for(size_type i = 0; i < in_adj.dimension_0(); ++i){
+      out_adj(i) = edges[i].dst;
+      out_vals(i) = edges[i].ew;
+    }
+
+
+
+  }
 }
 
 

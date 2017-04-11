@@ -183,6 +183,8 @@ public:
   typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_numeric2_policy_t ;
   typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_numeric3_policy_t ;
 
+  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_policy_t ;
+
 
 private:
   HandleType *handle;
@@ -360,7 +362,7 @@ private:
   size_t collapse_triplets_omp(triplet_view_t triplets, size_t num_triplets, triplet_view_t out_triplets);
 
   template <typename a_row_view_t, typename b_row_view_t, typename flop_row_view_t>
-  struct FlopsPerRow;
+  struct FlopsPerRowOuter;
 #endif
 #endif
 

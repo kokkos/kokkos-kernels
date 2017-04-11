@@ -20,7 +20,7 @@ KOKKOS_DEVICES = "Cuda,OpenMP"
 KOKKOS_ARCH = "SNB,Kepler35"
 else
 CXX = icpc
-CXXFLAGS = -DGCC_EXTENSION -D_GLIBCXX_PARALLEL -O3 -DKOKKOS_HAVE_HBWSPACE=1
+CXXFLAGS = -DGCC_EXTENSION -D_GLIBCXX_PARALLEL -O3 -DKOKKOS_HAVE_HBWSPACE=1 -DKOKKOSKERNELS_HAVE_OUTER
 LINK = ${CXX} -lmemkind
 LINKFLAGS =  
 KOKKOS_DEVICES = "OpenMP"
@@ -98,10 +98,49 @@ clean: kokkos-clean
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Sparse.hpp
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Sparse_CrsMatrix.hpp
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Sparse_findRelOffset.hpp
-../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Sparse_trsv.hpp
-../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Sparse_MV.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Sparse_impl_spmv.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_InnerProductSpaceTraits.hpp
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Blas1_MV.hpp
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Blas1.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_V_impl_dot.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_abs.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_abs_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_axpby.hpp
+../KokkosKernels_PCG_GS_TEST.o: KokkosKernels_config.h
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_V_axpby_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_axpby_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_dot.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_V_dot_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_dot_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_fill.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_fill_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_mult.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_mult_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_nrm1.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_nrm1_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_nrm2.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_nrm2_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_nrm2w.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_nrm2w_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_nrmInf.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_nrmInf_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_recip.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_recip_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_scal.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_scal_multicoeff_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_scal_singlecoeff_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_V_scal_singlecoeff_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_sum.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_sum_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Blas1_MV_impl_update.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_V_update_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosBlas1_impl_MV_update_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Sparse_impl_spmv_omp.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosSparse_impl_MV_spmv_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/generated_specializations_hpp/KokkosSparse_impl_V_spmv_decl_specializations.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Sparse_trsv.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/impl/Kokkos_Sparse_impl_trsm.hpp
+../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_Sparse_MV.hpp
 ../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
 ../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
 ../KokkosKernels_SPMM_KK.o: ../../../src/Kokkos_ArithTraits.hpp
