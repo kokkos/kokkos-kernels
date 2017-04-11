@@ -12,7 +12,7 @@ ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Threads,HostSpace Serial,HostS
 
 mkdir generated_specializations_hpp/${Function}
 mkdir generated_specializations_cpp/${Function}
-filename_hpp=generated_specializations_hpp/${Function}/${FunctionExtended}_decl_specializations.hpp
+filename_hpp=generated_specializations_hpp/${FunctionExtended}_decl_specializations.hpp
 Function_UpperCase=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 
 
