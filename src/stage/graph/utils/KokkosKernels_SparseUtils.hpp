@@ -615,7 +615,8 @@ void kk_sort_graph(
       }
     }
     std::sort (edges.begin(), edges.begin() + row_size);
-    for(size_type i = 0; i < in_adj.dimension_0(); ++i){
+    size_type ne = in_adj.dimension_0();
+    for(size_type i = 0; i < ne; ++i){
       out_adj(i) = edges[i].dst;
       out_vals(i) = edges[i].ew;
     }
@@ -643,7 +644,8 @@ void kk_sort_graph(
       }
     }
     std::sort (edges.begin(), edges.begin() + row_size);
-    for(size_type i = 0; i < in_adj.dimension_0(); ++i){
+    size_type ne = in_adj.dimension_0();
+    for(size_type i = 0; i < ne; ++i){
       out_adj(i) = edges[i].dst;
       out_vals(i) = edges[i].ew;
     }
