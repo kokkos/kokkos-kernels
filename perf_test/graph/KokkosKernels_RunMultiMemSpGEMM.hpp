@@ -94,7 +94,7 @@ namespace Experiment{
     }
 
 
-    if ((b_mat_file == NULL || strcmp(b_mat_file, a_mat_file) ) && params.b_mem_space == params.a_mem_space){
+    if ((b_mat_file == NULL || strcmp(b_mat_file, a_mat_file) == 0) && params.b_mem_space == params.a_mem_space){
       std::cout << "Using A matrix for B as well" << std::endl;
       b_fast_crsmat = a_fast_crsmat;
       b_slow_crsmat = a_slow_crsmat;
