@@ -93,10 +93,18 @@ namespace Experiment{
       a_slow_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
     }
 
-    if (params.b_mem_space == 1){
+
+    if ((b_mat_file == NULL || strcmp(b_mat_file, a_mat_file) ) && params.b_mem_space == params.a_mem_space){
+      std::cout << "Using A matrix for B as well" << std::endl;
+      b_fast_crsmat = a_fast_crsmat;
+      b_slow_crsmat = a_slow_crsmat;
+    }
+    else if (params.b_mem_space == 1){
+      if (b_mat_file == NULL) b_mat_file = a_mat_file;
       b_fast_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
     }
     else {
+      if (b_mat_file == NULL) b_mat_file = a_mat_file;
       b_slow_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
     }
 

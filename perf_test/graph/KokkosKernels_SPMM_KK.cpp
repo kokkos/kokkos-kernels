@@ -251,10 +251,13 @@ int main (int argc, char ** argv){
   if (parse_inputs (params, argc, argv) ){
     return 1;
   }
-  if (params.a_mtx_bin_file == NULL || params.b_mtx_bin_file == NULL){
+  if (params.a_mtx_bin_file == NULL){
     std::cerr << "Provide a and b matrix files" << std::endl ;
     print_options();
     return 0;
+  }
+  if (params.b_mtx_bin_file == NULL){
+    std::cout << "B is not provided. Multiplying AxA." << std::endl;
   }
 
 #if defined( KOKKOS_HAVE_OPENMP )
