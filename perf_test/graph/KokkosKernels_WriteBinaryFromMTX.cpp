@@ -54,6 +54,7 @@ int main (int argc, char ** argv){
 
   bool symmetrize = false, remove_diagonal = false, transpose = false;
   char *in_mtx = NULL, *out_bin = NULL;
+  bool create_incidence = false;
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "symmetrize" ) ) {
       symmetrize = true;
@@ -63,6 +64,9 @@ int main (int argc, char ** argv){
     }
     else if ( 0 == strcasecmp( argv[i] , "transpose" ) ) {
       transpose = true;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "incidence" ) ) {
+      create_incidence = true;
     }
     else if ( 0 == strcasecmp( argv[i] , "in_mtx" ) ) {
       in_mtx = argv[++i];
@@ -90,7 +94,24 @@ int main (int argc, char ** argv){
   KokkosKernels::Experimental::Util::read_mtx<idx,size_type, wt>
       (in_mtx, &nv, &ne, &xadj, &adj, &ew, symmetrize, remove_diagonal, transpose);
 
-  KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, adj, ew, out_bin);
+  if (create_incidence){
+    std::vector<size_type> i_adj (ne);
+    KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix(
+        nv,xadj,adj,&(i_adj[0]));
+
+    /*
+    for (int i =0 ;i < nv; ++i){
+      for (int j =xadj[i] ;j < xadj[i+1]; ++j){
+        std::cout << i_adj[j] << " ";
+      }
+      std::cout << std::endl;
+    }
+    */
+    KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, &(i_adj[0]), ew, out_bin);
+  }
+  else {
+    KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, adj, ew, out_bin);
+  }
 
   delete [] xadj;
   delete [] adj;

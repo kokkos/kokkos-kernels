@@ -188,6 +188,46 @@ struct HashmapAccumulator{
 
   //function to be called from device.
   //Accumulation is OR operation.
+  //TODO: This function is for triangle counting.
+  //Assume that there are 2 values for triangle count.
+
+  KOKKOS_INLINE_FUNCTION
+  int sequential_insert_into_hash_mergeOr_TriangleCount_TrackHashes (
+      size_type hash,
+      key_type key,
+      value_type value,
+      value_type *values2,
+      size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
+
+    size_type i = hash_begins[hash];
+    for (; i != -1; i = hash_nexts[i]){
+      if (keys[i] == key){
+        values2[i] = values2[i] | (values[i] & value);
+        values[i] = values[i] | value;
+        return INSERT_SUCCESS;
+      }
+    }
+
+    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
+
+    if (hash_begins[hash] == -1){
+      used_hashes[used_hash_size[0]++] = hash;
+    }
+    hash_nexts[my_index] = hash_begins[hash];
+
+    hash_begins[hash] = my_index;
+    keys[my_index] = key;
+    values[my_index] = value;
+    values2[my_index] = 0;
+    return INSERT_SUCCESS;
+  }
+
+  //function to be called from device.
+  //Accumulation is OR operation.
   //Insertion is sequential, no race condition for the insertion.
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_mergeAdd_TrackHashes (

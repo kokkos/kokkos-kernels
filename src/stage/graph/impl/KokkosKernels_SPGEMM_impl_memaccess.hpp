@@ -47,6 +47,7 @@ namespace Experimental{
 
 namespace Graph{
 namespace Impl{
+#ifdef KOKKOSKERNELS_ANALYZE_MEMORYACCESS
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
@@ -851,7 +852,7 @@ std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_co
             << " overall_c_reuse:" << overall_c_l1_reuse
             <<  " opt_c_write:" << double(rowmapC(a_row_cnt)) / cache_1_line_word_count<< std::endl;
 }
-
+#endif
 
 }
 }

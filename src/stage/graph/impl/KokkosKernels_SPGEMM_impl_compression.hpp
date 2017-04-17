@@ -149,6 +149,99 @@ struct KokkosSPGEMM
     }
 
   KOKKOS_INLINE_FUNCTION
+  void operator()(const CountTag&, const team_member_t & teamMember) const {
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_ind)
+    {
+
+
+    //CPU part only compares it with the previous index.
+    size_type rowBegin = row_map(row_ind);
+    nnz_lno_t left_work = row_map(row_ind + 1) - rowBegin;
+
+    nnz_lno_t used_size = 0;
+    if (left_work > 0){
+    const nnz_lno_t n = entries(rowBegin);
+    nnz_lno_t prev_nset_ind = n >> compression_bit_divide_shift;
+    nnz_lno_t prev_nset = 1;
+    prev_nset = prev_nset << (n & compression_bit_mask);
+
+
+
+
+    for (nnz_lno_t i = 1; i < left_work; ++i){
+      nnz_lno_t n_set = 1;
+      const size_type adjind = i + rowBegin;
+      const nnz_lno_t nn = entries(adjind);
+      nnz_lno_t n_set_index = nn >> compression_bit_divide_shift;
+      n_set = n_set << (nn & compression_bit_mask);
+      if (prev_nset_ind == n_set_index){
+        prev_nset = prev_nset | n_set;
+      } else {
+        ++used_size;
+        prev_nset_ind = n_set_index;
+        prev_nset = n_set;
+      }
+    }
+    ++used_size;
+    }
+    new_row_map(row_ind) = used_size;
+    });
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const FillTag&, const team_member_t & teamMember) const {
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_ind)
+    {
+
+
+    //CPU part only compares it with the previous index.
+    size_type rowBegin = row_map(row_ind);
+    nnz_lno_t left_work = row_map(row_ind + 1) - rowBegin;
+
+    size_type outrowBegin = new_row_map(row_ind);
+
+
+    nnz_lno_t used_size = 0;
+    if (left_work > 0){
+    const nnz_lno_t n = entries(rowBegin);
+    nnz_lno_t prev_nset_ind = n >> compression_bit_divide_shift;
+    nnz_lno_t prev_nset = 1;
+    prev_nset = prev_nset << (n & compression_bit_mask);
+
+
+
+
+    for (nnz_lno_t i = 1; i < left_work; ++i){
+      nnz_lno_t n_set = 1;
+      const size_type adjind = i + rowBegin;
+      const nnz_lno_t nn = entries(adjind);
+      nnz_lno_t n_set_index = nn >> compression_bit_divide_shift;
+      n_set = n_set << (nn & compression_bit_mask);
+      if (prev_nset_ind == n_set_index){
+        prev_nset = prev_nset | n_set;
+      } else {
+        pset_index_entries[used_size + outrowBegin] = prev_nset_ind ;
+        pset_entries[used_size + outrowBegin] = prev_nset;
+        ++used_size;
+        prev_nset_ind = n_set_index;
+        prev_nset = n_set;
+      }
+    }
+    pset_index_entries[used_size + outrowBegin] = prev_nset_ind ;
+    pset_entries[used_size + outrowBegin] = prev_nset;
+    ++used_size;
+    }
+    });
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
 
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
@@ -194,6 +287,7 @@ struct KokkosSPGEMM
     new_row_map(row_ind) = rowBegin + used_size;
     });
   }
+  //TODO: Implement the GPU count version.
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag&, const team_member_t & teamMember) const {
@@ -425,8 +519,9 @@ void KokkosSPGEMM
     in_nnz_view_t in_entries,
 
     out_rowmap_view_t out_row_map,
-    out_nnz_view_t out_nnz_indices,
-    out_nnz_view_t out_nnz_sets){
+    out_nnz_view_t &out_nnz_indices,
+    out_nnz_view_t &out_nnz_sets,
+    bool compress_in_single_step){
   //get the execution space type.
   KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
   //get the suggested vectorlane size based on the execution space, and average number of nnzs per row.
@@ -471,6 +566,12 @@ void KokkosSPGEMM
     std::cout << "\t\tCompression Allocations:" <<  timer1.seconds() << std::endl;
   }
 
+  //if compressing in single step, allocate the memory as upperbound.
+  //TODO: two step is not there for cuda.
+  if (compress_in_single_step || my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
+    out_nnz_indices = out_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), nnz);
+    out_nnz_sets = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), nnz);
+  }
   typedef KokkosKernels::Experimental::Util::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
   //create functor to compress matrix.
   SingleStepZipMatrix <in_row_view_t, in_nnz_view_t, out_rowmap_view_t, out_nnz_view_t, pool_memory_space>
@@ -527,6 +628,31 @@ void KokkosSPGEMM
     Kokkos::parallel_for( gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
   }
   else {
+
+    if (!compress_in_single_step){
+      Kokkos::parallel_for( team_count_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+      MyExecSpace::fence();
+      KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum<out_rowmap_view_t, MyExecSpace> (n + 1, out_row_map);
+
+      auto d_c_nnz_size = Kokkos::subview(out_row_map, n);
+      auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
+      Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
+      typename out_rowmap_view_t::non_const_value_type compressed_b_size = h_c_nnz_size();
+
+      out_nnz_indices = out_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), compressed_b_size);
+      out_nnz_sets = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), compressed_b_size);
+
+      sszm_compressMatrix.set_index_entries = out_nnz_indices;
+      sszm_compressMatrix.set_entries = out_nnz_sets;
+
+
+      sszm_compressMatrix.pset_index_entries = out_nnz_indices.data();
+      sszm_compressMatrix.pset_entries = out_nnz_sets.data();
+
+      Kokkos::parallel_for( team_fill_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+
+    }
+    else {
     //USING DYNAMIC SCHEDULE HERE SLOWS DOWN SIGNIFICANTLY WITH HYPERTHREADS
     /*
     if (use_dynamic_schedule){
@@ -538,7 +664,7 @@ void KokkosSPGEMM
     //call cpu kernel with static schedule
       Kokkos::parallel_for( multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
     //}
-
+    }
   }
   MyExecSpace::fence();
 

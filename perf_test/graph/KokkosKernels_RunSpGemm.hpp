@@ -145,6 +145,7 @@ struct Parameters{
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
 
   char *a_mtx_bin_file, *b_mtx_bin_file, *c_mtx_bin_file;
+  bool compression2step;
   Parameters(){
 
     algorithm = 7;
@@ -168,6 +169,7 @@ struct Parameters{
     use_cuda = 0;
     a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
     a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = NULL;
+    compression2step = false;
   }
 };
 
@@ -225,7 +227,7 @@ crsMat_t3 run_experiment(
   const idx k = crsMat2.numCols();
 
   std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
-  if (n != crsMat.numCols()){
+  if (n < crsMat.numCols()){
     std::cout << "left.numCols():" << crsMat.numCols() << " right.numRows():" << crsMat2.numRows() << std::endl;
     exit(1);
   }
@@ -349,6 +351,10 @@ crsMat_t3 run_experiment(
   case 15:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_OUTERMULTIMEM);
     break;
+  case 16:
+    std::cout << "setting to triangle" << std::endl;
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_1);
+    break;
 
   default:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
@@ -359,6 +365,7 @@ crsMat_t3 run_experiment(
   kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
   kh.get_spgemm_handle()->mkl_convert_to_1base = false;
   kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
+  kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
 
   if (coloring_input_file){
     kh.get_spgemm_handle()->coloring_input_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_input_file);

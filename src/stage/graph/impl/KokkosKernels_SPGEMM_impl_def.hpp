@@ -85,6 +85,9 @@ void KokkosSPGEMM
     else if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_OUTERMULTIMEM ){
       this->KokkosSPGEMM_numeric_outer(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }
+    else if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_1 ){
+      this->KokkosSPGEMM_numeric_triangle(rowmapC_, entriesC_, valuesC_, my_exec_space);
+    }
     else {
       this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }
@@ -99,52 +102,92 @@ void KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_symbolic(c_row_view_t rowmapC_){
-  //number of rows and nnzs
-  nnz_lno_t n = this->row_mapB.dimension_0() - 1;
-  size_type nnz = this->entriesB.dimension_0();
-  //compressed b
-  row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
-  nnz_lno_temp_work_view_t set_index_entries(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), nnz);
-  nnz_lno_temp_work_view_t set_entries(Kokkos::ViewAllocateWithoutInitializing("set_indices_"), nnz);
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "SYMBOLIC PHASE" << std::endl;
+
+  SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
+  if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_1){
+    this->KokkosSPGEMM_symbolic_triangle(rowmapC_);
+    return;
   }
-  //First Compress B.
-  Kokkos::Impl::Timer timer1;
+  else {
 
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\tCOMPRESS MATRIX-B PHASE" << std::endl;
-  }
-  //get the compressed matrix.
-  this->compressMatrix(n, nnz, this->row_mapB, this->entriesB, new_row_mapB, set_index_entries, set_entries);
+    //number of rows and nnzs
+    nnz_lno_t n = this->row_mapB.dimension_0() - 1;
+    size_type nnz = this->entriesB.dimension_0();
 
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds()
-                  << std::endl << std::endl;
-  }
+    bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
+    //compressed b
+    row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
+    row_lno_temp_work_view_t new_row_mapB_begins;
 
-  timer1.reset();
+    nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
+    nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
 
-  //first get the max flops for a row, which will be used for max row size.
-  nnz_lno_t maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, row_mapB, new_row_mapB);
 
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\tMax Row Flops:" << maxNumRoughZeros  << std::endl;
-    std::cout << "\tMax Row Flop Calc Time:" << timer1.seconds()  << std::endl;
-  }
+    if (KOKKOSKERNELS_VERBOSE){
+      std::cout << "SYMBOLIC PHASE" << std::endl;
+    }
+    //First Compress B.
+    Kokkos::Impl::Timer timer1;
 
-  //calling symbolic structure
-  this->symbolic_c(a_row_cnt, row_mapA, entriesA,
-                  row_mapB, new_row_mapB, set_index_entries, set_entries,
-                   rowmapC_, maxNumRoughZeros);
+    if (KOKKOSKERNELS_VERBOSE){
+      std::cout << "\tCOMPRESS MATRIX-B PHASE" << std::endl;
+    }
+    //get the compressed matrix.
+    this->compressMatrix(n, nnz, this->row_mapB, this->entriesB, new_row_mapB, set_index_entries, set_entries, compress_in_single_step);
+
+    if (KOKKOSKERNELS_VERBOSE){
+      std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds()
+                                  << std::endl << std::endl;
+    }
+
+    timer1.reset();
+
+    //first get the max flops for a row, which will be used for max row size.
+    //If we did compression in single step, row_mapB[i] points the begining of row i,
+    //and new_row_mapB[i] points to the end of row i.
+    nnz_lno_t maxNumRoughZeros = 0;
+    if (compress_in_single_step){
+      maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, row_mapB, new_row_mapB);
+      if (KOKKOSKERNELS_VERBOSE){
+        std::cout << "\tMax Row Flops:" << maxNumRoughZeros  << std::endl;
+        std::cout << "\tMax Row Flop Calc Time:" << timer1.seconds()  << std::endl;
+      }
+
+      //calling symbolic structure
+      this->symbolic_c(a_row_cnt, row_mapA, entriesA,
+          row_mapB, new_row_mapB, set_index_entries, set_entries,
+          rowmapC_, maxNumRoughZeros);
+
+    }
+    else {
+      auto new_row_mapB_begin = Kokkos::subview (new_row_mapB, std::make_pair (0, n - 1));
+      auto new_row_mapB_end = Kokkos::subview (new_row_mapB, std::make_pair (1, n));
+      //KokkosKernels::Experimental::Util::print_1Dview(new_row_mapB);
+      //KokkosKernels::Experimental::Util::print_1Dview(new_row_mapB_begin);
+      //KokkosKernels::Experimental::Util::print_1Dview(new_row_mapB_end);
+      //But for 2 step it is a bit different.
+      //new_row_mapB is complete and holds content of row i is in between new_row_mapB[i] - new_row_mapB[i+1]
+      maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end);
+      if (KOKKOSKERNELS_VERBOSE){
+        std::cout << "\tMax Row Flops:" << maxNumRoughZeros  << std::endl;
+        std::cout << "\tMax Row Flop Calc Time:" << timer1.seconds()  << std::endl;
+        std::cout << "\t Compression Ratio: " << set_index_entries.dimension_0() << " / " << nnz
+            << " = " << set_index_entries.dimension_0() / double (nnz) << std::endl;
+      }
+
+      //calling symbolic structure
+      this->symbolic_c(a_row_cnt, row_mapA, entriesA,
+          new_row_mapB_begin, new_row_mapB_end, set_index_entries, set_entries,
+          rowmapC_, maxNumRoughZeros);
+    }
 
 #ifdef KOKKOSKERNELS_ANALYZE_MEMORYACCESS
-  double read_write_cost = this->handle->get_spgemm_handle()->get_read_write_cost_calc();
-  if (read_write_cost){
-    this->print_read_write_cost(rowmapC_);
-  }
+    double read_write_cost = this->handle->get_spgemm_handle()->get_read_write_cost_calc();
+    if (read_write_cost){
+      this->print_read_write_cost(rowmapC_);
+    }
 #endif
-
+  }
 }
 
 

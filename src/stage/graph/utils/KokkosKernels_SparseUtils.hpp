@@ -48,6 +48,7 @@
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
+#include <vector>
 //#include "KokkosKernels_Handle.hpp"
 namespace KokkosKernels{
 
@@ -655,6 +656,151 @@ void kk_sort_graph(
   }
 }
 
+/*
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename out_nnz_view_t,
+          typename MyExecSpace>
+struct IncidenceMatrix{
+
+  struct FillTag{};
+
+  typedef struct FillTag FillTag;
+
+  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
+  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t ;
+  typedef typename team_fill_policy_t::member_type team_fill_member_t ;
+
+  typedef typename in_nnz_view_t::non_const_value_type nnz_lno_t;
+  typedef typename in_row_view_t::non_const_value_type size_type;
+
+
+  typename in_nnz_view_t::non_const_value_type num_rows;
+  in_row_view_t xadj;
+  in_nnz_view_t adj;
+  out_nnz_view_t t_adj;  //allocated
+  typename in_row_view_t::non_const_type tmp_txadj;
+  nnz_lno_t team_work_size;
+
+  IncidenceMatrix(
+      nnz_lno_t num_rows_,
+      in_row_view_t xadj_,
+      in_nnz_view_t adj_,
+      out_nnz_view_t t_adj_,
+      typename in_row_view_t::non_const_type tmp_txadj_,
+      nnz_lno_t team_row_work_size_):
+        num_rows(num_rows_),
+        xadj(xadj_), adj(adj_),
+        t_adj(t_adj_),
+        tmp_txadj(tmp_txadj_), team_work_size(team_row_work_size_) {}
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const FillTag&, const team_fill_member_t & teamMember) const {
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, num_rows);
+
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,team_row_begin,team_row_end), [&] (const nnz_lno_t& row_index) {
+      const size_type col_begin = xadj[row_index];
+      const size_type col_end = xadj[row_index + 1];
+      const nnz_lno_t left_work = col_end - col_begin;
+      Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, left_work),
+          [&] (nnz_lno_t i) {
+        const size_type adjind = i + col_begin;
+        const nnz_lno_t colIndex = adj[adjind];
+        if (row_index < colIndex){
+
+          const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)),1);
+          t_adj(adjind) = adjind;
+          t_adj(pos) = adjind;
+        }
+      });
+    //}
+    });
+  }
+};
+*/
+/**
+ * \brief function returns transpose of the given graph.
+ * \param num_rows: num rows in input graph
+ * \param num_cols: num cols in input graph
+ * \param xadj: row pointers of the input graph
+ * \param adj: column indices of the input graph
+ * \param t_xadj: output, the row indices of the output graph. MUST BE INITIALIZED WITH ZEROES.
+ * \param t_adj: output, column indices. No need for initializations.
+ * \param vector_size: suggested vector size, optional. if -1, kernel will decide.
+ * \param suggested_team_size: suggested team size, optional. if -1, kernel will decide.
+ * \param team_work_chunk_size: suggested work size of a team, optional. if -1, kernel will decide.
+ * \param use_dynamic_scheduling: whether to use dynamic scheduling. Default is true.
+ */
+/*
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename out_nnz_view_t,
+          typename MyExecSpace>
+inline void kk_create_incidence_matrix(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    in_row_view_t xadj,
+    in_nnz_view_t adj,
+    out_nnz_view_t i_adj,  //pre-allocated -- no need for initialize -- size is same as adj
+    int vector_size = -1,
+    int suggested_team_size = -1,
+    typename in_nnz_view_t::non_const_value_type team_work_chunk_size = -1,
+    bool use_dynamic_scheduling = true
+    ){
+
+
+  typedef typename in_row_view_t::non_const_type tmp_row_view_t;
+  //allocate some memory for work for row pointers
+  tmp_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_rows + 1);
+
+  Kokkos::deep_copy(tmp_row_view, xadj);
+
+  in_nnz_view_t tmp1;
+  out_nnz_view_t tmp2;
+
+  //create the functor for tranpose.
+  typedef IncidenceMatrix <
+      in_row_view_t, in_nnz_view_t, in_nnz_view_t,
+      out_nnz_view_t, MyExecSpace>  IncidenceMatrix_Functor_t;
+
+  IncidenceMatrix_Functor_t tm ( num_rows, xadj, adj,
+                                t_adj, tmp_row_view,
+                                false,
+                                team_work_chunk_size);
+
+
+  typedef typename IncidenceMatrix_Functor_t::team_fill_policy_t fill_tp_t;
+  typedef typename IncidenceMatrix_Functor_t::dynamic_team_fill_policy_t d_fill_tp_t;
+
+  typename in_row_view_t::non_const_value_type nnz = adj.dimension_0();
+
+  //set the vector size, if not suggested.
+  if (vector_size == -1)
+    vector_size = kk_get_suggested_vector_size(num_rows, nnz, kk_get_exec_space_type<MyExecSpace>());
+
+  //set the team size, if not suggested.
+  if (suggested_team_size == -1)
+    suggested_team_size = kk_get_suggested_team_size(vector_size, kk_get_exec_space_type<MyExecSpace>());
+
+  //set the chunk size, if not suggested.
+  if (team_work_chunk_size == -1)
+    team_work_chunk_size = suggested_team_size;
+
+
+
+  if (use_dynamic_scheduling){
+    Kokkos::parallel_for(  fill_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
+  }
+  else {
+    Kokkos::parallel_for(  d_fill_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
+  }
+  MyExecSpace::fence();
+
+}
+*/
 
 
 

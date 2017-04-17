@@ -68,7 +68,7 @@ namespace Graph{
 enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
                       SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA,
                      //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
-                      SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
+                      SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM, SPGEMM_KK_TRIANGLE_1,
                      SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_MEMORY2, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
 
 template <class lno_row_view_t_,
@@ -231,8 +231,10 @@ private:
   nnz_lno_t max_nnz_inresult;
   nnz_lno_t max_nnz_compressed_result;
 
+
   row_lno_temp_work_view_t compressed_b_rowmap;// compressed_b_set_begins, compressed_b_set_nexts;
   nnz_lno_temp_work_view_t compressed_b_set_indices, compressed_b_sets;
+
   row_lno_temp_work_view_t compressed_c_rowmap;
 
   nnz_lno_temp_work_view_t c_column_indices;
@@ -270,6 +272,7 @@ private:
   typename Kokkos::View<int *, HandlePersistentMemorySpace> persistent_c_xadj, persistent_a_xadj, persistent_b_xadj, persistent_a_adj, persistent_b_adj;
   bool mkl_keep_output;
   bool mkl_convert_to_1base;
+  bool is_compression_single_step;
 
   void set_mkl_sort_option(int mkl_sort_option_){
     this->mkl_sort_option = mkl_sort_option_;
@@ -352,15 +355,20 @@ private:
 
 
 
-
+  void set_compressed_b(
+      row_lno_temp_work_view_t compressed_b_rowmap_,
+      nnz_lno_temp_work_view_t compressed_b_set_indices_,
+      nnz_lno_temp_work_view_t compressed_b_sets_){
+    compressed_b_rowmap = compressed_b_rowmap_;
+    compressed_b_set_indices = compressed_b_set_indices_;
+    compressed_b_sets = compressed_b_sets_;
+  }
 
 
   void get_compressed_b(
       row_lno_temp_work_view_t &compressed_b_rowmap_,
       nnz_lno_temp_work_view_t &compressed_b_set_indices_,
-      nnz_lno_temp_work_view_t &compressed_b_sets_,
-      row_lno_temp_work_view_t &compressed_b_set_begins_,
-      row_lno_temp_work_view_t &compressed_b_set_nexts_){
+      nnz_lno_temp_work_view_t &compressed_b_sets_){
     compressed_b_rowmap_ = compressed_b_rowmap;
     compressed_b_set_indices_ = compressed_b_set_indices;
     compressed_b_sets_ = compressed_b_sets;
@@ -383,7 +391,7 @@ private:
 	coloring_output_file(""),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
     mkl_keep_output(true),
-    mkl_convert_to_1base(true)
+    mkl_convert_to_1base(true), is_compression_single_step(true)
 #ifdef KERNELS_HAVE_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
@@ -572,6 +580,13 @@ private:
 
   }
 
+  void set_compression_steps(bool isCompressionSingleStep){
+    this->is_compression_single_step = isCompressionSingleStep;
+  }
+
+  bool get_compression_step(){
+    return is_compression_single_step;
+  }
 };
 
 

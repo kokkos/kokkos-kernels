@@ -492,7 +492,40 @@ crsMat_t read_kokkos_crst_matrix(const char * filename_){
 
 
 
+template <typename size_type, typename nnz_lno_t>
+inline void kk_sequential_create_incidence_matrix(
+    nnz_lno_t num_rows,
+    size_type *xadj,
+    nnz_lno_t *adj,
+    size_type *i_adj //output. preallocated
+  ){
 
+  std::vector<size_type> c_xadj(num_rows);
+  for (nnz_lno_t i = 0; i < num_rows; i++){
+    c_xadj[i] = xadj[i];
+  }
+  int eCnt=0;
+  for (nnz_lno_t i = 0; i < num_rows; i++){
+    size_type begin = xadj[i];
+    size_type end = xadj[i + 1];
+    nnz_lno_t adjsize = end - begin;
+
+    for (nnz_lno_t j = 0; j < adjsize; j++){
+      size_type aind = j + begin;
+      nnz_lno_t col = adj[aind];
+      if (i < col){
+        i_adj[c_xadj[i]++] = eCnt;
+        i_adj[c_xadj[col]++] = eCnt++;
+      }
+    }
+  }
+
+  for (nnz_lno_t i = 0; i < num_rows; i++){
+    if (c_xadj[i] != xadj[i+1]){
+      std::cout << "i:" << i << " c_xadj[i]:" << c_xadj[i] << " xadj[i+1]:" << xadj[i+1] << std::endl;
+    }
+  }
+}
 
 }
 }

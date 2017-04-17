@@ -155,6 +155,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "shmem" ) ) {
       params.shmemsize =  atoi( argv[++i] ) ;
     }
+    else if ( 0 == strcasecmp( argv[i] , "compression2step" ) ) {
+      params.compression2step =  true ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "mklsort" ) ) {
       params.mkl_sort_option = atoi( argv[++i] ) ;
     }
@@ -225,6 +228,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       else if ( 0 == strcasecmp( argv[i] , "OUTER" ) ) {
         params.algorithm = 15;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLE" ) ) {
+        params.algorithm = 16;
       }
       else {
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
