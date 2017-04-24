@@ -527,6 +527,45 @@ inline void kk_sequential_create_incidence_matrix(
   }
 }
 
+template <typename size_type, typename nnz_lno_t>
+inline void kk_sequential_create_incidence_matrix(
+    nnz_lno_t num_rows,
+    nnz_lno_t num_edges,
+    size_type *xadj,
+    nnz_lno_t *adj,
+    size_type *i_xadj, //output. preallocated
+    size_type *i_adj //output. preallocated
+  ){
+
+  for (nnz_lno_t i = 0; i < num_edges/2 + 1; i++){
+    i_xadj[i] = i * 2;
+  }
+  int eCnt=0;
+  for (nnz_lno_t i = 0; i < num_rows; i++){
+    size_type begin = xadj[i];
+    size_type end = xadj[i + 1];
+    nnz_lno_t adjsize = end - begin;
+
+    for (nnz_lno_t j = 0; j < adjsize; j++){
+      size_type aind = j + begin;
+      nnz_lno_t col = adj[aind];
+      if (i < col){
+        i_adj[eCnt++] = i;
+        i_adj[eCnt++] = col;
+        //std::cout << "eCnt:" << eCnt << " i:" << i << " col:" << col << std::endl;
+      }
+    }
+  }
+  /*
+  for (int i = 0; i < num_edges / 2 ; ++i) {
+    std::cout << i << " " << i_adj[i] << " " << i_adj[i + 1] << std::endl;
+  }
+  */
+
+  //std::cout << "eCnt:" << eCnt << " num_edges:" << num_edges << std::endl;
+}
+
+
 }
 }
 

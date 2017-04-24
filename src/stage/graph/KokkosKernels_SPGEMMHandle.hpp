@@ -68,7 +68,10 @@ namespace Graph{
 enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
                       SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA,
                      //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
-                      SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM, SPGEMM_KK_TRIANGLE_1,
+                      SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
+                      SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
+                      SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
+                      SPGEMM_KK_TRIANGLE_LL,
                      SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_MEMORY2, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
 
 template <class lno_row_view_t_,
@@ -231,7 +234,7 @@ private:
   nnz_lno_t max_nnz_inresult;
   nnz_lno_t max_nnz_compressed_result;
 
-
+  size_type compressed_b_size;
   row_lno_temp_work_view_t compressed_b_rowmap;// compressed_b_set_begins, compressed_b_set_nexts;
   nnz_lno_temp_work_view_t compressed_b_set_indices, compressed_b_sets;
 
@@ -249,6 +252,7 @@ private:
   nnz_lno_persistent_work_host_view_t color_xadj;
   nnz_lno_persistent_work_view_t color_adj, vertex_colors;
   nnz_lno_t num_multi_colors, num_used_colors;
+  nnz_lno_persistent_work_view_t min_result_row_for_each_row;
 
   double multi_color_scale;
   int mkl_sort_option;
@@ -356,9 +360,11 @@ private:
 
 
   void set_compressed_b(
+      size_type b_nnz_size,
       row_lno_temp_work_view_t compressed_b_rowmap_,
       nnz_lno_temp_work_view_t compressed_b_set_indices_,
       nnz_lno_temp_work_view_t compressed_b_sets_){
+    compressed_b_size = b_nnz_size;
     compressed_b_rowmap = compressed_b_rowmap_;
     compressed_b_set_indices = compressed_b_set_indices_;
     compressed_b_sets = compressed_b_sets_;
@@ -366,9 +372,11 @@ private:
 
 
   void get_compressed_b(
+      size_type &b_nnz_size,
       row_lno_temp_work_view_t &compressed_b_rowmap_,
       nnz_lno_temp_work_view_t &compressed_b_set_indices_,
       nnz_lno_temp_work_view_t &compressed_b_sets_){
+    b_nnz_size = compressed_b_size;
     compressed_b_rowmap_ = compressed_b_rowmap;
     compressed_b_set_indices_ = compressed_b_set_indices;
     compressed_b_sets_ = compressed_b_sets;
@@ -386,7 +394,8 @@ private:
     tranpose_a_adj(), tranpose_b_adj(), tranpose_c_adj(),
     transpose_a(false),transpose_b(false), transpose_c_symbolic(false),
     num_colors(0),
-    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
+    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0),
+    min_result_row_for_each_row(), multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
 	coloring_output_file(""),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
@@ -582,6 +591,14 @@ private:
 
   void set_compression_steps(bool isCompressionSingleStep){
     this->is_compression_single_step = isCompressionSingleStep;
+  }
+
+  void set_min_col_of_row(nnz_lno_persistent_work_view_t min_result_row_for_each_row_){
+    this->min_result_row_for_each_row = min_result_row_for_each_row_;
+  }
+
+  nnz_lno_persistent_work_view_t get_min_col_of_row(){
+    return this->min_result_row_for_each_row;
   }
 
   bool get_compression_step(){

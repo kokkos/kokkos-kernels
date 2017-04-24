@@ -187,6 +187,27 @@ struct HashmapAccumulator{
   }
 
   //function to be called from device.
+  //Accumulation is AND operation.
+  //Insertion is sequential, no race condition for the insertion.
+  KOKKOS_INLINE_FUNCTION
+  int sequential_insert_into_hash_mergeAnd (
+      size_type hash,
+      key_type key,
+      value_type value){
+
+    size_type i = hash_begins[hash];
+    //if it is in the hash perform an and operation.
+    for (; i != -1; i = hash_nexts[i]){
+      if (keys[i] == key){
+        values[i] = values[i] & value;
+        return INSERT_SUCCESS;
+      }
+    }
+    //if it is not there, return it is full in the meaning that it is not there.
+    return INSERT_FULL;
+  }
+
+  //function to be called from device.
   //Accumulation is OR operation.
   //TODO: This function is for triangle counting.
   //Assume that there are 2 values for triangle count.
@@ -225,6 +246,64 @@ struct HashmapAccumulator{
     values2[my_index] = 0;
     return INSERT_SUCCESS;
   }
+
+  KOKKOS_INLINE_FUNCTION
+  int sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes (
+      size_type hash,
+      key_type key,
+      value_type value,
+      value_type *values2,
+      size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
+    //this function will only try to do an AND operation with
+    //existing keys. If the key is not there, returns INSERT_FULL.
+    size_type i = hash_begins[hash];
+    for (; i != -1; i = hash_nexts[i]){
+      //if (hash == 74) std::cout << "i" << i << " keys[i]:" << keys[i] << std::endl;
+      if (keys[i] == key){
+        //values2[i] = values2[i] | (values[i] & value);
+        values[i] = values[i] & value;
+        ++values2[i];
+        return INSERT_SUCCESS;
+      }
+    }
+    return INSERT_FULL;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  int sequential_insert_into_hash_TriangleCount_TrackHashes (
+      size_type hash,
+      key_type key,
+      value_type value,
+      value_type *values2,
+      size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
+
+    //this function will directly insert, won't check if it exists already.
+    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
+
+    keys[my_index] = key;
+    values[my_index] = value;
+    values2[my_index] = 1;
+
+    if (hash_begins[hash] == -1){
+      hash_begins[hash] = my_index;
+      used_hashes[used_hash_size[0]++] = hash;
+    }
+    else {
+      hash_nexts[my_index] = hash_begins[hash];
+      hash_begins[hash] = my_index;
+
+    }
+
+    return INSERT_SUCCESS;
+  }
+
 
   //function to be called from device.
   //Accumulation is OR operation.

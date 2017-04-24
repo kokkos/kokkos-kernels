@@ -50,7 +50,7 @@
 
 
 #define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
-
+#define KOKKOSKERNELS_MACRO_MAX(x,y) ((x) < (y) ? (y) : (x))
 #define KOKKOSKERNELS_MACRO_ABS(x)  Kokkos::Details::ArithTraits<typename std::decay<decltype(x)>::type>::abs (x)
 
 namespace KokkosKernels{
@@ -147,6 +147,24 @@ template <typename view_t, typename view2_t, typename MyExecSpace>
 inline void kk_reduce_diff_view(size_t num_elements, view_t smaller, view2_t bigger, typename view_t::non_const_value_type & reduction){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_reduce( my_exec_space(0, num_elements), DiffReductionFunctor<view_t, view2_t>(smaller, bigger), reduction);
+}
+
+template <typename it>
+struct DiffReductionFunctorP{
+  const it * array_begins;
+  const it* array_ends;
+  DiffReductionFunctorP(const it * begins, const it* ends): array_begins(begins), array_ends(ends){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii, it & update) const {
+          update += (array_ends[ii] - array_begins[ii]);
+  }
+};
+
+template <typename it,  typename MyExecSpace>
+inline void kkp_reduce_diff_view(const size_t num_elements, const it *smaller, const it *bigger, it & reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0, num_elements), DiffReductionFunctorP<it>(smaller, bigger), reduction);
 }
 
 

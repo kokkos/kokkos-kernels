@@ -232,6 +232,21 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "TRIANGLE" ) ) {
         params.algorithm = 16;
       }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEMEM" ) ) {
+        params.algorithm = 17;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEDENSE" ) ) {
+        params.algorithm = 18;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIA" ) ) {
+        params.algorithm = 19;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIAMEM" ) ) {
+        params.algorithm = 20;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIADENSE" ) ) {
+        params.algorithm = 21;
+      }
       else {
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
         print_options();

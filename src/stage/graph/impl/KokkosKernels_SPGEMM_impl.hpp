@@ -153,6 +153,7 @@ public:
 
   struct FillTag{};
   struct MultiCoreDenseAccumulatorTag{};
+  struct MultiCoreDenseAccumulatorTag2{};
   struct MultiCoreTag{};
   struct MultiCoreTag2{};
   struct GPUTag{};
@@ -162,6 +163,7 @@ public:
   struct Numeric3Tag{};
 
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace> multicore_dense_team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace> multicore_dense_team2_count_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace> multicore_team_policy2_t ;
 
@@ -177,6 +179,8 @@ public:
 
 
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_dense_team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_dense_team2_count_policy_t ;
+
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy2_t ;
 
@@ -212,6 +216,9 @@ private:
   const bool use_dynamic_schedule;
   const bool KOKKOSKERNELS_VERBOSE;
   //const int KOKKOSKERNELS_VERBOSE = 1;
+
+  const KokkosKernels::Experimental::Util::ExecSpaceType MyEnumExecSpace;
+  const SPGEMMAlgorithm spgemm_algorithm;
 
 
   //////////////////////////////////////////////////////////////////////////////
@@ -250,52 +257,42 @@ private:
   ////BELOW code is for triangle count specific.
   //////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////
-  template <typename a_row_view_t, typename a_nnz_view_t,
-                typename b_original_row_view_t,
-                typename b_compressed_row_view_t, typename b_nnz_view_t,
-                typename c_row_view_t>
 
-  void triangle_count_symbolic(
-      nnz_lno_t m,
-      a_row_view_t row_mapA_,
-      a_nnz_view_t entriesA_,
+  void triangle_count_ai(
+      const int is_symbolic_or_numeric,
+      const nnz_lno_t m,
+      const size_type* row_mapA_,
+      const nnz_lno_t* entriesA_,
 
-      b_original_row_view_t old_row_mapB,
-      b_compressed_row_view_t row_mapB_,
-      b_nnz_view_t entriesSetIndex,
-      b_nnz_view_t entriesSets,
+      const size_type bnnz,
+      const size_type* old_row_mapB,
+      const size_type* row_mapB_,
+      const nnz_lno_t* entriesSetIndex,
+      const nnz_lno_t* entriesSets,
 
-      c_row_view_t rowmapC,
-      nnz_lno_t maxNumRoughNonzeros
+      size_type* rowmapC,
+      nnz_lno_t *entriesC
   );
 
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_original_row_view_t,
-            typename b_compressed_row_view_t, typename b_nnz_view_t,
-            typename c_row_view_t, //typename nnz_lno_temp_work_view_t,
-            typename pool_memory_space>
+  template <typename pool_memory_space>
   struct TriangleCount;
 
-  template <typename pool_memory_space>
-  struct TriangleEnumerate;
-
+public:
   template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
   void KokkosSPGEMM_numeric_triangle(
         c_row_view_t rowmapC_,
         c_lno_nnz_view_t entriesC_,
-        c_scalar_nnz_view_t valuesC_,
-        KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space);
-
-  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_triangle_1(
-        c_row_view_t rowmapC_,
-        c_lno_nnz_view_t entriesC_,
-        c_scalar_nnz_view_t valuesC_,
-        KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space);
-
+        c_scalar_nnz_view_t valuesC_);
 
   template <typename c_row_view_t>
   void KokkosSPGEMM_symbolic_triangle(c_row_view_t rowmapC_);
+private:
+  template <typename c_row_view_t, typename c_lno_nnz_view_t>
+  void KokkosSPGEMM_numeric_triangle_ai(
+        c_row_view_t rowmapC_,
+        c_lno_nnz_view_t entriesC_);
+
+
 
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for SPEED SPGEMM
@@ -529,7 +526,10 @@ public:
           row_mapA(row_mapA_), entriesA(entriesA_), valsA(), transposeA(transposeA_),
           row_mapB(row_mapB_), entriesB(entriesB_), valsB(), transposeB(transposeB_),
           shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency()),
-          use_dynamic_schedule(handle_->is_dynamic_scheduling()), KOKKOSKERNELS_VERBOSE(handle_->get_verbose())
+          use_dynamic_schedule(handle_->is_dynamic_scheduling()),
+          KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
+          MyEnumExecSpace(this->handle->get_handle_exec_space()),
+          spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type())
           //,row_mapC(), entriesC(), valsC()
           {}
 
@@ -549,7 +549,10 @@ public:
             row_mapA(row_mapA_), entriesA(entriesA_), valsA(valsA_), transposeA(transposeA_),
             row_mapB(row_mapB_), entriesB(entriesB_), valsB(valsB_), transposeB(transposeB_),
             shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency()),
-            use_dynamic_schedule(handle_->is_dynamic_scheduling()), KOKKOSKERNELS_VERBOSE(handle_->get_verbose())
+            use_dynamic_schedule(handle_->is_dynamic_scheduling()),
+            KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
+            MyEnumExecSpace(this->handle->get_handle_exec_space()),
+            spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type())
             //,row_mapB(), entriesC(), valsC()
             {}
 
@@ -591,6 +594,8 @@ private:
             typename b_oldrow_view_t, typename b_row_view_t>
   struct PredicMaxRowNNZ;
 
+  struct PredicMaxRowNNZIntersection;
+
   /**
    * \brief function return max flops for a row in the result multiplication.
    * \param m: number of rows in A
@@ -601,14 +606,32 @@ private:
    */
   template <typename a_row_view_t, typename a_nnz_view_t,
             typename b_oldrow_view_t, typename b_row_view_t>
-  int getMaxRoughRowNNZ(
-      int m,
+  size_t getMaxRoughRowNNZ(
+      nnz_lno_t m,
       a_row_view_t row_mapA_,
       a_nnz_view_t entriesA_,
 
       b_oldrow_view_t row_pointers_begin_B,
       b_row_view_t row_pointers_end_B);
 
+  struct PredicMaxRowNNZ_p;
+  size_t getMaxRoughRowNNZ_p(
+      const nnz_lno_t m, const  size_type annz,
+      const size_type * row_mapA_,
+      const nnz_lno_t * entriesA_,
+
+      const size_type * row_pointers_begin_B,
+      const size_type * row_pointers_end_B);
+
+  size_t getMaxRoughRowNNZIntersection_p(
+      const nnz_lno_t m,const  size_type annz,
+      const size_type * row_mapA_,
+      const nnz_lno_t * entriesA_,
+
+      const size_type * row_pointers_begin_B,
+      const size_type * row_pointers_end_B,
+      nnz_lno_t * min_result_row_for_each_row
+      );
 
   template <typename a_r_view_t, typename a_nnz_view_t,
               typename b_original_row_view_t,

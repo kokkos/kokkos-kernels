@@ -691,6 +691,113 @@ struct KokkosSPGEMM
   }
 };
 
+template <typename HandleType,
+typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
+struct KokkosSPGEMM
+  <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
+    b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
+  PredicMaxRowNNZIntersection{
+  const nnz_lno_t m,k; //num rows
+  const size_type * row_mapA;  //row pointers of a
+  const nnz_lno_t * entriesA;  //col
+  const size_type * row_begins_B;
+  const size_type * row_end_indices_B;
+  const size_type min_val;
+  const nnz_lno_t team_row_chunk_size;
+  nnz_lno_t * min_result_row_for_each_row;
+
+  /**
+   * \brief Constructor
+   * \param m_: num rows in A.
+   * \param row_mapA_: row pointers of A
+   * \param entriesA_: col indices of A
+   * \param row_begins_B_: row begin indices of B
+   * \param row_end_indices_B_: row end indices of B
+   * \param team_row_chunk_size_: the number of rows assigned to each team.
+   */
+  PredicMaxRowNNZIntersection(
+      const nnz_lno_t m_, const nnz_lno_t k_,
+      const size_type * row_mapA_,
+      const nnz_lno_t * entriesA_,
+
+      const size_type * row_begins_B_,
+      const size_type * row_end_indices_B_,
+      const nnz_lno_t team_row_chunk_size_,
+      nnz_lno_t * min_result_row_for_each_row_):
+        m(m_), k(k_),
+        row_mapA(row_mapA_), entriesA(entriesA_),
+        row_begins_B(row_begins_B_),
+        row_end_indices_B(row_end_indices_B_),
+        min_val(((std::numeric_limits<size_type>::lowest()))),
+        team_row_chunk_size(team_row_chunk_size_),
+        min_result_row_for_each_row(min_result_row_for_each_row_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member_t & teamMember, size_type &overal_max) const {
+    //get the range of rows for team.
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, m);
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index)
+    {
+
+      const size_type col_begin = row_mapA[row_index];
+      const size_type col_end = row_mapA[row_index + 1];
+      const nnz_lno_t left_work = col_end - col_begin;
+      nnz_lno_t min_num_result_row = -1;
+      if (left_work){
+        nnz_lno_t min_num_results_in_row = this->k;
+        for (nnz_lno_t i = 0; i< left_work; ++i){
+
+          const size_type adjind = i + col_begin;
+          const nnz_lno_t colIndex = entriesA[adjind];
+          nnz_lno_t rowsize = row_end_indices_B [colIndex] - row_begins_B[colIndex];
+          if (min_num_results_in_row > rowsize){
+            min_num_results_in_row = rowsize;
+            min_num_result_row = colIndex;
+          }
+          //max_num_results_in_row = KOKKOSKERNELS_MACRO_MIN(max_num_results_in_row, rowsize);
+
+        }
+        /*
+      //get the size of the rows of B, pointed by row of A
+      Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(teamMember, left_work),
+          [&] (nnz_lno_t i, nnz_lno_t & valueToUpdate) {
+        const size_type adjind = i + col_begin;
+        const nnz_lno_t colIndex = entriesA[adjind];
+        nnz_lno_t rowsize = row_end_indices_B (colIndex) - row_begins_B(colIndex);
+        std::cout << "adjind:" << adjind << " valueToUpdate:" << valueToUpdate << " rowsize:" << rowsize << std::endl;
+        valueToUpdate = KOKKOSKERNELS_MACRO_MIN(valueToUpdate, rowsize);
+      },
+        [&] (nnz_lno_t& val, const nnz_lno_t& src)
+        {std::cout << "val:" << val << " src:" << src << std::endl;
+
+        val = KOKKOSKERNELS_MACRO_MIN(val, src);},
+      max_num_results_in_row);
+         */
+        //set max.
+        if (overal_max < min_num_results_in_row) {
+          overal_max = min_num_results_in_row;
+        }
+      }
+      min_result_row_for_each_row[row_index] = min_num_result_row;
+    });
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile size_type& dst,const volatile size_type& src) const {
+    if (dst < src) { dst = src;}
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void init (size_type& dst) const
+  {
+    dst = min_val;
+  }
+};
 
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
@@ -1049,12 +1156,13 @@ template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
 template <typename a_r_view_t, typename a_n_view_t, typename b_oldrow_view_t, typename b_r_view_t>
-int KokkosSPGEMM
+
+size_t KokkosSPGEMM
   <HandleType,
       a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
       b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     getMaxRoughRowNNZ(
-        int m,
+        nnz_lno_t m,
     a_r_view_t row_mapA_,
     a_n_view_t entriesA_,
 
@@ -1062,27 +1170,190 @@ int KokkosSPGEMM
     b_r_view_t row_pointers_end_B)
     {
 
-        //get the execution space type.
-        //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
-        int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA_.dimension_0());
-        int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
-        nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
+  //get the execution space type.
+  //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
+  int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA_.dimension_0());
+  int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
 
-        PredicMaxRowNNZ<a_r_view_t, a_n_view_t, b_oldrow_view_t, b_r_view_t>
-          pcnnnz(
-            m,
-            row_mapA_,
-            entriesA_,
-            row_pointers_begin_B,
-            row_pointers_end_B,
-            team_row_chunk_size );
+  PredicMaxRowNNZ<a_r_view_t, a_n_view_t, b_oldrow_view_t, b_r_view_t>
+  pcnnnz(
+      m,
+      row_mapA_,
+      entriesA_,
+      row_pointers_begin_B,
+      row_pointers_end_B,
+      team_row_chunk_size );
 
 
-        typename b_oldrow_view_t::non_const_value_type rough_size = 0;
-        Kokkos::parallel_reduce( team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
-        MyExecSpace::fence();
-        return rough_size;
+  typename b_oldrow_view_t::non_const_value_type rough_size = 0;
+  Kokkos::parallel_reduce( team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
+  MyExecSpace::fence();
+  return rough_size;
+    }
+
+
+template <typename HandleType,
+typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
+
+struct KokkosSPGEMM
+  <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
+    b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
+  PredicMaxRowNNZ_p{
+  const nnz_lno_t m; //num rows
+  const size_type * row_mapA;  //row pointers of a
+  const nnz_lno_t * entriesA;  //col
+  const size_type * row_begins_B;
+  const size_type * row_end_indices_B;
+  const size_type min_val;
+  const nnz_lno_t team_row_chunk_size;
+
+  /**
+   * \brief Constructor
+   * \param m_: num rows in A.
+   * \param row_mapA_: row pointers of A
+   * \param entriesA_: col indices of A
+   * \param row_begins_B_: row begin indices of B
+   * \param row_end_indices_B_: row end indices of B
+   * \param team_row_chunk_size_: the number of rows assigned to each team.
+   */
+  PredicMaxRowNNZ_p(
+      const nnz_lno_t m_,
+      const size_type * row_mapA_,
+      const nnz_lno_t * entriesA_,
+
+      const size_type * row_begins_B_,
+      const size_type * row_end_indices_B_,
+      nnz_lno_t team_row_chunk_size_):
+        m(m_),
+        row_mapA(row_mapA_), entriesA(entriesA_),
+        row_begins_B(row_begins_B_),
+        row_end_indices_B(row_end_indices_B_),
+        min_val(((std::numeric_limits<size_type>::lowest()))),
+        team_row_chunk_size(team_row_chunk_size_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member_t & teamMember, size_type &overal_max) const {
+    //get the range of rows for team.
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, m);
+
+    //TODO MD: here do I need a reduce as well?
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index)
+    {
+
+      const size_type col_begin = row_mapA[row_index];
+      const size_type col_end = row_mapA[row_index + 1];
+      const nnz_lno_t left_work = col_end - col_begin;
+
+      size_type max_num_results_in_row = 0;
+
+      //get the size of the rows of B, pointed by row of A
+      Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(teamMember, left_work),
+          [&] (nnz_lno_t i, size_type & valueToUpdate) {
+        const size_type adjind = i + col_begin;
+        const nnz_lno_t colIndex = entriesA[adjind];
+        valueToUpdate += row_end_indices_B [colIndex] - row_begins_B[colIndex];
+      },
+      max_num_results_in_row);
+      //set max.
+      if (overal_max < max_num_results_in_row) {
+        overal_max = max_num_results_in_row;
       }
+    });
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile size_type& dst,const volatile size_type& src) const {
+    if (dst < src) { dst = src;}
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void init (size_type& dst) const
+  {
+    dst = min_val;
+  }
+};
+
+template <typename HandleType,
+typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
+size_t KokkosSPGEMM
+  <HandleType,
+      a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
+      b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
+      getMaxRoughRowNNZ_p(
+          const nnz_lno_t m,const  size_type annz,
+          const size_type * row_mapA_,
+          const nnz_lno_t * entriesA_,
+
+          const size_type * row_pointers_begin_B,
+          const size_type * row_pointers_end_B) {
+
+  int suggested_vector_size = this->handle->get_suggested_vector_size(m, annz);
+  int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
+
+  PredicMaxRowNNZ_p
+  pcnnnz(
+      m,
+      row_mapA_,
+      entriesA_,
+      row_pointers_begin_B,
+      row_pointers_end_B,
+      team_row_chunk_size );
+
+
+  size_type rough_size = 0;
+  Kokkos::parallel_reduce( team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
+  MyExecSpace::fence();
+  return rough_size;
+}
+
+template <typename HandleType,
+typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
+typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
+size_t KokkosSPGEMM
+  <HandleType,
+      a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
+      b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
+    getMaxRoughRowNNZIntersection_p(
+        const nnz_lno_t m,const  size_type annz,
+        const size_type * row_mapA_,
+        const nnz_lno_t * entriesA_,
+
+        const size_type * row_pointers_begin_B,
+        const size_type * row_pointers_end_B,
+        nnz_lno_t * min_result_row_for_each_row
+        )
+    {
+
+  //get the execution space type.
+  //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
+  int suggested_vector_size = this->handle->get_suggested_vector_size(m, annz);
+  int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
+
+
+
+  PredicMaxRowNNZIntersection
+  pcnnnz(
+      m, this->b_col_cnt,
+      row_mapA_,
+      entriesA_,
+      row_pointers_begin_B,
+      row_pointers_end_B,
+      team_row_chunk_size,  min_result_row_for_each_row);
+
+
+  size_type rough_size = 0;
+  Kokkos::parallel_reduce( team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
+  MyExecSpace::fence();
+  return rough_size;
+    }
 
 
 template <typename HandleType,
