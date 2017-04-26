@@ -1183,7 +1183,7 @@ void KokkosSPGEMM
     pool_init_val = 0;
   }
 
-  size_t num_chunks = concurrency / suggested_vector_size;
+  nnz_lno_t num_chunks = concurrency / suggested_vector_size;
   KokkosKernels::Experimental::Util::PoolType my_pool_type = KokkosKernels::Experimental::Util::OneThread2OneChunk;
   if (MyEnumExecSpace == KokkosKernels::Experimental::Util::Exec_CUDA) {
     my_pool_type = KokkosKernels::Experimental::Util::ManyThread2OneChunk;
@@ -1194,7 +1194,7 @@ void KokkosSPGEMM
   size_t free_byte ;
   size_t total_byte ;
   cudaMemGetInfo( &free_byte, &total_byte ) ;
-  size_t required_size = num_chunks * accumulator_chunksize * sizeof(nnz_lno_t);
+  size_t required_size = size_t (num_chunks) * accumulator_chunksize * sizeof(nnz_lno_t);
   if (KOKKOSKERNELS_VERBOSE)
     std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
   if (required_size + num_chunks > free_byte){

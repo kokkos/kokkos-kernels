@@ -244,12 +244,13 @@ private:
       out_nnz_view_t &out_nnz_sets,
       bool singleStep);
 
+public:
   /**
    *\brief Functor to zip the B matrix.
    */
   template <typename row_view_t, typename nnz_view_t, typename new_row_view_t, typename new_nnz_view_t, typename pool_memory_space>
   struct SingleStepZipMatrix;
-
+private:
 
 
   //////////////////////////////////////////////////////////////////////////
@@ -273,11 +274,11 @@ private:
       size_type* rowmapC,
       nnz_lno_t *entriesC
   );
-
+public:
   template <typename pool_memory_space>
   struct TriangleCount;
 
-public:
+
   template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
   void KokkosSPGEMM_numeric_triangle(
         c_row_view_t rowmapC_,
@@ -293,7 +294,7 @@ private:
         c_lno_nnz_view_t entriesC_);
 
 
-
+public:
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for SPEED SPGEMM
   ////DECL IS AT _speed.hpp
@@ -308,6 +309,7 @@ private:
             typename b_row_view_t__, typename b_nnz_view_t__, typename b_scalar_view_t__,
             typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__>
   struct NumericCMEM;
+private:
   /**
    * \brief Numeric phase with speed method
    */
@@ -319,7 +321,7 @@ private:
       KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space);
 
 
-
+public:
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for colored SPGEMM
   ////DECL IS AT _color.hpp
@@ -328,7 +330,7 @@ private:
             typename b_row_view_t__, typename b_nnz_view_t__, typename b_scalar_view_t__,
             typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__>
   struct NumericCCOLOR;
-
+private:
   /**
    * \brief Numeric phase with speed method
    */
@@ -353,7 +355,7 @@ private:
       nnz_lno_t &num_colors_in_one_step,
       nnz_lno_t &num_multi_color_steps,
       SPGEMMAlgorithm spgemm_algorithm);
-
+public:
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for kkmem SPGEMM
   ////DECL IS AT _kkmem.hpp
@@ -363,7 +365,7 @@ private:
             typename c_row_view_t, typename c_nnz_view_t, typename c_scalar_view_t,
             typename pool_memory_type>
   struct PortableNumericCHASH;
-
+private:
   //KKMEM only difference is work memory does not use output memory for 2nd level accumulator.
   template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
   void KokkosSPGEMM_numeric_hash2(
@@ -380,6 +382,7 @@ private:
         KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space);
 #if defined( KOKKOS_HAVE_OPENMP )
 #ifdef KOKKOSKERNELS_HAVE_OUTER
+public:
   //OUTER PRODUCT CODES
   struct Triplet;
 
@@ -388,6 +391,9 @@ private:
             typename flop_row_view_t>
   struct OuterProduct;
 
+  template <typename a_row_view_t, typename b_row_view_t, typename flop_row_view_t>
+  struct FlopsPerRowOuter;
+private:
   template <typename triplet_view_t>
   void sort_triplets(triplet_view_t triplets, size_t num_triplets);
 
@@ -414,8 +420,6 @@ private:
   template <typename triplet_view_t>
   size_t collapse_triplets_omp(triplet_view_t triplets, size_t num_triplets, triplet_view_t out_triplets);
 
-  template <typename a_row_view_t, typename b_row_view_t, typename flop_row_view_t>
-  struct FlopsPerRowOuter;
 #endif
 #endif
 
@@ -434,13 +438,14 @@ private:
   /////BELOW CODE IS TO CALCULATE MEMORY ACCESSES WITH HYPERGRAPH MODEL/////
   ////DECL IS AT _memaccess.hpp
   //////////////////////////////////////////////////////////////////////////
+public:
 
   //Functor to calculate how many flops is performed per row of C.
   template <typename a_row_view_t, typename a_nnz_view_t,
             typename b_row_view_t, typename b_nnz_view_t, typename c_row_view_t>
   struct FlopsPerRow;
-
-
+  struct Cache;
+private:
   void create_read_write_hg(
       size_t &overall_flops,
       row_lno_temp_work_view_t &c_flop_rowmap,
@@ -482,7 +487,7 @@ private:
       c_row_view_t rowmapC,
       int write_type //0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR 4-KKMULTICOLOR2
       );
-  struct Cache;
+
 #endif
 
 public:
@@ -561,12 +566,12 @@ public:
 
 
 
-private:
+
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS for symbolic phase
   ////DECL IS AT _symbolic.hpp
   //////////////////////////////////////////////////////////////////////////
-
+public:
   /***
    * \brief Functor to calculate the row sizes of C.
    */
@@ -595,7 +600,8 @@ private:
   struct PredicMaxRowNNZ;
 
   struct PredicMaxRowNNZIntersection;
-
+  struct PredicMaxRowNNZ_p;
+private:
   /**
    * \brief function return max flops for a row in the result multiplication.
    * \param m: number of rows in A
@@ -614,7 +620,7 @@ private:
       b_oldrow_view_t row_pointers_begin_B,
       b_row_view_t row_pointers_end_B);
 
-  struct PredicMaxRowNNZ_p;
+
   size_t getMaxRoughRowNNZ_p(
       const nnz_lno_t m, const  size_type annz,
       const size_type * row_mapA_,

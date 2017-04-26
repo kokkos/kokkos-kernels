@@ -99,7 +99,6 @@ void get_suggested_vector_team_size(
   if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ = 1;
-    return;
   }
 #endif
 
@@ -107,7 +106,6 @@ void get_suggested_vector_team_size(
   if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ =  1;
-    return;
   }
 #endif
 
