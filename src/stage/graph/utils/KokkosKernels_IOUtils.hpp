@@ -235,7 +235,19 @@ void convert_undirected_edge_list_to_csr (
     edges[i + 1].src = dests[i];
     edges[i + 1].dst = srcs[i];
   }
+#ifdef KOKKOSKERNELS_HAVE_OUTER
+#include<parallel/multiseq_selection.h>
+#include<parallel/multiway_merge.h>
+#include<parallel/merge.h>
+#include<parallel/multiway_mergesort.h>
+  typedef typename triplet_view_t::value_type element_t;
+  __gnu_parallel::parallel_sort_mwms<false,true,element_t*>
+  (&(edges[0]), &(edges[0])+num_triplets,
+      std::less<struct Edge<lno_t, double> >());
+#else
   std::sort (edges.begin(), edges.begin() + ne * 2);
+#endif
+
 
   size_type eind = 0;
   for (lno_t i = 0; i < nv; ++i){
