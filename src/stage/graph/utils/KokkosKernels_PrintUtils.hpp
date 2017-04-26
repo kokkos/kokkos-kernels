@@ -96,7 +96,7 @@ inline void kk_get_histogram(
  * only first and last 10 elements are printed.
  */
 template <typename idx_array_type>
-inline void kk_print_1Dview(idx_array_type view, bool print_all = false){
+inline void kk_print_1Dview(idx_array_type view, bool print_all = false, size_t print_size = 40){
 
   typedef typename idx_array_type::HostMirror host_type;
   typedef typename idx_array_type::size_type idx;
@@ -106,8 +106,8 @@ inline void kk_print_1Dview(idx_array_type view, bool print_all = false){
   if (!print_all){
 
 
-    if (nr > 20){
-      idx n = 10;
+    if (nr > print_size){
+      idx n = print_size / 2;
       for (idx i = 0; i < n; ++i){
         std::cout << host_view(i) << " ";
       }

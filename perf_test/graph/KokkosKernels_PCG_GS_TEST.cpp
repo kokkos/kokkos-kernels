@@ -362,7 +362,7 @@ int main (int argc, char ** argv){
       }
       Kokkos::OpenMP::print_configuration(std::cout);
 
-      KokkosKernels::Experimental::Util::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::OpenMP myExecSpace;
