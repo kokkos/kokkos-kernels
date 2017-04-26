@@ -127,8 +127,15 @@ void buildEdgeListFromBinSrcTarg_undirected(
    std::ifstream myFile (fnameSrc, std::ios::in | std::ios::binary);
 
    myFile.read((char *) *srcs, sizeof(lno_t) * (numEdges));
-   myFile.read((char *) *dst, sizeof(lno_t) * (numEdges));
+
    myFile.close();
+
+   std::ifstream myFile2 (fnameTarg, std::ios::in | std::ios::binary);
+
+   myFile2.read((char *) *dst, sizeof(lno_t) * (numEdges));
+
+   myFile2.close();
+   //
 
 }
 
