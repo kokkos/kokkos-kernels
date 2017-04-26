@@ -53,6 +53,7 @@
 
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_SimpleUtils.hpp"
+#include <sys/stat.h>
 
 namespace KokkosKernels{
 namespace Experimental{
@@ -68,6 +69,70 @@ void md_malloc(stype **arr, size_t n, std::string alloc_str = ""){
     throw std::runtime_error ("Memory Allocation Problem\n");
   }
 }
+
+template <typename idx, typename wt>
+struct Edge{
+  idx src;
+  idx dst;
+  wt ew;
+  bool operator<(const Edge <idx,wt> & a) const
+  {
+    //return !((this->src < a.src) || (this->src == a.src && this->dst < a.dst));
+    return (this->src < a.src) || (this->src == a.src && this->dst < a.dst);
+  }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+// From MTGL
+////////////////////////////////////////////////////////////////////////////////
+inline size_t kk_get_file_size(const char* file)
+{
+  struct stat stat_buf;
+
+#ifdef _WIN32
+  int retval = _stat(file, &stat_buf);
+#else
+  int retval = stat(file, &stat_buf);
+#endif
+
+  return retval == 0 ? size_t(stat_buf.st_size) : size_t(0);
+}
+
+template <typename lno_t>
+void buildEdgeListFromBinSrcTarg_undirected(
+    const char *fnameSrc, const char*fnameTarg,
+    size_t &numEdges,
+    lno_t **srcs, lno_t **dst){
+   size_t srcFileSize = kk_get_file_size(fnameSrc);
+   size_t trgFileSize = kk_get_file_size(fnameTarg);
+   // test these values
+
+   size_t srcSize = srcFileSize / sizeof(lno_t);
+   size_t trgSize = trgFileSize / sizeof(lno_t);
+   if (srcSize != trgSize)
+   {
+     throw std::runtime_error ("Src and Target file needs to be the same size");
+   }
+   //Assumption that each edge is listed once
+   numEdges = srcSize;
+
+   md_malloc<lno_t>(srcs, numEdges);
+   md_malloc<lno_t>(dst, numEdges);
+
+   ////////////////////////////////////////////////////////
+   // Read source data into buffer
+   ////////////////////////////////////////////////////////
+
+   std::ifstream myFile (fnameSrc, std::ios::in | std::ios::binary);
+
+   myFile.read((char *) *srcs, sizeof(lno_t) * (numEdges));
+   myFile.read((char *) *dst, sizeof(lno_t) * (numEdges));
+   myFile.close();
+
+}
+
+
 
 template <typename idx_array_type>
 inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename){
@@ -100,17 +165,7 @@ inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename)
   Kokkos::fence();
 }
 
-template <typename idx, typename wt>
-struct Edge{
-  idx src;
-  idx dst;
-  wt ew;
-  bool operator<(const Edge <idx,wt> & a) const
-  {
-    //return !((this->src < a.src) || (this->src == a.src && this->dst < a.dst));
-    return (this->src < a.src) || (this->src == a.src && this->dst < a.dst);
-  }
-};
+
 
 
 template <typename idx>
@@ -140,19 +195,21 @@ void convert_crs_to_edge_list(idx nv, idx *xadj, idx *srcs){
   }
 }
 
-template <typename idx, typename wt>
-void convert_edge_list_to_csr (idx nv, idx ne, idx *srcs, idx *dests, wt *ew, idx *xadj, idx *adj, wt *crs_ew){
+template <typename size_type, typename lno_t, typename wt>
+void convert_edge_list_to_csr (lno_t nv, size_type ne,
+    lno_t *srcs, lno_t *dests, wt *ew,
+    size_type *xadj, lno_t *adj, wt *crs_ew){
 
-  std::vector <struct Edge<idx, wt> > edges (ne);
-  for(idx i = 0; i < ne; ++i){
+  std::vector <struct Edge<lno_t, wt> > edges (ne);
+  for(size_type i = 0; i < ne; ++i){
     edges[i].src = srcs[i];
     edges[i].dst = dests[i];
     edges[i].ew = ew[i];
   }
   std::sort (edges.begin(), edges.begin() + ne);
 
-  idx eind = 0;
-  for (idx i = 0; i < nv; ++i){
+  size_type eind = 0;
+  for (lno_t i = 0; i < nv; ++i){
     (xadj)[i] = eind;
     while (edges[eind].src == i){
       (adj)[eind] = edges[eind].dst;
@@ -163,6 +220,70 @@ void convert_edge_list_to_csr (idx nv, idx ne, idx *srcs, idx *dests, wt *ew, id
   xadj[nv] = eind;
 
 }
+
+template <typename in_lno_t, typename size_type, typename lno_t>
+void convert_undirected_edge_list_to_csr (
+    lno_t nv, size_type ne,
+    in_lno_t *srcs, in_lno_t *dests,
+    size_type *xadj, lno_t *adj){
+
+  std::vector <struct Edge<lno_t, double> > edges (ne * 2);
+  for(size_type i = 0; i < ne; i += 2){
+    edges[i].src = srcs[i];
+    edges[i].dst = dests[i];
+
+    edges[i + 1].src = dests[i];
+    edges[i + 1].dst = srcs[i];
+  }
+  std::sort (edges.begin(), edges.begin() + ne * 2);
+
+  size_type eind = 0;
+  for (lno_t i = 0; i < nv; ++i){
+    (xadj)[i] = eind;
+    while (edges[eind].src == i){
+      (adj)[eind] = edges[eind].dst;
+      //(*crs_ew)[eind] = edges[eind].ew;
+      ++eind;
+    }
+  }
+  xadj[nv] = eind;
+}
+/*
+
+template <typename lno_t, typename size_type, typename scalar_t>
+void read_graph_src_dst_bin(
+    lno_t *nv, size_type *ne
+    ,size_type **xadj, lno_t **adj, scalar_t **ew,
+    const char *fnameSrc, const char *fnameTarg){
+
+  size_t numEdges = 0;
+  size_t *srcs, *dst; //this type is hard coded
+  buildEdgeListFromBinSrcTarg_undirected(
+      fnameSrc, fnameTarg,
+      &numEdges,
+      &srcs, &dst);
+
+  lno_t num_vertex = 0;
+  for (size_t i = 0; i < numEdges; ++i){
+    if (num_vertex < srcs[i]) num_vertex = srcs[i];
+    if (num_vertex < dst[i]) num_vertex = dst[i];
+  }
+  num_vertex += 1;
+
+  *nv = num_vertex;
+  *ne = numEdges * 2;
+
+  md_malloc<size_type>(xadj, num_vertex + 1);
+  md_malloc<lno_t>(adj, numEdges * 2);
+  convert_undirected_edge_list_to_csr (
+      num_vertex, numEdges,
+      srcs, dst,
+      *xadj, *adj);
+
+  delete [] srcs;
+  delete [] dst;
+}
+*/
 
 
 template <typename idx, typename wt>
@@ -241,6 +362,7 @@ inline bool endswith (std::string const &fullString, std::string const &ending) 
         return false;
     }
 }
+
 
 
 template <typename lno_t, typename size_type, typename scalar_t>
@@ -391,7 +513,7 @@ int read_mtx (
 
   *ne = nE;
   //*xadj = new idx[nr + 1];
-  md_malloc<lno_t>(xadj, nr+1);
+  md_malloc<size_type>(xadj, nr+1);
   //*adj = new idx[nE];
   md_malloc<lno_t>(adj, nE);
   //*ew = new wt[nE];
@@ -528,7 +650,7 @@ inline void kk_sequential_create_incidence_matrix(
 }
 
 template <typename size_type, typename nnz_lno_t>
-inline void kk_sequential_create_incidence_matrix(
+inline void kk_sequential_create_incidence_matrix_transpose(
     nnz_lno_t num_rows,
     nnz_lno_t num_edges,
     size_type *xadj,
@@ -552,17 +674,9 @@ inline void kk_sequential_create_incidence_matrix(
       if (i < col){
         i_adj[eCnt++] = i;
         i_adj[eCnt++] = col;
-        //std::cout << "eCnt:" << eCnt << " i:" << i << " col:" << col << std::endl;
       }
     }
   }
-  /*
-  for (int i = 0; i < num_edges / 2 ; ++i) {
-    std::cout << i << " " << i_adj[i] << " " << i_adj[i + 1] << std::endl;
-  }
-  */
-
-  //std::cout << "eCnt:" << eCnt << " num_edges:" << num_edges << std::endl;
 }
 
 

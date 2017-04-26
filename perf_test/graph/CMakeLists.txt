@@ -14,6 +14,12 @@ TRIBITS_ADD_EXECUTABLE(
   conMTX2BIN
   SOURCES KokkosKernels_WriteBinaryFromMTX.cpp 
   )
+  
+TRIBITS_ADD_EXECUTABLE(
+  contSRCDST2Bin
+  SOURCES KokkosKernels_WriteBinaryFromBinSrcDst.cpp 
+  )
+  
 
 #
 # Disabled temporarily per #980

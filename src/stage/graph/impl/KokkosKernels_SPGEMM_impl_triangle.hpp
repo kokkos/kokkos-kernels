@@ -385,8 +385,6 @@ struct KokkosSPGEMM
       const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
       nnz_lno_t num_el = 0;
 
-
-
       //traverse columns of A
       for (nnz_lno_t colind = 0; colind < col_size; ++colind){
         size_type a_col = colind + col_begin;
@@ -586,8 +584,6 @@ struct KokkosSPGEMM
       break;
 
       }
-
-
 
       //clear the begins.
       for (int i = 0; i < globally_used_hash_count; ++i){
@@ -1361,7 +1357,7 @@ void
   size_type const *p_rowmapB_ends = new_row_mapB.data();
   nnz_lno_t const *p_set_index_b = set_index_entries.data();
   nnz_lno_t const *p_set_b = set_entries.data();
-  nnz_lno_t *p_rowmapC = rowmapC_.data();
+  size_type *p_rowmapC = rowmapC_.data();
   nnz_lno_t *p_entriesC = entriesC_.data();
 
   if (!compress_in_single_step){
@@ -1425,7 +1421,7 @@ void KokkosSPGEMM
   size_type const *p_rowmapB_ends = new_row_mapB.data();
   nnz_lno_t const *p_set_index_b = set_index_entries.data();
   nnz_lno_t const *p_set_b = set_entries.data();
-  nnz_lno_t *p_rowmapC = rowmapC_.data();
+  size_type *p_rowmapC = rowmapC_.data();
 
   if (!compress_in_single_step){
     //first get the max flops for a row, which will be used for max row size.

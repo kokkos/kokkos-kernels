@@ -162,8 +162,9 @@ void KokkosSPGEMM
 
     }
     else {
-      auto new_row_mapB_begin = Kokkos::subview (new_row_mapB, std::make_pair (0, n - 1));
-      auto new_row_mapB_end = Kokkos::subview (new_row_mapB, std::make_pair (1, n));
+      nnz_lno_t begin = 0;
+      auto new_row_mapB_begin = Kokkos::subview (new_row_mapB, std::make_pair (begin, n - 1));
+      auto new_row_mapB_end = Kokkos::subview (new_row_mapB, std::make_pair (begin + 1, n));
       //KokkosKernels::Experimental::Util::print_1Dview(new_row_mapB);
       //KokkosKernels::Experimental::Util::print_1Dview(new_row_mapB_begin);
       //KokkosKernels::Experimental::Util::print_1Dview(new_row_mapB_end);

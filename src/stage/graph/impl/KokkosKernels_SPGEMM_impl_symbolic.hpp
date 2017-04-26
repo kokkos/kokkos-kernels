@@ -734,7 +734,7 @@ struct KokkosSPGEMM
         min_result_row_for_each_row(min_result_row_for_each_row_){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const team_member_t & teamMember, size_type &overal_max) const {
+  void operator()(const team_member_t & teamMember, nnz_lno_t &overal_max) const {
     //get the range of rows for team.
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, m);
@@ -1349,7 +1349,7 @@ size_t KokkosSPGEMM
       team_row_chunk_size,  min_result_row_for_each_row);
 
 
-  size_type rough_size = 0;
+  nnz_lno_t rough_size = 0;
   Kokkos::parallel_reduce( team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
   MyExecSpace::fence();
   return rough_size;

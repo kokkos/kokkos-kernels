@@ -46,88 +46,79 @@
 #include <string.h>
 
 typedef int size_type;
-typedef int idx;
+typedef int lno_t;
 typedef double wt;
 
+typedef size_t input_lno_t;
 int main (int argc, char ** argv){
 
 
-  bool symmetrize = false, remove_diagonal = false, transpose = false;
-  char *in_mtx = NULL, *out_bin = NULL;
-  bool create_incidence = false;
+  char *in_src = NULL, *in_dst = NULL, *out_bin = NULL;
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "symmetrize" ) ) {
-      symmetrize = true;
+    if ( 0 == strcasecmp( argv[i] , "in_src" ) ) {
+      in_src = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "remove_diagonal" ) ) {
-      remove_diagonal = true;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "transpose" ) ) {
-      transpose = true;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "incidence" ) ) {
-      create_incidence = true;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "in_mtx" ) ) {
-      in_mtx = argv[++i];
-    }
-    else if ( 0 == strcasecmp( argv[i] , "out_bin" ) ) {
-      out_bin = argv[++i];
+    if ( 0 == strcasecmp( argv[i] , "in_dst" ) ) {
+      in_dst = argv[++i];
     }
     else {
       std::cerr << "Usage:" << argv[0]
-                << " in_mtx matrixfile.mtx out_bin output_bin_file [symmetrize] [remove_diagonal] [transpose]" << std::endl;
+                << " in_src srcs.bin in_dst dsts.bin" << std::endl;
       exit(1);
     }
   }
-  if (in_mtx == NULL || out_bin == NULL){
+  if (in_src == NULL || out_bin == NULL){
     std::cerr << "Usage:" << argv[0]
-              << " in_mtx matrixfile.mtx out_bin output_bin_file [symmetrize] [remove_diagonal] [transpose]" << std::endl;
+              << " in_src srcs.bin in_dst dsts.bin" << std::endl;
     exit(1);
   }
 
-  idx nv = 0;
-  size_type ne = 0;
+  size_t numEdges = 0;
+  size_t *srcs, *dst; //this type is hard coded
+  KokkosKernels::Experimental::Util::buildEdgeListFromBinSrcTarg_undirected<size_t>(
+      in_src, in_dst,
+      numEdges,
+      &srcs, &dst);
+
+  size_t num_vertex = 0;
+  for (size_t i = 0; i < numEdges; ++i){
+    if (num_vertex < srcs[i]) num_vertex = srcs[i];
+    if (num_vertex < dst[i]) num_vertex = dst[i];
+  }
+  num_vertex += 1;
+
+  lno_t nv = num_vertex;
+  size_type ne = numEdges * 2;
+  std::vector<wt> ew1(ne);
+  wt *ew = &(ew1[0]);
   size_type *xadj;
-  idx *adj;
-  wt *ew;
-  KokkosKernels::Experimental::Util::read_mtx<idx,size_type, wt>
-      (in_mtx, &nv, &ne, &xadj, &adj, &ew, symmetrize, remove_diagonal, transpose);
+  lno_t *adj;
 
-  if (create_incidence){
-    //std::vector<size_type> i_adj (ne);
-    //KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix(
-    //    nv,xadj,adj,&(i_adj[0]));
+  KokkosKernels::Experimental::Util::md_malloc<size_type>(&xadj, nv + 1);
+  KokkosKernels::Experimental::Util::md_malloc<lno_t>(&adj, ne);
+
+  KokkosKernels::Experimental::Util::convert_undirected_edge_list_to_csr <size_t, size_type, lno_t>(
+      nv, numEdges, //numEdges should be num undirected edges.
+      srcs, dst,
+      xadj, adj);
+
+  std::vector<size_type> i_xadj(ne / 2 + 1);
+  std::vector<lno_t> i_adj(ne);
+
+  KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, adj, ew, "actual.bin");
+
+  KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix_transpose(
+      nv,
+      ne,
+      xadj,
+      adj,
+      &(i_xadj[0]), //output. preallocated
+      &(i_adj[0]) //output. preallocated
+  );
+
+  KokkosKernels::Experimental::Util::write_graph_bin (ne / 2, ne, &(i_xadj[0]), &(i_adj[0]), ew, "incidence-transpose.bin");
 
 
-    std::vector<size_type> i_xadj(ne / 2 + 1);
-    std::vector<size_type> i_adj(ne);
-
-    KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix_transpose(
-        nv,
-        ne,
-        xadj,
-        adj,
-        &(i_xadj[0]), //output. preallocated
-        &(i_adj[0]) //output. preallocated
-      );
-
-
-    KokkosKernels::Experimental::Util::write_graph_bin (ne / 2, ne, &(i_xadj[0]), &(i_adj[0]), ew, out_bin);
-
-    /*
-    for (int i =0 ;i < nv; ++i){
-      for (int j =xadj[i] ;j < xadj[i+1]; ++j){
-        std::cout << i_adj[j] << " ";
-      }
-      std::cout << std::endl;
-    }
-    */
-    //KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, &(i_adj[0]), ew, out_bin);
-  }
-  else {
-    KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, adj, ew, out_bin);
-  }
 
   delete [] xadj;
   delete [] adj;
