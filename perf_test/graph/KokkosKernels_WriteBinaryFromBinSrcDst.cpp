@@ -45,9 +45,14 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include <string.h>
 
-typedef long long size_type;
-typedef int lno_t;
+//typedef long long size_type;
+//typedef int lno_t;
+//typedef double wt;
+typedef size_t size_type;
+typedef size_t lno_t;
 typedef double wt;
+
+
 
 typedef size_t input_lno_t;
 int main (int argc, char ** argv){
@@ -123,7 +128,7 @@ int main (int argc, char ** argv){
   std::cout <<"writing original" << std::endl;
   KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, adj, ew, "actual.bin");
 
-  std::cout << "writing incidence transpose" << std::endl;
+  std::cout << "calculating incidence transpose" << std::endl;
   KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix_transpose(
       nv,
       ne,
@@ -132,9 +137,34 @@ int main (int argc, char ** argv){
       &(i_xadj[0]), //output. preallocated
       &(i_adj[0]) //output. preallocated
   );
-  std::cout << "writing bin incidence" << std::endl;
+  std::cout << "writing bin incidence transpose" << std::endl;
   KokkosKernels::Experimental::Util::write_graph_bin (lno_t (ne / 2), ne, &(i_xadj[0]), &(i_adj[0]), ew , "incidence-transpose.bin");
+  size_type *i_adj2;
+  KokkosKernels::Experimental::Util::md_malloc<size_type>(&i_adj2, ne);
 
+  std::cout << "calculating incidence " << std::endl;
+  KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix(
+        nv,
+        xadj,
+        adj,
+        &(i_adj2[0]) //output. preallocated
+    );
+  std::cout << "writing bin incidence" << std::endl;
+  KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, i_adj2, ew, "incidence.bin");
+
+  std::vector<lno_t> row_sizes (nv, 0);
+  for (lno_t i = 0 ; i < nv; ++i){
+    size_type row_s= xadj[i + 1] - xadj[i];
+    if (row_s > 1)
+    std::cout << "row:" << i << " size:" << row_s << std::endl;
+    row_sizes[row_s] += 1;
+  }
+
+  for (lno_t i = 0 ; i < nv; ++i){
+    if (row_sizes[i] == 0){
+      std::cout << row_sizes[i] << " rows has " << i << " nonzeroes" << std::endl;
+    }
+  }
   delete [] i_xadj;
 
   delete [] i_adj;
