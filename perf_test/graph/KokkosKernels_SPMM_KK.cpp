@@ -300,7 +300,7 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_CUDA )
   if (params.use_cuda) {
     Kokkos::HostSpace::execution_space::initialize();
-    //Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
+    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
     Kokkos::Cuda::print_configuration(std::cout);
 
     KokkosKernels::Experiment::run_multi_mem_spgemm
