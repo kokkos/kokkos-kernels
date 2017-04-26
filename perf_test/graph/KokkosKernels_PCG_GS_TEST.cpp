@@ -312,7 +312,7 @@ int main (int argc, char ** argv){
         Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
       }
 
-      KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Experimental::Util::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
       Kokkos::Threads::print_configuration(std::cout);
 
       typedef Kokkos::Threads myExecSpace;
@@ -406,7 +406,7 @@ int main (int argc, char ** argv){
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
       Kokkos::Cuda::print_configuration(std::cout);
 
-      KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Experimental::Util::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::Cuda myExecSpace;
