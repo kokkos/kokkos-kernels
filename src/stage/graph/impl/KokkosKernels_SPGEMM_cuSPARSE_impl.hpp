@@ -90,11 +90,11 @@ namespace Impl{
     //TODO this is not correct, check memory space.
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
-      return;
+      //return;
     }
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
-      return;
+      //return;
     }
 
     if (Kokkos::Impl::is_same<idx, int>::value){
@@ -144,7 +144,7 @@ namespace Impl{
     }
     else {
       throw std::runtime_error ("CUSPARSE requires local ordinals to be integer.\n");
-      return;
+      //return;
     }
 #else
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
@@ -197,15 +197,15 @@ namespace Impl{
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
-      return;
+      //return;
     }
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
-      return;
+      //return;
     }
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
-      return;
+      //return;
     }
 
 
@@ -277,7 +277,7 @@ namespace Impl{
       }
       else {
         throw std::runtime_error ("CUSPARSE requires float or double values. cuComplex and cuDoubleComplex are not implemented yet.\n");
-        return;
+        //return;
       }
 
 
@@ -286,11 +286,11 @@ namespace Impl{
     }
     else {
       throw std::runtime_error ("CUSPARSE requires local ordinals to be integer.\n");
-      return;
+      //return;
     }
 #else
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
-    return;
+    //return;
 #endif
   }
 }

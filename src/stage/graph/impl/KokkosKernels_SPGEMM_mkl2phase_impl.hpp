@@ -186,7 +186,7 @@ void mkl2phase_symbolic(
   }
 #else
   throw std::runtime_error ("MKL IS NOT DEFINED\n");
-  return;
+  //return;
 #endif
 }
 
@@ -334,7 +334,7 @@ void mkl2phase_symbolic(
     }
 #else
     throw std::runtime_error ("MKL IS NOT DEFINED\n");
-    return;
+    //return;
 #endif
   }
 }

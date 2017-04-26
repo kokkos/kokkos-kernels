@@ -110,16 +110,15 @@ void CUSP_apply(
 
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
     throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
-
-    return;
+    //return;
   }
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
     throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
-    return;
+    //return;
   }
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
     throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
-    return;
+    //return;
   }
 
   //typedef in_row_index_view_type idx_array_type;

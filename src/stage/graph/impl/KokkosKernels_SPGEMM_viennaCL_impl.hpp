@@ -209,7 +209,7 @@ namespace Impl{
     }
 #else
     throw std::runtime_error ("VIENNACL IS NOT DEFINED\n");
-    return;
+    //return;
 #endif
   }
 }

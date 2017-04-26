@@ -168,7 +168,7 @@ public:
       status= cusparseCreate(&handle);
       if (status != CUSPARSE_STATUS_SUCCESS) {
         throw std::runtime_error ("cusparseCreate ERROR\n");
-        return;
+        //return;
       }
       cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
 
@@ -189,8 +189,7 @@ public:
       status = cusparseCreateMatDescr(&a_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
         throw std::runtime_error ("cusparseCreateMatDescr a_descr ERROR\n");
-
-        return;
+        //return;
       }
       cusparseSetMatType(a_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
       cusparseSetMatIndexBase(a_descr,CUSPARSE_INDEX_BASE_ZERO);
@@ -198,8 +197,7 @@ public:
       status = cusparseCreateMatDescr(&b_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
         throw std::runtime_error ("cusparseCreateMatDescr b_descr ERROR\n");
-
-        return;
+        //return;
       }
       cusparseSetMatType(b_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
       cusparseSetMatIndexBase(b_descr,CUSPARSE_INDEX_BASE_ZERO);
@@ -207,7 +205,7 @@ public:
       status = cusparseCreateMatDescr(&c_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
         throw std::runtime_error ("cusparseCreateMatDescr  c_descr ERROR\n");
-        return;
+        //return;
       }
       cusparseSetMatType(c_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
       cusparseSetMatIndexBase(c_descr,CUSPARSE_INDEX_BASE_ZERO);

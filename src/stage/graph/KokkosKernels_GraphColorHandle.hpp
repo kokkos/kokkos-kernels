@@ -661,7 +661,7 @@ private:
       break;
     default:
       throw std::runtime_error ("Unknown Coloring Algorithm\n");
-      break;
+      //break;
     }
   }
 

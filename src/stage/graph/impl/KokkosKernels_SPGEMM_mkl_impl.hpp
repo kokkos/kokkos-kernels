@@ -373,7 +373,7 @@ namespace Impl{
     }
 #else
     throw std::runtime_error ("MKL IS NOT DEFINED\n");
-    return;
+    //return;
 #endif
   }
 }
