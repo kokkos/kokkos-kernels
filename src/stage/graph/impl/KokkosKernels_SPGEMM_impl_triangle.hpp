@@ -1252,9 +1252,9 @@ void KokkosSPGEMM
 
   timer1.reset();
 
-  nnz_lno_t runcuda = atoi(getenv("runcuda"));
+  //nnz_lno_t runcuda = atoi(getenv("runcuda"));
 
-  if (runcuda || MyEnumExecSpace == KokkosKernels::Experimental::Util::Exec_CUDA) {
+  if (/*runcuda ||*/ MyEnumExecSpace == KokkosKernels::Experimental::Util::Exec_CUDA) {
     Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
   else {
@@ -1278,7 +1278,7 @@ void KokkosSPGEMM
           Kokkos::parallel_for( multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
         }
       }
-    }
+    }    
     else {
 
 

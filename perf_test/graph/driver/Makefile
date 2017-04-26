@@ -9,8 +9,10 @@ SPGEMM_EXE = KokkosKernels_SPMM_KK
 COLOR_EXE = KokkosKernels_GraphColor
 PCG_EXE= KokkosKernels_PCG
 BINWRITER_EXE= KokkosKernels_WriteBinaryFromMTX
+BINWRITER_EXE2= KokkosKernels_WriteBinaryFromSRCDST
 
-default: $(SPGEMM_EXE) $(COLOR_EXE) $(BINWRITER_EXE)
+
+default: $(SPGEMM_EXE) $(COLOR_EXE) $(BINWRITER_EXE) $(BINWRITER_EXE2)
 
 ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
 CXXFLAGS = -O3
@@ -21,7 +23,9 @@ KOKKOS_ARCH = "SNB,Kepler35"
 else
 CXX = icpc
 CXXFLAGS = -DGCC_EXTENSION -D_GLIBCXX_PARALLEL -O3 -DKOKKOS_HAVE_HBWSPACE=1 -DKOKKOSKERNELS_HAVE_OUTER
-LINK = ${CXX} -lmemkind
+CXXFLAGS = -DGCC_EXTENSION -D_GLIBCXX_PARALLEL -O3 -DKOKKOSKERNELS_HAVE_OUTER
+
+LINK = ${CXX}# -lmemkind
 LINKFLAGS =  
 KOKKOS_DEVICES = "OpenMP"
 KOKKOS_ARCH = "KNL"
@@ -35,6 +39,8 @@ OBJ= KokkosKernels_SPMM_KK.o
 OBJC=KokkosKernels_GraphColoringTest.o
 OBJP=KokkosKernels_PCG_GS_TEST.o
 OBJW=KokkosKernels_WriteBinaryFromMTX.o
+OBJW2=KokkosKernels_WriteBinaryFromBinSrcDst.o
+
 LIB =
 
 include $(KOKKOS_PATH)/Makefile.kokkos
@@ -48,6 +54,8 @@ $(PCG_EXE): $(OBJP) $(KOKKOS_LINK_DEPENDS)
 $(BINWRITER_EXE): $(OBJW) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(KOKKOS_LDFLAGS) $(LINKFLAGS) $(EXTRA_PATH) $(OBJW) $(KOKKOS_LIBS) $(LIB) -o $(BINWRITER_EXE)
 
+$(BINWRITER_EXE2): $(OBJW2) $(KOKKOS_LINK_DEPENDS)
+	$(LINK) $(KOKKOS_LDFLAGS) $(LINKFLAGS) $(EXTRA_PATH) $(OBJW2) $(KOKKOS_LIBS) $(LIB) -o $(BINWRITER_EXE2)
 depend:
 	makedepend -Y ${SRC} $(KERNELINC)
 
@@ -61,6 +69,9 @@ clean: kokkos-clean
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(KERNELINC) -c $< -o $(notdir $@)
 # DO NOT DELETE
 
+../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
+../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
+../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/Kokkos_ArithTraits.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/KokkosKernels_GraphColor.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/impl/KokkosKernels_GraphColor_impl.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/KokkosKernels_GraphColorHandle.hpp
@@ -174,5 +185,6 @@ clean: kokkos-clean
 ../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_compression.hpp
 ../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_def.hpp
 ../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_symbolic.hpp
+../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_triangle.hpp
 ../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_seq.hpp
 ../KokkosKernels_SPMM_KK.o: ../KokkosKernels_MyCRSMatrix.hpp

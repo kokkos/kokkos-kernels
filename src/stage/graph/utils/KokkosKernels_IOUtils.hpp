@@ -228,22 +228,21 @@ void convert_undirected_edge_list_to_csr (
     size_type *xadj, lno_t *adj){
 
   std::vector <struct Edge<lno_t, double> > edges (ne * 2);
-  for(size_type i = 0; i < ne; i += 2){
-    edges[i].src = srcs[i];
-    edges[i].dst = dests[i];
+  for(size_type i = 0; i < ne; ++i){
+    edges[i * 2].src = srcs[i];
+    edges[i * 2].dst = dests[i];
 
-    edges[i + 1].src = dests[i];
-    edges[i + 1].dst = srcs[i];
+    edges[i * 2 + 1].src = dests[i];
+    edges[i * 2 + 1].dst = srcs[i];
   }
 #ifdef KOKKOSKERNELS_HAVE_OUTER
 #include<parallel/multiseq_selection.h>
 #include<parallel/multiway_merge.h>
 #include<parallel/merge.h>
 #include<parallel/multiway_mergesort.h>
-  typedef typename triplet_view_t::value_type element_t;
-  __gnu_parallel::parallel_sort_mwms<false,true,element_t*>
-  (&(edges[0]), &(edges[0])+num_triplets,
-      std::less<struct Edge<lno_t, double> >());
+  __gnu_parallel::parallel_sort_mwms<false,true, struct Edge<lno_t, double> *>
+  (&(edges[0]), &(edges[0])+ne*2,
+      std::less<struct Edge<lno_t, double> >(), 64);
 #else
   std::sort (edges.begin(), edges.begin() + ne * 2);
 #endif
@@ -342,8 +341,11 @@ void write_graph_bin(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *
   myFile.write((char *) &nv, sizeof(lno_t));
   myFile.write((char *) &ne, sizeof(size_type));
   myFile.write((char *) xadj, sizeof(size_type) * (nv + 1));
+
   myFile.write((char *) adj, sizeof(lno_t) * (ne));
+
   myFile.write((char *) ew, sizeof(scalar_t) * (ne));
+
   myFile.close();
 }
 
@@ -617,7 +619,7 @@ crsMat_t read_kokkos_crst_matrix(const char * filename_){
   KokkosKernels::Experimental::Util::kk_view_reduce_max
       <cols_view_t, typename crsMat_t::execution_space>(nnzA, columns_view, ncols);
   ncols += 1;
-
+  
   graph_t static_graph (columns_view, rowmap_view);
   crsMat_t crsmat("CrsMatrix", ncols, values_view, static_graph);
   delete [] xadj; delete [] adj; delete [] values;
@@ -664,11 +666,11 @@ inline void kk_sequential_create_incidence_matrix(
 template <typename size_type, typename nnz_lno_t>
 inline void kk_sequential_create_incidence_matrix_transpose(
     nnz_lno_t num_rows,
-    nnz_lno_t num_edges,
+    size_type num_edges,
     size_type *xadj,
     nnz_lno_t *adj,
     size_type *i_xadj, //output. preallocated
-    size_type *i_adj //output. preallocated
+    nnz_lno_t *i_adj //output. preallocated
   ){
 
   for (nnz_lno_t i = 0; i < num_edges/2 + 1; i++){
