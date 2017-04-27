@@ -1,0 +1,53 @@
+KOKKOSKERNELS_OPTIONS =
+
+KOKKOSKERNELS_INTERNAL_INST_DOUBLE := $(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "double" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_FLOAT := $(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "float" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE := $(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "complex<double>" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT := $(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "complex<float>" | wc -l))
+KOKKOSKERNELS_INTERNAL_ETI_ONLY := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "eti-only" | wc -l))
+
+tmp := $(shell echo "/* ---------------------------------------------" > KokkosKernels_config.tmp)
+tmp := $(shell echo "Makefile constructed configuration:" >> KokkosKernels_config.tmp)
+tmp := $(shell date >> KokkosKernels_config.tmp)
+tmp := $(shell echo "----------------------------------------------*/" >> KokkosKernels_config.tmp)
+
+tmp := $(shell echo "/* Scalar Types */" >> KokkosKernels_config.tmp)
+
+ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_DOUBLE" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_FLOAT" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_COMPLEX_DOUBLE" >> KokkosKernels_config.tmp )
+endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_COMPLEX_FLOAT" >> KokkosKernels_config.tmp )
+endif
+
+tmp := $(shell echo "/* Configuration Options */" >> KokkosKernels_config.tmp)
+
+ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_ETI_ONLY" >> KokkosKernels_config.tmp )
+endif
+
+KOKKOSKERNELS_HEADERS = $(wildcard $(KOKKOSKERNELS_PATH)/src/*.hpp)
+KOKKOSKERNELS_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/src/impl/*.hpp)
+
+KOKKOSKERNELS_CPP_DEPENDS := KokkosKernels_config.h $(KOKKOSKERNELS_HEADERS)
+KOKKOSKERNELS_CPPFLAGS := -I$(KOKKOSKERNELS_PATH)/src -I$(KOKKOSKERNELS_PATH)/src/impl -I./
+
+KokkosKernels_config.h:
+
+KOKKOSKERNELS_INTERNAL_LS_CONFIG := $(shell ls KokkosKernels_config.h)
+ifeq ($(KOKKOSKERNELS_INTERNAL_LS_CONFIG), KokkosKernels_config.h)
+  KOKKOSKERNELS_INTERNAL_NEW_CONFIG := $(strip $(shell diff KokkosKernels_config.h KokkosKernels_config.tmp | grep define | wc -l))
+else
+  KOKKOSKERNELS_INTERNAL_NEW_CONFIG := 1
+endif
+
+ifneq ($(KOKKOSKERNELS_INTERNAL_NEW_CONFIG), 0)
+  tmp := $(shell cp KokkosKernels_config.tmp KokkosKernels_config.h)
+endif
+
