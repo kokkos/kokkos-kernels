@@ -55,6 +55,7 @@ namespace KokkosKernels{
 namespace Experimental{
 
 namespace Util{
+
 template <typename in_row_view_t,
           typename in_nnz_view_t,
           typename in_scalar_view_t,
@@ -804,6 +805,151 @@ inline void kk_create_incidence_matrix(
 
 
 
+
+
+template <typename size_type, typename lno_t, typename ExecutionSpace>
+void kk_get_lower_triangle_count(
+    const lno_t nv,
+    const size_type *in_xadj,
+    const lno_t *in_adj,
+    size_type *out_xadj,
+    const lno_t *new_indices = NULL
+    ){
+  for (lno_t i = 0; i < nv; ++i){
+    lno_t row_index = i;
+
+    if (new_indices) row_index = new_indices[i];
+
+    out_xadj[i] = 0;
+    size_type begin = in_xadj[i];
+    lno_t rowsize = in_xadj[i + 1] - begin;
+
+    for (lno_t j = 0; j < rowsize; ++j){
+      lno_t col = in_adj[j + begin];
+      lno_t col_index = col;
+      if (new_indices) col_index = new_indices[col];
+
+      if (row_index > col_index){
+        ++out_xadj[i];
+      }
+    }
+  }
+}
+
+template <typename size_type, typename lno_t, typename ExecutionSpace>
+void kk_sort_by_row_size(
+    const lno_t nv,
+    const size_type *in_xadj,
+    lno_t *new_indices){
+  std::vector<lno_t> begins (nv);
+  std::vector<lno_t> nexts (nv);
+  for (lno_t i = 0; i < nv; ++i){
+    nexts[i] = begins[i] = -1;
+  }
+
+
+
+  for (lno_t i = 0; i < nv; ++i){
+    lno_t row_size = in_xadj[i+1] - in_xadj[i];
+    nexts [i] = begins[row_size];
+    begins[row_size] = i;
+  }
+  lno_t new_index = nv;
+  for (lno_t i = 0; i < nv ; ++i){
+    lno_t row = begins[i];
+    while (row != -1){
+      new_indices[row] = --new_index;
+      row = nexts[row];
+    }
+  }
+}
+
+template <typename size_type, typename lno_t, typename scalar_t, typename ExecutionSpace>
+void kk_get_lower_triangle_fill(
+    lno_t nv,
+    const size_type *in_xadj,
+    const lno_t *in_adj,
+    const scalar_t *in_vals,
+    const size_type *out_xadj,
+    lno_t *out_adj,
+    scalar_t *out_vals,
+    const lno_t *new_indices = NULL
+    ){
+  for (lno_t i = 0; i < nv; ++i){
+    lno_t row_index = i;
+
+    if (new_indices) row_index = new_indices[i];
+    size_type write_index = out_xadj[i];
+    size_type begin = in_xadj[i];
+    lno_t rowsize = in_xadj[i + 1] - begin;
+    for (lno_t j = 0; j < rowsize; ++j){
+      lno_t col = in_adj[j + begin];
+      lno_t col_index = col;
+      if (new_indices) col_index = new_indices[col];
+
+      if (row_index > col_index){
+        if (in_vals != NULL && out_vals != NULL){
+          out_vals[write_index] = in_vals[j + begin];
+        }
+        out_adj[write_index++] = col;
+      }
+    }
+  }
+}
+
+template <typename crstmat_t>
+crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
+    typename crstmat_t::index_type::value_type *new_indices = NULL){
+
+  typedef typename crstmat_t::execution_space exec_space;
+  typedef typename crstmat_t::StaticCrsGraphType graph_t;
+  typedef typename crstmat_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename crstmat_t::index_type::non_const_type   cols_view_t;
+  typedef typename crstmat_t::values_type::non_const_type values_view_t;
+  typedef typename crstmat_t::row_map_type::const_type const_row_map_view_t;
+  typedef typename crstmat_t::index_type::const_type   const_cols_view_t;
+  typedef typename crstmat_t::values_type::const_type const_values_view_t;
+
+  typedef typename row_map_view_t::non_const_value_type size_type;
+  typedef typename cols_view_t::non_const_value_type lno_t;
+  typedef typename values_view_t::non_const_value_type scalar_t;
+
+
+  lno_t nr = in_crs_matrix.numRows();
+  const scalar_t *vals = in_crs_matrix.values.data();
+  const size_type *rowmap = in_crs_matrix.graph.row_map.data();
+  const lno_t *entries= in_crs_matrix.graph.entries.data();
+
+  row_map_view_t new_row_map ("LL", nr + 1);
+  KokkosKernels::Experimental::Util::kk_get_lower_triangle_count
+  <size_type, lno_t, exec_space> (nr, rowmap, entries, new_row_map.data(), new_indices);
+
+  size_type total = 0;
+  for (int i = 0; i < nr; ++i){
+    total += new_row_map(i);
+  }
+
+  KokkosKernels::Experimental::Util::kk_exclusive_parallel_prefix_sum
+  <row_map_view_t, exec_space>(nr + 1, new_row_map);
+  exec_space::fence();
+
+  auto ll_size = Kokkos::subview(new_row_map, nr);
+  auto h_ll_size = Kokkos::create_mirror_view (ll_size);
+  Kokkos::deep_copy (h_ll_size, ll_size);
+  size_type ll_nnz_size = h_ll_size();
+
+  cols_view_t new_entries ("LL", ll_nnz_size);
+  values_view_t new_values ("LL", ll_nnz_size);
+
+  KokkosKernels::Experimental::Util::kk_get_lower_triangle_fill
+  <size_type, lno_t, scalar_t, exec_space> (
+      nr, rowmap, entries, vals, new_row_map.data(),
+      new_entries.data(), new_values.data(),new_indices);
+
+  graph_t g (new_entries, new_row_map);
+  crstmat_t new_ll_mtx("lower triangle", in_crs_matrix.numCols(), new_values, g);
+  return new_ll_mtx;
+}
 }
 }
 }

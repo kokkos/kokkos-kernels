@@ -144,8 +144,11 @@ struct Parameters{
   int use_cuda;
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
 
+
   char *a_mtx_bin_file, *b_mtx_bin_file, *c_mtx_bin_file;
   bool compression2step;
+  int left_lower_triangle, right_lower_triangle;
+  int left_sort, right_sort;
   Parameters(){
 
     algorithm = 7;
@@ -170,6 +173,11 @@ struct Parameters{
     a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
     a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = NULL;
     compression2step = false;
+
+    left_lower_triangle = 0;
+    right_lower_triangle = 0;
+    left_sort = 0;
+    right_sort = 0;
   }
 };
 

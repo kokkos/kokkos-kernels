@@ -179,6 +179,20 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
+
+    else if ( 0 == strcasecmp( argv[i] , "LLT" ) ) {
+      params.left_lower_triangle = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "RLT" ) ) {
+      params.right_lower_triangle = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "LS" ) ) {
+      params.left_sort = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "RS" ) ) {
+      params.right_sort = 1;
+    }
+
     else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
       params.verbose = 1;
     }

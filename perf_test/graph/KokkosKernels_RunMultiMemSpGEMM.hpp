@@ -87,12 +87,40 @@ namespace Experiment{
     }
     */
 
+    double preprocess_time = 0;
     //read a and b matrices and store them on slow or fast memory.
+
     if (params.a_mem_space == 1){
       a_fast_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
+      std::vector<lno_t> new_indices;
+      Kokkos::Impl::Timer timer1;
+      if (params.left_sort){
+        new_indices.resize(a_fast_crsmat.numRows());
+        KokkosKernels::Experimental::Util::kk_sort_by_row_size <size_type, lno_t,exec_space>(
+            a_fast_crsmat.numRows(), a_fast_crsmat.graph.row_map.data(),
+            &(new_indices[0]));
+      }
+      if (params.left_lower_triangle){
+        a_fast_crsmat = KokkosKernels::Experimental::Util::
+            kk_get_lower_crs_matrix(a_fast_crsmat,&(new_indices[0]));
+      }
+      preprocess_time = timer1.seconds();
     }
     else {
       a_slow_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
+      std::vector<lno_t> new_indices;
+      Kokkos::Impl::Timer timer1;
+      if (params.left_sort){
+        new_indices.resize(a_slow_crsmat.numRows());
+        KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, lno_t,exec_space>(
+            a_slow_crsmat.numRows(), a_slow_crsmat.graph.row_map.data(),
+            &(new_indices[0]));
+      }
+      if (params.left_lower_triangle){
+        a_slow_crsmat = KokkosKernels::Experimental::Util::
+                    kk_get_lower_crs_matrix(a_slow_crsmat,&(new_indices[0]));
+      }
+      preprocess_time = timer1.seconds();
     }
 
 
@@ -104,12 +132,40 @@ namespace Experiment{
     else if (params.b_mem_space == 1){
       if (b_mat_file == NULL) b_mat_file = a_mat_file;
       b_fast_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
+      std::vector<lno_t> new_indices;
+      Kokkos::Impl::Timer timer1;
+      if (params.right_sort){
+        new_indices.resize(b_fast_crsmat.numRows());
+        KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, lno_t,exec_space>(
+            b_fast_crsmat.numRows(), b_fast_crsmat.graph.row_map.data(),
+            &(new_indices[0]));
+      }
+      if (params.right_lower_triangle){
+        b_fast_crsmat = KokkosKernels::Experimental::Util::
+                            kk_get_lower_crs_matrix(b_fast_crsmat,&(new_indices[0]));
+      }
+      preprocess_time = timer1.seconds();
     }
     else {
       if (b_mat_file == NULL) b_mat_file = a_mat_file;
       b_slow_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
+      std::vector<lno_t> new_indices;
+      Kokkos::Impl::Timer timer1;
+      if (params.right_sort){
+        new_indices.resize(b_slow_crsmat.numRows());
+        KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, lno_t,exec_space>(
+            b_slow_crsmat.numRows(), b_slow_crsmat.graph.row_map.data(),
+            &(new_indices[0]));
+
+      }
+      if (params.right_lower_triangle){
+        b_slow_crsmat = KokkosKernels::Experimental::Util::
+                            kk_get_lower_crs_matrix(b_slow_crsmat,&(new_indices[0]));
+      }
+      preprocess_time = timer1.seconds();
     }
 
+    std::cout << "preprocess_time:" << preprocess_time << std::endl;
 
 
     if (params.a_mem_space == 1){
