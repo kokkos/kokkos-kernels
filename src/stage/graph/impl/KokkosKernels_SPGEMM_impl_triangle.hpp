@@ -88,6 +88,7 @@ struct KokkosSPGEMM
   nnz_lno_t shmem_hash_size;
   const nnz_lno_t team_row_chunk_size;
   const int set_size;
+  const int set_shift;
   const int count_or_fill_mode = 0;
   const nnz_lno_t *min_size_row_for_each_row;
 
@@ -156,6 +157,7 @@ struct KokkosSPGEMM
         shmem_hash_size(1),
         team_row_chunk_size(team_row_chunk_size_),
         set_size (sizeof(nnz_lno_t) * 8),
+        set_shift(log(double(sizeof(nnz_lno_t) * 8)) / log(2.0) + 0.5),
         count_or_fill_mode(mode_),
         min_size_row_for_each_row(min_size_row_for_each_row_)
   {
@@ -186,6 +188,7 @@ struct KokkosSPGEMM
           << " adjusted shmem_key_size:" << shmem_key_size
           << " using "<< (shmem_key_size * 4  + shmem_hash_size) * sizeof (nnz_lno_t) +    sizeof(nnz_lno_t) * 3
           << " of thread_memory: " << thread_memory
+          << " set_shift:" << set_shift << " set_size:" << set_size
           << std::endl;
     }
   }
@@ -323,16 +326,17 @@ struct KokkosSPGEMM
         size_type num_el = rowmapC[row_index];
 
         for (nnz_lno_t ii = 0; ii < insertion_count; ++ii){
-          nnz_lno_t set_ind = indices[ii];
-          nnz_lno_t c_rows = sets[set_ind];
-          if (sets2[set_ind] != col_size) continue;
+          const nnz_lno_t set_ind = indices[ii];
 
+          if (sets2[set_ind] != col_size) continue;
+          nnz_lno_t c_rows = sets[set_ind];
+          const nnz_lno_t shift = set_ind << set_shift;
           int current_row = 0;
           nnz_lno_t unit = 1;
           while (c_rows){
             if (c_rows & unit){
               //insert indices.
-              entriesC[num_el++] = set_size * set_ind + current_row;
+              entriesC[num_el++] = shift + current_row;
             }
             current_row++;
             c_rows = c_rows & ~unit;
@@ -436,7 +440,9 @@ struct KokkosSPGEMM
         size_type num_el = rowmapC[row_index];
 
         for (nnz_lno_t ii = 0; ii < insertion_count; ++ii){
-          nnz_lno_t set_ind = indices[ii];
+          const nnz_lno_t set_ind = indices[ii];
+          const nnz_lno_t shift = set_ind << set_shift;
+
           //nnz_lno_t c_rows = sets[set_ind];
           nnz_lno_t c_rows = sets2[set_ind];
           sets[set_ind] = 0;
@@ -447,7 +453,7 @@ struct KokkosSPGEMM
           while (c_rows){
             if (c_rows & unit){
               //insert indices.
-              entriesC[num_el++] = set_size * set_ind + current_row;
+              entriesC[num_el++] = shift + current_row;
             }
             current_row++;
             c_rows = c_rows & ~unit;
@@ -564,8 +570,9 @@ struct KokkosSPGEMM
         size_type num_el = rowmapC[row_index];
 
         for (nnz_lno_t ii = 0; ii < used_hash_size; ++ii){
-          nnz_lno_t c_rows_setind = hm2.keys[ii];
+          const nnz_lno_t c_rows_setind = hm2.keys[ii];
           nnz_lno_t c_rows = values2[ii];
+          const nnz_lno_t shift = c_rows_setind << set_shift;
 
           int current_row = 0;
           nnz_lno_t unit = 1;
@@ -573,7 +580,7 @@ struct KokkosSPGEMM
           while (c_rows){
             if (c_rows & unit){
               //insert indices.
-              entriesC[num_el++] = set_size * c_rows_setind + current_row;
+              entriesC[num_el++] = shift + current_row;
             }
             current_row++;
             c_rows = c_rows & ~unit;
@@ -731,6 +738,7 @@ struct KokkosSPGEMM
           if (values2[ii] != col_size) continue;
           nnz_lno_t c_rows_setind = hm2.keys[ii];
           nnz_lno_t c_rows = hm2.values[ii];
+          const nnz_lno_t shift = c_rows_setind << set_shift;
 
           int current_row = 0;
           nnz_lno_t unit = 1;
@@ -738,7 +746,7 @@ struct KokkosSPGEMM
           while (c_rows){
             if (c_rows & unit){
               //insert indices.
-              entriesC[num_el++] = set_size * c_rows_setind + current_row;
+              entriesC[num_el++] = shift + current_row;
             }
             current_row++;
             c_rows = c_rows & ~unit;
