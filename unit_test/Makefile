@@ -1,4 +1,4 @@
-KOKKOS_PATH = ${HOME}/kokkos
+KOKKOS_PATH = ${HOME}/Kokkos/kokkos
 KOKKOSKERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
 GTEST_PATH = ${KOKKOS_PATH}/tpls/gtest
 
@@ -26,12 +26,15 @@ LIB =
 include $(KOKKOS_PATH)/Makefile.kokkos
 include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 
-CXXFLAGS += -I${GTEST_PATH}
+CXXFLAGS += -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
+CXXFLAGS += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
+
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/cuda
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/openmp
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
 
-TEST_HEADERS = $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/*.hpp)
+TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/blas/*.hpp)
 
 TEST_TARGETS =
 TARGETS =
@@ -39,7 +42,7 @@ TARGETS =
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
   CXXFLAGS += -I./openmp
   OBJ_OPENMP = Test_Main.o gtest-all.o
-  OBJ_OPENMP += Test_OpenMP_Dot.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_Dot.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -53,7 +56,7 @@ test-openmp: KokkosKernels_UnitTest_OpenMP
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   CXXFLAGS += -I./cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
-  OBJ_CUDA += Test_Cuda_Dot.o
+  OBJ_CUDA += Test_Cuda_Blas1_Dot.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
