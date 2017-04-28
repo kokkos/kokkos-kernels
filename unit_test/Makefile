@@ -71,6 +71,7 @@ test-cuda: KokkosKernels_UnitTest_Cuda
 ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/serial
   OBJ_SERIAL = Test_Main.o gtest-all.o
+  OBJ_SERIAL += Test_Serial_Blas1_AXPBY.o
   OBJ_SERIAL += Test_Serial_Blas1_Dot.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
