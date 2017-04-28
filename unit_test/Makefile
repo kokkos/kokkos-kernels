@@ -31,6 +31,7 @@ CXXFLAGS += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/cuda
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/openmp
+vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/serial
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
 
 TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/*.hpp)
@@ -40,7 +41,7 @@ TEST_TARGETS =
 TARGETS =
 
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
-  CXXFLAGS += -I./openmp
+  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/openmp
   OBJ_OPENMP = Test_Main.o gtest-all.o
   OBJ_OPENMP += Test_OpenMP_Blas1_Dot.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
@@ -54,7 +55,7 @@ test-openmp: KokkosKernels_UnitTest_OpenMP
 	./KokkosKernels_UnitTest_OpenMP
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
-  CXXFLAGS += -I./cuda
+  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_Dot.o
   TARGETS += KokkosKernels_UnitTest_Cuda
@@ -66,6 +67,20 @@ KokkosKernels_UnitTest_Cuda: $(OBJ_CUDA) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS
 
 test-cuda: KokkosKernels_UnitTest_Cuda
 	./KokkosKernels_UnitTest_Cuda
+
+ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
+  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/serial
+  OBJ_SERIAL = Test_Main.o gtest-all.o
+  OBJ_SERIAL += Test_Serial_Blas1_Dot.o
+  TARGETS += KokkosKernels_UnitTest_Serial
+  TEST_TARGETS += test-serial
+endif
+
+KokkosKernels_UnitTest_Serial: $(OBJ_SERIAL) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS_LINK_DEPENDS)
+	$(LINK) $(EXTRA_PATH) $(OBJ_SERIAL) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Serial
+
+test-serial: KokkosKernels_UnitTest_Serial
+	./KokkosKernels_UnitTest_Serial
 
 test: $(TEST_TARGETS)
 
