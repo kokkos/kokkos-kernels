@@ -1,8 +1,12 @@
+
+#=======================================================================
+#=================== Settings ==========================================
+#=======================================================================
+
 KOKKOS_PATH = ${HOME}/Kokkos/kokkos
 KOKKOSKERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
 GTEST_PATH = ${KOKKOS_PATH}/tpls/gtest
 
-SRC = $(wildcard *.cpp)
 KOKKOS_DEVICES=OpenMP
 KOKKOS_CUDA_OPTIONS=enable_lambda
 
@@ -20,18 +24,23 @@ LINKFLAGS =
 
 DEPFLAGS = -M
 
-OBJ = $(SRC:.cpp=.o)
+OBJ =
 LIB =
+
+#=======================================================================
+#=================== Include Kokkos and KokkosKernels ==================
+#=======================================================================
 
 include $(KOKKOS_PATH)/Makefile.kokkos
 include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 
+#=======================================================================
+#=================== Add common source files ===========================
+#=======================================================================
+
 CXXFLAGS += -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
 CXXFLAGS += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
 
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/cuda
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/openmp
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/serial
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
 
 TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/*.hpp)
@@ -40,9 +49,16 @@ TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/blas/*.hpp)
 TEST_TARGETS =
 TARGETS =
 
+#=======================================================================
+#=================== OpenMP BACKEND ====================================
+#=======================================================================
+
+vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/openmp
+
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/openmp
   OBJ_OPENMP = Test_Main.o gtest-all.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_AXPBY.o
   OBJ_OPENMP += Test_OpenMP_Blas1_Dot.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
@@ -54,9 +70,16 @@ KokkosKernels_UnitTest_OpenMP: $(OBJ_OPENMP) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KER
 test-openmp: KokkosKernels_UnitTest_OpenMP
 	./KokkosKernels_UnitTest_OpenMP
 
+#=======================================================================
+#=================== Cuda BACKEND ====================================
+#=======================================================================
+
+vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/cuda
+
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
+  OBJ_CUDA += Test_Cuda_Blas1_AXPBY.o
   OBJ_CUDA += Test_Cuda_Blas1_Dot.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
@@ -67,6 +90,12 @@ KokkosKernels_UnitTest_Cuda: $(OBJ_CUDA) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS
 
 test-cuda: KokkosKernels_UnitTest_Cuda
 	./KokkosKernels_UnitTest_Cuda
+
+#=======================================================================
+#=================== Serial BACKEND ====================================
+#=======================================================================
+
+vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/serial
 
 ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/serial
@@ -82,6 +111,31 @@ KokkosKernels_UnitTest_Serial: $(OBJ_SERIAL) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KER
 
 test-serial: KokkosKernels_UnitTest_Serial
 	./KokkosKernels_UnitTest_Serial
+
+#=======================================================================
+#=================== Threads BACKEND ===================================
+#=======================================================================
+
+vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/threads
+
+ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
+  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/threads
+  OBJ_THREADS = Test_Main.o gtest-all.o
+  OBJ_THREADS += Test_Threads_Blas1_AXPBY.o
+  OBJ_THREADS += Test_Threads_Blas1_Dot.o
+  TARGETS += KokkosKernels_UnitTest_Threads
+  TEST_TARGETS += test-threads
+endif
+
+KokkosKernels_UnitTest_Threads: $(OBJ_THREADS) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS_LINK_DEPENDS)
+	$(LINK) $(EXTRA_PATH) $(OBJ_THREADS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Threads
+
+test-threads: KokkosKernels_UnitTest_Threads
+	./KokkosKernels_UnitTest_Threads
+
+#=======================================================================
+#=================== Make Rules ========================================
+#=======================================================================
 
 test: $(TEST_TARGETS)
 
