@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <KokkosKernels_BitUtils.hpp>
+#include "KokkosKernels_BitUtils.hpp"
 
 namespace KokkosKernels{
 
