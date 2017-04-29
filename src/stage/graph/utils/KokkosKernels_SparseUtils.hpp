@@ -950,6 +950,60 @@ crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
   crstmat_t new_ll_mtx("lower triangle", in_crs_matrix.numCols(), new_values, g);
   return new_ll_mtx;
 }
+
+template <typename graph_t>
+graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
+    typename graph_t::data_type *new_indices = NULL){
+
+  typedef typename graph_t::execution_space exec_space;
+
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+
+  typedef typename graph_t::row_map_type::const_type const_row_map_view_t;
+  typedef typename graph_t::entries_type::const_type   const_cols_view_t;
+
+
+  typedef typename row_map_view_t::non_const_value_type size_type;
+  typedef typename cols_view_t::non_const_value_type lno_t;
+
+
+
+  lno_t nr = in_crs_matrix.numRows();
+  const size_type *rowmap = in_crs_matrix.row_map.data();
+  const lno_t *entries= in_crs_matrix.entries.data();
+
+  row_map_view_t new_row_map ("LL", nr + 1);
+  KokkosKernels::Experimental::Util::kk_get_lower_triangle_count
+  <size_type, lno_t, exec_space> (nr, rowmap, entries, new_row_map.data(), new_indices);
+
+  size_type total = 0;
+  for (int i = 0; i < nr; ++i){
+    total += new_row_map(i);
+  }
+
+  KokkosKernels::Experimental::Util::kk_exclusive_parallel_prefix_sum
+  <row_map_view_t, exec_space>(nr + 1, new_row_map);
+  exec_space::fence();
+
+  auto ll_size = Kokkos::subview(new_row_map, nr);
+  auto h_ll_size = Kokkos::create_mirror_view (ll_size);
+  Kokkos::deep_copy (h_ll_size, ll_size);
+  size_type ll_nnz_size = h_ll_size();
+
+  cols_view_t new_entries ("LL", ll_nnz_size);
+
+
+  KokkosKernels::Experimental::Util::kk_get_lower_triangle_fill
+  <size_type, lno_t, lno_t, exec_space> (
+      nr, rowmap, entries, NULL, new_row_map.data(),
+      new_entries.data(), NULL,new_indices);
+
+  graph_t g (new_entries, new_row_map);
+
+  return g;
+}
+
 }
 }
 }

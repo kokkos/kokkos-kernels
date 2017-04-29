@@ -639,6 +639,7 @@ void KokkosSPGEMM
       Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
       typename out_rowmap_view_t::non_const_value_type compressed_b_size = h_c_nnz_size();
 
+      //std::cout << "\tcompressed_b_size:" <<compressed_b_size << std::endl;
       out_nnz_indices = out_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), compressed_b_size);
       out_nnz_sets = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), compressed_b_size);
 

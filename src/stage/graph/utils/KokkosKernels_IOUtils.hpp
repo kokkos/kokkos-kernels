@@ -634,6 +634,53 @@ crsMat_t read_kokkos_crst_matrix(const char * filename_){
 }
 
 
+template <typename crsGraph_t>
+crsGraph_t read_kokkos_crst_graph(const char * filename_){
+
+  typedef typename crsGraph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename crsGraph_t::entries_type::non_const_type   cols_view_t;
+
+  typedef typename row_map_view_t::value_type size_type;
+  typedef typename cols_view_t::value_type   lno_t;
+  typedef double scalar_t ;
+
+  lno_t nv, *adj;
+  size_type *xadj, nnzA;
+  scalar_t *values;
+  read_matrix<lno_t, size_type, scalar_t>(
+      &nv, &nnzA, &xadj, &adj, &values, filename_);
+
+  row_map_view_t rowmap_view("rowmap_view", nv+1);
+  cols_view_t columns_view("colsmap_view", nnzA);
+
+
+
+  {
+    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+    typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+
+    for (lno_t i = 0; i <= nv; ++i){
+      hr(i) = xadj[i];
+    }
+
+    for (size_type i = 0; i < nnzA; ++i){
+      hc(i) = adj[i];
+    }
+    Kokkos::deep_copy (rowmap_view , hr);
+    Kokkos::deep_copy (columns_view , hc);
+  }
+
+  lno_t ncols = 0;
+  KokkosKernels::Experimental::Util::kk_view_reduce_max
+      <cols_view_t, typename crsGraph_t::execution_space>(nnzA, columns_view, ncols);
+  ncols += 1;
+
+  crsGraph_t static_graph (columns_view, rowmap_view, ncols);
+  delete [] xadj; delete [] adj; delete [] values;
+  return static_graph;
+}
+
+
 
 template <typename size_type, typename nnz_lno_t>
 inline void kk_sequential_create_incidence_matrix(

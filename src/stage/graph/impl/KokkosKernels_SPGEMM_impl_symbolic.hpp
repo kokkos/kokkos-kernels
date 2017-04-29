@@ -1337,6 +1337,11 @@ size_t KokkosSPGEMM
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
 
+  //KokkosKernels::Experimental::Util::print_1Dview(row_mapA_);
+  //KokkosKernels::Experimental::Util::print_1Dview(entriesA_);
+  //KokkosKernels::Experimental::Util::print_1Dview(row_pointers_begin_B);
+
+  //KokkosKernels::Experimental::Util::print_1Dview(row_pointers_end_B);
 
 
   PredicMaxRowNNZIntersection

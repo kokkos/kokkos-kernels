@@ -258,7 +258,7 @@ private:
   ////BELOW code is for triangle count specific.
   //////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////
-
+  template <typename struct_visit_t>
   void triangle_count_ai(
       const int is_symbolic_or_numeric,
       const nnz_lno_t m,
@@ -272,10 +272,11 @@ private:
       const nnz_lno_t* entriesSets,
 
       size_type* rowmapC,
-      nnz_lno_t *entriesC
+      nnz_lno_t *entriesC,
+      struct_visit_t visit_applier
   );
 public:
-  template <typename pool_memory_space>
+  template <typename pool_memory_space, typename struct_visit_t>
   struct TriangleCount;
 
 
@@ -287,6 +288,11 @@ public:
 
   template <typename c_row_view_t>
   void KokkosSPGEMM_symbolic_triangle(c_row_view_t rowmapC_);
+  template <typename visit_struct_t>
+  void KokkosSPGEMM_generic_triangle(visit_struct_t visit_apply);
+
+
+  void KokkosSPGEMM_symbolic_triangle_setup();
 private:
   template <typename c_row_view_t, typename c_lno_nnz_view_t>
   void KokkosSPGEMM_numeric_triangle_ai(

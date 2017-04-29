@@ -40,30 +40,23 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef _KOKKOS_SPGEMM_HPP
-#define _KOKKOS_SPGEMM_HPP
+#ifndef _KOKKOS_TRIANGLE_HPP
+#define _KOKKOS_TRIANGLE_HPP
 
 #include "KokkosKernels_Handle.hpp"
-#include "KokkosKernels_SPGEMM_viennaCL_impl.hpp"
-#include "KokkosKernels_SPGEMM_cuSPARSE_impl.hpp"
-#include "KokkosKernels_SPGEMM_CUSP_impl.hpp"
-#include "KokkosKernels_SPGEMM_mkl_impl.hpp"
-#include "KokkosKernels_SPGEMM_mkl2phase_impl.hpp"
 #include "KokkosKernels_SPGEMM_impl.hpp"
-#include "KokkosKernels_SPGEMM_impl_seq.hpp"
 namespace KokkosKernels{
 
 namespace Experimental{
 
 namespace Graph{
-
   template <typename KernelHandle,
   typename alno_row_view_t_,
   typename alno_nnz_view_t_,
   typename blno_row_view_t_,
   typename blno_nnz_view_t_,
   typename clno_row_view_t_>
-  void spgemm_symbolic(
+  void triangle_count(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n,
@@ -79,55 +72,24 @@ namespace Graph{
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
     switch (sh->get_algorithm_type()){
-
-    case SPGEMM_CUSPARSE:
-      Impl::cuSPARSE_symbolic
-      <spgemmHandleType,
-      alno_row_view_t_,
-      alno_nnz_view_t_,
-      blno_row_view_t_,
-      blno_nnz_view_t_,
-      clno_row_view_t_>(sh, m,n,k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC);
-      break;
-    case SPGEMM_CUSP:
-      break;
-
-    case SPGEMM_MKL2PHASE:
-      Impl::mkl2phase_symbolic(
-          sh,
-          m, n, k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC,handle->get_verbose());
-      break;
-
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
+    case SPGEMM_KK_TRIANGLE_LL:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
       alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
       blno_row_view_t_, blno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
       kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
-      kspgemm.KokkosSPGEMM_symbolic(row_mapC);
+      kspgemm.KokkosSPGEMM_symbolic_triangle(row_mapC);
     }
     break;
+
     case SPGEMM_KK_TRIANGLE_DEFAULT:
     case SPGEMM_KK_TRIANGLE_DENSE:
     case SPGEMM_KK_TRIANGLE_MEM:
     case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
     case SPGEMM_KK_TRIANGLE_IA_DENSE:
     case SPGEMM_KK_TRIANGLE_IA_MEM:
+    default:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
@@ -138,11 +100,7 @@ namespace Graph{
     }
       break;
 
-    case SPGEMM_SERIAL:
-    case SPGEMM_DEBUG:
-    case SPGEMM_MKL:
-    default:
-      break;
+
     }
     sh->set_call_symbolic();
 
@@ -152,37 +110,32 @@ namespace Graph{
   template <typename KernelHandle,
     typename alno_row_view_t_,
     typename alno_nnz_view_t_,
-    typename ascalar_nnz_view_t_,
     typename blno_row_view_t_,
     typename blno_nnz_view_t_,
-    typename bscalar_nnz_view_t_,
     typename clno_row_view_t_,
-    typename clno_nnz_view_t_,
-    typename cscalar_nnz_view_t_>
-  void spgemm_numeric(
+    typename clno_nnz_view_t_>
+  void triangle_enumerate(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n,
       typename KernelHandle::nnz_lno_t k,
       alno_row_view_t_ row_mapA,
       alno_nnz_view_t_ entriesA,
-      ascalar_nnz_view_t_ valuesA,
 
       bool transposeA,
       blno_row_view_t_ row_mapB,
       blno_nnz_view_t_ entriesB,
-      bscalar_nnz_view_t_ valuesB,
       bool transposeB,
       clno_row_view_t_ row_mapC,
-      clno_nnz_view_t_ &entriesC,
-      cscalar_nnz_view_t_ &valuesC
+      clno_nnz_view_t_ &entriesC1,
+      clno_nnz_view_t_ &entriesC2 = NULL
       ){
 
 
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_symbolic_called()){
-      spgemm_symbolic<KernelHandle,
+      triangle_count<KernelHandle,
                     alno_row_view_t_, alno_nnz_view_t_,
                     blno_row_view_t_, blno_nnz_view_t_,
                     clno_row_view_t_>(
@@ -191,85 +144,18 @@ namespace Graph{
           row_mapB, entriesB, transposeB,
           row_mapC
           );
+
       typename clno_row_view_t_::value_type c_nnz_size = handle->get_spgemm_handle()->get_c_nnz();
       if (c_nnz_size){
-        entriesC = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-        valuesC = cscalar_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+        entriesC1 = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+        //entriesC2 = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       }
     }
 
 
     switch (sh->get_algorithm_type()){
-    case SPGEMM_CUSPARSE:
-      Impl::cuSPARSE_apply<spgemmHandleType>(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC);
-      break;
-    case SPGEMM_CUSP:
-      Impl::CUSP_apply<spgemmHandleType,
-        alno_row_view_t_,
-        alno_nnz_view_t_,
-        ascalar_nnz_view_t_,
-        blno_row_view_t_,
-        blno_nnz_view_t_,
-        bscalar_nnz_view_t_,
-        clno_row_view_t_,
-        clno_nnz_view_t_,
-        cscalar_nnz_view_t_ >(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC);
-          break;
-    case SPGEMM_MKL:
-      Impl::mkl_apply<spgemmHandleType>(
-                sh,
-                m,n,k,
-                row_mapA, entriesA, valuesA, transposeA,
-                row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-    case SPGEMM_MKL2PHASE:
-      Impl::mkl2phase_apply(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
+    default:
 
-    case SPGEMM_VIENNA:
-      Impl::viennaCL_apply<spgemmHandleType>(
-                sh,
-                m,n,k,
-                row_mapA, entriesA, valuesA, transposeA,
-                row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
-    case SPGEMM_KK_OUTERMULTIMEM:
-    {
-      KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
-      <KernelHandle,
-      alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
-      blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
-      kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
-    }
-    break;
     case SPGEMM_KK_TRIANGLE_DEFAULT:
     case SPGEMM_KK_TRIANGLE_DENSE:
     case SPGEMM_KK_TRIANGLE_MEM:
@@ -279,40 +165,60 @@ namespace Graph{
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
-      alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
-      blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
-
-      kspgemm.KokkosSPGEMM_numeric_triangle(row_mapC, entriesC, valuesC);
+      alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
+      blno_row_view_t_, blno_nnz_view_t_,  typename KernelHandle::in_scalar_nnz_view_t>
+      kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
+      kspgemm.KokkosSPGEMM_numeric_triangle(row_mapC, entriesC1, entriesC2);
     }
     break;
-
-    case SPGEMM_SERIAL:
-    case SPGEMM_DEBUG:
-      KokkosKernels::Experimental::Graph::Impl::spgemm_debug(
-          handle,
-          m,
-          n,
-          k,
-          row_mapA,
-          entriesA,
-          valuesA,
-
-          transposeA,
-          row_mapB,
-          entriesB,
-          valuesB,
-          transposeB,
-          row_mapC,
-          entriesC,
-          valuesC
-          );
-      break;
-    default:
-      break;
     }
   }
 
+  template <typename KernelHandle,
+  typename alno_row_view_t_,
+  typename alno_nnz_view_t_,
+  typename blno_row_view_t_,
+  typename blno_nnz_view_t_,
+  typename visit_struct_t>
+  void triangle_generic(
+      KernelHandle *handle,
+      typename KernelHandle::nnz_lno_t m,
+      typename KernelHandle::nnz_lno_t n,
+      typename KernelHandle::nnz_lno_t k,
+      alno_row_view_t_ row_mapA,
+      alno_nnz_view_t_ entriesA,
+      bool transposeA,
+      blno_row_view_t_ row_mapB,
+      blno_nnz_view_t_ entriesB,
+      bool transposeB,
+      visit_struct_t visit_struct){
+
+    typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
+    spgemmHandleType *sh = handle->get_spgemm_handle();
+    switch (sh->get_algorithm_type()){
+    case SPGEMM_KK_TRIANGLE_LL:
+    case SPGEMM_KK_TRIANGLE_DEFAULT:
+    case SPGEMM_KK_TRIANGLE_DENSE:
+    case SPGEMM_KK_TRIANGLE_MEM:
+    case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
+    case SPGEMM_KK_TRIANGLE_IA_DENSE:
+    case SPGEMM_KK_TRIANGLE_IA_MEM:
+    default:
+    {
+      KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
+      <KernelHandle,
+        alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
+        blno_row_view_t_, blno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
+      kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
+      kspgemm.KokkosSPGEMM_generic_triangle(visit_struct);
+    }
+      break;
+
+
+    }
+    sh->set_call_symbolic();
+
+  }
 
 }
 }

@@ -29,6 +29,11 @@ TRIBITS_ADD_EXECUTABLE(
    SOURCES KokkosKernels_SPMM_KK.cpp  
    )
   
+   TRIBITS_ADD_EXECUTABLE(
+   triangle
+   SOURCES KokkosKernels_Triangle.cpp  
+   )
+   
 #TRIBITS_ADD_EXECUTABLE(
 #  spemm_cuda
 #  SOURCES KokkosKernels_SPMM_cuda.cpp  

@@ -56,18 +56,21 @@ public:
 
   entries_type entries;
   row_map_type row_map;
+  OrdinalType num_cols;
 
   //! Construct an empty view.
-  StaticCrsGraph () : entries(), row_map() {}
+  StaticCrsGraph () : entries(), row_map(), num_cols() {}
 
   //! Copy constructor (shallow copy).
-  StaticCrsGraph (const StaticCrsGraph& rhs) : entries (rhs.entries), row_map (rhs.row_map)
+  StaticCrsGraph (const StaticCrsGraph& rhs) : entries (rhs.entries), row_map (rhs.row_map), num_cols(rhs.num_cols)
   {}
 
   template<class EntriesType, class RowMapType>
   StaticCrsGraph (const EntriesType& entries_,const RowMapType& row_map_) : entries (entries_), row_map (row_map_)
   {}
-
+  template<class EntriesType, class RowMapType>
+  StaticCrsGraph (const EntriesType& entries_,const RowMapType& row_map_, OrdinalType numCols_) :
+  entries (entries_), row_map (row_map_), num_cols(numCols_) {}
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
@@ -78,12 +81,17 @@ public:
     return *this;
   }
 
+  KOKKOS_INLINE_FUNCTION
+  data_type numCols() const {
+    return num_cols;
+  }
+
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
   ~StaticCrsGraph() {}
   KOKKOS_INLINE_FUNCTION
-  size_type numRows() const {
+  data_type numRows() const {
     return (row_map.dimension_0 () != 0) ?
         row_map.dimension_0 () - static_cast<size_type> (1) :
         static_cast<size_type> (0);

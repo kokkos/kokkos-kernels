@@ -87,6 +87,7 @@ int main (int argc, char ** argv){
   std::cout << "read numEdges:" << numEdges << std::endl;
   size_t num_vertex = 0;
   for (size_t i = 0; i < numEdges; ++i){
+    if (srcs[i] == 0) std::cout << "i:" << i << " src:" << srcs[i] << " dst:" << dst[i] << std::endl;
     if (num_vertex < srcs[i]) num_vertex = srcs[i];
     if (num_vertex < dst[i]) num_vertex = dst[i];
   }
