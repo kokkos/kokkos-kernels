@@ -836,11 +836,15 @@ void kk_get_lower_triangle_count(
   }
 }
 
-template <typename size_type, typename lno_t, typename ExecutionSpace>
-void kk_sort_by_row_size(
+
+
+template <typename size_type, typename lno_t>
+void kk_sort_by_row_size_sequential(
     const lno_t nv,
     const size_type *in_xadj,
     lno_t *new_indices){
+
+
   std::vector<lno_t> begins (nv);
   std::vector<lno_t> nexts (nv);
   for (lno_t i = 0; i < nv; ++i){
@@ -864,6 +868,57 @@ void kk_sort_by_row_size(
   }
 }
 
+template <typename size_type, typename lno_t, typename ExecutionSpace>
+void kk_sort_by_row_size_parallel(
+    const lno_t nv,
+    const size_type *in_xadj,
+    lno_t *new_indices){
+
+  typedef Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
+
+
+  Kokkos::View <lno_t *, ExecutionSpace> begins (Kokkos::ViewAllocateWithoutInitializing("begins"), nv);
+  lno_t * p_begins = begins.data();
+  Kokkos::View <lno_t *, ExecutionSpace> nexts (Kokkos::ViewAllocateWithoutInitializing("begins"), nv);
+  Kokkos::View <lno_t *, ExecutionSpace> num_elements ("num_elements", nv);
+  lno_t * p_num_elements = num_elements.data();
+  const lno_t increment = 1;
+
+  Kokkos::deep_copy(begins, -1);
+
+  Kokkos::parallel_for( my_exec_space(0, nv),
+      KOKKOS_LAMBDA(const lno_t& row) {
+        lno_t row_size = in_xadj[row+1] - in_xadj[row];
+        lno_t hashbeginning = Kokkos::atomic_exchange(p_begins+row_size, row);
+        Kokkos::atomic_add(p_num_elements + row_size, increment);
+        nexts [row] = hashbeginning;
+      });
+
+  kk_exclusive_parallel_prefix_sum< Kokkos::View <lno_t *, ExecutionSpace>, ExecutionSpace> (nv, num_elements);
+
+  const lno_t end_linked_list = -1;
+  Kokkos::parallel_for( my_exec_space(0, nv),
+      KOKKOS_LAMBDA(const lno_t& i) {
+    lno_t row = p_begins[i];
+    lno_t new_index = nv - 1 - p_num_elements[i];
+    while (row != end_linked_list){
+      new_indices[row] = --new_index;
+      row = nexts[row];
+    }
+  });
+}
+template <typename size_type, typename lno_t, typename ExecutionSpace>
+void kk_sort_by_row_size(
+    const lno_t nv,
+    const size_type *in_xadj,
+    lno_t *new_indices){
+  //kk_sort_by_row_size_sequential(nv, in_xadj, new_indices);
+  Kokkos::Impl::Timer timer1;
+  kk_sort_by_row_size_parallel<size_type, lno_t, ExecutionSpace>(nv, in_xadj, new_indices);
+  double sort_time = timer1.seconds();
+  std::cout << "sort time:" << sort_time<< std::endl;
+
+}
 template <typename size_type, typename lno_t, typename scalar_t, typename ExecutionSpace>
 void kk_get_lower_triangle_fill(
     lno_t nv,
@@ -925,7 +980,7 @@ crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
   <size_type, lno_t, exec_space> (nr, rowmap, entries, new_row_map.data(), new_indices);
 
   size_type total = 0;
-  for (int i = 0; i < nr; ++i){
+  for (lno_t i = 0; i < nr; ++i){
     total += new_row_map(i);
   }
 

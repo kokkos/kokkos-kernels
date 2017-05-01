@@ -286,12 +286,6 @@ crsGraph_t3 run_experiment(
 
   for (int i = 0; i < repeat; ++i){
 
-    KokkosKernels::Experimental::Util::print_1Dview(crsGraph.row_map);
-    KokkosKernels::Experimental::Util::print_1Dview(crsGraph.entries);
-
-
-    KokkosKernels::Experimental::Util::print_1Dview(crsGraph2.row_map);
-    KokkosKernels::Experimental::Util::print_1Dview(crsGraph2.entries);
 
     row_mapC = lno_view_t
               ("non_const_lnow_row",
