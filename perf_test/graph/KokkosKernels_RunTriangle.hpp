@@ -370,8 +370,47 @@ crsGraph_t3 run_experiment(
     }
 
     if (params.triangle_options == 3 ){
+      struct TriangleCountReducer{
+        lno_view_t row_mapC;
+        TriangleCountReducer(lno_view_t row_mapC_): row_mapC(row_mapC_){
+        }
+        void operator ()(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) const {
+          row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
+        }
+      };
+
+      TriangleCountReducer tcr(row_mapC);
+
+      Kokkos::Impl::Timer timer1;
+      KokkosKernels::Experimental::Graph::triangle_generic (
+          &kh,
+          m,
+          n,
+          k,
+          crsGraph.row_map,
+          crsGraph.entries,
+          TRANPOSEFIRST,
+          crsGraph2.row_map,
+          crsGraph2.entries,
+          TRANPOSESECOND,
+          tcr
+      );
+
+      size_type num_triangles = 0;
+      KokkosKernels::Experimental::Util::kk_reduce_view<lno_view_t, ExecSpace>(m, row_mapC, num_triangles);
+      ExecSpace::fence();
+
+      symbolic_time = timer1.seconds();
+      std::cout << "num_triangles:" << num_triangles << std::endl;
+    }
+
+
+    if (params.triangle_options == 4 ){
       //Kokkos::View<lno_t *, Kokkos::MemoryTraits<Kokkos::Atomic> > num_triangle_per_vertex("triangle_vertex", k);
-      lno_view_t num_triangle_per_vertex("triangle_vertex", k);
+      //Kokkos::View<lno_t *, Kokkos::MemoryTraits<Kokkos::Atomic> > num_triangle_per_vertex("triangle_vertex", k);
+
+      //lno_view_t num_triangle_per_vertex("triangle_vertex", k);
+      lno_t set_shift = (log(double(sizeof(lno_t) * 8)) / log(2.0) + 0.5);
 
       Kokkos::Impl::Timer timer1;
       KokkosKernels::Experimental::Graph::triangle_generic (
@@ -387,36 +426,21 @@ crsGraph_t3 run_experiment(
           TRANPOSESECOND,
 
           KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
-            row_mapC(row) += 1;
-            //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(col)),1);
-            //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(crsGraph.entries(row * 2 ))),1);
-            //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(crsGraph.entries(row * 2 + 1) )),1);
+            lno_t unit = 1;
+            lno_t shift = col_set_index << set_shift;
+            lno_t w_col_set = col_set;
+            while (w_col_set){
 
-            num_triangle_per_vertex(col_set_index) +=1;
-            //below assumes that crsGraph is the incidence matrix.
-            //row corresponds to edge index,
-            //col corresponds to vertex index in the triangle.
-            //num_triangle_per_vertex(crsGraph.entries(row * 2 )) += 1;
-            //num_triangle_per_vertex(crsGraph.entries(row * 2 + 1)) += 1;
+              int least_set = KokkosKernels::Experimental::Util::least_set_bit(w_col_set) - 1;
+              w_col_set = w_col_set & ~(unit << least_set);
+              lno_t real_column_index = shift + least_set;
+              lno_t v1_of_triangle= crsGraph.entries(row * 2 );
+              lno_t v2_of_triangle= crsGraph.entries(row * 2 + 1);
+              std::cout << v1_of_triangle << " " << v2_of_triangle << " " << real_column_index << " with edge:" << row << std::endl;
+
+            }
           }
       );
-
-      size_type num_triangles = 0;
-      KokkosKernels::Experimental::Util::kk_reduce_view<lno_view_t, ExecSpace>(m, row_mapC, num_triangles);
-      ExecSpace::fence();
-
-      symbolic_time = timer1.seconds();
-      std::cout << "num_triangles:" << num_triangles << std::endl;
-
-      num_triangles = 0;
-      KokkosKernels::Experimental::Util::kk_reduce_view<lno_view_t, ExecSpace>(k, num_triangle_per_vertex, num_triangles);
-      //KokkosKernels::Experimental::Util::kk_reduce_view<Kokkos::View<lno_t* , Kokkos::MemoryTraits<Kokkos::Atomic> >, ExecSpace>(k, num_triangle_per_vertex, num_triangles);
-      
-      ExecSpace::fence();
-
-      std::cout << "num_triangles:" << num_triangles << std::endl;
-
-      KokkosKernels::Experimental::Util::print_1Dview(num_triangle_per_vertex);
     }
 
     std::cout
