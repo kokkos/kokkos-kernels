@@ -98,7 +98,7 @@ namespace Experiment{
       }
       if (params.left_lower_triangle){
         a_fast_crsmat = KokkosKernels::Experimental::Util::
-            kk_get_lower_crs_matrix(a_fast_crsmat,new_indices.data(), params.use_dynamic_scheduling);
+            kk_get_lower_crs_matrix(a_fast_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
       a_fast_crsgraph = a_fast_crsmat.graph;
       a_fast_crsgraph.num_cols = a_fast_crsmat.numCols();
@@ -118,7 +118,7 @@ namespace Experiment{
       }
       if (params.left_lower_triangle){
         a_slow_crsmat = KokkosKernels::Experimental::Util::
-                    kk_get_lower_crs_matrix(a_slow_crsmat,new_indices.data(), params.use_dynamic_scheduling);
+                    kk_get_lower_crs_matrix(a_slow_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
 
       a_slow_crsgraph = a_slow_crsmat.graph;
@@ -150,7 +150,7 @@ namespace Experiment{
       }
       if (params.right_lower_triangle){
         b_fast_crsmat = KokkosKernels::Experimental::Util::
-                            kk_get_lower_crs_matrix(b_fast_crsmat,new_indices.data(), params.use_dynamic_scheduling);
+                            kk_get_lower_crs_matrix(b_fast_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
       b_fast_crsgraph = b_fast_crsmat.graph;
       b_fast_crsgraph.num_cols = b_fast_crsmat.numCols();
@@ -173,7 +173,7 @@ namespace Experiment{
       }
       if (params.right_lower_triangle){
         b_slow_crsmat = KokkosKernels::Experimental::Util::
-                            kk_get_lower_crs_matrix(b_slow_crsmat,new_indices.data(), params.use_dynamic_scheduling);
+                            kk_get_lower_crs_matrix(b_slow_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
       b_slow_crsgraph = b_slow_crsmat.graph;
       b_slow_crsgraph.num_cols = b_slow_crsmat.numCols();

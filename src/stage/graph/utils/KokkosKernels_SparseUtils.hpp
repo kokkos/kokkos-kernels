@@ -1193,7 +1193,7 @@ void kk_get_lower_triangle_count(
   //kk_get_lower_triangle_count_sequential(nv, in_xadj, in_adj, out_xadj, new_indices);
   kk_get_lower_triangle_count_parallel<size_type, lno_t, ExecutionSpace>(nv, ne, in_xadj, in_adj, out_xadj, new_indices,use_dynamic_scheduling,chunksize);
   double count = timer1.seconds();
-  std::cout << "count fill time:" << count<< std::endl;
+  std::cout << "lower count time:" << count<< std::endl;
 
 }
 template <typename size_type, typename lno_t, typename scalar_t, typename ExecutionSpace>
