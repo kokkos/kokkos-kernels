@@ -87,7 +87,7 @@ int main (int argc, char ** argv){
   std::cout << "read numEdges:" << numEdges << std::endl;
   size_t num_vertex = 0;
   for (size_t i = 0; i < numEdges; ++i){
-    if (srcs[i] == 0) std::cout << "i:" << i << " src:" << srcs[i] << " dst:" << dst[i] << std::endl;
+    if (srcs[i] == 0 || dst[i] == 0) std::cout << "i:" << i << " src:" << srcs[i] << " dst:" << dst[i] << std::endl;
     if (num_vertex < srcs[i]) num_vertex = srcs[i];
     if (num_vertex < dst[i]) num_vertex = dst[i];
   }
@@ -153,16 +153,17 @@ int main (int argc, char ** argv){
   std::cout << "writing bin incidence" << std::endl;
   KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, i_adj2, ew, "incidence.bin");
 
+  lno_t average_degree = ne/nv;
   std::vector<lno_t> row_sizes (nv, 0);
   for (lno_t i = 0 ; i < nv; ++i){
     size_type row_s= xadj[i + 1] - xadj[i];
-    if (row_s > 1)
-    std::cout << "row:" << i << " size:" << row_s << std::endl;
+    if (row_s > 1000)
+    std::cout << "row:" << i << " size:" << row_s << " average_degree:" << average_degree << std::endl;
     row_sizes[row_s] += 1;
   }
 
   for (lno_t i = 0 ; i < nv; ++i){
-    if (row_sizes[i] == 0){
+    if (row_sizes[i] != 0){
       std::cout << row_sizes[i] << " rows has " << i << " nonzeroes" << std::endl;
     }
   }

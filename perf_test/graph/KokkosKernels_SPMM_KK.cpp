@@ -46,9 +46,12 @@
 #include "KokkosKernels_RunMultiMemSpGEMM.hpp"
 
 
-typedef int size_type;
-typedef int idx;
+typedef size_t size_type;
+typedef size_t idx;
 typedef double wt;
+//typedef int size_type;
+//typedef int idx;
+//typedef double wt;
 
 
 

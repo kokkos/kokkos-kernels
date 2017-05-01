@@ -376,7 +376,9 @@ crsGraph_t3 run_experiment(
     }
 
     if (params.triangle_options == 3 ){
-      Kokkos::View<lno_t *, Kokkos::MemoryTraits<Kokkos::Atomic> > num_triangle_per_vertex("triangle_vertex", k);
+      //Kokkos::View<lno_t *, Kokkos::MemoryTraits<Kokkos::Atomic> > num_triangle_per_vertex("triangle_vertex", k);
+      lno_view_t num_triangle_per_vertex("triangle_vertex", k);
+
       Kokkos::Impl::Timer timer1;
       KokkosKernels::Experimental::Graph::triangle_generic (
           &kh,
@@ -392,12 +394,16 @@ crsGraph_t3 run_experiment(
 
           KOKKOS_LAMBDA(const lno_t& row, const lno_t &col ) {
             row_mapC(row) += 1;
+	    //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(col)),1);
+            //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(crsGraph.entries(row * 2 ))),1);
+            //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(crsGraph.entries(row * 2 + 1) )),1);
+
             num_triangle_per_vertex(col) +=1;
             //below assumes that crsGraph is the incidence matrix.
             //row corresponds to edge index,
             //col corresponds to vertex index in the triangle.
-            num_triangle_per_vertex(crsGraph.entries(row * 2 )) += 1;
-            num_triangle_per_vertex(crsGraph.entries(row * 2 + 1)) += 1;
+            //num_triangle_per_vertex(crsGraph.entries(row * 2 )) += 1;
+            //num_triangle_per_vertex(crsGraph.entries(row * 2 + 1)) += 1;
           }
       );
 
@@ -407,6 +413,15 @@ crsGraph_t3 run_experiment(
 
       symbolic_time = timer1.seconds();
       std::cout << "num_triangles:" << num_triangles << std::endl;
+
+      num_triangles = 0;
+      KokkosKernels::Experimental::Util::kk_reduce_view<lno_view_t, ExecSpace>(k, num_triangle_per_vertex, num_triangles);
+      //KokkosKernels::Experimental::Util::kk_reduce_view<Kokkos::View<lno_t* , Kokkos::MemoryTraits<Kokkos::Atomic> >, ExecSpace>(k, num_triangle_per_vertex, num_triangles);
+      
+      ExecSpace::fence();
+
+      std::cout << "num_triangles:" << num_triangles << std::endl;
+
       KokkosKernels::Experimental::Util::print_1Dview(num_triangle_per_vertex);
     }
 
