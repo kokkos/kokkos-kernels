@@ -356,8 +356,8 @@ crsGraph_t3 run_experiment(
           crsGraph2.entries,
           TRANPOSESECOND,
 
-          KOKKOS_LAMBDA(const lno_t& row, const lno_t &col ) {
-            row_mapC(row) += 1;
+          KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
+            row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
           }
       );
 
@@ -386,13 +386,13 @@ crsGraph_t3 run_experiment(
           crsGraph2.entries,
           TRANPOSESECOND,
 
-          KOKKOS_LAMBDA(const lno_t& row, const lno_t &col ) {
+          KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
             row_mapC(row) += 1;
-	    //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(col)),1);
+            //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(col)),1);
             //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(crsGraph.entries(row * 2 ))),1);
             //Kokkos::atomic_fetch_add(&(num_triangle_per_vertex(crsGraph.entries(row * 2 + 1) )),1);
 
-            num_triangle_per_vertex(col) +=1;
+            num_triangle_per_vertex(col_set_index) +=1;
             //below assumes that crsGraph is the incidence matrix.
             //row corresponds to edge index,
             //col corresponds to vertex index in the triangle.

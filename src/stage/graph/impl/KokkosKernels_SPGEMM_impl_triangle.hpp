@@ -197,7 +197,7 @@ struct KokkosSPGEMM
   }
 
   KOKKOS_INLINE_FUNCTION
-  size_t get_thread_id(const size_t row_index) const{
+  nnz_lno_t get_thread_id(const nnz_lno_t row_index) const{
     switch (my_exec_space){
     default:
       return row_index;
@@ -238,7 +238,7 @@ struct KokkosSPGEMM
 
     volatile nnz_lno_t * tmp = NULL;
 
-    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
     while (tmp == NULL){
       tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
     }
@@ -364,23 +364,11 @@ struct KokkosSPGEMM
 
           if (sets2[set_ind] != col_size) continue;
           nnz_lno_t c_rows = sets[set_ind];
-          const nnz_lno_t shift = set_ind << set_shift;
-          //int current_row = 0;
-          nnz_lno_t unit = 1;
-          while (c_rows){
-            int least_set = KokkosKernels::Experimental::Util::least_set_bit(c_rows) - 1;
-            visit_applier(row_index, shift + least_set);
-            c_rows = c_rows & ~(unit << least_set);
-            /*
-            if (c_rows & unit){
-              //insert indices.
-              visit_applier(row_index, shift + current_row);
-            }
-            current_row++;
-            c_rows = c_rows & ~unit;
-            unit = unit << 1;
-            */
+          //const nnz_lno_t shift = set_ind << set_shift;
+          if (c_rows){
+            visit_applier(row_index, set_ind, c_rows, tid);
           }
+
         }
       }
       break;
@@ -406,7 +394,7 @@ struct KokkosSPGEMM
 
     volatile nnz_lno_t * tmp = NULL;
 
-    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
     while (tmp == NULL){
       tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
     }
@@ -514,29 +502,15 @@ struct KokkosSPGEMM
       {
         for (nnz_lno_t ii = 0; ii < insertion_count; ++ii){
           const nnz_lno_t set_ind = indices[ii];
-          const nnz_lno_t shift = set_ind << set_shift;
+          //const nnz_lno_t shift = set_ind << set_shift;
 
           //nnz_lno_t c_rows = sets[set_ind];
           nnz_lno_t c_rows = sets2[set_ind];
           sets[set_ind] = 0;
           sets2[set_ind] = 0;
 
-          //int current_row = 0;
-          nnz_lno_t unit = 1;
-          while (c_rows){
-
-            int least_set = KokkosKernels::Experimental::Util::least_set_bit(c_rows) - 1;
-            visit_applier(row_index, shift + least_set);
-            c_rows = c_rows & ~(unit << least_set);
-            /*
-            if (c_rows & unit){
-              //insert indices.
-              visit_applier(row_index, shift + current_row);
-            }
-            current_row++;
-            c_rows = c_rows & ~unit;
-            unit = unit << 1;
-            */
+          if (c_rows){
+            visit_applier(row_index, set_ind, c_rows, tid);
           }
         }
       }
@@ -558,7 +532,7 @@ struct KokkosSPGEMM
 
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
-    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
     while (tmp == NULL){
       tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
     }
@@ -682,26 +656,10 @@ struct KokkosSPGEMM
         for (nnz_lno_t ii = 0; ii < used_hash_size; ++ii){
           const nnz_lno_t c_rows_setind = hm2.keys[ii];
           nnz_lno_t c_rows = values2[ii];
-          const nnz_lno_t shift = c_rows_setind << set_shift;
-
-          //int current_row = 0;
-          nnz_lno_t unit = 1;
-
-          while (c_rows){
-
-            int least_set = KokkosKernels::Experimental::Util::least_set_bit(c_rows) - 1;
-            visit_applier(row_index, shift + least_set);
-            c_rows = c_rows & ~(unit << least_set);
-            /*
-            if (c_rows & unit){
-              //insert indices.
-              visit_applier(row_index, shift + current_row);
-            }
-            current_row++;
-            c_rows = c_rows & ~unit;
-            unit = unit << 1;
-            */
+          if (c_rows){
+            visit_applier(row_index, c_rows_setind, c_rows, tid);
           }
+
         }
       }
       break;
@@ -727,7 +685,7 @@ struct KokkosSPGEMM
 
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
-    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
     while (tmp == NULL){
       tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
     }
@@ -886,26 +844,10 @@ struct KokkosSPGEMM
           if (values2[ii] != col_size) continue;
           nnz_lno_t c_rows_setind = hm2.keys[ii];
           nnz_lno_t c_rows = hm2.values[ii];
-          const nnz_lno_t shift = c_rows_setind << set_shift;
-
-          //int current_row = 0;
-          nnz_lno_t unit = 1;
-
-          while (c_rows){
-
-            int least_set = KokkosKernels::Experimental::Util::least_set_bit(c_rows) - 1;
-            visit_applier(row_index, shift + least_set);
-            c_rows = c_rows & ~(unit << least_set);
-            /*
-            if (c_rows & unit){
-              //insert indices.
-              visit_applier(row_index, shift + current_row);
-            }
-            current_row++;
-            c_rows = c_rows & ~unit;
-            unit = unit << 1;
-            */
+          if (c_rows){
+            visit_applier(row_index, c_rows_setind, c_rows, tid);
           }
+
         }
       }
       break;
@@ -1031,7 +973,7 @@ struct KokkosSPGEMM
             if (!is_global_alloced){
 
               volatile nnz_lno_t * tmp = NULL;
-              size_t tid = get_thread_id(row_index);
+              nnz_lno_t tid = get_thread_id(row_index);
               //the code gets internal compiler error on gcc 4.7.2
               //assuming that this part only runs on GPUs for now, below fix
               //has the exact same behaviour and runs okay.
@@ -1539,7 +1481,7 @@ void
   struct dummy{
 
     KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t & col) const{
+    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
     }
   } dummy;
   this->triangle_count_ai(
@@ -1683,10 +1625,12 @@ void KokkosSPGEMM
 
   const int is_symbolic_or_numeric = 0;
 
+
   struct dummy{
     KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t & col) const{
+    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
     }
+
   } dummy;
 
   this->triangle_count_ai(
