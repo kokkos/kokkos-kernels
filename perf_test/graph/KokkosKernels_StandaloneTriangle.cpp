@@ -43,15 +43,12 @@
 #include <iostream>
 
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_RunMultiMemSpGEMM.hpp"
+#include "KokkosKernels_RunMultiMemStandaloneTriangle.hpp"
 
 
 typedef int size_type;
 typedef int idx;
 typedef double wt;
-//typedef int size_type;
-//typedef int idx;
-//typedef double wt;
 
 
 
@@ -91,7 +88,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
       params.repeat = atoi( argv[++i] );
     }
-
+    else if ( 0 == strcasecmp( argv[i] , "triangle_operation" ) ) {
+      params.triangle_options = atoi( argv[++i] );
+    }
     else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
       params.chunk_size = atoi( argv[++i] ) ;
     }
@@ -173,24 +172,20 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
       params.a_mtx_bin_file = argv[++i];
     }
+    /*
     else if ( 0 == strcasecmp( argv[i] , "cmtx" ) ) {
       params.c_mtx_bin_file = argv[++i];
     }
     else if ( 0 == strcasecmp( argv[i] , "bmtx" ) ) {
       params.b_mtx_bin_file = argv[++i];
     }
+    */
     else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "LLT" ) ) {
-      params.left_lower_triangle = 1;
-    }
     else if ( 0 == strcasecmp( argv[i] , "RLT" ) ) {
       params.right_lower_triangle = 1;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "LS" ) ) {
-      params.left_sort = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "RS" ) ) {
       params.right_sort = 1;
@@ -264,6 +259,15 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIADENSE" ) ) {
         params.algorithm = 21;
       }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIAUNION" ) ) {
+        params.algorithm = 22;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIAMEMUNION" ) ) {
+        params.algorithm = 23;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIADENSEUNION" ) ) {
+        params.algorithm = 24;
+      }
       else {
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
         print_options();
@@ -290,13 +294,11 @@ int main (int argc, char ** argv){
     return 1;
   }
   if (params.a_mtx_bin_file == NULL){
-    std::cerr << "Provide a and b matrix files" << std::endl ;
+    std::cerr << "Provide a matrix files" << std::endl ;
     print_options();
     return 0;
   }
-  if (params.b_mtx_bin_file == NULL){
-    std::cout << "B is not provided. Multiplying AxA." << std::endl;
-  }
+
 
 #if defined( KOKKOS_HAVE_OPENMP )
 
@@ -305,8 +307,8 @@ int main (int argc, char ** argv){
     Kokkos::OpenMP::initialize( params.use_openmp );
 	  Kokkos::OpenMP::print_configuration(std::cout);
 
-    KokkosKernels::Experiment::run_multi_mem_spgemm
-    <size_type, idx, wt, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
+    KokkosKernels::Experiment::run_multi_mem_triangle
+    <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
         params
         );
     Kokkos::OpenMP::finalize();
@@ -320,8 +322,8 @@ int main (int argc, char ** argv){
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
     Kokkos::Cuda::print_configuration(std::cout);
 
-    KokkosKernels::Experiment::run_multi_mem_spgemm
-    <size_type, idx, wt, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
+    KokkosKernels::Experiment::run_multi_mem_triangle
+    <size_type, idx, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
         params
         );
 

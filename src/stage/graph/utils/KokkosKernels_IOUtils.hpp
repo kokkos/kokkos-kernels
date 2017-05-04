@@ -685,8 +685,8 @@ crsGraph_t read_kokkos_crst_graph(const char * filename_){
 template <typename size_type, typename nnz_lno_t>
 inline void kk_sequential_create_incidence_matrix(
     nnz_lno_t num_rows,
-    size_type *xadj,
-    nnz_lno_t *adj,
+    const size_type *xadj,
+    const nnz_lno_t *adj,
     size_type *i_adj //output. preallocated
   ){
 
@@ -719,10 +719,10 @@ inline void kk_sequential_create_incidence_matrix(
 
 template <typename size_type, typename nnz_lno_t>
 inline void kk_sequential_create_incidence_matrix_transpose(
-    nnz_lno_t num_rows,
-    size_type num_edges,
-    size_type *xadj,
-    nnz_lno_t *adj,
+    const nnz_lno_t num_rows,
+    const size_type num_edges,
+    const size_type *xadj,
+    const nnz_lno_t *adj,
     size_type *i_xadj, //output. preallocated
     nnz_lno_t *i_adj //output. preallocated
   ){

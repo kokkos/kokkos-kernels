@@ -342,6 +342,36 @@ struct HashmapAccumulator{
   }
 
 
+  KOKKOS_INLINE_FUNCTION
+  int sequential_insert_into_hash_TrackHashes (
+      size_type hash,
+      key_type key,
+
+      size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
+
+    size_type i = hash_begins[hash];
+    for (; i != -1; i = hash_nexts[i]){
+      if (keys[i] == key){
+        return INSERT_SUCCESS;
+      }
+    }
+
+    //if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    size_type my_index = (*used_size_)++;
+
+    if (hash_begins[hash] == -1){
+      used_hashes[used_hash_size[0]++] = hash;
+    }
+    hash_nexts[my_index] = hash_begins[hash];
+
+    hash_begins[hash] = my_index;
+    keys[my_index] = key;
+    return INSERT_SUCCESS;
+  }
+
 
   //function to be called from device.
   //Accumulation is add operation.

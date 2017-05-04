@@ -29,9 +29,14 @@ TRIBITS_ADD_EXECUTABLE(
    SOURCES KokkosKernels_SPMM_KK.cpp  
    )
   
-   TRIBITS_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE(
    triangle
    SOURCES KokkosKernels_Triangle.cpp  
+   )
+      
+TRIBITS_ADD_EXECUTABLE(
+   StandAloneTriangle
+   SOURCES KokkosKernels_StandaloneTriangle.cpp  
    )
    
 #TRIBITS_ADD_EXECUTABLE(

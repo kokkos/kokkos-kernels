@@ -5,6 +5,7 @@ KERNELINC=-I../../../src/stage/graph/impl -I../../../src/stage/graph/ -I../../..
 
 vpath %.cpp $(sort $(dir $(SRC)))
 
+TRIANGLE_EXE2 = KokkosKernels_StandAloneTriangle
 TRIANGLE_EXE = KokkosKernels_Triangle
 SPGEMM_EXE = KokkosKernels_SPMM_KK
 COLOR_EXE = KokkosKernels_GraphColor
@@ -13,7 +14,7 @@ BINWRITER_EXE= KokkosKernels_WriteBinaryFromMTX
 BINWRITER_EXE2= KokkosKernels_WriteBinaryFromSRCDST
 
 
-default: $(SPGEMM_EXE) $(COLOR_EXE) $(TRIANGLE_EXE) $(BINWRITER_EXE) $(BINWRITER_EXE2)
+default: $(SPGEMM_EXE) $(COLOR_EXE) $(TRIANGLE_EXE) $(BINWRITER_EXE) $(BINWRITER_EXE2) $(TRIANGLE_EXE2)
 
 ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
 CXXFLAGS = -O3
@@ -42,10 +43,15 @@ OBJP=KokkosKernels_PCG_GS_TEST.o
 OBJW=KokkosKernels_WriteBinaryFromMTX.o
 OBJW2=KokkosKernels_WriteBinaryFromBinSrcDst.o
 OBJW3=KokkosKernels_Triangle.o
-
+OBJW4=KokkosKernels_StandaloneTriangle.o
 LIB =
 
 include $(KOKKOS_PATH)/Makefile.kokkos
+
+$(TRIANGLE_EXE2): $(OBJW4) $(KOKKOS_LINK_DEPENDS)
+	$(LINK) $(KOKKOS_LDFLAGS) $(LINKFLAGS) $(EXTRA_PATH) $(OBJW3) $(KOKKOS_LIBS) $(LIB) -o $(TRIANGLE_EXE2)
+
+
 
 $(TRIANGLE_EXE): $(OBJW3) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(KOKKOS_LDFLAGS) $(LINKFLAGS) $(EXTRA_PATH) $(OBJW3) $(KOKKOS_LIBS) $(LIB) -o $(TRIANGLE_EXE)
@@ -74,9 +80,6 @@ clean: kokkos-clean
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(KERNELINC) -c $< -o $(notdir $@)
 # DO NOT DELETE
 
-../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
-../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
-../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/Kokkos_ArithTraits.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/KokkosKernels_GraphColor.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/impl/KokkosKernels_GraphColor_impl.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/KokkosKernels_GraphColorHandle.hpp
@@ -91,41 +94,6 @@ clean: kokkos-clean
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/KokkosKernels_Handle.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/KokkosKernels_GaussSeidelHandle.hpp
 ../KokkosKernels_GraphColoringTest.o: ../../../src/stage/graph/KokkosKernels_SPGEMMHandle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
-../KokkosKernels_Triangle.o: ../../../src/Kokkos_ArithTraits.hpp
-../KokkosKernels_Triangle.o: ../KokkosKernels_RunMultiMemTriangle.hpp
-../KokkosKernels_Triangle.o: ../KokkosKernels_RunTriangle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Triangle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Handle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_GraphColorHandle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Utils.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_ExecSpaceUtils.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_SparseUtils.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_PrintUtils.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_VectorUtils.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_GaussSeidelHandle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_SPGEMMHandle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_HashmapAccumulator.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Uniform_Initialized_MemoryPool.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_GraphColor.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_GraphColor_impl.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_imp_outer.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_memaccess.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_kkmem.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_color.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_speed.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_compression.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_def.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_symbolic.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_triangle.hpp
-../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_BitUtils.hpp
-../KokkosKernels_Triangle.o: ../KokkosKernels_TestParameters.hpp
-../KokkosKernels_Triangle.o: ../KokkosKernels_MyCRSMatrix.hpp
-../KokkosKernels_WriteBinaryFromMTX.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
-../KokkosKernels_WriteBinaryFromMTX.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
-../KokkosKernels_WriteBinaryFromMTX.o: ../../../src/Kokkos_ArithTraits.hpp
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/stage/graph/KokkosKernels_Utils.hpp
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/Kokkos_ArithTraits.hpp
 ../KokkosKernels_PCG_GS_TEST.o: ../../../src/stage/graph/utils/KokkosKernels_ExecSpaceUtils.hpp
@@ -227,3 +195,73 @@ clean: kokkos-clean
 ../KokkosKernels_SPMM_KK.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_seq.hpp
 ../KokkosKernels_SPMM_KK.o: ../KokkosKernels_TestParameters.hpp
 ../KokkosKernels_SPMM_KK.o: ../KokkosKernels_MyCRSMatrix.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/Kokkos_ArithTraits.hpp
+../KokkosKernels_StandaloneTriangle.o: ../KokkosKernels_RunMultiMemStandaloneTriangle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../KokkosKernels_RunStandaloneTriangle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_Triangle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_Handle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_GraphColorHandle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_Utils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/utils/KokkosKernels_ExecSpaceUtils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/utils/KokkosKernels_SparseUtils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/utils/KokkosKernels_PrintUtils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/utils/KokkosKernels_VectorUtils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_GaussSeidelHandle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_SPGEMMHandle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_HashmapAccumulator.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_Uniform_Initialized_MemoryPool.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/KokkosKernels_GraphColor.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_GraphColor_impl.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_imp_outer.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_memaccess.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_kkmem.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_color.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_speed.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_compression.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_def.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_symbolic.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_triangle.hpp
+../KokkosKernels_StandaloneTriangle.o: ../../../src/stage/graph/utils/KokkosKernels_BitUtils.hpp
+../KokkosKernels_StandaloneTriangle.o: ../KokkosKernels_TestParameters.hpp
+../KokkosKernels_StandaloneTriangle.o: ../KokkosKernels_MyCRSMatrix.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
+../KokkosKernels_Triangle.o: ../../../src/Kokkos_ArithTraits.hpp
+../KokkosKernels_Triangle.o: ../KokkosKernels_RunMultiMemTriangle.hpp
+../KokkosKernels_Triangle.o: ../KokkosKernels_RunTriangle.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Triangle.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Handle.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_GraphColorHandle.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Utils.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_ExecSpaceUtils.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_SparseUtils.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_PrintUtils.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_VectorUtils.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_GaussSeidelHandle.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_SPGEMMHandle.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_HashmapAccumulator.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_Uniform_Initialized_MemoryPool.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/KokkosKernels_GraphColor.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_GraphColor_impl.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_imp_outer.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_memaccess.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_kkmem.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_color.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_speed.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_compression.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_def.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_symbolic.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/impl/KokkosKernels_SPGEMM_impl_triangle.hpp
+../KokkosKernels_Triangle.o: ../../../src/stage/graph/utils/KokkosKernels_BitUtils.hpp
+../KokkosKernels_Triangle.o: ../KokkosKernels_TestParameters.hpp
+../KokkosKernels_Triangle.o: ../KokkosKernels_MyCRSMatrix.hpp
+../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
+../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
+../KokkosKernels_WriteBinaryFromBinSrcDst.o: ../../../src/Kokkos_ArithTraits.hpp
+../KokkosKernels_WriteBinaryFromMTX.o: ../../../src/stage/graph/utils/KokkosKernels_IOUtils.hpp
+../KokkosKernels_WriteBinaryFromMTX.o: ../../../src/stage/graph/utils/KokkosKernels_SimpleUtils.hpp
+../KokkosKernels_WriteBinaryFromMTX.o: ../../../src/Kokkos_ArithTraits.hpp

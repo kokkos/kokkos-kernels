@@ -147,11 +147,13 @@ public:
 
   struct CountTag{};
   struct GPUCountTag{};
+  struct CountTag2{};
 
 
 
 
   struct FillTag{};
+  struct FillTag2{};
   struct MultiCoreDenseAccumulatorTag{};
   struct MultiCoreDenseAccumulatorTag2{};
   struct MultiCoreTag{};
@@ -169,9 +171,12 @@ public:
 
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count2_policy_t ;
+
   typedef Kokkos::TeamPolicy<GPUCountTag, MyExecSpace> team_gpucount_policy_t ;
 
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
+  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill2_policy_t ;
 
   typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace> team_numeric1_policy_t ;
   typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace> team_numeric2_policy_t ;
@@ -291,7 +296,22 @@ public:
   template <typename visit_struct_t>
   void KokkosSPGEMM_generic_triangle(visit_struct_t visit_apply);
 
+  /*
+  template <typename visit_struct_t>
+  void KokkosSPGEMM_generic_triangle_no_compression(visit_struct_t visit_apply);
 
+  template <typename struct_visit_t>
+  void triangle_count_ai_no_compression(
+          const nnz_lno_t m,
+          const size_type* row_mapA_,
+          const nnz_lno_t * entriesA_,
+
+          const size_type bnnz,
+          const size_type * rowmapB_begins,
+          const size_type * rowmapB_ends,
+          const nnz_lno_t * entriesB,
+          struct_visit_t visit_applier);
+  */
   void KokkosSPGEMM_symbolic_triangle_setup();
 private:
   template <typename c_row_view_t, typename c_lno_nnz_view_t>

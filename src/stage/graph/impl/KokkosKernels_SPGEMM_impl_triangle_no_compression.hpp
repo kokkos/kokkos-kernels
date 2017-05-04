@@ -49,8 +49,6 @@ namespace Experimental{
 
 namespace Graph{
 namespace Impl{
-
-
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
@@ -58,7 +56,7 @@ template <typename pool_memory_space, typename struct_visit_t>
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-  TriangleCount{
+  TriangleCount_No_Compression{
   const nnz_lno_t numrows; //num rows in A
 
   const size_type *row_mapA; //A row pointers
@@ -66,8 +64,7 @@ struct KokkosSPGEMM
 
   const size_type *row_pointer_begins_B;
   const size_type *row_pointer_ends_B;
-  const nnz_lno_t *entriesSetIndicesB;
-  const nnz_lno_t *entriesSetsB;
+  const nnz_lno_t *entriesB;
 
   size_type *rowmapC;
   nnz_lno_t* entriesC;
@@ -111,7 +108,7 @@ struct KokkosSPGEMM
    * \param team_row_chunk_size_: suggested team chunk size
    * \param my_exec_space_ : execution space.
    */
-  TriangleCount(
+  TriangleCount_No_Compression(
       const nnz_lno_t m_,
       const size_type *row_mapA_,
       const nnz_lno_t *entriesA_,
@@ -141,8 +138,7 @@ struct KokkosSPGEMM
         entriesA(entriesA_),
         row_pointer_begins_B(row_ptr_begins_B_),
         row_pointer_ends_B(row_ptr_ends_B_),
-        entriesSetIndicesB(entriesSetIndicesB_),
-        entriesSetsB(entriesSetsB_),
+        entriesB(entriesSetIndicesB_),
         rowmapC(rowmapC_),
         entriesC(entriesC_),
         pow2_hash_size(hash_size_),
@@ -248,8 +244,8 @@ struct KokkosSPGEMM
     sets = (nnz_lno_t *) tmp;
     tmp += MaxRoughNonZero; //this is set as column size before calling dense accumulators.
 
-    sets2 = (nnz_lno_t *) tmp;
-    tmp += MaxRoughNonZero; //this is set as column size before calling dense accumulators.
+    //sets2 = (nnz_lno_t *) tmp;
+    //tmp += MaxRoughNonZero; //this is set as column size before calling dense accumulators.
 
 
     //indices only needs max row size.
@@ -272,14 +268,13 @@ struct KokkosSPGEMM
         //traverse columns of B
         for (nnz_lno_t i = 0; i < min_row_left_work; ++i){
           const size_type adjind = i + min_row_begin;
-          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
-          nnz_lno_t b_set = entriesSetsB[adjind];
+          nnz_lno_t b_set_ind = entriesB[adjind];
           //here we assume that each element in row is unique.
           //we need to change compression so that it will always
           //return unique rows.
           indices[insertion_count++] = b_set_ind;
-          sets[b_set_ind] = b_set;
-          sets2[b_set_ind] = 1;
+          sets[b_set_ind] = 1;
+          //sets2[b_set_ind] = 1;
         }
 
 
@@ -297,11 +292,12 @@ struct KokkosSPGEMM
           //traverse columns of B
           for (nnz_lno_t i = 0; i < left_work; ++i){
             const size_type adjind = i + rowBegin;
-            nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
-            nnz_lno_t b_set = entriesSetsB[adjind];
+            nnz_lno_t b_set_ind = entriesB[adjind];
+            //nnz_lno_t b_set = entriesSetsB[adjind];
             //make a intersection.
-            sets[b_set_ind] = sets[b_set_ind] & b_set;
-            ++sets2[b_set_ind];
+            //sets[b_set_ind] = sets[b_set_ind] & b_set;
+            //sets[b_set_ind]
+            ++sets[b_set_ind];
           }
         }
       }
@@ -430,7 +426,7 @@ struct KokkosSPGEMM
         //traverse columns of B
         for (nnz_lno_t i = 0; i < left_work; ++i){
           const size_type adjind = i + rowBegin;
-          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          nnz_lno_t b_set_ind = entriesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
           //if sets are not set before, add this to indices.
           if (sets[b_set_ind] == 0){
@@ -583,7 +579,7 @@ struct KokkosSPGEMM
 
           const size_type adjind = i + rowBegin;
 
-          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          nnz_lno_t b_set_ind = entriesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
           nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
@@ -733,7 +729,7 @@ struct KokkosSPGEMM
         //traverse columns of B
         for (nnz_lno_t i = 0; i < min_row_left_work; ++i){
           const size_type adjind = i + min_row_begin;
-          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          nnz_lno_t b_set_ind = entriesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
           nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
@@ -766,7 +762,7 @@ struct KokkosSPGEMM
             const size_type adjind = i + rowBegin;
 
 
-            nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+            nnz_lno_t b_set_ind = entriesB[adjind];
             nnz_lno_t b_set = entriesSetsB[adjind];
             nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
@@ -945,7 +941,7 @@ struct KokkosSPGEMM
               Kokkos::ThreadVectorRange(teamMember, work_to_handle),
               [&] (nnz_lno_t i) {
             const size_type adjind = i + rowBegin;
-            b_col_ind = entriesSetIndicesB[adjind];
+            b_col_ind = entriesB[adjind];
             b_val = entriesSetsB[adjind] ;
             hash = b_col_ind & shared_memory_hash_func;
             shmem_success = 1;
@@ -1039,7 +1035,7 @@ struct KokkosSPGEMM
           Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, work_to_handle),
               [&] (nnz_lno_t i) {
             const size_type adjind = i + rowBegin;
-            b_col_ind = entriesSetIndicesB[adjind];
+            b_col_ind = entriesB[adjind];
             b_val = entriesSetsB[adjind] ;
             hash = b_col_ind & shared_memory_hash_func;
           });
@@ -1196,7 +1192,6 @@ struct KokkosSPGEMM
 };
 
 
-
 template <typename HandleType,
           typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
           typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
@@ -1204,8 +1199,7 @@ template <typename struct_visit_t>
 void KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    triangle_count_ai(
-        const int is_symbolic_or_numeric,
+    triangle_count_ai_no_compression(
         const nnz_lno_t m,
         const size_type* row_mapA_,
         const nnz_lno_t * entriesA_,
@@ -1213,20 +1207,17 @@ void KokkosSPGEMM
         const size_type bnnz,
         const size_type * rowmapB_begins,
         const size_type * rowmapB_ends,
-        const nnz_lno_t * entriesBSetIndex,
-        const nnz_lno_t * entriesBSets,
-        size_type * rowmapC,
-        nnz_lno_t *entriesC, //null if it is symbolic, otherwise not null!
-        struct_visit_t visit_applier
-    ){
+        const nnz_lno_t * entriesB,
+        struct_visit_t visit_applier){
 
-
+  //for now I assume that this is 2 as we are only dealing with triangles.
+  //if we go 4 cliques, this needs to be 3.
+  //I will parametrized this later.
+  const int num_left_side_nnz_per_row = 2;
   const nnz_lno_t * min_result_row_for_each_row = this->handle->get_spgemm_handle()->get_min_col_of_row().data();
   nnz_lno_t max_row_size = this->handle->get_spgemm_handle()->get_max_result_nnz();
 
   typedef KokkosKernels::Experimental::Util::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
-
-
   int suggested_vector_size = this->handle->get_suggested_vector_size(this->b_row_cnt, bnnz);
 
   //this kernel does not really work well if the vector size is less than 4.
@@ -1234,10 +1225,12 @@ void KokkosSPGEMM
     if (KOKKOSKERNELS_VERBOSE) std::cout << "\tVecSize:" << suggested_vector_size << " Setting it to 4" << std::endl;
     suggested_vector_size = 4;
   }
-  int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
-  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
 
-  nnz_lno_t dense_col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
+  int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(
+        suggested_team_size,concurrency, a_row_cnt);
+
+  nnz_lno_t dense_col_size = this->b_col_cnt;
 
   //round up maxNumRoughNonzeros to closest power of 2.
   nnz_lno_t min_hash_size = 1;
@@ -1250,12 +1243,14 @@ void KokkosSPGEMM
   sparse_accumulator_chunksize += min_hash_size ; //this is for the hash begins
   sparse_accumulator_chunksize += max_row_size ; //this is for hash nexts
   sparse_accumulator_chunksize += max_row_size ; //this is for hash keys
-  sparse_accumulator_chunksize += max_row_size ; //this is for hash values - 1
-  sparse_accumulator_chunksize += max_row_size ; //this is for hash values - 2
+  //I need to store the edge indices for each result.
+  //Edge indices are size type, and I need edge indices as many as the num_left_side_nnz_per_row.
+  sparse_accumulator_chunksize += max_row_size * num_left_side_nnz_per_row * sizeof(size_type) / sizeof(nnz_lno_t);
 
   size_t dense_accumulator_chunksize = max_row_size; //this is for used keys
-  dense_accumulator_chunksize += dense_col_size ; //this is for values-1
-  dense_accumulator_chunksize += dense_col_size ; //this is for values-2
+  dense_accumulator_chunksize += dense_col_size *
+      num_left_side_nnz_per_row * sizeof(size_type) / sizeof(nnz_lno_t); //this is for values-1
+
 
   //initizalize value for the mem pool
   int pool_init_val = -1;
@@ -1268,13 +1263,11 @@ void KokkosSPGEMM
   size_t accumulator_chunksize = sparse_accumulator_chunksize;
   bool use_dense_accumulator = false;
   if (
-      (  (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT ||
+      (  (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT ||
           spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DEFAULT) &&
           ((concurrency <=  sizeof (nnz_lno_t) * 8) || (dense_accumulator_chunksize < sparse_accumulator_chunksize)))
           ||
-          (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE_IA_UNION ||
-              spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE ||
+          (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE ||
               spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DENSE)){
 
     use_dense_accumulator = true;
@@ -1327,26 +1320,7 @@ void KokkosSPGEMM
     std::cout << "\tPool Alloc Time:" << timer1.seconds() << std::endl;
   }
 
-
-  /*
-  std::cout << "m:" << m << " bnnz:" << bnnz << std::endl;
-
-  KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-    (row_mapA_, m+1);
-
-  KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-    (entriesA_, this->entriesA.dimension_0());
-  KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-    (rowmapB_begins, this->b_row_cnt);
-  KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-      (rowmapB_ends, this->b_row_cnt);
-  KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-      (entriesBSetIndex, bnnz);
-  KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-        (entriesBSets, bnnz);
-*/
-
-  TriangleCount<pool_memory_space, struct_visit_t>
+  TriangleCount_No_Compression<pool_memory_space, struct_visit_t>
   sc(
       m,
       row_mapA_,
@@ -1354,7 +1328,7 @@ void KokkosSPGEMM
 
       rowmapB_begins,
       rowmapB_ends,
-      entriesBSetIndex,
+      entriesB,
       entriesBSets,
 
       rowmapC,
@@ -1383,6 +1357,7 @@ void KokkosSPGEMM
   timer1.reset();
 
   //nnz_lno_t runcuda = atoi(getenv("runcuda"));
+
   if (/*runcuda ||*/ MyEnumExecSpace == KokkosKernels::Experimental::Util::Exec_CUDA) {
     Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
@@ -1390,18 +1365,12 @@ void KokkosSPGEMM
     if (use_dense_accumulator){
       if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_DEFAULT ||
           spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE ||
-          spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM
-          ||
-          spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION ||
-          spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM_IA_UNION ||
-          spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE_IA_UNION){
+          spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM){
         if (use_dynamic_schedule){
           Kokkos::parallel_for( dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-
         }
         else {
           Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-
         }
       }
       else {
@@ -1413,16 +1382,13 @@ void KokkosSPGEMM
           Kokkos::parallel_for( multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
         }
       }
-    }    
+    }
     else {
+
 
       if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_DEFAULT ||
           spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE ||
-          spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM
-          ||
-          spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION ||
-          spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM_IA_UNION ||
-          spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE_IA_UNION){
+          spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM){
         if (use_dynamic_schedule){
             Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
           }
@@ -1450,324 +1416,58 @@ void KokkosSPGEMM
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
-template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
-void
-  KokkosSPGEMM
-  <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
-    b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    KokkosSPGEMM_numeric_triangle(
-      c_row_view_t rowmapC_,
-      c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_){
-  this->KokkosSPGEMM_numeric_triangle_ai(rowmapC_, entriesC_);
-
-}
-
-template <typename HandleType,
-typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
-template <typename c_row_view_t, typename c_lno_nnz_view_t>
-void
-  KokkosSPGEMM
-  <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
-    b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    KokkosSPGEMM_numeric_triangle_ai(
-      c_row_view_t rowmapC_,
-      c_lno_nnz_view_t entriesC_){
-
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\tTRIANGLE GENERATION" << std::endl;
-  }
-
-  row_lno_temp_work_view_t new_row_mapB;
-  nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
-  nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-  size_type bnnz =  set_index_entries.dimension_0();
-  this->handle->get_spgemm_handle()->get_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
-
-
-  bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
-
-  //get pointers from views.
-  size_type const *p_rowmapA = row_mapA.data();
-  nnz_lno_t const *p_entriesA = entriesA.data();
-  size_type const *p_rowmapB_begins = row_mapB.data();
-  size_type const *p_rowmapB_ends = new_row_mapB.data();
-  nnz_lno_t const *p_set_index_b = set_index_entries.data();
-  nnz_lno_t const *p_set_b = set_entries.data();
-  size_type *p_rowmapC = rowmapC_.data();
-  nnz_lno_t *p_entriesC = entriesC_.data();
-
-  if (!compress_in_single_step){
-    //first get the max flops for a row, which will be used for max row size.
-    //If we did compression in single step, row_mapB[i] points the beginning of row i,
-    //and new_row_mapB[i] points to the end of row i.
-    p_rowmapB_begins = new_row_mapB.data();
-    p_rowmapB_ends = p_rowmapB_begins + 1;
-  }
-
-
-  const int is_symbolic_or_numeric = 1;
-  struct dummy{
-
-    KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
-    }
-  } dummy;
-  this->triangle_count_ai(
-      is_symbolic_or_numeric,
-      a_row_cnt,
-      p_rowmapA, p_entriesA,
-      bnnz, p_rowmapB_begins, p_rowmapB_ends,
-      p_set_index_b, p_set_b,
-      p_rowmapC,
-      p_entriesC,
-      dummy
-  );
-}
-
-
-template <typename HandleType,
-typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
+template <typename visit_struct_t>
 void KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    KokkosSPGEMM_symbolic_triangle_setup(){
+    KokkosSPGEMM_generic_triangle_no_compression(visit_struct_t visit_apply){
 
-  nnz_lno_t n = this->row_mapB.dimension_0() - 1;
-  size_type nnz = this->entriesB.dimension_0();
-
-  //compressed b
-  row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
-  nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
-  nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-
-
-  if (KOKKOSKERNELS_VERBOSE) std::cout << "SYMBOLIC PHASE" << std::endl;
-  if (KOKKOSKERNELS_VERBOSE) std::cout << "\tCOMPRESS MATRIX-B PHASE" << std::endl;
-  //First Compress B.
-  Kokkos::Impl::Timer timer1;
-  bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
-
-
-  /*
-  std::cout << "n:" << n << " nnz:" << nnz << std::endl;
-  KokkosKernels::Experimental::Util::print_1Dview(this->row_mapB);
-  KokkosKernels::Experimental::Util::kk_print_1Dview(this->entriesB, false, 800);
-  */
-  this->compressMatrix(n, nnz,
-        this->row_mapB, this->entriesB,
-        new_row_mapB, set_index_entries, set_entries,
-        compress_in_single_step);
-
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\tNew Size:" << set_index_entries.dimension_0() << " old:" << this->entriesB.dimension_0()
-        << " ratio:" << set_index_entries.dimension_0() / double (this->entriesB.dimension_0() )<< std::endl;
-    std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds() << std::endl << std::endl;
-  }
-
-  timer1.reset();
-
-  //get pointers from views.
   size_type const *p_rowmapA = row_mapA.data();
   nnz_lno_t const *p_entriesA = entriesA.data();
   size_type const *p_rowmapB_begins = row_mapB.data();
-  size_type const *p_rowmapB_ends = new_row_mapB.data();
+  size_type const *p_rowmapB_ends = p_rowmapB_begins  + 1;
+  nnz_lno_t const *p_entriesB = entriesB.data();
 
-  if (!compress_in_single_step){
-    //first get the max flops for a row, which will be used for max row size.
-    //If we did compression in single step, row_mapB[i] points the beginning of row i,
-    //and new_row_mapB[i] points to the end of row i.
-    p_rowmapB_begins = new_row_mapB.data();
-    p_rowmapB_ends = p_rowmapB_begins + 1;
-  }
-
-  nnz_lno_t maxNumRoughZeros = 0;
   nnz_lno_persistent_work_view_t min_result_row_for_each_row;
 
-
-
-
-
+  nnz_lno_t maxNumRoughZeros = 0;
   if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_DEFAULT ||
       spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE ||
-      spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM
-      ||
-      spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION ||
-      spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM_IA_UNION ||
-      spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE_IA_UNION){
-    /*
-    std::cout << "calling getMaxRoughRowNNZ_p" << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-        (p_rowmapA, a_row_cnt+1);
-    KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-        (p_entriesA, entriesA.dimension_0());
-    KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-        (p_rowmapB_begins, this->b_row_cnt);
-    KokkosKernels::Experimental::Util::print_1Dpointer<size_type, MyTempMemorySpace>
-        (p_rowmapB_ends, this->b_row_cnt);
-        */
-
-    maxNumRoughZeros = this->getMaxRoughRowNNZ_p(
+      spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM){
+    size_t s_maxNumRoughZeros = this->getMaxRoughRowNNZ_p(
         a_row_cnt, entriesA.dimension_0(),
         p_rowmapA, p_entriesA,
         p_rowmapB_begins, p_rowmapB_ends);
     //max row size cannot be overeall number of columns.
     //in this case more than number of compressed columns.
-    nnz_lno_t dense_col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
-    maxNumRoughZeros = KOKKOSKERNELS_MACRO_MIN(dense_col_size, maxNumRoughZeros);
+    nnz_lno_t dense_col_size = this->b_col_cnt;
+    maxNumRoughZeros = KOKKOSKERNELS_MACRO_MIN(dense_col_size, s_maxNumRoughZeros);
   }
   else {
-    //std::cout << "calling getMaxRoughRowNNZIntersection_p" << std::endl;
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
           Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
         a_row_cnt, entriesA.dimension_0(),
         p_rowmapA, p_entriesA,
-        p_rowmapB_begins, p_rowmapB_ends,
-        min_result_row_for_each_row.data());
+        p_rowmapB_begins, p_rowmapB_ends, min_result_row_for_each_row.data());
   }
 
-
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\tMax Row Flops:" << maxNumRoughZeros  << std::endl;
-    std::cout << "\tMax Row Flop Calc Time:" << timer1.seconds()  << std::endl;
-  }
-
-  size_type bnnz =  set_index_entries.dimension_0();
-  if (this->MyEnumExecSpace == Util::Exec_CUDA){
-    KokkosKernels::Experimental::Util::kkp_reduce_diff_view
-    <size_type, MyExecSpace> (this->b_row_cnt, p_rowmapB_begins, p_rowmapB_ends, bnnz);
-    if (KOKKOSKERNELS_VERBOSE){
-      std::cout << "\tcompressed_b_size:" << bnnz << bnnz << std::endl;
-    }
-  }
   this->handle->get_spgemm_handle()->set_min_col_of_row(min_result_row_for_each_row);
   this->handle->get_spgemm_handle()->set_max_result_nnz(maxNumRoughZeros);
-  this->handle->get_spgemm_handle()->set_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
-}
 
-template <typename HandleType,
-typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
-template <typename c_row_view_t>
-void KokkosSPGEMM
-  <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
-    b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    KokkosSPGEMM_symbolic_triangle(c_row_view_t rowmapC_){
-  this->KokkosSPGEMM_symbolic_triangle_setup();
-  row_lno_temp_work_view_t new_row_mapB;
-  nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
-  nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-  size_type bnnz =  set_index_entries.dimension_0();
-  this->handle->get_spgemm_handle()->get_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
-
-
-  bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
-
-  //get pointers from views.
-  size_type const *p_rowmapA = row_mapA.data();
-  nnz_lno_t const *p_entriesA = entriesA.data();
-  size_type const *p_rowmapB_begins = row_mapB.data();
-  size_type const *p_rowmapB_ends = new_row_mapB.data();
-  nnz_lno_t const *p_set_index_b = set_index_entries.data();
-  nnz_lno_t const *p_set_b = set_entries.data();
-  size_type *p_rowmapC = rowmapC_.data();
-  //nnz_lno_t *p_entriesC = entriesC_.data();
-
-  if (!compress_in_single_step){
-    //first get the max flops for a row, which will be used for max row size.
-    //If we did compression in single step, row_mapB[i] points the beginning of row i,
-    //and new_row_mapB[i] points to the end of row i.
-    p_rowmapB_begins = new_row_mapB.data();
-    p_rowmapB_ends = p_rowmapB_begins + 1;
-  }
-
-  const int is_symbolic_or_numeric = 0;
-
-
-  struct dummy{
-    KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
-    }
-
-  } dummy;
-
-  this->triangle_count_ai(
-      is_symbolic_or_numeric,
+  this->triangle_count_ai_no_compression(
       a_row_cnt,
-      p_rowmapA, p_entriesA,
-      bnnz, p_rowmapB_begins, p_rowmapB_ends,
-      p_set_index_b, p_set_b,
-      p_rowmapC,
-      NULL,
-      dummy
-  );
+      p_rowmapA,
+      p_entriesA,
 
-  KokkosKernels::Experimental::Util::kk_exclusive_parallel_prefix_sum
-                <c_row_view_t, MyExecSpace>(this->a_row_cnt + 1, rowmapC_);
-  MyExecSpace::fence();
-
-  auto d_c_nnz_size = Kokkos::subview(rowmapC_, this->a_row_cnt);
-  auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
-  Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
-  typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
-  this->handle->get_spgemm_handle()->set_c_nnz(c_nnz_size);
-
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\t"; KokkosKernels::Experimental::Util::kk_print_1Dview(rowmapC_, false, 20);
-    std::cout << "\tSize of C found as:" << c_nnz_size << std::endl<< std::endl;
-  }
-}
-
-template <typename HandleType,
-typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
-template <typename visit_struct_t>
-void KokkosSPGEMM
-  <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
-    b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    KokkosSPGEMM_generic_triangle(visit_struct_t visit_apply){
-  this->KokkosSPGEMM_symbolic_triangle_setup();
-  row_lno_temp_work_view_t new_row_mapB;
-  nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
-  nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-  size_type bnnz =  set_index_entries.dimension_0();
-  this->handle->get_spgemm_handle()->get_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
-
-  bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
-
-  //get pointers from views.
-  size_type const *p_rowmapA = row_mapA.data();
-  nnz_lno_t const *p_entriesA = entriesA.data();
-  size_type const *p_rowmapB_begins = row_mapB.data();
-  size_type const *p_rowmapB_ends = new_row_mapB.data();
-  nnz_lno_t const *p_set_index_b = set_index_entries.data();
-  nnz_lno_t const *p_set_b = set_entries.data();
-  //size_type *p_rowmapC = rowmapC_.data();
-  //nnz_lno_t *p_entriesC = entriesC_.data();
-
-  if (!compress_in_single_step){
-    //first get the max flops for a row, which will be used for max row size.
-    //If we did compression in single step, row_mapB[i] points the beginning of row i,
-    //and new_row_mapB[i] points to the end of row i.
-    p_rowmapB_begins = new_row_mapB.data();
-    p_rowmapB_ends = p_rowmapB_begins + 1;
-  }
-
-  const int is_symbolic_or_numeric = 2;
-  this->triangle_count_ai(
-      is_symbolic_or_numeric,
-      a_row_cnt,
-      p_rowmapA, p_entriesA,
-      bnnz, p_rowmapB_begins, p_rowmapB_ends,
-      p_set_index_b, p_set_b,
-      NULL,
-      NULL,
+      entriesB.dimension_0(),
+      p_rowmapB_begins,
+      p_rowmapB_ends,
+      p_entriesB,
       visit_apply
   );
 }
+
 
 }
 }

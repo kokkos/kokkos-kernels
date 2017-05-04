@@ -1,0 +1,256 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//               KokkosKernels 0.9: Linear Algebra and Graph Kernels
+//                 Copyright 2017 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
+
+
+#include "KokkosKernels_Triangle.hpp"
+#include "KokkosKernels_TestParameters.hpp"
+
+#define TRANPOSEFIRST false
+#define TRANPOSESECOND false
+
+namespace KokkosKernels{
+
+namespace Experiment{
+template <typename crsGraph_t, typename device>
+bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
+
+  //typedef typename crsGraph_t::StaticCrsGraphType crsGraph_t;
+  typedef typename crsGraph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename crsGraph_t::entries_type::non_const_type   lno_nnz_view_t;
+  //typedef typename crsGraph_t::values_type::non_const_type scalar_view_t;
+
+  size_t nrows1 = output_mat1.row_map.dimension_0();
+  size_t nentries1 = output_mat1.entries.dimension_0() ;
+
+  size_t nrows2 = output_mat2.row_map.dimension_0();
+  size_t nentries2 = output_mat2.entries.dimension_0() ;
+  //size_t nvals2 = output_mat2.values.dimension_0();
+
+
+  lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
+  lno_nnz_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nentries1);
+
+
+  KokkosKernels::Experimental::Util::kk_sort_graph<typename crsGraph_t::row_map_type,
+    typename crsGraph_t::entries_type,
+    lno_nnz_view_t,
+    lno_nnz_view_t,
+    lno_nnz_view_t,
+    typename device::execution_space
+    >(
+    output_mat1.row_map, output_mat1.entries,h_vals1,
+    h_ent1, h_vals1
+  );
+
+  lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
+  lno_nnz_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nentries2);
+
+  if (nrows1 != nrows2) return false;
+  if (nentries1 != nentries2) return false;
+
+  KokkosKernels::Experimental::Util::kk_sort_graph
+      <typename crsGraph_t::row_map_type,
+      typename crsGraph_t::entries_type,
+      lno_nnz_view_t,
+      lno_nnz_view_t,
+      lno_nnz_view_t,
+      typename device::execution_space
+      >(
+      output_mat2.row_map, output_mat2.entries, h_vals2,
+      h_ent2, h_vals2
+    );
+
+  bool is_identical = true;
+  is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
+      <typename crsGraph_t::row_map_type, typename crsGraph_t::row_map_type, typename lno_view_t::value_type,
+      typename device::execution_space>(output_mat1.row_map, output_mat2.row_map, 0);
+  if (!is_identical) return false;
+
+  is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
+      <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
+      typename device::execution_space>(h_ent1, h_ent2, 0 );
+  if (!is_identical) return false;
+
+  if (!is_identical) {
+    std::cout << "Incorret values" << std::endl;
+  }
+  return true;
+}
+
+
+template <typename ExecSpace, typename crsGraph_t, typename crsGraph_t2 , typename crsGraph_t3 , typename TempMemSpace , typename PersistentMemSpace >
+void run_experiment(
+    crsGraph_t crsGraph, Parameters params){
+  int algorithm = params.algorithm;
+  int repeat = params.repeat;
+  int chunk_size = params.chunk_size;
+
+  int shmemsize = params.shmemsize;
+  int team_size = params.team_size;
+  int use_dynamic_scheduling = params.use_dynamic_scheduling;
+  int verbose = params.verbose;
+
+  //char spgemm_step = params.spgemm_step;
+  int vector_size = params.vector_size;
+
+  //spgemm_step++;
+
+  typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
+  typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
+
+  lno_view_t row_mapC;
+  lno_nnz_view_t entriesC;
+  lno_nnz_view_t valuesC;
+
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+      <lno_view_t,lno_nnz_view_t, lno_nnz_view_t,
+      ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
+
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename lno_view_t::value_type size_type;
+
+  KernelHandle kh;
+  kh.set_team_work_size(chunk_size);
+  kh.set_shmem_size(shmemsize);
+  kh.set_suggested_team_size(team_size);
+  kh.set_suggested_vector_size(vector_size);
+
+
+  if (use_dynamic_scheduling){
+    kh.set_dynamic_scheduling(true);
+  }
+  if (verbose){
+    kh.set_verbose(true);
+  }
+
+  const lno_t m = crsGraph.numRows();;
+
+  int rowmap_size = crsGraph.entries.dimension_0() + 1;
+  switch (algorithm){
+  case 16:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT);
+    rowmap_size = m + 1;
+    break;
+  case 17:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_MEM);
+    rowmap_size = m + 1;
+    break;
+  case 18:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE);
+    rowmap_size = m + 1;
+    break;
+
+  case 19:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DEFAULT);
+
+    break;
+  case 20:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_MEM);
+    break;
+  case 21:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DENSE);
+    break;
+
+
+  case 22:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION);
+    break;
+  case 23:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_MEM_IA_UNION);
+    break;
+  case 24:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE_IA_UNION);
+    break;
+
+  default:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DEFAULT);
+    break;
+  }
+
+  kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
+
+  kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
+  kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
+
+
+  for (int i = 0; i < repeat; ++i){
+
+
+    Kokkos::Impl::Timer timer1;
+
+    row_mapC = lno_view_t
+              ("non_const_lnow_row",
+                  rowmap_size);
+    entriesC = lno_nnz_view_t ("");
+    valuesC  = lno_nnz_view_t ("");
+
+    double symbolic_time = 0;
+    if (params.triangle_options == 0 ){
+      KokkosKernels::Experimental::Graph::triangle_generic (
+          &kh,
+          m,
+          crsGraph.row_map,
+          crsGraph.entries,
+          KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
+
+            row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
+          }
+      );
+
+      size_type num_triangles = 0;
+      KokkosKernels::Experimental::Util::kk_reduce_view<lno_view_t, ExecSpace>(rowmap_size, row_mapC, num_triangles);
+      ExecSpace::fence();
+
+      symbolic_time = timer1.seconds();
+      std::cout << "num_triangles:" << num_triangles << std::endl;
+    }
+
+    std::cout  << "mm_time:" << symbolic_time << std::endl;
+  }
+
+  KokkosKernels::Experimental::Util::print_1Dview(entriesC);
+}
+
+
+};
+};

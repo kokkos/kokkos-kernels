@@ -465,6 +465,13 @@ void print_1Dview(idx_array_type view, bool print_all = false){
   kk_print_1Dview(view, print_all);
 }
 
+template <typename lno_t, typename memory_space>
+void print_1Dpointer(const lno_t *pview, size_t size, bool print_all = false){
+  typedef Kokkos::View<const lno_t *, memory_space, Kokkos::MemoryUnmanaged> um_array_type;
+  um_array_type view (pview, size);
+  kk_print_1Dview(view, print_all);
+}
+
 template <typename forward_map_type, typename reverse_map_type>
 struct Reverse_Map_Init{
   typedef typename forward_map_type::value_type forward_type;

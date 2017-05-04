@@ -70,6 +70,7 @@ enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
                      //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
                       SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
                       SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
+                      SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION, SPGEMM_KK_TRIANGLE_MEM_IA_UNION, SPGEMM_KK_TRIANGLE_DENSE_IA_UNION,
                       SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
                       SPGEMM_KK_TRIANGLE_LL,
                      SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_MEMORY2, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
@@ -252,6 +253,20 @@ private:
   nnz_lno_t num_multi_colors, num_used_colors;
   nnz_lno_persistent_work_view_t min_result_row_for_each_row;
 
+
+  bool create_lower_triangular;
+  bool sort_lower_triangular;
+  nnz_lno_persistent_work_view_t lower_triangular_permutation;
+
+  row_lno_persistent_work_view_t lower_triangular_matrix_rowmap;
+  nnz_lno_persistent_work_view_t lower_triangular_matrix_entries;
+
+
+  row_lno_persistent_work_view_t incidence_matrix_row_map;
+  nnz_lno_persistent_work_view_t incidence_matrix_entries;
+
+
+
   double multi_color_scale;
   int mkl_sort_option;
   bool calculate_read_write_cost;
@@ -355,6 +370,39 @@ private:
   //TODO: store transpose here.
   void get_c_transpose_symbolic(){}
 
+  void set_sort_lower_triangular(bool option){
+    this->sort_lower_triangular = option;
+  }
+  bool get_sort_lower_triangular(){
+    return this->sort_lower_triangular;
+  }
+  void set_create_lower_triangular(bool option){
+    this->create_lower_triangular = option;
+  }
+  bool get_create_lower_triangular(){
+    return this->create_lower_triangular;
+  }
+
+  void set_lower_triangular_permutation(nnz_lno_persistent_work_view_t ltp_){
+    this->lower_triangular_permutation = ltp_;
+  }
+
+  nnz_lno_persistent_work_view_t get_lower_triangular_permutation(){
+    return this->lower_triangular_permutation;
+  }
+
+  void set_lower_triangular_matrix(
+      row_lno_persistent_work_view_t lower_triangular_matrix_rowmap_,
+      nnz_lno_persistent_work_view_t lower_triangular_matrix_entries_){
+    this->lower_triangular_matrix_rowmap = lower_triangular_matrix_rowmap_;
+    this->lower_triangular_matrix_entries = lower_triangular_matrix_entries_;
+  }
+  void get_lower_triangular_matrix(
+      row_lno_persistent_work_view_t &lower_triangular_matrix_rowmap_,
+      nnz_lno_persistent_work_view_t &lower_triangular_matrix_entries_){
+    lower_triangular_matrix_rowmap_ = this->lower_triangular_matrix_rowmap;
+    lower_triangular_matrix_entries_ = this->lower_triangular_matrix_entries;
+  }
 
 
   void set_compressed_b(
@@ -393,7 +441,18 @@ private:
     transpose_a(false),transpose_b(false), transpose_c_symbolic(false),
     num_colors(0),
     color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0),
-    min_result_row_for_each_row(), multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
+    min_result_row_for_each_row(),
+
+    create_lower_triangular(false),
+    sort_lower_triangular(false),
+
+    lower_triangular_permutation(),
+    lower_triangular_matrix_rowmap(),
+    lower_triangular_matrix_entries(),
+    incidence_matrix_row_map(),
+    incidence_matrix_entries(),
+
+    multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
 	coloring_output_file(""),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
