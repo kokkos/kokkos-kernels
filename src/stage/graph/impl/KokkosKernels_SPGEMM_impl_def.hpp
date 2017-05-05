@@ -85,9 +85,6 @@ void KokkosSPGEMM
     else if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_OUTERMULTIMEM ){
       this->KokkosSPGEMM_numeric_outer(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }
-    else if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT ){
-      this->KokkosSPGEMM_numeric_triangle(rowmapC_, entriesC_, valuesC_);
-    }
     else {
       this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }
@@ -103,14 +100,8 @@ void KokkosSPGEMM
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_symbolic(c_row_view_t rowmapC_){
 
-  SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
-  if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT ||
-      spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE ||
-      spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_MEM){
-    this->KokkosSPGEMM_symbolic_triangle(rowmapC_);
-    return;
-  }
-  else {
+  //SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
+  {
 
     //number of rows and nnzs
     nnz_lno_t n = this->row_mapB.dimension_0() - 1;

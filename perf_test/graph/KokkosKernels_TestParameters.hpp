@@ -46,6 +46,7 @@ namespace KokkosKernels{
 namespace Experiment{
 struct Parameters{
   int algorithm;
+  int accumulator;
   int repeat;
   int chunk_size;
   int multi_color_scale;
@@ -80,6 +81,7 @@ struct Parameters{
   Parameters(){
 
     algorithm = 7;
+    accumulator = 0;
     repeat = 1;
     chunk_size = -1;
     multi_color_scale = 1;

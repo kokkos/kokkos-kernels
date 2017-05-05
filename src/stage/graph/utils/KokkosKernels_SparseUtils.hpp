@@ -1171,7 +1171,8 @@ void kk_get_lower_triangle_fill_parallel(
     scalar_t *out_vals,
     const lno_t *new_indices = NULL,
     bool use_dynamic_scheduling = false,
-    bool chunksize = 4
+    bool chunksize = 4,
+    bool is_lower = true
     ){
 
 
@@ -1187,7 +1188,8 @@ void kk_get_lower_triangle_fill_parallel(
       new_indices,
       out_xadj,
       out_adj,out_vals,
-      team_work_chunk_size);
+      team_work_chunk_size,
+      is_lower);
 
 
   typedef typename ltm_t::team_fill_policy_t fill_p_t;
@@ -1266,7 +1268,8 @@ void kk_get_lower_triangle_fill(
     scalar_t *out_vals,
     const lno_t *new_indices = NULL,
     bool use_dynamic_scheduling = false,
-    bool chunksize = 4
+    bool chunksize = 4,
+    bool is_lower = true
     ){
   //Kokkos::Impl::Timer timer1;
 /*
@@ -1292,7 +1295,8 @@ void kk_get_lower_triangle_fill(
       out_vals,
       new_indices,
       use_dynamic_scheduling,
-      chunksize
+      chunksize,
+      is_lower
       );
 
   //double fill = timer1.seconds();
@@ -1487,7 +1491,8 @@ void kk_get_lower_triangle(
     out_values_view_t &out_values,
     new_indices_t &new_indices,
     bool use_dynamic_scheduling = false,
-    bool chunksize = 4){
+    bool chunksize = 4,
+    bool is_lower = true){
 
   typedef typename row_map_view_t::const_type const_row_map_view_t;
   typedef typename cols_view_t::const_type   const_cols_view_t;
@@ -1510,7 +1515,7 @@ void kk_get_lower_triangle(
       out_rowmap.data(),
       new_indices.data(),
       use_dynamic_scheduling,
-      chunksize);
+      chunksize,  is_lower);
 
 
   KokkosKernels::Experimental::Util::kk_exclusive_parallel_prefix_sum
@@ -1534,7 +1539,7 @@ void kk_get_lower_triangle(
       nr, ne,
       rowmap, entries, vals,
       out_rowmap.data(), out_entries.data(), out_values.data(),
-      new_indices.data(), use_dynamic_scheduling, chunksize);
+      new_indices.data(), use_dynamic_scheduling, chunksize,is_lower);
 }
 
 template <typename row_map_view_t,

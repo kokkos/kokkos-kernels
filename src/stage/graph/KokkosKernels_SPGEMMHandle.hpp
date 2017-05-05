@@ -69,12 +69,16 @@ enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
                       SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA,
                      //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
                       SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
-                      SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
-                      SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION, SPGEMM_KK_TRIANGLE_MEM_IA_UNION, SPGEMM_KK_TRIANGLE_DENSE_IA_UNION,
-                      SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
+                      SPGEMM_KK_TRIANGLE_AI, //SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
+                      SPGEMM_KK_TRIANGLE_IA_UNION, //SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION, SPGEMM_KK_TRIANGLE_MEM_IA_UNION, SPGEMM_KK_TRIANGLE_DENSE_IA_UNION,
+                      SPGEMM_KK_TRIANGLE_IA,//SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
                       SPGEMM_KK_TRIANGLE_LL,
+                      SPGEMM_KK_TRIANGLE_LU,
                      SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_MEMORY2, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
 
+enum SPGEMMAccumulator{
+  SPGEMM_ACC_DEFAULT, SPGEMM_ACC_DENSE, SPGEMM_ACC_SPARSE,
+};
 template <class lno_row_view_t_,
           class lno_nnz_view_t_,
           class scalar_nnz_view_t_,
@@ -223,6 +227,7 @@ public:
 #endif
 private:
   SPGEMMAlgorithm algorithm_type;
+  SPGEMMAccumulator accumulator_type;
   size_type result_nnz_size;
 
   bool called_symbolic;
@@ -432,7 +437,7 @@ private:
    * \brief Default constructor.
    */
   SPGEMMHandle(SPGEMMAlgorithm gs = SPGEMM_DEFAULT):
-    algorithm_type(gs), result_nnz_size(0),
+    algorithm_type(gs), accumulator_type(SPGEMM_ACC_DEFAULT), result_nnz_size(0),
     called_symbolic(false), called_numeric(false),
     suggested_vector_size(0), suggested_team_size(0), max_nnz_inresult(0),
     c_column_indices(),
@@ -543,6 +548,8 @@ private:
 
 
 
+  SPGEMMAccumulator get_accumulator_type() const {return this->accumulator_type;}
+  void set_accumulator_type(const SPGEMMAccumulator &acc_type){this->accumulator_type = acc_type;}
 
 
   //getters

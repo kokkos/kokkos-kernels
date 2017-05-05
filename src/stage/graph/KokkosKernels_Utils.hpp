@@ -1212,10 +1212,52 @@ void view_reduce_max(size_t num_elements, view_type view_to_reduce, typename vie
   kk_view_reduce_max<view_type, MyExecSpace>(num_elements, view_to_reduce, max_reduction);
 }
 
+template<typename size_type>
+struct ReduceRowSizeFunctor{
+  const size_type *rowmap_view_begins;
+  const size_type *rowmap_view_ends;
+  const size_type min_val;
+  ReduceRowSizeFunctor(
+      const size_type *rb,const  size_type *re): rowmap_view_begins(rb), rowmap_view_ends(re),
+          min_val((std::numeric_limits<size_type>::lowest())){
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, size_type &max_reduction) const {
+    size_type val = rowmap_view_ends[i] - rowmap_view_begins[i] ;
+    if (max_reduction < val) { max_reduction = val;}
+  }
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile size_type& dst,const volatile size_type& src) const {
+    if (dst < src) { dst = src;}
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void init (size_type& dst) const
+  {
+    // The identity under max is -Inf.
+    // Kokkos does not come with a portable way to access
+    // floating -point Inf and NaN. Trilinos does , however;
+    // see Kokkos :: ArithTraits in the Tpetra package.
+    dst = min_val;
+  }
+
+};
+
+//view has num_rows+1 elements.
+template <typename size_type , typename MyExecSpace>
+void kk_view_reduce_max_row_size(const size_t num_rows,
+                const size_type *rowmap_view_begins,
+                const size_type *rowmap_view_ends,
+                size_type &max_row_size){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_rows),
+      ReduceRowSizeFunctor<size_type>(rowmap_view_begins, rowmap_view_ends), max_row_size);
+}
+
 
 template<typename view_type>
 struct ReduceMaxRowFunctor{
-
   view_type rowmap_view;
   typedef typename view_type::non_const_value_type value_type;
   const value_type min_val;

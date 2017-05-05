@@ -198,6 +198,26 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
       params.verbose = 1;
     }
+
+
+    else if ( 0 == strcasecmp( argv[i] , "accumulator" ) ) {
+      ++i;
+      if ( 0 == strcasecmp( argv[i] , "default" ) ) {
+        params.accumulator = 0;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "dense" ) ) {
+        params.accumulator = 1;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "sparse" ) ) {
+        params.accumulator = 2;
+      }
+      else {
+        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+        print_options();
+        return 1;
+      }
+    }
+
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
       if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
@@ -245,23 +265,20 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "OUTER" ) ) {
         params.algorithm = 15;
       }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLE" ) ) {
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEAI" ) ) {
         params.algorithm = 16;
       }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEMEM" ) ) {
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIA" ) ) {
         params.algorithm = 17;
       }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEDENSE" ) ) {
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIAUNION" ) ) {
         params.algorithm = 18;
       }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIA" ) ) {
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLELL" ) ) {
         params.algorithm = 19;
       }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIAMEM" ) ) {
+      else if ( 0 == strcasecmp( argv[i] , "TRIANGLELU" ) ) {
         params.algorithm = 20;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIADENSE" ) ) {
-        params.algorithm = 21;
       }
       else {
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;

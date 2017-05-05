@@ -302,24 +302,7 @@ crsMat_t3 run_experiment(
   case 15:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_OUTERMULTIMEM);
     break;
-  case 16:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT);
-    break;
-  case 17:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_MEM);
-    break;
-  case 18:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE);
-    break;
-  case 19:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DEFAULT);
-    break;
-  case 20:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_MEM);
-    break;
-  case 21:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DENSE);
-    break;
+
 
   default:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);

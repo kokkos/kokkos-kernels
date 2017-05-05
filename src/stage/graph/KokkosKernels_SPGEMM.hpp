@@ -122,22 +122,6 @@ namespace Graph{
       kspgemm.KokkosSPGEMM_symbolic(row_mapC);
     }
     break;
-    case SPGEMM_KK_TRIANGLE_DEFAULT:
-    case SPGEMM_KK_TRIANGLE_DENSE:
-    case SPGEMM_KK_TRIANGLE_MEM:
-    case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
-    case SPGEMM_KK_TRIANGLE_IA_DENSE:
-    case SPGEMM_KK_TRIANGLE_IA_MEM:
-    {
-      KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
-      <KernelHandle,
-        alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
-        blno_row_view_t_, blno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
-      kspgemm.KokkosSPGEMM_symbolic_triangle(row_mapC);
-    }
-      break;
-
     case SPGEMM_SERIAL:
     case SPGEMM_DEBUG:
     case SPGEMM_MKL:
@@ -270,23 +254,6 @@ namespace Graph{
       kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
     }
     break;
-    case SPGEMM_KK_TRIANGLE_DEFAULT:
-    case SPGEMM_KK_TRIANGLE_DENSE:
-    case SPGEMM_KK_TRIANGLE_MEM:
-    case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
-    case SPGEMM_KK_TRIANGLE_IA_DENSE:
-    case SPGEMM_KK_TRIANGLE_IA_MEM:
-    {
-      KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
-      <KernelHandle,
-      alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
-      blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
-
-      kspgemm.KokkosSPGEMM_numeric_triangle(row_mapC, entriesC, valuesC);
-    }
-    break;
-
     case SPGEMM_SERIAL:
     case SPGEMM_DEBUG:
       KokkosKernels::Experimental::Graph::Impl::spgemm_debug(

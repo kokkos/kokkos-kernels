@@ -156,8 +156,10 @@ public:
   struct FillTag2{};
   struct MultiCoreDenseAccumulatorTag{};
   struct MultiCoreDenseAccumulatorTag2{};
+  struct MultiCoreDenseAccumulatorTag3{};
   struct MultiCoreTag{};
   struct MultiCoreTag2{};
+  struct MultiCoreTag3{};
   struct GPUTag{};
 
   struct Numeric1Tag{};
@@ -166,8 +168,10 @@ public:
 
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace> multicore_dense_team_count_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace> multicore_dense_team2_count_policy_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace> multicore_dense_team3_count_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace> multicore_team_policy2_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace> multicore_team_policy3_t ;
 
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
@@ -185,10 +189,11 @@ public:
 
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_dense_team_count_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_dense_team2_count_policy_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_dense_team3_count_policy_t ;
 
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy2_t ;
-
+  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy3_t ;
 
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_count_policy_t ;
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t ;
@@ -224,7 +229,7 @@ private:
 
   const KokkosKernels::Experimental::Util::ExecSpaceType MyEnumExecSpace;
   const SPGEMMAlgorithm spgemm_algorithm;
-
+  const SPGEMMAccumulator spgemm_accumulator;
 
   //////////////////////////////////////////////////////////////////////////////
   //////Function and Struct for matrix compression.
@@ -560,7 +565,8 @@ public:
           use_dynamic_schedule(handle_->is_dynamic_scheduling()),
           KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
           MyEnumExecSpace(this->handle->get_handle_exec_space()),
-          spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type())
+          spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
+          spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
           //,row_mapC(), entriesC(), valsC()
           {}
 
@@ -583,7 +589,8 @@ public:
             use_dynamic_schedule(handle_->is_dynamic_scheduling()),
             KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
             MyEnumExecSpace(this->handle->get_handle_exec_space()),
-            spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type())
+            spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
+            spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
             //,row_mapB(), entriesC(), valsC()
             {}
 

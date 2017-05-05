@@ -83,12 +83,9 @@ void triangle_count(
   }
   break;
 
-  case SPGEMM_KK_TRIANGLE_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_DENSE:
-  case SPGEMM_KK_TRIANGLE_MEM:
-  case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_IA_DENSE:
-  case SPGEMM_KK_TRIANGLE_IA_MEM:
+  case SPGEMM_KK_TRIANGLE_AI:
+  case SPGEMM_KK_TRIANGLE_IA:
+  case SPGEMM_KK_TRIANGLE_IA_UNION:
   default:
   {
     KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
@@ -156,12 +153,9 @@ void triangle_enumerate(
   switch (sh->get_algorithm_type()){
   default:
 
-  case SPGEMM_KK_TRIANGLE_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_DENSE:
-  case SPGEMM_KK_TRIANGLE_MEM:
-  case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_IA_DENSE:
-  case SPGEMM_KK_TRIANGLE_IA_MEM:
+  case SPGEMM_KK_TRIANGLE_AI:
+  case SPGEMM_KK_TRIANGLE_IA:
+  case SPGEMM_KK_TRIANGLE_IA_UNION:
   {
     KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
     <KernelHandle,
@@ -196,13 +190,10 @@ void triangle_generic(
   typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
   spgemmHandleType *sh = handle->get_spgemm_handle();
   switch (sh->get_algorithm_type()){
-  case SPGEMM_KK_TRIANGLE_LL:
-  case SPGEMM_KK_TRIANGLE_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_DENSE:
-  case SPGEMM_KK_TRIANGLE_MEM:
-  case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_IA_DENSE:
-  case SPGEMM_KK_TRIANGLE_IA_MEM:
+  //case SPGEMM_KK_TRIANGLE_LL:
+  case SPGEMM_KK_TRIANGLE_AI:
+  case SPGEMM_KK_TRIANGLE_IA:
+  case SPGEMM_KK_TRIANGLE_IA_UNION:
   default:
   {
     KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
@@ -250,14 +241,71 @@ void triangle_generic(
       nnz_lno_persistent_work_view_t new_indices(Kokkos::ViewAllocateWithoutInitializing("new_indices"), m);
       bool sort_decreasing_order = true;
       ////If true we place the largest row to top, so that largest row size will be minimized in lower triangle.
-      if (sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_DEFAULT ||
-          sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_DENSE ||
-          sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_MEM){
+      if (sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_AI || sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LU){
         sort_decreasing_order = false;
         //if false we place the largest row to bottom, so that largest column is minimizedin lower triangle.
       }
+#if 0
+      if (0)
+      {
+      typename alno_row_view_t_::non_const_type new_row_map("new", m + 1);
+
+      for (nnz_lno_t i = 0; i < m; ++i){
+        nnz_lno_t used_size = 0;
+        size_type rowBegin = row_mapA(i);
+        nnz_lno_t left_work = row_mapA(i + 1) - rowBegin;
+        if (left_work > 0){
+          const nnz_lno_t n = entriesA(rowBegin);
+          nnz_lno_t prev_nset_ind = n / 32;
+          for (nnz_lno_t i = 1; i < left_work; ++i){
+
+            const size_type adjind = i + rowBegin;
+            const nnz_lno_t nn = entriesA(adjind);
+            nnz_lno_t n_set_index = nn / 32;
+            //n_set = n_set << (nn & compression_bit_mask);
+            if (prev_nset_ind != n_set_index){
+              ++used_size;
+              prev_nset_ind = n_set_index;
+            }
+          }
+          ++used_size;
+
+        }
+        /*
+        if (used_size * left_work < m)
+        new_row_map(i) = used_size * left_work;
+        else
+          new_row_map(i) = m;
+        */
+        new_row_map(i) = used_size * left_work;
+
+        std::cout << "row:" << i << " original_size:" << left_work << " used_size:" << used_size << std::endl;
+      }
+
+      /*
+      KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum
+      <typename alno_row_view_t_::non_const_type, ExecutionSpace> (m + 1, new_row_map);
+
+      KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, nnz_lno_t, ExecutionSpace>(
+          m, new_row_map.data(), new_indices.data(), sort_decreasing_order);
+      */
+      std::vector<struct KokkosKernels::Experimental::Util::Edge<nnz_lno_t, nnz_lno_t> > to_sort (m);
+
+      for (nnz_lno_t i = 0; i < m; ++i){
+        to_sort[i].src = new_row_map(i);
+        to_sort[i].dst = i;
+      }
+      std::sort (to_sort.begin(), to_sort.begin() + m);
+      for (nnz_lno_t i = 0; i < m; ++i){
+        new_indices[to_sort[i].dst] = m - i;
+      }
+      }
+      else
+#endif
+      {
       KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, nnz_lno_t, ExecutionSpace>(
           m, row_mapA.data(), new_indices.data(), sort_decreasing_order);
+      }
       sh->set_lower_triangular_permutation(new_indices);
     }
   }
@@ -271,7 +319,9 @@ void triangle_generic(
   row_lno_persistent_work_view_t lower_triangular_matrix_rowmap;
   nnz_lno_persistent_work_view_t lower_triangular_matrix_entries;
   timer1.reset();
-  if (create_lower_triangular){
+  if (create_lower_triangular ||
+      sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LL ||
+      sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LU){
     sh->get_lower_triangular_matrix(lower_triangular_matrix_rowmap, lower_triangular_matrix_entries);
     if( lower_triangular_matrix_rowmap.data() == NULL ||
         lower_triangular_matrix_entries.data() == NULL){
@@ -294,6 +344,32 @@ void triangle_generic(
   if (handle->get_verbose()){
     std::cout << "Preprocess Create Lower Triangular Time:" << timer1.seconds() << std::endl;
   }
+  timer1.reset();
+
+  row_lno_persistent_work_view_t upper_triangular_matrix_rowmap;
+  nnz_lno_persistent_work_view_t upper_triangular_matrix_entries;
+  if (sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LU){
+    sh->get_lower_triangular_matrix(lower_triangular_matrix_rowmap, lower_triangular_matrix_entries);
+    alno_nnz_view_t_ null_values;
+    nnz_lno_persistent_work_view_t new_indices = sh->get_lower_triangular_permutation();
+
+    KokkosKernels::Experimental::Util::kk_get_lower_triangle
+    <alno_row_view_t_, alno_nnz_view_t_, alno_nnz_view_t_,
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, alno_nnz_view_t_,
+    nnz_lno_persistent_work_view_t, ExecutionSpace> (
+        m,
+        row_mapA, entriesA, null_values,
+        upper_triangular_matrix_rowmap, upper_triangular_matrix_entries, null_values,
+        new_indices, handle->is_dynamic_scheduling(), 4, false
+    );
+    sh->set_lower_triangular_matrix(lower_triangular_matrix_rowmap, lower_triangular_matrix_entries);
+
+  }
+  if (handle->get_verbose()){
+    std::cout << "Preprocess Create Upper Triangular Time:" << timer1.seconds() << std::endl;
+  }
+
+
 
   /////////CREATE LOWER TRIANGLE///////
 
@@ -310,13 +386,8 @@ void triangle_generic(
 
   //IF it is one of below, we perform I^T x (A) or (L).
   //so create the transpose of I.
-  case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_IA_DENSE:
-  case SPGEMM_KK_TRIANGLE_IA_MEM:
-  case SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION:
-  case SPGEMM_KK_TRIANGLE_DENSE_IA_UNION:
-  case SPGEMM_KK_TRIANGLE_MEM_IA_UNION:
-
+  case SPGEMM_KK_TRIANGLE_IA_UNION:
+  case SPGEMM_KK_TRIANGLE_IA:
   {
     //these are the algorithms that requires transpose of the incidence matrix.
     sh->get_lower_triangular_matrix(lower_triangular_matrix_rowmap, lower_triangular_matrix_entries);
@@ -349,11 +420,11 @@ void triangle_generic(
   }
   break;
 
+
+
   //IF it is one of below, we perform (A) or (L) x I
   //so create I.
-  case SPGEMM_KK_TRIANGLE_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_DENSE:
-  case SPGEMM_KK_TRIANGLE_MEM:
+  case SPGEMM_KK_TRIANGLE_AI:
   {
     //these are the algorithms that requires the incidence matrix.
 
@@ -367,8 +438,9 @@ void triangle_generic(
             handle->is_dynamic_scheduling());
   }
   break;
-  default:
+  case SPGEMM_KK_TRIANGLE_LU:
   case SPGEMM_KK_TRIANGLE_LL:
+  default:
   {
     break;
   }
@@ -386,12 +458,35 @@ void triangle_generic(
   default:
   case SPGEMM_KK_TRIANGLE_LL:
   {
-    break;
-  }
-  case SPGEMM_KK_TRIANGLE_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_DENSE:
-  case SPGEMM_KK_TRIANGLE_MEM:
 
+    KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
+    <KernelHandle,
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t>
+    kspgemm (handle,m,m,m,
+        lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
+        false,
+        lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
+        false);
+    kspgemm.KokkosSPGEMM_generic_triangle(visit_struct);
+  }
+  break;
+  case SPGEMM_KK_TRIANGLE_LU:
+  {
+
+    KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
+    <KernelHandle,
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
+    row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t>
+    kspgemm (handle,m,m,m,
+        lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
+        false,
+        upper_triangular_matrix_rowmap, upper_triangular_matrix_entries,
+        false);
+    kspgemm.KokkosSPGEMM_generic_triangle(visit_struct);
+  }
+  break;
+  case SPGEMM_KK_TRIANGLE_AI:
   {
     if (create_lower_triangular){
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
@@ -420,17 +515,10 @@ void triangle_generic(
   }
 
   break;
-  case SPGEMM_KK_TRIANGLE_IA_DEFAULT:
-  case SPGEMM_KK_TRIANGLE_IA_DENSE:
-  case SPGEMM_KK_TRIANGLE_IA_MEM:
-  case SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION:
-  case SPGEMM_KK_TRIANGLE_DENSE_IA_UNION:
-  case SPGEMM_KK_TRIANGLE_MEM_IA_UNION:
-
+  case SPGEMM_KK_TRIANGLE_IA_UNION:
+  case SPGEMM_KK_TRIANGLE_IA:
   {
-
     if (create_lower_triangular){
-
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,
@@ -444,8 +532,6 @@ void triangle_generic(
       kspgemm.KokkosSPGEMM_generic_triangle(visit_struct);
     }
     else {
-
-
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, typename KernelHandle::in_scalar_nnz_view_t,

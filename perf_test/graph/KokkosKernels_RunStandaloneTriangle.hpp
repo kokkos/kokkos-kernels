@@ -130,6 +130,7 @@ void run_experiment(
   int use_dynamic_scheduling = params.use_dynamic_scheduling;
   int verbose = params.verbose;
 
+  int accumulator = params.accumulator;
   //char spgemm_step = params.spgemm_step;
   int vector_size = params.vector_size;
 
@@ -165,45 +166,29 @@ void run_experiment(
 
   const lno_t m = crsGraph.numRows();;
 
+
   int rowmap_size = crsGraph.entries.dimension_0() + 1;
   switch (algorithm){
   case 16:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_AI);
     rowmap_size = m + 1;
     break;
   case 17:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_MEM);
-    rowmap_size = m + 1;
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
     break;
   case 18:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_UNION);
+    break;
+  case 19:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL);
+      rowmap_size = m + 1;
+      break;
+  case 20:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU);
     rowmap_size = m + 1;
     break;
-
-  case 19:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DEFAULT);
-
-    break;
-  case 20:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_MEM);
-    break;
-  case 21:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DENSE);
-    break;
-
-
-  case 22:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION);
-    break;
-  case 23:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_MEM_IA_UNION);
-    break;
-  case 24:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE_IA_UNION);
-    break;
-
   default:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DEFAULT);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
     break;
   }
 
@@ -212,6 +197,18 @@ void run_experiment(
   kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
   kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
 
+  switch (accumulator){
+  case 0:
+  default:
+    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT);
+    break;
+  case 1:
+    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DENSE);
+    break;
+  case 2:
+    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_SPARSE);
+    break;
+  }
 
   for (int i = 0; i < repeat; ++i){
 

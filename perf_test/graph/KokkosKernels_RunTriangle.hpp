@@ -135,7 +135,7 @@ crsGraph_t3 run_experiment(
   char *coloring_output_file = params.coloring_output_file;
   //char spgemm_step = params.spgemm_step;
   int vector_size = params.vector_size;
-  int check_output = params.check_output;
+  //int check_output = params.check_output;
 
   //spgemm_step++;
 
@@ -176,93 +176,45 @@ crsGraph_t3 run_experiment(
     exit(1);
   }
 
-  lno_view_t row_mapC_ref;
-  lno_nnz_view_t entriesC_ref;
-  lno_nnz_view_t valuesC_ref;
-  crsGraph_t3 Ccrsgraph_ref;
-  if (check_output)
-  {
-    std::cout << "Running a reference algorithm" << std::endl;
-    row_mapC_ref = lno_view_t ("non_const_lnow_row", m + 1);
-    entriesC_ref = lno_nnz_view_t ("");
-
-    KernelHandle kh;
-    kh.set_team_work_size(chunk_size);
-    kh.set_shmem_size(shmemsize);
-    kh.set_suggested_team_size(team_size);
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT);
-
-    if (use_dynamic_scheduling){
-      kh.set_dynamic_scheduling(true);
-    }
-
-    KokkosKernels::Experimental::Graph::triangle_count (
-        &kh,
-        m,
-        n,
-        k,
-        crsGraph.row_map,
-        crsGraph.entries,
-        TRANPOSEFIRST,
-        crsGraph2.row_map,
-        crsGraph2.entries,
-        TRANPOSESECOND,
-        row_mapC_ref
-    );
-
-    ExecSpace::fence();
-
-
-    size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size){
-      entriesC_ref = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    }
-
-    KokkosKernels::Experimental::Graph::triangle_enumerate(
-        &kh,
-        m,
-        n,
-        k,
-        crsGraph.row_map,
-        crsGraph.entries,
-        TRANPOSEFIRST,
-
-        crsGraph2.row_map,
-        crsGraph2.entries,
-        TRANPOSESECOND,
-        row_mapC_ref,
-        entriesC_ref,
-        valuesC_ref
-    );
-    ExecSpace::fence();
-
-    crsGraph_t3 static_graph (entriesC_ref, row_mapC_ref, k);
-    Ccrsgraph_ref = static_graph;
-  }
 
 
   switch (algorithm){
   case 16:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_AI);
     break;
   case 17:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_MEM);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
     break;
   case 18:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DENSE);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_UNION);
     break;
   case 19:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DEFAULT);
-    break;
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL);
+      break;
   case 20:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_MEM);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU);
     break;
-  case 21:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_DENSE);
-    break;
-
   default:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_DEFAULT);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
+    break;
+  }
+
+  kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
+
+  kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
+  kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
+
+  int accumulator = params.accumulator;
+  switch (accumulator){
+  case 0:
+  default:
+    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT);
+    break;
+  case 1:
+    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DENSE);
+    break;
+  case 2:
+    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_SPARSE);
     break;
   }
 
@@ -459,15 +411,6 @@ crsGraph_t3 run_experiment(
 
 
   crsGraph_t3 static_graph (entriesC, row_mapC, k);
-
-  if (check_output){
-    bool is_identical = is_same_graph<crsGraph_t3, typename crsGraph_t3::device_type>(Ccrsgraph_ref, static_graph);
-    if (!is_identical){
-      std::cout << "Result is wrong." << std::endl;
-      exit(1);
-    }
-  }
-
 
   return static_graph;
 
