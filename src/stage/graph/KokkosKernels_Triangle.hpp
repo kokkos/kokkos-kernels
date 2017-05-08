@@ -362,7 +362,6 @@ void triangle_generic(
         upper_triangular_matrix_rowmap, upper_triangular_matrix_entries, null_values,
         new_indices, handle->is_dynamic_scheduling(), 4, false
     );
-    sh->set_lower_triangular_matrix(lower_triangular_matrix_rowmap, lower_triangular_matrix_entries);
 
   }
   if (handle->get_verbose()){

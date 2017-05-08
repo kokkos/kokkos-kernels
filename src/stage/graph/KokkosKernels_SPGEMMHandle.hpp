@@ -269,7 +269,7 @@ private:
 
   row_lno_persistent_work_view_t incidence_matrix_row_map;
   nnz_lno_persistent_work_view_t incidence_matrix_entries;
-
+  bool compress_second_matrix;
 
 
   double multi_color_scale;
@@ -283,6 +283,7 @@ private:
 
   std::string coloring_input_file;
   std::string coloring_output_file;
+
 
   void set_read_write_cost_calc(bool read_write_cost_cal){
     this->calculate_read_write_cost = read_write_cost_cal;
@@ -455,7 +456,7 @@ private:
     lower_triangular_matrix_rowmap(),
     lower_triangular_matrix_entries(),
     incidence_matrix_row_map(),
-    incidence_matrix_entries(),
+    incidence_matrix_entries(),compress_second_matrix(true),
 
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
@@ -546,7 +547,13 @@ private:
   }
 
 
+  void set_compression(bool compress_second_matrix_){
+    this->compress_second_matrix = compress_second_matrix_;
+  }
 
+  bool get_compression (){
+    return this->compress_second_matrix;
+  }
 
   SPGEMMAccumulator get_accumulator_type() const {return this->accumulator_type;}
   void set_accumulator_type(const SPGEMMAccumulator &acc_type){this->accumulator_type = acc_type;}

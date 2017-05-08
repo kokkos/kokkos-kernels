@@ -157,6 +157,9 @@ public:
   struct MultiCoreDenseAccumulatorTag{};
   struct MultiCoreDenseAccumulatorTag2{};
   struct MultiCoreDenseAccumulatorTag3{};
+  struct NoCompressMultiCoreDenseAccumulatorTag{};
+  struct NoCompressMultiCoreDenseAccumulatorTag2{};
+  struct NoCompressMultiCoreDenseAccumulatorTag3{};
   struct MultiCoreTag{};
   struct MultiCoreTag2{};
   struct MultiCoreTag3{};
@@ -169,6 +172,17 @@ public:
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace> multicore_dense_team_count_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace> multicore_dense_team2_count_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace> multicore_dense_team3_count_policy_t ;
+
+
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag, MyExecSpace> nc_multicore_dense_team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2, MyExecSpace> nc_multicore_dense_team2_count_policy_t ;
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3, MyExecSpace> nc_multicore_dense_team3_count_policy_t ;
+
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > nc_dynamic_multicore_dense_team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > nc_dynamic_multicore_dense_team2_count_policy_t ;
+  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > nc_dynamic_multicore_dense_team3_count_policy_t ;
+
+
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace> multicore_team_policy2_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace> multicore_team_policy3_t ;

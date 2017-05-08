@@ -225,6 +225,248 @@ struct KokkosSPGEMM
     }
   }
 
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const NoCompressMultiCoreDenseAccumulatorTag3&, const team_member_t & teamMember) const {
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+
+    //dense accumulators
+    nnz_lno_t *indices = NULL;
+    nnz_lno_t *sets = NULL;
+
+    volatile nnz_lno_t * tmp = NULL;
+
+    nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+    }
+
+    //we need as much as column size for sets.
+    sets = (nnz_lno_t *) tmp;
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
+        [&] (const nnz_lno_t& row_index) {
+      //nnz_lno_t insertion_count = 0;
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
+      //nnz_lno_t num_el = 0;
+      if (col_size){
+
+        size_type mask_row_begin = row_pointer_begins_B[row_index];
+        nnz_lno_t mask_row_left_work = row_pointer_ends_B[row_index] - mask_row_begin;
+
+        //traverse columns of B
+        for (nnz_lno_t i = 0; i < mask_row_left_work; ++i){
+          const size_type adjind = i + mask_row_begin;
+          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          //nnz_lno_t b_set = entriesSetsB[adjind];
+          //here we assume that each element in row is unique.
+          //we need to change compression so that it will always
+          //return unique rows.
+          sets[b_set_ind] = row_index;
+        }
+
+
+        //traverse columns of A
+        for (nnz_lno_t colind = 0; colind < col_size; ++colind){
+          size_type a_col = colind + col_begin;
+
+
+          nnz_lno_t rowB = entriesA[a_col];
+          size_type rowBegin = row_pointer_begins_B[rowB];
+          nnz_lno_t left_work = row_pointer_ends_B[rowB] - rowBegin;
+
+
+          //traverse columns of B
+          for (nnz_lno_t i = 0; i < left_work; ++i){
+            const size_type adjind = i + rowBegin;
+            nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+            //nnz_lno_t intersection = sets[b_set_ind] & b_set;
+            if(sets[b_set_ind] == row_index)
+              visit_applier(row_index, b_set_ind, a_col, tid);
+          }
+        }
+      }
+    }
+    );
+
+    m_space.release_chunk(indices);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const NoCompressMultiCoreDenseAccumulatorTag2&, const team_member_t & teamMember) const {
+
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+
+    //dense accumulators
+    nnz_lno_t *indices = NULL;
+    //nnz_lno_t *sets = NULL;
+    nnz_lno_t *sets2 = NULL;
+
+    volatile nnz_lno_t * tmp = NULL;
+
+    nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+    }
+
+    //we need as much as column size for sets.
+    //sets = (nnz_lno_t *) tmp;
+    //tmp += MaxRoughNonZero; //this is set as column size before calling dense accumulators.
+
+    sets2 = (nnz_lno_t *) tmp;
+    tmp += MaxRoughNonZero; //this is set as column size before calling dense accumulators.
+
+
+    //indices only needs max row size.
+    indices = (nnz_lno_t *) tmp;
+
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
+        [&] (const nnz_lno_t& row_index) {
+      nnz_lno_t insertion_count = 0;
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
+      //nnz_lno_t num_el = 0;
+      if (col_size){
+
+        //first insert the minimum row.
+        nnz_lno_t min_row_b = this->min_size_row_for_each_row[row_index];
+        size_type min_row_begin = row_pointer_begins_B[min_row_b];
+        nnz_lno_t min_row_left_work = row_pointer_ends_B[min_row_b] - min_row_begin;
+
+        //traverse columns of B
+        for (nnz_lno_t i = 0; i < min_row_left_work; ++i){
+          const size_type adjind = i + min_row_begin;
+          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          //nnz_lno_t b_set = entriesSetsB[adjind];
+          //here we assume that each element in row is unique.
+          //we need to change compression so that it will always
+          //return unique rows.
+          indices[insertion_count++] = b_set_ind;
+          //sets[b_set_ind] = row_index;
+          sets2[b_set_ind] = 1;
+        }
+
+
+        //traverse columns of A
+        for (nnz_lno_t colind = 0; colind < col_size; ++colind){
+          size_type a_col = colind + col_begin;
+
+
+          nnz_lno_t rowB = entriesA[a_col];
+          if (rowB == min_row_b) continue;
+          size_type rowBegin = row_pointer_begins_B[rowB];
+          nnz_lno_t left_work = row_pointer_ends_B[rowB] - rowBegin;
+
+
+          //traverse columns of B
+          for (nnz_lno_t i = 0; i < left_work; ++i){
+            const size_type adjind = i + rowBegin;
+            nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+            //nnz_lno_t b_set = entriesSetsB[adjind];
+            //make a intersection.
+            //sets[b_set_ind] = sets[b_set_ind] & b_set;
+            ++sets2[b_set_ind];
+          }
+        }
+      }
+      for (nnz_lno_t ii = 0; ii < insertion_count; ++ii){
+        const nnz_lno_t set_ind = indices[ii];
+
+        if (sets2[set_ind] != col_size) continue;
+        visit_applier(row_index, set_ind, 0, tid);
+      }
+    }
+    );
+
+    m_space.release_chunk(indices);
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const NoCompressMultiCoreDenseAccumulatorTag&, const team_member_t & teamMember) const {
+
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+
+    //dense accumulators
+    nnz_lno_t *indices = NULL;
+    nnz_lno_t *sets = NULL;
+    //nnz_lno_t *sets2 = NULL;
+
+    volatile nnz_lno_t * tmp = NULL;
+
+    nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+    }
+
+    //we need as much as column size for sets.
+    sets = (nnz_lno_t *) tmp;
+    tmp += MaxRoughNonZero; //this is set as column size before calling dense accumulators.
+    //sets2 = (nnz_lno_t *) tmp;
+    //tmp += MaxRoughNonZero; //this is set as column size before calling dense accumulators.
+
+    //indices only needs max row size.
+    indices = (nnz_lno_t *) tmp;
+
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
+        [&] (const nnz_lno_t& row_index) {
+      nnz_lno_t insertion_count = 0;
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
+      //nnz_lno_t num_el = 0;
+
+      //traverse columns of A
+      for (nnz_lno_t colind = 0; colind < col_size; ++colind){
+        size_type a_col = colind + col_begin;
+
+        nnz_lno_t rowB = entriesA[a_col];
+
+
+        size_type rowBegin = row_pointer_begins_B[rowB];
+        nnz_lno_t left_work = row_pointer_ends_B[rowB] - rowBegin;
+
+        //traverse columns of B
+        for (nnz_lno_t i = 0; i < left_work; ++i){
+          const size_type adjind = i + rowBegin;
+          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          //nnz_lno_t b_set = entriesSetsB[adjind];
+          //if sets are not set before, add this to indices.
+          if (sets[b_set_ind]++ == 0){
+
+
+            //std::cout << "row:"<< row_index << " insertion_count:" << insertion_count << std::endl;
+            indices[insertion_count++] = b_set_ind;
+          }
+          //sets2[b_set_ind] = sets2[b_set_ind] | (sets[b_set_ind] & b_set);
+          //make a union.
+          //sets[b_set_ind] = sets[b_set_ind] | b_set;
+        }
+      }
+      for (nnz_lno_t ii = 0; ii < insertion_count; ++ii){
+        const nnz_lno_t set_ind = indices[ii];
+
+        nnz_lno_t c_rows = sets[set_ind];
+        sets[set_ind] = 0;
+        //std::cout << "c_rows :" << c_rows  << std::endl;
+        if (c_rows == 2){
+          visit_applier(row_index, set_ind, 0, tid);
+        }
+      }
+    }
+    );
+
+    m_space.release_chunk(indices);
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreDenseAccumulatorTag3&, const team_member_t & teamMember) const {
 
@@ -363,6 +605,7 @@ struct KokkosSPGEMM
           //here we assume that each element in row is unique.
           //we need to change compression so that it will always
           //return unique rows.
+          //std::cout << "MaxRoughNonZero:"<<MaxRoughNonZero<< " insertion_count:" << insertion_count << std::endl;
           indices[insertion_count++] = b_set_ind;
           sets[b_set_ind] = b_set;
           sets2[b_set_ind] = 1;
@@ -1405,6 +1648,7 @@ void KokkosSPGEMM
         struct_visit_t visit_applier
     ){
 
+  bool apply_compression = this->handle->get_spgemm_handle()->get_compression();
 
   const nnz_lno_t * min_result_row_for_each_row = this->handle->get_spgemm_handle()->get_min_col_of_row().data();
   nnz_lno_t max_row_size = this->handle->get_spgemm_handle()->get_max_result_nnz();
@@ -1422,7 +1666,11 @@ void KokkosSPGEMM
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
 
-  nnz_lno_t dense_col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
+  nnz_lno_t dense_col_size = this->b_col_cnt;
+  if (apply_compression){
+    dense_col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
+  }
+
 
   //round up maxNumRoughNonzeros to closest power of 2.
   nnz_lno_t min_hash_size = 1;
@@ -1435,7 +1683,11 @@ void KokkosSPGEMM
   sparse_accumulator_chunksize += min_hash_size ; //this is for the hash begins
   sparse_accumulator_chunksize += max_row_size ; //this is for hash nexts
   sparse_accumulator_chunksize += max_row_size ; //this is for hash keys
-  sparse_accumulator_chunksize += max_row_size ; //this is for hash values - 1
+
+  //we do not need values-1 if we do not compress the data.
+  if (apply_compression){
+    sparse_accumulator_chunksize += max_row_size ; //this is for hash values - 1
+  }
 
 
 
@@ -1443,9 +1695,11 @@ void KokkosSPGEMM
   dense_accumulator_chunksize += dense_col_size ; //this is for values-1
   //std::cout << "b_col_cnt:" << b_col_cnt << " dense_col_size:" << dense_col_size << std::endl;
 
-  if (! ( spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL ||
+  if (!( spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL ||
           spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU)){
-    dense_accumulator_chunksize += dense_col_size ; //this is for values-2
+    if(apply_compression){
+      dense_accumulator_chunksize += dense_col_size ; //this is for values-2
+    }
     sparse_accumulator_chunksize += max_row_size ; //this is for hash values - 2
   }
 
@@ -1459,7 +1713,8 @@ void KokkosSPGEMM
   }
   size_t accumulator_chunksize = sparse_accumulator_chunksize;
   bool use_dense_accumulator = false;
-  if ( (spgemm_accumulator == KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT &&
+  if (!apply_compression ||
+      (spgemm_accumulator == KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT &&
         ((concurrency <=  sizeof (nnz_lno_t) * 8) || (dense_accumulator_chunksize < sparse_accumulator_chunksize)))
      ||
        spgemm_accumulator == KokkosKernels::Experimental::Graph::SPGEMM_ACC_DENSE ){
@@ -1555,7 +1810,42 @@ void KokkosSPGEMM
     Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
   else {
-    if (use_dense_accumulator){
+    if (!apply_compression){
+
+      if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_AI ||
+          spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_IA_UNION){
+        if (use_dynamic_schedule){
+          Kokkos::parallel_for( nc_dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+
+        }
+        else {
+          Kokkos::parallel_for( nc_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+
+        }
+      }
+      else if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_IA){
+        if (use_dynamic_schedule){
+          Kokkos::parallel_for( nc_dynamic_multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+
+        }
+        else {
+          Kokkos::parallel_for( nc_multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
+      }
+      else if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LL || spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LU){
+        if (use_dynamic_schedule){
+          Kokkos::parallel_for( nc_dynamic_multicore_dense_team3_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+
+        }
+        else {
+          Kokkos::parallel_for( nc_multicore_dense_team3_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
+      }
+
+
+
+    }
+    else if (use_dense_accumulator){
       if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_AI ||
           spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_IA_UNION){
         if (use_dynamic_schedule){
@@ -1714,51 +2004,63 @@ void KokkosSPGEMM
   nnz_lno_t n = this->row_mapB.dimension_0() - 1;
   size_type nnz = this->entriesB.dimension_0();
 
-  //compressed b
-  row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
-  nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
-  nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
+  bool apply_compression = this->handle->get_spgemm_handle()->get_compression();
 
-
-  if (KOKKOSKERNELS_VERBOSE) std::cout << "SYMBOLIC PHASE" << std::endl;
-  if (KOKKOSKERNELS_VERBOSE) std::cout << "\tCOMPRESS MATRIX-B PHASE" << std::endl;
-  //First Compress B.
-  Kokkos::Impl::Timer timer1;
-  bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
-
-
-  /*
-  std::cout << "n:" << n << " nnz:" << nnz << std::endl;
-  KokkosKernels::Experimental::Util::print_1Dview(this->row_mapB);
-  KokkosKernels::Experimental::Util::kk_print_1Dview(this->entriesB, false, 800);
-  */
-  this->compressMatrix(n, nnz,
-        this->row_mapB, this->entriesB,
-        new_row_mapB, set_index_entries, set_entries,
-        compress_in_single_step);
-
-  if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\tNew Size:" << set_index_entries.dimension_0() << " old:" << this->entriesB.dimension_0()
-        << " ratio:" << set_index_entries.dimension_0() / double (this->entriesB.dimension_0() )<< std::endl;
-    std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds() << std::endl << std::endl;
-  }
-
-  timer1.reset();
 
   //get pointers from views.
   size_type const *p_rowmapA = row_mapA.data();
   nnz_lno_t const *p_entriesA = entriesA.data();
   size_type const *p_rowmapB_begins = row_mapB.data();
-  size_type const *p_rowmapB_ends = new_row_mapB.data();
+  size_type const *p_rowmapB_ends = row_mapB.data() + 1;
 
-  if (!compress_in_single_step){
-    //first get the max flops for a row, which will be used for max row size.
-    //If we did compression in single step, row_mapB[i] points the beginning of row i,
-    //and new_row_mapB[i] points to the end of row i.
-    p_rowmapB_begins = new_row_mapB.data();
-    p_rowmapB_ends = p_rowmapB_begins + 1;
+  Kokkos::Impl::Timer timer1;
+  if (apply_compression){
+    //compressed b
+    row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
+    nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
+    nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
+
+
+    if (KOKKOSKERNELS_VERBOSE) std::cout << "SYMBOLIC PHASE" << std::endl;
+    if (KOKKOSKERNELS_VERBOSE) std::cout << "\tCOMPRESS MATRIX-B PHASE" << std::endl;
+    //First Compress B.
+
+    bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
+    this->compressMatrix(n, nnz,
+        this->row_mapB, this->entriesB,
+        new_row_mapB, set_index_entries, set_entries,
+        compress_in_single_step);
+
+    if (KOKKOSKERNELS_VERBOSE){
+      std::cout << "\tNew Size:" << set_index_entries.dimension_0() << " old:" << this->entriesB.dimension_0()
+            << " ratio:" << set_index_entries.dimension_0() / double (this->entriesB.dimension_0() )<< std::endl;
+      std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds() << std::endl << std::endl;
+    }
+
+
+
+    //get pointers from views.
+    p_rowmapB_begins = row_mapB.data();
+    p_rowmapB_ends = new_row_mapB.data();
+
+    if (!compress_in_single_step){
+      //first get the max flops for a row, which will be used for max row size.
+      //If we did compression in single step, row_mapB[i] points the beginning of row i,
+      //and new_row_mapB[i] points to the end of row i.
+      p_rowmapB_begins = new_row_mapB.data();
+      p_rowmapB_ends = p_rowmapB_begins + 1;
+    }
+
+    size_type bnnz =  set_index_entries.dimension_0();
+    if (this->MyEnumExecSpace == Util::Exec_CUDA){
+      KokkosKernels::Experimental::Util::kkp_reduce_diff_view
+      <size_type, MyExecSpace> (this->b_row_cnt, p_rowmapB_begins, p_rowmapB_ends, bnnz);
+      if (KOKKOSKERNELS_VERBOSE){
+        std::cout << "\tcompressed_b_size:" << bnnz << bnnz << std::endl;
+      }
+    }
+    this->handle->get_spgemm_handle()->set_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
   }
-
   nnz_lno_t maxNumRoughZeros = 0;
   nnz_lno_persistent_work_view_t min_result_row_for_each_row;
 
@@ -1808,7 +2110,7 @@ void KokkosSPGEMM
   */
 
 
-
+  timer1.reset();
   if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_AI ||
       spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_IA_UNION){
 
@@ -1818,7 +2120,9 @@ void KokkosSPGEMM
         p_rowmapB_begins, p_rowmapB_ends);
     //max row size cannot be overeall number of columns.
     //in this case more than number of compressed columns.
-    nnz_lno_t dense_col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
+    nnz_lno_t dense_col_size = this->b_col_cnt;
+    if (apply_compression)
+      dense_col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
     maxNumRoughZeros = KOKKOSKERNELS_MACRO_MIN(dense_col_size, maxNumRoughZeros);
   }
   else if ( spgemm_algorithm == SPGEMM_KK_TRIANGLE_LL ||
@@ -1847,17 +2151,9 @@ void KokkosSPGEMM
     std::cout << "\tMax Row Flop Calc Time:" << timer1.seconds()  << std::endl;
   }
 
-  size_type bnnz =  set_index_entries.dimension_0();
-  if (this->MyEnumExecSpace == Util::Exec_CUDA){
-    KokkosKernels::Experimental::Util::kkp_reduce_diff_view
-    <size_type, MyExecSpace> (this->b_row_cnt, p_rowmapB_begins, p_rowmapB_ends, bnnz);
-    if (KOKKOSKERNELS_VERBOSE){
-      std::cout << "\tcompressed_b_size:" << bnnz << bnnz << std::endl;
-    }
-  }
+
   this->handle->get_spgemm_handle()->set_min_col_of_row(min_result_row_for_each_row);
   this->handle->get_spgemm_handle()->set_max_result_nnz(maxNumRoughZeros);
-  this->handle->get_spgemm_handle()->set_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
 }
 
 template <typename HandleType,
@@ -1942,30 +2238,36 @@ void KokkosSPGEMM
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_generic_triangle(visit_struct_t visit_apply){
   this->KokkosSPGEMM_symbolic_triangle_setup();
-  row_lno_temp_work_view_t new_row_mapB;
-  nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
-  nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-  size_type bnnz =  set_index_entries.dimension_0();
-  this->handle->get_spgemm_handle()->get_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
 
-  bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
+
 
   //get pointers from views.
   size_type const *p_rowmapA = row_mapA.data();
   nnz_lno_t const *p_entriesA = entriesA.data();
   size_type const *p_rowmapB_begins = row_mapB.data();
-  size_type const *p_rowmapB_ends = new_row_mapB.data();
-  nnz_lno_t const *p_set_index_b = set_index_entries.data();
-  nnz_lno_t const *p_set_b = set_entries.data();
-  //size_type *p_rowmapC = rowmapC_.data();
-  //nnz_lno_t *p_entriesC = entriesC_.data();
+  size_type const *p_rowmapB_ends = row_mapB.data()+1;
+  nnz_lno_t const *p_set_index_b = this->entriesB.data();
+  nnz_lno_t const *p_set_b = NULL;
+  size_type bnnz = this->entriesB.dimension_0();
 
-  if (!compress_in_single_step){
-    //first get the max flops for a row, which will be used for max row size.
-    //If we did compression in single step, row_mapB[i] points the beginning of row i,
-    //and new_row_mapB[i] points to the end of row i.
-    p_rowmapB_begins = new_row_mapB.data();
-    p_rowmapB_ends = p_rowmapB_begins + 1;
+  bool apply_compression = this->handle->get_spgemm_handle()->get_compression();
+  if (apply_compression){
+    row_lno_temp_work_view_t new_row_mapB;
+    nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
+    nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
+
+    this->handle->get_spgemm_handle()->get_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
+    p_set_index_b = set_index_entries.data();
+    p_set_b = set_entries.data();
+    p_rowmapB_ends = new_row_mapB.data();
+    bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
+    if (!compress_in_single_step){
+      //first get the max flops for a row, which will be used for max row size.
+      //If we did compression in single step, row_mapB[i] points the beginning of row i,
+      //and new_row_mapB[i] points to the end of row i.
+      p_rowmapB_begins = new_row_mapB.data();
+      p_rowmapB_ends = p_rowmapB_begins + 1;
+    }
   }
 
   const int is_symbolic_or_numeric = 2;

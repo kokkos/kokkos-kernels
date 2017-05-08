@@ -75,6 +75,7 @@ struct Parameters{
   int left_sort, right_sort;
 
   int triangle_options;
+  bool apply_compression;
   // 0 - triangle_count
   // 1 - first count then instantiate
   // 2- more options.
@@ -109,6 +110,7 @@ struct Parameters{
     left_sort = 0;
     right_sort = 0;
     triangle_options=2;
+    apply_compression = true;
   }
 };
 }

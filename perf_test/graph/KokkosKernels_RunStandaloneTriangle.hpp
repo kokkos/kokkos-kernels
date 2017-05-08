@@ -196,6 +196,7 @@ void run_experiment(
 
   kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
   kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
+  kh.get_spgemm_handle()->set_compression(params.apply_compression);
 
   switch (accumulator){
   case 0:
@@ -223,16 +224,30 @@ void run_experiment(
 
     double symbolic_time = 0;
     if (params.triangle_options == 0 ){
-      KokkosKernels::Experimental::Graph::triangle_generic (
-          &kh,
-          m,
-          crsGraph.row_map,
-          crsGraph.entries,
-          KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
+      if (params.apply_compression){
+        KokkosKernels::Experimental::Graph::triangle_generic (
+            &kh,
+            m,
+            crsGraph.row_map,
+            crsGraph.entries,
+            KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
 
-            row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
-          }
-      );
+          row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
+        }
+        );
+      }
+      else {
+        KokkosKernels::Experimental::Graph::triangle_generic (
+            &kh,
+            m,
+            crsGraph.row_map,
+            crsGraph.entries,
+            KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
+
+          row_mapC(row) += 1;
+        }
+        );
+      }
 
       size_type num_triangles = 0;
       KokkosKernels::Experimental::Util::kk_reduce_view<lno_view_t, ExecSpace>(rowmap_size, row_mapC, num_triangles);

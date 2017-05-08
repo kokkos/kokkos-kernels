@@ -100,6 +100,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
       params.vector_size  = atoi( argv[++i] ) ;
     }
+    else if ( 0 == strcasecmp( argv[i] , "compression" ) ) {
+      params.apply_compression = atoi( argv[++i] ) ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "memspaces" ) ) {
       int memspaces = atoi( argv[++i] ) ;
       int memspaceinfo = memspaces;
