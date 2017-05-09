@@ -2070,22 +2070,12 @@ void KokkosSPGEMM
   nnz_lno_t maxNumRoughZeros = 0;
   nnz_lno_persistent_work_view_t min_result_row_for_each_row;
 
-  /*
 
+
+
+
+  if (this->handle->get_spgemm_handle()->get_read_write_cost_calc())
   {
-    std::cout << "DELETE HERE:" << std::endl;
-
-    for (int i = 0; i < b_row_cnt; ++i){
-      std::cout << i << " " << row_mapB(i + 1) - row_mapB(i) << std::endl;
-    }
-
-    std::cout << "DELETE HERE COMPRESSED SIZES:" << std::endl;
-
-    for (int i = 0; i < b_row_cnt; ++i){
-      std::cout << i << " " << p_rowmapB_ends[i] - p_rowmapB_begins[i] << std::endl;
-    }
-
-
     size_t compressed_flops = 0;
     size_t original_flops = 0;
     size_t compressd_max_flops= 0;
@@ -2105,16 +2095,18 @@ void KokkosSPGEMM
       compressed_flops += compressed_row_flops;
       original_flops += original_row_flops;
     }
-    std::cout   << "original_flops:" << original_flops
+    std::cout
+        << "original_flops:" << original_flops
         << " compressed_flops:" << compressed_flops
         << " FLOP_REDUCTION:" << double(compressed_flops) / original_flops
         << std::endl;
-    std::cout   << "original_max_flops:" << original_max_flops
+    std::cout
+        << "original_max_flops:" << original_max_flops
         << " compressd_max_flops:" << compressd_max_flops
         << " MEM_REDUCTION:" << double(compressd_max_flops) / original_max_flops * 2
         << std::endl << std::endl << std::endl;
   }
-*/
+
 
 
   timer1.reset();

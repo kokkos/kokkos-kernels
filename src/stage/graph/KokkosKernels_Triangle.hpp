@@ -239,11 +239,15 @@ void triangle_generic(
 
     if(sh->get_lower_triangular_permutation().data() == NULL){
       nnz_lno_persistent_work_view_t new_indices(Kokkos::ViewAllocateWithoutInitializing("new_indices"), m);
-      bool sort_decreasing_order = true;
+      int sort_decreasing_order = 1;
       ////If true we place the largest row to top, so that largest row size will be minimized in lower triangle.
       if (sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_AI || sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LU){
-        sort_decreasing_order = false;
+        sort_decreasing_order = 0;
         //if false we place the largest row to bottom, so that largest column is minimizedin lower triangle.
+      }
+      else if (sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LL){
+        sort_decreasing_order = 2;
+        //if 2, we do an interleaved sort.
       }
 #if 0
       if (0)
@@ -303,8 +307,11 @@ void triangle_generic(
       else
 #endif
       {
-      KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, nnz_lno_t, ExecutionSpace>(
-          m, row_mapA.data(), new_indices.data(), sort_decreasing_order);
+        if (sh->get_sort_option() != -1){
+          sort_decreasing_order = sh->get_sort_option();
+        }
+        KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, nnz_lno_t, ExecutionSpace>(
+            m, row_mapA.data(), new_indices.data(), sort_decreasing_order);
       }
       sh->set_lower_triangular_permutation(new_indices);
     }
@@ -338,6 +345,7 @@ void triangle_generic(
           lower_triangular_matrix_rowmap, lower_triangular_matrix_entries, null_values,
           new_indices, handle->is_dynamic_scheduling()
       );
+
       sh->set_lower_triangular_matrix(lower_triangular_matrix_rowmap, lower_triangular_matrix_entries);
     }
   }

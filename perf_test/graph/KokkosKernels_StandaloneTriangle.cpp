@@ -103,6 +103,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "compression" ) ) {
       params.apply_compression = atoi( argv[++i] ) ;
     }
+    else if ( 0 == strcasecmp( argv[i] , "sort_option" ) ) {
+      params.sort_option = atoi( argv[++i] ) ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "memspaces" ) ) {
       int memspaces = atoi( argv[++i] ) ;
       int memspaceinfo = memspaces;
@@ -144,7 +147,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       memspaceinfo  = memspaceinfo >> 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "CRWC" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "FLOP" ) ) {
       params.calculate_read_write_cost = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "CIF" ) ) {

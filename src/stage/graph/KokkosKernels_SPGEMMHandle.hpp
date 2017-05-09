@@ -261,6 +261,7 @@ private:
 
   bool create_lower_triangular;
   bool sort_lower_triangular;
+  int sort_option ;
   nnz_lno_persistent_work_view_t lower_triangular_permutation;
 
   row_lno_persistent_work_view_t lower_triangular_matrix_rowmap;
@@ -382,6 +383,14 @@ private:
   bool get_sort_lower_triangular(){
     return this->sort_lower_triangular;
   }
+
+  void set_sort_option(int option){
+    this->sort_option = option;
+  }
+  int get_sort_option(){
+    return this->sort_option;
+  }
+
   void set_create_lower_triangular(bool option){
     this->create_lower_triangular = option;
   }
@@ -451,7 +460,7 @@ private:
 
     create_lower_triangular(false),
     sort_lower_triangular(false),
-
+    sort_option (-1),
     lower_triangular_permutation(),
     lower_triangular_matrix_rowmap(),
     lower_triangular_matrix_entries(),

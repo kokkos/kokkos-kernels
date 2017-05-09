@@ -117,6 +117,42 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
   return true;
 }
 
+template<size_t BufSize, typename SpaceType = Kokkos::DefaultExecutionSpace>
+struct Flush {
+  typedef double value_type;
+
+  // flush a large host buffer
+  Kokkos::View<value_type*,SpaceType> _buf;
+  Flush() : _buf("Flush::buf", BufSize) {
+    Kokkos::deep_copy(_buf, 1);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init(value_type &update) {
+    update = 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join(volatile value_type &update,
+            const volatile value_type &input) {
+    update += input;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i, value_type &update) const {
+    update += _buf[i];
+  }
+
+  void run() {
+    double sum = 0;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
+    SpaceType::fence();
+    FILE *fp = fopen("/dev/null", "w");
+    fprintf(fp, "%f\n", sum);
+    fclose(fp);
+  }
+
+};
 
 template <typename ExecSpace, typename crsGraph_t, typename crsGraph_t2 , typename crsGraph_t3 , typename TempMemSpace , typename PersistentMemSpace >
 void run_experiment(
@@ -163,7 +199,6 @@ void run_experiment(
   if (verbose){
     kh.set_verbose(true);
   }
-
   const lno_t m = crsGraph.numRows();;
 
 
@@ -197,6 +232,7 @@ void run_experiment(
   kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
   kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
   kh.get_spgemm_handle()->set_compression(params.apply_compression);
+  kh.get_spgemm_handle()->set_sort_option(params.sort_option);
 
   switch (accumulator){
   case 0:
@@ -211,7 +247,13 @@ void run_experiment(
     break;
   }
 
+
+  //constexpr size_t LLC_CAPACITY = 256*1024*1024;
+  //Flush<LLC_CAPACITY, ExecSpace> flush;
+
+  kh.get_spgemm_handle()->set_read_write_cost_calc(params.calculate_read_write_cost);
   for (int i = 0; i < repeat; ++i){
+    //flush.run();
 
 
     Kokkos::Impl::Timer timer1;
@@ -258,6 +300,8 @@ void run_experiment(
     }
 
     std::cout  << "mm_time:" << symbolic_time << std::endl;
+    //only do this once
+    kh.get_spgemm_handle()->set_read_write_cost_calc(false);
   }
 
   KokkosKernels::Experimental::Util::print_1Dview(entriesC);

@@ -1047,7 +1047,7 @@ void kk_sort_by_row_size_sequential(
     const lno_t nv,
     const size_type *in_xadj,
     lno_t *new_indices,
-    bool sort_decreasing_order = true){
+    int sort_decreasing_order = 1){
 
 
   std::vector<lno_t> begins (nv);
@@ -1063,7 +1063,7 @@ void kk_sort_by_row_size_sequential(
     nexts [i] = begins[row_size];
     begins[row_size] = i;
   }
-  if (sort_decreasing_order){
+  if (sort_decreasing_order == 1){
     lno_t new_index = nv;
     const lno_t row_end = -1;
     for (lno_t i = 0; i < nv ; ++i){
@@ -1072,6 +1072,26 @@ void kk_sort_by_row_size_sequential(
         new_indices[row] = --new_index;
         row = nexts[row];
       }
+    }
+  }
+  else if (sort_decreasing_order == 2){
+    lno_t new_index_top = nv;
+    lno_t new_index_bottom = 0;
+    const lno_t row_end = -1;
+    bool is_even = true;
+    for (lno_t i = nv - 1; ; --i){
+      lno_t row = begins[i];
+      while (row != row_end){
+        if (is_even){
+          new_indices[row] = --new_index_top;
+        }
+        else {
+          new_indices[row] = new_index_bottom++;
+        }
+        is_even = !is_even;
+        row = nexts[row];
+      }
+      if (i == 0) break;
     }
   }
   else {
@@ -1131,7 +1151,7 @@ template <typename size_type, typename lno_t, typename ExecutionSpace>
 void kk_sort_by_row_size(
     const lno_t nv,
     const size_type *in_xadj,
-    lno_t *new_indices, bool sort_decreasing_order = true){
+    lno_t *new_indices, int sort_decreasing_order = 1){
 
   //Kokkos::Impl::Timer timer1;
   kk_sort_by_row_size_sequential(nv, in_xadj, new_indices, sort_decreasing_order);
