@@ -202,65 +202,68 @@ void run_experiment(
   const lno_t m = crsGraph.numRows();;
 
 
-  int rowmap_size = crsGraph.entries.dimension_0() ;
-  switch (algorithm){
-  case 16:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_AI);
-    rowmap_size = m ;
-    break;
-  case 17:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
-    break;
-  case 18:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_UNION);
-    break;
-  case 19:
+
+  for (int i = 0; i < repeat; ++i){
+    int rowmap_size = crsGraph.entries.dimension_0() ;
+    switch (algorithm){
+    case 16:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_AI);
+      rowmap_size = m ;
+      break;
+    case 17:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
+      break;
+    case 18:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_UNION);
+      break;
+    case 19:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL);
       rowmap_size = m ;
       break;
-  case 20:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU);
-    rowmap_size = m ;
-    break;
-  default:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
-    break;
-  }
+    case 20:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU);
+      rowmap_size = m ;
+      break;
+    default:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
+      break;
+    }
 
-  kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
+    kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
 
-  kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
-  kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
-  kh.get_spgemm_handle()->set_compression(params.apply_compression);
-  kh.get_spgemm_handle()->set_sort_option(params.sort_option);
+    kh.get_spgemm_handle()->set_sort_lower_triangular(params.right_sort);
+    kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
+    kh.get_spgemm_handle()->set_compression(params.apply_compression);
+    kh.get_spgemm_handle()->set_sort_option(params.sort_option);
 
-  switch (accumulator){
-  case 0:
-  default:
-    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT);
-    break;
-  case 1:
-    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DENSE);
-    break;
-  case 2:
-    kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_SPARSE);
-    break;
-  }
+    switch (accumulator){
+    case 0:
+    default:
+      kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT);
+      break;
+    case 1:
+      kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DENSE);
+      break;
+    case 2:
+      kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_SPARSE);
+      break;
+    }
 
 
-  //constexpr size_t LLC_CAPACITY = 256*1024*1024;
-  //Flush<LLC_CAPACITY, ExecSpace> flush;
+    //constexpr size_t LLC_CAPACITY = 256*1024*1024;
+    //Flush<LLC_CAPACITY, ExecSpace> flush;
+    if (i == 0){
+      kh.get_spgemm_handle()->set_read_write_cost_calc(params.calculate_read_write_cost);
+    }
 
-  kh.get_spgemm_handle()->set_read_write_cost_calc(params.calculate_read_write_cost);
-  for (int i = 0; i < repeat; ++i){
     //flush.run();
 
 
     Kokkos::Impl::Timer timer1;
 
     row_mapC = lno_view_t
-              ("non_const_lnow_row",
-                  rowmap_size);
+        ("non_const_lnow_row",
+            rowmap_size);
     entriesC = lno_nnz_view_t ("");
     valuesC  = lno_nnz_view_t ("");
 
@@ -301,7 +304,7 @@ void run_experiment(
 
     std::cout  << "mm_time:" << symbolic_time << std::endl;
     //only do this once
-    kh.get_spgemm_handle()->set_read_write_cost_calc(false);
+    //kh.get_spgemm_handle()->set_read_write_cost_calc(false);
   }
 
   KokkosKernels::Experimental::Util::print_1Dview(entriesC);
