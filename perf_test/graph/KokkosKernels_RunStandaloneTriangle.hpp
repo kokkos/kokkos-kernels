@@ -175,7 +175,7 @@ void run_experiment(
   typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
   typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
 
-  lno_view_t row_mapC;
+  Kokkos::View <size_t *,ExecSpace> row_mapC;
   lno_nnz_view_t entriesC;
   lno_nnz_view_t valuesC;
 
@@ -261,9 +261,9 @@ void run_experiment(
 
     Kokkos::Impl::Timer timer1;
 
-    row_mapC = lno_view_t
-        ("non_const_lnow_row",
-            rowmap_size);
+    row_mapC = Kokkos::View <size_t *,ExecSpace>
+              ("non_const_lnow_row",
+                  rowmap_size);
     entriesC = lno_nnz_view_t ("");
     valuesC  = lno_nnz_view_t ("");
 
@@ -294,20 +294,18 @@ void run_experiment(
         );
       }
 
-      size_type num_triangles = 0;
-      KokkosKernels::Experimental::Util::kk_reduce_view<lno_view_t, ExecSpace>(rowmap_size, row_mapC, num_triangles);
+      size_t num_triangles = 0;
+      KokkosKernels::Experimental::Util::kk_reduce_view< Kokkos::View <size_t *,ExecSpace>, ExecSpace>(rowmap_size, row_mapC, num_triangles);
       ExecSpace::fence();
 
       symbolic_time = timer1.seconds();
       std::cout << "num_triangles:" << num_triangles << std::endl;
     }
-
+    kh.destroy_spgemm_handle();
     std::cout  << "mm_time:" << symbolic_time << std::endl;
     //only do this once
     //kh.get_spgemm_handle()->set_read_write_cost_calc(false);
   }
-
-  KokkosKernels::Experimental::Util::print_1Dview(entriesC);
 }
 
 

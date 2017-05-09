@@ -1728,7 +1728,7 @@ void KokkosSPGEMM
     //if speed is set, and exec space is cpu, then  we use dense accumulators.
     //or if memspeed is set, and concurrency is not high, we use dense accumulators.
     max_row_size = dense_col_size;
-    if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LL || spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LU){
+    if (!apply_compression && (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LL || spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LU)){
       pool_init_val = -1;
     }
     else {
