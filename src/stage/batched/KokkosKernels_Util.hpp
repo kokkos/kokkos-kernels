@@ -27,13 +27,13 @@ namespace KokkosKernels {
     return (m/T::vector_length + (m%T::vector_length > 0));
   }
 
-  template<size_t BufSize>
+  template<size_t BufSize, typename SpaceType = Kokkos::DefaultExecutionSpace>
   struct Flush {
     typedef double value_type;
     
     // flush a large host buffer 
-    Kokkos::View<value_type*,Kokkos::DefaultHostExecutionSpace> _buf;
-    Flush() : _buf("Flush::buf", BufSize) {
+    Kokkos::View<value_type*,SpaceType> _buf;
+    Flush() : _buf("Flush::buf", BufSize/sizeof(double)) {
       Kokkos::deep_copy(_buf, 1);       
     }
 
@@ -55,7 +55,8 @@ namespace KokkosKernels {
 
     void run() {
       double sum = 0;
-      Kokkos::parallel_reduce(BufSize/sizeof(double), *this, sum);
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
+      SpaceType::fence();
       FILE *fp = fopen("/dev/null", "w");
       fprintf(fp, "%f\n", sum);
       fclose(fp);
@@ -105,7 +106,7 @@ namespace KokkosKernels {
   
   // Intel AVX instruction device (explicit vectorization)
   template<typename T,
-           typename SpT = Kokkos::DefaultExecutionSpace>
+           typename SpT = Kokkos::DefaultHostExecutionSpace>
   struct AVX {
     static_assert( std::is_same<T,double>::value                   ||
                    std::is_same<T,float>::value                    ||
@@ -161,8 +162,8 @@ namespace KokkosKernels {
   // Tags for BLAS
   struct Trans {
     struct Transpose {};
-    struct ConjTranspose {};
     struct NoTranspose {};
+    struct ConjTranspose {};
   };
 
   struct Side {
@@ -177,7 +178,7 @@ namespace KokkosKernels {
   
   struct Diag {
     struct Unit    { enum : bool { use_unit_diag = true }; };
-    struct NonUnit { enum :  bool{ use_unit_diag = false}; };
+    struct NonUnit { enum : bool { use_unit_diag = false}; };
   };
 
   struct Algo {
@@ -225,69 +226,73 @@ namespace KokkosKernels {
   };
 
   struct Util {
+
     template<typename ViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static void 
     set(const ViewType A, const ScalarType alpha) {
-      typedef typename ViewType::value_type value_type;
+      set(A.dimension_0(), A.dimension_1(),
+          A.data(), A.stride_0(), A.stride_1(),
+          alpha);
+    }
+    
+    template<typename ValueType, typename ScalarType>
+    KOKKOS_INLINE_FUNCTION
+    static void 
+    set(const int m, const int n, 
+        ValueType *__restrict__ A, const int as0, const int as1,
+        const ScalarType alpha) {
+      typedef ValueType value_type;
 
-      const int 
-        iend = A.dimension(0),
-        jend = A.dimension(1),
-        kend = iend*jend;
-      
-      
-      const int 
-        as0 = A.stride_0(),
-        as1 = A.stride_1();
+      const int mn = m*n;
 
-      value_type 
-        *__restrict__ pA = A.data();
-
-      if ( (iend == as0 && as1 == 1) ||
-           (jend == as1 && as0 == 1) )
-        for (int k=0;k<kend;++k)
-          pA[k] = alpha;
+      if ( (m == as0 && as1 == 1) ||
+           (n == as1 && as0 == 1) )
+        for (int k=0;k<mn;++k)
+          A[k] = alpha;
       else
         if (as0 > as1) 
-          for (int i=0;i<iend;++i) 
-            for (int j=0;j<jend;++j)
-              pA[i*as0+j*as1] = alpha;
+          for (int i=0;i<m;++i) 
+            for (int j=0;j<n;++j)
+              A[i*as0+j*as1] = alpha;
         else 
-          for (int j=0;j<jend;++j) 
-            for (int i=0;i<iend;++i)
-              pA[i*as0+j*as1] = alpha;
+          for (int j=0;j<n;++j) 
+            for (int i=0;i<m;++i)
+              A[i*as0+j*as1] = alpha;
     }
 
     template<typename ViewType, typename ScalarType>
     KOKKOS_INLINE_FUNCTION
     static void 
-    scale(ViewType A, const ScalarType alpha) {
-      typedef typename ViewType::value_type value_type;
+    scale(const ViewType A, const ScalarType alpha) {
+      scale(A.dimension_0(), A.dimension_1(),
+            A.data(), A.stride_0(), A.stride_1(),
+            alpha);
+    }
+    
+    template<typename ValueType, typename ScalarType>
+    KOKKOS_INLINE_FUNCTION
+    static void 
+    scale(const int m, const int n, 
+          ValueType *__restrict__ A, const int as0, const int as1,
+          const ScalarType alpha) {
+      typedef ValueType value_type;
 
-      const int 
-        iend = A.dimension(0),
-        jend = A.dimension(1),
-        kend = iend*jend;      
-      const int 
-        as0 = A.stride_0(),
-        as1 = A.stride_1();
+      const int mn = m*n;      
 
-      value_type 
-        *__restrict__ pA = A.data();
-      if ( (iend == as0 && as1 == 1) ||
-           (jend == as1 && as0 == 1) )
-        for (int k=0;k<kend;++k)
-          pA[k] *= alpha;
+      if ( (m == as0 && as1 == 1) ||
+           (n == as1 && as0 == 1) )
+        for (int k=0;k<mn;++k)
+          A[k] *= alpha;
       else
         if (as0 > as1) 
-          for (int i=0;i<iend;++i) 
-            for (int j=0;j<jend;++j)
-              pA[i*as0+j*as1] *= alpha;
+          for (int i=0;i<m;++i) 
+            for (int j=0;j<n;++j)
+              A[i*as0+j*as1] *= alpha;
         else 
-          for (int j=0;j<jend;++j) 
-            for (int i=0;i<iend;++i)
-              pA[i*as0+j*as1] *= alpha;
+          for (int j=0;j<n;++j) 
+            for (int i=0;i<m;++i)
+              A[i*as0+j*as1] *= alpha;
     }
 
     template<typename ValueType>

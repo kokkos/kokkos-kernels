@@ -124,66 +124,66 @@ namespace KokkosKernels {
       }
 #endif
 
-      // ///
-      // /// Plain version (comparable to micro BLAS version)
-      // ///
-      // {
-      //   Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType> 
-      //     a("a", N*VectorLength, BlkSize, BlkSize),
-      //     x("x", N*VectorLength, NumVecs, BlkSize),
-      //     y("y", N*VectorLength, NumVecs, BlkSize);
+      ///
+      /// Plain version (comparable to micro BLAS version)
+      ///
+      {
+        Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType> 
+          a("a", N*VectorLength, BlkSize, BlkSize),
+          x("x", N*VectorLength, NumVecs, BlkSize),
+          y("y", N*VectorLength, NumVecs, BlkSize);
 
-      //   {
-      //     const Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
+        {
+          const Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
           
-      //     double t = 0;
-      //     for (int iter=iter_begin;iter<iter_end;++iter) {
-      //       // flush
-      //       flush.run();
+          double t = 0;
+          for (int iter=iter_begin;iter<iter_end;++iter) {
+            // flush
+            flush.run();
 
-      //       // initialize matrices
-      //       Kokkos::deep_copy(a, amat);
-      //       Kokkos::deep_copy(x, xvec);
-      //       Kokkos::deep_copy(y, 0);
+            // initialize matrices
+            Kokkos::deep_copy(a, amat);
+            Kokkos::deep_copy(x, xvec);
+            Kokkos::deep_copy(y, 0);
 
-      //       DeviceSpaceType::fence();
-      //       timer.reset();
+            DeviceSpaceType::fence();
+            timer.reset();
 
-      //       Kokkos::parallel_for
-      //         (policy, 
-      //          KOKKOS_LAMBDA(const int k) {
-      //           auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+            Kokkos::parallel_for
+              (policy, 
+               KOKKOS_LAMBDA(const int k) {
+                auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
 
-      //           for (int j=0;j<NumVecs;++j) {                
-      //             auto xx = Kokkos::subview(x, k, j, Kokkos::ALL());
-      //             auto yy = Kokkos::subview(y, k, j, Kokkos::ALL());
+                for (int j=0;j<NumVecs;++j) {                
+                  auto xx = Kokkos::subview(x, k, j, Kokkos::ALL());
+                  auto yy = Kokkos::subview(y, k, j, Kokkos::ALL());
                 
-      //             KokkosKernels::Serial::
-      //               Gemv<Trans::NoTranspose,AlgoTagType>::
-      //               invoke(1.0, aa, xx, 1.0, yy);
-      //           }
-      //         });
+                  KokkosKernels::Serial::
+                    Gemv<Trans::NoTranspose,AlgoTagType>::
+                    invoke(1.0, aa, xx, 1.0, yy);
+                }
+              });
             
-      //       DeviceSpaceType::fence();
-      //       t += (iter >= 0)*timer.seconds();
-      //     }
-      //     t /= iter_end;
+            DeviceSpaceType::fence();
+            t += (iter >= 0)*timer.seconds();
+          }
+          t /= iter_end;
 
-      //     double diff = 0;
-      //     for (int i=0;i<yref.dimension(0);++i)
-      //       for (int j=0;j<yref.dimension(1);++j)
-      //         for (int k=0;k<yref.dimension(2);++k)
-      //           diff += std::abs(yref(i,j,k) - y(i,j,k));
+          double diff = 0;
+          for (int i=0;i<yref.dimension(0);++i)
+            for (int j=0;j<yref.dimension(1);++j)
+              for (int k=0;k<yref.dimension(2);++k)
+                diff += std::abs(yref(i,j,k) - y(i,j,k));
 
-      //     std::cout << std::setw(12) << "Plain"
-      //               << " BlkSize = " << std::setw(3) << BlkSize
-      //               << " NumVecs = " << std::setw(3) << NumVecs
-      //               << " time = " << std::scientific << t
-      //               << " flop/s = " << (flop/t)
-      //               << " diff to ref = " << diff
-      //               << std::endl;
-      //   }
-      // }
+          std::cout << std::setw(12) << "Plain"
+                    << " BlkSize = " << std::setw(3) << BlkSize
+                    << " NumVecs = " << std::setw(3) << NumVecs
+                    << " time = " << std::scientific << t
+                    << " flop/s = " << (flop/t)
+                    << " diff to ref = " << diff
+                    << std::endl;
+        }
+      }
       
       typedef Vector<VectorTagType> VectorType;
       Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType> 
@@ -279,17 +279,17 @@ void run(const int N) {
   else 
     ExecSpace::print_configuration(std::cout, false);
 
-  Test::Gemv< 4, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  // Test::Gemv< 4, 1, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Gemv< 8, 1, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Gemv<16, 1, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Gemv<20, 1, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Gemv<32, 1, ExecSpace,VectorType,AlgoTagType>(N);
   // Test::Gemv<64, 1, ExecSpace,VectorType,AlgoTagType>(N);
 
+  Test::Gemv< 3, 1, ExecSpace,VectorType,AlgoTagType>(N);
   Test::Gemv< 5, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::Gemv< 9, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Gemv<10, 1, ExecSpace,VectorType,AlgoTagType>(N);
   Test::Gemv<15, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  Test::Gemv<20, 1, ExecSpace,VectorType,AlgoTagType>(N);
 }
 
 int main(int argc, char *argv[]) {
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
 
   const int ntest = 1;
   //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
-  const int N[1] = { 2048 };
+  const int N[1] = { 128*128 };
 
 #if defined(__AVX512F__)
   constexpr int VectorLength = 8;
@@ -324,8 +324,8 @@ int main(int argc, char *argv[]) {
       std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemv::Blocked\n";
       run<VectorTag<AVX<double>,VectorLength>,Algo::Gemv::Blocked>(N[i]/VectorLength);
 
-      std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemv::CompactMKL\n";
-      run<VectorTag<AVX<double>,VectorLength>,Algo::Gemv::CompactMKL>(N[i]/VectorLength);
+      // std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemv::CompactMKL\n";
+      // run<VectorTag<AVX<double>,VectorLength>,Algo::Gemv::CompactMKL>(N[i]/VectorLength);
     }
   }
 

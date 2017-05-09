@@ -12,6 +12,16 @@ CXXFLAGS=-O3 -g
 LIBS=
 endif
 
+#### white : cuda p100
+
+ifneq (,$(findstring white,$(HOST)))
+CXX=$(NVCC_WRAPPER)
+MKL_CFLAG= 
+KOKKOS=/ascldap/users/kyukim/Work/lib/kokkos/install/cuda/gnu/release
+CXXFLAGS=-O3 -g -D__KOKKOSKERNELS_NVIDIA_CUBLAS__ 
+LIBS=-lcublas
+endif
+
 #### bowman : knl 1x68x4
 
 ifneq (,$(findstring bowman,$(HOST)))

@@ -20,7 +20,7 @@
 
 #include "KokkosKernels_Gemm_Decl.hpp"
 #include "KokkosKernels_Gemm_Serial_Impl.hpp"
-#include "KokkosKernels_Gemm_Team_Impl.hpp"
+//#include "KokkosKernels_Gemm_Team_Impl.hpp"
 
 #include "KokkosKernels_Trsm_Decl.hpp"
 #include "KokkosKernels_Trsm_Serial_Impl.hpp"
@@ -34,12 +34,12 @@ namespace KokkosKernels {
   
   namespace Test {
 
-    template <typename ExecSpace>
+    template <typename ExecSpace, typename ArrayLayout>
     class BlockCrsMatrixVectorProductByRow {
     public:
-      typedef BlockCrsMatrix<ExecSpace> block_crs_matrix_type;
+      typedef BlockCrsMatrix<ExecSpace,ArrayLayout> block_crs_matrix_type;
       typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
-      typedef BlockMultiVector<ExecSpace> block_multi_vector_type;
+      typedef BlockMultiVector<ExecSpace,ArrayLayout> block_multi_vector_type;
       
     private:
       ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
@@ -94,12 +94,12 @@ namespace KokkosKernels {
       }
     };
 
-    template <typename ExecSpace>
+    template <typename ExecSpace, typename ArrayLayout>
     class BlockCrsMatrixVectorProductByBlockRow {
     public:
-      typedef BlockCrsMatrix<ExecSpace> block_crs_matrix_type;
+      typedef BlockCrsMatrix<ExecSpace,ArrayLayout> block_crs_matrix_type;
       typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
-      typedef BlockMultiVector<ExecSpace> block_multi_vector_type;
+      typedef BlockMultiVector<ExecSpace,ArrayLayout> block_multi_vector_type;
 
     private:
       ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
@@ -156,16 +156,17 @@ namespace KokkosKernels {
       }
     };
 
-    template <typename ExecSpace, typename ValueType>
+    template <typename ExecSpace, typename ValueType, typename ArrayLayout>
     class ExtractBlockTridiagMatrices {
     public:
       typedef ExecSpace exec_space;
       typedef ValueType value_type;
+      typedef ArrayLayout array_layout;
 
       typedef StructuredBlock structured_block_mesh_type;
-      typedef BlockCrsMatrix<exec_space> block_crs_matrix_type;
+      typedef BlockCrsMatrix<exec_space,array_layout> block_crs_matrix_type;
       typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
-      typedef BlockTridiagMatrices<exec_space,value_type> block_tridiag_matrices_type;
+      typedef BlockTridiagMatrices<exec_space,value_type,array_layout> block_tridiag_matrices_type;
 
     private:
       structured_block_mesh_type _mesh;
@@ -291,7 +292,7 @@ namespace KokkosKernels {
       }
     };
 
-    template <typename ExecSpace, typename ValueType,
+    template <typename ExecSpace, typename ValueType, typename ArrayLayout,
               typename LU_AlgoTagType,
               typename Trsm_AlgoTagType,
               typename Gemm_AlgoTagType>
@@ -299,8 +300,9 @@ namespace KokkosKernels {
     public:
       typedef ExecSpace exec_space;
       typedef ValueType value_type;
+      typedef ArrayLayout array_layout;
 
-      typedef BlockTridiagMatrices<exec_space,value_type> block_tridiag_matrices_type;
+      typedef BlockTridiagMatrices<exec_space,value_type,array_layout> block_tridiag_matrices_type;
 
     private:
       ordinal_type _ntridiag, _m, _blocksize;
@@ -473,16 +475,17 @@ namespace KokkosKernels {
       }
     };
 
-    template <typename ExecSpace, typename ValueType,
+    template <typename ExecSpace, typename ValueType, typename ArrayLayout,
               typename Trsv_AlgoTagType,
               typename Gemv_AlgoTagType>
     class SolveBlockTridiagMatrices {
     public:
       typedef ExecSpace exec_space;
       typedef ValueType value_type;
+      typedef ArrayLayout array_layout;
 
-      typedef BlockTridiagMatrices<exec_space,value_type> block_tridiag_matrices_type;
-      typedef PartitionedBlockMultiVector<exec_space,value_type> partitioned_block_multi_vector_type;
+      typedef BlockTridiagMatrices<exec_space,value_type,array_layout> block_tridiag_matrices_type;
+      typedef PartitionedBlockMultiVector<exec_space,value_type,array_layout> partitioned_block_multi_vector_type;
       
     private:
       ordinal_type _ntridiag, _m, _blocksize, _nvectors;
@@ -667,8 +670,10 @@ namespace KokkosKernels {
     void run(const ordinal_type ni, const ordinal_type nj, const ordinal_type nk, 
              const ordinal_type blocksize, 
              const ordinal_type nrhs,
-             const bool test_mkl = false) {
+             const bool test_cublas = false) {
+      typedef typename DeviceSpace::array_layout DeviceArrayLayout;
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
+
       bool success = true;
       StructuredBlock mesh(ni, nj, nk);
 
@@ -683,10 +688,11 @@ namespace KokkosKernels {
       }
 
       // Graph construction
-      CrsGraph<HostSpace> graph_host = create_graph_host_for_structured_block(mesh, StencilShape::cross);
+      CrsGraph<HostSpace,DeviceArrayLayout> graph_host 
+        = create_graph_host_for_structured_block<DeviceArrayLayout>(mesh, StencilShape::cross);
 
       // Crs matrix and multi vector construction
-      BlockCrsMatrix<HostSpace> A_host(graph_host, blocksize);
+      BlockCrsMatrix<HostSpace,DeviceArrayLayout> A_host(graph_host, blocksize);
       fill_block_crs_matrix_host(A_host);      
 
       // Device mirroring
@@ -697,20 +703,22 @@ namespace KokkosKernels {
       {
         const ordinal_type m = graph_host.NumRows();
         
-        BlockMultiVector<HostSpace> x_host(nrhs, m, blocksize);
+        BlockMultiVector<HostSpace,DeviceArrayLayout> x_host(nrhs, m, blocksize);
         fill_block_multi_vector_host(x_host);
         
         auto x_device = create_mirror<DeviceSpace>(x_host);
         deep_copy(x_device, x_host);
         
-        BlockMultiVector<DeviceSpace> y1_device(nrhs, m, blocksize), y2_device(nrhs, m, blocksize);
+        BlockMultiVector<DeviceSpace,DeviceArrayLayout> 
+          y1_device(nrhs, m, blocksize), 
+          y2_device(nrhs, m, blocksize);
 
         {
-          BlockCrsMatrixVectorProductByRow<DeviceSpace> matvec;
+          BlockCrsMatrixVectorProductByRow<DeviceSpace,DeviceArrayLayout> matvec;
           matvec.run(A_device, x_device, y1_device);
         }
         {
-          BlockCrsMatrixVectorProductByBlockRow<DeviceSpace> matvec;
+          BlockCrsMatrixVectorProductByBlockRow<DeviceSpace,DeviceArrayLayout> matvec;
           matvec.run(A_device, x_device, y2_device);
         }
 
@@ -719,35 +727,32 @@ namespace KokkosKernels {
       }
 
       // Test Block TriDiag Extraction
-      BlockTridiagMatrices<DeviceSpace,ValueType> T_device
-        = create_block_tridiag_matrices<DeviceSpace,ValueType>(mesh.ni*mesh.nj, 
-                                                               mesh.nk,
-                                                               blocksize);
+      BlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> T_device
+        = create_block_tridiag_matrices
+        <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+                                                  mesh.nk,
+                                                  blocksize);
       {
-        ExtractBlockTridiagMatrices<DeviceSpace,ValueType> extblk(mesh);
+        ExtractBlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> extblk(mesh);
         extblk.run(A_device, T_device);
         TEST_ASSERT(extblk.check(), success);
       }
 
-      BlockTridiagMatrices<DeviceSpace,ValueType> T_org_device
-        = create_block_tridiag_matrices<DeviceSpace,ValueType>(mesh.ni*mesh.nj, 
-                                                               mesh.nk,
-                                                               blocksize);
+      BlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> T_org_device
+        = create_block_tridiag_matrices
+        <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+                                                  mesh.nk,
+                                                  blocksize);
       
       deep_copy(T_org_device, T_device);
       
       // Test Block TriDiag Factorization
-      if (test_mkl) {
-        FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType,
-                                      Algo::LU::CompactMKL,
-                                      Algo::Trsm::CompactMKL,
-                                      Algo::Gemm::CompactMKL> factorblk;
-        factorblk.run(T_device);
-        TEST_ASSERT(factorblk.check(T_org_device), success);
+      if (test_cublas) {
+        //
       } else {
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType,
+                                      DeviceArrayLayout,
                                       Algo::LU::Blocked,
                                       Algo::Trsm::Blocked,
                                       Algo::Gemm::Blocked> factorblk;
@@ -757,32 +762,29 @@ namespace KokkosKernels {
 
       // Test Block TriDiag Solve
       {
-        PartitionedBlockMultiVector<HostSpace,ValueType> b_host
-          = create_partitioned_block_multi_vector<HostSpace,ValueType>(mesh.ni*mesh.nj, 
-                                                                       nrhs,
-                                                                       mesh.nk, 
-                                                                       blocksize);
+        PartitionedBlockMultiVector<HostSpace,ValueType,DeviceArrayLayout> b_host
+          = create_partitioned_block_multi_vector
+          <HostSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+                                                  nrhs,
+                                                  mesh.nk, 
+                                                  blocksize);
         fill_partitioned_block_multi_vector_host(b_host, mesh.ni*mesh.nj);
 
         auto b_device = create_mirror<DeviceSpace>(b_host);
         deep_copy(b_device, b_host);
 
-        PartitionedBlockMultiVector<DeviceSpace,ValueType> x_device
-          = create_partitioned_block_multi_vector<DeviceSpace,ValueType>(mesh.ni*mesh.nj, 
-                                                                         nrhs,
-                                                                         mesh.nk, 
-                                                                         blocksize);
-        if (test_mkl) {
-          SolveBlockTridiagMatrices<DeviceSpace,
-                                    ValueType,
-                                    Algo::Trsv::CompactMKL,
-                                    Algo::Gemv::CompactMKL> solveblk;
-          
-          solveblk.run(T_device, x_device, b_device);
-          TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
+        PartitionedBlockMultiVector<DeviceSpace,ValueType,DeviceArrayLayout> x_device
+          = create_partitioned_block_multi_vector
+          <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+                                                    nrhs,
+                                                    mesh.nk, 
+                                                    blocksize);
+        if (test_cublas) {
+          //
         } else {
           SolveBlockTridiagMatrices<DeviceSpace,
                                     ValueType,
+                                    DeviceArrayLayout,
                                     Algo::Trsv::Blocked,
                                     Algo::Gemv::Blocked> solveblk;
           
@@ -799,7 +801,8 @@ namespace KokkosKernels {
     
     // performance tests
     template<typename DeviceSpace, typename ValueType = scalar_type>
-    int run(const Input &input, const bool test_mkl = false) { 
+    int run(const Input &input, const bool test_cublas = false) { 
+      typedef typename DeviceSpace::array_layout DeviceArrayLayout;
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
 
       const ordinal_type niter = 50;      
@@ -819,18 +822,18 @@ namespace KokkosKernels {
       StructuredBlock mesh(ni, nj, nk);
 
       // something is not copyable ... don't know why yet...
-      BlockCrsMatrix<DeviceSpace> A_device;
+      BlockCrsMatrix<DeviceSpace,DeviceArrayLayout> A_device;
       double t_fill_block_crs_matrix = 0.0, t_fill_graph = 0.0;
       {
         const StencilShape::Enum stencil_shape = input.stencil_shape;
-        CrsGraph<HostSpace> graph_host;
+        CrsGraph<HostSpace,DeviceArrayLayout> graph_host;
         {
           Timer timer("Fill Graph _______________");
           timer.reset();
-          graph_host = create_graph_host_for_structured_block(mesh, stencil_shape);
+          graph_host = create_graph_host_for_structured_block<DeviceArrayLayout>(mesh, stencil_shape);
           t_fill_graph = timer.seconds();
         }
-        BlockCrsMatrix<HostSpace> A_host(graph_host, blocksize);
+        BlockCrsMatrix<HostSpace,DeviceArrayLayout> A_host(graph_host, blocksize);
         {
           Timer timer("Fill Block CRS Matrix_______________");
           timer.reset();
@@ -852,7 +855,7 @@ namespace KokkosKernels {
       {
         const ordinal_type m = mesh.size();
 
-        BlockMultiVector<HostSpace> x_host(nrhs, m, blocksize);
+        BlockMultiVector<HostSpace,DeviceArrayLayout> x_host(nrhs, m, blocksize);
         {
           Timer timer("Fill Block Multi Vector______________");
           timer.reset();
@@ -862,10 +865,10 @@ namespace KokkosKernels {
         auto x_device = create_mirror<DeviceSpace>(x_host);
         deep_copy(x_device, x_host);
         
-        BlockMultiVector<DeviceSpace> y_device(nrhs, m, blocksize);
+        BlockMultiVector<DeviceSpace,DeviceArrayLayout> y_device(nrhs, m, blocksize);
         {
           //BlockCrsMatrixVectorProductByRow<DeviceSpace> matvec;
-          BlockCrsMatrixVectorProductByBlockRow<DeviceSpace> matvec;
+          BlockCrsMatrixVectorProductByBlockRow<DeviceSpace,DeviceArrayLayout> matvec;
           {
             Timer timer("50 BlockCrsMatrixVectorProduct");
             timer.reset();
@@ -884,10 +887,10 @@ namespace KokkosKernels {
       const double memsize_T = ni*nj*(3*(nk-1)*blocksize*blocksize + blocksize*blocksize)*8;
 
       double t_extract = 0.0;
-      BlockTridiagMatrices<DeviceSpace,ValueType> T_device
-        = create_block_tridiag_matrices<DeviceSpace,ValueType>(ni*nj, nk, blocksize);
+      BlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> T_device
+        = create_block_tridiag_matrices<DeviceSpace,ValueType,DeviceArrayLayout>(ni*nj, nk, blocksize);
       {
-        ExtractBlockTridiagMatrices<DeviceSpace,ValueType> extblk(mesh);
+        ExtractBlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> extblk(mesh);
         {
           Timer timer("ExtractBlockTridiagMatrices");
           timer.reset();
@@ -898,8 +901,8 @@ namespace KokkosKernels {
       }
 
       // keep original matrix for check
-      BlockTridiagMatrices<DeviceSpace,ValueType> T_org_device
-        = create_block_tridiag_matrices<DeviceSpace,ValueType>(ni*nj, nk, blocksize);
+      BlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> T_org_device
+        = create_block_tridiag_matrices<DeviceSpace,ValueType,DeviceArrayLayout>(ni*nj, nk, blocksize);
       
       deep_copy(T_org_device, T_device);
       
@@ -907,24 +910,12 @@ namespace KokkosKernels {
       /// block tridiag factorization test
       ///
       double t_factorize = 0.0, f_factorize = 0.0;
-      if (test_mkl) {
-        FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType,
-                                      Algo::LU::CompactMKL,
-                                      Algo::Trsm::CompactMKL,
-                                      Algo::Gemm::CompactMKL> factorblk;
-        
-        f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
-        {
-          Timer timer("FactorizeBlockTridiagMatrices");
-          timer.reset();
-          factorblk.run(T_device);
-          t_factorize = timer.seconds();
-        }
-        if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
+      if (test_cublas) {
+        //
       } else {
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType,
+                                      DeviceArrayLayout,
                                       Algo::LU::Blocked,
                                       Algo::Trsm::Blocked,
                                       Algo::Gemm::Blocked> factorblk;
@@ -938,45 +929,35 @@ namespace KokkosKernels {
         }
         if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
       }
-
+      
       ///
       /// block tridiag solve test
       ///
       double t_solve = 0.0;
       {
-        PartitionedBlockMultiVector<HostSpace,ValueType> b_host
-          = create_partitioned_block_multi_vector<HostSpace,ValueType>(ni*nj, 
-                                                                       nrhs,
-                                                                       nk, 
-                                                                       blocksize);
+        PartitionedBlockMultiVector<HostSpace,ValueType,DeviceArrayLayout> b_host
+          = create_partitioned_block_multi_vector
+          <HostSpace,ValueType,DeviceArrayLayout>(ni*nj, 
+                                                  nrhs,
+                                                  nk, 
+                                                  blocksize);
         fill_partitioned_block_multi_vector_host(b_host, ni*nj);
 
         auto b_device = create_mirror<DeviceSpace>(b_host);
         deep_copy(b_device, b_host);
         
-        PartitionedBlockMultiVector<DeviceSpace,ValueType> x_device
-          = create_partitioned_block_multi_vector<DeviceSpace,ValueType>(ni*nj, 
-                                                                         nrhs,
-                                                                         nk, 
-                                                                         blocksize);
-        if (test_mkl) {
-          SolveBlockTridiagMatrices<DeviceSpace,
-                                    ValueType,
-                                    Algo::Trsv::CompactMKL,
-                                    Algo::Gemv::CompactMKL> solveblk;
-          {
-            Timer timer("50 SolveBlockTridiagMatrices");
-            timer.reset();
-            for (ordinal_type i=0;i<niter;++i) {
-              solveblk.run(T_device, x_device, b_device);
-              dontopt += i;
-            }          
-            t_solve = timer.seconds();
-          }
-          if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
+        PartitionedBlockMultiVector<DeviceSpace,ValueType,DeviceArrayLayout> x_device
+          = create_partitioned_block_multi_vector
+          <DeviceSpace,ValueType,DeviceArrayLayout>(ni*nj, 
+                                                    nrhs,
+                                                    nk, 
+                                                    blocksize);
+        if (test_cublas) {
+          //
         } else {
           SolveBlockTridiagMatrices<DeviceSpace,
                                     ValueType,
+                                    DeviceArrayLayout,
                                     Algo::Trsv::Blocked,
                                     Algo::Gemv::Blocked> solveblk;
           {
@@ -991,19 +972,16 @@ namespace KokkosKernels {
           if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
         }
       }
-
+      
       const double t_matvec_per_iter = t_matvec/double(niter), t_solve_per_iter = t_solve/double(niter);
-      // std::cout << "KokkosKernels:: time fill graph = " << t_fill_graph << std::endl; 
-      // std::cout << "KokkosKernels:: time fill crs   = " << t_fill_block_crs_matrix << std::endl; 
-      // std::cout << "KokkosKernels:: time fill mv    = " << t_fill_block_multi_vector << std::endl; 
       std::cout << " matvec     = " << t_matvec_per_iter << std::endl; 
       std::cout << " extract    = " << t_extract        << " extract/matvec = " << (t_extract/t_matvec_per_iter) << std::endl; 
-      std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << std::endl; 
-      //std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << " flop = " << f_factorize << " flop/s = " << (f_factorize/t_factorize) << std::endl; 
+      //std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << std::endl; 
+      std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << " flop = " << f_factorize << " flop/s = " << (f_factorize/t_factorize) << std::endl; 
       std::cout << " solve      = " << t_solve_per_iter << "  solve/matvec  = " << (t_solve_per_iter/t_matvec_per_iter) << std::endl; 
-      //std::cout << " memory used     = " << (memsize_A + memsize_T) << std::endl; 
+      std::cout << " memory used     = " << (memsize_A + memsize_T) << std::endl; 
 
-      return dontopt;
+      return dontopt + success;
     }
 
   }

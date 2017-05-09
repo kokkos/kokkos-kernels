@@ -13,7 +13,8 @@ namespace KokkosKernels {
     enum { TEST_ADD = 0,
            TEST_MINUS = 1,
            TEST_MULT = 2,
-           TEST_DIV = 3 };
+           TEST_DIV = 3,
+           TEST_UNARY_MINUS = 4 };
     
     template<typename ViewType, int TestID>
     struct Functor {
@@ -30,6 +31,7 @@ namespace KokkosKernels {
         case 1: _c(i) = _a(i) - _b(i); break;
         case 2: _c(i) = _a(i) * _b(i); break;
         case 3: _c(i) = _a(i) / _b(i); break;
+        case 4: _c(i) = -_c(i); break;
         }
       }
       
@@ -56,7 +58,7 @@ namespace KokkosKernels {
             j = k%VectorLength;
           a_host(k) = j + 1;
           b_host(k) = i + 1;
-          c_host(k) = 0;
+          c_host(k) = i*j;
         }
         
         auto a = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), a_host);
@@ -91,7 +93,7 @@ namespace KokkosKernels {
           for (int j=0;j<VectorLength;++j) {
             a_host(i)[j] = j + 1;
             b_host(i)[j] = i + 1;
-            c_host(i)[j] = 0;
+            c_host(i)[j] = i*j;
           }
         
         auto a = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), a_host);
@@ -125,12 +127,14 @@ int main(int argc, char *argv[]) {
 
   Kokkos::initialize();
   
+#if defined(KOKKOS_HAVE_SERIAL)
   std::cout << " Testing SIMD4 double \n";
 
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,4>,0>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,4>,1>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,4>,2>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,4>,3>();
+  KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,4>,4>();
 
   std::cout << " Testing SIMD2 complex<double> \n";
   
@@ -138,7 +142,8 @@ int main(int argc, char *argv[]) {
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<Kokkos::complex<double> >,2>,1>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<Kokkos::complex<double> >,2>,2>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<Kokkos::complex<double> >,2>,3>();
-
+  KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<Kokkos::complex<double> >,2>,4>();
+  
 #if defined(__AVX__) || defined(__AVX2__)
   std::cout << " Testing AVX256 double \n";
 
@@ -146,12 +151,14 @@ int main(int argc, char *argv[]) {
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,4>,1>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,4>,2>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,4>,3>();
+  KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,4>,4>();
 
   std::cout << " Testing AVX256 complex<double> \n";
 
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<Kokkos::complex<double> >,2>,0>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<Kokkos::complex<double> >,2>,1>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<Kokkos::complex<double> >,2>,2>();
+  KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<Kokkos::complex<double> >,2>,4>();
   
   // division is not yet implemented
   // KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<Kokkos::complex<double> >,2>,3>();
@@ -163,6 +170,7 @@ int main(int argc, char *argv[]) {
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,8>,1>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,8>,2>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,8>,3>();
+  KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::SIMD<double>,8>,4>();
 
 #if defined(__AVX512F__)
   std::cout << " Testing AVX512 \n";
@@ -171,8 +179,11 @@ int main(int argc, char *argv[]) {
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,8>,1>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,8>,2>();
   KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,8>,3>();
+  KokkosKernels::Test::VectorArithmatic<Kokkos::Serial,KokkosKernels::VectorTag<KokkosKernels::AVX<double>,8>,4>();
 #endif
-  
+#else
+  std::cout << " Kokkos::Serial is not enabled\n";
+#endif  
   Kokkos::finalize();
 
   return 0;

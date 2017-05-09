@@ -68,7 +68,7 @@ int main (int argc, char *argv[]) {
   std::cout << " Unit Test::Vector :: End\n";
 
 #if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
-  std::cout << " Unit Test::MKLCmpt :: Begin\n";
+  std::cout << " Unit Test::MKL :: Begin\n";
   {
 #if defined(__AVX512F__)  
     //typedef VectorTag<SIMD<Test::scalar_type>,8> VectorType;
@@ -78,7 +78,7 @@ int main (int argc, char *argv[]) {
     typedef Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
 #endif    
 
-    const int test_mkl = 1;
+    const bool test_mkl = true;
 
     Test::run<DeviceSpace,VectorType>( 3,  4,  2, 25, 2, test_mkl);
     Test::run<DeviceSpace,VectorType>(44, 63, 15,  4, 1, test_mkl);
@@ -88,29 +88,7 @@ int main (int argc, char *argv[]) {
     for (int nrhs=1;nrhs<=33;++nrhs)
       Test::run<DeviceSpace,VectorType>(2, 2, 15, 3, nrhs, test_mkl);
   }
-  std::cout << " Unit Test::MKLCmpt :: End\n";
-
-  std::cout << " Unit Test::MKLBatch :: Begin\n";
-  {
-#if defined(__AVX512F__)  
-    //typedef VectorTag<SIMD<Test::scalar_type>,8> VectorType;
-    typedef Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
-#elif defined(__AVX2__) || defined(__AVX__)
-    //typedef VectorTag<SIMD<Test::scalar_type>,4> VectorType;
-    typedef Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
-#endif    
-
-    const int test_mkl = 2;
-
-    Test::run<DeviceSpace,VectorType>( 3,  4,  2, 25, 2, test_mkl);
-    Test::run<DeviceSpace,VectorType>(44, 63, 15,  4, 1, test_mkl);
-    Test::run<DeviceSpace,VectorType>( 2,  2, 15,  3, 3, test_mkl);
-    Test::run<DeviceSpace,VectorType>( 1,  1,  2, 63, 8, test_mkl);
-
-    for (int nrhs=1;nrhs<=33;++nrhs)
-      Test::run<DeviceSpace,VectorType>(2, 2, 15, 3, nrhs, test_mkl);
-  }
-  std::cout << " Unit Test::MKLBatch:: End\n";
+  std::cout << " Unit Test::MKL :: End\n";
 #endif
 
   // // Performance tests
@@ -139,7 +117,7 @@ int main (int argc, char *argv[]) {
   std::cout << " Perf Test::Vector :: End\n";
 
 #if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
-  std::cout << " Perf Test::MKL Cmpt:: Begin\n";
+  std::cout << " Perf Test::MKL :: Begin\n";
   {
 #if defined(__AVX512F__)  
     //typedef VectorTag<SIMD<Test::scalar_type>,8> VectorType;
@@ -150,28 +128,11 @@ int main (int argc, char *argv[]) {
 #endif    
 
     const Test::Input input(argc, argv);
-    const int test_mkl = 1;
+    const bool test_mkl = true;
     int r_val = Test::run<DeviceSpace,VectorType>(input, test_mkl);
     r_val = 0;
   } 
-  std::cout << " Perf Test::MKL Cmpt:: End\n";
-
-  std::cout << " Perf Test::MKL Batch:: Begin\n";
-  {
-#if defined(__AVX512F__)  
-    //typedef VectorTag<SIMD<Test::scalar_type>,8> VectorType;
-    typedef Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
-#elif defined(__AVX2__) || defined(__AVX__)
-    //typedef VectorTag<SIMD<Test::scalar_type>,4> VectorType;
-    typedef Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
-#endif    
-
-    const Test::Input input(argc, argv);
-    const int test_mkl = 2;
-    int r_val = Test::run<DeviceSpace,VectorType>(input, test_mkl);
-    r_val = 0;
-  } 
-  std::cout << " Perf Test::MKL Batch:: End\n";
+  std::cout << " Perf Test::MKL :: End\n";
 #endif
 
   Kokkos::finalize();

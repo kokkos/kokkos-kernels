@@ -1,7 +1,6 @@
 #ifndef __KOKKOSKERNELS_VECTOR_AVX512D_HPP__
 #define __KOKKOSKERNELS_VECTOR_AVX512D_HPP__
 
-/// This follows the work "vectorlib" -- GNU public license -- written by Agner Fog.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 #if defined(__AVX512F__)
 
@@ -73,18 +72,6 @@ namespace KokkosKernels {
     value_type& operator[](int i) const {
       return _data.d[i];
     }
-
-    template <int i00, int i01, int i02, int i03, int i04, int i05, int i06, int i07,
-              int i10, int i11, int i12, int i13, int i14, int i15, int i16, int i17>
-    static inline __m512 constant16f() {
-      static const union {
-        int  i[16];
-      __m512 zmm;
-      } u = {{i00,i01,i02,i03,i04,i05,i06,i07,
-              i10,i11,i12,i13,i14,i15,i16,i17}};
-      return u.zmm;
-    }
-    
   };
 
   template<typename SpT>
@@ -150,20 +137,6 @@ namespace KokkosKernels {
   inline 
   static Vector<VectorTag<AVX<double,SpT>,8> > operator - (const double a, Vector<VectorTag<AVX<double,SpT>,8> > const & b) {
     return Vector<VectorTag<AVX<double,SpT>,8> >(a) - b;
-  }
-
-  template<typename SpT>
-  inline 
-  static Vector<VectorTag<AVX<double,SpT>,8> > operator - (Vector<VectorTag<AVX<double,SpT>,8> > const & a) {
-    return _mm512_xor_pd(a, _mm512_castps_pd(Vector<VectorTag<AVX<double,SpT>,8> >::constant16f<
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000> ()));
   }
 
   template<typename SpT>  
@@ -259,6 +232,12 @@ namespace KokkosKernels {
     return a;
   }
 
+  template<typename SpT>
+  inline 
+  static Vector<VectorTag<AVX<double,SpT>,8> > operator - (Vector<VectorTag<AVX<double,SpT>,8> > const & a) {
+    return -1*a;
+  }
+
   ///
   /// AVX512D Kokkos::complex<double> 
   ///
@@ -333,17 +312,6 @@ namespace KokkosKernels {
     inline 
     value_type& operator[](int i) const {
       return _data.d[i];
-    }
-
-    template <int i00, int i01, int i02, int i03, int i04, int i05, int i06, int i07,
-              int i10, int i11, int i12, int i13, int i14, int i15, int i16, int i17>
-    static inline __m512 constant16f() {
-      static const union {
-        int  i[16];
-      __m512 zmm;
-      } u = {{i00,i01,i02,i03,i04,i05,i06,i07,
-              i10,i11,i12,i13,i14,i15,i16,i17}};
-      return u.zmm;
     }
     
   };
@@ -437,6 +405,23 @@ namespace KokkosKernels {
     return a;
   }
 
+  /// unitary operator
+
+  template<typename SpT>
+  inline 
+  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & a, int) {
+    Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > a0 = a;
+    a = a - 1.0;
+    return a0;
+  }
+
+  template<typename SpT>
+  inline 
+  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & a) {
+    a = a - 1.0;
+    return a;
+  }
+
   /// complex vector , complex
 
   template<typename SpT>
@@ -476,37 +461,6 @@ namespace KokkosKernels {
   inline 
   static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & operator -= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & a, const double b) {
     a = a - b;
-    return a;
-  }
-
-  /// unitary operator
-
-  template<typename SpT>
-  inline 
-  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > const & a) {
-    return _mm512_xor_pd(a, _mm512_castps_pd(Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> >::constant16f<
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000> ()));
-  }
-
-  template<typename SpT>
-  inline 
-  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & a, int) {
-    Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > a0 = a;
-    a = a - 1.0;
-    return a0;
-  }
-
-  template<typename SpT>
-  inline 
-  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & a) {
-    a = a - 1.0;
     return a;
   }
 
@@ -630,7 +584,6 @@ namespace KokkosKernels {
     return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> >(a) / b;
   }
 
-
   template<typename SpT>
   inline 
   static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & operator /= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > & a, const double b) {
@@ -639,6 +592,11 @@ namespace KokkosKernels {
     return a;
   }
 
+  template<typename SpT>
+  inline 
+  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > const & a) {
+    return -1*a;
+  }
 
 }
 

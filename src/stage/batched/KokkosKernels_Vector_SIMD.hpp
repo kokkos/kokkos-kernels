@@ -1,7 +1,6 @@
 #ifndef __KOKKOSKERNELS_VECTOR_SIMD_HPP__
 #define __KOKKOSKERNELS_VECTOR_SIMD_HPP__
 
-/// This follows the work "vectorlib" -- GNU public license -- written by Agner Fog.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace KokkosKernels {

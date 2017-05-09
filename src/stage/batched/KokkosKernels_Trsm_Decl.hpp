@@ -1,34 +1,32 @@
-#ifndef __KOKKOSKERNELS_TRSV_DECL_HPP__
-#define __KOKKOSKERNELS_TRSV_DECL_HPP__
+#ifndef __KOKKOSKERNELS_TRSM_DECL_HPP__
+#define __KOKKOSKERNELS_TRSM_DECL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace KokkosKernels {
-  
-  ///
-  /// Serial Trsv
-  ///
 
   namespace Serial {
-    template<typename ArgUplo,
+
+    template<typename ArgSide,
+             typename ArgUplo,
              typename ArgTrans,
              typename ArgDiag,
              typename ArgAlgo>
-    struct Trsv {
-
+    struct Trsm {
       template<typename ScalarType,
                typename AViewType,
-               typename bViewType>
+               typename BViewType>
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const ScalarType alpha,
              const AViewType &A,
-             const bViewType &b) {
-        //static_assert(false, "KokkosKernels::Trsv:: Not yet implemented");
+             const BViewType &B) {
+        //static_assert(false, "KokkosKernels::Trsm::invoke:: Not yet implemented");
         return 0;
-      }
+      }      
     };
+
   }
 
 }

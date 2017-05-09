@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
 
   const int ntest = 1;
   //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
-  const int N[1] = { 512 };
+  const int N[1] = { 128*128 };
 
 #if defined(__AVX512F__)
   constexpr int VectorLength = 4;
@@ -441,8 +441,8 @@ int main(int argc, char *argv[]) {
       // std::cout << "\n Testing SIMD-" << VectorLength << " and Algo::Gemm::Unblocked\n";
       // run<VectorTag<SIMD<Kokkos::complex<double> >,VectorLength>,Algo::Gemm::Unblocked>(N[i]/VectorLength);
 
-      // std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemm::Unblocked\n";
-      // run<VectorTag<AVX<Kokkos::complex<double> >,VectorLength>,Algo::Gemm::Unblocked>(N[i]/VectorLength);
+      std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemm::Unblocked\n";
+      run<VectorTag<AVX<Kokkos::complex<double> >,VectorLength>,Algo::Gemm::Unblocked>(N[i]/VectorLength);
 
       // std::cout << "\n Testing SIMD-" << VectorLength << " and Algo::Gemm::Blocked\n";
       // run<VectorTag<SIMD<Kokkos::complex<double> >,VectorLength>,Algo::Gemm::Blocked>(N[i]/VectorLength);

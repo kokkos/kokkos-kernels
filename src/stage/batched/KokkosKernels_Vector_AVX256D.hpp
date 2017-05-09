@@ -1,7 +1,6 @@
 #ifndef __KOKKOSKERNELS_VECTOR_AVX256D_HPP__
 #define __KOKKOSKERNELS_VECTOR_AVX256D_HPP__
 
-/// This follows the work "vectorlib" -- GNU public license -- written by Agner Fog.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #if defined(__AVX__) || defined(__AVX2__) 
@@ -74,16 +73,6 @@ namespace KokkosKernels {
     value_type& operator[](int i) const {
       return _data.d[i];
     }
-
-    template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
-    static inline __m256 constant8f() {
-      static const union {
-        int  i[8];
-      __m256 ymm;
-      } u = {{i0,i1,i2,i3,i4,i5,i6,i7}};
-      return u.ymm;
-    }
-    
   };
 
   template<typename SpT>
@@ -151,16 +140,6 @@ namespace KokkosKernels {
     return Vector<VectorTag<AVX<double,SpT>,4> >(a) - b;
   }
 
-  template<typename SpT>
-  inline 
-  static Vector<VectorTag<AVX<double,SpT>,4> > operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a) {
-    return _mm256_xor_pd(a, _mm256_castps_pd(Vector<VectorTag<AVX<double,SpT>,4> >::constant8f<
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000> ()));
-  }
-  
   template<typename SpT>
   inline 
   static Vector<VectorTag<AVX<double,SpT>,4> > & operator -= (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
@@ -254,6 +233,12 @@ namespace KokkosKernels {
     return a;
   }
 
+  template<typename SpT>
+  inline 
+  static Vector<VectorTag<AVX<double,SpT>,4> > operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a) {
+    return -1*a;
+  }
+  
   ///
   /// AVX256D Kokkos::complex<double>
   //
@@ -322,16 +307,6 @@ namespace KokkosKernels {
     value_type& operator[](int i) const {
       return _data.d[i];
     }
-
-    template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
-    static inline __m256 constant8f() {
-      static const union {
-        int  i[8];
-      __m256 ymm;
-      } u = {{i0,i1,i2,i3,i4,i5,i6,i7}};
-      return u.ymm;
-    }
-    
   };
 
   /// complex vector , complex vector
@@ -466,16 +441,6 @@ namespace KokkosKernels {
   }
 
   /// unitary operator
-
-  template<typename SpT>
-  inline 
-  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a) {
-    return _mm256_xor_pd(a, _mm256_castps_pd(Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >::constant8f<
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000,
-                                             0,(int)0x80000000> ()));
-  }
 
   template<typename SpT>
   inline 
@@ -617,6 +582,12 @@ namespace KokkosKernels {
     Kokkos::abort("Not yet implemented");
     a = a / b;
     return a;
+  }
+
+  template<typename SpT>
+  inline 
+  static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a) {
+    return -1*a;
   }
 
 }

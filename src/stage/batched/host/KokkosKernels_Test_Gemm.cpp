@@ -18,8 +18,6 @@
 #include "KokkosKernels_Gemm_Serial_Impl.hpp"
 #include "KokkosKernels_Gemm_Team_Impl.hpp"
 
-bool hot = false;
-
 namespace KokkosKernels {
 
   namespace Test {
@@ -97,14 +95,11 @@ namespace KokkosKernels {
           double tavg = 0, tmin = tmax;
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            if (!hot)
-              flush.run();
+            flush.run();
 
             // initialize matrices
-            if (!hot && iter == iter_begin) {
-              Kokkos::deep_copy(a, amat);
-              Kokkos::deep_copy(b, bmat);
-            }
+            Kokkos::deep_copy(a, amat);
+            Kokkos::deep_copy(b, bmat);
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -179,14 +174,11 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            if (!hot)
-              flush.run();
+            flush.run();
 
             // initialize matrices
-            if (!hot && iter == iter_begin) {
-              Kokkos::deep_copy(a, amat);
-              Kokkos::deep_copy(b, bmat);
-            }
+            Kokkos::deep_copy(a, amat);
+            Kokkos::deep_copy(b, bmat);
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -277,14 +269,11 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            if (!hot)
-              flush.run();
+            flush.run();
 
             // initialize matrices
-            if (!hot && iter == iter_begin) {
-              Kokkos::deep_copy(a, amat_simd);
-              Kokkos::deep_copy(b, bmat_simd);
-            }
+            Kokkos::deep_copy(a, amat_simd);
+            Kokkos::deep_copy(b, bmat_simd);
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -349,14 +338,11 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            if (!hot)
-              flush.run();
+            flush.run();
 
             // initialize matrices
-            if (!hot && iter == iter_begin) {
-              Kokkos::deep_copy(a, amat);
-              Kokkos::deep_copy(b, bmat);
-            }
+            Kokkos::deep_copy(a, amat);
+            Kokkos::deep_copy(b, bmat);
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -405,66 +391,66 @@ namespace KokkosKernels {
         libxsmm_finalize();
       }
 #endif
-      // ///
-      // /// Plain version (comparable to micro BLAS version)
-      // ///
-      // if (!std::is_same<AlgoTagType,Algo::Gemm::CompactMKL>::value) {
-      //   Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType> 
-      //     a("a", N*VectorLength, BlkSize, BlkSize),
-      //     b("b", N*VectorLength, BlkSize, BlkSize),
-      //     c("c", N*VectorLength, BlkSize, BlkSize);
+      ///
+      /// Plain version (comparable to micro BLAS version)
+      ///
+      if (!std::is_same<AlgoTagType,Algo::Gemm::CompactMKL>::value) {
+        Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType> 
+          a("a", N*VectorLength, BlkSize, BlkSize),
+          b("b", N*VectorLength, BlkSize, BlkSize),
+          c("c", N*VectorLength, BlkSize, BlkSize);
 
-      //   {
-      //     const Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
+        {
+          const Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
           
-      //     double tavg = 0, tmin = tmax;
+          double tavg = 0, tmin = tmax;
 
-      //     for (int iter=iter_begin;iter<iter_end;++iter) {
-      //       // flush
-      //       flush.run();
+          for (int iter=iter_begin;iter<iter_end;++iter) {
+            // flush
+            flush.run();
 
-      //       // initialize matrices
-      //       Kokkos::deep_copy(a, amat);
-      //       Kokkos::deep_copy(b, bmat);
-      //       Kokkos::deep_copy(c, 0);
+            // initialize matrices
+            Kokkos::deep_copy(a, amat);
+            Kokkos::deep_copy(b, bmat);
+            Kokkos::deep_copy(c, 0);
 
-      //       DeviceSpaceType::fence();
-      //       timer.reset();
+            DeviceSpaceType::fence();
+            timer.reset();
 
-      //       Kokkos::parallel_for
-      //         (policy, 
-      //          KOKKOS_LAMBDA(const int k) {
-      //           auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
-      //           auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
-      //           auto cc = Kokkos::subview(c, k, Kokkos::ALL(), Kokkos::ALL());
+            Kokkos::parallel_for
+              (policy, 
+               KOKKOS_LAMBDA(const int k) {
+                auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+                auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
+                auto cc = Kokkos::subview(c, k, Kokkos::ALL(), Kokkos::ALL());
                 
-      //           KokkosKernels::Serial::
-      //             Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
-      //             invoke(1.0, aa, bb, 1.0, cc);
-      //         });
+                KokkosKernels::Serial::
+                  Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
+                  invoke(1.0, aa, bb, 1.0, cc);
+              });
             
-      //       DeviceSpaceType::fence();
-      //       const double t = timer.seconds();
-      //       tmin = std::min(tmin, t);
-      //       tavg += (iter >= 0)*t;
-      //     }
-      //     tavg /= iter_end;
+            DeviceSpaceType::fence();
+            const double t = timer.seconds();
+            tmin = std::min(tmin, t);
+            tavg += (iter >= 0)*t;
+          }
+          tavg /= iter_end;
 
-      //     double diff = 0;
-      //     for (int i=0;i<cref.dimension(0);++i)
-      //       for (int j=0;j<cref.dimension(1);++j)
-      //         for (int k=0;k<cref.dimension(2);++k)
-      //           diff += std::abs(cref(i,j,k) - c(i,j,k));
+          double diff = 0;
+          for (int i=0;i<cref.dimension(0);++i)
+            for (int j=0;j<cref.dimension(1);++j)
+              for (int k=0;k<cref.dimension(2);++k)
+                diff += std::abs(cref(i,j,k) - c(i,j,k));
 
-      //     std::cout << std::setw(12) << "Plain"
-      //               << " BlkSize = " << std::setw(3) << BlkSize
-      //               << " time = " << std::scientific << tmin
-      //               << " avg flop/s = " << (flop/tavg)
-      //               << " max flop/s = " << (flop/tmin)
-      //               << " diff to ref = " << diff
-      //               << std::endl;
-      //   }
-      // }
+          std::cout << std::setw(12) << "Plain"
+                    << " BlkSize = " << std::setw(3) << BlkSize
+                    << " time = " << std::scientific << tmin
+                    << " avg flop/s = " << (flop/tavg)
+                    << " max flop/s = " << (flop/tmin)
+                    << " diff to ref = " << diff
+                    << std::endl;
+        }
+      }
 
       ///
       /// Serial SIMD with appropriate data layout
@@ -482,14 +468,11 @@ namespace KokkosKernels {
 
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
-            if (!hot)
-              flush.run();
+            flush.run();
 
             // initialize matrices
-            if (!hot && iter == iter_begin) {
-              Kokkos::deep_copy(a, amat_simd);
-              Kokkos::deep_copy(b, bmat_simd);
-            }
+            Kokkos::deep_copy(a, amat_simd);
+            Kokkos::deep_copy(b, bmat_simd);
             Kokkos::deep_copy(c, 0);
 
             DeviceSpaceType::fence();
@@ -530,70 +513,73 @@ namespace KokkosKernels {
         }
       }
 
-    //   ///
-    //   /// Team SIMD with appropriate data layout
-    //   ///
-    //   if (!std::is_same<AlgoTagType,Algo::Gemm::CompactMKL>::value) {
-    //     Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType> 
-    //       a("a", N, BlkSize, BlkSize),
-    //       b("b", N, BlkSize, BlkSize),
-    //       c("c", N, BlkSize, BlkSize);
+      ///
+      /// Team SIMD with appropriate data layout
+      ///
+      {
+        Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType> 
+          a("a", N, BlkSize, BlkSize),
+          b("b", N, BlkSize, BlkSize),
+          c("c", N, BlkSize, BlkSize);
 
-    //     {
-    //       double tavg = 0, tmin = tmax;
+        {
+          double tavg = 0, tmin = tmax;
 
-    //       typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType> policy_type;
-    //       typedef typename policy_type::member_type member_type;
-    //       const policy_type policy(N, Kokkos::AUTO, VectorLength);
+          typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType> policy_type;
+          typedef typename policy_type::member_type member_type;
+
+	  // TODO:: league size should be properly computed via chunk per team
+	  // if we assume N = leaguesize then this is same as dynamic scheduling.
+          const policy_type policy(N, Kokkos::AUTO, VectorLength);
           
-    //       for (int iter=iter_begin;iter<iter_end;++iter) {
-    //         // flush
-    //         flush.run();
-
-    //         // initialize matrices
-    //         Kokkos::deep_copy(a, amat_simd);
-    //         Kokkos::deep_copy(b, bmat_simd);
-    //         Kokkos::deep_copy(c, 0);
-
-    //         DeviceSpaceType::fence();
-    //         timer.reset();
-
-    //         Kokkos::parallel_for
-    //           (policy, 
-    //            KOKKOS_LAMBDA(const member_type &member) {
-    //             const int k = member.league_rank();
-
-    //             auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
-    //             auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
-    //             auto cc = Kokkos::subview(c, k, Kokkos::ALL(), Kokkos::ALL());
-                
-    //             KokkosKernels::Team::
-    //               Gemm<member_type,Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
-    //               invoke(member, 1.0, aa, bb, 1.0, cc);
-    //           });
+          for (int iter=iter_begin;iter<iter_end;++iter) {
+            // flush
+            flush.run();
             
-    //         DeviceSpaceType::fence();
-    //         const double t = timer.seconds();
-    //         tmin = std::min(tmin, t);
-    //         tavg += (iter >= 0)*t;
-    //       }
-    //       tavg /= iter_end;
+            // initialize matrices
+            Kokkos::deep_copy(a, amat_simd);
+            Kokkos::deep_copy(b, bmat_simd);
+            Kokkos::deep_copy(c, 0);
+            
+            DeviceSpaceType::fence();
+            timer.reset();
+            
+            Kokkos::parallel_for
+              (policy, 
+               KOKKOS_LAMBDA(const member_type &member) {
+                const int k = member.league_rank();
 
-    //       double diff = 0;
-    //       for (int i=0;i<cref.dimension(0);++i)
-    //         for (int j=0;j<cref.dimension(1);++j)
-    //           for (int k=0;k<cref.dimension(2);++k)
-    //             diff += std::abs(cref(i,j,k) - c(i/VectorLength,j,k)[i%VectorLength]);
+                auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+                auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
+                auto cc = Kokkos::subview(c, k, Kokkos::ALL(), Kokkos::ALL());
+                
+                KokkosKernels::Team::
+                  Gemm<member_type,Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
+                  invoke(member, 1.0, aa, bb, 1.0, cc);
+              });
+            
+            DeviceSpaceType::fence();
+            const double t = timer.seconds();
+            tmin = std::min(tmin, t);
+            tavg += (iter >= 0)*t;
+          }
+          tavg /= iter_end;
 
-    //       std::cout << std::setw(12) << "Team SIMD"
-    //                 << " BlkSize = " << std::setw(3) << BlkSize
-    //                 << " time = " << std::scientific << tmin
-    //                 << " avg flop/s = " << (flop/tavg)
-    //                 << " max flop/s = " << (flop/tmin)
-    //                 << " diff to ref = " << diff
-    //                 << std::endl << std::endl;
-    //     }
-    //   }
+          double diff = 0;
+          for (int i=0;i<cref.dimension(0);++i)
+            for (int j=0;j<cref.dimension(1);++j)
+              for (int k=0;k<cref.dimension(2);++k)
+                diff += std::abs(cref(i,j,k) - c(i/VectorLength,j,k)[i%VectorLength]);
+
+          std::cout << std::setw(12) << "Team SIMD"
+                    << " BlkSize = " << std::setw(3) << BlkSize
+                    << " time = " << std::scientific << tmin
+                    << " avg flop/s = " << (flop/tavg)
+                    << " max flop/s = " << (flop/tmin)
+                    << " diff to ref = " << diff
+                    << std::endl << std::endl;
+        }
+      }
     }
   
   }
@@ -636,7 +622,6 @@ int main(int argc, char *argv[]) {
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
     if (token == std::string("-N")) N[0] = std::atoi(argv[++i]);
-    if (token == std::string("-hot-cache")) hot = true;
   }
 
 #if defined(__AVX512F__)
@@ -654,19 +639,14 @@ int main(int argc, char *argv[]) {
       // std::cout << "\n Testing SIMD-" << VectorLength << " and Algo::Gemm::Unblocked\n";
       // run<VectorTag<SIMD<double>,VectorLength>,Algo::Gemm::Unblocked>(N[i]/VectorLength);
       
-      // std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemm::Unblocked\n";
-      // run<VectorTag<AVX<double>,VectorLength>,Algo::Gemm::Unblocked>(N[i]/VectorLength);
+      std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemm::Unblocked\n";
+      run<VectorTag<AVX<double>,VectorLength>,Algo::Gemm::Unblocked>(N[i]/VectorLength);
       
       // std::cout << "\n Testing SIMD-" << VectorLength << " and Algo::Gemm::Blocked\n";
       // run<VectorTag<SIMD<double>,VectorLength>,Algo::Gemm::Blocked>(N[i]/VectorLength);
       
       std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemm::Blocked\n";
       run<VectorTag<AVX<double>,VectorLength>,Algo::Gemm::Blocked>(N[i]/VectorLength);
-
-// #if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
-//       std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Gemm::CompactMKL\n";
-//       run<VectorTag<AVX<double>,VectorLength>,Algo::Gemm::CompactMKL>(N[i]/VectorLength);
-// #endif
     }
   }
 

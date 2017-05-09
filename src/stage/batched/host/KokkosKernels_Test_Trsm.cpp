@@ -11,7 +11,7 @@
 
 #include "KokkosKernels_Vector.hpp"
 
-#include "KokkosKernels_Trsm_Serial_Decl.hpp"
+#include "KokkosKernels_Trsm_Decl.hpp"
 #include "KokkosKernels_Trsm_Serial_Impl.hpp"
 
 namespace KokkosKernels {
@@ -488,81 +488,81 @@ namespace KokkosKernels {
 
 #endif
 
-      // ///
-      // /// Plain version (comparable to micro BLAS version)
-      // ///
-      // {
-      //   Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
-      //     a("a", N*VectorLength, BlkSize, BlkSize),
-      //     b("b", N*VectorLength, BlkSize, NumCols);
+      ///
+      /// Plain version (comparable to micro BLAS version)
+      ///
+      {
+        Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
+          a("a", N*VectorLength, BlkSize, BlkSize),
+          b("b", N*VectorLength, BlkSize, NumCols);
 
-      //   {
-      //     double tavg = 0, tmin = tmax;
-      //     for (int iter=iter_begin;iter<iter_end;++iter) {
-      //       // flush
-      //       flush.run();
+        {
+          double tavg = 0, tmin = tmax;
+          for (int iter=iter_begin;iter<iter_end;++iter) {
+            // flush
+            flush.run();
 
-      //       // initialize matrices
-      //       Kokkos::deep_copy(a, amat);
-      //       Kokkos::deep_copy(b, bmat);
+            // initialize matrices
+            Kokkos::deep_copy(a, amat);
+            Kokkos::deep_copy(b, bmat);
 
-      //       DeviceSpaceType::fence();
-      //       timer.reset();
+            DeviceSpaceType::fence();
+            timer.reset();
 
-      //       Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
-      //       Kokkos::parallel_for
-      //         (policy,
-      //          KOKKOS_LAMBDA(const int k) {
-      //           auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
-      //           auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
+            Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
+            Kokkos::parallel_for
+              (policy,
+               KOKKOS_LAMBDA(const int k) {
+                auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+                auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
 
-      //           switch (test) {
-      //           case 0: 
-      //             Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-      //               invoke(1.0, aa, bb);
-      //             break;
-      //           case 1:
-      //             Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-      //               invoke(1.0, aa, bb);
-      //             break;
-      //           case 2:
-      //             Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-      //               invoke(1.0, aa, bb);
-      //             break;
-      //           case 3:
-      //             Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-      //               invoke(1.0, aa, bb);
-      //             break;
-      //           case 4:
-      //             Serial::Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-      //               invoke(1.0, aa, bb);
-      //             break;
-      //           }
-      //         });
+                switch (test) {
+                case 0: 
+                  Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
+                    invoke(1.0, aa, bb);
+                  break;
+                case 1:
+                  Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+                    invoke(1.0, aa, bb);
+                  break;
+                case 2:
+                  Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
+                    invoke(1.0, aa, bb);
+                  break;
+                case 3:
+                  Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+                    invoke(1.0, aa, bb);
+                  break;
+                case 4:
+                  Serial::Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+                    invoke(1.0, aa, bb);
+                  break;
+                }
+              });
 
-      //       DeviceSpaceType::fence();
-      //       const double t = timer.seconds();
-      //       tmin = std::min(tmin, t);
-      //       tavg += (iter >= 0)*t;
-      //     }
-      //     tavg /= iter_end;
+            DeviceSpaceType::fence();
+            const double t = timer.seconds();
+            tmin = std::min(tmin, t);
+            tavg += (iter >= 0)*t;
+          }
+          tavg /= iter_end;
 
-      //     double diff = 0;
-      //     for (int i=0;i<bref.dimension(0);++i)
-      //       for (int j=0;j<bref.dimension(1);++j)
-      //         for (int k=0;k<bref.dimension(2);++k)
-      //           diff += std::abs(bref(i,j,k) - b(i,j,k));
+          double diff = 0;
+          for (int i=0;i<bref.dimension(0);++i)
+            for (int j=0;j<bref.dimension(1);++j)
+              for (int k=0;k<bref.dimension(2);++k)
+                diff += std::abs(bref(i,j,k) - b(i,j,k));
 
-      //     std::cout << std::setw(10) << "Plain"
-      //               << " BlkSize = " << std::setw(3) << BlkSize
-      //               << " NumCols = " << std::setw(3) << NumCols
-      //               << " time = " << std::scientific << tmin
-      //               << " avg flop/s = " << (flop/tavg)
-      //               << " max flop/s = " << (flop/tmin)
-      //               << " diff to ref = " << diff
-      //               << std::endl;
-      //   }
-      // }
+          std::cout << std::setw(10) << "Plain"
+                    << " BlkSize = " << std::setw(3) << BlkSize
+                    << " NumCols = " << std::setw(3) << NumCols
+                    << " time = " << std::scientific << tmin
+                    << " avg flop/s = " << (flop/tavg)
+                    << " max flop/s = " << (flop/tmin)
+                    << " diff to ref = " << diff
+                    << std::endl;
+        }
+      }
 
       ///
       /// SIMD with appropriate data layout
@@ -667,42 +667,42 @@ void run(const int N) {
   Test::Trsm<0,10,10, ExecSpace,VectorType,AlgoTagType>(N);
   Test::Trsm<0,15,15, ExecSpace,VectorType,AlgoTagType>(N);
 
-  // /// Left, Lower, NoTrans, NonUnitDiag
+  /// Left, Lower, NoTrans, NonUnitDiag
 
-  // Test::Trsm<1, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<1, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<1,10,10, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<1,15,15, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<1, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<1, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<1,10,10, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<1,15,15, ExecSpace,VectorType,AlgoTagType>(N);
 
-  // /// Right, Upper, NoTrans, UnitDiag
+  /// Right, Upper, NoTrans, UnitDiag
 
-  // Test::Trsm<2, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<2, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<2,10,10, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<2,15,15, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<2, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<2, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<2,10,10, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<2,15,15, ExecSpace,VectorType,AlgoTagType>(N);
 
-  // /// Right, Upper, NoTrans, NonUnitDiag (used in LU factorization)
+  /// Right, Upper, NoTrans, NonUnitDiag (used in LU factorization)
 
-  // Test::Trsm<3, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<3, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<3,10,10, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<3,15,15, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<3, 3, 3, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<3, 5, 5, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<3,10,10, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<3,15,15, ExecSpace,VectorType,AlgoTagType>(N);
 
-  // std::cout << "\n\n Used for Solve \n\n";
+  std::cout << "\n\n Used for Solve \n\n";
 
-  // /// Left, Lower, NoTrans, UnitDiag (used in LU solve)
+  /// Left, Lower, NoTrans, UnitDiag (used in LU solve)
 
-  // Test::Trsm<0, 5, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<0, 9, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<0,15, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<0,20, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<0, 3, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<0, 5, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<0,10, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<0,15, 1, ExecSpace,VectorType,AlgoTagType>(N);
 
-  // /// Left, Upper, Notrans, NonUnitDiag (user in LU solve)
+  /// Left, Upper, Notrans, NonUnitDiag (user in LU solve)
 
-  // Test::Trsm<4, 5, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<4, 9, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<4,15, 1, ExecSpace,VectorType,AlgoTagType>(N);
-  // Test::Trsm<4,20, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<4, 3, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<4, 5, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<4,10, 1, ExecSpace,VectorType,AlgoTagType>(N);
+  Test::Trsm<4,15, 1, ExecSpace,VectorType,AlgoTagType>(N);
 }
 
 int main(int argc, char *argv[]) {
@@ -730,8 +730,8 @@ int main(int argc, char *argv[]) {
     // std::cout << "\n Testing SIMD-" << VectorLength << " and Algo::Trsm::Unblocked\n";
     // run<VectorTag<SIMD<double>,VectorLength>,Algo::Trsm::Unblocked>(N/VectorLength);
 
-    // std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Trsm::Unblocked\n";
-    // run<VectorTag<AVX<double>,VectorLength>,Algo::Trsm::Unblocked>(N/VectorLength);
+    std::cout << "\n Testing AVX-" << VectorLength << " and Algo::Trsm::Unblocked\n";
+    run<VectorTag<AVX<double>,VectorLength>,Algo::Trsm::Unblocked>(N/VectorLength);
 
     // std::cout << "\n Testing SIMD-" << VectorLength << " and Algo::Trsm::Blocked\n";
     // run<VectorTag<SIMD<double>,VectorLength>,Algo::Trsm::Blocked>(N/VectorLength);
