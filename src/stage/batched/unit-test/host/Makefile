@@ -1,5 +1,5 @@
 HOST=$(shell hostname)
-include ../Makefile.inc
+include ../../Makefile.inc
 
 info:
 	@echo "make test EXEC=exec or make all"
@@ -22,7 +22,7 @@ EXECS = \
 
 include $(KOKKOS)/Makefile.kokkos
 
-%.o : %.cpp ../*.hpp *.hpp
+%.o : %.cpp ../../src/*.hpp *.hpp
 	@echo "Compiling $<"
 	$(CXX) $(MKL_CFLAG) $(CXXFLAGS) $(INCLUDES) $(KOKKOS_CXXFLAGS) $(KOKKOS_CPPFLAGS) -o $@ -c $< 
 #	$(CXX) $(MKL_CFLAG) $(CXXFLAGS) $(INCLUDES) OB$(KOKKOS_CXXFLAGS) $(KOKKOS_CPPFLAGS) -o $@.S -S -c $< 

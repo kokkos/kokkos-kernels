@@ -1,6 +1,6 @@
 #### common
 
-INCLUDES= -I../
+INCLUDES= -I../../src
 
 #### hasen : cuda k80
 

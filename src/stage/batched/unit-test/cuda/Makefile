@@ -1,5 +1,5 @@
 HOST=$(shell hostname)
-include ../Makefile.inc
+include ../../Makefile.inc
 
 info:
 	@echo "make test EXEC=exec or make all"
@@ -16,7 +16,7 @@ EXECS = KokkosKernels_Test_ExecPolicy \
 
 include $(KOKKOS)/Makefile.kokkos
 
-%.o : %.cpp *.hpp
+%.o : %.cpp ../../src/*.hpp *.hpp
 	@echo "Compiling $<"
 	$(NVCC_WRAPPER) $(CXXFLAGS) $(INCLUDES) $(KOKKOS_CXXFLAGS) $(KOKKOS_CPPFLAGS) -o $@ -c $< 
 
