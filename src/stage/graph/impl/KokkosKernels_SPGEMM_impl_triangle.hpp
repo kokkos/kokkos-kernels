@@ -1728,7 +1728,13 @@ void KokkosSPGEMM
     //if speed is set, and exec space is cpu, then  we use dense accumulators.
     //or if memspeed is set, and concurrency is not high, we use dense accumulators.
     max_row_size = dense_col_size;
-    pool_init_val = 0;
+    if (spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LL || spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_LU){
+      pool_init_val = -1;
+    }
+    else {
+      pool_init_val = 0;
+    }
+
   }
 
   nnz_lno_t num_chunks = concurrency / suggested_vector_size;
@@ -2064,8 +2070,8 @@ void KokkosSPGEMM
   nnz_lno_t maxNumRoughZeros = 0;
   nnz_lno_persistent_work_view_t min_result_row_for_each_row;
 
-
   /*
+
   {
     std::cout << "DELETE HERE:" << std::endl;
 
@@ -2078,6 +2084,7 @@ void KokkosSPGEMM
     for (int i = 0; i < b_row_cnt; ++i){
       std::cout << i << " " << p_rowmapB_ends[i] - p_rowmapB_begins[i] << std::endl;
     }
+
 
     size_t compressed_flops = 0;
     size_t original_flops = 0;
@@ -2107,7 +2114,7 @@ void KokkosSPGEMM
         << " MEM_REDUCTION:" << double(compressd_max_flops) / original_max_flops * 2
         << std::endl << std::endl << std::endl;
   }
-  */
+*/
 
 
   timer1.reset();

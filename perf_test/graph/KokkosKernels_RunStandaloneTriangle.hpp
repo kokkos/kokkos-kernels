@@ -167,11 +167,11 @@ void run_experiment(
   const lno_t m = crsGraph.numRows();;
 
 
-  int rowmap_size = crsGraph.entries.dimension_0() + 1;
+  int rowmap_size = crsGraph.entries.dimension_0() ;
   switch (algorithm){
   case 16:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_AI);
-    rowmap_size = m + 1;
+    rowmap_size = m ;
     break;
   case 17:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
@@ -181,11 +181,11 @@ void run_experiment(
     break;
   case 19:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL);
-      rowmap_size = m + 1;
+      rowmap_size = m ;
       break;
   case 20:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU);
-    rowmap_size = m + 1;
+    rowmap_size = m ;
     break;
   default:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
