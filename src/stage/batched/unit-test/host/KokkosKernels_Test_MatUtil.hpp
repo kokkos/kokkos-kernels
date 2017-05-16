@@ -18,11 +18,12 @@ namespace KokkosKernels {
         enum : int  { TEST_SET = 0,
                       TEST_SCALE = 1,
                       TEST_MAX = 2 };
+
+        struct KokkosKernelVersion {};
+        struct NaiveVersion {};
         
-        template<typename ScalarType, typename ViewType, int TestID>
+        template<typename ScalarType, typename ViewType, typename AlgoTagType, int TestID>
         struct Functor {
-          struct KokkosKernelVersion {};
-          struct NaiveVersion {};
           
           ScalarType _alpha;
           ViewType _a;
@@ -69,20 +70,15 @@ namespace KokkosKernels {
             }
             }
           }
-            
+
           inline
-          int run(const bool is_kokkoskernels_version) {
-            if (is_kokkoskernels_version) {
-              Kokkos::RangePolicy<DeviceSpaceType,KokkosKernelVersion> policy(0, _a.dimension_0());
-              Kokkos::parallel_for(policy, *this);
-            } else {
-              Kokkos::RangePolicy<DeviceSpaceType,NaiveVersion> policy(0, _a.dimension_0());
-              Kokkos::parallel_for(policy, *this);
-            }
+          int run() {
+            Kokkos::RangePolicy<DeviceSpaceType,AlgoTagType> policy(0, _a.dimension_0());
+            Kokkos::parallel_for(policy, *this);
           }      
         };
 
-        template<typename DeviceSpaceType, typename ValueType, int TestID>
+        template<typename ValueType, int TestID>
         void SetScale() {
           enum : int {
             N = 32768,
@@ -125,11 +121,11 @@ namespace KokkosKernels {
             
             {
               t = 0;
-              Functor<scalar_type,decltype(a),TestID> test(alpha, a);
+              Functor<scalar_type,decltype(a),NaiveVersion,TestID> test(alpha, a);
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 DeviceSpaceType::fence();
                 timer.reset();
-                test.run(false);
+                test.run();
                 DeviceSpaceType::fence();
                 t += (iter >= 0)*timer.seconds();
               }
@@ -139,11 +135,11 @@ namespace KokkosKernels {
 
             {
               t = 0;
-              Functor<scalar_type,decltype(b),TestID> test(alpha, b);
+              Functor<scalar_type,decltype(b),KokkosKernelVersion,TestID> test(alpha, b);
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 DeviceSpaceType::fence();
                 timer.reset();
-                test.run(true);
+                test.run();
                 DeviceSpaceType::fence();
                 t += (iter >= 0)*timer.seconds();
               }
@@ -177,7 +173,7 @@ using namespace KokkosKernels::Batched::Experimental;
 ///
 
 TEST( MatUtil, double ) {
-  MatUtilTest::SetScale<DeviceSpaceType,double,MatUtilTest::TEST_SET>();
-  MatUtilTest::SetScale<DeviceSpaceType,double,MatUtilTest::TEST_SCALE>();
+  MatUtilTest::SetScale<double,MatUtilTest::TEST_SET>();
+  MatUtilTest::SetScale<double,MatUtilTest::TEST_SCALE>();
 }
 

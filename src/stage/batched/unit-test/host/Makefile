@@ -9,7 +9,7 @@ info:
 
 EXEC  = KokkosKernels_Test_Serial
 EXECS = \
-	KokkosKernels_Test_Vector_Arithmatic \
+	KokkosKernels_Test_Serial \
 	KokkosKernels_Test_Gemm \
 	KokkosKernels_Test_Gemm_Complex \
 	KokkosKernels_Test_Trsm \

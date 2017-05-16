@@ -34,7 +34,8 @@ namespace KokkosKernels {
               _data[i] = 0; 
             });
         }
-        KOKKOS_INLINE_FUNCTION Vector(const value_type val) { 
+        template<typename ArgValueType>
+        KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) { 
           Kokkos::parallel_for
             (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length), 
              [&](const int &i) {

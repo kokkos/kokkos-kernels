@@ -59,7 +59,7 @@ namespace KokkosKernels {
       
         };
 
-        template<typename DeviceSpaceType, typename VectorTagType, int TestID>
+        template<typename VectorTagType, int TestID>
         void VectorArithmatic() {
           enum : int {
             N = 32768,
@@ -175,42 +175,42 @@ using namespace KokkosKernels::Batched::Experimental;
 ///
 
 TEST( VectorArithmatic, double_SIMD4 ) {
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 4>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 
 TEST( VectorArithmatic, dcomplex_SIMD2 ) {
   typedef std::complex<double> dcomplex;
 
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 
 #if defined(__AVX__) || defined(__AVX2__)
 TEST( VectorArithmatic, double_AVX256 ) {
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 4>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 
 TEST( VectorArithmatic, dcomplex_AVX256 ) {
   typedef Kokkos::complex<double> dcomplex;
 
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_SUBTRACT>();
   
   // mult uses fmaddsub and I am not sure how I can detect this instruction
-  //ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_MULT>();
-  //ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_UNARY_MINUS>();
+  //ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_MULT>();
+  //ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 #endif
 
@@ -219,30 +219,30 @@ TEST( VectorArithmatic, dcomplex_AVX256 ) {
 ///
 
 TEST( VectorArithmatic, double_SIMD8 ) {
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>, 8>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 
 TEST( VectorArithmatic, dcomplex_SIMD4 ) {
   typedef std::complex<double> dcomplex;
 
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 
 #if defined(__AVX512F__)
 TEST( VectorArithmatic, AVX8 ) {
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 #endif
 
@@ -251,19 +251,19 @@ TEST( VectorArithmatic, AVX8 ) {
 ///
 
 TEST( VectorArithmatic, double_SIMD64 ) {
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<double>,64>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 
 TEST( VectorArithmatic, dcomplex_SIMD32 ) {
   typedef std::complex<double> dcomplex;
 
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_ADD>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_SUBTRACT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_DIV>();
-  ArithmaticTest::VectorArithmatic<DeviceSpaceType,VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_UNARY_MINUS>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_ADD>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_SUBTRACT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_MULT>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_DIV>();
+  ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 32>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
