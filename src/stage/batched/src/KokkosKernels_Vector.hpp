@@ -6,8 +6,12 @@
 #include "KokkosKernels_Util.hpp"
 
 namespace KokkosKernels {
-  template<typename T>
-  class Vector;
+  namespace Batched {
+    namespace Experimental {
+      template<typename T>
+      class Vector;
+    }
+  }
 }
 
 #include "KokkosKernels_Vector_SIMD.hpp"
