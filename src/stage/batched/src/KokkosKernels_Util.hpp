@@ -74,9 +74,31 @@ namespace KokkosKernels {
 
       };
 
-      struct Random {
+      template<typename ValueType>
+      struct Random;
+      
+      template<>
+      struct Random<double> {
         Random(const unsigned int seed = 0) { srand(seed); }
         double value() { return rand()/((double) RAND_MAX + 1.0); }
+      };
+
+      template<>
+      struct Random<std::complex<double> > {
+        Random(const unsigned int seed = 0) { srand(seed); }
+        std::complex<double> value() { 
+          return std::complex<double>(rand()/((double) RAND_MAX + 1.0),
+                                      rand()/((double) RAND_MAX + 1.0)); 
+        }
+      };
+
+      template<>
+      struct Random<Kokkos::complex<double> > {
+        Random(const unsigned int seed = 0) { srand(seed); }
+        Kokkos::complex<double> value() { 
+          return Kokkos::complex<double>(rand()/((double) RAND_MAX + 1.0),
+                                         rand()/((double) RAND_MAX + 1.0)); 
+        }
       };
 
       struct Timer {
@@ -241,74 +263,6 @@ namespace KokkosKernels {
       };
 
       struct Util {
-
-        template<typename ViewType, typename ScalarType>
-        KOKKOS_INLINE_FUNCTION
-        static void 
-        set(const ViewType A, const ScalarType alpha) {
-          set(A.dimension_0(), A.dimension_1(),
-              A.data(), A.stride_0(), A.stride_1(),
-              alpha);
-        }
-    
-        template<typename ValueType, typename ScalarType>
-        KOKKOS_INLINE_FUNCTION
-        static void 
-        set(const int m, const int n, 
-            ValueType *__restrict__ A, const int as0, const int as1,
-            const ScalarType alpha) {
-          typedef ValueType value_type;
-
-          const int mn = m*n;
-
-          if ( (m == as0 && as1 == 1) ||
-               (n == as1 && as0 == 1) )
-            for (int k=0;k<mn;++k)
-              A[k] = alpha;
-          else
-            if (as0 > as1) 
-              for (int i=0;i<m;++i) 
-                for (int j=0;j<n;++j)
-                  A[i*as0+j*as1] = alpha;
-            else 
-              for (int j=0;j<n;++j) 
-                for (int i=0;i<m;++i)
-                  A[i*as0+j*as1] = alpha;
-        }
-
-        template<typename ViewType, typename ScalarType>
-        KOKKOS_INLINE_FUNCTION
-        static void 
-        scale(const ViewType A, const ScalarType alpha) {
-          scale(A.dimension_0(), A.dimension_1(),
-                A.data(), A.stride_0(), A.stride_1(),
-                alpha);
-        }
-    
-        template<typename ValueType, typename ScalarType>
-        KOKKOS_INLINE_FUNCTION
-        static void 
-        scale(const int m, const int n, 
-              ValueType *__restrict__ A, const int as0, const int as1,
-              const ScalarType alpha) {
-          typedef ValueType value_type;
-
-          const int mn = m*n;      
-
-          if ( (m == as0 && as1 == 1) ||
-               (n == as1 && as0 == 1) )
-            for (int k=0;k<mn;++k)
-              A[k] *= alpha;
-          else
-            if (as0 > as1) 
-              for (int i=0;i<m;++i) 
-                for (int j=0;j<n;++j)
-                  A[i*as0+j*as1] *= alpha;
-            else 
-              for (int j=0;j<n;++j) 
-                for (int i=0;i<m;++i)
-                  A[i*as0+j*as1] *= alpha;
-        }
 
         template<typename ValueType>
         KOKKOS_INLINE_FUNCTION

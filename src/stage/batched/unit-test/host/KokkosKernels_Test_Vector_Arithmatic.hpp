@@ -31,11 +31,11 @@ namespace KokkosKernels {
           inline
           const char* label() const {
             switch (TestID) {
-            case 0: return "add"; break;
-            case 1: return "subtract";  break;
-            case 2: return "multiply";  break;
-            case 3: return "divide";  break;
-            case 4: return "unary minus"; break;
+            case TEST_ADD: return "add"; break;
+            case TEST_SUBTRACT: return "subtract";  break;
+            case TEST_MULT: return "multiply";  break;
+            case TEST_DIV: return "divide";  break;
+            case TEST_UNARY_MINUS: return "unary minus"; break;
             }
             return "nothing";
           }
@@ -43,11 +43,11 @@ namespace KokkosKernels {
           KOKKOS_INLINE_FUNCTION
           void operator()(const int i) const {
             switch (TestID) {
-            case 0: _c(i) = _a(i) + _b(i); break;
-            case 1: _c(i) = _a(i) - _b(i); break;
-            case 2: _c(i) = _a(i) * _b(i); break;
-            case 3: _c(i) = _a(i) / _b(i); break;
-            case 4: _c(i) = -_c(i); break;
+            case TEST_ADD: _c(i) = _a(i) + _b(i); break;
+            case TEST_SUBTRACT: _c(i) = _a(i) - _b(i); break;
+            case TEST_MULT: _c(i) = _a(i) * _b(i); break;
+            case TEST_DIV: _c(i) = _a(i) / _b(i); break;
+            case TEST_UNARY_MINUS: _c(i) = -_c(i); break;
             }
           }
 
@@ -61,7 +61,9 @@ namespace KokkosKernels {
 
         template<typename DeviceSpaceType, typename VectorTagType, int TestID>
         void VectorArithmatic() {
-          constexpr int N = 32768;
+          enum : int {
+            N = 32768,
+          };
             
           const int iter_begin = -10, iter_end = 100;
           Kokkos::Impl::Timer timer;
@@ -85,7 +87,7 @@ namespace KokkosKernels {
             bvec_host("bvec_host", N/vector_length), 
             cvec_host("cvec_host", N/vector_length);
       
-          Random random;
+          Random<scalar_type> random;
           for (int k=0;k<N;++k) {
             a_host(k) = random.value();
             b_host(k) = random.value();
