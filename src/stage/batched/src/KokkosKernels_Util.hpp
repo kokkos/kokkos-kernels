@@ -3,15 +3,23 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+
 #include <iomanip>
 #include <random>
 #include <string>
+
+#include <limits>
+#include <cmath>
 #include <ctime>
 
 #include <complex>
 #include "Kokkos_Complex.hpp"
 
 namespace KokkosKernels {
+
+#define Int2StringHelper(A) #A
+#define Int2String(A) Int2StringHelper(A)
+#define StringCat(A,B) A B
 
   template<typename T>
   KOKKOS_INLINE_FUNCTION      
@@ -188,6 +196,7 @@ namespace KokkosKernels {
 	enum : int { mb = 4,
 		     nb = 4 };
       };
+      struct MKL {};
       struct CompactMKL {};
     };
 
@@ -196,6 +205,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct MKL {};
       struct CompactMKL {};
     };
 
@@ -204,6 +214,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct MKL {};
       struct CompactMKL {};
     };
 
@@ -212,6 +223,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct MKL {};
       struct CompactMKL {};
     };
 
@@ -220,6 +232,7 @@ namespace KokkosKernels {
       struct Blocked {
 	enum : int { mb = 4 };
       };
+      struct MKL {};
       struct CompactMKL {};
     };
 

@@ -27,6 +27,9 @@ namespace KokkosKernels {
       double d[4];
     };
 
+    KOKKOS_INLINE_FUNCTION
+    static const char* label() { return "AVX256"; }
+
   private:
     mutable data_type _data;
     
@@ -259,6 +262,9 @@ namespace KokkosKernels {
       data_type() { v = _mm256_setzero_pd(); }
       data_type(const data_type &b) { v = b.v; }
     };
+
+    KOKKOS_INLINE_FUNCTION
+    static const char* label() { return "AVX256"; }
 
   private:
     mutable data_type _data;

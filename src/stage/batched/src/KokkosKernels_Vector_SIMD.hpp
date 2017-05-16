@@ -18,6 +18,9 @@ namespace KokkosKernels {
 
     typedef value_type data_type[vector_length];
     
+    KOKKOS_INLINE_FUNCTION
+    static const char* label() { return "SIMD"; }
+
   private:
     mutable data_type _data;
     
