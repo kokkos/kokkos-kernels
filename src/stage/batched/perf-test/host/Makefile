@@ -7,20 +7,19 @@ info:
 	@echo " - kokkos is located at $(KOKKOS)"
 	@echo " - exec is one of $(EXECS)"
 
-EXEC  = KokkosKernels_Test_BlockCrs
+EXEC  = KokkosKernels_Test_Gemm
 EXECS = \
 	KokkosKernels_Test_Gemm \
-	KokkosKernels_Test_Gemm_Complex \
 	KokkosKernels_Test_Trsm \
-	KokkosKernels_Test_LU \
-	KokkosKernels_Test_Gemv \
-	KokkosKernels_Test_BlockCrs
+	KokkosKernels_Test_LU 
 
-# KokkosKernels_Test_Trsv
+# KokkosKernels_Test_Gemm_Complex
+# KokkosKernels_Test_Gemv
+# KokkosKernels_Test_BlockCrs
 
 include $(KOKKOS)/Makefile.kokkos
 
-%.o : %.cpp ../../src/*.hpp *.hpp
+%.o : %.cpp
 	@echo "Compiling $<"
 	$(CXX) $(MKL_CFLAG) $(CXXFLAGS) $(INCLUDES) $(KOKKOS_CXXFLAGS) $(KOKKOS_CPPFLAGS) -o $@ -c $< 
 #	$(CXX) $(MKL_CFLAG) $(CXXFLAGS) $(INCLUDES) OB$(KOKKOS_CXXFLAGS) $(KOKKOS_CPPFLAGS) -o $@.S -S -c $< 
