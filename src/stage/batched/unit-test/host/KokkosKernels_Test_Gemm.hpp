@@ -16,13 +16,16 @@ namespace KokkosKernels {
     namespace Experimental {
       namespace GemmTest {
 
-#undef FLOP_MUL
-#undef FLOP_ADD
-#define FLOP_MUL 1.0
-#define FLOP_ADD 1.0
-
+        template<typename ValueType> 
         double FlopCount(int mm, int nn, int kk) {
           double m = (double)mm;    double n = (double)nn;    double k = (double)kk;
+          double FLOP_MUL = 1.0;
+          double FLOP_ADD = 1.0;
+          if (std::is_same<ValueType,std::complex<double> >::value ||
+              std::is_same<ValueType,Kokkos::complex<double> >::value) {
+            FLOP_MUL = 6.0;
+            FLOP_ADD = 2.0;
+          }
           return (FLOP_MUL*(m*n*k) +
                   FLOP_ADD*(m*n*k));
         }
@@ -67,7 +70,7 @@ namespace KokkosKernels {
           typedef typename VectorTagType::value_type value_type;
           constexpr int VectorLength = VectorTagType::length;
           
-          const double flop = N*VectorLength*FlopCount(BlkSize,BlkSize,BlkSize);
+          const double flop = N*VectorLength*FlopCount<value_type>(BlkSize,BlkSize,BlkSize);
           const double tmax = 1.0e15;
 
           const int iter_begin = -3, iter_end = 10;
@@ -315,65 +318,65 @@ TEST( GemmBlocked_T_T, double_AVX256 ) {
 ///
 /// dcomplex AVX 256
 ///
+#if defined(__FMA__)
+TEST( GemmBlocked_NT_NT, dcomplex_AVX256 ) {
+  enum : int { N = 1024 }; // 1024*2 = 2048
+  typedef Kokkos::complex<double> dcomplex;
 
-// TEST( GemmBlocked_NT_NT, dcomplex_AVX256 ) {
+  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+}
+
+TEST( GemmBlocked_T_NT, dcomplex_AVX256 ) {
+  enum : int { N = 1024 }; // 1024*2 = 2048
+  typedef Kokkos::complex<double> dcomplex;
+
+  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+}
+
+TEST( GemmBlocked_NT_T, dcomplex_AVX256 ) {
+  enum : int { N = 1024 }; // 1024*2 = 2048
+  typedef Kokkos::complex<double> dcomplex;
+
+  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+}
+
+// TEST( GemmBlocked_CT_NT, dcomplex_AVX256 ) {
 //   enum : int { N = 1024 }; // 1024*2 = 2048
-//   typedef Kokkos::complex<double> dcomplex;
-
-//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+//  typedef Kokkos::complex<double> dcomplex;
+//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
 // }
 
-// TEST( GemmBlocked_T_NT, dcomplex_AVX256 ) {
+// TEST( GemmBlocked_NT_CT, dcomplex_AVX256 ) {
 //   enum : int { N = 1024 }; // 1024*2 = 2048
-//   typedef Kokkos::complex<double> dcomplex;
-
-//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+//  typedef Kokkos::complex<double> dcomplex;
+//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
+//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
+//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
 // }
 
-// TEST( GemmBlocked_NT_T, dcomplex_AVX256 ) {
-//   enum : int { N = 1024 }; // 1024*2 = 2048
-//   typedef Kokkos::complex<double> dcomplex;
+TEST( GemmBlocked_T_T, dcomplex_AVX256 ) {
+  enum : int { N = 1024 }; // 1024*2 = 2048
+  typedef Kokkos::complex<double> dcomplex;
 
-//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-// }
-
-// // TEST( GemmBlocked_CT_NT, dcomplex_AVX256 ) {
-// //   enum : int { N = 1024 }; // 1024*2 = 2048
-// //  typedef Kokkos::complex<double> dcomplex;
-// //   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-// //   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-// //   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-// // }
-
-// // TEST( GemmBlocked_NT_CT, dcomplex_AVX256 ) {
-// //   enum : int { N = 1024 }; // 1024*2 = 2048
-// //  typedef Kokkos::complex<double> dcomplex;
-// //   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// //   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// //   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// // }
+  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+}
 
 // TEST( GemmBlocked_T_T, dcomplex_AVX256 ) {
 //   enum : int { N = 1024 }; // 1024*2 = 2048
-//   typedef Kokkos::complex<double> dcomplex;
-
-//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+//  typedef Kokkos::complex<double> dcomplex;
+//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
+//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
+//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
 // }
-
-// // TEST( GemmBlocked_T_T, dcomplex_AVX256 ) {
-// //   enum : int { N = 1024 }; // 1024*2 = 2048
-// //  typedef Kokkos::complex<double> dcomplex;
-// //   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// //   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// //   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// // }
-
+#endif
 #endif
