@@ -15,7 +15,7 @@
 
 #include "KokkosKernels_Gemm_Decl.hpp"
 #include "KokkosKernels_Gemm_Serial_Impl.hpp"
-//#include "KokkosKernels_Gemm_Team_Impl.hpp"
+#include "KokkosKernels_Gemm_Team_Impl.hpp"
 
 namespace KokkosKernels {
   namespace Batched {
@@ -42,7 +42,7 @@ namespace KokkosKernels {
 
           typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 
-          const int iter_begin = -10, iter_end = 100;
+          const int iter_begin = -3, iter_end = 10;
           Kokkos::Impl::Timer timer;
 
           Kokkos::View<ValueType***,Kokkos::LayoutLeft,HostSpaceType>
@@ -220,8 +220,14 @@ namespace KokkosKernels {
 
             double tavg = 0, tmin = tmax;
             {
-              const Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
+              typedef typename DeviceSpaceType::scratch_memory_space scratch_space;
+              typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,scratch_space> scratch_view_type;
 
+              typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType> policy_type;
+              typedef typename policy_type::member_type member_type;
+
+              const int team_size = 32;
+              const policy_type policy(N/team_size, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 // flush
                 flush.run();
@@ -236,16 +242,22 @@ namespace KokkosKernels {
 
                 Kokkos::parallel_for
                   (policy,
-                   KOKKOS_LAMBDA(const int k) {
-                    auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
-                    auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
-                    auto cc = Kokkos::subview(c, k, Kokkos::ALL(), Kokkos::ALL());
+                   KOKKOS_LAMBDA(const member_type &member) {
+                    const int kbeg = (member.league_rank()*(member.team_size()*VectorLength) +
+                                      member.team_rank()*VectorLength);
+                    Kokkos::parallel_for
+                      (Kokkos::ThreadVectorRange(member, VectorLength),
+                       [&](const int &k) {
+                        auto aa = Kokkos::subview(a, kbeg+k, Kokkos::ALL(), Kokkos::ALL());
+                        auto bb = Kokkos::subview(b, kbeg+k, Kokkos::ALL(), Kokkos::ALL());
+                        auto cc = Kokkos::subview(c, kbeg+k, Kokkos::ALL(), Kokkos::ALL());
                     
-                    Serial::
-                      Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
-                      invoke(1.0, aa, bb, 1.0, cc);
+                        Serial::
+                          Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
+                          invoke(1.0, aa, bb, 1.0, cc);
+                      });
                   });
-
+                
                 DeviceSpaceType::fence();
                 const double t = timer.seconds();
                 tmin = std::min(tmin, t);
@@ -263,7 +275,7 @@ namespace KokkosKernels {
                     diff += std::abs(cref(i,j,k) - csol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
-                        << std::setw(8) << "Range"
+                        << std::setw(8) << "Team"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
@@ -294,17 +306,17 @@ void run(const int N) {
   else
     ExecSpace::print_configuration(std::cout, false);
 
-  // PerfTest::Gemm< 4, ExecSpace,VectorType,AlgoTagType>(N);
-  // PerfTest::Gemm< 8, ExecSpace,VectorType,AlgoTagType>(N);
-  // PerfTest::Gemm<16, ExecSpace,VectorType,AlgoTagType>(N);
-  // PerfTest::Gemm<20, ExecSpace,VectorType,AlgoTagType>(N);
-  // PerfTest::Gemm<32, ExecSpace,VectorType,AlgoTagType>(N);
-  // PerfTest::Gemm<64, ExecSpace,VectorType,AlgoTagType>(N);
+  PerfTest::Gemm< 4, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  PerfTest::Gemm< 8, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  PerfTest::Gemm<16, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  PerfTest::Gemm<20, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  PerfTest::Gemm<32, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  //PerfTest::Gemm<64, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
 
-  PerfTest::Gemm< 3, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm< 5, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm<10, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm<15, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  // PerfTest::Gemm< 3, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  // PerfTest::Gemm< 5, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  // PerfTest::Gemm<10, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  // PerfTest::Gemm<15, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
 }
 
 int main(int argc, char *argv[]) {
@@ -320,7 +332,7 @@ int main(int argc, char *argv[]) {
     if (token == std::string("-N")) N[0] = std::atoi(argv[++i]);
   }
 
-  constexpr int VectorLength = 4;
+  constexpr int VectorLength = 8;
 
   {
     for (int i=0;i<ntest;++i) {
@@ -329,8 +341,8 @@ int main(int argc, char *argv[]) {
       std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
       run<VectorLength,double,Algo::Gemm::Unblocked>(N[i]/VectorLength);
 
-      // std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
-      // run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength);
+      std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
+      run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength);
     }
   }
 
