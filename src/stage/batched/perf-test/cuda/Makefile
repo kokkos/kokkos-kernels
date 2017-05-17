@@ -7,16 +7,16 @@ info:
 	@echo " - kokkos is located at $(KOKKOS)"
 	@echo " - exec is one of $(EXECS)"
 
-EXEC  = KokkosKernels_Test_BlockCrs
-EXECS = KokkosKernels_Test_ExecPolicy \
-	KokkosKernels_Test_Gemm \
+EXEC  = KokkosKernels_Test_Gemm
+EXECS = KokkosKernels_Test_Gemm \
 	KokkosKernels_Test_Trsm \
-	KokkosKernels_Test_LU \
-	KokkosKernels_Test_BlockCrs
+	KokkosKernels_Test_LU 
+
+#	KokkosKernels_Test_BlockCrs
 
 include $(KOKKOS)/Makefile.kokkos
 
-%.o : %.cpp ../../src/*.hpp *.hpp
+%.o : %.cpp 
 	@echo "Compiling $<"
 	$(NVCC_WRAPPER) $(CXXFLAGS) $(INCLUDES) $(KOKKOS_CXXFLAGS) $(KOKKOS_CPPFLAGS) -o $@ -c $< 
 

@@ -44,8 +44,8 @@ namespace KokkosKernels {
           const double flop = (N*VectorLength)*FlopCount(BlkSize,BlkSize,BlkSize);
           const double tmax = 1.0e15;
 
-          typedef typename
-            Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+          typedef Kokkos::DefaultHostExecutionSpace HostSpaceType ;
+
           const int iter_begin = -10, iter_end = 100;
           Kokkos::Impl::Timer timer;
 
@@ -390,7 +390,7 @@ namespace KokkosKernels {
           }
 #endif
           ///
-          /// Plain version (comparable to micro BLAS version)
+          /// KK Scalar version (comparable to micro BLAS version)
           ///
           if (!std::is_same<AlgoTagType,Algo::Gemm::CompactMKL>::value) {
             Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType> 

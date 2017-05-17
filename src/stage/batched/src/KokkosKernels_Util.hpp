@@ -134,7 +134,7 @@ namespace KokkosKernels {
   
       // Implicit vectorization
       template<typename T, 
-               typename SpT = Kokkos::DefaultExecutionSpace>
+               typename SpT = Kokkos::DefaultHostExecutionSpace>
       struct SIMD { 
         static_assert( std::is_same<T,double>::value                   ||
                        std::is_same<T,float>::value                    ||
@@ -168,26 +168,26 @@ namespace KokkosKernels {
         using exec_space = SpT;
       };
 
-      // Cuda threading (explicit thread vectorization)
-      template<typename T, 
-               typename SpT = Kokkos::DefaultExecutionSpace>
-      struct SIMT { 
-        static_assert( std::is_same<T,double>::value ||
-                       std::is_same<T,float>::value,
-                       "KokkosKernels:: Invalid SIMT<> type." );
+//       // Cuda threading (explicit thread vectorization)
+//       template<typename T, 
+//                typename SpT = Kokkos::DefaultExecutionSpace>
+//       struct SIMT { 
+//         static_assert( std::is_same<T,double>::value ||
+//                        std::is_same<T,float>::value,
+//                        "KokkosKernels:: Invalid SIMT<> type." );
 
-        static_assert( !std::is_same<SpT,Kokkos::Serial>::value &&
-                       !std::is_same<SpT,Kokkos::OpenMP>::value,
-                       "KokkosKernels:: Invalid AVX<> exec space." );
+//         static_assert( !std::is_same<SpT,Kokkos::Serial>::value &&
+//                        !std::is_same<SpT,Kokkos::OpenMP>::value,
+//                        "KokkosKernels:: Invalid AVX<> exec space." );
 
-#if defined(KOKKOS_HAVE_CUDA)
-        static_assert( std::is_same<SpT,Kokkos::Cuda>::value,
-                       "KokkosKernels:: Invalid SIMT<> exec space." );
-#endif
+// #if defined(KOKKOS_HAVE_CUDA)
+//         static_assert( std::is_same<SpT,Kokkos::Cuda>::value,
+//                        "KokkosKernels:: Invalid SIMT<> exec space." );
+// #endif
 
-        using value_type = T; 
-        using exec_space = SpT;
-      };
+//         using value_type = T; 
+//         using exec_space = SpT;
+//       };
   
       template<class T, int l>
       struct VectorTag {
@@ -196,8 +196,8 @@ namespace KokkosKernels {
         using member_type = typename Kokkos::Impl::TeamPolicyInternal<exec_space>::member_type;
     
         static_assert( std::is_same<T,SIMD<value_type,exec_space> >::value || // host compiler vectorization
-                       std::is_same<T,AVX<value_type, exec_space> >::value || // host AVX vectorization
-                       std::is_same<T,SIMT<value_type,exec_space> >::value,   // cuda thread vectorization
+                       std::is_same<T,AVX<value_type, exec_space> >::value, // || // host AVX vectorization
+                       // std::is_same<T,SIMT<value_type,exec_space> >::value,   // cuda thread vectorization
                        "KokkosKernels:: Invalid VectorUnitTag<> type." );
     
         using type = VectorTag;
