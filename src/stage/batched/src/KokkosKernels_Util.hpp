@@ -25,6 +25,20 @@ namespace KokkosKernels {
 
       template<typename T>
       KOKKOS_INLINE_FUNCTION      
+      typename std::enable_if<std::is_fundamental<T>::value,T>::type 
+      abs(const T &a) {
+        return (a > 0 ? a : -a);
+      }
+
+      // template<typename T>
+      // KOKKOS_INLINE_FUNCTION      
+      // typename std::enable_if<std::is_fundamental<T>::value,T>::type 
+      // abs(const Kokkos::complex<T> &a) {
+      //   return sqrt(a.real()*a.real() + a.imag()*a.imag());
+      // }
+      
+      template<typename T>
+      KOKKOS_INLINE_FUNCTION      
       typename std::enable_if<std::is_fundamental<T>::value,size_t>::type 
       adjustDimension(const size_t &m) {
         return m;

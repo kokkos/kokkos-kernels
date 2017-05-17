@@ -65,7 +65,7 @@ namespace KokkosKernels {
             N = 32768,
           };
             
-          const int iter_begin = -10, iter_end = 100;
+          const int iter_begin = -3, iter_end = 10;
           Kokkos::Impl::Timer timer;
           double t = 0;
 
@@ -154,14 +154,13 @@ namespace KokkosKernels {
           /// check cref = cvec
           ///
 
-          double sum = 0;
+          double diff = 0, sum = 0;
           for (int k=0;k<N;++k) {
             const int i = k/vector_length, j = k%vector_length;
-            const auto diff = abs(c_host(k) - cvec_host(i)[j]);
-            sum += diff;
+            sum  += abs(c_host(k));
+            diff += abs(c_host(k) - cvec_host(i)[j]);
           }
-          EXPECT_TRUE(sum < std::numeric_limits<double>::epsilon());
-      
+          EXPECT_TRUE((diff/sum) < std::numeric_limits<double>::epsilon());
         }
       }
     }
@@ -183,7 +182,7 @@ TEST( VectorArithmatic, double_SIMD4 ) {
 }
 
 TEST( VectorArithmatic, dcomplex_SIMD2 ) {
-  typedef std::complex<double> dcomplex;
+  typedef Kokkos::complex<double> dcomplex;
 
   ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_ADD>();
   ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 2>,ArithmaticTest::TEST_SUBTRACT>();
@@ -207,9 +206,11 @@ TEST( VectorArithmatic, dcomplex_AVX256 ) {
   ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_ADD>();
   ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_SUBTRACT>();
   
-  // mult uses fmaddsub and I am not sure how I can detect this instruction
-  //ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_MULT>();
+#if defined (__FMA__)
+  ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_MULT>();
   //ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_DIV>();
+#endif 
+
   ArithmaticTest::VectorArithmatic<VectorTag<AVX<dcomplex>, 2>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 #endif
@@ -227,7 +228,7 @@ TEST( VectorArithmatic, double_SIMD8 ) {
 }
 
 TEST( VectorArithmatic, dcomplex_SIMD4 ) {
-  typedef std::complex<double> dcomplex;
+  typedef Kokkos::complex<double> dcomplex;
 
   ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_ADD>();
   ArithmaticTest::VectorArithmatic<VectorTag<SIMD<dcomplex>, 4>,ArithmaticTest::TEST_SUBTRACT>();
@@ -240,8 +241,12 @@ TEST( VectorArithmatic, dcomplex_SIMD4 ) {
 TEST( VectorArithmatic, AVX8 ) {
   ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_ADD>();
   ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_SUBTRACT>();
+
+#if defined (__FMA__)
   ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_MULT>();
-  ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_DIV>();
+  //ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_DIV>();
+#endif
+
   ArithmaticTest::VectorArithmatic<VectorTag<AVX<double>, 8>,ArithmaticTest::TEST_UNARY_MINUS>();
 }
 #endif

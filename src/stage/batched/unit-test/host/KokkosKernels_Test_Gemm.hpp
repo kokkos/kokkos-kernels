@@ -32,8 +32,8 @@ namespace KokkosKernels {
 
         template<typename TA, typename TB>
         struct ParamTag { 
-          typedef TA TransA;
-          typedef TB TransB;
+          typedef TA transA;
+          typedef TB transB;
         };
  
         template<typename ViewType, typename ParamTagType, typename AlgoTagType>
@@ -52,13 +52,12 @@ namespace KokkosKernels {
             auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
             auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
             
-            Serial::Gemm<typename ParamTagType::TransA,typename ParamTagType::TransB,AlgoTagType>::
+            Serial::Gemm<typename ParamTagType::transA,typename ParamTagType::transB,AlgoTagType>::
               invoke(1.0, aa, bb, 1.0, cc);
           }
 
           inline
           void run() {
-            //Kokkos::RangePolicy<DeviceSpaceType,ParamTag<Trans::NoTranspose,Trans::NoTranspose> > policy(0, _c.dimension_0());
             Kokkos::RangePolicy<DeviceSpaceType,ParamTagType> policy(0, _c.dimension_0());
             Kokkos::parallel_for(policy, *this);            
           }
@@ -191,30 +190,50 @@ using namespace KokkosKernels::Batched::Experimental;
 
 TEST( GemmBlocked_NT_NT, double_SIMD4 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<SIMD<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_T_NT, double_SIMD4 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<SIMD<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_NT_T, double_SIMD4 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<SIMD<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_T_T, double_SIMD4 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<SIMD<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 ///
@@ -224,62 +243,91 @@ TEST( GemmBlocked_T_T, double_SIMD4 ) {
 TEST( GemmBlocked_NT_NT, dcomplex_SIMD2 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
   typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
 
-  GemmTest::Gemm< 3, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_T_NT, dcomplex_SIMD2 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
   typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
 
-  GemmTest::Gemm< 3, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_NT_T, dcomplex_SIMD2 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
   typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
 
-  GemmTest::Gemm< 3, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
-// TEST( GemmBlocked_CT_NT, dcomplex_SIMD2 ) {
+TEST( GemmBlocked_CT_NT, dcomplex_SIMD2 ) {
+  printf("Not yet implemented\n");
 //   enum : int { N = 1024 }; // 1024*2 = 2048
-//  typedef Kokkos::complex<double> dcomplex;
-//   GemmTest::Gemm< 3, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-// }
+//   typedef Kokkos::complex<double> dcomplex;
+//   typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
+//   typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose> param_tag_type;
+//   typedef Algo::Gemm::Blocked algo_tag_type;
 
-// TEST( GemmBlocked_NT_CT, dcomplex_SIMD2 ) {
+//   GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+//   GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+//   GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+}
+
+TEST( GemmBlocked_NT_CT, dcomplex_SIMD2 ) {
+  printf("Not yet implemented\n");
 //   enum : int { N = 1024 }; // 1024*2 = 2048
-//  typedef Kokkos::complex<double> dcomplex;
-//   GemmTest::Gemm< 3, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// }
+//   typedef Kokkos::complex<double> dcomplex;
+//   typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
+//   typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose> param_tag_type;
+//   typedef Algo::Gemm::Blocked algo_tag_type;
+
+//   GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+//   GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+//   GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+}
 
 TEST( GemmBlocked_T_T, dcomplex_SIMD2 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
 
-  GemmTest::Gemm< 3, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
-// TEST( GemmBlocked_CT_CT, dcomplex_SIMD2 ) {
-//   enum : int { N = 1024 }; // 1024*2 = 2048
-//  typedef Kokkos::complex<double> dcomplex;
-//   GemmTest::Gemm< 3, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<SIMD<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// }
+TEST( GemmBlocked_CT_CT, dcomplex_SIMD2 ) {
+  printf("not yet implemented\n");
+  // enum : int { N = 1024 }; // 1024*2 = 2048
+
+  // typedef Kokkos::complex<double> dcomplex;
+  // typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
+  // typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose> param_tag_type;
+  // typedef Algo::Gemm::Blocked algo_tag_type;
+
+  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+}
 
 ///
 /// double AVX 256
@@ -289,30 +337,50 @@ TEST( GemmBlocked_T_T, dcomplex_SIMD2 ) {
 
 TEST( GemmBlocked_NT_NT, double_AVX256 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<AVX<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_T_NT, double_AVX256 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<AVX<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_NT_T, double_AVX256 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<AVX<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_T_T, double_AVX256 ) {
   enum : int { N = 512 }; // 512*4 = 2048
-  GemmTest::Gemm< 3, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<double>,4>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+
+  typedef VectorTag<AVX<double>,4> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 ///
@@ -321,62 +389,96 @@ TEST( GemmBlocked_T_T, double_AVX256 ) {
 #if defined(__FMA__)
 TEST( GemmBlocked_NT_NT, dcomplex_AVX256 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
 
-  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_T_NT, dcomplex_AVX256 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
 
-  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
+  typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
 TEST( GemmBlocked_NT_T, dcomplex_AVX256 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
 
-  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
-// TEST( GemmBlocked_CT_NT, dcomplex_AVX256 ) {
-//   enum : int { N = 1024 }; // 1024*2 = 2048
-//  typedef Kokkos::complex<double> dcomplex;
-//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>,Algo::Gemm::Blocked>(N);
-// }
+TEST( GemmBlocked_CT_NT, dcomplex_AVX256 ) {
+  printf("Not yet implemented\n");
+  // enum : int { N = 1024 }; // 1024*2 = 2048
 
-// TEST( GemmBlocked_NT_CT, dcomplex_AVX256 ) {
-//   enum : int { N = 1024 }; // 1024*2 = 2048
-//  typedef Kokkos::complex<double> dcomplex;
-//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// }
+  // typedef Kokkos::complex<double> dcomplex;
+  // typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
+  // typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose> param_tag_type;  
+  // typedef Algo::Gemm::Blocked algo_tag_type;
+
+  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+}
+
+TEST( GemmBlocked_NT_CT, dcomplex_AVX256 ) {
+  printf("Not yet implemented\n");
+  // enum : int { N = 1024 }; // 1024*2 = 2048
+
+  // typedef Kokkos::complex<double> dcomplex;
+  // typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
+  // typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose> param_tag_type;  
+  // typedef Algo::Gemm::Blocked algo_tag_type;
+
+  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+}
 
 TEST( GemmBlocked_T_T, dcomplex_AVX256 ) {
   enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
 
-  GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
-  GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::Transpose,Trans::Transpose>,Algo::Gemm::Blocked>(N);
+  typedef Kokkos::complex<double> dcomplex;
+  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
+  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;  
+  typedef Algo::Gemm::Blocked algo_tag_type;
+
+  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
 }
 
-// TEST( GemmBlocked_T_T, dcomplex_AVX256 ) {
-//   enum : int { N = 1024 }; // 1024*2 = 2048
-//  typedef Kokkos::complex<double> dcomplex;
-//   GemmTest::Gemm< 3, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm< 5, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-//   GemmTest::Gemm<10, VectorTag<AVX<dcomplex>,2>,GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose>,Algo::Gemm::Blocked>(N);
-// }
+TEST( GemmBlocked_CT_CT, dcomplex_AVX256 ) {
+  printf("Not yet implemented\n");
+  // enum : int { N = 1024 }; // 1024*2 = 2048
+
+  // typedef Kokkos::complex<double> dcomplex;
+  // typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
+  // typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose> param_tag_type;  
+  // typedef Algo::Gemm::Blocked algo_tag_type;
+
+  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+}
 #endif
 #endif

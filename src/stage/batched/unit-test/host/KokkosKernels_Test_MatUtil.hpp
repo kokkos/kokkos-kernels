@@ -85,7 +85,7 @@ namespace KokkosKernels {
             BlkSize = 3
           };
           
-          const int iter_begin = -10, iter_end = 100;
+          const int iter_begin = -3, iter_end = 10;
           Kokkos::Impl::Timer timer;
           double t = 0;
 

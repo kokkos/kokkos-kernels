@@ -5,30 +5,29 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace KokkosKernels {
+  namespace Batched {
+    namespace Experimental {
+      namespace Serial {
+        
+        template<typename ArgSide,
+                 typename ArgUplo,
+                 typename ArgTrans,
+                 typename ArgDiag,
+                 typename ArgAlgo>
+        struct Trsm {
+          template<typename ScalarType,
+                   typename AViewType,
+                   typename BViewType>
+          KOKKOS_INLINE_FUNCTION
+          static int
+          invoke(const ScalarType alpha,
+                 const AViewType &A,
+                 const BViewType &B);
+        };
 
-  namespace Serial {
+      }
 
-    template<typename ArgSide,
-             typename ArgUplo,
-             typename ArgTrans,
-             typename ArgDiag,
-             typename ArgAlgo>
-    struct Trsm {
-      template<typename ScalarType,
-               typename AViewType,
-               typename BViewType>
-      KOKKOS_INLINE_FUNCTION
-      static int
-      invoke(const ScalarType alpha,
-             const AViewType &A,
-             const BViewType &B) {
-        //static_assert(false, "KokkosKernels::Trsm::invoke:: Not yet implemented");
-        return 0;
-      }      
-    };
-
+    }
   }
-
 }
-
 #endif

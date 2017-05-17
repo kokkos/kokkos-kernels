@@ -27,6 +27,9 @@ namespace KokkosKernels {
           double d[8];
         };
 
+        KOKKOS_INLINE_FUNCTION
+        static const char* label() { return "AVX512"; }
+
       private:
         mutable data_type _data;
     
