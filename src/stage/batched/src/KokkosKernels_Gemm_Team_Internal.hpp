@@ -117,8 +117,8 @@ namespace KokkosKernels {
             if (m <= 0 || n <= 0 || k <= 0) return 0;
 
             enum : int {
-              mb = 2, //Algo::Gemm::Blocked::mb,
-              nb = 2 }; //Algo::Gemm::Blocked::nb };
+              mb = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
+              nb = Algo::Gemm::Blocked::nb<Kokkos::Impl::ActiveExecutionMemorySpace>() };
         
             InnerGemmFixC<mb,nb> inner(as0, as1, bs0, bs1, cs0, cs1);
             InnerGemmFixC<0,0> remainder(as0, as1, bs0, bs1, cs0, cs1);

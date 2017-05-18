@@ -383,6 +383,9 @@ namespace KokkosKernels {
 
             double tavg = 0, tmin = tmax;
             {
+              typedef typename DeviceSpaceType::scratch_memory_space scratch_space;
+              typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,scratch_space> scratch_view_type;
+
               typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType> policy_type;
               typedef typename policy_type::member_type member_type;
 
@@ -390,6 +393,11 @@ namespace KokkosKernels {
               while (team_size*VectorLength>=thres) --team_size;
               const policy_type policy(N, team_size, VectorLength);
               
+              // const int 
+              //   shlvl = 0, 
+              //   per_team_scratch = 2*scratch_view_type::shmem_size(VectorLength, BlkSize, BlkSize);
+
+              //if (per_team_scratch/1024 < 48)
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 // flush
                 flush.run();
@@ -403,6 +411,7 @@ namespace KokkosKernels {
                 timer.reset();
 
                 Kokkos::parallel_for
+                  //(policy.set_scratch_size(shlvl, Kokkos::PerTeam(per_team_scratch)),
                   (policy,
                    KOKKOS_LAMBDA(const member_type &member) {
                     const int kbeg = member.league_rank()*VectorLength;
@@ -411,11 +420,29 @@ namespace KokkosKernels {
                        [&](const int &k) {
                         const int kk = kbeg + k;
                         if (kk < N*VectorLength) {
+                          // scratch_view_type sa(member.team_scratch(shlvl), VectorLength, BlkSize, BlkSize);
+                          // scratch_view_type sb(member.team_scratch(shlvl), VectorLength, BlkSize, BlkSize);
+                          // Kokkos::parallel_for
+                          //   (Kokkos::TeamThreadRange(member,0,BlkSize*BlkSize),
+                          //    [&](const int &ij) {
+                          //     const int i = ij/BlkSize, j = ij%BlkSize;
+                          //     sa(k, i, j) = a(kk, i, j);
+                          //     sb(k, i, j) = b(kk, i, j);
+                          //   });
+                          // member.team_barrier();
+                          // Kokkos::parallel_for
+                          //   (Kokkos::TeamThreadRange(member,0,BlkSize*BlkSize),
+                          //    [&](const int &ij) {
+                          //     const int i = ij/BlkSize, j = ij%BlkSize;                              
+                          //     ValueType cval = 0;
+                          //     for (int p=0;p<BlkSize;++p)
+                          //       cval += sa(k, i, p)*sb(k, p, j);
+                          //     c(kk, i, j) += cval;
+                          //   });
                           Kokkos::parallel_for
                             (Kokkos::TeamThreadRange(member,0,BlkSize*BlkSize),
                              [&](const int &ij) {
-                              const int i = ij/BlkSize, j = ij%BlkSize;
-
+                              const int i = ij/BlkSize, j = ij%BlkSize;                              
                               ValueType cval = 0;
                               for (int p=0;p<BlkSize;++p)
                                 cval += a(kk, i, p)*b(kk, p, j);

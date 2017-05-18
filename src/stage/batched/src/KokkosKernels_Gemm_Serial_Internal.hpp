@@ -100,8 +100,8 @@ namespace KokkosKernels {
             // small matrix specialization
             {
               enum : int {
-                mb = Algo::Gemm::Blocked::mb,
-                nb = Algo::Gemm::Blocked::nb };
+                mb = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
+                nb = Algo::Gemm::Blocked::nb<Kokkos::Impl::ActiveExecutionMemorySpace>() };
           
               InnerGemmFixC<> inner(as0, as1, bs0, bs1, cs0, cs1);
           
