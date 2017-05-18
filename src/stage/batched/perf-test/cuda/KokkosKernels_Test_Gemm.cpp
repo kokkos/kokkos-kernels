@@ -129,8 +129,8 @@ namespace KokkosKernels {
           }
         };
 
-        template<int BlkSize, int VectorLength, typename ValueType, typename DeviceSpaceType, typename AlgoTagType>
-        void Gemm(const int N) {
+        template<int VectorLength, typename ValueType, typename DeviceSpaceType, typename AlgoTagType>
+        void Gemm(const int N, const int BlkSize) {
           typedef Kokkos::Schedule<Kokkos::Static> ScheduleType;
 
           const double flop = (N*VectorLength)*FlopCount(BlkSize,BlkSize,BlkSize);
@@ -161,7 +161,7 @@ namespace KokkosKernels {
           Flush<LLC_CAPACITY,DeviceSpaceType> flush;
 
 #if defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
-          {
+          if (0) {
             ///
             /// CUBLAS Strided version
             ///
@@ -242,7 +242,7 @@ namespace KokkosKernels {
           }
 #endif
 
-          {
+          if (0) {
             ///
             /// Range policy version
             ///
@@ -299,7 +299,7 @@ namespace KokkosKernels {
             }
           }
 
-          {
+          if (0) {
             ///
             /// Team policy V1 - almost same scheduling with range policy; 
             ///                  expect the same performance as range policy
@@ -364,7 +364,7 @@ namespace KokkosKernels {
             }
           }
 
-          {
+          if (1) {
             ///
             /// Team policy V2 - team parallel 
             ///
@@ -528,7 +528,7 @@ namespace KokkosKernels {
           //   }
           // }
 
-          {
+          if (0) {
             ///
             /// Team policy - handmade
             ///
@@ -604,7 +604,7 @@ using namespace KokkosKernels::Batched::Experimental;
 template<int VectorLength, 
          typename ValueType,
          typename AlgoTagType>
-void run(const int N) {
+void run(const int N, const int B) {
   typedef Kokkos::DefaultExecutionSpace ExecSpace;
 
   std::cout << "ExecSpace::  ";
@@ -613,14 +613,17 @@ void run(const int N) {
   else
     ExecSpace::print_configuration(std::cout, false);
 
-  PerfTest::Gemm< 4, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm< 8, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm<16, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm<20, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm<32, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm<64, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  PerfTest::Gemm<128, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-
+  if (B != 0) {
+    PerfTest::Gemm< VectorLength, ValueType, ExecSpace, AlgoTagType>(N, B);
+  } else {
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  4);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  8);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 16);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 20);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 32);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 64);
+  }
+    
   // PerfTest::Gemm< 3, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
   // PerfTest::Gemm< 5, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
   // PerfTest::Gemm<10, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
@@ -633,11 +636,12 @@ int main(int argc, char *argv[]) {
 
   const int ntest = 1;
   //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
-  int N[1] = { 128*128 };
+  int N[1] = { 128*128 }, B = 0;
 
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
     if (token == std::string("-N")) N[0] = std::atoi(argv[++i]);
+    if (token == std::string("-B")) B    = std::atoi(argv[++i]);
   }
 
   constexpr int VectorLength = 16;
@@ -646,11 +650,11 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<ntest;++i) {
       std::cout << " N = " << N[i] << std::endl;
 
-      //std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
-      //run<VectorLength,double,Algo::Gemm::Unblocked>(N[i]/VectorLength);
+      std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
+      run<VectorLength,double,Algo::Gemm::Unblocked>(N[i]/VectorLength, B);
 
-      std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
-      run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength);
+      // std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
+      // run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength, B);
     }
   }
 

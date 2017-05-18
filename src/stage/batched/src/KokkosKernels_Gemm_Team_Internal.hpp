@@ -167,7 +167,7 @@ namespace KokkosKernels {
               }
             };          
         
-            const bool is_small = (m*n*k <= 64*64*64);
+            const bool is_small = true; //(m*n*k <= 64*64*64);
             if (is_small) {
               gemm(m, n, k, A, B, C);
             } else {
