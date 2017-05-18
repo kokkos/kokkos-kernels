@@ -137,8 +137,9 @@ namespace KokkosKernels {
           const double tmax = 1.0e15;
 
           typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
+          typedef typename DeviceSpaceType::memory_space DeviceMemorySpaceType;
 
-          const int iter_begin = -3, iter_end = 3;
+          const int iter_begin = -3, iter_end = 30;
           Kokkos::Impl::Timer timer;
 
           Kokkos::View<ValueType***,Kokkos::LayoutLeft,HostSpaceType>
@@ -161,7 +162,7 @@ namespace KokkosKernels {
           Flush<LLC_CAPACITY,DeviceSpaceType> flush;
 
 #if defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
-          if (0) {
+          if (1) {
             ///
             /// CUBLAS Strided version
             ///
@@ -183,8 +184,8 @@ namespace KokkosKernels {
             if (stat != CUBLAS_STATUS_SUCCESS)
               Kokkos::abort("CUBLAS initialization failed\n");
 
-            auto amat_device = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), amat);
-            auto bmat_device = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), bmat);
+            auto amat_device = Kokkos::create_mirror_view(DeviceMemorySpaceType(), amat);
+            auto bmat_device = Kokkos::create_mirror_view(DeviceMemorySpaceType(), bmat);
 
             Kokkos::deep_copy(amat_device, amat);
             Kokkos::deep_copy(bmat_device, bmat);
@@ -242,7 +243,7 @@ namespace KokkosKernels {
           }
 #endif
 
-          if (0) {
+          if (1) {
             ///
             /// Range policy version
             ///
@@ -282,9 +283,9 @@ namespace KokkosKernels {
               Kokkos::deep_copy(csol, c);
 
               double diff = 0;
-              for (int i=0;i<cref.dimension(0);++i)
-                for (int j=0;j<cref.dimension(1);++j)
-                  for (int k=0;k<cref.dimension(2);++k)
+              for (int i=0;i<cref.dimension_0();++i)
+                for (int j=0;j<cref.dimension_1();++j)
+                  for (int k=0;k<cref.dimension_2();++k)
                     diff += std::abs(cref(i,j,k) - csol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
@@ -299,7 +300,7 @@ namespace KokkosKernels {
             }
           }
 
-          if (0) {
+          if (1) {
             ///
             /// Team policy V1 - almost same scheduling with range policy; 
             ///                  expect the same performance as range policy
@@ -347,9 +348,9 @@ namespace KokkosKernels {
               Kokkos::deep_copy(csol, c);
 
               double diff = 0;
-              for (int i=0;i<cref.dimension(0);++i)
-                for (int j=0;j<cref.dimension(1);++j)
-                  for (int k=0;k<cref.dimension(2);++k)
+              for (int i=0;i<cref.dimension_0();++i)
+                for (int j=0;j<cref.dimension_1();++j)
+                  for (int k=0;k<cref.dimension_2();++k)
                     diff += std::abs(cref(i,j,k) - csol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
@@ -382,8 +383,19 @@ namespace KokkosKernels {
               typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
               typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
               
-              const int team_size = 
-                Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
+              const int 
+                use_blocked_algo = (std::is_same<AlgoTagType,Algo::Gemm::Blocked>::value), // && BlkSize > 8),
+                mb = Algo::Gemm::Blocked::mb<DeviceMemorySpaceType>(),
+                nb = Algo::Gemm::Blocked::nb<DeviceMemorySpaceType>(),
+                mp = BlkSize%mb > 0,
+                np = BlkSize%nb > 0;
+
+              const int 
+                mblk = use_blocked_algo ? (BlkSize/mb + mp) : BlkSize,
+                nblk = use_blocked_algo ? (BlkSize/nb + np) : BlkSize;
+
+              const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
+              const int team_size = min(mblk*nblk, max_cuda_blocksize/VectorLength);
 
               policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -411,9 +423,9 @@ namespace KokkosKernels {
               Kokkos::deep_copy(csol, c);
 
               double diff = 0;
-              for (int i=0;i<cref.dimension(0);++i)
-                for (int j=0;j<cref.dimension(1);++j)
-                  for (int k=0;k<cref.dimension(2);++k)
+              for (int i=0;i<cref.dimension_0();++i)
+                for (int j=0;j<cref.dimension_1();++j)
+                  for (int k=0;k<cref.dimension_2();++k)
                     diff += std::abs(cref(i,j,k) - csol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
@@ -528,7 +540,7 @@ namespace KokkosKernels {
           //   }
           // }
 
-          if (0) {
+          if (1) {
             ///
             /// Team policy - handmade
             ///
@@ -575,9 +587,9 @@ namespace KokkosKernels {
               Kokkos::deep_copy(csol, c);
 
               double diff = 0;
-              for (int i=0;i<cref.dimension(0);++i)
-                for (int j=0;j<cref.dimension(1);++j)
-                  for (int k=0;k<cref.dimension(2);++k)
+              for (int i=0;i<cref.dimension_0();++i)
+                for (int j=0;j<cref.dimension_1();++j)
+                  for (int k=0;k<cref.dimension_2();++k)
                     diff += std::abs(cref(i,j,k) - csol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
@@ -621,7 +633,7 @@ void run(const int N, const int B) {
     PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 16);
     PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 20);
     PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 32);
-    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 64);
+    //PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 64);
   }
     
   // PerfTest::Gemm< 3, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
@@ -653,8 +665,8 @@ int main(int argc, char *argv[]) {
       std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
       run<VectorLength,double,Algo::Gemm::Unblocked>(N[i]/VectorLength, B);
 
-      // std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
-      // run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength, B);
+      std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
+      run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength, B);
     }
   }
 
