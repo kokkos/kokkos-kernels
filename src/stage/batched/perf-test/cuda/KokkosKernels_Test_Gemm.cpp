@@ -11,6 +11,7 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
+#include "KokkosKernels_Util.hpp"
 #include "KokkosKernels_Vector.hpp"
 
 #include "KokkosKernels_Gemm_Decl.hpp"
@@ -33,6 +34,101 @@ namespace KokkosKernels {
                   FLOP_ADD*(m*n*k));
         }
 
+        struct RangeTag {};
+        struct TeamTagV1 {};
+        struct TeamTagV2 {};
+        struct TeamTagHandmade {};
+
+        template<typename ViewType, typename AlgoTagType, int VectorLength = 0>
+        struct Functor {
+          ConstUnmanagedViewType<ViewType> _a, _b;
+          UnmanagedViewType<ViewType> _c;
+
+          KOKKOS_INLINE_FUNCTION
+          Functor() = default;
+         
+          KOKKOS_INLINE_FUNCTION
+          Functor(const ViewType &a, 
+                  const ViewType &b,
+                  const ViewType &c)
+            : _a(a), _b(b), _c(c) {}
+                    
+          KOKKOS_INLINE_FUNCTION
+          void operator()(const RangeTag &, const int k) const {
+            auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
+            auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
+            auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
+            
+            Serial::
+              Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
+              invoke(1.0, aa, bb, 1.0, cc);
+          }
+
+          template<typename MemberType>
+          KOKKOS_INLINE_FUNCTION
+          void operator()(const TeamTagV1 &, const MemberType &member) const {
+            const int kbeg = (member.league_rank()*(member.team_size()*VectorLength) +
+                              member.team_rank()*VectorLength);
+            Kokkos::parallel_for
+              (Kokkos::ThreadVectorRange(member, VectorLength),
+               [&](const int &k) {
+                const int kk = kbeg + k;
+                if (kk < _c.dimension_0()) {
+                  auto aa = Kokkos::subview(_a, kk, Kokkos::ALL(), Kokkos::ALL());
+                  auto bb = Kokkos::subview(_b, kk, Kokkos::ALL(), Kokkos::ALL());
+                  auto cc = Kokkos::subview(_c, kk, Kokkos::ALL(), Kokkos::ALL());
+                  
+                  Serial::
+                    Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
+                    invoke(1.0, aa, bb, 1.0, cc);
+                }
+              });
+          }   
+
+          template<typename MemberType>
+          KOKKOS_INLINE_FUNCTION
+          void operator()(const TeamTagV2 &, const MemberType &member) const {
+            const int kbeg = member.league_rank()*VectorLength;
+            Kokkos::parallel_for
+              (Kokkos::ThreadVectorRange(member, VectorLength),
+               [&](const int &k) {
+                const int kk = kbeg + k;
+                if (kk < _c.dimension_0()) {
+                  auto aa = Kokkos::subview(_a, kk, Kokkos::ALL(), Kokkos::ALL());
+                  auto bb = Kokkos::subview(_b, kk, Kokkos::ALL(), Kokkos::ALL());
+                  auto cc = Kokkos::subview(_c, kk, Kokkos::ALL(), Kokkos::ALL());
+                  
+                  Team::
+                    Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
+                    invoke(member, 1.0, aa, bb, 1.0, cc);
+                }
+              });
+          }
+
+          template<typename MemberType>
+          KOKKOS_INLINE_FUNCTION
+          void operator()(const TeamTagHandmade &, const MemberType &member) const {
+            const int kbeg = member.league_rank()*VectorLength;
+            Kokkos::parallel_for
+              (Kokkos::ThreadVectorRange(member, VectorLength),
+               [&](const int &k) {
+                const int kk = kbeg + k;
+                if (kk < _c.dimension_0()) {
+                  const int m = _c.dimension_1(), n = _c.dimension_2(), q = _a.dimension_2();
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member,0,m*n),
+                     [&](const int &ij) {
+                      const int i = ij%m, j = ij/m;                              
+                      typename ViewType::non_const_value_type cval = 0;
+                      for (int p=0;p<q;++p)
+                        cval += _a(kk, i, p)*_b(kk, p, j);
+                      _c(kk, i, j) += cval;
+                    });
+                }
+              });
+          }
+        };
+
         template<int BlkSize, int VectorLength, typename ValueType, typename DeviceSpaceType, typename AlgoTagType>
         void Gemm(const int N) {
           typedef Kokkos::Schedule<Kokkos::Static> ScheduleType;
@@ -42,7 +138,7 @@ namespace KokkosKernels {
 
           typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 
-          const int iter_begin = -3, iter_end = 10;
+          const int iter_begin = -3, iter_end = 30;
           Kokkos::Impl::Timer timer;
 
           Kokkos::View<ValueType***,Kokkos::LayoutLeft,HostSpaceType>
@@ -150,14 +246,16 @@ namespace KokkosKernels {
             ///
             /// Range policy version
             ///
-            Kokkos::View<ValueType***,DeviceSpaceType>
+            typedef Kokkos::View<ValueType***,DeviceSpaceType> view_type;
+            view_type
               a("a", N*VectorLength, BlkSize, BlkSize),
               b("b", N*VectorLength, BlkSize, BlkSize),
               c("c", N*VectorLength, BlkSize, BlkSize);
 
             double tavg = 0, tmin = tmax;
             {
-              const Kokkos::RangePolicy<DeviceSpaceType,ScheduleType> policy(0, N*VectorLength);
+              typedef Functor<view_type,AlgoTagType> functor_type;
+              const Kokkos::RangePolicy<DeviceSpaceType,ScheduleType,RangeTag> policy(0, N*VectorLength);
 
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 // flush
@@ -171,18 +269,8 @@ namespace KokkosKernels {
                 DeviceSpaceType::fence();
                 timer.reset();
 
-                Kokkos::parallel_for
-                  (policy,
-                   KOKKOS_LAMBDA(const int k) {
-                    auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
-                    auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
-                    auto cc = Kokkos::subview(c, k, Kokkos::ALL(), Kokkos::ALL());
-                    
-                    Serial::
-                      Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
-                      invoke(1.0, aa, bb, 1.0, cc);
-                  });
-
+                Kokkos::parallel_for(policy, functor_type(a,b,c));
+                
                 DeviceSpaceType::fence();
                 const double t = timer.seconds();
                 tmin = std::min(tmin, t);
@@ -213,23 +301,26 @@ namespace KokkosKernels {
 
           {
             ///
-            /// Team policy version (almost same scheduling with range policy)
+            /// Team policy V1 - almost same scheduling with range policy; 
+            ///                  expect the same performance as range policy
             ///
-            Kokkos::View<ValueType***,DeviceSpaceType>
+            typedef Kokkos::View<ValueType***,DeviceSpaceType> view_type;
+            view_type
               a("a", N*VectorLength, BlkSize, BlkSize),
               b("b", N*VectorLength, BlkSize, BlkSize),
               c("c", N*VectorLength, BlkSize, BlkSize);
-
+            
             double tavg = 0, tmin = tmax;
             {
-              typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType> policy_type;
+              typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV1> policy_type;
               typedef typename policy_type::member_type member_type;
 
-              int team_size = 128, thres = 1024;
-              if (std::is_same<AlgoTagType,Algo::Gemm::Blocked>::value) thres = 256;
-
-              while (team_size*VectorLength>=thres) team_size /= 2;
-
+              typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
+              typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
+              
+              const int team_size = 
+                Kokkos::Impl::cuda_get_opt_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
+              
               const policy_type policy(N/team_size, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 // flush
@@ -243,26 +334,7 @@ namespace KokkosKernels {
                 DeviceSpaceType::fence();
                 timer.reset();
 
-                Kokkos::parallel_for
-                  (policy,
-                   KOKKOS_LAMBDA(const member_type &member) {
-                    const int kbeg = (member.league_rank()*(member.team_size()*VectorLength) +
-                                      member.team_rank()*VectorLength);
-                    Kokkos::parallel_for
-                      (Kokkos::ThreadVectorRange(member, VectorLength),
-                       [&](const int &k) {
-                        const int kk = kbeg + k;
-                        if (kk < N*VectorLength) {
-                          auto aa = Kokkos::subview(a, kk, Kokkos::ALL(), Kokkos::ALL());
-                          auto bb = Kokkos::subview(b, kk, Kokkos::ALL(), Kokkos::ALL());
-                          auto cc = Kokkos::subview(c, kk, Kokkos::ALL(), Kokkos::ALL());
-                          
-                          Serial::
-                            Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
-                            invoke(1.0, aa, bb, 1.0, cc);
-                        }
-                      });
-                  });
+                Kokkos::parallel_for(policy,functor_type(a,b,c));
                 
                 DeviceSpaceType::fence();
                 const double t = timer.seconds();
@@ -294,22 +366,24 @@ namespace KokkosKernels {
 
           {
             ///
-            /// Team policy version (team parallel)
+            /// Team policy V2 - team parallel 
             ///
-            Kokkos::View<ValueType***,DeviceSpaceType>
+            typedef Kokkos::View<ValueType***,DeviceSpaceType> view_type;
+            view_type
               a("a", N*VectorLength, BlkSize, BlkSize),
               b("b", N*VectorLength, BlkSize, BlkSize),
               c("c", N*VectorLength, BlkSize, BlkSize);
 
             double tavg = 0, tmin = tmax;
             {
-              typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType> policy_type;
+              typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV2> policy_type;
               typedef typename policy_type::member_type member_type;
 
-              int team_size = BlkSize*BlkSize, thres = 1024;
-              if (std::is_same<AlgoTagType,Algo::Gemm::Blocked>::value) thres = 512;
-
-              while (team_size*VectorLength>=thres) --team_size;
+              typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
+              typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
+              
+              const int team_size = 
+                Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
 
               policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -324,25 +398,7 @@ namespace KokkosKernels {
                 DeviceSpaceType::fence();
                 timer.reset();
 
-                Kokkos::parallel_for
-                  (policy,
-                   KOKKOS_LAMBDA(const member_type &member) {
-                    const int kbeg = member.league_rank()*VectorLength;
-                    Kokkos::parallel_for
-                      (Kokkos::ThreadVectorRange(member, VectorLength),
-                       [&](const int &k) {
-                        const int kk = kbeg + k;
-                        if (kk < N*VectorLength) {
-                          auto aa = Kokkos::subview(a, kk, Kokkos::ALL(), Kokkos::ALL());
-                          auto bb = Kokkos::subview(b, kk, Kokkos::ALL(), Kokkos::ALL());
-                          auto cc = Kokkos::subview(c, kk, Kokkos::ALL(), Kokkos::ALL());
-                          
-                          Team::
-                            Gemm<member_type,Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
-                            invoke(member, 1.0, aa, bb, 1.0, cc);
-                        }
-                      });
-                  });
+                Kokkos::parallel_for(policy, functor_type(a,b,c));
                 
                 DeviceSpaceType::fence();
                 const double t = timer.seconds();
@@ -372,113 +428,6 @@ namespace KokkosKernels {
             }
           }
 
-          {
-            ///
-            /// Team policy version (handmade)
-            ///
-            Kokkos::View<ValueType***,DeviceSpaceType>
-              a("a", N*VectorLength, BlkSize, BlkSize),
-              b("b", N*VectorLength, BlkSize, BlkSize),
-              c("c", N*VectorLength, BlkSize, BlkSize);
-
-            double tavg = 0, tmin = tmax;
-            {
-              typedef typename DeviceSpaceType::scratch_memory_space scratch_space;
-              typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,scratch_space> scratch_view_type;
-
-              typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType> policy_type;
-              typedef typename policy_type::member_type member_type;
-
-              int team_size = BlkSize*BlkSize, thres = 1024;
-              while (team_size*VectorLength>=thres) --team_size;
-              const policy_type policy(N, team_size, VectorLength);
-              
-              // const int 
-              //   shlvl = 0, 
-              //   per_team_scratch = 2*scratch_view_type::shmem_size(VectorLength, BlkSize, BlkSize);
-
-              //if (per_team_scratch/1024 < 48)
-              for (int iter=iter_begin;iter<iter_end;++iter) {
-                // flush
-                flush.run();
-
-                // initialize matrices
-                Kokkos::deep_copy(a, amat);
-                Kokkos::deep_copy(b, bmat);
-                Kokkos::deep_copy(c, 0);
-
-                DeviceSpaceType::fence();
-                timer.reset();
-
-                Kokkos::parallel_for
-                  //(policy.set_scratch_size(shlvl, Kokkos::PerTeam(per_team_scratch)),
-                  (policy,
-                   KOKKOS_LAMBDA(const member_type &member) {
-                    const int kbeg = member.league_rank()*VectorLength;
-                    Kokkos::parallel_for
-                      (Kokkos::ThreadVectorRange(member, VectorLength),
-                       [&](const int &k) {
-                        const int kk = kbeg + k;
-                        if (kk < N*VectorLength) {
-                          // scratch_view_type sa(member.team_scratch(shlvl), VectorLength, BlkSize, BlkSize);
-                          // scratch_view_type sb(member.team_scratch(shlvl), VectorLength, BlkSize, BlkSize);
-                          // Kokkos::parallel_for
-                          //   (Kokkos::TeamThreadRange(member,0,BlkSize*BlkSize),
-                          //    [&](const int &ij) {
-                          //     const int i = ij/BlkSize, j = ij%BlkSize;
-                          //     sa(k, i, j) = a(kk, i, j);
-                          //     sb(k, i, j) = b(kk, i, j);
-                          //   });
-                          // member.team_barrier();
-                          // Kokkos::parallel_for
-                          //   (Kokkos::TeamThreadRange(member,0,BlkSize*BlkSize),
-                          //    [&](const int &ij) {
-                          //     const int i = ij/BlkSize, j = ij%BlkSize;                              
-                          //     ValueType cval = 0;
-                          //     for (int p=0;p<BlkSize;++p)
-                          //       cval += sa(k, i, p)*sb(k, p, j);
-                          //     c(kk, i, j) += cval;
-                          //   });
-                          Kokkos::parallel_for
-                            (Kokkos::TeamThreadRange(member,0,BlkSize*BlkSize),
-                             [&](const int &ij) {
-                              const int i = ij/BlkSize, j = ij%BlkSize;                              
-                              ValueType cval = 0;
-                              for (int p=0;p<BlkSize;++p)
-                                cval += a(kk, i, p)*b(kk, p, j);
-                              c(kk, i, j) += cval;
-                            });
-                        }
-                      });
-                  });
-                
-                DeviceSpaceType::fence();
-                const double t = timer.seconds();
-                tmin = std::min(tmin, t);
-                tavg += (iter >= 0)*t;
-              }
-              tavg /= iter_end;
-
-              auto csol = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), c);
-              Kokkos::deep_copy(csol, c);
-
-              double diff = 0;
-              for (int i=0;i<cref.dimension(0);++i)
-                for (int j=0;j<cref.dimension(1);++j)
-                  for (int k=0;k<cref.dimension(2);++k)
-                    diff += std::abs(cref(i,j,k) - csol(i,j,k));
-
-              std::cout << std::setw(8) << "Kokkos"
-                        << std::setw(8) << "Team v4"
-                        << " BlkSize = " << std::setw(3) << BlkSize
-                        << " TeamSize = " << std::setw(3) << team_size
-                        << " time = " << std::scientific << tmin
-                        << " avg flop/s = " << (flop/tavg)
-                        << " max flop/s = " << (flop/tmin)
-                        << " diff to ref = " << diff
-                        << std::endl;
-            }
-          }
           // {
           //   ///
           //   /// Team policy version (team parallel + scratch)
@@ -578,6 +527,70 @@ namespace KokkosKernels {
           //               << std::endl;
           //   }
           // }
+
+          {
+            ///
+            /// Team policy - handmade
+            ///
+            typedef Kokkos::View<ValueType***,DeviceSpaceType> view_type;
+            view_type
+              a("a", N*VectorLength, BlkSize, BlkSize),
+              b("b", N*VectorLength, BlkSize, BlkSize),
+              c("c", N*VectorLength, BlkSize, BlkSize);
+
+            double tavg = 0, tmin = tmax;
+            {
+              typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagHandmade> policy_type;
+              typedef typename policy_type::member_type member_type;
+
+              typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
+              typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
+              
+              const int team_size = 
+                Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
+
+              const policy_type policy(N, team_size, VectorLength);
+              for (int iter=iter_begin;iter<iter_end;++iter) {
+                // flush
+                flush.run();
+
+                // initialize matrices
+                Kokkos::deep_copy(a, amat);
+                Kokkos::deep_copy(b, bmat);
+                Kokkos::deep_copy(c, 0);
+
+                DeviceSpaceType::fence();
+                timer.reset();
+
+                Kokkos::parallel_for(policy, functor_type(a,b,c));
+                
+                DeviceSpaceType::fence();
+                const double t = timer.seconds();
+                tmin = std::min(tmin, t);
+                tavg += (iter >= 0)*t;
+              }
+              tavg /= iter_end;
+
+              auto csol = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), c);
+              Kokkos::deep_copy(csol, c);
+
+              double diff = 0;
+              for (int i=0;i<cref.dimension(0);++i)
+                for (int j=0;j<cref.dimension(1);++j)
+                  for (int k=0;k<cref.dimension(2);++k)
+                    diff += std::abs(cref(i,j,k) - csol(i,j,k));
+
+              std::cout << std::setw(8) << "Kokkos"
+                        << std::setw(8) << "Team HM"
+                        << " BlkSize = " << std::setw(3) << BlkSize
+                        << " TeamSize = " << std::setw(3) << team_size
+                        << " time = " << std::scientific << tmin
+                        << " avg flop/s = " << (flop/tavg)
+                        << " max flop/s = " << (flop/tmin)
+                        << " diff to ref = " << diff
+                        << std::endl;
+            }
+          }
 
           std::cout << std::endl;
         }

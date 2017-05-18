@@ -22,20 +22,29 @@ namespace KokkosKernels {
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A,B) A B
+      
+      // to use double, std::complex<double>, Kokkos::complex<double>
+      using std::abs;
 
-      template<typename T>
-      KOKKOS_INLINE_FUNCTION      
-      typename std::enable_if<std::is_fundamental<T>::value,T>::type 
-      abs(const T &a) {
-        return (a > 0 ? a : -a);
-      }
+      template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
+      using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::Unmanaged |
+                                                MemoryTraitsType::RandomAccess |
+                                                //                                                MemoryTraitsType::Atomic |
+                                                flag>;
 
-      // template<typename T>
-      // KOKKOS_INLINE_FUNCTION      
-      // typename std::enable_if<std::is_fundamental<T>::value,T>::type 
-      // abs(const Kokkos::complex<T> &a) {
-      //   return sqrt(a.real()*a.real() + a.imag()*a.imag());
-      // }
+      template <typename ViewType>
+      using UnmanagedViewType = Kokkos::View<typename ViewType::data_type,
+                                             typename ViewType::array_layout,
+                                             typename ViewType::device_type,
+                                             MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+      template <typename ViewType>
+      using ConstViewType = Kokkos::View<typename ViewType::const_data_type,
+                                         typename ViewType::array_layout,
+                                         typename ViewType::device_type,
+                                         typename ViewType::memory_traits>;
+      template <typename ViewType>
+      using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
+
       
       template<typename T>
       KOKKOS_INLINE_FUNCTION      
