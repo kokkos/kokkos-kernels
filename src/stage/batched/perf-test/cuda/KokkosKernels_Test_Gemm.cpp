@@ -138,7 +138,7 @@ namespace KokkosKernels {
 
           typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 
-          const int iter_begin = -3, iter_end = 30;
+          const int iter_begin = -3, iter_end = 3;
           Kokkos::Impl::Timer timer;
 
           Kokkos::View<ValueType***,Kokkos::LayoutLeft,HostSpaceType>
@@ -618,7 +618,8 @@ void run(const int N) {
   PerfTest::Gemm<16, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
   PerfTest::Gemm<20, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
   PerfTest::Gemm<32, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  //PerfTest::Gemm<64, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  PerfTest::Gemm<64, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
+  PerfTest::Gemm<128, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
 
   // PerfTest::Gemm< 3, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
   // PerfTest::Gemm< 5, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
@@ -645,8 +646,8 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<ntest;++i) {
       std::cout << " N = " << N[i] << std::endl;
 
-      std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
-      run<VectorLength,double,Algo::Gemm::Unblocked>(N[i]/VectorLength);
+      //std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
+      //run<VectorLength,double,Algo::Gemm::Unblocked>(N[i]/VectorLength);
 
       std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
       run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength);
