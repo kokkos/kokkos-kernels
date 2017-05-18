@@ -1137,6 +1137,20 @@ namespace KokkosKernels {
         return 0;
       }
 
+      template<>
+      template<typename ScalarType,
+               typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerGemmFixC<1,1>::
+      serial_invoke(const ScalarType alpha,
+                    const ValueType *__restrict__ A,
+                    const ValueType *__restrict__ B,
+                    const int m, const int n, const int k,
+                    /**/  ValueType *__restrict__ C) {
+        return serial_invoke(alpha, A, B, k, C);;
+      }
+
       ///
       /// Inner kernel (remainders)
       /// =========================

@@ -82,7 +82,6 @@ namespace KokkosKernels {
                   c += pA[p*as1]*pB[p*bs0];
                 C[i*cs0+j*cs1] += alpha*c;
               });
-            member.team_barrier();
           }
           return 0;
         }
@@ -103,7 +102,7 @@ namespace KokkosKernels {
                /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
           // C = beta C + alpha A B
           // C (m x n), A(m x k), B(k x n)
-      
+
           typedef ValueType value_type;
         
           const int team_rank = member.team_rank();
@@ -118,8 +117,8 @@ namespace KokkosKernels {
             if (m <= 0 || n <= 0 || k <= 0) return 0;
 
             enum : int {
-              mb = Algo::Gemm::Blocked::mb,
-              nb = Algo::Gemm::Blocked::nb };
+              mb = 2, //Algo::Gemm::Blocked::mb,
+              nb = 2 }; //Algo::Gemm::Blocked::nb };
         
             InnerGemmFixC<mb,nb> inner(as0, as1, bs0, bs1, cs0, cs1);
             InnerGemmFixC<0,0> remainder(as0, as1, bs0, bs1, cs0, cs1);
@@ -134,25 +133,36 @@ namespace KokkosKernels {
                 remainder.team_invoke(member, alpha, AA, BB, ib, jb, pb, CC);
               } else {
                 const int
-                mm = (ib/mb)*mb, mp = (ib%mb), 
-                nn = (jb/nb)*nb, np = (jb%nb);         
+                mq = (ib/mb), mm = (mq*mb), mp = (ib%mb), 
+                nq = (jb/nb), nn = (nq*nb), np = (jb%nb);         
             
                 {
                   // square tiling
-                  for (int i=0;i<mm;i+=mb)
-                    for (int j=0;j<nn;j+=nb)
-                      inner.team_invoke(member, alpha, AA+i*as0, BB+j*bs1, k, CC+i*cs0+j*cs1);
-              
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member, mq*nq ),
+                     [&](const int &ij) {
+                      const int i = ij%mq*mb, j = ij/mq*nb;
+                      inner.serial_invoke(alpha, AA+i*as0, BB+j*bs1, k, CC+i*cs0+j*cs1);
+                    });
                   if (mp)
-                    for (int j=0;j<nn;j+=nb)
-                      inner.team_invoke(member, alpha, AA+mm*as0, BB+j*bs1, mp, nb, pb, CC+mm*cs0+j*cs1);            
-              
+                    Kokkos::parallel_for
+                      (Kokkos::TeamThreadRange(member, nq ),
+                       [&](const int &jj) {
+                        const int j = jj*nb;
+                        inner.serial_invoke(alpha, AA+mm*as0, BB+j*bs1, mp, nb, pb, CC+mm*cs0+j*cs1);            
+                      });
+                  
                   if (np)
-                    for (int i=0;i<mm;i+=mb)
-                      inner.team_invoke(member, alpha, AA+i*as0, BB+nn*bs1, mb, np, pb, CC+i*cs0+nn*cs1);
-                }
-                if (mp && np) {
-                  remainder.team_invoke(member, alpha, AA+mm*as0, BB+nn*bs1, mp, np, pb, CC+mm*cs0+nn*cs1);
+                    Kokkos::parallel_for
+                      (Kokkos::TeamThreadRange(member, mq ),
+                       [&](const int &ii) {
+                        const int i = ii*mb;
+                        inner.serial_invoke(alpha, AA+i*as0, BB+nn*bs1, mb, np, pb, CC+i*cs0+nn*cs1);
+                      });
+
+                  if (mp && np) {
+                    remainder.team_invoke(member, alpha, AA+mm*as0, BB+nn*bs1, mp, np, pb, CC+mm*cs0+nn*cs1);
+                  }
                 }
               }
             };          
@@ -182,9 +192,9 @@ namespace KokkosKernels {
                 } // for pp
               } // for jj          
             }
-            // member.team_barrier();
-            return 0;
+
           }
+          return 0;
         };
 
       } // end namespace Team
