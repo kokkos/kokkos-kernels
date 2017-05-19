@@ -226,7 +226,7 @@ namespace KokkosKernels {
           Flush<LLC_CAPACITY,DeviceSpaceType> flush;
 
 #if defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
-          {
+          if (1) {
             ///
             /// CUBLAS Batch version
             ///
@@ -600,11 +600,11 @@ void run(const int N, const int B, const int R) {
   else
     ExecSpace::print_configuration(std::cout, false);
 
-  std::cout << "\n\n Used for Factorization \n\n";
-
   if (B != 0 && R != 0) {
     PerfTest::Trsm<0, VectorLength, ValueType, ExecSpace, AlgoTagType>(N,B,R);
   } else {
+
+    std::cout << "\n\n Used for Factorization \n\n";
 
     /// Left, Lower, NoTrans, UnitDiag (used in LU factorization and LU solve)
 
