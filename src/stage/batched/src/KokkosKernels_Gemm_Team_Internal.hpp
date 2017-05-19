@@ -121,50 +121,24 @@ namespace KokkosKernels {
               nb = Algo::Gemm::Blocked::nb<Kokkos::Impl::ActiveExecutionMemorySpace>() };
         
             InnerGemmFixC<mb,nb> inner(as0, as1, bs0, bs1, cs0, cs1);
-            InnerGemmFixC<0,0> remainder(as0, as1, bs0, bs1, cs0, cs1);
-
             auto gemm = [&](const int ib, 
                             const int jb,
                             const int pb,
                             const value_type *__restrict__ AA,
                             const value_type *__restrict__ BB,
                             /**/  value_type *__restrict__ CC) {
-              if (ib <= 5 && ib == jb) {
-                remainder.team_invoke(member, alpha, AA, BB, ib, jb, pb, CC);
-              } else {
-                const int
-                mq = (ib/mb), mm = (mq*mb), mp = (ib%mb), 
-                nq = (jb/nb), nn = (nq*nb), np = (jb%nb);         
-            
-                {
-                  // square tiling
-                  Kokkos::parallel_for
-                    (Kokkos::TeamThreadRange(member, mq*nq ),
-                     [&](const int &ij) {
-                      const int i = ij%mq*mb, j = ij/mq*nb;
-                      inner.serial_invoke(alpha, AA+i*as0, BB+j*bs1, k, CC+i*cs0+j*cs1);
-                    });
-                  if (mp)
-                    Kokkos::parallel_for
-                      (Kokkos::TeamThreadRange(member, nq ),
-                       [&](const int &jj) {
-                        const int j = jj*nb;
-                        inner.serial_invoke(alpha, AA+mm*as0, BB+j*bs1, mp, nb, pb, CC+mm*cs0+j*cs1);            
-                      });
-                  
-                  if (np)
-                    Kokkos::parallel_for
-                      (Kokkos::TeamThreadRange(member, mq ),
-                       [&](const int &ii) {
-                        const int i = ii*mb;
-                        inner.serial_invoke(alpha, AA+i*as0, BB+nn*bs1, mb, np, pb, CC+i*cs0+nn*cs1);
-                      });
-
-                  if (mp && np) {
-                    remainder.team_invoke(member, alpha, AA+mm*as0, BB+nn*bs1, mp, np, pb, CC+mm*cs0+nn*cs1);
-                  }
-                }
-              }
+              const int
+              mp = (ib%mb), mq = (ib/mb) + (mp>0),
+              np = (jb%nb), nq = (jb/nb) + (np>0);
+              
+              // square tiling
+              Kokkos::parallel_for
+              (Kokkos::TeamThreadRange(member, mq*nq ),
+               [&](const int &ij) {
+                const int i = ij%mq*mb, j = ij/mq*nb;
+                const int mm = (i+mb > ib ? mp : mb), nn = (j+nb > jb ? np : nb); 
+                inner.serial_invoke(alpha, AA+i*as0, BB+j*bs1, mm, nn, k, CC+i*cs0+j*cs1);
+              });
             };          
         
             const bool is_small = true; //(m*n*k <= 64*64*64);
