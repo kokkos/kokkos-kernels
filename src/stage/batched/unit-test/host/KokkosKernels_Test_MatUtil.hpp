@@ -5,10 +5,10 @@
 #include "impl/Kokkos_Timer.hpp"
 
 #include "KokkosKernels_Set_Decl.hpp"
-#include "KokkosKernels_Set_Serial_Impl.hpp"
+#include "KokkosKernels_Set_Impl.hpp"
 
 #include "KokkosKernels_Scale_Decl.hpp"
-#include "KokkosKernels_Scale_Serial_Impl.hpp"
+#include "KokkosKernels_Scale_Impl.hpp"
 
 namespace KokkosKernels {
   namespace Batched {

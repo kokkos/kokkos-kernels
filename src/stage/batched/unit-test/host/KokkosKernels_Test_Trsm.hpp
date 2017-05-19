@@ -152,7 +152,7 @@ namespace KokkosKernels {
               tavg /= iter_end;
               Kokkos::deep_copy(bref, b);
 
-              printf("Reference, BlkSize = %3d, NumCols = %d, time = %e, avg flop/s = %e, max flop/s = %e\n",
+              printf("Reference, BlkSize = %3d, NumCols = %3d, time = %e, avg flop/s = %e, max flop/s = %e\n",
                      BlkSize, NumCols, tmin, (flop/tavg), (flop/tmin));
             }
           }

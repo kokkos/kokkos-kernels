@@ -22,6 +22,23 @@ namespace KokkosKernels {
         };
       }
 
+      ///
+      /// Team Set
+      ///
+
+      namespace Team {
+        template<typename MemberType>
+        struct Set {
+          template<typename ScalarType,
+                   typename AViewType>
+          KOKKOS_INLINE_FUNCTION
+          static int
+          invoke(const MemberType &member,
+                 const ScalarType alpha,
+                 const AViewType &A);
+        };
+      }
+
     }
   }
 }

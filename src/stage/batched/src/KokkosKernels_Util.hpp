@@ -22,21 +22,24 @@ namespace KokkosKernels {
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A,B) A B
-      
+
       // to use double, std::complex<double>, Kokkos::complex<double>
       using std::abs;
 
+      // view manipulation
       template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
       using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::Unmanaged |
                                                 MemoryTraitsType::RandomAccess |
-                                                //                                                MemoryTraitsType::Atomic |
+                                                //  MemoryTraitsType::Atomic |
                                                 flag>;
 
       template <typename ViewType>
-      using UnmanagedViewType = Kokkos::View<typename ViewType::data_type,
-                                             typename ViewType::array_layout,
-                                             typename ViewType::device_type,
-                                             MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+      using UnmanagedViewType 
+      = Kokkos::View<typename ViewType::data_type,
+                     typename ViewType::array_layout,
+                     typename ViewType::device_type,
+                     MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+
       template <typename ViewType>
       using ConstViewType = Kokkos::View<typename ViewType::const_data_type,
                                          typename ViewType::array_layout,
@@ -45,7 +48,7 @@ namespace KokkosKernels {
       template <typename ViewType>
       using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
 
-      
+      // helper for vector type 
       template<typename T>
       KOKKOS_INLINE_FUNCTION      
       typename std::enable_if<std::is_fundamental<T>::value,size_t>::type 
@@ -240,6 +243,7 @@ namespace KokkosKernels {
         struct Gemm { 
           struct Unblocked {};
           struct Blocked {
+#if defined(KOKKOS_HAVE_CUDA)
             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
             ::type mb() { return 2; }  
@@ -247,7 +251,7 @@ namespace KokkosKernels {
             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
             ::type nb() { return 2; }  
-
+#endif
             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
             ::type mb() { return 4; }  

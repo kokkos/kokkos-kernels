@@ -6,8 +6,8 @@
 
 #include "KokkosKernels_Util.hpp"
 
-#include "KokkosKernels_Set_Serial_Internal.hpp"
-#include "KokkosKernels_Scale_Serial_Internal.hpp"
+#include "KokkosKernels_Set_Internal.hpp"
+#include "KokkosKernels_Scale_Internal.hpp"
 
 #include "KokkosKernels_InnerGemmFixA_Serial_Impl.hpp"
 #include "KokkosKernels_InnerTrsm_Serial_Impl.hpp"

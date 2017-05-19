@@ -446,7 +446,7 @@ namespace KokkosKernels {
             InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); 
             for (int i=0;i<m;i+=2)
               for (int j=0;j<n;j+=2) 
-                inner.serial_invoke(alpha, A+i*as0, B+j*bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*cs0+j*cs1);
+                inner.serial_invoke(alpha, A+i*_as0, B+j*_bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*_cs0+j*_cs1);
           } else {
             Kokkos::abort("InnerGemmFixC<5,5>::serial_invoke, assert failure (m<5 && n<5)");
           }
@@ -775,7 +775,7 @@ namespace KokkosKernels {
             InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); 
             for (int i=0;i<m;i+=2)
               for (int j=0;j<n;j+=2) 
-                inner.serial_invoke(alpha, A+i*as0, B+j*bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*cs0+j*cs1);
+                inner.serial_invoke(alpha, A+i*_as0, B+j*_bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*_cs0+j*_cs1);
           } else {
             Kokkos::abort("InnerGemmFixC<4,4>::serial_invoke, assert failure (m<4 && n<4)");
           }
@@ -1002,7 +1002,7 @@ namespace KokkosKernels {
             InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); 
             for (int i=0;i<m;i+=2)
               for (int j=0;j<n;j+=2) 
-                inner.serial_invoke(alpha, A+i*as0, B+j*bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*cs0+j*cs1);
+                inner.serial_invoke(alpha, A+i*_as0, B+j*_bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*_cs0+j*_cs1);
           } else {
             Kokkos::abort("InnerGemmFixC<3,3>::serial_invoke, assert failure (m<3 && n<3)");
           }
