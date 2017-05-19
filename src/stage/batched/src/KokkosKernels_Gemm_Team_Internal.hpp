@@ -9,9 +9,7 @@
 #include "KokkosKernels_Set_Internal.hpp"
 #include "KokkosKernels_Scale_Internal.hpp"
 
-//#include "KokkosKernels_InnerGemmFixA_Team_Impl.hpp"
-//#include "KokkosKernels_InnerGemmFixB_Team_Impl.hpp"
-#include "KokkosKernels_InnerGemmFixC_Team_Impl.hpp"
+#include "KokkosKernels_InnerGemmFixC_Serial_Impl.hpp"
 
 namespace KokkosKernels {
   namespace Batched {

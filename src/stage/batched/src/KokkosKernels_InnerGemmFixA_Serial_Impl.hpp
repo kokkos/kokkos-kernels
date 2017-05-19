@@ -479,8 +479,19 @@ namespace KokkosKernels {
         case 35: { InnerGemmFixA<3,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 25: { InnerGemmFixA<2,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 15: { InnerGemmFixA<1,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
+        default: {
+          if (m < 5 && n < 5) {
+            InnerGemmFixA<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
+            for (int i=0;i<m;i+=2)
+              for (int p=0;p<k;p+=2)
+                inner.serial_invoke(alpha, A+i*_as0+p*_as1, B+p*_bs0, (i+2 > m ? 1 : 2), n, (p+2 > k ? 1 : 2), C+i*_cs0);
+          } else {
+            Kokkos::abort("InnerGemmFixA<5,5>::serial_invoke, assert failure (m<5 && n<5)");
+          }
+          break;
         }
-
+        }
+        
         return 0;
       }
 
@@ -821,12 +832,24 @@ namespace KokkosKernels {
         if (m <=0 || n <= 0 || k <= 0) return 0;
 
         switch (m*10+k) {
+        case 44: { InnerGemmFixA<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 43: { InnerGemmFixA<4,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 42: { InnerGemmFixA<4,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 41: { InnerGemmFixA<4,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 34: { InnerGemmFixA<3,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 24: { InnerGemmFixA<2,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 14: { InnerGemmFixA<1,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
+        default: {
+          if (m < 4 && n < 4) {
+            InnerGemmFixA<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
+            for (int i=0;i<m;i+=2)
+              for (int p=0;p<k;p+=2)
+                inner.serial_invoke(alpha, A+i*_as0+p*_as1, B+p*_bs0, (i+2 > m ? 1 : 2), n, (p+2 > k ? 1 : 2), C+i*_cs0);
+          } else {
+            Kokkos::abort("InnerGemmFixA<4,4>::serial_invoke, assert failure (m<4 && n<4)");
+          }
+          break;
+        }
         }
 
         return 0;
@@ -1057,12 +1080,24 @@ namespace KokkosKernels {
         if (m <=0 || n <= 0 || k <= 0) return 0;
 
         switch (m*10+k) {
+        case 33: { InnerGemmFixA<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 32: { InnerGemmFixA<3,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 31: { InnerGemmFixA<3,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 23: { InnerGemmFixA<2,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 13: { InnerGemmFixA<1,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
+        default: {
+          if (m < 3 && n < 3) {
+            InnerGemmFixA<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
+            for (int i=0;i<m;i+=2)
+              for (int p=0;p<k;p+=2)
+                inner.serial_invoke(alpha, A+i*_as0+p*_as1, B+p*_bs0, (i+2 > m ? 1 : 2), n, (p+2 > k ? 1 : 2), C+i*_cs0);
+          } else {
+            Kokkos::abort("InnerGemmFixA<3,3>::serial_invoke, assert failure (m<3 && n<3)");
+          }
+          break;
         }
-
+        }
+        
         return 0;
       }
 
@@ -1197,8 +1232,14 @@ namespace KokkosKernels {
         if (m <=0 || n <= 0 || k <= 0) return 0;
 
         switch (m*10+k) {
+        case 22: { InnerGemmFixA<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 21: { InnerGemmFixA<2,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
         case 12: { InnerGemmFixA<1,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
+        case 11: { InnerGemmFixA<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
+        default: {
+          Kokkos::abort("InnerGemmFixA<2,2>::serial_invoke, assert failure (m<2 && n<2)");
+          break;
+        }
         }
 
         return 0;
@@ -1242,46 +1283,6 @@ namespace KokkosKernels {
         return 0;
       }
 
-      ///
-      /// Inner kernel (remainders)
-      /// =========================
-
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixA<0,0>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <=0 || n <= 0 || k <= 0) return 0;
-
-        if (m == k) {
-          switch (m) {
-          case 5: { InnerGemmFixA<5,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
-          case 4: { InnerGemmFixA<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
-          case 3: { InnerGemmFixA<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
-          case 2: { InnerGemmFixA<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
-          case 1: { InnerGemmFixA<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, n, C); break; }
-          }
-        } else {
-          for (int j=0;j<n;++j) {
-            const ValueType *__restrict__ jB = B + j*_bs1;
-            /**/  ValueType *__restrict__ jC = C + j*_cs1;        
-            for (int i=0;i<m;++i) {
-              const ValueType *__restrict__ iA = A + i*_as0;
-              /**/  ValueType tC = 0;
-              for (int p=0;p<k;++p) 
-                tC += iA[p*_as1]*jB[p*_bs0];
-              jC[i*_cs0] += alpha*tC;
-            }
-          }
-        }
-        return 0;
-      }
     }
   }  
 } // end namespace KokkosKernels

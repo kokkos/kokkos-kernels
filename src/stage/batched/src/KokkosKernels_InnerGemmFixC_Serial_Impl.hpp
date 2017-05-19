@@ -1192,96 +1192,99 @@ namespace KokkosKernels {
         return serial_invoke(alpha, A, B, k, C);;
       }
 
-      ///
-      /// Inner kernel (remainders)
-      /// =========================
+      /// the below should not be called
 
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixC<0,0>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <= 0 || n <= 0 || k <= 0) return 0;
-        const int mn = m > n ? m : n;
-        switch (mn) {
-        case 5: { InnerGemmFixC<5,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-        case 4: { InnerGemmFixC<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-        case 3: { InnerGemmFixC<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-        case 2: { InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-        case 1: { InnerGemmFixC<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B,       k, C); break; }
-        }
-        return 0;
-      }
 
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixC<0,1>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <= 0 || k <= 0) return 0;
+      // ///
+      // /// Inner kernel (remainders)
+      // /// =========================
 
-        if (m) {
-          switch (m) {
-          case 5: { InnerGemmFixC<5,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-          case 4: { InnerGemmFixC<4,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-          case 3: { InnerGemmFixC<3,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-          case 2: { InnerGemmFixC<2,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-          case 1: { InnerGemmFixC<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-          }
-        } else {
-          for (int p=0;p<k;++p) {
-            const ValueType
-              *__restrict__ pA = A + p*_as1,
-              *__restrict__ pB = B + p*_bs0;
-            for (int i=0;i<m;++i) {
-              const ValueType tA(alpha*pA[i*_as0]);
-              C[i*_cs0] += tA*pB[0];
-            }
-          }
-        }
-        return 0;
-      }
+      // template<>
+      // template<typename ScalarType,
+      //          typename ValueType>
+      // KOKKOS_INLINE_FUNCTION
+      // int
+      // InnerGemmFixC<0,0>::
+      // serial_invoke(const ScalarType alpha,
+      //               const ValueType *__restrict__ A,
+      //               const ValueType *__restrict__ B,
+      //               const int m, const int n, const int k,
+      //               /**/  ValueType *__restrict__ C) {
+      //   if (m <= 0 || n <= 0 || k <= 0) return 0;
+      //   const int mn = m > n ? m : n;
+      //   switch (mn) {
+      //   case 5: { InnerGemmFixC<5,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
+      //   case 4: { InnerGemmFixC<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
+      //   case 3: { InnerGemmFixC<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
+      //   case 2: { InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
+      //   case 1: { InnerGemmFixC<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B,       k, C); break; }
+      //   }
+      //   return 0;
+      // }
 
-      ///
-      /// default unblocked one
-      /// 
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixC<-1,-1>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <=0 || n <= 0 || k <= 0) return 0;
+      // template<>
+      // template<typename ScalarType,
+      //          typename ValueType>
+      // KOKKOS_INLINE_FUNCTION
+      // int
+      // InnerGemmFixC<0,1>::
+      // serial_invoke(const ScalarType alpha,
+      //               const ValueType *__restrict__ A,
+      //               const ValueType *__restrict__ B,
+      //               const int m, const int k,
+      //               /**/  ValueType *__restrict__ C) {
+      //   if (m <= 0 || k <= 0) return 0;
 
-        for (int p=0;p<k;++p) {
-          const ValueType
-            *__restrict__ pA = A+p*_as1,
-            *__restrict__ pB = B+p*_bs0;
-          for (int i=0;i<m;++i) {
-            const ValueType tA(alpha*pA[i*_as0]);
-            for (int j=0;j<n;++j)
-              C[i*_cs0+j*_cs1] += tA*pB[j*_bs1];
-          }
-        }        
-        return 0;
-      }
+      //   if (m) {
+      //     switch (m) {
+      //     case 5: { InnerGemmFixC<5,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+      //     case 4: { InnerGemmFixC<4,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+      //     case 3: { InnerGemmFixC<3,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+      //     case 2: { InnerGemmFixC<2,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+      //     case 1: { InnerGemmFixC<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+      //     }
+      //   } else {
+      //     for (int p=0;p<k;++p) {
+      //       const ValueType
+      //         *__restrict__ pA = A + p*_as1,
+      //         *__restrict__ pB = B + p*_bs0;
+      //       for (int i=0;i<m;++i) {
+      //         const ValueType tA(alpha*pA[i*_as0]);
+      //         C[i*_cs0] += tA*pB[0];
+      //       }
+      //     }
+      //   }
+      //   return 0;
+      // }
+
+      // ///
+      // /// default unblocked one
+      // /// 
+      // template<>
+      // template<typename ScalarType,
+      //          typename ValueType>
+      // KOKKOS_INLINE_FUNCTION
+      // int
+      // InnerGemmFixC<-1,-1>::
+      // serial_invoke(const ScalarType alpha,
+      //               const ValueType *__restrict__ A,
+      //               const ValueType *__restrict__ B,
+      //               const int m, const int n, const int k,
+      //               /**/  ValueType *__restrict__ C) {
+      //   if (m <=0 || n <= 0 || k <= 0) return 0;
+
+      //   for (int p=0;p<k;++p) {
+      //     const ValueType
+      //       *__restrict__ pA = A+p*_as1,
+      //       *__restrict__ pB = B+p*_bs0;
+      //     for (int i=0;i<m;++i) {
+      //       const ValueType tA(alpha*pA[i*_as0]);
+      //       for (int j=0;j<n;++j)
+      //         C[i*_cs0+j*_cs1] += tA*pB[j*_bs1];
+      //     }
+      //   }        
+      //   return 0;
+      // }
       
 
     }

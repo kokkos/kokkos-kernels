@@ -217,44 +217,97 @@ namespace KokkosKernels {
       }
 
       ///
-      /// Remainder TRSM
-      /// ==============
+      /// TRSM
+      /// ====
       /// L(m x m) X(m x n) = B (m x n)
     
       template<>
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int
-      InnerTrsmLeftLowerUnitDiag<0>::
+      InnerTrsmLeftLowerUnitDiag<5>::
       serial_invoke(const ValueType *__restrict__ A,
                     const int m, const int n,
                     /**/  ValueType *__restrict__ B) {
-        if (m <= 0 || n <= 0) return 0;
-
+        if (m > 5)
+          Kokkos::abort("InnerTrsmLeftLowerUnitDiag<5>::serial_invoke, assert failure (m<=5)");
+        if (m <= 0 || n <= 0) return 0;        
         switch (m) {
         case 5: { InnerTrsmLeftLowerUnitDiag<5> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 4: { InnerTrsmLeftLowerUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 3: { InnerTrsmLeftLowerUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 2: { InnerTrsmLeftLowerUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 1: { InnerTrsmLeftLowerUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
-          // default: {
-          //   for (int p=0;p<m;++p) {
-          //     const ValueType
-          //       *__restrict__ a21 = A + (p+1)*_as0 + p*_as1;
-          //     ValueType 
-          //       *__restrict__ b1t = B + p*_bs0,
-          //       *__restrict__ B2  = b1t + _bs0;
-          
-          //     const int
-          //       iend = m-p-1,
-          //       jend = n;
-          
-          //     for (int i=0;i<iend;++i)
-          //       for (int j=0;j<jend;++j) 
-          //         B2[i*_bs0+j*_bs1] -= a21[i*_as0] * b1t[j*_bs1];
-          //   }
-          //   break;
-          // }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerUnitDiag<4>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 4)
+          Kokkos::abort("InnerTrsmLeftLowerUnitDiag<4>::serial_invoke, assert failure (m<=4)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 4: { InnerTrsmLeftLowerUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 3: { InnerTrsmLeftLowerUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftLowerUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftLowerUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerUnitDiag<3>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 3)
+          Kokkos::abort("InnerTrsmLeftLowerUnitDiag<3>::serial_invoke, assert failure (m<=3)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 3: { InnerTrsmLeftLowerUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftLowerUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftLowerUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerUnitDiag<2>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 2)
+          Kokkos::abort("InnerTrsmLeftLowerUnitDiag<2>::serial_invoke, assert failure (m<=2)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 2: { InnerTrsmLeftLowerUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftLowerUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerUnitDiag<1>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 1)
+          Kokkos::abort("InnerTrsmLeftLowerUnitDiag<1>::serial_invoke, assert failure (m<=1)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 1: { InnerTrsmLeftLowerUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         }
         return 0;
       }
@@ -552,7 +605,7 @@ namespace KokkosKernels {
       }
 
       ///
-      /// Remainder TRSM
+      /// TRSM
       /// ==============
       /// L(m x m) X(m x n) = B (m x n)
 
@@ -560,45 +613,89 @@ namespace KokkosKernels {
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int
-      InnerTrsmLeftLowerNonUnitDiag<0>::
+      InnerTrsmLeftLowerNonUnitDiag<5>::
       serial_invoke(const ValueType *__restrict__ A,
                     const int m, const int n,
                     /**/  ValueType *__restrict__ B) {
+        if (m > 5)
+          Kokkos::abort("InnerTrsmLeftLowerNonUnitDiag<5>::serial_invoke, assert failure (m<=5)");
         if (m <= 0 || n <= 0) return 0;
-
         switch (m) {
         case 5: { InnerTrsmLeftLowerNonUnitDiag<5> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 4: { InnerTrsmLeftLowerNonUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 3: { InnerTrsmLeftLowerNonUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 2: { InnerTrsmLeftLowerNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 1: { InnerTrsmLeftLowerNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
-          // default: {
-          //   for (int p=0;p<m;++p) {
-          //     const ValueType
-          //       inv_alpha11 = 1.0/A[p*_as0+p*_as1], //alpha11 = A[p*_as0 + p*_as1],
-          //       *__restrict__ a21 = A + (p+1)*_as0 + p*_as1;
-          //     ValueType 
-          //       *__restrict__ b1t = B + p*_bs0,
-          //       *__restrict__ B2  = b1t + _bs0;
-          
-          //     const int
-          //       iend = m-p-1,
-          //       jend = n;
-          
-          //     // inverse scale
-          //     for (int j=0;j<jend;++j)
-          //       b1t[j*_bs1] *= inv_alpha11;
-          
-          //     // division
-          //     // for (int j=0;j<jend;++j)
-          //     //   b1t[j*_bs1] /= alpha11;
-          
-          //     for (int i=0;i<iend;++i)
-          //       for (int j=0;j<jend;++j) 
-          //         B2[i*_bs0+j*_bs1] -= a21[i*_as0] * b1t[j*_bs1];
-          //   }
-          //   break;
-          // }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerNonUnitDiag<4>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 4)
+          Kokkos::abort("InnerTrsmLeftLowerNonUnitDiag<4>::serial_invoke, assert failure (m<=4)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 4: { InnerTrsmLeftLowerNonUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 3: { InnerTrsmLeftLowerNonUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftLowerNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftLowerNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerNonUnitDiag<3>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 3)
+          Kokkos::abort("InnerTrsmLeftLowerNonUnitDiag<3>::serial_invoke, assert failure (m<=3)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 3: { InnerTrsmLeftLowerNonUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftLowerNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftLowerNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerNonUnitDiag<2>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 2)
+          Kokkos::abort("InnerTrsmLeftLowerNonUnitDiag<2>::serial_invoke, assert failure (m<=2)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 2: { InnerTrsmLeftLowerNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftLowerNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftLowerNonUnitDiag<1>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 1)
+          Kokkos::abort("InnerTrsmLeftLowerNonUnitDiag<1>::serial_invoke, assert failure (m<=1)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 1: { InnerTrsmLeftLowerNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         }
         return 0;
       }
@@ -808,47 +905,97 @@ namespace KokkosKernels {
       }
 
       ///
-      /// Remainder TRSM
-      /// ==============
+      /// TRSM
+      /// ====
       /// L(m x m) X(m x n) = B (m x n)
 
       template<>
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int
-      InnerTrsmLeftUpperUnitDiag<0>::
+      InnerTrsmLeftUpperUnitDiag<5>::
       serial_invoke(const ValueType *__restrict__ A,
                     const int m, const int n,
                     /**/  ValueType *__restrict__ B) {
+        if (m > 5)
+          Kokkos::abort("InnerTrsmLeftUpperUnitDiag<5>::serial_invoke, assert failure (m<=5)");
         if (m <= 0 || n <= 0) return 0;
-
         switch (m) {
         case 5: { InnerTrsmLeftUpperUnitDiag<5> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 4: { InnerTrsmLeftUpperUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 3: { InnerTrsmLeftUpperUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 2: { InnerTrsmLeftUpperUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 1: { InnerTrsmLeftUpperUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
-          // default: {
-          //   ValueType 
-          //     *__restrict__ B0  = B;
-        
-          //   for (int p=(m-1);p>=0;--p) {
-          //     const int
-          //       iend = p,
-          //       jend = n;
-          
-          //     const ValueType
-          //       *__restrict__ a01 = A + p*_as1;
-          
-          //     ValueType 
-          //       *__restrict__ b1t = B + p*_bs0;
-          
-          //     for (int i=0;i<iend;++i)
-          //       for (int j=0;j<jend;++j) 
-          //         B0[i*_bs0+j*_bs1] -= a01[i*_as0] * b1t[j*_bs1];
-          //   }
-          //   break;
-          // }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperUnitDiag<4>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 4)
+          Kokkos::abort("InnerTrsmLeftUpperUnitDiag<4>::serial_invoke, assert failure (m<=4)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 4: { InnerTrsmLeftUpperUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 3: { InnerTrsmLeftUpperUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftUpperUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftUpperUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperUnitDiag<3>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 3)
+          Kokkos::abort("InnerTrsmLeftUpperUnitDiag<3>::serial_invoke, assert failure (m<=3)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 3: { InnerTrsmLeftUpperUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftUpperUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftUpperUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperUnitDiag<2>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 2)
+          Kokkos::abort("InnerTrsmLeftUpperUnitDiag<2>::serial_invoke, assert failure (m<=2)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 2: { InnerTrsmLeftUpperUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftUpperUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperUnitDiag<1>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 1)
+          Kokkos::abort("InnerTrsmLeftUpperUnitDiag<1>::serial_invoke, assert failure (m<=1)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 1: { InnerTrsmLeftUpperUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         }
         return 0;
       }
@@ -1152,59 +1299,101 @@ namespace KokkosKernels {
 
 
       ///
-      /// Remainder TRSM
-      /// ==============
+      /// TRSM
+      /// ====
       /// L(m x m) X(m x n) = B (m x n)
 
-      template<int bmn>
+      template<>
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int
-      InnerTrsmLeftUpperNonUnitDiag<bmn>::
+      InnerTrsmLeftUpperNonUnitDiag<5>::
       serial_invoke(const ValueType *__restrict__ A,
                     const int m, const int n,
                     /**/  ValueType *__restrict__ B) {
+        if (m > 5)
+          Kokkos::abort("InnerTrsmLeftUpperNonUnitDiag<5>::serial_invoke, assert failure (m<=5)");
         if (m <= 0 || n <= 0) return 0;
-
         switch (m) {
         case 5: { InnerTrsmLeftUpperNonUnitDiag<5> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 4: { InnerTrsmLeftUpperNonUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 3: { InnerTrsmLeftUpperNonUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 2: { InnerTrsmLeftUpperNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
         case 1: { InnerTrsmLeftUpperNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
-          // default: {
-          //   ValueType 
-          //     *__restrict__ B0  = B;
-        
-          //   for (int p=(m-1);p>=0;--p) {
-          //     const int
-          //       iend = p,
-          //       jend = n;
-          
-          //     const ValueType
-          //       inv_alpha11 = 1.0/A[p*_as0+p*_as1], //alpha11 = A[p*_as0 + p*_as1],
-          //       *__restrict__ a01 = A + p*_as1;
-          
-          //     ValueType 
-          //       *__restrict__ b1t = B + p*_bs0;
-          
-          //     // inverse scale
-          //     for (int j=0;j<jend;++j)
-          //       b1t[j*_bs1] *= inv_alpha11;
-          
-          //     // division
-          //     // for (int j=0;j<jend;++j)
-          //     //   b1t[j*_bs1] /= alpha11;
-          
-          //     for (int i=0;i<iend;++i)
-          //       for (int j=0;j<jend;++j) 
-          //         B0[i*_bs0+j*_bs1] -= a01[i*_as0] * b1t[j*_bs1];
-          //   }
-          //   break;
-          // }
         }
         return 0;
       }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperNonUnitDiag<4>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 4)
+          Kokkos::abort("InnerTrsmLeftUpperNonUnitDiag<4>::serial_invoke, assert failure (m<=4)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 4: { InnerTrsmLeftUpperNonUnitDiag<4> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 3: { InnerTrsmLeftUpperNonUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftUpperNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftUpperNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperNonUnitDiag<3>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 3)
+          Kokkos::abort("InnerTrsmLeftUpperNonUnitDiag<3>::serial_invoke, assert failure (m<=3)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 3: { InnerTrsmLeftUpperNonUnitDiag<3> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 2: { InnerTrsmLeftUpperNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftUpperNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperNonUnitDiag<2>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 2)
+          Kokkos::abort("InnerTrsmLeftUpperNonUnitDiag<2>::serial_invoke, assert failure (m<=2)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 2: { InnerTrsmLeftUpperNonUnitDiag<2> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        case 1: { InnerTrsmLeftUpperNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+      template<>
+      template<typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerTrsmLeftUpperNonUnitDiag<1>::
+      serial_invoke(const ValueType *__restrict__ A,
+                    const int m, const int n,
+                    /**/  ValueType *__restrict__ B) {
+        if (m > 1)
+          Kokkos::abort("InnerTrsmLeftUpperNonUnitDiag<1>::serial_invoke, assert failure (m<=1)");
+        if (m <= 0 || n <= 0) return 0;
+        switch (m) {
+        case 1: { InnerTrsmLeftUpperNonUnitDiag<1> inner(_as0, _as1, _bs0, _bs1); inner.serial_invoke(A, n, B); break; }
+        }
+        return 0;
+      }
+
     }
   }
 }
