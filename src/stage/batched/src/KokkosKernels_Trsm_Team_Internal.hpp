@@ -49,14 +49,11 @@ namespace KokkosKernels {
                /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
           typedef ValueType value_type;
 
-          // note that parallel range is different ( m*n vs m-1*n);        
-          const bool team_barrier = true;
-          if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1, team_barrier);
+          if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
           else {
-            if (alpha != 1) Team::ScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1, team_barrier);
+            if (alpha != 1) Team::ScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
             if (m <= 0 || n <= 0) return 0;
 
-            member.team_barrier();
             for (int p=0;p<m;++p) {
               const int iend = m-p-1, jend = n;
           
@@ -67,6 +64,7 @@ namespace KokkosKernels {
                 *__restrict__ b1t =        B+p*bs0,
                 *__restrict__ B2  = iend ? B+(p+1)*bs0 : NULL;
 
+              member.team_barrier();
               if (!use_unit_diag) {
                 const value_type alpha11 = A[p*as0+p*as1];
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
@@ -105,10 +103,9 @@ namespace KokkosKernels {
           typedef ValueType value_type;
 
           // note that parallel range is different ( m*n vs m-1*n);        
-          const bool team_barrier = true;
-          if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1, team_barrier);
+          if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
           else {
-            if (alpha != 1) Team::ScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1, team_barrier);
+            if (alpha != 1) Team::ScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
             if (m <= 0 || n <= 0) return 0;
 
             {
@@ -134,7 +131,8 @@ namespace KokkosKernels {
                   // trsm update
                   const value_type *__restrict__ Ap = AA+p*as0+p*as1;
                   /**/  value_type *__restrict__ Bp = BB+p*bs0;
-                  
+
+                  member.team_barrier();                  
                   const int np = jb%mb;
                   Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/mb)+(np>0)),[&](const int &jj) {
                       const int j = jj*mb, qb = (j+mb) > jb ? np : mb;
@@ -198,10 +196,9 @@ namespace KokkosKernels {
           typedef ValueType value_type;
   
           // note that parallel range is different ( m*n vs m-1*n);        
-          const bool team_barrier = true;
-          if (alpha == 0)   Team::SetInternal::invoke(m, n, value_type(0), B, bs0, bs1, team_barrier);
+          if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
           else {
-            if (alpha != 1) Team::ScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1, team_barrier);
+            if (alpha != 1) Team::ScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
             if (m <= 0 || n <= 0) return 0;
         
             value_type *__restrict__ B0 = B;
@@ -211,6 +208,7 @@ namespace KokkosKernels {
               const value_type *__restrict__ a01 = A+p*as1;
               /**/  value_type *__restrict__ b1t = B+p*bs0;
             
+              member.team_barrier();
               if (!use_unit_diag) {
                 const value_type alpha11 = A[p*as0+p*as1];
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
@@ -250,10 +248,9 @@ namespace KokkosKernels {
           typedef ValueType value_type;
 
           // note that parallel range is different ( m*n vs m-1*n);        
-          const bool team_barrier = true;
-          if (alpha == 0)   Team::SetInternal::invoke(m, n, value_type(0), B, bs0, bs1, team_barrier);
+          if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
           else {
-            if (alpha != 1) Team::ScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1, team_barrier);
+            if (alpha != 1) Team::ScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
             if (m <= 0 || n <= 0) return 0;
 
             {
@@ -278,12 +275,14 @@ namespace KokkosKernels {
                   const value_type *__restrict__ Ap = AA+p*as0+p*as1;
                   /**/  value_type *__restrict__ Bp = BB+p*bs0;
 
+                  member.team_barrier();
                   const int np = jb%mb;
                   Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/mb)+(np>0)),[&](const int &jj) {
                       const int j = jj*mb, qb = (j+mb) > jb ? np : mb;     
                       if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                       else               trsm_n.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                     });
+                  member.team_barrier();
                   
                   // gemm update
                   GemmInternal<Algo::Gemm::Blocked>

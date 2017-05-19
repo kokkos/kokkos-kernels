@@ -384,18 +384,15 @@ namespace KokkosKernels {
               typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
               
               const int 
-                use_blocked_algo = (std::is_same<AlgoTagType,Algo::Gemm::Blocked>::value), // && BlkSize > 8),
+                is_blocked_algo = (std::is_same<AlgoTagType,Algo::Gemm::Blocked>::value), 
                 mb = Algo::Gemm::Blocked::mb<DeviceMemorySpaceType>(),
-                nb = Algo::Gemm::Blocked::nb<DeviceMemorySpaceType>(),
-                mp = BlkSize%mb > 0,
-                np = BlkSize%nb > 0;
+                mp = BlkSize%mb > 0;
 
               const int 
-                mblk = use_blocked_algo ? (BlkSize/mb + mp) : BlkSize,
-                nblk = use_blocked_algo ? (BlkSize/nb + np) : BlkSize;
+                mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
               const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-              const int team_size = min(mblk*nblk, max_cuda_blocksize/VectorLength);
+              const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
 
               policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {

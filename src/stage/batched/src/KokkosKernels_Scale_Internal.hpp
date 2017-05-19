@@ -55,8 +55,7 @@ namespace KokkosKernels {
           invoke(const MemberType &member, 
                  const int m, const int n, 
                  const ScalarType alpha, 
-                 /* */ ValueType *__restrict__ A, const int as0, const int as1,
-                 const bool team_barrier = false) {
+                 /* */ ValueType *__restrict__ A, const int as0, const int as1) {
             if ( (m == as0 && as1 == 1) ||
                  (n == as1 && as0 == 1) )
               Kokkos::parallel_for
@@ -71,8 +70,6 @@ namespace KokkosKernels {
                   const int i = ij%m, j = ij/m;
                   A[i*as0+j*as1] *= alpha;
                 });
-            if (team_barrier)
-              member.team_barrier();
 
             return 0;
           }
