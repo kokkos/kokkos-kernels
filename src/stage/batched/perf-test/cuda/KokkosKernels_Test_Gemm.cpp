@@ -559,7 +559,7 @@ namespace KokkosKernels {
               typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
               
               const int team_size = 
-                Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
+                min(Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength,BlkSize*BlkSize);
 
               const policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -646,28 +646,24 @@ int main(int argc, char *argv[]) {
 
   Kokkos::initialize(argc, argv);
 
-  const int ntest = 1;
-  //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
-  int N[1] = { 128*128 }, B = 0;
+  int N = 128*128, B = 0;
 
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
-    if (token == std::string("-N")) N[0] = std::atoi(argv[++i]);
-    if (token == std::string("-B")) B    = std::atoi(argv[++i]);
+    if (token == std::string("-N")) N = std::atoi(argv[++i]);
+    if (token == std::string("-B")) B = std::atoi(argv[++i]);
   }
 
   constexpr int VectorLength = 16;
 
   {
-    for (int i=0;i<ntest;++i) {
-      std::cout << " N = " << N[i] << std::endl;
+    std::cout << " N = " << N << std::endl;
 
-      std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
-      run<VectorLength,double,Algo::Gemm::Unblocked>(N[i]/VectorLength, B);
-
-      std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
-      run<VectorLength,double,Algo::Gemm::Blocked>(N[i]/VectorLength, B);
-    }
+    std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Unblocked\n";      
+    run<VectorLength,double,Algo::Gemm::Unblocked>(N/VectorLength, B);
+    
+    std::cout << "\n Testing LayoutLeft-" << VectorLength << " and Algo::Gemm::Blocked\n";      
+    run<VectorLength,double,Algo::Gemm::Blocked>(N/VectorLength, B);
   }
 
   Kokkos::finalize();
