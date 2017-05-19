@@ -101,7 +101,7 @@ namespace KokkosKernels {
             {
               enum : int {
                 mb = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
-                nb = Algo::Gemm::Blocked::nb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
+                nb = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
               };
 
               InnerGemmFixC<mb,nb> inner(as0, as1, bs0, bs1, cs0, cs1);
