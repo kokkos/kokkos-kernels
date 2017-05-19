@@ -281,7 +281,14 @@ namespace KokkosKernels {
         struct LU {
           struct Unblocked {};
           struct Blocked {
-            enum : int { mb = 4 };
+#if defined(KOKKOS_HAVE_CUDA)
+            template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
+            typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
+            ::type mb() { return 4; }
+#endif
+            template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
+            typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
+            ::type mb() { return 4; }  
           };
           struct MKL {};
           struct CompactMKL {};
