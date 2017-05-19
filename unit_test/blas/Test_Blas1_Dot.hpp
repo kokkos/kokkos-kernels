@@ -70,49 +70,55 @@ int test_dot() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutRight, Device> view_type_b_lr;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
 
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(0);
-  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(0);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
-
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(13);
-  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(13);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
-
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(1024);
-  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(1024);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
-
   Test::impl_test_dot<view_type_a_ll, view_type_b_ll, Device>(132231);
-  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(132231);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
+#endif
 
-  #if !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(0);
+  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(13);
+  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(1024);
+  Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(132231);
+#endif
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
+#endif
+
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
   Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(1024);
   Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
-  #endif
+#endif
+
 
   return 1;
 }
 
-#if defined(KOKKOSKERNELS_INST_FLOAT) || !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_float ) {
     test_dot<float,float,TestExecSpace> ();
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_DOUBLE) || !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_double ) {
     test_dot<double,double,TestExecSpace> ();
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_INT) || !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_int ) {
     test_dot<int,int,TestExecSpace> ();
 }
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F( TestCategory, dot_double_int ) {
     test_dot<double,int,TestExecSpace> ();
 }

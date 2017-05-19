@@ -31,7 +31,7 @@ LIB =
 #=================== Include Kokkos and KokkosKernels ==================
 #=======================================================================
 
-include $(KOKKOS_PATH)/Makefile.kokkos
+#include $(KOKKOS_PATH)/Makefile.kokkos
 include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 
 #=======================================================================
@@ -40,6 +40,7 @@ include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 
 CXXFLAGS += -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
 CXXFLAGS += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
+#CXXFLAGS += -DKOKKOSKERNELS_IMPL_CHECK_ETI_CALLS
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
 
@@ -64,7 +65,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
   TEST_TARGETS += test-openmp
 endif
 
-KokkosKernels_UnitTest_OpenMP: $(OBJ_OPENMP) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS_LINK_DEPENDS)
+KokkosKernels_UnitTest_OpenMP: $(OBJ_OPENMP) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_OPENMP) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_OpenMP
 
 test-openmp: KokkosKernels_UnitTest_OpenMP
@@ -85,7 +86,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   TEST_TARGETS += test-cuda
 endif
 
-KokkosKernels_UnitTest_Cuda: $(OBJ_CUDA) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS_LINK_DEPENDS)
+KokkosKernels_UnitTest_Cuda: $(OBJ_CUDA) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_CUDA) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Cuda
 
 test-cuda: KokkosKernels_UnitTest_Cuda
@@ -106,7 +107,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
   TEST_TARGETS += test-serial
 endif
 
-KokkosKernels_UnitTest_Serial: $(OBJ_SERIAL) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS_LINK_DEPENDS)
+KokkosKernels_UnitTest_Serial: $(OBJ_SERIAL) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_SERIAL) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Serial
 
 test-serial: KokkosKernels_UnitTest_Serial
@@ -127,7 +128,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
   TEST_TARGETS += test-threads
 endif
 
-KokkosKernels_UnitTest_Threads: $(OBJ_THREADS) $(KOKKOS_LINK_DEPENDS) $(KOKKOS_KERNELS_LINK_DEPENDS)
+KokkosKernels_UnitTest_Threads: $(OBJ_THREADS) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_THREADS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Threads
 
 test-threads: KokkosKernels_UnitTest_Threads
@@ -141,7 +142,7 @@ test: $(TEST_TARGETS)
 
 build: $(TARGETS)
 	
-clean: kokkos-clean 
+clean: kokkos-clean kokkoskernels-clean
 	rm -f *.o
 
 # Compilation rules
