@@ -354,7 +354,7 @@ namespace KokkosKernels {
                     diff += std::abs(cref(i,j,k) - csol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
-                        << std::setw(8) << "Team v1"
+                        << std::setw(8) << "Team V1"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = " << std::setw(3) << team_size 
                         << " time = " << std::scientific << tmin
@@ -429,7 +429,7 @@ namespace KokkosKernels {
                     diff += std::abs(cref(i,j,k) - csol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
-                        << std::setw(8) << "Team v2"
+                        << std::setw(8) << "Team V2"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = " << std::setw(3) << team_size
                         << " time = " << std::scientific << tmin
