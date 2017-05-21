@@ -41,8 +41,9 @@
 //@HEADER
 */
 
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
 
-#include "Kokkos_Blas1_MV_impl_abs.hpp"
+#include "Kokkos_Blas1_impl_abs_spec.hpp"
 
 // Turning off the KOKKOSKERNELS_ETI_ONLY macro
 // since the core cpp files have to be build always.

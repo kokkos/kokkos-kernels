@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOS_BLAS1_MV_IMPL_ABS_HPP_
-#define KOKKOS_BLAS1_MV_IMPL_ABS_HPP_
+#ifndef KOKKOS_BLAS1_IMPL_ABS_HPP_
+#define KOKKOS_BLAS1_IMPL_ABS_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -235,107 +235,6 @@ V_Abs_Generic (const RV& R, const XV& X)
   }
 }
 
-//! Implementation of KokkosBlas::abs for (multi)vectors.
-template<class RMV, class XMV, int rank = RMV::rank>
-struct Abs {};
-
-#
-template<class RMV, class XMV>
-struct Abs<RMV, XMV, 2> {
-  typedef typename XMV::size_type size_type;
-
-  static void abs (const RMV& R, const XMV& X)
-  {
-    static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                   "Abs<2-D>: RMV is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                   "Abs<2-D>: XMV is not a Kokkos::View.");
-    static_assert (RMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                   "RMV is not rank 2.");
-    static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                   "XMV is not rank 2.");
-
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
-    if (numRows < static_cast<size_type> (INT_MAX) &&
-        numRows * numCols < static_cast<size_type> (INT_MAX)) {
-      typedef int index_type;
-      MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-    }
-    else {
-      typedef typename XMV::size_type index_type;
-      MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-    }
-  }
-};
-
-//! Partial specialization of Abs for single vectors (1-D Views).
-template<class RMV, class XMV>
-struct Abs<RMV, XMV, 1>
-{
-  typedef typename XMV::size_type size_type;
-
-  static void abs (const RMV& R, const XMV& X)
-  {
-    static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                   "Abs<1-D>: RMV is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                   "Abs<1-D>: XMV is not a Kokkos::View.");
-    static_assert (RMV::rank == 1, "KokkosBlas::Impl::Abs<1-D>: "
-                   "RMV is not rank 1.");
-    static_assert (XMV::rank == 1, "KokkosBlas::Impl::Abs<1-D>: "
-                   "XMV is not rank 1.");
-
-    const size_type numRows = X.dimension_0 ();
-
-    if (numRows < static_cast<size_type> (INT_MAX)) {
-      typedef int index_type;
-      V_Abs_Generic<RMV, XMV, index_type> (R, X);
-    }
-    else {
-      typedef typename XMV::size_type index_type;
-      V_Abs_Generic<RMV, XMV, index_type> (R, X);
-    }
-  }
-};
-
-//
-// Macro for declaration of full specialization of
-// KokkosBlas::Impl::Abs for rank == 2.  This is NOT for users!!!  All
-// the declarations of full specializations go in this header file.
-// We may spread out definitions (see _DEF macro below) across one or
-// more .cpp files.
-//
-#define KOKKOSBLAS1_IMPL_MV_ABS_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-extern template struct Abs<Kokkos::View<SCALAR**, \
-                             LAYOUT, \
-                             Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                           Kokkos::View<const SCALAR**, \
-                             LAYOUT, \
-                             Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                           2>;
-
-//
-// Macro for definition of full specialization of
-// KokkosBlas::Impl::Abs for rank == 2.  This is NOT for users!!!  We
-// use this macro in one or more .cpp files in this directory.
-//
-#define KOKKOSBLAS1_IMPL_MV_ABS_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template struct Abs<Kokkos::View<SCALAR**, \
-                      LAYOUT, \
-                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                    Kokkos::View<const SCALAR**, \
-                      LAYOUT, \
-                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                    2>;
-
-} // namespace Impl
-} // namespace KokkosBlas
-
-#include<generated_specializations_hpp/KokkosBlas1_impl_MV_abs_decl_specializations.hpp>
-
+}
+}
 #endif // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_

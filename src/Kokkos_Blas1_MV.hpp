@@ -48,7 +48,7 @@
 ///   Tpetra::Vector and Tpetra::MultiVector use cases.
 
 #include <Kokkos_Blas1.hpp>
-#include <Kokkos_Blas1_MV_impl_abs.hpp>
+#include <Kokkos_Blas1_impl_abs_spec.hpp>
 #include <Kokkos_Blas1_MV_impl_axpby.hpp>
 #include <Kokkos_Blas1_MV_impl_dot.hpp>
 #include <Kokkos_Blas1_MV_impl_fill.hpp>
@@ -714,8 +714,8 @@ abs (const RMV& R, const XMV& X)
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
       XMV::rank == 1,
-      typename XMV::non_const_value_type*,
-      typename XMV::non_const_value_type** >::type,
+      typename XMV::const_value_type*,
+      typename XMV::const_value_type** >::type,
     typename XMV::array_layout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;

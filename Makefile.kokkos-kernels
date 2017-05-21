@@ -6,7 +6,7 @@ KOKKOSKERNELS_INSTALL_PATH ?= ${HOME}/Kokkos/kokkos-kernels-install
 # What to instantiate
 
 KOKKOSKERNELS_SCALARS ?= double
-KOKKOSKERNELS_LAYOUTS ?= LayoutLeft
+KOKKOSKERNELS_LAYOUTS ?= LayoutLeft,LayoutRight
 KOKKOSKERNELS_SPACES ?= $(KOKKOS_DEVICES),HostSpace
 KOKKOSKERNELS_ENABLE_TPLS ?= ""
 KOKKOSKERNELS_OPTIONS ?= ""
@@ -18,7 +18,7 @@ KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS := $(strip $(shell echo $(KOKKOSKERNELS_ENA
 MKL_PATH ?= ${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS ?= -L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 
-default: build-lib
+default-kokkos-kernels: build-lib
 	echo "Start Build"
 
 
@@ -197,6 +197,13 @@ KOKKOSKERNELS_INTERNAL_ETI_ONLY := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS)
 ifeq (${KOKKOSKERNELS_INTERNAL_ETI_ONLY}, 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_ETI_ONLY" >> KokkosKernels_config.tmp )
 endif
+
+#==== Put in guard for library compilations ===========================
+tmp := $(shell echp "" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "\#ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "\#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "\#endif " >> KokkosKernels_config.tmp)
+tmp := $(shell echp "" >> KokkosKernels_config.tmp)
 
 #==== Endif the file  =================================================
 

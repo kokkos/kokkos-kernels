@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-
-#include "Kokkos_Blas1_MV_impl_abs.hpp"
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
+#include "Kokkos_Blas1_impl_abs_spec.hpp"
 
 // Turning off the KOKKOSKERNELS_ETI_ONLY macro
 // since the core cpp files have to be build always.
@@ -57,6 +57,7 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
  KOKKOSBLAS1_IMPL_MV_ABS_DEF(double, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_IMPL_V_ABS_DEF(double, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 } // Impl
 } // KokkosBlas
