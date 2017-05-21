@@ -7,7 +7,7 @@ info:
 	@echo " - kokkos is located at $(KOKKOS)"
 	@echo " - exec is one of $(EXECS)"
 
-EXEC  = KokkosKernels_Test_Trsm
+EXEC  = KokkosKernels_Test_LU
 EXECS = KokkosKernels_Test_Gemm \
 	KokkosKernels_Test_Trsm \
 	KokkosKernels_Test_LU 

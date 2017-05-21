@@ -5,9 +5,10 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosKernels_Util.hpp"
+
 #include "KokkosKernels_InnerLU_Serial_Impl.hpp"
 #include "KokkosKernels_InnerTrsm_Serial_Impl.hpp"
-#include "KokkosKernels_Gemm_Serial_Internal.hpp"
+#include "KokkosKernels_Gemm_Team_Internal.hpp"
 
 namespace KokkosKernels {
   namespace Batched {
@@ -108,7 +109,7 @@ namespace KokkosKernels {
 
                 // lu on a block             
                 member.team_barrier();
-                lu.serial_invoke(pb, pb, Ap);
+                lu.serial_invoke(pb, Ap);
                 member.team_barrier();
 
                 // dimension ABR
@@ -143,7 +144,7 @@ namespace KokkosKernels {
               }
             };
             
-            const bool is_small = (m*n <= 64*64);
+            const bool is_small = true; //(m*n <= 64*64);
             if (is_small) {
               lu_factorize(m, n, A);
             } else {

@@ -93,7 +93,7 @@ namespace KokkosKernels {
                 value_type *__restrict__ Ap = AA+p*as0+p*as1;
 
                 // lu on a block             
-                lu.serial_invoke(pb, pb, Ap);
+                lu.serial_invoke(pb, Ap);
 
                 // dimension ABR
                 const int m_abr = ib-p-mb, n_abr = jb-p-mb;
@@ -113,7 +113,7 @@ namespace KokkosKernels {
               }
             };
 
-            const bool is_small = (m*n <= 64*64);
+            const bool is_small = true; //(m*n <= 64*64);
             if (is_small) {
               lu_factorize(m, n, A);
             } else {
