@@ -67,10 +67,16 @@ namespace KokkosKernels {
               Kokkos::parallel_for
                 (Kokkos::TeamThreadRange(member,0,m*n),
                  [&](const int &ij) {
+#if \
+  defined (KOKKOS_HAVE_CUDA) && \
+  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
                   const int i = ij%m, j = ij/m;
+#else
+                  const int i = ij/n, j = ij%n;
+#endif
                   A[i*as0+j*as1] *= alpha;
                 });
-
+            member.team_barrier();
             return 0;
           }
         };

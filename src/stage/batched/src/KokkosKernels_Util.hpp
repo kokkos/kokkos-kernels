@@ -240,15 +240,15 @@ namespace KokkosKernels {
       };
 
       struct Algo {
-        struct Gemm { 
+        struct Level3 {
           struct Unblocked {};
           struct Blocked {
-            /// TODO:: for now harwire the blocksizes; this should reflect 
-            ///        regieter blocking (not about team parallelism).
-            /// this mb should vary according to
-            /// - team policy (smaller) or range policy (bigger)
-            /// - space (cuda vs host)
-            /// - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+            // TODO:: for now harwire the blocksizes; this should reflect 
+            // regieter blocking (not about team parallelism).
+            // this mb should vary according to
+            // - team policy (smaller) or range policy (bigger)
+            // - space (cuda vs host)
+            // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
 #if defined(KOKKOS_HAVE_CUDA)
             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
@@ -262,56 +262,34 @@ namespace KokkosKernels {
           struct CompactMKL {};
         };
 
-        struct Trsm {
+        using Gemm = Level3;
+        using Trsm = Level3;
+        using LU   = Level3;
+
+        struct Level2 {
           struct Unblocked {};
           struct Blocked {
+            // TODO:: for now harwire the blocksizes; this should reflect 
+            // regieter blocking (not about team parallelism).
+            // this mb should vary according to
+            // - team policy (smaller) or range policy (bigger)
+            // - space (cuda vs host)
+            // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
 #if defined(KOKKOS_HAVE_CUDA)
             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
-            ::type mb() { return 4; }
+            ::type mb() { return 2; }
 #endif
             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
-            ::type mb() { return 4; }  
+            ::type mb() { return 2; }  
           };
           struct MKL {};
           struct CompactMKL {};
         };
 
-        struct LU {
-          struct Unblocked {};
-          struct Blocked {
-#if defined(KOKKOS_HAVE_CUDA)
-            template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
-            typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
-            ::type mb() { return 4; }
-#endif
-            template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr 
-            typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
-            ::type mb() { return 4; }  
-          };
-          struct MKL {};
-          struct CompactMKL {};
-        };
-
-        struct Gemv { 
-          struct Unblocked {};
-          struct Blocked {
-            enum : int { mb = 4 };
-          };
-          struct MKL {};
-          struct CompactMKL {};
-        };
-
-        struct Trsv { 
-          struct Unblocked {};
-          struct Blocked {
-            enum : int { mb = 4 };
-          };
-          struct MKL {};
-          struct CompactMKL {};
-        };
-
+        using Gemv = Level2;
+        using Trsv = Level2;
       };
 
       struct Util {

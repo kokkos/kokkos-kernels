@@ -1,18 +1,18 @@
-#ifndef __KOKKOSKERNELS_TRSV_SERIAL_INTERNAL_HPP__
-#define __KOKKOSKERNELS_TRSV_SERIAL_INTERNAL_HPP__
+#ifndef __KOKKOSKERNELS_TRSV_TEAM_INTERNAL_HPP__
+#define __KOKKOSKERNELS_TRSV_TEAM_INTERNAL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_Trsm_Serial_Internal.hpp"  
+#include "KokkosKernels_Trsm_Team_Internal.hpp"  
 
 namespace KokkosKernels {
 
   ///
-  /// Serial Internal Impl
+  /// Team Internal Impl
   /// ====================
-  namespace Serial {
+  namespace Team {
 
     ///
     /// Lower
@@ -20,11 +20,13 @@ namespace KokkosKernels {
 
     template<typename AlgoType>
     struct TrsvInternalLower {
-      template<typename ScalarType,
+      template<typename MemberType,
+               typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const bool use_unit_diag,
+      invoke(const MemberType &member, 
+             const bool use_unit_diag,
              const int m, 
              const ScalarType alpha,
              const ValueType *__restrict__ A, const int as0, const int as1,
@@ -32,18 +34,21 @@ namespace KokkosKernels {
     };
 
     template<>
-    template<typename ScalarType,
+    template<typename MemberType,
+             typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int 
     TrsvInternalLower<Algo::Trsv::Unblocked>::
-    invoke(const bool use_unit_diag,
+    invoke(const MemberType &member,
+           const bool use_unit_diag,
            const int m, 
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
       return TrsmInternalLeftLower<Algo::Trsm::Unblocked>::
-        invoke(use_unit_diag,
+        invoke(member,
+               use_unit_diag,
                m, 1,
                alpha,
                A, as0, as1,
@@ -51,18 +56,21 @@ namespace KokkosKernels {
     }
 
     template<>
-    template<typename ScalarType,
+    template<typename MemberType,
+             typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int 
     TrsvInternalLower<Algo::Trsv::Blocked>::
-    invoke(const bool use_unit_diag,
+    invoke(const MemberType &member,
+           const bool use_unit_diag,
            const int m, 
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
       return TrsmInternalLeftLower<Algo::Trsm::Blocked>::
-        invoke(use_unit_diag,
+        invoke(member,
+               use_unit_diag,
                m, 1,
                alpha,
                A, as0, as1,
@@ -75,11 +83,13 @@ namespace KokkosKernels {
 
     template<typename AlgoType>
     struct TrsvInternalUpper {
-      template<typename ScalarType,
+      template<typename MemberType,
+               typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const bool use_unit_diag,
+      invoke(const MemberType &member, 
+             const bool use_unit_diag,
              const int m, 
              const ScalarType alpha,
              const ValueType *__restrict__ A, const int as0, const int as1,
@@ -87,18 +97,21 @@ namespace KokkosKernels {
     };
 
     template<>
-    template<typename ScalarType,
+    template<typename MemberType,
+             typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int 
     TrsvInternalUpper<Algo::Trsv::Unblocked>::
-    invoke(const bool use_unit_diag,
+    invoke(const MemberType &member, 
+           const bool use_unit_diag,
            const int m, 
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
       return TrsmInternalLeftUpper<Algo::Trsm::Unblocked>::
-        invoke(use_unit_diag,
+        invoke(member,
+               use_unit_diag,
                m, 1,
                alpha,
                A, as0, as1,
@@ -106,18 +119,21 @@ namespace KokkosKernels {
     }
 
     template<>
-    template<typename ScalarType,
+    template<typename MemberType,
+             typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int 
     TrsvInternalUpper<Algo::Trsv::Blocked>::
-    invoke(const bool use_unit_diag,
+    invoke(const MemberType &member, 
+           const bool use_unit_diag,
            const int m, 
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
       return TrsmInternalLeftUpper<Algo::Trsm::Blocked>::
-        invoke(use_unit_diag,
+        invoke(member,
+               use_unit_diag,
                m, 1,
                alpha,
                A, as0, as1,
