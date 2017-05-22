@@ -48,6 +48,14 @@ namespace KokkosKernels {
       template <typename ViewType>
       using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
 
+      template <typename ViewType>
+      using ScratchViewType 
+      = Kokkos::View<typename ViewType::data_type,
+                     typename ViewType::array_layout,
+                     typename ViewType::execution_space::scratch_memory_space,
+                     MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+      
+      
       // helper for vector type 
       template<typename T>
       KOKKOS_INLINE_FUNCTION      

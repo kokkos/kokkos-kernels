@@ -21,7 +21,7 @@ namespace KokkosKernels {
                  typename BViewType>
         KOKKOS_INLINE_FUNCTION
         int
-        Set<Trasn::NoTranspose>::
+        Copy<Trans::NoTranspose>::
         invoke(const AViewType &A,
                /* */ BViewType &B) {
           return CopyInternal::
@@ -36,7 +36,7 @@ namespace KokkosKernels {
                  typename BViewType>
         KOKKOS_INLINE_FUNCTION
         int
-        Set<Trasn::Transpose>::
+        Copy<Trans::Transpose>::
         invoke(const AViewType &A,
                /* */ BViewType &B) {
           return CopyInternal::
@@ -59,7 +59,7 @@ namespace KokkosKernels {
           template<typename AViewType,
                    typename BViewType>
           KOKKOS_INLINE_FUNCTION
-          int
+          static int
           invoke(const MemberType &member, 
                  const AViewType &A,
                  /* */ BViewType &B) {
@@ -77,7 +77,7 @@ namespace KokkosKernels {
           template<typename AViewType,
                    typename BViewType>
           KOKKOS_INLINE_FUNCTION
-          int
+          static int
           invoke(const MemberType &member, 
                  const AViewType &A,
                  /* */ BViewType &B) {

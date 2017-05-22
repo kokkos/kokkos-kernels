@@ -37,7 +37,7 @@ namespace KokkosKernels {
       /// Team Internal Impl
       /// ==================
       namespace Team {
-        struct SetInternal {
+        struct CopyInternal {
           template<typename MemberType,
                    typename ValueType>
           KOKKOS_INLINE_FUNCTION
@@ -56,7 +56,7 @@ namespace KokkosKernels {
 #else
                 const int i = ij/n, j = ij%n;
 #endif
-                A[i*as0+j*as1] = B[i*bs0+j*bs1];
+                B[i*bs0+j*bs1] = A[i*as0+j*as1];
               });
             member.team_barrier();
             return 0;
