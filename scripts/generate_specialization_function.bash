@@ -1,8 +1,8 @@
 #!/bin/bash
 
 Function=$1             #e.g. abs: function name
-FunctionExtended=$2     #e.g. KokkosBlas1_impl_MV_abs: prefix for files etc.
-MasterHeader=$3         #e.g. Kokkos_Blas1_MV_impl_abs.hpp: where the actual function definition and declaration lives 
+FunctionExtended=$2     #e.g. KokkosBlas1_abs: prefix for files etc.
+MasterHeader=$3         #e.g. Kokkos_Blas1_abs_spec.hpp: where the specialization layer lives 
 NameSpace=$4            #e.g. KokkosBlas: namespace it lives in 
 KokkosKernelsPath=$5
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
@@ -11,7 +11,9 @@ ExecMemSpaceList="Cuda,CudaSpace Cuda,CudaUVMSpace OpenMP,HostSpace Threads,Host
 
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp/${Function}
-filename_hpp=generated_specializations_hpp/${FunctionExtended}_decl_specializations.hpp
+filename_hpp_root=generated_specializations_hpp/${FunctionExtended}_eti_spec_
+filename_spec_avail_hpp=${filename_hpp_root}_avail.hpp
+filename_spec_decl_hpp=${filename_hpp_root}_decl.hpp
 Function_UpperCase=`echo ${FunctionExtended} | awk '{print toupper($0)}'`
 
 

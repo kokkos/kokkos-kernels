@@ -1,5 +1,5 @@
-#ifndef KOKKOSBLAS1_IMPL_V_ABS_DECL_SPECIALISATION_HPP_
-#define KOKKOSBLAS1_IMPL_V_ABS_DECL_SPECIALISATION_HPP_
+#ifndef KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL_HPP_
+#define KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL_HPP_
 /*
 //@HEADER
 // ************************************************************************
@@ -50,281 +50,281 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(double, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(double, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(float, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(float, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
- KOKKOSBLAS1_IMPL_V_ABS_SPEC(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
 #endif
 } // Impl
 } // KokkosBlas
-#endif // KOKKOSBLAS1_IMPL_V_ABS_DECL_SPECIALISATION_HPP_
+#endif // KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL_HPP_

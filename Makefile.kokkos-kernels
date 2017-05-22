@@ -47,7 +47,7 @@ tmp := $(shell echo "\#ifndef KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.t
 tmp := $(shell echo "\#define KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.tmp)
 
 #==== ETI Macros Scalars =================================================
-
+KOKKOSKERNELS_INTERNAL_INST_SCALARS =
 KOKKOSKERNELS_INTERNAL_INST_DOUBLE=$(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "double" | wc -l))
 KOKKOSKERNELS_INTERNAL_INST_FLOAT=$(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "float" | wc -l))
 KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_=$(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "complex<double>" | wc -l))
@@ -60,15 +60,19 @@ tmp := $(shell echo "   ---------------------------------------------*/" >> Kokk
 
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_DOUBLE" >> KokkosKernels_config.tmp )
+  KOKKOSKERNELS_INTERNAL_INST_SCALARS += "double"
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_FLOAT" >> KokkosKernels_config.tmp )
+  KOKKOSKERNELS_INTERNAL_INST_SCALARS += "float"
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_COMPLEX_DOUBLE" >> KokkosKernels_config.tmp )
+  KOKKOSKERNELS_INTERNAL_INST_SCALARS += "Kokkos::complex<double>"
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_COMPLEX_FLOAT" >> KokkosKernels_config.tmp )
+  KOKKOSKERNELS_INTERNAL_INST_SCALARS += "Kokkos::complex<float>"
 endif
 tmp := $(shell echo "\#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)" >> KokkosKernels_config.tmp )
 tmp := $(shell echo "\#define KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_" >> KokkosKernels_config.tmp )
@@ -199,11 +203,11 @@ ifeq (${KOKKOSKERNELS_INTERNAL_ETI_ONLY}, 1)
 endif
 
 #==== Put in guard for library compilations ===========================
-tmp := $(shell echp "" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "\#ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "\#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "\#endif " >> KokkosKernels_config.tmp)
-tmp := $(shell echp "" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 
 #==== Endif the file  =================================================
 
@@ -222,6 +226,7 @@ ifneq ($(KOKKOSKERNELS_INTERNAL_NEW_CONFIG), 0)
   tmp := $(shell cp KokkosKernels_config.tmp KokkosKernels_config.h)
 endif
 
+#include $(KOKKOSKERNELS_PATH)/Makefile.generate_eti_files
 
 #-------------------------------------------------------------------------
 #-----Add src Files-------------------------------------
