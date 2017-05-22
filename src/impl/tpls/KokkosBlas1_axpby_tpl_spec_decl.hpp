@@ -41,16 +41,11 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_ABS_TPL_SPEC_AVAIL_HPP_
-#define KOKKOSBLAS1_ABS_TPL_SPEC_AVAIL_HPP_
+#ifndef KOKKOSBLAS1_AXPBY_TPL_SPEC_DECL_HPP_
+#define KOKKOSBLAS1_AXPBY_TPL_SPEC_DECL_HPP_
 
 namespace KokkosBlas {
 namespace Impl {
-// Specialization struct which defines whether a specialization exists
-template<class RMV, class XMV, int rank = RMV::rank>
-struct abs_tpl_spec_avail {
-  enum : bool { value = false };
-};
 }
 }
 

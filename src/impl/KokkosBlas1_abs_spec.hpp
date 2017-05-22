@@ -66,7 +66,7 @@ struct abs_eti_spec_avail {
 // Macro for declaration of full specialization availability
 // KokkosBlas::Impl::Abs for rank == 1.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
-// We may spread out definitions (see _DEF macro below) across one or
+// We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
 #define KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
@@ -111,7 +111,7 @@ struct Abs {
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//! Partial specialization of Abs for single vectors (1-D Views).
+//! Full specialization of Abs for single vectors (1-D Views).
 template<class RMV, class XMV>
 struct Abs<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
 {
@@ -130,9 +130,9 @@ struct Abs<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::foo ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
+      printf("KokkosBlas1::abs<> ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
     else {
-      printf("KokkosBlas1::foo non-ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
+      printf("KokkosBlas1::abs<> non-ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
     }
     #endif
     const size_type numRows = X.dimension_0 ();

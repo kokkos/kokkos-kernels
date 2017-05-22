@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+#ifndef KOKKOSBLAS1_ABS_HPP_
+#define KOKKOSBLAS1_ABS_HPP_
+
 #include<impl/KokkosBlas1_abs_spec.hpp>
 /// \brief R(i,j) = abs(X(i,j))
 ///
@@ -116,3 +119,6 @@ abs (const RMV& R, const XMV& X)
   Impl::Abs<RMV_Internal, XMV_Internal>::abs (R_internal, X_internal);
 }
 }
+
+#endif // KOKKOSBLAS1_ABS_HPP_
+

@@ -41,7 +41,12 @@
 //@HEADER
 */
 
+#ifndef KOKKOSBLAS1_ABS_TPL_SPEC_DECL_HPP_
+#define KOKKOSBLAS1_ABS_TPL_SPEC_DECL_HPP_
+
 namespace KokkosBlas {
 namespace Impl {
 }
 }
+
+#endif
