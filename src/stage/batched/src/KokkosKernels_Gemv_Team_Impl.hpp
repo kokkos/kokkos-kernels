@@ -84,7 +84,7 @@ namespace KokkosKernels {
         ///
 
         template<typename MemberType>
-        Gemv<MemberType,Trans::Transpose,Algo::Gemv::Unblocked> {
+        struct Gemv<MemberType,Trans::Transpose,Algo::Gemv::Unblocked> {
 
           template<typename ScalarType,
                    typename AViewType,
@@ -110,7 +110,7 @@ namespace KokkosKernels {
         };
         
         template<typename MemberType>
-        Gemv<MemberType,Trans::Transpose,Algo::Gemv::Blocked> {
+        struct Gemv<MemberType,Trans::Transpose,Algo::Gemv::Blocked> {
 
           template<typename ScalarType,
                    typename AViewType,

@@ -106,7 +106,7 @@ namespace KokkosKernels {
                 const int kk = kbeg + k;
                 if (kk < _a.dimension_0()) {
                   auto aa  = Kokkos::subview(_a, kk, Kokkos::ALL(), Kokkos::ALL());
-                  auto saa = Kokkos::subview(sa, kk, Kokkos::ALL(), Kokkos::ALL());
+                  auto saa = Kokkos::subview(sa,  k, Kokkos::ALL(), Kokkos::ALL());
 
                   Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, aa, saa);
                   Team::LU<MemberType,AlgoTagType>::invoke(member, saa);

@@ -188,8 +188,8 @@ namespace KokkosKernels {
                   auto aa  = Kokkos::subview(_a, kk, Kokkos::ALL(), Kokkos::ALL());
                   auto bb  = Kokkos::subview(_b, kk, Kokkos::ALL(), Kokkos::ALL());
 
-                  auto saa = Kokkos::subview(sa, kk, Kokkos::ALL(), Kokkos::ALL());
-                  auto sbb = Kokkos::subview(sb, kk, Kokkos::ALL(), Kokkos::ALL());
+                  auto saa = Kokkos::subview(sa,  k, Kokkos::ALL(), Kokkos::ALL());
+                  auto sbb = Kokkos::subview(sb,  k, Kokkos::ALL(), Kokkos::ALL());
 
                   Team::Copy<MemberType,Trans::NoTranspose>::
                     invoke(member, aa, saa);

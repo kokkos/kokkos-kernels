@@ -20,6 +20,7 @@ namespace KokkosKernels {
           invoke(const int m, const int n, 
                  const ValueType *__restrict__ A, const int as0, const int as1,
                  /* */ ValueType *__restrict__ B, const int bs0, const int bs1) {
+            if (A == B) return 0;
             if (as0 > as1)
               for (int i=0;i<m;++i)
                 for (int j=0;j<n;++j)
@@ -46,6 +47,7 @@ namespace KokkosKernels {
                  const int m, const int n, 
                  const ValueType *__restrict__ A, const int as0, const int as1,
                  /* */ ValueType *__restrict__ B, const int bs0, const int bs1) {
+            if (A == B) return 0;
             Kokkos::parallel_for
               (Kokkos::TeamThreadRange(member,0,m*n),
                [&](const int &ij) {
@@ -58,7 +60,7 @@ namespace KokkosKernels {
 #endif
                 B[i*bs0+j*bs1] = A[i*as0+j*as1];
               });
-            member.team_barrier();
+            //member.team_barrier();
             return 0;
           }
         };

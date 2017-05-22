@@ -24,7 +24,7 @@ namespace KokkosKernels {
       }
 
       ///
-      /// Team Set
+      /// Team Copy
       ///
 
       namespace Team {

@@ -55,8 +55,8 @@ namespace KokkosKernels {
 
           typedef ValueType value_type;
 
-          if      (beta == 0) Team::SetInternal  ::invoke(m, 1, value_type(0),    y, ys0, 1);
-          else if (beta != 1) Team::ScaleInternal::invoke(m, 1, value_type(beta), y, ys0, 1);
+          if      (beta == 0) Team::SetInternal  ::invoke(member, m, 1, value_type(0),    y, ys0, 1);
+          else if (beta != 1) Team::ScaleInternal::invoke(member, m, 1, value_type(beta), y, ys0, 1);
       
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
@@ -91,8 +91,8 @@ namespace KokkosKernels {
 
           typedef ValueType value_type;
           
-          if      (beta == 0) Team::SetInternal  ::invoke(m, 1, value_type(0),    y, ys0, 1);
-          else if (beta != 1) Team::ScaleInternal::invoke(m, 1, value_type(beta), y, ys0, 1);
+          if      (beta == 0) Team::SetInternal  ::invoke(member, m, 1, value_type(0),    y, ys0, 1);
+          else if (beta != 1) Team::ScaleInternal::invoke(member, m, 1, value_type(beta), y, ys0, 1);
       
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
@@ -101,6 +101,7 @@ namespace KokkosKernels {
               mb = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
             };
 
+            const int mp = m%mb;
             InnerGemmFixC<0,1> inner(as0, as1, xs0, 1, ys0, 1);
             Kokkos::parallel_for
               (Kokkos::TeamThreadRange(member, (m/mb) + (mp>0)),

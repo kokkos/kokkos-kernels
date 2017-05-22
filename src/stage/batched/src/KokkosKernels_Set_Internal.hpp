@@ -76,7 +76,7 @@ namespace KokkosKernels {
 #endif
                   A[i*as0+j*as1] = alpha;
                 });
-            member.team_barrier();
+            //member.team_barrier();
             return 0;
           }
         };
