@@ -674,7 +674,7 @@ int main(int argc, char *argv[]) {
     if (token == std::string("-B")) B = std::atoi(argv[++i]);
   }
 
-  constexpr int VectorLength = 8;
+  constexpr int VectorLength = 16;
 
   {
     std::cout << " N = " << N << std::endl;

@@ -816,7 +816,7 @@ int main(int argc, char *argv[]) {
 
   if (R == 0 && B != 0) R = B;
 
-  constexpr int VectorLength = 8;
+  constexpr int VectorLength = 16;
 
   {
     std::cout << " N = " << N << std::endl;

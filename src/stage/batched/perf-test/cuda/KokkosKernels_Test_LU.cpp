@@ -129,7 +129,7 @@ namespace KokkosKernels {
           typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
           typedef typename DeviceSpaceType::memory_space DeviceMemorySpaceType;
 
-          const int iter_begin = -3, iter_end = 30;
+          const int iter_begin = -3, iter_end = 10;
           Kokkos::Impl::Timer timer;
 
           Kokkos::View<ValueType***,Kokkos::LayoutLeft,HostSpaceType>
@@ -287,9 +287,9 @@ namespace KokkosKernels {
               Kokkos::deep_copy(asol, a);
           
               double diff = 0;
-              for (int i=0;i<aref.dimension(0);++i)
-                for (int j=0;j<aref.dimension(1);++j)
-                  for (int k=0;k<aref.dimension(2);++k)
+              for (int i=0;i<aref.dimension_0();++i)
+                for (int j=0;j<aref.dimension_1();++j)
+                  for (int k=0;k<aref.dimension_2();++k)
                     diff += std::abs(aref(i,j,k) - asol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
@@ -347,9 +347,9 @@ namespace KokkosKernels {
               Kokkos::deep_copy(asol, a);
           
               double diff = 0;
-              for (int i=0;i<aref.dimension(0);++i)
-                for (int j=0;j<aref.dimension(1);++j)
-                  for (int k=0;k<aref.dimension(2);++k)
+              for (int i=0;i<aref.dimension_0();++i)
+                for (int j=0;j<aref.dimension_1();++j)
+                  for (int k=0;k<aref.dimension_2();++k)
                     diff += std::abs(aref(i,j,k) - asol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
@@ -415,9 +415,9 @@ namespace KokkosKernels {
               Kokkos::deep_copy(asol, a);
           
               double diff = 0;
-              for (int i=0;i<aref.dimension(0);++i)
-                for (int j=0;j<aref.dimension(1);++j)
-                  for (int k=0;k<aref.dimension(2);++k)
+              for (int i=0;i<aref.dimension_0();++i)
+                for (int j=0;j<aref.dimension_1();++j)
+                  for (int k=0;k<aref.dimension_2();++k)
                     diff += std::abs(aref(i,j,k) - asol(i,j,k));
 
               std::cout << std::setw(8) << "Kokkos"
@@ -486,9 +486,9 @@ namespace KokkosKernels {
                 Kokkos::deep_copy(asol, a);
           
                 double diff = 0;
-                for (int i=0;i<aref.dimension(0);++i)
-                  for (int j=0;j<aref.dimension(1);++j)
-                    for (int k=0;k<aref.dimension(2);++k)
+                for (int i=0;i<aref.dimension_0();++i)
+                  for (int j=0;j<aref.dimension_1();++j)
+                    for (int k=0;k<aref.dimension_2();++k)
                       diff += std::abs(aref(i,j,k) - asol(i,j,k));
 
                 std::cout << std::setw(8) << "Kokkos"
@@ -552,7 +552,7 @@ int main(int argc, char *argv[]) {
     if (token == std::string("-B")) B = std::atoi(argv[++i]);
   }
 
-  constexpr int VectorLength = 8;
+  constexpr int VectorLength = 16;
 
   {
     std::cout << " N = " << N << std::endl;
