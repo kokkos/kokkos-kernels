@@ -129,11 +129,9 @@ namespace KokkosKernels {
                   auto saa = Kokkos::subview(sa,  k, Kokkos::ALL(), Kokkos::ALL());
                   auto sbb = Kokkos::subview(sb,  k, Kokkos::ALL(), Kokkos::ALL());
                   
-                  Team::Copy<MemberType,Trans::NoTranspose>::
-                    invoke(member, aa, saa);
-                  
-                  Team::Copy<MemberType,Trans::NoTranspose>::
-                    invoke(member, bb, sbb);
+                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, aa, saa);                  
+                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, bb, sbb);
+                  member.team_barrier();
                   
                   Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,AlgoTagType>::
                     invoke(member, 1.0, saa, sbb, 1.0, cc);
@@ -270,6 +268,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Strided"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = N/A" 
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -328,6 +327,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Range"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = N/A" 
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -393,6 +393,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Team V1"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = " << std::setw(3) << team_size 
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -465,6 +466,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Team V2"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = " << std::setw(3) << team_size
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -492,6 +494,7 @@ namespace KokkosKernels {
               typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
 
               const int lvl = 0, per_team_scratch = 2*ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, BlkSize);
+              //std::cout << "per team scratch " << per_team_scratch << "\n";
               if (per_team_scratch/1024 < 48) {
                 const int 
                   is_blocked_algo = (std::is_same<AlgoTagType,Algo::Gemm::Blocked>::value), 
@@ -540,6 +543,7 @@ namespace KokkosKernels {
                           << std::setw(8) << "Team V3"
                           << " BlkSize = " << std::setw(3) << BlkSize
                           << " TeamSize = " << std::setw(3) << team_size
+                          << " ScratchSize (KB) = " << std::setw(3) << (per_team_scratch/1024)
                           << " time = " << std::scientific << tmin
                           << " avg flop/s = " << (flop/tavg)
                           << " max flop/s = " << (flop/tmin)
@@ -548,7 +552,7 @@ namespace KokkosKernels {
               } else {
                 std::cout << std::setw(8) << "Kokkos"
                           << std::setw(8) << "Team V3"
-                          << " Scratch per team is too big"
+                          << " Scratch per team is too big:" << std::setw(3) << (per_team_scratch/1024)
                           << std::endl;
               }
             }
@@ -610,6 +614,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Team HM"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = " << std::setw(3) << team_size
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -642,18 +647,19 @@ void run(const int N, const int B) {
   if (B != 0) {
     PerfTest::Gemm< VectorLength, ValueType, ExecSpace, AlgoTagType>(N, B);
   } else {
-    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  4);
-    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  8);
-    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 16);
-    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 20);
-    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 32);
-    //PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 64);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  3);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  5);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 10);
+    PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 15);
+    
+    // PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  4);
+    // PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N,  8);
+    // PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 16);
+    // PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 18);
+    // //PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 32);
+    // //PerfTest::Gemm<VectorLength, ValueType, ExecSpace, AlgoTagType>(N, 64);
   }
     
-  // PerfTest::Gemm< 3, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  // PerfTest::Gemm< 5, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  // PerfTest::Gemm<10, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
-  // PerfTest::Gemm<15, VectorLength, ValueType, ExecSpace, AlgoTagType>(N);
 }
 
 int main(int argc, char *argv[]) {
@@ -668,7 +674,7 @@ int main(int argc, char *argv[]) {
     if (token == std::string("-B")) B = std::atoi(argv[++i]);
   }
 
-  constexpr int VectorLength = 16;
+  constexpr int VectorLength = 8;
 
   {
     std::cout << " N = " << N << std::endl;

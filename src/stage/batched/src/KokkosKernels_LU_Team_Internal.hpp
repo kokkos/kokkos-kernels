@@ -8,6 +8,8 @@
 
 #include "KokkosKernels_InnerLU_Serial_Impl.hpp"
 #include "KokkosKernels_InnerTrsm_Serial_Impl.hpp"
+
+#include "KokkosKernels_Trsm_Team_Internal.hpp"
 #include "KokkosKernels_Gemm_Team_Internal.hpp"
 
 namespace KokkosKernels {
@@ -109,25 +111,26 @@ namespace KokkosKernels {
 
                 // lu on a block             
                 member.team_barrier();
-                lu.serial_invoke(pb, Ap);
+                if (member.team_rank() == 0)
+                  lu.serial_invoke(pb, Ap);
                 member.team_barrier();
 
                 // dimension ABR
                 const int 
-                  m_abr = ib-p-mb, n_abr = jb-p-mb,
-                  mp_abr = m_abr%mb, np_abr = n_abr%mb,
+                  m_abr  = ib-p-mb,               n_abr  = jb-p-mb,
+                  mp_abr = m_abr%mb,              np_abr = n_abr%mb,
                   mq_abr = (m_abr/mb)+(mp_abr>0), nq_abr = (n_abr/mb)+(np_abr>0);
-                
+
                 // trsm update
                 Kokkos::parallel_for
                   (Kokkos::TeamThreadRange(member,0,mq_abr+nq_abr),
                    [&](const int &ij) {
                     if (ij < nq_abr) {
-                      const int j = ij*mb, qb = (j+mb) > n_abr ? np_abr : mb;
-                      trsm_llu.serial_invoke(Ap, pb, qb, Ap+j*as1);
+                      const int j = (ij)*mb, qb = (j+mb) > n_abr ? np_abr : mb;
+                      trsm_llu.serial_invoke(Ap, pb, qb, Ap+(j+mb)*as1);
                     } else {
                       const int i = (ij-nq_abr)*mb , qb = (i+mb) > m_abr ? mp_abr : mb;
-                      trsm_run.serial_invoke(Ap, pb, qb, Ap+i*as0);
+                      trsm_run.serial_invoke(Ap, pb, qb, Ap+(i+mb)*as0);
                     }
                   });
                 member.team_barrier();

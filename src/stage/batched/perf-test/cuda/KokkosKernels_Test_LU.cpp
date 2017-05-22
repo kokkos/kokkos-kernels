@@ -109,7 +109,9 @@ namespace KokkosKernels {
                   auto saa = Kokkos::subview(sa,  k, Kokkos::ALL(), Kokkos::ALL());
 
                   Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, aa, saa);
+                  member.team_barrier();
                   Team::LU<MemberType,AlgoTagType>::invoke(member, saa);
+                  member.team_barrier();
                   Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, saa, aa);
                 }
               });
@@ -146,7 +148,7 @@ namespace KokkosKernels {
                   amat(k, i+1, i) = random.value() + 1.0;
                 }
               }
-          
+
               // ValueType d[BlkSize], v[BlkSize][BlkSize];
               // for (int i=0;i<BlkSize;++i) {
               //   d[i] = random.value() + 1.0; // positive value
@@ -239,6 +241,8 @@ namespace KokkosKernels {
               std::cout << std::setw(8) << "CUBLAS"
                         << std::setw(8) << "Batch"
                         << " BlkSize = " << std::setw(3) << BlkSize
+                        << " TeamSize = N/A" 
+                        << " ScratchSize (KB) = N/A"
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -292,6 +296,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Range"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = N/A" 
+                        << " ScratchSize (KB) =   0"
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -351,6 +356,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Team V1"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = " << std::setw(3) << team_size
+                        << " ScratchSize (KB) =   0"
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -418,6 +424,7 @@ namespace KokkosKernels {
                         << std::setw(8) << "Team V2"
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " TeamSize = " << std::setw(3) << team_size
+                        << " ScratchSize (KB) =   0"
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -488,6 +495,7 @@ namespace KokkosKernels {
                           << std::setw(8) << "Team V3"
                           << " BlkSize = " << std::setw(3) << BlkSize
                           << " TeamSize = " << std::setw(3) << team_size
+                          << " ScratchSize (KB) = " << std::setw(3) << (per_team_scratch/1024)
                           << " time = " << std::scientific << tmin
                           << " avg flop/s = " << (flop/tavg)
                           << " max flop/s = " << (flop/tmin)
@@ -496,7 +504,7 @@ namespace KokkosKernels {
               } else {
                 std::cout << std::setw(8) << "Kokkos"
                           << std::setw(8) << "Team V3"
-                          << " Scratch per team is too big"
+                          << " Scratch per team is too big (KB): " << (per_team_scratch/1024)
                           << std::endl;
               }
             }
@@ -544,7 +552,7 @@ int main(int argc, char *argv[]) {
     if (token == std::string("-B")) B = std::atoi(argv[++i]);
   }
 
-  constexpr int VectorLength = 16;
+  constexpr int VectorLength = 8;
 
   {
     std::cout << " N = " << N << std::endl;

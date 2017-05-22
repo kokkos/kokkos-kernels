@@ -191,11 +191,9 @@ namespace KokkosKernels {
                   auto saa = Kokkos::subview(sa,  k, Kokkos::ALL(), Kokkos::ALL());
                   auto sbb = Kokkos::subview(sb,  k, Kokkos::ALL(), Kokkos::ALL());
 
-                  Team::Copy<MemberType,Trans::NoTranspose>::
-                    invoke(member, aa, saa);
-
-                  Team::Copy<MemberType,Trans::NoTranspose>::
-                    invoke(member, bb, sbb);
+                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, aa, saa);
+                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, bb, sbb);
+                  member.team_barrier();
 
                   switch (test) {
                   case 0: 
@@ -224,8 +222,8 @@ namespace KokkosKernels {
                     break;
                   }
 
-                  Team::Copy<MemberType,Trans::NoTranspose>::
-                    invoke(member, sbb, bb);
+                  member.team_barrier();
+                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sbb, bb);
                 }
               });
           }
@@ -444,6 +442,7 @@ namespace KokkosKernels {
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " NumCols = " << std::setw(3) << NumCols
                         << " TeamSize = N/A" 
+                        << " ScratchSize (KB) = N/A" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -501,6 +500,7 @@ namespace KokkosKernels {
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " NumCols = " << std::setw(3) << NumCols
                         << " TeamSize = N/A"
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -564,6 +564,7 @@ namespace KokkosKernels {
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " NumCols = " << std::setw(3) << NumCols
                         << " TeamSize = " << std::setw(3) << team_size
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -635,6 +636,7 @@ namespace KokkosKernels {
                         << " BlkSize = " << std::setw(3) << BlkSize
                         << " NumCols = " << std::setw(3) << NumCols
                         << " TeamSize = " << std::setw(3) << team_size
+                        << " ScratchSize (KB) =   0" 
                         << " time = " << std::scientific << tmin
                         << " avg flop/s = " << (flop/tavg)
                         << " max flop/s = " << (flop/tmin)
@@ -660,7 +662,10 @@ namespace KokkosKernels {
               typedef Functor<test,view_type,AlgoTagType,VectorLength> functor_type;
               typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
 
-              const int lvl = 0, per_team_scratch = 2*ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, BlkSize);
+              const int lvl = 0, per_team_scratch 
+                = (ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, BlkSize) +
+                   ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, NumCols));
+
               if (per_team_scratch/1024 < 48) {
                 const int
                   is_blocked_algo = (std::is_same<AlgoTagType,Algo::Trsm::Blocked>::value),
@@ -709,6 +714,7 @@ namespace KokkosKernels {
                           << " BlkSize = " << std::setw(3) << BlkSize
                           << " NumCols = " << std::setw(3) << NumCols
                           << " TeamSize = " << std::setw(3) << team_size
+                          << " ScratchSize (KB) = " << std::setw(3) << (per_team_scratch/1024)
                           << " time = " << std::scientific << tmin
                           << " avg flop/s = " << (flop/tavg)
                           << " max flop/s = " << (flop/tmin)
@@ -717,7 +723,7 @@ namespace KokkosKernels {
               } else {
                 std::cout << std::setw(8) << "Kokkos"
                           << std::setw(8) << "Team V3"
-                          << " Scratch per team is too big"
+                          << " Scratch per team is too big (KB): " << (per_team_scratch/1024)
                           << std::endl;
               }
             }
@@ -810,7 +816,7 @@ int main(int argc, char *argv[]) {
 
   if (R == 0 && B != 0) R = B;
 
-  constexpr int VectorLength = 16;
+  constexpr int VectorLength = 8;
 
   {
     std::cout << " N = " << N << std::endl;
