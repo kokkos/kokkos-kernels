@@ -317,7 +317,7 @@ namespace KokkosKernels {
       typedef BlockTridiagMatrices<exec_space,value_type,array_layout> block_tridiag_matrices_type;
 
     private:
-      ordinal_type _ntridiag, _m, _blocksize;
+      ordinal_type _ntridiag, _m, _blocksize, _shmemlvl;
 
       UnmanagedViewType<typename block_tridiag_matrices_type::value_array_type> _TA, _TB, _TC;
 
@@ -397,12 +397,10 @@ namespace KokkosKernels {
       template<typename MemberType>
       KOKKOS_INLINE_FUNCTION 
       void operator()(const TeamShmemTag &, const MemberType &member) const {
-        const int lvl = 0;
-
         typedef Kokkos::View<ValueType***,exec_space> packed_view_type;
-        ScratchViewType<packed_view_type> sA(member.team_scratch(lvl), VectorLength, _blocksize, _blocksize);
-        ScratchViewType<packed_view_type> sB(member.team_scratch(lvl), VectorLength, _blocksize, _blocksize);
-        ScratchViewType<packed_view_type> sC(member.team_scratch(lvl), VectorLength, _blocksize, _blocksize);
+        //ScratchViewType<packed_view_type> sA(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
+        ScratchViewType<packed_view_type> sB(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
+        ScratchViewType<packed_view_type> sC(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
 
         const int ijbeg = member.league_rank()*VectorLength;
         Kokkos::parallel_for
@@ -414,7 +412,7 @@ namespace KokkosKernels {
               auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
               auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
-              auto sAA = Kokkos::subview(sA, idx, Kokkos::ALL(), Kokkos::ALL());
+              //auto sAA = Kokkos::subview(sA, idx, Kokkos::ALL(), Kokkos::ALL());
               auto sBB = Kokkos::subview(sB, idx, Kokkos::ALL(), Kokkos::ALL());
               auto sCC = Kokkos::subview(sC, idx, Kokkos::ALL(), Kokkos::ALL());
                 
@@ -425,25 +423,26 @@ namespace KokkosKernels {
                 auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
                 auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
 
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, AA, sAA);
+                //Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, AA, sAA);
+                //member.team_barrier();
+
+                Team::LU<MemberType,LU_AlgoTagType>
+                  ::invoke(member, AA);
+
                 Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, BB, sBB);
                 Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, CC, sCC);
                 member.team_barrier();
 
-                Team::LU<MemberType,LU_AlgoTagType>
-                  ::invoke(member, AA);
-                member.team_barrier();
-
                 Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
-                  ::invoke(member, 1.0, AA, BB);
+                  ::invoke(member, 1.0, AA, sBB);
                 Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
-                  ::invoke(member, 1.0, AA, CC);
+                  ::invoke(member, 1.0, AA, sCC);
                 member.team_barrier();
 
                 Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
-                  ::invoke(member, -1.0, CC, BB, 1.0, DD);
+                  ::invoke(member, -1.0, sCC, sBB, 1.0, DD);
 
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sAA, AA);
+                //Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sAA, AA);
                 Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sBB, BB);
                 Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sCC, CC);
               }
@@ -451,14 +450,8 @@ namespace KokkosKernels {
               {
                 auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
 
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, AA, sAA);
-                member.team_barrier();
-
                 Team::LU<MemberType,LU_AlgoTagType>
                   ::invoke(member, AA);
-                member.team_barrier();
-                
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sAA, AA);
               }
             }
           });
@@ -494,6 +487,7 @@ namespace KokkosKernels {
                                                 LU_AlgoTagType,
                                                 Trsm_AlgoTagType,
                                                 Gemm_AlgoTagType> functor_type;
+          
           switch (op) {
           case 0: {
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
@@ -516,7 +510,7 @@ namespace KokkosKernels {
             const int max_cuda_blocksize 
               = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
               (functor_type(), VectorLength, 0, 0);
-            const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+            const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
                
             const policy_type policy(_ntridiag, team_size, VectorLength);
             Kokkos::parallel_for(policy, *this);
@@ -528,10 +522,12 @@ namespace KokkosKernels {
             typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
-            const int lvl = 0, per_team_scratch 
-              = 3*ScratchViewType<packed_view_type>::shmem_size(VectorLength, _blocksize, _blocksize);
 
-            if (per_team_scratch/1024 < 48) {
+            const int per_team_scratch 
+              = 2*ScratchViewType<packed_view_type>::shmem_size(VectorLength, _blocksize, _blocksize);
+            
+            _shmemlvl = ((per_team_scratch/1024) < 48 ? 0 : 1);
+            {
               const int
                 is_blocked_algo = (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value),
                 mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>(),
@@ -543,13 +539,11 @@ namespace KokkosKernels {
               const int max_cuda_blocksize 
                 = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
                 (functor_type(), VectorLength, 0, 0);
-              const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+              const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
-              Kokkos::parallel_for(policy.set_scratch_size(lvl, Kokkos::PerTeam(per_team_scratch)), *this);
-            } else {
-              Kokkos::abort("Scratch per team is too big");
-            }
+              Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
+            } 
             break;
           }
           }
@@ -678,7 +672,7 @@ namespace KokkosKernels {
       typedef PartitionedBlockMultiVector<exec_space,value_type,array_layout> partitioned_block_multi_vector_type;
       
     private:
-      ordinal_type _ntridiag, _m, _blocksize, _nvectors;
+      ordinal_type _ntridiag, _m, _blocksize, _nvectors, _shmemlvl;
 
       ConstUnmanagedViewType<typename block_tridiag_matrices_type::value_array_type> _TA, _TB, _TC;
       ConstUnmanagedViewType<typename partitioned_block_multi_vector_type::value_array_type> _b;
@@ -860,13 +854,9 @@ namespace KokkosKernels {
       template<typename MemberType>
       KOKKOS_INLINE_FUNCTION 
       void operator()(const TeamShmemTag &, const MemberType &member) const {
-        const int lvl = 0;
+        typedef Kokkos::View<ValueType***,exec_space> packed_view_type;        
+        ScratchViewType<packed_view_type> s(member.team_scratch(_shmemlvl), VectorLength, _m, _blocksize);
 
-        typedef Kokkos::View<ValueType**,exec_space> packed_view_type;        
-
-        ScratchViewType<packed_view_type> s0(member.team_scratch(lvl), VectorLength, _blocksize);
-        ScratchViewType<packed_view_type> s1(member.team_scratch(lvl), VectorLength, _blocksize);
-      
         const int ijbeg = member.league_rank()*VectorLength;
         Kokkos::parallel_for
           (Kokkos::ThreadVectorRange(member, VectorLength),
@@ -877,58 +867,45 @@ namespace KokkosKernels {
               auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
               auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
-              // k is even number sxt = sx0, sxb = sx1;
-              // k is  odd number sxt = sx1, sxb = sx0;
-              auto sx0 = Kokkos::subview(s0, idx, Kokkos::ALL());
-              auto sx1 = Kokkos::subview(s1, idx, Kokkos::ALL());
-              
+              auto sx = Kokkos::subview(s, idx, Kokkos::ALL(), Kokkos::ALL());              
+
               ///
               /// loop over multivectors
               ///
               for (int jvec=0;jvec<_nvectors;++jvec) {
                 auto x = Kokkos::subview(_x, ij, jvec, Kokkos::ALL(), Kokkos::ALL());
                 auto b = Kokkos::subview(_b, ij, jvec, Kokkos::ALL(), Kokkos::ALL());
+
+                // copy the entire vector into shared memory (if necessary it needs chunking)
+                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, b, sx);
+                member.team_barrier();
                 
                 ///
                 /// forward substitution
                 ///
                 {
-                  auto b0 = Kokkos::subview(b, 0, Kokkos::ALL());
-                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, b0, sx0);
-                  
                   const ordinal_type kend = _m - 1;
                   for (ordinal_type k=0;k<kend;++k) {
                     auto LT = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-                    auto LB = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());                    
+                    auto LB = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
 
-                    auto xt = Kokkos::subview(x, k,   Kokkos::ALL());
-                    auto xb = Kokkos::subview(x, k+1, Kokkos::ALL());
+                    auto xt = Kokkos::subview(sx, k,   Kokkos::ALL());
+                    auto xb = Kokkos::subview(sx, k+1, Kokkos::ALL());
 
-                    auto sxt = k%2 ? sx0 : sx1;
-                    auto sxb = k%2 ? sx1 : sx0;
-                    Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, xb, sxb);                    
-                    
                     member.team_barrier();
                     Team::Trsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
-                      ::invoke(member, 1.0, LT, sxt);
+                      ::invoke(member, 1.0, LT, xt);
 
                     member.team_barrier();
                     Team::Gemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
-                      ::invoke(member, -1.0, LB, sxt, 1.0, sxb);
-
-                    Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sxt, xt);
+                      ::invoke(member, -1.0, LB, xt, 1.0, xb);
                   }
                   {
                     auto LL = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-                    auto xx = Kokkos::subview(x, kend, Kokkos::ALL());
-                    auto ss = kend%2 ? sx0 : sx1;
-
+                    auto xx = Kokkos::subview(sx, kend, Kokkos::ALL());
                     member.team_barrier();
                     Team::Trsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
-                      ::invoke(member, 1.0, LL, ss);
-
-                    member.team_barrier();
-                    Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, ss, xx);
+                      ::invoke(member, 1.0, LL, xx);
                   }
                 }
 
@@ -941,39 +918,34 @@ namespace KokkosKernels {
                     auto UT = Kokkos::subview(B, k-1, Kokkos::ALL(), Kokkos::ALL());
                     auto UB = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
             
-                    auto xt = Kokkos::subview(x, k-1, Kokkos::ALL());
-                    auto xb = Kokkos::subview(x, k,   Kokkos::ALL());
-
-                    auto sxt = k%2 ? sx1 : sx0;
-                    auto sxb = k%2 ? sx0 : sx1;
-                    Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, xt, sxt);                    
+                    auto xt = Kokkos::subview(sx, k-1, Kokkos::ALL());
+                    auto xb = Kokkos::subview(sx, k,   Kokkos::ALL());
 
                     member.team_barrier();
                     Team::Trsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
-                      ::invoke(member, 1.0, UB, sxb);
+                      ::invoke(member, 1.0, UB, xb);
 
                     member.team_barrier();
                     Team::Gemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
-                      ::invoke(member, -1.0, UT, sxb, 1.0, sxt);
-
-                    Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sxb, xb);
+                      ::invoke(member, -1.0, UT, xb, 1.0, xt);
                   }
                   {
                     auto UU = Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL());
-                    auto xx = Kokkos::subview(x, 0, Kokkos::ALL());
-                    auto ss = sx0;
+                    auto xx = Kokkos::subview(sx, 0, Kokkos::ALL());
 
                     member.team_barrier();
                     Team::Trsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
-                      ::invoke(member, 1.0, UU, ss);
-
-                    member.team_barrier();
-                    Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, ss, xx);
+                      ::invoke(member, 1.0, UU, xx);
                   }
                 }
+                // copy the entire vector into shared memory (if necessary it needs chunking)
+                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sx, x);
+                member.team_barrier();
               }
             }
           });
+
+
       }
 
       void run(const int op, 
@@ -1030,15 +1002,16 @@ namespace KokkosKernels {
             break;
           }
           case 2: {
-            typedef Kokkos::View<ValueType**,exec_space> packed_view_type;
+            typedef Kokkos::View<ValueType***,exec_space> packed_view_type;
             typedef Kokkos::TeamPolicy<exec_space,TeamShmemTag> policy_type;
             typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
-            const int lvl = 0, per_team_scratch 
-              = 2*ScratchViewType<packed_view_type>::shmem_size(VectorLength, _blocksize);
+            const int per_team_scratch 
+              = ScratchViewType<packed_view_type>::shmem_size(VectorLength, _m, _blocksize);
 
-            if (per_team_scratch/1024 < 48) {
+            _shmemlvl = ((per_team_scratch/1024) < 48 ? 0 : 1);            
+            {
               const int
                 is_blocked_algo = (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value),
                 mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>(),
@@ -1053,9 +1026,7 @@ namespace KokkosKernels {
               const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
-              Kokkos::parallel_for(policy.set_scratch_size(lvl, Kokkos::PerTeam(per_team_scratch)), *this);
-            } else {
-              Kokkos::abort("Scratch per team is too big");
+              Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
             }
             break;
           }

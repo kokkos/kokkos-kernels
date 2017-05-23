@@ -137,7 +137,7 @@ namespace KokkosKernels {
                  const ValueType *__restrict__ A, const int as0, const int as1,
                  /* */ ValueType *__restrict__ B, const int bs0, const int bs1) {
             if (A == B) return 0;
-            if ((m == n && as1 < as0) || (m < n)) {
+            if (as1 < as0) { // ((m == n && as1 < as0) || (m < n)) {
               Serial::CopyUnrolled<0> inner(as1, bs1);
               for (int i=0;i<m;++i) {
                 const ValueType *__restrict__ AA = A + i*as0;
@@ -175,7 +175,7 @@ namespace KokkosKernels {
                  const ValueType *__restrict__ A, const int as0, const int as1,
                  /* */ ValueType *__restrict__ B, const int bs0, const int bs1) {
             if (A == B) return 0;
-            if ((m == n && as1 < as0) || (m < n)) {
+            if (as1 < as0) { // ((m == n && as1 < as0) || (m < n)) {
               Serial::CopyUnrolled<0> inner(as1, bs1);
               Kokkos::parallel_for
                 (Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {

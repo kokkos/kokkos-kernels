@@ -18,7 +18,7 @@ ifneq (,$(findstring white,$(HOST)))
 CXX=$(NVCC_WRAPPER)
 MKL_CFLAG= 
 KOKKOS=/ascldap/users/kyukim/Work/lib/kokkos/install/cuda/gnu/release
-CXXFLAGS=-O3 -g -D__KOKKOSKERNELS_NVIDIA_CUBLAS__ 
+CXXFLAGS=-O3 -g -D__KOKKOSKERNELS_NVIDIA_CUBLAS__ -DFAST_MATRIX_FILL
 LIBS=-lcublas
 endif
 
