@@ -129,7 +129,7 @@ namespace KokkosKernels {
           typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
           typedef typename DeviceSpaceType::memory_space DeviceMemorySpaceType;
 
-          const int iter_begin = -3, iter_end = 10;
+          const int iter_begin = -3, iter_end = 50;
           Kokkos::Impl::Timer timer;
 
           Kokkos::View<ValueType***,Kokkos::LayoutLeft,HostSpaceType>
@@ -389,7 +389,7 @@ namespace KokkosKernels {
                 mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
               const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-              const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+              const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
 
               const policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -459,7 +459,7 @@ namespace KokkosKernels {
                   mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
                 const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-                const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+                const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
 
                 const policy_type policy(N, team_size, VectorLength);
                 for (int iter=iter_begin;iter<iter_end;++iter) {
