@@ -40,7 +40,7 @@ int main (int argc, char *argv[]) {
   bool profile = false;
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
-    if (strncmp(token.c_str(), "-profile", 8)) profile = true;
+    if (strncmp(token.c_str(), "-profile", 8) == 0) profile = true;
   }
   
   if (!profile) {

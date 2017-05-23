@@ -366,29 +366,67 @@ namespace KokkosKernels {
               auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
               const ordinal_type kend = _m - 1;
-              for (ordinal_type k=0;k<kend;++k) {
-                auto AA = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-                auto BB = Kokkos::subview(B, k,   Kokkos::ALL(), Kokkos::ALL());
-                auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
-                auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
+              // {
+              //   for (ordinal_type k=0;k<kend;++k) {
+              //     auto AA = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
+              //     auto BB = Kokkos::subview(B, k,   Kokkos::ALL(), Kokkos::ALL());
+              //     auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
+              //     auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
+                  
+              //     member.team_barrier();
+              //     Team::LU<MemberType,LU_AlgoTagType>
+              //       ::invoke(member, AA);
+              //     member.team_barrier();
+              //     Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
+              //       ::invoke(member, 1.0, AA, BB);
+              //     Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
+              //       ::invoke(member, 1.0, AA, CC);
+              //     member.team_barrier();
+              //     Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
+              //       ::invoke(member, -1.0, CC, BB, 1.0, DD);
+              //   }
+              //   {
+              //     member.team_barrier();
+              //     auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
+              //     Team::LU<MemberType,LU_AlgoTagType>
+              //       ::invoke(member, AA);
+              //   }
+              // }
+              { // 0.028 vs 0.035; without subview it performs 0.028
+                const int as0 = A.stride_1(), as1 = A.stride_2();
+                const int bs0 = B.stride_1(), bs1 = B.stride_2();
+                const int cs0 = C.stride_1(), cs1 = C.stride_2();
 
-                member.team_barrier();
-                Team::LU<MemberType,LU_AlgoTagType>
-                  ::invoke(member, AA);
-                member.team_barrier();
-                Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
-                  ::invoke(member, 1.0, AA, BB);
-                Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
-                  ::invoke(member, 1.0, AA, CC);
-                member.team_barrier();
-                Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
-                  ::invoke(member, -1.0, CC, BB, 1.0, DD);
-              }
-              {
-                member.team_barrier();
-                auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-                Team::LU<MemberType,LU_AlgoTagType>
-                  ::invoke(member, AA);
+                for (ordinal_type k=0;k<kend;++k) {
+                  auto AA = &A(k,  0,0);
+                  auto BB = &B(k,  0,0);
+                  auto CC = &C(k,  0,0);
+                  auto DD = &A(k+1,0,0);
+                  
+                  member.team_barrier();
+                  Team::LU_Internal<LU_AlgoTagType>
+                    ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+                  member.team_barrier();
+                  Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
+                    ::invoke(member, true, _blocksize, _blocksize,
+                             1.0, AA, as0, as1, BB, bs0, bs1);
+                  Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
+                    ::invoke(member, false, _blocksize, _blocksize,
+                             1.0, AA, as1, as0, CC, cs1, cs0);
+                  member.team_barrier();
+                  Team::GemmInternal<Gemm_AlgoTagType>::
+                    invoke(member, _blocksize, _blocksize, _blocksize, 
+                           -1.0, 
+                           CC, cs0, cs1, BB, bs0, bs1,
+                           1.0,
+                           DD, as0, as1);
+                }
+                {
+                  member.team_barrier();
+                  auto AA = &A(kend, 0,0);
+                  Team::LU_Internal<LU_AlgoTagType>
+                    ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+                }
               }
             }
           });
@@ -510,7 +548,7 @@ namespace KokkosKernels {
             const int max_cuda_blocksize 
               = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
               (functor_type(), VectorLength, 0, 0);
-            const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+            const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
                
             const policy_type policy(_ntridiag, team_size, VectorLength);
             Kokkos::parallel_for(policy, *this);
@@ -539,7 +577,7 @@ namespace KokkosKernels {
               const int max_cuda_blocksize 
                 = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
                 (functor_type(), VectorLength, per_team_scratch, 0);
-              const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+              const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
