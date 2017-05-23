@@ -55,7 +55,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template<class AV, class XMV, class BV, class YMV, int rank = YMV::rank>
+template<class AV, class XMV, class BV, class YMV, int rank = YMV::Rank>
 struct axpby_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -141,11 +141,18 @@ namespace Impl {
 /// Any <i>scalar</i> coefficient of zero has BLAS semantics of
 /// ignoring the corresponding (multi)vector entry.  This does NOT
 /// apply to coefficients in av and bv vectors, if they are used.
-template<class AV, class XMV, class BV, class YMV, int rank = YMV::rank,
+template<class AV, class XMV, class BV, class YMV, int rank = YMV::Rank,
          bool tpl_spec_avail = axpby_tpl_spec_avail<AV,XMV,BV,YMV>::value,
          bool eti_spec_avail = axpby_eti_spec_avail<AV,XMV,BV,YMV>::value>
 struct Axpby {
   static void axpby (const AV& av, const XMV& X, const BV& bv, const YMV& Y);
+};
+
+template<class AV, class XMV, class BV, class YMV>
+struct Axpby<AV,XMV,BV,YMV,0,true,true> {
+  static void axpby (const AV& av, const XMV& X, const BV& bv, const YMV& Y) {
+    static_assert(YMV::Rank==0,"Oh My God");
+  }
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -167,10 +174,10 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "KokkosBlas::Impl::Axpby<rank-2>::axpby: Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YMV::rank == (int) XMV::rank,
+    static_assert ((int) YMV::Rank == (int) XMV::Rank,
                    "KokkosBlas::Impl::Axpby<rank-2>::axpby (MV): "
                    "X and Y must have the same rank.");
-    static_assert (YMV::rank == 2, "KokkosBlas::Impl::Axpby<rank-2>::axpby: "
+    static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby<rank-2>::axpby: "
                    "X and Y must have rank 2.");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
@@ -190,14 +197,21 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     if (bv.dimension_0 () == 0) {
       b = 0;
     }
+
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef int index_type;
-      Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> (av, X, bv, Y, a, b);
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+        Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
+        Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
+      Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
     }
     else {
       typedef typename XMV::size_type index_type;
-      Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> (av, X, bv, Y, a, b);
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+        Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
+        Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
+      Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
     }
   }
 };
@@ -228,10 +242,10 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
                    "KokkosBlas::Impl::Axpby::axpby (MV): Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YMV::rank == (int) XMV::rank,
+    static_assert ((int) YMV::Rank == (int) XMV::Rank,
                    "KokkosBlas::Impl::Axpby::axpby (MV): "
                    "X and Y must have the same rank.");
-    static_assert (YMV::rank == 2, "KokkosBlas::Impl::Axpby::axpby (MV): "
+    static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby::axpby (MV): "
                    "X and Y must have rank 2.");
 
 
@@ -275,15 +289,22 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
       b = 2;
     }
 
+
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef int index_type;
-      Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> (alpha, X,
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+        Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
+        Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
+      Axpby_MV_Invoke_Layout::run(alpha, X,
                                                           beta, Y, a, b);
     }
     else {
       typedef typename XMV::size_type index_type;
-      Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> (alpha, X,
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+        Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
+        Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
+      Axpby_MV_Invoke_Layout::run(alpha, X,
                                                           beta, Y, a, b);
     }
   }
@@ -313,9 +334,9 @@ struct Axpby<typename XV::non_const_value_type, XV,
                    "KokkosBlas::Impl::Axpby<rank-1>::axpby: Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+    static_assert ((int) YV::Rank == (int) XV::Rank, "KokkosBlas::Impl::"
                    "Axpby<rank-1>::axpby: X and Y must have the same rank.");
-    static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: "
+    static_assert (YV::Rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: "
                    "X and Y must have rank 1.");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION

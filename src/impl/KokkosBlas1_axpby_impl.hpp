@@ -102,14 +102,14 @@ struct Axpby_Functor {
                    "KokkosBlas::Impl::Axpby_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+    static_assert ((int) YV::Rank == (int) XV::Rank, "KokkosBlas::Impl::"
                    "Axpby_Functor: X and Y must have the same rank.");
-    static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby_Functor: "
+    static_assert (YV::Rank == 1, "KokkosBlas::Impl::Axpby_Functor: "
                    "XV and YV must have rank 1.");
 
     if (startingColumn != 0) {
-      m_a = Kokkos::subview (a, std::make_pair (startingColumn, a.dimension_0 ()));
-      m_b = Kokkos::subview (b, std::make_pair (startingColumn, b.dimension_0 ()));
+      m_a = Kokkos::subview (a, std::make_pair (startingColumn, SizeType(a.dimension_0 ())));
+      m_b = Kokkos::subview (b, std::make_pair (startingColumn, SizeType(b.dimension_0 ())));
     }
   }
 
@@ -236,9 +236,9 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
                    "KokkosBlas::Impl::Axpby_Functor: R is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+    static_assert ((int) YV::Rank == (int) XV::Rank, "KokkosBlas::Impl::"
                    "Axpby_Functor: X and Y must have the same rank.");
-    static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby_Functor: "
+    static_assert (YV::Rank == 1, "KokkosBlas::Impl::Axpby_Functor: "
                    "XV and YV must have rank 1.");
   }
 
@@ -341,9 +341,9 @@ Axpby_Generic (const AV& av, const XV& x,
                  "KokkosBlas::Impl::Axpby_Generic: Y is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+  static_assert ((int) YV::Rank == (int) XV::Rank, "KokkosBlas::Impl::"
                  "Axpby_Generic: X and Y must have the same rank.");
-  static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby_Generic: "
+  static_assert (YV::Rank == 1, "KokkosBlas::Impl::Axpby_Generic: "
                  "XV and YV must have rank 1.");
 
   typedef typename YV::execution_space execution_space;

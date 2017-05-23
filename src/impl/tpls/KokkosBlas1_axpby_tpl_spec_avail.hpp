@@ -47,11 +47,89 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template<class AV, class XMV, class BV, class YMV, int rank = YMV::rank>
+template<class AV, class XMV, class BV, class YMV, int rank = YMV::Rank>
 struct axpby_tpl_spec_avail {
   enum : bool { value = false };
 };
 }
 }
 
+namespace KokkosBlas {
+namespace Impl {
+
+// Generic Host side BLAS (could be MKL or whatever)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+// double
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          double,
+          Kokkos::View<const double*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          double,
+          Kokkos::View<double*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          double,
+          Kokkos::View<const double*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          double,
+          Kokkos::View<double*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+// float
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          float,
+          Kokkos::View<const float*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          float,
+          Kokkos::View<float*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          float,
+          Kokkos::View<const float*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          float,
+          Kokkos::View<float*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+// complex<double>
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          Kokkos::complex<double>,
+          Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          Kokkos::complex<double>,
+          Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          Kokkos::complex<double>,
+          Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          Kokkos::complex<double>,
+          Kokkos::View<Kokkos::complex<double>*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+
+// complex<float>
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          Kokkos::complex<float>,
+          Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          Kokkos::complex<float>,
+          Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutLeft, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+template<class ExecSpace>
+struct axpby_tpl_spec_avail<
+          Kokkos::complex<float>,
+          Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          Kokkos::complex<float>,
+          Kokkos::View<Kokkos::complex<float>*, Kokkos::LayoutStride, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
+          1> { enum : bool { value = true }; };
+
+#endif
+
+}
+}
 #endif

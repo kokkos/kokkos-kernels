@@ -92,9 +92,9 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
                  "KokkosBlas::axpby: Y is const.  It must be nonconst, "
                  "because it is an output argument "
                  "(we must be able to write to its entries).");
-  static_assert (YMV::rank == XMV::rank, "KokkosBlas::axpby: "
+  static_assert (YMV::Rank == XMV::Rank, "KokkosBlas::axpby: "
                  "X and Y must have the same rank.");
-  static_assert (YMV::rank == 1 || YMV::rank == 2, "KokkosBlas::axpby: "
+  static_assert (YMV::Rank == 1 || YMV::Rank == 2, "KokkosBlas::axpby: "
                  "XMV and YMV must either have rank 1 or rank 2.");
 
   // Check compatibility of dimensions at run time.
@@ -114,20 +114,22 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
     AV, XMV, Kokkos::Impl::is_view<AV>::value>::type AV_Internal;
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
-      XMV::rank == 1,
+      XMV::Rank == 1,
       typename XMV::const_value_type*,
       typename XMV::const_value_type** >::type,
-    typename XMV::array_layout,
+    typename std::conditional<(XMV::Rank == 1) && std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+       Kokkos::LayoutLeft,typename XMV::array_layout>::type ,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
   typedef typename GetInternalTypeForAxpby<
     BV, YMV, Kokkos::Impl::is_view<BV>::value>::type BV_Internal;
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
-      YMV::rank == 1,
+      YMV::Rank == 1,
       typename YMV::non_const_value_type*,
       typename YMV::non_const_value_type** >::type,
-    typename YMV::array_layout,
+    typename std::conditional<(YMV::Rank == 1) && std::is_same<typename YMV::array_layout,Kokkos::LayoutRight>::value,
+      Kokkos::LayoutLeft,typename YMV::array_layout>::type ,
     typename YMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV_Internal;
 

@@ -46,6 +46,83 @@
 
 namespace KokkosBlas {
 namespace Impl {
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+extern "C" void daxpy_( const int N, const double alpha,
+                                     const double* x, const int x_inc,
+                                     const double* y, const int y_inc);
+
+#define KOKKOSBLAS1_DAXPBY_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Axpby< \
+     double, \
+     Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     double, \
+     Kokkos::View<double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     1, true, ETI_SPEC_AVAIL> { \
+  typedef double AV; \
+  typedef double BV; \
+  typedef Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef Kokkos::View<double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+\
+  static void \
+  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    if(X.extent(0) < INT_MAX) { \
+      printf("%i %i\n",X.extent(0),Y.extent(0));\
+      for(int i=0; i<X.extent(0);i++) printf("%i %lf %lf %lf %lf\n",i,X(i),Y(i),X.data()[i],Y.data()[i]);\
+      daxpy_((int)X.extent(0)-1,alpha,X.data(),(int)1,Y.data(),(int)1); \
+      printf("Hello\n");\
+    } else \
+      Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+  } \
+};
+
+extern "C" void saxpy_( const int N, const float alpha,
+                              const float* x, const int x_inc,
+                              const float* y, const int y_inc);
+
+#define KOKKOSBLAS1_SAXPBY_BLAS( LAYOUT, MEMSPACE , ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Axpby< \
+     float, \
+     Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     float, \
+     Kokkos::View<float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     1, true, ETI_SPEC_AVAIL> { \
+  typedef float AV; \
+  typedef float BV; \
+  typedef Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef Kokkos::View<float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+\
+  static void \
+  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    printf("TPL\n"); \
+    if(X.extent(0) < INT_MAX) { \
+      saxpy_(X.extent(0),alpha,X.data(),1,Y.data(),1); \
+    } else \
+      Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+  } \
+};
+
+KOKKOSBLAS1_DAXPBY_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS1_DAXPBY_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS1_DAXPBY_BLAS( Kokkos::LayoutRight, Kokkos::HostSpace, true )
+KOKKOSBLAS1_DAXPBY_BLAS( Kokkos::LayoutRight, Kokkos::HostSpace, false )
+
+KOKKOSBLAS1_SAXPBY_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS1_SAXPBY_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS1_SAXPBY_BLAS( Kokkos::LayoutRight, Kokkos::HostSpace, true )
+KOKKOSBLAS1_SAXPBY_BLAS( Kokkos::LayoutRight, Kokkos::HostSpace, false )
+
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 }
 }
 
