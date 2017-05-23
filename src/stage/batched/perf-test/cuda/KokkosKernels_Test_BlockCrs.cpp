@@ -37,41 +37,49 @@ int main (int argc, char *argv[]) {
   constexpr int VectorLength = 16;
 
   // Unit tests
-  std::cout << " Unit Test::Range :: Begin\n";
-  {
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>( 3,  4,  2, 25, 2);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>(44, 63, 15,  4, 1);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>( 2,  2, 15,  3, 3);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>( 1,  1,  2, 63, 8);
-
-    for (int nrhs=1;nrhs<=33;++nrhs)
-      Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>(2, 2, 15, 3, nrhs);
+  bool profile = false;
+  for (int i=1;i<argc;++i) {
+    const std::string& token = argv[i];
+    if (strncmp(token.c_str(), "-profile", 8)) profile = true;
   }
-  std::cout << " Unit Test::Range :: End\n";
-
-  std::cout << " Unit Test::Team :: Begin\n";
-  {
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>( 3,  4,  2, 25, 2);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>(44, 63, 15,  4, 1);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>( 2,  2, 15,  3, 3);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>( 1,  1,  2, 63, 8);
-
-    for (int nrhs=1;nrhs<=33;++nrhs)
-      Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>(2, 2, 15, 3, nrhs);
-  }
-  std::cout << " Unit Test::Team :: End\n";
-
-  std::cout << " Unit Test::TeamShmem :: Begin\n";
-  {
-    //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 3,  4,  2, 25, 2);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>(44, 63, 15,  4, 1);
-    Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 2,  2, 15,  3, 3);
-    //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 1,  1,  2, 63, 8);
-
-    for (int nrhs=1;nrhs<=4;++nrhs)
+  
+  if (!profile) {
+    std::cout << " Unit Test::Range :: Begin\n";
+    {
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>( 3,  4,  2, 25, 2);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>(44, 63, 15,  4, 1);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>( 2,  2, 15,  3, 3);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>( 1,  1,  2, 63, 8);
+      
+      for (int nrhs=1;nrhs<=33;++nrhs)
+        Test::run<DeviceSpace,Test::scalar_type,VectorLength,0>(2, 2, 15, 3, nrhs);
+    }
+    std::cout << " Unit Test::Range :: End\n";
+    
+    std::cout << " Unit Test::Team :: Begin\n";
+    {
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>( 3,  4,  2, 25, 2);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>(44, 63, 15,  4, 1);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>( 2,  2, 15,  3, 3);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>( 1,  1,  2, 63, 8);
+      
+      for (int nrhs=1;nrhs<=33;++nrhs)
+        Test::run<DeviceSpace,Test::scalar_type,VectorLength,1>(2, 2, 15, 3, nrhs);
+    }
+    std::cout << " Unit Test::Team :: End\n";
+    
+    std::cout << " Unit Test::TeamShmem :: Begin\n";
+    {
+      //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 3,  4,  2, 25, 2);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>(44, 63, 15,  4, 1);
+      Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 2,  2, 15,  3, 3);
+      //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 1,  1,  2, 63, 8);
+      
+      for (int nrhs=1;nrhs<=4;++nrhs)
       Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>(2, 2, 15, 3, nrhs);
+    }
+    std::cout << " Unit Test::TeamShmem :: End\n";
   }
-  std::cout << " Unit Test::TeamShmem :: End\n";
 
   // Performance tests
   std::cout << " Perf Test:: Begin\n";

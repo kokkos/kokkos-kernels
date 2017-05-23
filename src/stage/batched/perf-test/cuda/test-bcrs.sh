@@ -8,7 +8,7 @@
 
 # 4 5 8 9 A < 10 GB
 for bsz in 3 5; do
-    sz="-ni 256 -nj 128 -nk 128"
+    sz="-ni 128 -nj 128 -nk 128"
     echo ">>> bsz $bsz"
 
     echo "> kk"

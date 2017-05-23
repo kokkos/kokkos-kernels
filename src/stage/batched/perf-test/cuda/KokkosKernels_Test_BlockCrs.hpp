@@ -510,7 +510,7 @@ namespace KokkosKernels {
             const int max_cuda_blocksize 
               = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
               (functor_type(), VectorLength, 0, 0);
-            const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
+            const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
                
             const policy_type policy(_ntridiag, team_size, VectorLength);
             Kokkos::parallel_for(policy, *this);
@@ -538,8 +538,8 @@ namespace KokkosKernels {
               
               const int max_cuda_blocksize 
                 = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
-                (functor_type(), VectorLength, 0, 0);
-              const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
+                (functor_type(), VectorLength, per_team_scratch, 0);
+              const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
@@ -1022,7 +1022,7 @@ namespace KokkosKernels {
               
               const int max_cuda_blocksize 
                 = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
-                (functor_type(), VectorLength, 0, 0);
+                (functor_type(), VectorLength, per_team_scratch, 0);
               const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
