@@ -25,6 +25,8 @@ namespace KokkosKernels {
 
       // to use double, std::complex<double>, Kokkos::complex<double>
       using std::abs;
+      using std::min;
+      using std::max;
 
       // view manipulation
       template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>

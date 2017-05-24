@@ -280,6 +280,7 @@ namespace KokkosKernels {
             Kokkos::parallel_for(policy, *this);
             break;
           }
+#if defined(KOKKOS_ENABLE_CUDA)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
             typedef typename policy_type::member_type member_type;
@@ -330,6 +331,11 @@ namespace KokkosKernels {
               const policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
             } 
+            break;
+          }
+#endif
+          default: {
+            std::cout << "Not supported operation mode: " << op << " \n";
             break;
           }
           }
@@ -765,6 +771,7 @@ namespace KokkosKernels {
             Kokkos::parallel_for(policy, *this);
             break;
           }
+#if defined(KOKKOS_ENABLE_CUDA)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
             typedef typename policy_type::member_type member_type;
@@ -814,6 +821,11 @@ namespace KokkosKernels {
               const policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
             }
+            break;
+          }
+#endif
+          default: {
+            std::cout << "Not supported operation mode: " << op << " \n";
             break;
           }
           }
@@ -978,6 +990,8 @@ namespace KokkosKernels {
   defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType,
+                                      DeviceArrayLayout,
+                                      VectorLength,
                                       Algo::LU::CompactMKL,
                                       Algo::Trsm::CompactMKL,
                                       Algo::Gemm::CompactMKL> factorblk;
@@ -1026,6 +1040,8 @@ namespace KokkosKernels {
   defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
           SolveBlockTridiagMatrices<DeviceSpace,
                                     ValueType,
+                                    DeviceArrayLayout,
+                                    VectorLength,
                                     Algo::Trsv::CompactMKL,
                                     Algo::Gemv::CompactMKL> solveblk;
 
@@ -1175,6 +1191,8 @@ namespace KokkosKernels {
   defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType,
+                                      DeviceArrayLayout,
+                                      VectorLength,
                                       Algo::LU::CompactMKL,
                                       Algo::Trsm::CompactMKL,
                                       Algo::Gemm::CompactMKL> factorblk;
