@@ -6,6 +6,12 @@
 #include "mkl.h"
 #endif
 
+#if defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+#include "cuda_runtime.h"
+#include "cublas_v2.h"
+#include "cublas_api.h"
+#endif
+
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
@@ -44,264 +50,6 @@ namespace KokkosKernels {
     struct RangeTag {};
     struct TeamTag {};
     struct TeamShmemTag {};
-
-    template <typename ExecSpace, typename ArrayLayout>
-    class BlockCrsMatrixVectorProductByRow {
-    public:
-      typedef BlockCrsMatrix<ExecSpace,ArrayLayout> block_crs_matrix_type;
-      typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
-      typedef BlockMultiVector<ExecSpace,ArrayLayout> block_multi_vector_type;
-      
-    private:
-      ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
-      ConstUnmanagedViewType<typename crs_graph_type::col_idx_type> _colidx;
-
-      ConstUnmanagedViewType<typename block_crs_matrix_type::value_array_type> _A;
-      ConstUnmanagedViewType<typename block_multi_vector_type::value_array_type> _x;
-      /**/ UnmanagedViewType<typename block_multi_vector_type::value_array_type> _y;
-
-      ordinal_type _blocksize;
-
-    public:
-      // A thread maps to a point row of the matrix.
-      // loop = blksize*m
-      KOKKOS_INLINE_FUNCTION 
-      void operator()(const ordinal_type idx) const {
-        // index of blockrow and row in a block
-        const ordinal_type i  = idx/_blocksize;
-        const ordinal_type ii = idx%_blocksize;
-        
-        // loop over multivectors
-        const ordinal_type jend = _y.dimension_0();
-        for (ordinal_type j=0;j<jend;++j) {
-          scalar_type tmp = 0;
-          
-          // block row 
-          const ordinal_type 
-            cbegin = _rowptr(i), cend = _rowptr(i+1);
-
-          for (ordinal_type c=cbegin;c<cend;++c) {
-            const ordinal_type col = _colidx(c);
-            for (ordinal_type jj=0;jj<_blocksize;++jj) 
-              tmp += _A(col,ii,jj)*_x(j, col, jj);
-          }
-          _y(j, i, ii) = tmp;
-        }
-      }
-      
-      void run(const block_crs_matrix_type A,
-               const block_multi_vector_type x, 
-               const block_multi_vector_type y) {
-        _rowptr = A.CrsGraph().rowptr;
-        _colidx = A.CrsGraph().colidx;
-
-        _blocksize = A.BlockSize();
-
-        _A = A.Values();
-        _x = x.Values();
-        _y = y.Values();
-
-        Kokkos::parallel_for(_x.dimension_1()*_blocksize, *this);
-      }
-    };
-
-    template <typename ExecSpace, typename ArrayLayout>
-    class BlockCrsMatrixVectorProductByBlockRow {
-    public:
-      typedef BlockCrsMatrix<ExecSpace,ArrayLayout> block_crs_matrix_type;
-      typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
-      typedef BlockMultiVector<ExecSpace,ArrayLayout> block_multi_vector_type;
-
-    private:
-      ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
-      ConstUnmanagedViewType<typename crs_graph_type::col_idx_type> _colidx;
-
-      ConstUnmanagedViewType<typename block_crs_matrix_type::value_array_type> _A;
-      ConstUnmanagedViewType<typename block_multi_vector_type::value_array_type> _x;
-      /**/ UnmanagedViewType<typename block_multi_vector_type::value_array_type> _y;
-
-      ordinal_type _blocksize;
-
-    public:
-      
-      // A thread maps to a row block of the matrix.
-      // loop = m
-      KOKKOS_INLINE_FUNCTION 
-      void operator()(const ordinal_type i) const {
-        // loop over multivector colums
-        const ordinal_type jend = _y.dimension_0();
-        for (ordinal_type j=0;j<jend;++j) {
-          // set zero
-          for (ordinal_type ii=0;ii<_blocksize;++ii) 
-            _y(j, i, ii) = 0;
-          
-          // block row 
-          const ordinal_type 
-            cbegin = _rowptr(i), cend = _rowptr(i+1);
-          
-          for (ordinal_type c=cbegin;c<cend;++c) {
-            const ordinal_type col = _colidx(c);
-            for (ordinal_type ii=0;ii<_blocksize;++ii) {
-              scalar_type tmp = 0;
-              for (ordinal_type jj=0;jj<_blocksize;++jj) 
-                tmp += _A(col,ii,jj)*_x(j, col, jj);
-              _y(j, i, ii) += tmp;
-            }
-          }
-        }
-      }
-      
-      void run(const block_crs_matrix_type A,
-               const block_multi_vector_type x, 
-               const block_multi_vector_type y) {
-        _rowptr = A.CrsGraph().rowptr;
-        _colidx = A.CrsGraph().colidx;
-
-        _blocksize = A.BlockSize();
-
-        _A = A.Values();
-        _x = x.Values();
-        _y = y.Values();
-
-        Kokkos::parallel_for(_x.dimension_1(), *this);
-      }
-    };
-
-    template <typename ExecSpace, typename ValueType, typename ArrayLayout>
-    class ExtractBlockTridiagMatrices {
-    public:
-      typedef ExecSpace exec_space;
-      typedef ValueType value_type;
-      typedef ArrayLayout array_layout;
-
-      typedef StructuredBlock structured_block_mesh_type;
-      typedef BlockCrsMatrix<exec_space,array_layout> block_crs_matrix_type;
-      typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
-      typedef BlockTridiagMatrices<exec_space,value_type,array_layout> block_tridiag_matrices_type;
-
-    private:
-      structured_block_mesh_type _mesh;
-      ordinal_type _blocksize;
-      
-      ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
-      ConstUnmanagedViewType<typename crs_graph_type::row_idx_type> _rowidx;
-      ConstUnmanagedViewType<typename crs_graph_type::col_idx_type> _colidx;
-      
-      ConstUnmanagedViewType<typename block_crs_matrix_type::value_array_type> _A;
-      /**/ UnmanagedViewType<typename block_tridiag_matrices_type::value_array_type> _TA, _TB, _TC;
-      
-    public:
-      ExtractBlockTridiagMatrices(const structured_block_mesh_type mesh) 
-        : _mesh(mesh) {}
-
-      template<typename TViewType,
-               typename AViewType>
-      KOKKOS_INLINE_FUNCTION
-      void 
-      elementwise_copy(const TViewType &T,
-                       const AViewType &A,
-                       const ordinal_type ij, 
-                       const ordinal_type k,
-                       const ordinal_type c,
-                       const ordinal_type blocksize) const {
-        for (ordinal_type ii=0;ii<blocksize;++ii)
-          for (ordinal_type jj=0;jj<blocksize;++jj) 
-            tdiag_val(T, ij, k, ii, jj) = A(c, ii, jj);
-      }
-      
-      // A thread maps nonzero blocks
-      KOKKOS_INLINE_FUNCTION 
-      void operator()(const ordinal_type c) const {
-        const ordinal_type row = _rowidx[c], col = _colidx[c];
-
-        ordinal_type ri, rj, rk, ci, cj, ck;
-        _mesh.id2ijk(row, ri, rj, rk);
-        _mesh.id2ijk(col, ci, cj, ck);
-  
-        if (ri == ci && rj == cj) {
-          const ordinal_type ij = _mesh.ij2id(ri, rj);
-          // consider connectivity to k-direction
-          switch (rk - ck) {
-          case  1: elementwise_copy(_TC, _A, ij, ck, c, _blocksize); break;
-          case  0: elementwise_copy(_TA, _A, ij, rk, c, _blocksize); break;
-          case -1: elementwise_copy(_TB, _A, ij, rk, c, _blocksize); break;
-          }
-        }
-      }
-      
-      void run(const block_crs_matrix_type A,
-               const block_tridiag_matrices_type T) { 
-        _rowptr = A.CrsGraph().rowptr;
-        _rowidx = A.CrsGraph().rowidx;
-        _colidx = A.CrsGraph().colidx;
-
-        _A = A.Values();
-
-        _TA = T.A(); 
-        _TB = T.B(); 
-        _TC = T.C();
-
-        _blocksize = A.BlockSize();
-        Kokkos::parallel_for(_A.dimension_0(), *this);
-      }
-
-      template<typename TViewType,
-               typename AViewType>
-      bool elementwise_check(const TViewType &T,
-                             const AViewType &A,
-                             const ordinal_type ij, 
-                             const ordinal_type k,
-                             const ordinal_type c,
-                             const ordinal_type blocksize) const {
-        const auto eps = 1e2*std::numeric_limits<scalar_type>::epsilon();
-        for (ordinal_type ii=0;ii<blocksize;++ii)
-          for (ordinal_type jj=0;jj<blocksize;++jj) 
-            if ( std::abs(tdiag_val(T, ij, k, ii, jj) - A(c, ii, jj)) >= eps ) return false; 
-        return true;
-      }
-      
-      bool check() const {        
-        auto rowptr = Kokkos::create_mirror_view(_rowptr); Kokkos::deep_copy(rowptr, _rowptr);
-        auto colidx = Kokkos::create_mirror_view(_colidx); Kokkos::deep_copy(colidx, _colidx);
-        auto TA     = Kokkos::create_mirror_view(_TA);     Kokkos::deep_copy(TA, _TA);
-        auto TB     = Kokkos::create_mirror_view(_TB);     Kokkos::deep_copy(TB, _TB);
-        auto TC     = Kokkos::create_mirror_view(_TC);     Kokkos::deep_copy(TC, _TC);
-        auto A      = Kokkos::create_mirror_view(_A);      Kokkos::deep_copy(A, _A);
-
-        const ordinal_type 
-          ijend = adjustDimension<value_type>(_mesh.ni*_mesh.nj),
-          kend = _mesh.nk;
-
-        assert(ijend == TA.dimension_0()); assert((kend - 0) == TA.dimension_1()); 
-        assert(ijend == TB.dimension_0()); assert((kend - 1) == TB.dimension_1());
-        assert(ijend == TC.dimension_0()); assert((kend - 1) == TC.dimension_1());
-
-        for (ordinal_type ij=0;ij<ijend;++ij) {
-          ordinal_type i, j;
-          _mesh.id2ij(ij, i, j);
-
-          for (ordinal_type k=0;k<kend;++k) {
-            const ordinal_type row = _mesh.ijk2id(i, j, k),
-              idx_begin = rowptr[row], 
-              idx_end = rowptr[row+1];
-
-            // check
-            bool found[3] = {}, same[3] = {};
-            for (ordinal_type idx=idx_begin;idx<idx_end;++idx) {
-              switch (row - colidx[idx]) {
-              case  1: same[2] = elementwise_check(TC, A, ij, k-1, idx, _blocksize); found[2] = true; break;
-              case  0: same[0] = elementwise_check(TA, A, ij, k,   idx, _blocksize); found[0] = true; break;
-              case -1: same[1] = elementwise_check(TB, A, ij, k,   idx, _blocksize); found[1] = true; break;
-              }
-            }
-            if      (k == 0)         assert(found[0] & same[0] && found[1] & same[1]); 
-            else if (k == (kend-1))  assert(found[0] & same[0] && found[2] & same[2]); 
-            else                     assert(found[0] & same[0] && found[1] & same[1] && found[2] & same[2]); 
-          }
-        }            
-        return true;
-      }
-    };
     
     template <typename ExecSpace, typename ValueType, typename ArrayLayout,
               int VectorLength,
@@ -1146,7 +894,7 @@ namespace KokkosKernels {
     void run(const ordinal_type ni, const ordinal_type nj, const ordinal_type nk, 
              const ordinal_type blocksize, 
              const ordinal_type nrhs,
-             const bool test_cublas = false) {
+             const bool test_tpl = false) {
       typedef typename DeviceSpace::array_layout DeviceArrayLayout;
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
 
@@ -1223,8 +971,23 @@ namespace KokkosKernels {
       deep_copy(T_org_device, T_device);
       
       // Test Block TriDiag Factorization
-      if (test_cublas) {
-        //
+      if (test_tpl) {
+#if                                                     \
+  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
+  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+        FactorizeBlockTridiagMatrices<DeviceSpace,
+                                      ValueType,
+                                      Algo::LU::CompactMKL,
+                                      Algo::Trsm::CompactMKL,
+                                      Algo::Gemm::CompactMKL> factorblk;
+        factorblk.run(0, T_device); // range policy only now
+        TEST_ASSERT(factorblk.check(T_org_device), success);
+#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+        std::cout << "CUBLAS compact version does not exist\n"; 
+#else
+        std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
+#endif 
       } else {
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType, 
@@ -1256,8 +1019,23 @@ namespace KokkosKernels {
                                                     nrhs,
                                                     mesh.nk, 
                                                     blocksize);
-        if (test_cublas) {
-          //
+        if (test_tpl) {
+#if                                                     \
+  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
+  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+          SolveBlockTridiagMatrices<DeviceSpace,
+                                    ValueType,
+                                    Algo::Trsv::CompactMKL,
+                                    Algo::Gemv::CompactMKL> solveblk;
+
+          solveblk.run(0, T_device, x_device, b_device);
+          TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
+#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+        std::cout << "CUBLAS compact version does not exist\n"; 
+#else
+        std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
+#endif 
         } else {
           SolveBlockTridiagMatrices<DeviceSpace,
                                     ValueType, 
@@ -1279,7 +1057,7 @@ namespace KokkosKernels {
     
     // performance tests
     template<typename DeviceSpace, typename ValueType, int VectorLength>
-    int run(const Input &input, const bool test_cublas = false) { 
+    int run(const Input &input, const bool test_tpl = false) { 
       typedef typename DeviceSpace::array_layout DeviceArrayLayout;
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
 
@@ -1303,7 +1081,7 @@ namespace KokkosKernels {
 
       // something is not copyable ... don't know why yet...
       BlockCrsMatrix<DeviceSpace,DeviceArrayLayout> A_device;
-      double t_fill_block_crs_matrix = 0.0, t_fill_graph = 0.0;
+      //double t_fill_block_crs_matrix = 0.0, t_fill_graph = 0.0;
       {
         const StencilShape::Enum stencil_shape = input.stencil_shape;
         CrsGraph<HostSpace,DeviceArrayLayout> graph_host;
@@ -1311,14 +1089,14 @@ namespace KokkosKernels {
           Timer timer("Fill Graph _______________");
           timer.reset();
           graph_host = create_graph_host_for_structured_block<DeviceArrayLayout>(mesh, stencil_shape);
-          t_fill_graph = timer.seconds();
+          /* t_fill_graph = */ timer.seconds();
         }
         BlockCrsMatrix<HostSpace,DeviceArrayLayout> A_host(graph_host, blocksize);
         {
           Timer timer("Fill Block CRS Matrix_______________");
           timer.reset();
           fill_block_crs_matrix_host(A_host);       
-          t_fill_block_crs_matrix = timer.seconds();       
+          /* t_fill_block_crs_matrix = */timer.seconds();       
         }
         A_device = create_mirror<DeviceSpace>(A_host);
         deep_copy(A_device, A_host);
@@ -1331,7 +1109,7 @@ namespace KokkosKernels {
       /// matrix vector multiplication test
       ///
       double t_matvec = 0.0;
-      double t_fill_block_multi_vector = 0.0;
+      //double t_fill_block_multi_vector = 0.0;
       {
         const ordinal_type m = mesh.size();
 
@@ -1340,7 +1118,7 @@ namespace KokkosKernels {
           Timer timer("Fill Block Multi Vector______________");
           timer.reset();
           fill_block_multi_vector_host(x_host);
-          t_fill_block_multi_vector = timer.seconds();
+          /* t_fill_block_multi_vector = */ timer.seconds();
         }
         auto x_device = create_mirror<DeviceSpace>(x_host);
         deep_copy(x_device, x_host);
@@ -1390,8 +1168,29 @@ namespace KokkosKernels {
       /// block tridiag factorization test
       ///
       double t_factorize = 0.0, f_factorize = 0.0;
-      if (test_cublas) {
-        //
+      if (test_tpl) {
+#if                                                     \
+  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
+  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+        FactorizeBlockTridiagMatrices<DeviceSpace,
+                                      ValueType,
+                                      Algo::LU::CompactMKL,
+                                      Algo::Trsm::CompactMKL,
+                                      Algo::Gemm::CompactMKL> factorblk;
+        f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
+        {
+          Timer timer("FactorizeBlockTridiagMatrices");
+          timer.reset();
+          factorblk.run(0, T_device);
+          t_factorize = timer.seconds();
+        }
+        TEST_ASSERT(factorblk.check(T_org_device), success);
+#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+        std::cout << "CUBLAS compact version does not exist\n"; 
+#else
+        std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
+#endif 
       } else {
         FactorizeBlockTridiagMatrices<DeviceSpace,
                                       ValueType, 
@@ -1433,8 +1232,32 @@ namespace KokkosKernels {
                                                     nrhs,
                                                     nk, 
                                                     blocksize);
-        if (test_cublas) {
-          //
+        if (test_tpl) {
+#if                                                     \
+  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
+  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+          SolveBlockTridiagMatrices<DeviceSpace,
+                                    ValueType, 
+                                    DeviceArrayLayout,
+                                    VectorLength,
+                                    Algo::Trsv::CompactMKL,
+                                    Algo::Gemv::CompactMKL> solveblk;
+          {
+            Timer timer("50 SolveBlockTridiagMatrices");
+            timer.reset();
+            for (ordinal_type i=0;i<niter;++i) {
+              solveblk.run(0, T_device, x_device, b_device);
+              dontopt += i;
+            }          
+            t_solve = timer.seconds();
+          }
+          if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
+#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+        std::cout << "CUBLAS compact version does not exist\n"; 
+#else
+        std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
+#endif 
         } else {
           SolveBlockTridiagMatrices<DeviceSpace,
                                     ValueType, 
