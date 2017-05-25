@@ -43,3 +43,4 @@
 
 #include<KokkosBlas1_abs.hpp>
 #include<KokkosBlas1_axpby.hpp>
+#include<KokkosBlas1_dot.hpp>

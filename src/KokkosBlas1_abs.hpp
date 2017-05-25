@@ -45,6 +45,10 @@
 #define KOKKOSBLAS1_ABS_HPP_
 
 #include<impl/KokkosBlas1_abs_spec.hpp>
+
+
+namespace KokkosBlas {
+
 /// \brief R(i,j) = abs(X(i,j))
 ///
 /// Replace each entry in R with the absolute value (magnitude) of the
@@ -54,9 +58,6 @@
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
-
-namespace KokkosBlas {
-
 template<class RMV, class XMV>
 void
 abs (const RMV& R, const XMV& X)

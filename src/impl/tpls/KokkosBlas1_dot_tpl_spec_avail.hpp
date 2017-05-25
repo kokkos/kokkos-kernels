@@ -41,14 +41,14 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_HPP_
-#define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_HPP_
+#ifndef KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_HPP_
+#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_HPP_
 
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template<class AV, class XMV, class BV, class YMV, int rank = YMV::Rank>
-struct axpby_tpl_spec_avail {
+template<class AV, class XMV, class YMV, int Xrank = XMV::Rank, int Yrank = YMV::Rank>
+struct dot_tpl_spec_avail {
   enum : bool { value = false };
 };
 }
@@ -59,24 +59,26 @@ namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-
-#define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS( SCALAR , LAYOUT, MEMSPACE ) \
+// double
+#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS( SCALAR, LAYOUT, MEMSPACE ) \
 template<class ExecSpace> \
-struct axpby_tpl_spec_avail< \
-     SCALAR, \
-     Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     SCALAR, \
-     Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     1>  { enum : bool { value = true }; };
+struct dot_tpl_spec_avail< \
+Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1,1> { enum : bool { value = true }; };
 
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
+
 
 #endif
+
 }
 }
 #endif
