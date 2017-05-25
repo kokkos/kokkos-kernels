@@ -94,6 +94,8 @@ namespace KokkosKernels {
               mb = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
             };
 
+            const int tsize = member.team_size();
+
             InnerLU<mb> lu(as0, as1);
           
             InnerTrsmLeftLowerUnitDiag<mb>    trsm_llu(as0, as1, as0, as1);
@@ -102,6 +104,7 @@ namespace KokkosKernels {
             auto lu_factorize = [&](const int ib,
                                     const int jb,
                                     value_type *__restrict__ AA) {
+              const int nb = jb/tsize + jb%tsize > 0;
               const int kb = ib < jb ? ib : jb; 
               for (int p=0;p<kb;p+=mb) {
                 const int pb = (p+mb) > kb ? (kb-p) : mb;
@@ -118,18 +121,18 @@ namespace KokkosKernels {
                 // dimension ABR
                 const int 
                   m_abr  = ib-p-mb,               n_abr  = jb-p-mb,
-                  mp_abr = m_abr%mb,              np_abr = n_abr%mb,
-                  mq_abr = (m_abr/mb)+(mp_abr>0), nq_abr = (n_abr/mb)+(np_abr>0);
+                  mp_abr = m_abr%nb,              np_abr = n_abr%nb,
+                  mq_abr = (m_abr/nb)+(mp_abr>0), nq_abr = (n_abr/nb)+(np_abr>0);
 
                 // trsm update
                 Kokkos::parallel_for
                   (Kokkos::TeamThreadRange(member,0,mq_abr+nq_abr),
                    [&](const int &ij) {
                     if (ij < nq_abr) {
-                      const int j = (ij)*mb, qb = (j+mb) > n_abr ? np_abr : mb;
+                      const int j = (ij)*nb, qb = (j+nb) > n_abr ? np_abr : nb;
                       trsm_llu.serial_invoke(Ap, pb, qb, Ap+(j+mb)*as1);
                     } else {
-                      const int i = (ij-nq_abr)*mb , qb = (i+mb) > m_abr ? mp_abr : mb;
+                      const int i = (ij-nq_abr)*nb , qb = (i+mb) > m_abr ? mp_abr : nb;
                       trsm_run.serial_invoke(Ap, pb, qb, Ap+(i+mb)*as0);
                     }
                   });

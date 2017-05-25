@@ -113,6 +113,8 @@ namespace KokkosKernels {
                 mb = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
               };
 
+              const int tsize = member.team_size();
+
               ///
               /// case host: team size is small and blocksize (mb,nb) is large
 
@@ -125,6 +127,7 @@ namespace KokkosKernels {
                               const int jb,
                               const value_type *__restrict__ AA,
                               /**/  value_type *__restrict__ BB) {
+                const int nb = jb/tsize + jb%tsize > 0;
                 for (int p=0;p<ib;p+=mb) {
                   const int pb = (p+mb) > ib ? (ib-p) : mb; 
                   
@@ -133,9 +136,9 @@ namespace KokkosKernels {
                   /**/  value_type *__restrict__ Bp = BB+p*bs0;
 
                   member.team_barrier();                  
-                  const int np = jb%mb;
-                  Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/mb)+(np>0)),[&](const int &jj) {
-                      const int j = jj*mb, qb = (j+mb) > jb ? np : mb;
+                  const int np = jb%nb;
+                  Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int &jj) {
+                      const int j = jj*nb, qb = (j+nb) > jb ? np : nb;
                       if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                       else               trsm_n.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                     });
@@ -258,6 +261,8 @@ namespace KokkosKernels {
                 mb = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
               };
 
+              const int tsize = member.team_size();
+
               InnerTrsmLeftUpperUnitDiag<mb>    trsm_u(as0, as1, bs0, bs1);
               InnerTrsmLeftUpperNonUnitDiag<mb> trsm_n(as0, as1, bs0, bs1);
           
@@ -265,6 +270,7 @@ namespace KokkosKernels {
                               const int jb,
                               const value_type *__restrict__ AA,
                               /**/  value_type *__restrict__ BB) {
+                const int nb = jb/tsize + jb%tsize > 0;
                 for (int pp=0;pp<ib;pp+=mb) {
                   const int 
                   ptmp = ib - pp - mb, 
@@ -276,9 +282,9 @@ namespace KokkosKernels {
                   /**/  value_type *__restrict__ Bp = BB+p*bs0;
 
                   member.team_barrier();
-                  const int np = jb%mb;
-                  Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/mb)+(np>0)),[&](const int &jj) {
-                      const int j = jj*mb, qb = (j+mb) > jb ? np : mb;     
+                  const int np = jb%nb;
+                  Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int &jj) {
+                      const int j = jj*nb, qb = (j+nb) > jb ? np : nb;     
                       if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                       else               trsm_n.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                     });
