@@ -41,7 +41,43 @@
 //@HEADER
 */
 
-#include<KokkosBlas1_abs.hpp>
-#include<KokkosBlas1_axpby.hpp>
-#include<KokkosBlas1_dot.hpp>
-#include<KokkosBlas1_scal.hpp>
+#ifndef KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_HPP_
+#define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_HPP_
+
+namespace KokkosBlas {
+namespace Impl {
+// Specialization struct which defines whether a specialization exists
+template<class RV, class AV, class XV, int Xrank = XV::Rank>
+struct scal_tpl_spec_avail {
+  enum : bool { value = false };
+};
+}
+}
+
+namespace KokkosBlas {
+namespace Impl {
+
+// Generic Host side BLAS (could be MKL or whatever)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+// double
+#define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS( SCALAR, LAYOUT, MEMSPACE ) \
+template<class ExecSpace> \
+struct scal_tpl_spec_avail< \
+Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+SCALAR, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1> { enum : bool { value = true }; };
+
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
+
+
+#endif
+
+}
+}
+#endif

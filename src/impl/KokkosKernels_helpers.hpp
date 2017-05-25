@@ -40,8 +40,45 @@
 // ************************************************************************
 //@HEADER
 */
+#ifndef KOKKOSKERNELS_HELPERS_HPP_
+#define KOKKOSKERNELS_HELPERS_HPP_
 
-#include<KokkosBlas1_abs.hpp>
-#include<KokkosBlas1_axpby.hpp>
-#include<KokkosBlas1_dot.hpp>
-#include<KokkosBlas1_scal.hpp>
+namespace KokkosKernels {
+namespace Impl {
+
+// Unify Layout of a View to LayoutLeft if possible.
+// Used to reduce number of code instantiations
+
+template<class ViewType>
+struct GetUnifiedLayout {
+  typedef typename std::conditional<
+        ( (ViewType::rank == 1) &&
+          (std::is_same<typename ViewType::array_layout,Kokkos::LayoutRight>::value) ) ||
+        ( (ViewType::rank == 0) )
+       ,Kokkos::LayoutLeft,typename ViewType::array_layout>::type array_layout;
+};
+
+template<class T, class TX, bool do_const, bool isView = Kokkos::is_view<T>::value>
+struct GetUnifiedScalarViewType {
+  typedef typename TX::non_const_value_type type;
+};
+
+template<class T, class TX>
+struct GetUnifiedScalarViewType<T,TX,false,true> {
+  typedef Kokkos::View<typename T::non_const_value_type*,
+                       typename KokkosKernels::Impl::GetUnifiedLayout<T>::array_layout,
+                       typename T::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > type;
+};
+
+template<class T, class TX>
+struct GetUnifiedScalarViewType<T,TX,true,true> {
+  typedef Kokkos::View<typename T::const_value_type*,
+                       typename KokkosKernels::Impl::GetUnifiedLayout<T>::array_layout,
+                       typename T::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > type;
+};
+
+}
+}
+#endif

@@ -41,171 +41,169 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_DOT_TPL_SPEC_DECL_HPP_
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_HPP_
+#ifndef KOKKOSBLAS1_SCAL_TPL_SPEC_DECL_HPP_
+#define KOKKOSBLAS1_SCAL_TPL_SPEC_DECL_HPP_
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-extern "C" double               ddot_( const int* N, const double* x, const int* x_inc,
-                                       const double* y, const int* y_inc);
-extern "C" float                sdot_( const int* N, const float* x, const int* x_inc,
-                                       const float* y, const int* y_inc);
-extern "C" std::complex<double> zdot_( const int* N, const std::complex<double>* x, const int* x_inc,
-                                       const std::complex<double>* y, const int* y_inc);
-extern "C" std::complex<float>  cdot_( const int* N, const std::complex<float>* x, const int* x_inc,
-                                       const std::complex<float>* y, const int* y_inc);
+extern "C" double               dscal_( const int* N, const double* alpha,
+                                        const double* x, const int* x_inc);
+extern "C" float                sscal_( const int* N, const float* alpha,
+                                        const float* x, const int* x_inc);
+extern "C" std::complex<double> zscal_( const int* N, const std::complex<double>* alpha,
+                                        const std::complex<double>* x, const int* x_inc);
+extern "C" std::complex<float>  cscal_( const int* N, const std::complex<float>* alpha,
+                                        const std::complex<float>* x, const int* x_inc);
 
 namespace KokkosBlas {
 namespace Impl {
 
 
 namespace {
-  template<class RV, class XV, class YV>
-  inline void dot_print_specialization() {
+  template<class RV, class AV, class XV>
+  inline void scal_print_specialization() {
       #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
-        printf("KokkosBlas1::dot<> TPL Blas specialization for < %s , %s , %s >\n",typeid(RV).name(),typeid(XV).name(),typeid(YV).name());
+        printf("KokkosBlas1::scal<> TPL Blas specialization for < %s , %s , %s >\n",typeid(RV).name(),typeid(AV).name(),typeid(XV).name());
       #endif
   }
 }
 
-#define KOKKOSBLAS1_DDOT_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
-struct Dot< \
-Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
+struct Scal< \
+Kokkos::View<double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+double, \
 Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-1,1,true, ETI_SPEC_AVAIL > { \
+1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef double AV; \
   typedef Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void dot (RV& R, const XV& X, const XV& Y) \
+  static void scal (RV& R, const double& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems < static_cast<size_type> (INT_MAX)) { \
-      dot_print_specialization<RV,XV,XV>(); \
+    if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
+      scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = ddot_(&N,X.data(),&one,Y.data(),&one); \
+      dscal_(&N,&alpha,X.data(),&one); \
     } else { \
-      Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
+      Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
   } \
 };
 
-#define KOKKOSBLAS1_SDOT_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
-struct Dot< \
-Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
+struct Scal< \
+Kokkos::View<float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+float, \
 Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-1,1,true, ETI_SPEC_AVAIL > { \
+1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef float AV; \
   typedef Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void dot (RV& R, const XV& X, const XV& Y) \
+  static void scal (RV& R, const float& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems < static_cast<size_type> (INT_MAX)) { \
-      dot_print_specialization<RV,XV,XV>(); \
+    if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
+      scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = sdot_(&N,X.data(),&one,Y.data(),&one); \
+      sscal_(&N,&alpha,X.data(),&one); \
     } else { \
-      Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
+      Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
   } \
 };
 
-#define KOKKOSBLAS1_ZDOT_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
-struct Dot< \
-Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::HostSpace, \
+struct Scal< \
+Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::complex<double>, \
 Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-1,1,true, ETI_SPEC_AVAIL > { \
+1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::HostSpace, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef Kokkos::complex<double> AV; \
   typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void dot (RV& R, const XV& X, const XV& Y) \
+  static void scal (RV& R, const Kokkos::complex<double>& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems < static_cast<size_type> (INT_MAX)) { \
-      dot_print_specialization<RV,XV,XV>(); \
+    if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
+      scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = zdot_(&N,static_cast<std::complex<double>* >(X.data()),&one, \
-                     static_cast<std::complex<double>* >(Y.data()),&one); \
+      zscal_(&N,static_cast<std::complex<double>*>(&alpha),static_cast<std::complex<double>*>(X.data()),&one); \
     } else { \
-      Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
+      Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
   } \
 };
 
-#define KOKKOSBLAS1_CDOT_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
-struct Dot< \
-Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::HostSpace, \
+struct Scal< \
+Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::complex<float>, \
 Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-1,1,true, ETI_SPEC_AVAIL > { \
+1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::HostSpace, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef Kokkos::complex<float> AV; \
   typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void dot (RV& R, const XV& X, const XV& Y) \
+  static void scal (RV& R, const Kokkos::complex<float>& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems < static_cast<size_type> (INT_MAX)) { \
-      dot_print_specialization<RV,XV,XV>(); \
+    if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
+      scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = cdot_(&N,static_cast<std::complex<float>* >(X.data()),&one, \
-                     static_cast<std::complex<float>* >(Y.data()),&one); \
+      cscal_(&N,static_cast<std::complex<float>*>(&alpha),static_cast<std::complex<float>*>(X.data()),&one); \
     } else { \
-      Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
+      Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
   } \
 };
 
-KOKKOSBLAS1_DDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_DDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_SDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_SDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_ZDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ZDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_CDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_CDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
 }
 }

@@ -45,7 +45,7 @@
 #define KOKKOSBLAS1_DOT_HPP_
 
 #include<impl/KokkosBlas1_dot_spec.hpp>
-
+#include<impl/KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 
@@ -80,21 +80,13 @@ dot (const XVector& x, const YVector& y)
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
-  typedef typename std::conditional<
-        (XVector::rank == 1) &&
-        std::is_same<typename XVector::array_layout,Kokkos::LayoutRight>::value
-       ,Kokkos::LayoutLeft,typename XVector::array_layout>::type XLayout;
-  typedef typename std::conditional<
-        (YVector::rank == 1) &&
-        std::is_same<typename YVector::array_layout,Kokkos::LayoutRight>::value
-       ,Kokkos::LayoutLeft,typename YVector::array_layout>::type YLayout;
 
   typedef Kokkos::View<typename XVector::const_value_type*,
-    XLayout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
     typename XVector::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVector_Internal;
   typedef Kokkos::View<typename YVector::const_value_type*,
-    YLayout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
     typename YVector::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_Internal;
 
@@ -200,25 +192,12 @@ dot (const RV& R, const XMV& X, const YMV& Y,
 
   // Create unmanaged versions of the input Views.
 
-  typedef typename std::conditional<
-        (RV::rank <= 1) &&
-        std::is_same<typename RV::array_layout,Kokkos::LayoutRight>::value
-       ,Kokkos::LayoutLeft,typename RV::array_layout>::type RLayout;
-  typedef typename std::conditional<
-        (XMV::rank == 1) &&
-        std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value
-       ,Kokkos::LayoutLeft,typename XMV::array_layout>::type XLayout;
-  typedef typename std::conditional<
-        (YMV::rank == 1) &&
-        std::is_same<typename YMV::array_layout,Kokkos::LayoutRight>::value
-       ,Kokkos::LayoutLeft,typename YMV::array_layout>::type YLayout;
-
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
       RV::rank == 0,
       typename RV::non_const_value_type,
       typename RV::non_const_value_type* >::type,
-    RLayout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
     typename RV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV_Internal;
   typedef Kokkos::View<
@@ -226,7 +205,7 @@ dot (const RV& R, const XMV& X, const YMV& Y,
       XMV::rank == 1,
       typename XMV::const_value_type*,
       typename XMV::const_value_type** >::type,
-    XLayout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
   typedef Kokkos::View<
@@ -234,7 +213,7 @@ dot (const RV& R, const XMV& X, const YMV& Y,
       YMV::rank == 1,
       typename YMV::const_value_type*,
       typename YMV::const_value_type** >::type,
-    YLayout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
     typename YMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV_Internal;
 

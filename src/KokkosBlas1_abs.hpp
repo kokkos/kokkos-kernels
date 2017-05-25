@@ -45,7 +45,7 @@
 #define KOKKOSBLAS1_ABS_HPP_
 
 #include<impl/KokkosBlas1_abs_spec.hpp>
-
+#include<impl/KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 
@@ -93,7 +93,7 @@ abs (const RMV& R, const XMV& X)
       RMV::rank == 1,
       typename RMV::non_const_value_type*,
       typename RMV::non_const_value_type** >::type,
-    typename RMV::array_layout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<RMV>::array_layout,
     typename RMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RMV_Internal;
   typedef Kokkos::View<
@@ -101,21 +101,12 @@ abs (const RMV& R, const XMV& X)
       XMV::rank == 1,
       typename XMV::const_value_type*,
       typename XMV::const_value_type** >::type,
-    typename XMV::array_layout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
 
   RMV_Internal R_internal = R;
   XMV_Internal X_internal = X;
-
-#ifdef KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
-  using std::cerr;
-  using std::endl;
-  cerr << "KokkosBlas::abs:" << endl
-       << "  RMV_Internal: " << demangledTypeName (R_internal) << endl
-       << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
-       << endl;
-#endif // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Abs<RMV_Internal, XMV_Internal>::abs (R_internal, X_internal);
 }
