@@ -1256,9 +1256,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+    return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }
@@ -1377,9 +1377,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+     return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }

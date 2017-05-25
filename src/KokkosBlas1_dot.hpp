@@ -101,6 +101,7 @@ dot (const XVector& x, const YVector& y)
   YVector_Internal Y = y;
 
   Impl::Dot<RVector_Internal,XVector_Internal,YVector_Internal>::dot (R,X,Y);
+  Kokkos::fence();
   return result;
 }
 
