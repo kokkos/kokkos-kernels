@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOS_BLAS1_UPDATE_SPEC_HPP_
-#define KOKKOS_BLAS1_UPDATE_SPEC_HPP_
+#ifndef KOKKOSBLAS1_UPDATE_SPEC_HPP_
+#define KOKKOSBLAS1_UPDATE_SPEC_HPP_
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
@@ -367,4 +367,4 @@ template struct Update< \
 #include<impl/generated_specializations_hpp/KokkosBlas1_update_eti_spec_decl.hpp>
 #include<impl/generated_specializations_hpp/KokkosBlas1_update_mv_eti_spec_decl.hpp>
 
-#endif // KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_
+#endif // KOKKOSBLAS1_UPDATE_SPEC_HPP_

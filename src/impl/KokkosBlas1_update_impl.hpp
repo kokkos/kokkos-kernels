@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_
-#define KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_
+#ifndef KOKKOSBLAS1_UPDATE_IMPL_HPP_
+#define KOKKOSBLAS1_UPDATE_IMPL_HPP_
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
@@ -525,4 +525,4 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
 } // namespace Impl
 } // namespace KokkosBlas
 
-#endif // KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_
+#endif // KOKKOSBLAS1_UPDATE_IMPL_HPP_

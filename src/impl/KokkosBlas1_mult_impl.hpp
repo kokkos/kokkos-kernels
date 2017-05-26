@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOS_BLAS1_MV_IMPL_MULT_HPP_
-#define KOKKOS_BLAS1_MV_IMPL_MULT_HPP_
+#ifndef KOKKOSBLAS1_MULT_IMPL_HPP_
+#define KOKKOSBLAS1_MULT_IMPL_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -299,133 +299,8 @@ MV_Mult_Generic (typename CMV::const_value_type& c,
   }
 }
 
-/// \brief Implementation of entry-wise multiply of multivectors or
-///   single vectors (depending on the rank template parameter).
-///
-/// This struct is how the front-end interface KokkosBlas::mult talks
-/// to the implementation.  The specializations for rank == 1 and rank
-/// == 2 have meaningful content.
-template<class CMV, class AV, class BMV, int rank = CMV::rank>
-struct Mult;
-
-/// \brief Implementation of entry-wise multiply of multivectors, that
-///   dispatches to MV_Mult_Generic.
-///
-/// \tparam CMV 2-D Kokkos::View
-/// \tparam AV 1-D Kokkos::View
-/// \tparam BMV 2-D Kokkos::View
-/// \tparam SizeType Index type for iterating over rows.
-///
-/// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
-/// BLAS update rules.
-template<class CMV, class AV, class BMV>
-struct Mult<CMV, AV, BMV, 2>
-#ifndef KOKKOSKERNELS_ETI_ONLY
-{
-  static void
-  mult (typename CMV::const_value_type& c,
-        const CMV& C,
-        typename AV::const_value_type& ab,
-        const AV& A,
-        const BMV& B)
-  {
-    typedef typename CMV::size_type size_type;
-
-    const size_type numRows = C.dimension_0 ();
-    const size_type numCols = C.dimension_1 ();
-    if (numRows < static_cast<int> (INT_MAX) &&
-        numRows * numCols < static_cast<int> (INT_MAX)) {
-      MV_Mult_Generic<CMV, AV, BMV, int> (c, C, ab, A, B);
-    }
-    else {
-      MV_Mult_Generic<CMV, AV, BMV, size_type> (c, C, ab, A, B);
-    }
-  }
-}
-#endif
-;
-
-/// \brief Implementation of entry-wise multiply of vectors, that
-///   dispatches to V_Mult_Generic.
-///
-/// \tparam CV 1-D Kokkos::View
-/// \tparam AV 1-D Kokkos::View
-/// \tparam BV 1-D Kokkos::View
-/// \tparam SizeType Index type for iterating over rows.
-///
-/// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual
-/// BLAS update rules.
-template<class CV, class AV, class BV>
-struct Mult<CV, AV, BV, 1>
-#ifndef KOKKOSKERNELS_ETI_ONLY
-{
-  static void
-  mult (typename CV::const_value_type& c,
-        const CV& C,
-        typename AV::const_value_type& ab,
-        const AV& A,
-        const BV& B)
-  {
-    typedef typename CV::size_type size_type;
-
-    const size_type numRows = C.dimension_0 ();
-    if (numRows < static_cast<int> (INT_MAX)) {
-      V_Mult_Generic<CV, AV, BV, int> (c, C, ab, A, B);
-    }
-    else {
-      V_Mult_Generic<CV, AV, BV, size_type> (c, C, ab, A, B);
-    }
-  }
-}
-#endif
-;
-
-//
-// Macro for declaration of full specialization of
-// KokkosBlas::Impl::Mult for rank == 2.  This is NOT for users!!!
-// All the declarations of full specializations go in this header
-// file.  We may spread out definitions (see _DEF macro below) across
-// one or more .cpp files.
-//
-
-#define KOKKOSBLAS1_IMPL_MV_MULT_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-extern template struct Mult<Kokkos::View<SCALAR**, \
-                         LAYOUT, \
-                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            Kokkos::View<const SCALAR*, \
-                         LAYOUT, \
-                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            Kokkos::View<const SCALAR**, \
-                         LAYOUT, \
-                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                            2>;
-
-//
-// Macro for definition of full specialization of
-// KokkosBlas::Impl::Mult for rank == 2.  This is NOT for users!!!  We
-// may spread out use of this macro across one or more .cpp files in
-// this directory.
-//
-#define KOKKOSBLAS1_IMPL_MV_MULT_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template struct Mult<Kokkos::View<SCALAR**, \
-                  LAYOUT, \
-                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR*, \
-                  LAYOUT, \
-                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR**, \
-                  LAYOUT, \
-                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                     2>;
 
 } // namespace Impl
 } // namespace KokkosBlas
 
-#include<generated_specializations_hpp/KokkosBlas1_impl_MV_mult_decl_specializations.hpp>
-#endif // KOKKOS_BLAS1_MV_IMPL_MULT_HPP_
+#endif // KOKKOSBLAS1_MULT_IMPL_HPP_
