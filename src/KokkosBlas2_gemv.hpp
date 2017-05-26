@@ -40,14 +40,15 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOS_BLAS2_MV_HPP_
-#define KOKKOS_BLAS2_MV_HPP_
+#ifndef KOKKOSBLAS2_GEMV_HPP_
+#define KOKKOSBLAS2_GEMV_HPP_
 
 /// \file Kokkos_Blas2_MV.hpp
 /// \brief BLAS 2 kernels specifically optimized for typical
 ///   Tpetra::MultiVector use cases.
 
-#include "Kokkos_Blas2_MV_impl_GEMV.hpp"
+#include <impl/KokkosBlas2_gemv_spec.hpp>
+#include <impl/KokkosKernels_helpers.hpp>
 #include <sstream>
 #include <type_traits> // requires C++11, but so does Kokkos
 
@@ -132,11 +133,11 @@ gemv (const char trans[],
     typename AViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > AVT;
   typedef Kokkos::View<typename XViewType::const_value_type*,
-    typename XViewType::array_layout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<XViewType>::array_layout,
     typename XViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVT;
   typedef Kokkos::View<typename YViewType::non_const_value_type*,
-    typename YViewType::array_layout,
+    typename KokkosKernels::Impl::GetUnifiedLayout<YViewType>::array_layout,
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
   typedef Impl::GEMV<AVT, XVT, YVT, AlphaCoeffType, BetaCoeffType> impl_type;

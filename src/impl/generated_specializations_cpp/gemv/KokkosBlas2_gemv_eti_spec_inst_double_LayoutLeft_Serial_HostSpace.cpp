@@ -41,21 +41,17 @@
 //@HEADER
 */
 
-#include<KokkosBlas1_abs.hpp>
-#include<KokkosBlas1_axpby.hpp>
-#include<KokkosBlas1_dot.hpp>
-#include<KokkosBlas1_fill.hpp>
-#include<KokkosBlas1_mult.hpp>
-#include<KokkosBlas1_nrm1.hpp>
-#include<KokkosBlas1_nrm2.hpp>
-#include<KokkosBlas1_nrm2_squared.hpp>
-#include<KokkosBlas1_nrm2w.hpp>
-#include<KokkosBlas1_nrm2w_squared.hpp>
-#include<KokkosBlas1_nrminf.hpp>
-#include<KokkosBlas1_reciprocal.hpp>
-#include<KokkosBlas1_scal.hpp>
-#include<KokkosBlas1_sum.hpp>
-#include<KokkosBlas1_update.hpp>
 
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
+#include "KokkosBlas2_gemv_spec.hpp"
 
-#include<KokkosBlas2_gemv.hpp>
+namespace KokkosBlas {
+namespace Impl {
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS2_GEMV_ETI_SPEC_INST(double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+#endif
+} // Impl
+} // KokkosBlas

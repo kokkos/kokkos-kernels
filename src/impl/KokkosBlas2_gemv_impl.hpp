@@ -57,10 +57,11 @@ template<class AViewType,
          class YViewType,
          const int alphaPreset, // 0 or 1 are specific values; -1 means general
          const int betaPreset, // 0 or 1 are specific values; -1 means general
-         class AlphaCoeffType = typename YViewType::non_const_value_type,
-         class BetaCoeffType = typename YViewType::non_const_value_type,
          class IndexType = typename AViewType::size_type>
 struct SingleLevelNontransposeGEMV {
+  typedef typename AViewType::non_const_value_type AlphaCoeffType;
+  typedef typename YViewType::non_const_value_type BetaCoeffType;
+
   SingleLevelNontransposeGEMV (const AlphaCoeffType& alpha,
                                const AViewType& A,
                                const XViewType& x,
@@ -147,11 +148,12 @@ template<class AViewType,
          const bool conj,
          const int alphaPreset, // 0 or 1 are specific values; -1 means general
          const int betaPreset, // 0 or 1 are specific values; -1 means general
-         class AlphaCoeffType = typename YViewType::non_const_value_type,
-         class BetaCoeffType = typename YViewType::non_const_value_type,
          class IndexType = typename AViewType::size_type>
 struct SingleLevelTransposeGEMV {
   typedef typename YViewType::non_const_value_type y_value_type;
+  typedef typename AViewType::non_const_value_type AlphaCoeffType;
+  typedef typename YViewType::non_const_value_type BetaCoeffType;
+
   typedef y_value_type value_type[];
   IndexType value_count; // Kokkos needs this for reductions w/ array results
 
@@ -249,15 +251,13 @@ private:
 template<class AViewType,
          class XViewType,
          class YViewType,
-         class AlphaCoeffType = typename YViewType::non_const_value_type,
-         class BetaCoeffType = typename YViewType::non_const_value_type,
          class IndexType = typename AViewType::size_type>
 void
 singleLevelGemv (const char trans[],
-                 const AlphaCoeffType& alpha,
+                 typename AViewType::non_const_value_type& alpha,
                  const AViewType& A,
                  const XViewType& x,
-                 const BetaCoeffType& beta,
+                 typename YViewType::non_const_value_type& beta,
                  const YViewType& y)
 {
   static_assert (Kokkos::Impl::is_view<AViewType>::value,
@@ -279,6 +279,9 @@ singleLevelGemv (const char trans[],
   typedef typename AViewType::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, IndexType> policy_type;
 
+  typedef typename AViewType::const_value_type AlphaCoeffType;
+  typedef typename YViewType::const_value_type BetaCoeffType;
+
   policy_type range (0, A.dimension_0 ());
   const char tr = trans[0];
 
@@ -296,7 +299,7 @@ singleLevelGemv (const char trans[],
       // general beta case.  This assumes that the functor doesn't
       // check dimensions.
       typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-        0, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+        0, -1, IndexType> functor_type;
       functor_type functor (alpha, A, x, beta, y);
       Kokkos::parallel_for (policy_type (0, A.dimension_1 ()), functor);
     }
@@ -314,7 +317,7 @@ singleLevelGemv (const char trans[],
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-          0, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          0, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_for (range, functor);
       }
@@ -322,19 +325,19 @@ singleLevelGemv (const char trans[],
     else if (alpha == Kokkos::Details::ArithTraits<AlphaCoeffType>::one ()) {
       if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
         typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-          1, 0, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          1, 0, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_for (range, functor);
       }
       else if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
         typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-          1, 1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          1, 1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_for (range, functor);
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-          1, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          1, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_for (range, functor);
       }
@@ -342,19 +345,19 @@ singleLevelGemv (const char trans[],
     else { // alpha != 0 and alpha != 1
       if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
         typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-          -1, 0, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          -1, 0, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_for (range, functor);
       }
       else if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
         typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-          -1, 1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          -1, 1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_for (range, functor);
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
-          -1, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          -1, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_for (range, functor);
       }
@@ -371,7 +374,7 @@ singleLevelGemv (const char trans[],
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          false, 0, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          false, 0, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
@@ -379,19 +382,19 @@ singleLevelGemv (const char trans[],
     else if (alpha == Kokkos::Details::ArithTraits<AlphaCoeffType>::one ()) {
       if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          false, 1, 0, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          false, 1, 0, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          false, 1, 1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          false, 1, 1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          false, 1, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          false, 1, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
@@ -399,19 +402,19 @@ singleLevelGemv (const char trans[],
     else { // alpha != 0 and alpha != 1
       if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          false, -1, 0, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          false, -1, 0, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          false, -1, 1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          false, -1, 1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          false, -1, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          false, -1, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
@@ -428,7 +431,7 @@ singleLevelGemv (const char trans[],
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          true, 0, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          true, 0, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
@@ -436,19 +439,19 @@ singleLevelGemv (const char trans[],
     else if (alpha == Kokkos::Details::ArithTraits<AlphaCoeffType>::one ()) {
       if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          true, 1, 0, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          true, 1, 0, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          true, 1, 1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          true, 1, 1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          true, 1, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          true, 1, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
@@ -456,115 +459,25 @@ singleLevelGemv (const char trans[],
     else { // alpha != 0 and alpha != 1
       if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          true, -1, 0, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          true, -1, 0, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          true, -1, 1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          true, -1, 1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
       else { // beta != 0 && beta != 1
         typedef SingleLevelTransposeGEMV<AViewType, XViewType, YViewType,
-          true, -1, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+          true, -1, -1, IndexType> functor_type;
         functor_type functor (alpha, A, x, beta, y);
         Kokkos::parallel_reduce (range, functor);
       }
     }
   }
 }
-
-// Implementation of KokkosBlas::gemv.
-template<class AViewType,
-         class XViewType,
-         class YViewType,
-         class AlphaCoeffType,
-         class BetaCoeffType>
-struct GEMV {
-  static void
-  gemv (const char trans[],
-        const AlphaCoeffType& alpha,
-        const AViewType& A,
-        const XViewType& x,
-        const BetaCoeffType& beta,
-        const YViewType& y)
-  {
-    static_assert (Kokkos::Impl::is_view<AViewType>::value,
-                   "AViewType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XViewType>::value,
-                   "XViewType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YViewType>::value,
-                   "YViewType must be a Kokkos::View.");
-    static_assert (static_cast<int> (AViewType::rank) == 2,
-                   "AViewType must have rank 2.");
-    static_assert (static_cast<int> (XViewType::rank) == 1,
-                   "XViewType must have rank 1.");
-    static_assert (static_cast<int> (YViewType::rank) == 1,
-                   "YViewType must have rank 1.");
-
-    typedef typename AViewType::size_type size_type;
-    const size_type numRows = A.dimension_0 ();
-    const size_type numCols = A.dimension_1 ();
-
-    // Prefer int as the index type, but use a larger type if needed.
-    if (numRows < static_cast<size_type> (INT_MAX) &&
-        numCols < static_cast<size_type> (INT_MAX)) {
-      singleLevelGemv<AViewType, XViewType, YViewType, AlphaCoeffType,
-        BetaCoeffType, int> (trans, alpha, A, x, beta, y);
-    }
-    else {
-      singleLevelGemv<AViewType, XViewType, YViewType, AlphaCoeffType,
-        BetaCoeffType, size_type> (trans, alpha, A, x, beta, y);
-    }
-  }
-};
-
-//
-// Macro for declaration of full specialization of
-// KokkosBlas::Impl::GEMV.  This is NOT for users!!!  All the
-// declarations of full specializations go in this header file.  We
-// may spread out definitions (see _DEF macro below) across one or
-// more .cpp files.
-//
-
-#define KOKKOSBLAS_IMPL_GEMV_DECL( SCALAR, MATRIX_LAYOUT, VECTOR_LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-extern template struct GEMV<Kokkos::View<const SCALAR**, \
-                         MATRIX_LAYOUT, \
-                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            Kokkos::View<const SCALAR*, \
-                         VECTOR_LAYOUT, \
-                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            Kokkos::View<SCALAR*, \
-                         VECTOR_LAYOUT, \
-                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-            SCALAR, \
-            SCALAR>;
-
-//
-// Macro for declarations of full specialization of
-// KokkosBlas::Impl::GEMV.  This is NOT for users!!!
-//
-
-#define KOKKOSBLAS_IMPL_GEMV_DEF( SCALAR, MATRIX_LAYOUT, VECTOR_LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template struct GEMV<Kokkos::View<const SCALAR**, \
-                  MATRIX_LAYOUT,                                \
-                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>,            \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-     Kokkos::View<const SCALAR*,                                    \
-                  VECTOR_LAYOUT,                                    \
-                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>,            \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-     Kokkos::View<SCALAR*,                                          \
-                  VECTOR_LAYOUT,                                    \
-                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>,            \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-     SCALAR,                                                        \
-     SCALAR>;
 
 } // namespace Impl
 } // namespace KokkosBlas

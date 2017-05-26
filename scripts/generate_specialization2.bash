@@ -52,3 +52,6 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash sum KokkosB
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash update KokkosBlas1_update KokkosBlas1_update_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash update KokkosBlas1_update_mv KokkosBlas1_update_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 
+#gemv
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash gemv KokkosBlas2_gemv KokkosBlas2_gemv_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+
