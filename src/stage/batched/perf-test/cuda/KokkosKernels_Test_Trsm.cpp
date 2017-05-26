@@ -177,7 +177,7 @@ namespace KokkosKernels {
           void operator()(const TeamTagV3 &, const MemberType &member) const {
             const int lvl = 0;
             ScratchViewType<ViewType> sa(member.team_scratch(lvl), VectorLength, _a.dimension_1(), _a.dimension_2());
-            ScratchViewType<ViewType> sb(member.team_scratch(lvl), VectorLength, _b.dimension_1(), _b.dimension_2());
+            //ScratchViewType<ViewType> sb(member.team_scratch(lvl), VectorLength, _b.dimension_1(), _b.dimension_2());
 
             const int kbeg = member.league_rank()*VectorLength;
             Kokkos::parallel_for
@@ -189,41 +189,36 @@ namespace KokkosKernels {
                   auto bb  = Kokkos::subview(_b, kk, Kokkos::ALL(), Kokkos::ALL());
 
                   auto saa = Kokkos::subview(sa,  k, Kokkos::ALL(), Kokkos::ALL());
-                  auto sbb = Kokkos::subview(sb,  k, Kokkos::ALL(), Kokkos::ALL());
 
                   Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, aa, saa);
-                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, bb, sbb);
                   member.team_barrier();
 
                   switch (test) {
                   case 0: 
                     Team::
                       Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-                      invoke(member, 1.0, saa, sbb);
+                      invoke(member, 1.0, saa, bb);
                     break;
                   case 1:
                     Team::
                       Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                      invoke(member, 1.0, saa, sbb);
+                      invoke(member, 1.0, saa, bb);
                     break;
                   case 2:
                     Team::
                       Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-                      invoke(member, 1.0, saa, sbb);
+                      invoke(member, 1.0, saa, bb);
                     break;
                   case 3:
                     Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                      invoke(member, 1.0, saa, sbb);
+                      invoke(member, 1.0, saa, bb);
                     break;
                   case 4:
                     Team::
                       Trsm<MemberType,Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                      invoke(member, 1.0, saa, sbb);
+                      invoke(member, 1.0, saa, bb);
                     break;
                   }
-
-                  member.team_barrier();
-                  Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sbb, bb);
                 }
               });
           }
@@ -594,12 +589,12 @@ namespace KokkosKernels {
                 is_blocked_algo = (std::is_same<AlgoTagType,Algo::Trsm::Blocked>::value),
                 mb = Algo::Trsm::Blocked::mb<DeviceMemorySpaceType>(),
                 mp = BlkSize%mb > 0;
-
+              
               const int
                 mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
-
+              
               const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-              const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+              const int team_size = min(max(NumCols,(mblk-1)*mblk), max_cuda_blocksize/VectorLength);
 
               const policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -663,8 +658,7 @@ namespace KokkosKernels {
               typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
 
               const int lvl = 0, per_team_scratch 
-                = (ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, BlkSize) +
-                   ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, NumCols));
+                = ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, BlkSize);
 
               if (per_team_scratch/1024 < 48) {
                 const int
@@ -676,7 +670,7 @@ namespace KokkosKernels {
                   mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
                 const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-                const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+                const int team_size = min(max(NumCols,(mblk-1)*mblk), max_cuda_blocksize/VectorLength);
 
                 const policy_type policy(N, team_size, VectorLength);
                 for (int iter=iter_begin;iter<iter_end;++iter) {

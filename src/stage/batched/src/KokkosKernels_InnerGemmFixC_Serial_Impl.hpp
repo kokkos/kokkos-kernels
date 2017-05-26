@@ -426,45 +426,6 @@ namespace KokkosKernels {
     
         return 0;
       }
-
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixC<5,5>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <=0 || n <= 0 || k <= 0) return 0;
-
-        switch (m*10+n) {
-        case 55: { InnerGemmFixC<5,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 54: { InnerGemmFixC<5,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 53: { InnerGemmFixC<5,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 52: { InnerGemmFixC<5,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 51: { InnerGemmFixC<5,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 45: { InnerGemmFixC<4,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 35: { InnerGemmFixC<3,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 25: { InnerGemmFixC<2,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 15: { InnerGemmFixC<1,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        default: {
-          if (m < 5 && n < 5) {
-            InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); 
-            for (int i=0;i<m;i+=2)
-              for (int j=0;j<n;j+=2) 
-                inner.serial_invoke(alpha, A+i*_as0, B+j*_bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*_cs0+j*_cs1);
-          } else {
-            Kokkos::abort("InnerGemmFixC<5,5>::serial_invoke, assert failure (m<=5 && n<=5)");
-          }
-          break;
-        }
-        }        
-        return 0;
-      }
-
       ///
       /// Inner kernel (4x4)
       /// ==================
@@ -765,43 +726,6 @@ namespace KokkosKernels {
         return 0;
       }
 
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixC<4,4>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <=0 || n <= 0 || k <= 0) return 0;
-
-        switch (m*10+n) {
-        case 44: { InnerGemmFixC<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 43: { InnerGemmFixC<4,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 42: { InnerGemmFixC<4,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 41: { InnerGemmFixC<4,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 34: { InnerGemmFixC<3,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 24: { InnerGemmFixC<2,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 14: { InnerGemmFixC<1,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        default: {
-          if (m < 4 && n < 4) {
-            InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); 
-            for (int i=0;i<m;i+=2)
-              for (int j=0;j<n;j+=2) 
-                inner.serial_invoke(alpha, A+i*_as0, B+j*_bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*_cs0+j*_cs1);
-          } else {
-            Kokkos::abort("InnerGemmFixC<4,4>::serial_invoke, assert failure (m<=4 && n<=4)");
-          }
-          break;
-        }
-        }
-
-        return 0;
-      }
-
       ///
       /// Inner kernel (3x3)
       /// ==================
@@ -999,41 +923,6 @@ namespace KokkosKernels {
         return 0;
       }
 
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixC<3,3>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <=0 || n <= 0 || k <= 0) return 0;
-
-        switch (m*10+n) {
-        case 33: { InnerGemmFixC<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 32: { InnerGemmFixC<3,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 31: { InnerGemmFixC<3,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 23: { InnerGemmFixC<2,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 13: { InnerGemmFixC<1,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        default: {
-          if (m < 3 && n < 3) {
-            InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); 
-            for (int i=0;i<m;i+=2)
-              for (int j=0;j<n;j+=2) 
-                inner.serial_invoke(alpha, A+i*_as0, B+j*_bs1, (i+2 > m ? 1 : 2), (j+2 > n ? 1 : 2), k, C+i*_cs0+j*_cs1);
-          } else {
-            Kokkos::abort("InnerGemmFixC<3,3>::serial_invoke, assert failure (m<=3 && n<=3)");
-          }
-          break;
-        }
-        }
-
-        return 0;
-      }
-
       ///
       /// Inner kernel (2x2)
       /// ==================
@@ -1142,32 +1031,6 @@ namespace KokkosKernels {
         return 0;
       }
 
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerGemmFixC<2,2>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (m <=0 || n <= 0 || k <= 0) return 0;
-
-        switch (m*10+n) {
-        case 22: { InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 21: { InnerGemmFixC<2,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 12: { InnerGemmFixC<1,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        case 11: { InnerGemmFixC<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
-        default: {
-          Kokkos::abort("InnerGemmFixC<2,2>::serial_invoke, assert failure (m<=2 && n<=2)");
-          break;
-        }
-        }
-
-        return 0;
-      }
 
       ///
       /// Inner kernel (1x1)
@@ -1208,22 +1071,6 @@ namespace KokkosKernels {
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int
-      InnerGemmFixC<1,1>::
-      serial_invoke(const ScalarType alpha,
-                    const ValueType *__restrict__ A,
-                    const ValueType *__restrict__ B,
-                    const int m, const int n, const int k,
-                    /**/  ValueType *__restrict__ C) {
-        if (!(m<=1 && n<=1))
-          Kokkos::abort("InnerGemmFixC<1,1>::serial_invoke, assert failure (m<=1 && n<=1)");
-        return serial_invoke(alpha, A, B, k, C);;
-      }
-
-      template<>
-      template<typename ScalarType,
-               typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
       InnerGemmFixC<0,1>::
       serial_invoke(const ScalarType alpha,
                     const ValueType *__restrict__ A,
@@ -1246,7 +1093,147 @@ namespace KokkosKernels {
         return 0;
       }
 
+
+
+      template<>
+      template<typename ScalarType,
+               typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerGemmFixC<5,5>::
+      serial_invoke(const ScalarType alpha,
+                    const ValueType *__restrict__ A,
+                    const ValueType *__restrict__ B,
+                    const int m, const int n, const int k,
+                    /**/  ValueType *__restrict__ C) {
+        if (m <=0 || n <= 0 || k <= 0) return 0;
+        if (!(m<=5 && n<=5))
+          Kokkos::abort("InnerGemmFixC<5,5>::serial_invoke, assert failure (m<=5 && n<=5)");
+
+        switch (m*10+n) {
+        case 55: { InnerGemmFixC<5,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 54: { InnerGemmFixC<5,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 53: { InnerGemmFixC<5,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 52: { InnerGemmFixC<5,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 51: { InnerGemmFixC<5,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 45: { InnerGemmFixC<4,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 35: { InnerGemmFixC<3,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 25: { InnerGemmFixC<2,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 15: { InnerGemmFixC<1,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        default: {
+          InnerGemmFixC<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); 
+          break;
+        }
+        }        
+        return 0;
+      }
+
+      template<>
+      template<typename ScalarType,
+               typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerGemmFixC<4,4>::
+      serial_invoke(const ScalarType alpha,
+                    const ValueType *__restrict__ A,
+                    const ValueType *__restrict__ B,
+                    const int m, const int n, const int k,
+                    /**/  ValueType *__restrict__ C) {
+        if (m <=0 || n <= 0 || k <= 0) return 0;
+        if (!(m<=4 && n<=4))
+          Kokkos::abort("InnerGemmFixC<4,4>::serial_invoke, assert failure (m<=4 && n<=4)");
+
+        switch (m*10+n) {
+        case 44: { InnerGemmFixC<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 43: { InnerGemmFixC<4,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 42: { InnerGemmFixC<4,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 41: { InnerGemmFixC<4,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 34: { InnerGemmFixC<3,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 24: { InnerGemmFixC<2,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 14: { InnerGemmFixC<1,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        default: {
+          InnerGemmFixC<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); 
+          break;
+        }
+        }
+        return 0;
+      }
+
+      template<>
+      template<typename ScalarType,
+               typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerGemmFixC<3,3>::
+      serial_invoke(const ScalarType alpha,
+                    const ValueType *__restrict__ A,
+                    const ValueType *__restrict__ B,
+                    const int m, const int n, const int k,
+                    /**/  ValueType *__restrict__ C) {
+        if (m <=0 || n <= 0 || k <= 0) return 0;
+        if (!(m<=3 && n<=3))
+          Kokkos::abort("InnerGemmFixC<3,3>::serial_invoke, assert failure (m<=3 && n<=3)");
+
+        switch (m*10+n) {
+        case 33: { InnerGemmFixC<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 32: { InnerGemmFixC<3,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 31: { InnerGemmFixC<3,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 23: { InnerGemmFixC<2,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 13: { InnerGemmFixC<1,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        default: {
+          InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); 
+          break;
+        }
+        }
+        return 0;
+      }
+
+      template<>
+      template<typename ScalarType,
+               typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerGemmFixC<2,2>::
+      serial_invoke(const ScalarType alpha,
+                    const ValueType *__restrict__ A,
+                    const ValueType *__restrict__ B,
+                    const int m, const int n, const int k,
+                    /**/  ValueType *__restrict__ C) {
+        if (m <=0 || n <= 0 || k <= 0) return 0;
+        if (!(m<=2 && n<=2))
+          Kokkos::abort("InnerGemmFixC<2,2>::serial_invoke, assert failure (m<=2 && n<=2)");
+
+        switch (m*10+n) {
+        case 22: { InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 21: { InnerGemmFixC<2,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 12: { InnerGemmFixC<1,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        case 11: { InnerGemmFixC<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, k, C); break; }
+        }
+        return 0;
+      }
+
+      template<>
+      template<typename ScalarType,
+               typename ValueType>
+      KOKKOS_INLINE_FUNCTION
+      int
+      InnerGemmFixC<1,1>::
+      serial_invoke(const ScalarType alpha,
+                    const ValueType *__restrict__ A,
+                    const ValueType *__restrict__ B,
+                    const int m, const int n, const int k,
+                    /**/  ValueType *__restrict__ C) {
+        if (m <=0 || n <= 0 || k <= 0) return 0;
+        if (!(m<=1 && n<=1))
+          Kokkos::abort("InnerGemmFixC<1,1>::serial_invoke, assert failure (m<=1 && n<=1)");
+
+        return serial_invoke(alpha, A, B, k, C);;
+      }
+      
+
+
       /// the below should not be called
+
 
 
       // ///

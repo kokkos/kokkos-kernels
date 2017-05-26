@@ -382,14 +382,15 @@ namespace KokkosKernels {
 
               const int
                 is_blocked_algo = (std::is_same<AlgoTagType,Algo::LU::Blocked>::value),
-                mb = Algo::LU::Blocked::mb<DeviceMemorySpaceType>(),
-                mp = BlkSize%mb > 0;
+                mb = Algo::LU::Blocked::mb<DeviceMemorySpaceType>();
+              //mp = BlkSize%mb > 0;
 
               const int
-                mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
+                //mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
+                mblk = is_blocked_algo ? (BlkSize - mb) : (BlkSize - 1);
 
               const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-              const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
+              const int team_size = min(max(mblk*2,1), max_cuda_blocksize/VectorLength);
 
               const policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -452,14 +453,15 @@ namespace KokkosKernels {
               if (per_team_scratch/1024 < 48) {
                 const int
                   is_blocked_algo = (std::is_same<AlgoTagType,Algo::LU::Blocked>::value),
-                  mb = Algo::LU::Blocked::mb<DeviceMemorySpaceType>(),
-                  mp = BlkSize%mb > 0;
+                  mb = Algo::LU::Blocked::mb<DeviceMemorySpaceType>();
+                  //                  mp = BlkSize%mb > 0;
 
                 const int
-                  mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
+                  //mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
+                  mblk = is_blocked_algo ? (BlkSize - mb) : (BlkSize - 1);
 
                 const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-                const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
+                const int team_size = min(max(mblk*2,1), max_cuda_blocksize/VectorLength);
 
                 const policy_type policy(N, team_size, VectorLength);
                 for (int iter=iter_begin;iter<iter_end;++iter) {

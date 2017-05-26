@@ -429,7 +429,7 @@ namespace KokkosKernels {
                 mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
               const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-              const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+              const int team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength);
 
               policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -505,7 +505,7 @@ namespace KokkosKernels {
                   mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
                 const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, per_team_scratch, 0);
-                const int team_size = min(mblk*mblk, max_cuda_blocksize/VectorLength);
+                const int team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength);
 
                 policy_type policy(N, team_size, VectorLength);
                 for (int iter=iter_begin;iter<iter_end;++iter) {

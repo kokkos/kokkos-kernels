@@ -110,33 +110,33 @@ namespace KokkosKernels {
 
             {
               enum : int {
-                mb = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
+                mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
               };
-
-              const int tsize = member.team_size();
 
               ///
               /// case host: team size is small and blocksize (mb,nb) is large
 
               ///
               /// case cuda: team size is large and blocksize (mb,nb) is small
-              InnerTrsmLeftLowerUnitDiag<mb>    trsm_u(as0, as1, bs0, bs1);
-              InnerTrsmLeftLowerNonUnitDiag<mb> trsm_n(as0, as1, bs0, bs1);
+              InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);
+              InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
               
               auto trsm = [&](const int ib, 
                               const int jb,
                               const value_type *__restrict__ AA,
                               /**/  value_type *__restrict__ BB) {
-                const int nb = jb/tsize + jb%tsize > 0;
+                const int mb = mbAlgo;
+                const int tsize = member.team_size();
+                const int nb = (jb/tsize + jb%tsize > 0);
+                const int np = jb%nb;
                 for (int p=0;p<ib;p+=mb) {
-                  const int pb = (p+mb) > ib ? (ib-p) : mb; 
+                  const int pb = ((p+mb) > ib ? (ib-p) : mb); 
                   
                   // trsm update
                   const value_type *__restrict__ Ap = AA+p*as0+p*as1;
                   /**/  value_type *__restrict__ Bp = BB+p*bs0;
 
                   member.team_barrier();                  
-                  const int np = jb%nb;
                   Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int &jj) {
                       const int j = jj*nb, qb = (j+nb) > jb ? np : nb;
                       if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, qb, Bp+j*bs1);
@@ -258,31 +258,31 @@ namespace KokkosKernels {
 
             {
               enum : int {
-                mb = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
+                mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()*2
               };
 
-              const int tsize = member.team_size();
-
-              InnerTrsmLeftUpperUnitDiag<mb>    trsm_u(as0, as1, bs0, bs1);
-              InnerTrsmLeftUpperNonUnitDiag<mb> trsm_n(as0, as1, bs0, bs1);
+              InnerTrsmLeftUpperUnitDiag<5>    trsm_u(as0, as1, bs0, bs1);
+              InnerTrsmLeftUpperNonUnitDiag<5> trsm_n(as0, as1, bs0, bs1);
           
               auto trsm = [&](const int ib, 
                               const int jb,
                               const value_type *__restrict__ AA,
                               /**/  value_type *__restrict__ BB) {
-                const int nb = jb/tsize + jb%tsize > 0;
+                const int mb = (ib <=5 ? ib : mbAlgo);
+                const int tsize = member.team_size();
+                const int nb = (jb/tsize + jb%tsize > 0);
+                const int np = jb%nb;
                 for (int pp=0;pp<ib;pp+=mb) {
                   const int 
-                  ptmp = ib - pp - mb, 
-                  p = ptmp < 0 ? 0 : ptmp, 
-                  pb = mb + (ptmp < 0)*ptmp;
-              
+                    ptmp = (ib - pp - mb), 
+                    p = (ptmp < 0 ? 0 : ptmp), 
+                    pb = (mb + (ptmp < 0)*ptmp);
+                  
                   // trsm update
                   const value_type *__restrict__ Ap = AA+p*as0+p*as1;
                   /**/  value_type *__restrict__ Bp = BB+p*bs0;
 
                   member.team_barrier();
-                  const int np = jb%nb;
                   Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int &jj) {
                       const int j = jj*nb, qb = (j+nb) > jb ? np : nb;     
                       if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, qb, Bp+j*bs1);

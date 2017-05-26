@@ -61,11 +61,11 @@ namespace KokkosKernels {
                 // a21[i*as0] *= inv_alpha11; 
                 a21[i*as0] /= alpha11;
               });
+            
             member.team_barrier();
-
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend*jend),[&](const int &ij) {
-#if                             \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+#if                                                                     \
+  defined (KOKKOS_HAVE_CUDA) &&                                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
                 const int i = ij%iend, j = ij/iend;
 #else
@@ -94,31 +94,29 @@ namespace KokkosKernels {
               mb = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
             };
 
-            const int tsize = member.team_size();
-
             InnerLU<mb> lu(as0, as1);
           
             InnerTrsmLeftLowerUnitDiag<mb>    trsm_llu(as0, as1, as0, as1);
             InnerTrsmLeftLowerNonUnitDiag<mb> trsm_run(as1, as0, as1, as0);
-
             auto lu_factorize = [&](const int ib,
                                     const int jb,
                                     value_type *__restrict__ AA) {
-              const int nb = jb/tsize + jb%tsize > 0;
+              const int tsize = member.team_size();
+              const int nb = ((jb-mb) + (ib-mb))/tsize + ((jb-mb) + (ib-mb))%tsize > 0;
               const int kb = ib < jb ? ib : jb; 
+
               for (int p=0;p<kb;p+=mb) {
                 const int pb = (p+mb) > kb ? (kb-p) : mb;
 
                 // diagonal block
                 value_type *__restrict__ Ap = AA+p*as0+p*as1;
-
+                
                 // lu on a block             
                 member.team_barrier();
                 if (member.team_rank() == 0)
                   lu.serial_invoke(pb, Ap);
                 member.team_barrier();
 
-                // dimension ABR
                 const int 
                   m_abr  = ib-p-mb,               n_abr  = jb-p-mb,
                   mp_abr = m_abr%nb,              np_abr = n_abr%nb,
@@ -132,7 +130,7 @@ namespace KokkosKernels {
                       const int j = (ij)*nb, qb = (j+nb) > n_abr ? np_abr : nb;
                       trsm_llu.serial_invoke(Ap, pb, qb, Ap+(j+mb)*as1);
                     } else {
-                      const int i = (ij-nq_abr)*nb , qb = (i+mb) > m_abr ? mp_abr : nb;
+                      const int i = (ij-nq_abr)*nb , qb = (i+nb) > m_abr ? mp_abr : nb;
                       trsm_run.serial_invoke(Ap, pb, qb, Ap+(i+mb)*as0);
                     }
                   });

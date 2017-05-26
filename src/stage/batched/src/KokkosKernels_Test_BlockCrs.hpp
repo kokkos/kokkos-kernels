@@ -184,9 +184,7 @@ namespace KokkosKernels {
       KOKKOS_INLINE_FUNCTION 
       void operator()(const TeamShmemTag &, const MemberType &member) const {
         typedef Kokkos::View<ValueType***,exec_space> packed_view_type;
-        //ScratchViewType<packed_view_type> sA(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
-        ScratchViewType<packed_view_type> sB(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
-        ScratchViewType<packed_view_type> sC(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
+        ScratchViewType<packed_view_type> sA(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
 
         const int ijbeg = member.league_rank()*VectorLength;
         Kokkos::parallel_for
@@ -198,10 +196,7 @@ namespace KokkosKernels {
               auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
               auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
-              //auto sAA = Kokkos::subview(sA, idx, Kokkos::ALL(), Kokkos::ALL());
-              auto sBB = Kokkos::subview(sB, idx, Kokkos::ALL(), Kokkos::ALL());
-              auto sCC = Kokkos::subview(sC, idx, Kokkos::ALL(), Kokkos::ALL());
-                
+              auto sAA = Kokkos::subview(sA, idx, Kokkos::ALL(), Kokkos::ALL());
               const ordinal_type kend = _m - 1;
               for (ordinal_type k=0;k<kend;++k) {
                 auto AA = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
@@ -209,33 +204,28 @@ namespace KokkosKernels {
                 auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
                 auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
 
-                //Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, AA, sAA);
-                //member.team_barrier();
-
-                Team::LU<MemberType,LU_AlgoTagType>
-                  ::invoke(member, AA);
-
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, BB, sBB);
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, CC, sCC);
+                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, AA, sAA);
                 member.team_barrier();
 
+                Team::LU<MemberType,LU_AlgoTagType>
+                  ::invoke(member, sAA);
+                member.team_barrier();
+
+                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sAA, AA);
+
                 Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
-                  ::invoke(member, 1.0, AA, sBB);
+                  ::invoke(member, 1.0, sAA, BB);
                 Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
-                  ::invoke(member, 1.0, AA, sCC);
+                  ::invoke(member, 1.0, sAA, CC);
                 member.team_barrier();
 
                 Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
-                  ::invoke(member, -1.0, sCC, sBB, 1.0, DD);
-
-                //Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sAA, AA);
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sBB, BB);
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sCC, CC);
+                  ::invoke(member, -1.0, CC, BB, 1.0, DD);
               }
 
               {
+                member.team_barrier();
                 auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-
                 Team::LU<MemberType,LU_AlgoTagType>
                   ::invoke(member, AA);
               }
@@ -311,7 +301,7 @@ namespace KokkosKernels {
             
 
             const int per_team_scratch 
-              = 2*ScratchViewType<packed_view_type>::shmem_size(VectorLength, _blocksize, _blocksize);
+              = ScratchViewType<packed_view_type>::shmem_size(VectorLength, _blocksize, _blocksize);
             
             _shmemlvl = ((per_team_scratch/1024) < 48 ? 0 : 1);
             {
