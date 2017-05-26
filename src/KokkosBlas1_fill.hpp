@@ -41,18 +41,25 @@
 //@HEADER
 */
 
-#include<KokkosBlas1_abs.hpp>
-#include<KokkosBlas1_axpby.hpp>
-#include<KokkosBlas1_dot.hpp>
-#include<KokkosBlas1_fill.hpp>
-#include<KokkosBlas1_mult.hpp>
-#include<KokkosBlas1_nrm1.hpp>
-#include<KokkosBlas1_nrm2.hpp>
-#include<KokkosBlas1_nrm2_squared.hpp>
-#include<KokkosBlas1_nrm2w.hpp>
-#include<KokkosBlas1_nrm2w_squared.hpp>
-#include<KokkosBlas1_nrminf.hpp>
-#include<KokkosBlas1_reciprocal.hpp>
-#include<KokkosBlas1_scal.hpp>
-#include<KokkosBlas1_sum.hpp>
-#include<KokkosBlas1_update.hpp>
+#ifndef KOKKOSBLAS1_FILL_HPP_
+#define KOKKOSBLAS1_FILL_HPP_
+
+#include<Kokkos_Core.hpp>
+
+namespace KokkosBlas {
+
+/// \brief Fill the multivector or single vector X with the given value.
+///
+/// \tparam XMV 1-D or 2-D output View
+///
+/// \param X [out] Output View (1-D or 2-D).
+/// \param val [in] Value with which to fill the entries of X.
+template<class XMV>
+void fill (const XMV& X, const typename XMV::non_const_value_type& val) {
+  Kokkos::deep_copy(X,val);
+}
+
+}
+
+#endif // KOKKOSBLAS1_ABS_HPP_
+
