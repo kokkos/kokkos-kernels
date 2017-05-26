@@ -266,6 +266,11 @@ namespace KokkosKernels {
           
           switch (op) {
           case 0: {
+            if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
+              std::cout << "KokkosKernels::RangeTag::Blocked\n";
+            } else {
+              std::cout << "KokkosKernels::RangeTag::Unblocked\n";
+            }
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
             Kokkos::parallel_for(policy, *this);
             break;
@@ -276,19 +281,27 @@ namespace KokkosKernels {
             typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
 
-            const int
-              is_blocked_algo = (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value),
-              mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>(),
-              mp = _blocksize%mb > 0;
+            int team_size = 0;
 
-            const int
-              mblk = is_blocked_algo ? (_blocksize/mb + mp) : _blocksize;
-
+            // this is what cuda allows
             const int max_cuda_blocksize 
-              = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
-              (functor_type(), VectorLength, 0, 0);
-            const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
-               
+              = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
+
+            // this is what algorithm allows
+            if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
+              const int mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>();
+              const int 
+                mp = _blocksize%mb,
+                mblk = (_blocksize/mb) + (mp>0);
+              team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
+              std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+            } else {
+              // - max parallelism in trsm * scheduling efficiency 2
+              // - max cuda team size / scheduling efficiency 2
+              team_size = min(max(_blocksize*2,4), max_cuda_blocksize/VectorLength/2);
+              std::cout << "KokkosKernels::TeamTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+            }
+
             const policy_type policy(_ntridiag, team_size, VectorLength);
             Kokkos::parallel_for(policy, *this);
             break;
@@ -299,24 +312,32 @@ namespace KokkosKernels {
             typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
-
             const int per_team_scratch 
               = ScratchViewType<packed_view_type>::shmem_size(VectorLength, _blocksize, _blocksize);
             
             _shmemlvl = ((per_team_scratch/1024) < 48 ? 0 : 1);
             {
-              const int
-                is_blocked_algo = (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value),
-                mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>(),
-                mp = _blocksize%mb > 0;
+              int team_size = 0;
               
-              const int
-                mblk = is_blocked_algo ? (_blocksize/mb + mp) : _blocksize;
-              
+              // this is what cuda allows
               const int max_cuda_blocksize 
                 = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
                 (functor_type(), VectorLength, per_team_scratch, 0);
-              const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
+              
+              // this is what algorithm allows
+              if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
+                const int
+                  mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>();
+
+                const int 
+                  mp = _blocksize%mb,
+                  mblk = (_blocksize/mb) + (mp>0);
+                team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
+                std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              } else {
+                team_size = min(max(_blocksize*2,4), max_cuda_blocksize/VectorLength/2);
+                std::cout << "KokkosKernels::TeamTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              }
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
@@ -566,7 +587,8 @@ namespace KokkosKernels {
                     if (!is_same_x_and_b) {
                       auto x0 = Kokkos::subview(x, 0, Kokkos::ALL());          
                       auto b0 = Kokkos::subview(b, 0, Kokkos::ALL());
-                      Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, b0, x0);                      
+                      Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, b0, x0);
+                      member.team_barrier();
                     }
                   }
                   const ordinal_type kend = _m - 1;
@@ -766,20 +788,27 @@ namespace KokkosKernels {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
             typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
-
-            const int
-              is_blocked_algo = (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value),
-              mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>(),
-              mp = _blocksize%mb > 0;
-
-            const int
-              mblk = is_blocked_algo ? (_blocksize/mb + mp) : _blocksize;
-
+            
+            int team_size = 0;
+            
+            // this is what cuda allows
             const int max_cuda_blocksize 
-              = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
-              (functor_type(), VectorLength, 0, 0);
-            const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
-               
+              = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
+
+            // this is what algorithm allows
+            if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
+              // const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
+              // const int 
+              //   mp = _blocksize%mb,
+              //   mblk = (_blocksize/mb) + (mp>0);
+              // team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
+              // std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+            } else {
+              // in solve phase, max peak parallelism is same as blocksize (one iteration)
+              // better to give blocksize/2 
+              team_size = min(max(_blocksize/2,4), max_cuda_blocksize/VectorLength/2);
+            }
+            
             const policy_type policy(_ntridiag, team_size, VectorLength);
             Kokkos::parallel_for(policy, *this);
             break;
@@ -795,18 +824,23 @@ namespace KokkosKernels {
 
             _shmemlvl = ((per_team_scratch/1024) < 48 ? 0 : 1);            
             {
-              const int
-                is_blocked_algo = (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value),
-                mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>(),
-                mp = _blocksize%mb > 0;
+              int team_size = 0;
               
-              const int
-                mblk = is_blocked_algo ? (_blocksize/mb + mp) : _blocksize;
-              
+              // this is what cuda allows
               const int max_cuda_blocksize 
-                = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
-                (functor_type(), VectorLength, per_team_scratch, 0);
-              const int team_size = min(mblk, max_cuda_blocksize/VectorLength);
+                = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
+              
+              // this is what algorithm allows
+              if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
+                // const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
+                // const int 
+                //   mp = _blocksize%mb,
+                //   mblk = (_blocksize/mb) + (mp>0);
+                // team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
+                // std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              } else {
+                team_size = min(max(_blocksize/2,4), max_cuda_blocksize/VectorLength/2);
+              }
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
@@ -997,9 +1031,9 @@ namespace KokkosKernels {
                                       ValueType, 
                                       DeviceArrayLayout,
                                       VectorLength,
-                                      Algo::LU::Blocked,
-                                      Algo::Trsm::Blocked,
-                                      Algo::Gemm::Blocked> factorblk;
+                                      AlgoLU,
+                                      AlgoTrsm,
+                                      AlgoGemm> factorblk;
         factorblk.run(Oper, T_device);
         TEST_ASSERT(factorblk.check(T_org_device), success);
       }
@@ -1047,8 +1081,8 @@ namespace KokkosKernels {
                                     ValueType, 
                                     DeviceArrayLayout,
                                     VectorLength,
-                                    Algo::Trsv::Blocked,
-                                    Algo::Gemv::Blocked> solveblk;
+                                    AlgoTrsv,
+                                    AlgoGemv> solveblk;
           
           solveblk.run(Oper, T_device, x_device, b_device);
           TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
@@ -1190,7 +1224,9 @@ namespace KokkosKernels {
         {
           Timer timer("FactorizeBlockTridiagMatrices");
           timer.reset();
+          Kokkos::fence();
           factorblk.run(0, T_device);
+          Kokkos::fence();
           t_factorize = timer.seconds();
         }
         TEST_ASSERT(factorblk.check(T_org_device), success);
@@ -1204,15 +1240,17 @@ namespace KokkosKernels {
                                       ValueType, 
                                       DeviceArrayLayout,
                                       VectorLength,
-                                      Algo::LU::Blocked,
-                                      Algo::Trsm::Blocked,
-                                      Algo::Gemm::Blocked> factorblk;
+                                      AlgoLU,
+                                      AlgoTrsm,
+                                      AlgoGemm> factorblk;
         
         f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
         {
           Timer timer("FactorizeBlockTridiagMatrices");
           timer.reset();
+          Kokkos::fence();
           factorblk.run(opf, T_device);
+          Kokkos::fence();
           t_factorize = timer.seconds();
         }
         if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
@@ -1254,10 +1292,12 @@ namespace KokkosKernels {
           {
             Timer timer("50 SolveBlockTridiagMatrices");
             timer.reset();
+            Kokkos::fence();
             for (ordinal_type i=0;i<niter;++i) {
               solveblk.run(0, T_device, x_device, b_device);
               dontopt += i;
             }          
+            Kokkos::fence();
             t_solve = timer.seconds();
           }
           if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
@@ -1271,15 +1311,17 @@ namespace KokkosKernels {
                                     ValueType, 
                                     DeviceArrayLayout,
                                     VectorLength,
-                                    Algo::Trsv::Blocked,
-                                    Algo::Gemv::Blocked> solveblk;
+                                    AlgoTrsv,
+                                    AlgoGemv> solveblk;
           {
             Timer timer("50 SolveBlockTridiagMatrices");
             timer.reset();
+            Kokkos::fence();
             for (ordinal_type i=0;i<niter;++i) {
               solveblk.run(ops, T_device, x_device, b_device);
               dontopt += i;
             }          
+            Kokkos::fence();
             t_solve = timer.seconds();
           }
           if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
@@ -1291,7 +1333,7 @@ namespace KokkosKernels {
       std::cout << " extract    = " << t_extract        << " extract/matvec = " << (t_extract/t_matvec_per_iter) << std::endl; 
       //std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << std::endl; 
       std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << " flop = " << f_factorize << " flop/s = " << (f_factorize/t_factorize) << std::endl; 
-      std::cout << " solve      = " << t_solve_per_iter << "  solve/matvec  = " << (t_solve_per_iter/t_matvec_per_iter) << std::endl; 
+      std::cout << " solve      = " << t_solve_per_iter << " solve/matvec   = " << (t_solve_per_iter/t_matvec_per_iter) << std::endl; 
       std::cout << " memory used     = " << (memsize_A + memsize_T) << std::endl; 
 
       return dontopt + success;

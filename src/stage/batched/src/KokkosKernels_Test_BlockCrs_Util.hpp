@@ -870,7 +870,7 @@ namespace KokkosKernels {
         ni = nj = nk = 10;
         bs = 5;
         nrhs = 1;
-        opf = 0; ops = 0;
+        opf = 1; ops = 1; // team is default
         stencil_shape = StencilShape::cross;
 
         for (ordinal_type i=1;i<argc;++i) {
