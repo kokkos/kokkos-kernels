@@ -43,3 +43,8 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash scal Kokkos
 #sum
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash sum KokkosBlas1_sum KokkosBlas1_sum_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash sum KokkosBlas1_sum_mv KokkosBlas1_sum_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+
+#update
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash update KokkosBlas1_update KokkosBlas1_update_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash update KokkosBlas1_update_mv KokkosBlas1_update_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+
