@@ -41,11 +41,12 @@
 //@HEADER
 */
 
-#include<KokkosBlas1_abs.hpp>
-#include<KokkosBlas1_axpby.hpp>
-#include<KokkosBlas1_dot.hpp>
-#include<KokkosBlas1_nrm2.hpp>
-#include<KokkosBlas1_nrm2_squared.hpp>
-#include<KokkosBlas1_nrminf.hpp>
-#include<KokkosBlas1_scal.hpp>
-#include<KokkosBlas1_sum.hpp>
+#ifndef KOKKOSBLAS1_ABS_TPL_SPEC_DECL_HPP_
+#define KOKKOSBLAS1_ABS_TPL_SPEC_DECL_HPP_
+
+namespace KokkosBlas {
+namespace Impl {
+}
+}
+
+#endif
