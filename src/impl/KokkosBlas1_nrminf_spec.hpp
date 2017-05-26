@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSBLAS1_NRM2_SPEC_HPP_
-#define KOKKOSBLAS1_NRM2_SPEC_HPP_
+#ifndef KOKKOSBLAS1_NRMINF_SPEC_HPP_
+#define KOKKOSBLAS1_NRMINF_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -49,14 +49,14 @@
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
-#include <impl/KokkosBlas1_nrm2_impl.hpp>
+#include <impl/KokkosBlas1_nrminf_impl.hpp>
 #endif
 
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
 template<class RMV, class XMV, int rank = XMV::rank>
-struct nrm2_eti_spec_avail {
+struct nrminf_eti_spec_avail {
   enum : bool { value = false };
 };
 }
@@ -64,14 +64,14 @@ struct nrm2_eti_spec_avail {
 
 //
 // Macro for declaration of full specialization availability
-// KokkosBlas::Impl::Nrm2 for rank == 1.  This is NOT for users!!!  All
+// KokkosBlas::Impl::NrmInf for rank == 1.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM2_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_NRMINF_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     template<> \
-    struct nrm2_eti_spec_avail< \
+    struct nrminf_eti_spec_avail< \
         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -80,14 +80,14 @@ struct nrm2_eti_spec_avail {
 
 //
 // Macro for declaration of full specialization availability
-// KokkosBlas::Impl::Nrm2 for rank == 2.  This is NOT for users!!!  All
+// KokkosBlas::Impl::NrmInf for rank == 2.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM2_MV_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     template<> \
-    struct nrm2_eti_spec_avail< \
+    struct nrminf_eti_spec_avail< \
         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -95,79 +95,79 @@ struct nrm2_eti_spec_avail {
         2> { enum : bool { value = true }; };
 
 // Include the actual specialization declarations
-#include<impl/tpls/KokkosBlas1_nrm2_tpl_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2_eti_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2_mv_eti_spec_avail.hpp>
+#include<impl/tpls/KokkosBlas1_nrminf_tpl_spec_avail.hpp>
+#include<impl/generated_specializations_hpp/KokkosBlas1_nrminf_eti_spec_avail.hpp>
+#include<impl/generated_specializations_hpp/KokkosBlas1_nrminf_mv_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
 template<class RMV, class XMV, int rank = XMV::rank,
-         bool tpl_spec_avail = nrm2_tpl_spec_avail<RMV,XMV>::value,
-         bool eti_spec_avail = nrm2_eti_spec_avail<RMV,XMV>::value>
-struct Nrm2 {
-  static void nrm2 (const RMV& R, const XMV& X, const bool& take_sqrt);
+         bool tpl_spec_avail = nrminf_tpl_spec_avail<RMV,XMV>::value,
+         bool eti_spec_avail = nrminf_eti_spec_avail<RMV,XMV>::value>
+struct NrmInf {
+  static void nrminf (const RMV& R, const XMV& X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//! Full specialization of Nrm2 for single vectors (1-D Views).
+//! Full specialization of NrmInf for single vectors (1-D Views).
 template<class RMV, class XMV>
-struct Nrm2<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
+struct NrmInf<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
 {
   typedef typename XMV::size_type size_type;
 
-  static void nrm2 (const RMV& R, const XMV& X, const bool& take_sqrt)
+  static void nrminf (const RMV& R, const XMV& X)
   {
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                   "Nrm2<1-D>: RMV is not a Kokkos::View.");
+                   "NrmInf<1-D>: RMV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                   "Nrm2<1-D>: XMV is not a Kokkos::View.");
-    static_assert (RMV::rank == 0, "KokkosBlas::Impl::Nrm2<1-D>: "
+                   "NrmInf<1-D>: XMV is not a Kokkos::View.");
+    static_assert (RMV::rank == 0, "KokkosBlas::Impl::NrmInf<1-D>: "
                    "RMV is not rank 0.");
-    static_assert (XMV::rank == 1, "KokkosBlas::Impl::Nrm2<1-D>: "
+    static_assert (XMV::rank == 1, "KokkosBlas::Impl::NrmInf<1-D>: "
                    "XMV is not rank 1.");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::nrm2<> ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
+      printf("KokkosBlas1::nrminf<> ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
     else {
-      printf("KokkosBlas1::nrm2<> non-ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
+      printf("KokkosBlas1::nrminf<> non-ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
     }
     #endif
     const size_type numRows = X.dimension_0 ();
 
     if (numRows < static_cast<size_type> (INT_MAX) ) {
-      V_Nrm2_Invoke<RMV, XMV, int> (R, X, take_sqrt);
+      V_NrmInf_Invoke<RMV, XMV, int> (R, X);
     }
     else {
       typedef std::int64_t index_type;
-      V_Nrm2_Invoke<RMV, XMV, index_type> (R, X, take_sqrt);
+      V_NrmInf_Invoke<RMV, XMV, index_type> (R, X);
     }
   }
 };
 
 
 template<class RV, class XMV>
-struct Nrm2<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
-  static void nrm2 (const RV& R, const XMV& X, const bool& take_sqrt)
+  static void nrminf (const RV& R, const XMV& X)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
-                   "Nrm2<2-D>: RV is not a Kokkos::View.");
+                   "NrmInf<2-D>: RV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                   "Nrm2<2-D>: XMV is not a Kokkos::View.");
-    static_assert (RV::rank == 1, "KokkosBlas::Impl::Nrm2<2-D>: "
+                   "NrmInf<2-D>: XMV is not a Kokkos::View.");
+    static_assert (RV::rank == 1, "KokkosBlas::Impl::NrmInf<2-D>: "
                    "RV is not rank 1.");
-    static_assert (XMV::rank == 2, "KokkosBlas::Impl::Nrm2<2-D>: "
+    static_assert (XMV::rank == 2, "KokkosBlas::Impl::NrmInf<2-D>: "
                    "XMV is not rank 2.");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::nrm2<> ETI specialization for < %s , %s >\n",typeid(RV).name(),typeid(XMV).name());
+      printf("KokkosBlas1::nrminf<> ETI specialization for < %s , %s >\n",typeid(RV).name(),typeid(XMV).name());
     else {
-      printf("KokkosBlas1::nrm2<> non-ETI specialization for < %s , %s >\n",typeid(RV).name(),typeid(XMV).name());
+      printf("KokkosBlas1::nrminf<> non-ETI specialization for < %s , %s >\n",typeid(RV).name(),typeid(XMV).name());
     }
     #endif
 
@@ -175,11 +175,11 @@ struct Nrm2<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     const size_type numCols = X.dimension_1 ();
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
-      MV_Nrm2_Invoke<RV, XMV, int> (R, X, take_sqrt);
+      MV_NrmInf_Invoke<RV, XMV, int> (R, X);
     }
     else {
       typedef std::int64_t index_type;
-      MV_Nrm2_Invoke<RV, XMV, index_type> (R, X, take_sqrt);
+      MV_NrmInf_Invoke<RV, XMV, index_type> (R, X);
     }
   }
 };
@@ -190,13 +190,13 @@ struct Nrm2<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
 //
 // Macro for declaration of full specialization of
-// KokkosBlas::Impl::Nrm2 for rank == 2.  This is NOT for users!!!  All
+// KokkosBlas::Impl::NrmInf for rank == 2.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM2_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-extern template struct Nrm2< \
+#define KOKKOSBLAS1_NRMINF_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+extern template struct NrmInf< \
          Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -205,11 +205,11 @@ extern template struct Nrm2< \
 
 //
 // Macro for definition of full specialization of
-// KokkosBlas::Impl::Nrm2 for rank == 2.  This is NOT for users!!!  We
+// KokkosBlas::Impl::NrmInf for rank == 2.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_NRM2_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template struct Nrm2< \
+#define KOKKOSBLAS1_NRMINF_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template struct NrmInf< \
          Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -218,13 +218,13 @@ template struct Nrm2< \
 
 //
 // Macro for declaration of full specialization of
-// KokkosBlas::Impl::Nrm2 for rank == 2.  This is NOT for users!!!  All
+// KokkosBlas::Impl::NrmInf for rank == 2.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_NRM2_MV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-extern template struct Nrm2< \
+#define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+extern template struct NrmInf< \
          Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -233,19 +233,19 @@ extern template struct Nrm2< \
 
 //
 // Macro for definition of full specialization of
-// KokkosBlas::Impl::Nrm2 for rank == 2.  This is NOT for users!!!  We
+// KokkosBlas::Impl::NrmInf for rank == 2.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_NRM2_MV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-template struct Nrm2< \
+#define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template struct NrmInf< \
          Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          2, false, true>;
 
-#include<impl/tpls/KokkosBlas1_nrm2_tpl_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2_eti_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2_mv_eti_spec_decl.hpp>
+#include<impl/tpls/KokkosBlas1_nrminf_tpl_spec_decl.hpp>
+#include<impl/generated_specializations_hpp/KokkosBlas1_nrminf_eti_spec_decl.hpp>
+#include<impl/generated_specializations_hpp/KokkosBlas1_nrminf_mv_eti_spec_decl.hpp>
 
-#endif // KOKKOSBLAS1_NRM2_SPEC_HPP_
+#endif // KOKKOSBLAS1_NRMINF_SPEC_HPP_
