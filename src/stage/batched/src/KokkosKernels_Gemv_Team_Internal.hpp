@@ -9,7 +9,7 @@
 #include "KokkosKernels_Set_Internal.hpp"
 #include "KokkosKernels_Scale_Internal.hpp"
 
-#include "KokkosKernels_InnerGemmFixC_Serial_Impl.hpp"
+#include "KokkosKernels_InnerMultipleDotProduct_Serial_Impl.hpp"
 
 namespace KokkosKernels {
   namespace Batched {
@@ -98,17 +98,21 @@ namespace KokkosKernels {
             if (m <= 0 || n <= 0) return 0;
         
             enum : int {
-              mb = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
+              mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
             };
 
-            const int mp = m%mb;
-            InnerGemmFixC<0,1> inner(as0, as1, xs0, 1, ys0, 1);
+            InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
+
+            const int tsize = member.team_size();
+            const int mb = min(m/tsize + (m%tsize)>0, mbAlgo), mp = m%mb;
+            
             Kokkos::parallel_for
               (Kokkos::TeamThreadRange(member, (m/mb) + (mp>0)),
                [&](const int &ii) {
                 const int i = ii*mb;
-                inner.serial_invoke(alpha, A+i*as0,  x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
+                inner.serial_invoke(alpha, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
               });
+            member.team_barrier();
           }
           
           return 0;

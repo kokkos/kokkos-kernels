@@ -290,10 +290,9 @@ namespace KokkosKernels {
             // this is what algorithm allows
             if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
               const int mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>();
-              const int 
-                mp = _blocksize%mb,
-                mblk = (_blocksize/mb) + (mp>0);
-              team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
+              const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
+              // - max parallelism in gemm / 2 (no idea...)
+              team_size = min(max(mblk*mblk/2,1), max_cuda_blocksize/VectorLength/2);
               std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
             } else {
               // - max parallelism in trsm * scheduling efficiency 2
@@ -326,17 +325,14 @@ namespace KokkosKernels {
               
               // this is what algorithm allows
               if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
-                const int
-                  mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>();
-
-                const int 
-                  mp = _blocksize%mb,
-                  mblk = (_blocksize/mb) + (mp>0);
-                team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
-                std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+                const int mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>();
+                const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
+                // - max parallelism in gemm / 2 (no idea...)
+                team_size = min(max(mblk*mblk/2,1), max_cuda_blocksize/VectorLength/2);
+                std::cout << "KokkosKernels::TeamShmemTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
               } else {
                 team_size = min(max(_blocksize*2,4), max_cuda_blocksize/VectorLength/2);
-                std::cout << "KokkosKernels::TeamTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+                std::cout << "KokkosKernels::TeamShmemTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
               }
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
@@ -797,12 +793,9 @@ namespace KokkosKernels {
 
             // this is what algorithm allows
             if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
-              // const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
-              // const int 
-              //   mp = _blocksize%mb,
-              //   mblk = (_blocksize/mb) + (mp>0);
-              // team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
-              // std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
+              const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
+              team_size = min(max(mblk,1), max_cuda_blocksize/VectorLength/2);
             } else {
               // in solve phase, max peak parallelism is same as blocksize (one iteration)
               // better to give blocksize/2 
@@ -832,12 +825,9 @@ namespace KokkosKernels {
               
               // this is what algorithm allows
               if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
-                // const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
-                // const int 
-                //   mp = _blocksize%mb,
-                //   mblk = (_blocksize/mb) + (mp>0);
-                // team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength/2);
-                // std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+                const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
+                const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
+                team_size = min(max(mblk,1), max_cuda_blocksize/VectorLength/2);
               } else {
                 team_size = min(max(_blocksize/2,4), max_cuda_blocksize/VectorLength/2);
               }

@@ -69,7 +69,7 @@ namespace KokkosKernels {
                const ScalarType alpha,
                const ValueType *__restrict__ A, const int as0, const int as1,
                /**/  ValueType *__restrict__ b, const int bs0) {
-          return TrsmInternalLeftLower<Algo::Trsm::Blocked>::
+          return TrsmInternalLeftLower<Algo::Trsm::Unblocked>::
             invoke(member,
                    use_unit_diag,
                    m, 1,
@@ -132,7 +132,7 @@ namespace KokkosKernels {
                const ScalarType alpha,
                const ValueType *__restrict__ A, const int as0, const int as1,
                /**/  ValueType *__restrict__ b, const int bs0) {
-          return TrsmInternalLeftUpper<Algo::Trsm::Blocked>::
+          return TrsmInternalLeftUpper<Algo::Trsm::Unblocked>::
             invoke(member,
                    use_unit_diag,
                    m, 1,
