@@ -28,6 +28,10 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash nrm2 Kokkos
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash nrminf KokkosBlas1_nrminf KokkosBlas1_nrminf_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash nrminf KokkosBlas1_nrminf_mv KokkosBlas1_nrminf_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 
+#reciprocal
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash reciprocal KokkosBlas1_reciprocal KokkosBlas1_reciprocal_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash reciprocal KokkosBlas1_reciprocal_mv KokkosBlas1_reciprocal_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+
 #scal
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash scal KokkosBlas1_scal KokkosBlas1_scal_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash scal KokkosBlas1_scal_mv KokkosBlas1_scal_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}

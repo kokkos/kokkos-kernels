@@ -41,13 +41,17 @@
 //@HEADER
 */
 
-#include<KokkosBlas1_abs.hpp>
-#include<KokkosBlas1_axpby.hpp>
-#include<KokkosBlas1_dot.hpp>
-#include<KokkosBlas1_nrm1.hpp>
-#include<KokkosBlas1_nrm2.hpp>
-#include<KokkosBlas1_nrm2_squared.hpp>
-#include<KokkosBlas1_nrminf.hpp>
-#include<KokkosBlas1_reciprocal.hpp>
-#include<KokkosBlas1_scal.hpp>
-#include<KokkosBlas1_sum.hpp>
+#ifndef KOKKOSBLAS1_RECIPROCAL_TPL_SPEC_AVAIL_HPP_
+#define KOKKOSBLAS1_RECIPROCAL_TPL_SPEC_AVAIL_HPP_
+
+namespace KokkosBlas {
+namespace Impl {
+// Specialization struct which defines whether a specialization exists
+template<class RMV, class XMV, int rank = RMV::rank>
+struct reciprocal_tpl_spec_avail {
+  enum : bool { value = false };
+};
+}
+}
+
+#endif
