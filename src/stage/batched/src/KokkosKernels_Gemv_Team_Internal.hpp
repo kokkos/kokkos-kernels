@@ -55,8 +55,8 @@ namespace KokkosKernels {
 
           typedef ValueType value_type;
 
-          if      (beta == 0) Team::SetInternal  ::invoke(member, m, 1, value_type(0),    y, ys0, 1);
-          else if (beta != 1) Team::ScaleInternal::invoke(member, m, 1, value_type(beta), y, ys0, 1);
+          if      (beta == 0) Team::SetInternal  ::invoke(member, m, value_type(0),    y, ys0);
+          else if (beta != 1) Team::ScaleInternal::invoke(member, m, value_type(beta), y, ys0);
       
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
@@ -64,6 +64,7 @@ namespace KokkosKernels {
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {
                 value_type t(0);
                 const value_type *__restrict__ tA = (A + i*as0);
+#pragma unroll
                 for (int j=0;j<n;++j)
                   t += tA[j*as1]*x[j*xs0];
                 y[i*ys0] += alpha*t;
@@ -90,17 +91,16 @@ namespace KokkosKernels {
           // y (m), A(m x n), B(n)
 
           typedef ValueType value_type;
+          enum : int {
+            mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
+          };
           
-          if      (beta == 0) Team::SetInternal  ::invoke(member, m, 1, value_type(0),    y, ys0, 1);
-          else if (beta != 1) Team::ScaleInternal::invoke(member, m, 1, value_type(beta), y, ys0, 1);
+          if      (beta == 0) Team::SetInternal  ::invoke(member, m, value_type(0),    y, ys0);
+          else if (beta != 1) Team::ScaleInternal::invoke(member, m, value_type(beta), y, ys0);
       
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
         
-            enum : int {
-              mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-            };
-
             InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
 
             const int tsize = member.team_size();

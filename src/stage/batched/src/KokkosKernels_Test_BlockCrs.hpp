@@ -795,7 +795,7 @@ namespace KokkosKernels {
             if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
               const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
               const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
-              team_size = min(max(mblk,1), max_cuda_blocksize/VectorLength/2);
+              team_size = min(max(mblk/2,1), max_cuda_blocksize/VectorLength/2);
             } else {
               // in solve phase, max peak parallelism is same as blocksize (one iteration)
               // better to give blocksize/2 
@@ -827,7 +827,7 @@ namespace KokkosKernels {
               if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
                 const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
                 const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
-                team_size = min(max(mblk,1), max_cuda_blocksize/VectorLength/2);
+                team_size = min(max(mblk/2,1), max_cuda_blocksize/VectorLength/2);
               } else {
                 team_size = min(max(_blocksize/2,4), max_cuda_blocksize/VectorLength/2);
               }

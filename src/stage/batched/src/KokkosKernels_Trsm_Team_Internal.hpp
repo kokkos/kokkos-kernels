@@ -101,6 +101,9 @@ namespace KokkosKernels {
                const ValueType *__restrict__ A, const int as0, const int as1,
                /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
           typedef ValueType value_type;
+          enum : int {
+            mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
+          };
 
           // note that parallel range is different ( m*n vs m-1*n);        
           if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
@@ -109,10 +112,6 @@ namespace KokkosKernels {
             if (m <= 0 || n <= 0) return 0;
 
             {
-              enum : int {
-                mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-              };
-
               ///
               /// case host: team size is small and blocksize (mb,nb) is large
 
@@ -249,6 +248,9 @@ namespace KokkosKernels {
                const ValueType *__restrict__ A, const int as0, const int as1,
                /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
           typedef ValueType value_type;
+          enum : int {
+            mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
+          };
 
           // note that parallel range is different ( m*n vs m-1*n);        
           if (alpha == 0)   Team::SetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
@@ -257,18 +259,14 @@ namespace KokkosKernels {
             if (m <= 0 || n <= 0) return 0;
 
             {
-              enum : int {
-                mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()*2
-              };
-
-              InnerTrsmLeftUpperUnitDiag<5>    trsm_u(as0, as1, bs0, bs1);
-              InnerTrsmLeftUpperNonUnitDiag<5> trsm_n(as0, as1, bs0, bs1);
+              InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);
+              InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
           
               auto trsm = [&](const int ib, 
                               const int jb,
                               const value_type *__restrict__ AA,
                               /**/  value_type *__restrict__ BB) {
-                const int mb = (ib <=5 ? ib : mbAlgo);
+                const int mb = mbAlgo; //(ib <=5 ? ib : mbAlgo);
                 const int tsize = member.team_size();
                 const int nb = (jb/tsize + jb%tsize > 0);
                 const int np = jb%nb;
@@ -312,7 +310,7 @@ namespace KokkosKernels {
             }        
           }
           return 0;      
-        };
+        }
 
       }
     }

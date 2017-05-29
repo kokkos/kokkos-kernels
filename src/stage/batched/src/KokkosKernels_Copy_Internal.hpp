@@ -13,6 +13,7 @@ namespace KokkosKernels {
       /// Serial Internal Impl
       /// ==================== 
       namespace Serial {
+        // do i need this ?
         template<int mb>
         struct CopyUnrolled {
           const int _as, _bs;
@@ -131,30 +132,34 @@ namespace KokkosKernels {
         
         struct CopyInternal {
           template<typename ValueType>
-          KOKKOS_INLINE_FUNCTION
+          KOKKOS_FORCEINLINE_FUNCTION
+          static int
+          invoke(const int m, 
+                 const ValueType *__restrict__ A, const int as0, 
+                 /* */ ValueType *__restrict__ B, const int bs0) {
+#pragma unroll
+            for (int i=0;i<m;++i) 
+              B[i*bs0] = A[i*as0];
+
+            // // manuall unroll: not sure if this works
+            // Serial::CopyUnrolled<0> inner(as0, bs0);
+            // for (int i=0;i<m;i+=8) 
+            //   inner.invoke(i+8 > m ? m-i : 8, A+(i*as0), B+(i*bs0));
+
+            return 0;
+          }
+          template<typename ValueType>
+          KOKKOS_FORCEINLINE_FUNCTION
           static int
           invoke(const int m, const int n, 
                  const ValueType *__restrict__ A, const int as0, const int as1,
                  /* */ ValueType *__restrict__ B, const int bs0, const int bs1) {
-            if (A == B) return 0;
-            if (as1 < as0) { // ((m == n && as1 < as0) || (m < n)) {
-              Serial::CopyUnrolled<0> inner(as1, bs1);
-              for (int i=0;i<m;++i) {
-                const ValueType *__restrict__ AA = A + i*as0;
-                /* */ ValueType *__restrict__ BB = B + i*bs0;
-                for (int j=0;j<n;j+=8)
-                  inner.invoke(j+8 > n ? n-j : 8, AA+(j*as1), BB+(j*bs1));
-              } 
-            } else {
-              Serial::CopyUnrolled<0> inner(as0, bs0);
-              for (int j=0;j<n;++j) {
-                const ValueType *__restrict__ AA = A + j*as1;
-                /* */ ValueType *__restrict__ BB = B + j*bs1;
-                for (int i=0;i<m;i+=8) 
-                  inner.invoke(i+8 > m ? m-i : 8, AA+(i*as0), BB+(i*bs0));
-              }
-            }
-
+            if (as1 < as0) 
+              for (int i=0;i<m;++i) 
+                invoke(n, A+i*as0, as1, B+i*bs0, bs1);
+            else 
+              for (int j=0;j<n;++j)               
+                invoke(m, A+j*as1, as0, B+j*bs1, bs0);
             return 0;
           }
         };        
@@ -168,30 +173,36 @@ namespace KokkosKernels {
         struct CopyInternal {
           template<typename MemberType,
                    typename ValueType>
-          KOKKOS_INLINE_FUNCTION
+          KOKKOS_FORCEINLINE_FUNCTION
+          static int
+          invoke(const MemberType &member,
+                 const int m, 
+                 const ValueType *__restrict__ A, const int as0, 
+                 /* */ ValueType *__restrict__ B, const int bs0) {
+            Kokkos::parallel_for
+              (Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {
+                B[i*bs0] = A[i*as0];
+              });
+            //member.team_barrier();
+            return 0;
+          }
+          template<typename MemberType,
+                   typename ValueType>
+          KOKKOS_FORCEINLINE_FUNCTION
           static int
           invoke(const MemberType &member,
                  const int m, const int n, 
                  const ValueType *__restrict__ A, const int as0, const int as1,
                  /* */ ValueType *__restrict__ B, const int bs0, const int bs1) {
-            if (A == B) return 0;
-            if (as1 < as0) { // ((m == n && as1 < as0) || (m < n)) {
-              Serial::CopyUnrolled<0> inner(as1, bs1);
+            if (m > n) { 
               Kokkos::parallel_for
                 (Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {
-                  const ValueType *__restrict__ AA = A + i*as0;
-                  /* */ ValueType *__restrict__ BB = B + i*bs0;
-                  for (int j=0;j<n;j+=8)
-                    inner.invoke(j+8 > n ? n-j : 8, AA+(j*as1), BB+(j*bs1));
+                  Serial::CopyInternal::invoke(n, A+i*as0, as1, B+i*bs0, bs1);
                 });
             } else {
-              Serial::CopyUnrolled<0> inner(as0, bs0);
               Kokkos::parallel_for
                 (Kokkos::TeamThreadRange(member,0,n),[&](const int &j) {
-                  const ValueType *__restrict__ AA = A + j*as1;
-                  /* */ ValueType *__restrict__ BB = B + j*bs1;
-                  for (int i=0;i<m;i+=8) 
-                    inner.invoke(i+8 > m ? m-i : 8, AA+(i*as0), BB+(i*bs0));
+                  Serial::CopyInternal::invoke(m, A+j*as1, as0, B+j*bs1, bs0);
                 });
             }
             //member.team_barrier();

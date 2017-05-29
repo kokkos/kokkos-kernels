@@ -89,17 +89,17 @@ int main (int argc, char *argv[]) {
     }
     std::cout << " Unit Test::Team :: End\n";
     
-    std::cout << " Unit Test::TeamShmem :: Begin\n";
-    {
-      //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 3,  4,  2, 25, 2);
-      Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>(44, 63, 15,  4, 1);
-      Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 2,  2, 15,  3, 3);
-      //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 1,  1,  2, 63, 8);
+    // std::cout << " Unit Test::TeamShmem :: Begin\n";
+    // {
+    //   //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 3,  4,  2, 25, 2);
+    //   Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>(44, 63, 15,  4, 1);
+    //   Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 2,  2, 15,  3, 3);
+    //   //Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>( 1,  1,  2, 63, 8);
       
-      for (int nrhs=1;nrhs<=4;++nrhs)
-      Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>(2, 2, 15, 3, nrhs);
-    }
-    std::cout << " Unit Test::TeamShmem :: End\n";
+    //   for (int nrhs=1;nrhs<=4;++nrhs)
+    //   Test::run<DeviceSpace,Test::scalar_type,VectorLength,2>(2, 2, 15, 3, nrhs);
+    // }
+    // std::cout << " Unit Test::TeamShmem :: End\n";
   }
 
   // Performance tests
