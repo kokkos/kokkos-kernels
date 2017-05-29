@@ -25,8 +25,8 @@ namespace KokkosKernels {
         invoke(const AViewType &A,
                /* */ BViewType &B) {
           return CopyInternal::
-            invoke(min(A.dimension_0(), B.dimension_0()), 
-                   min(A.dimension_1(), B.dimension_1()),
+            invoke(A.dimension_0(), 
+                   A.dimension_1(), 
                    A.data(), A.stride_0(), A.stride_1(),
                    B.data(), B.stride_0(), B.stride_1());
         }
@@ -40,8 +40,8 @@ namespace KokkosKernels {
         invoke(const AViewType &A,
                /* */ BViewType &B) {
           return CopyInternal::
-            invoke(min(A.dimension_1(), B.dimension_0()), 
-                   min(A.dimension_0(), B.dimension_1()),
+            invoke(A.dimension_1(), 
+                   A.dimension_0(), 
                    A.data(), A.stride_1(), A.stride_0(),
                    B.data(), B.stride_0(), B.stride_1());
         }
@@ -65,8 +65,8 @@ namespace KokkosKernels {
                  /* */ BViewType &B) {
             return CopyInternal::
               invoke(member,
-                     min(A.dimension_0(), B.dimension_0()), 
-                     min(A.dimension_1(), B.dimension_1()),
+                     A.dimension_0(), 
+                     A.dimension_1(), 
                      A.data(), A.stride_0(), A.stride_1(),
                      B.data(), B.stride_0(), B.stride_1());
           }
@@ -83,8 +83,8 @@ namespace KokkosKernels {
                  /* */ BViewType &B) {
             return CopyInternal::
               invoke(member,
-                     min(A.dimension_1(), B.dimension_0()), 
-                     min(A.dimension_0(), B.dimension_1()),
+                     A.dimension_1(), 
+                     A.dimension_0(), 
                      A.data(), A.stride_1(), A.stride_0(),
                      B.data(), B.stride_0(), B.stride_1());
           }

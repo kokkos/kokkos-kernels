@@ -24,7 +24,7 @@
 
 #include "KokkosKernels_Util.hpp"
 
-#if (0)
+#if (1)
 typedef KokkosKernels::Batched::Experimental::Algo::LU::Unblocked   AlgoLU;
 typedef KokkosKernels::Batched::Experimental::Algo::Trsm::Unblocked AlgoTrsm;
 typedef KokkosKernels::Batched::Experimental::Algo::Gemm::Unblocked AlgoGemm;
