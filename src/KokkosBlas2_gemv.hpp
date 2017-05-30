@@ -72,15 +72,13 @@ namespace KokkosBlas {
 /// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
 template<class AViewType,
          class XViewType,
-         class YViewType,
-         class AlphaCoeffType,
-         class BetaCoeffType>
+         class YViewType>
 void
 gemv (const char trans[],
-      const AlphaCoeffType& alpha,
+      typename AViewType::const_value_type& alpha,
       const AViewType& A,
       const XViewType& x,
-      const BetaCoeffType& beta,
+      typename YViewType::const_value_type& beta,
       const YViewType& y)
 {
   static_assert (Kokkos::Impl::is_view<AViewType>::value,
@@ -140,7 +138,7 @@ gemv (const char trans[],
     typename KokkosKernels::Impl::GetUnifiedLayout<YViewType>::array_layout,
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
-  typedef Impl::GEMV<AVT, XVT, YVT, AlphaCoeffType, BetaCoeffType> impl_type;
+  typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
   impl_type::gemv (trans, alpha, A, x, beta, y);
 }
 

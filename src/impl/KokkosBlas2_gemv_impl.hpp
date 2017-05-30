@@ -254,10 +254,10 @@ template<class AViewType,
          class IndexType = typename AViewType::size_type>
 void
 singleLevelGemv (const char trans[],
-                 typename AViewType::non_const_value_type& alpha,
+                 typename AViewType::const_value_type& alpha,
                  const AViewType& A,
                  const XViewType& x,
-                 typename YViewType::non_const_value_type& beta,
+                 typename YViewType::const_value_type& beta,
                  const YViewType& y)
 {
   static_assert (Kokkos::Impl::is_view<AViewType>::value,
@@ -279,8 +279,8 @@ singleLevelGemv (const char trans[],
   typedef typename AViewType::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, IndexType> policy_type;
 
-  typedef typename AViewType::const_value_type AlphaCoeffType;
-  typedef typename YViewType::const_value_type BetaCoeffType;
+  typedef typename AViewType::non_const_value_type AlphaCoeffType;
+  typedef typename YViewType::non_const_value_type BetaCoeffType;
 
   policy_type range (0, A.dimension_0 ());
   const char tr = trans[0];

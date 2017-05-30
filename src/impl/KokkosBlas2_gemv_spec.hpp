@@ -69,7 +69,7 @@ struct gemv_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_GEMV_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS2_GEMV_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     template<> \
     struct gemv_eti_spec_avail< \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -95,7 +95,10 @@ namespace Impl {
 // Implementation of KokkosBlas::gemv.
 template<class AViewType,
          class XViewType,
-         class YViewType>
+         class YViewType,
+         bool tpl_spec_avail = gemv_tpl_spec_avail<AViewType, XViewType, YViewType>::value,
+         bool eti_spec_avail = gemv_eti_spec_avail<AViewType, XViewType, YViewType>::value
+         >
 struct GEMV {
   static void
   gemv (const char trans[],
@@ -154,7 +157,7 @@ struct GEMV {
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS1_GEMV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS2_GEMV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct GEMV< \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -164,7 +167,7 @@ extern template struct GEMV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      false, true>;
 
-#define KOKKOSBLAS1_GEMV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS2_GEMV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct GEMV< \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
