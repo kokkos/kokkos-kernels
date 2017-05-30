@@ -2,6 +2,7 @@
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
 #include<KokkosBlas1_dot.hpp>
+#include<KokkosKernels_TestUtils.hpp>
 
 namespace Test {
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -60,47 +61,14 @@ namespace Test {
     EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
   }
 
-  template<class ViewType, bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value>
-  struct view_factory;
-
-  template<class ViewType>
-  struct view_factory<ViewType,true> {
-    typedef typename ViewType::value_type Scalar;
-    typedef typename ViewType::device_type Device;
-    typedef Kokkos::View<Scalar**[2], Kokkos::LayoutRight, Device> BaseTypeRight;
-    typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device> BaseTypeDefault;
-    typedef typename std::conditional<
-                std::is_same<typename ViewType::array_layout,Kokkos::LayoutStride>::value,
-                BaseTypeRight, BaseTypeDefault>::type BaseType;
-
-    static ViewType view(const BaseType& v) {
-      return Kokkos::subview(v,Kokkos::ALL,Kokkos::ALL,0);
-    };
-  };
-
-  template<class ViewType>
-  struct view_factory<ViewType,false> {
-    typedef typename ViewType::value_type Scalar;
-    typedef typename ViewType::device_type Device;
-    typedef Kokkos::View<Scalar**[2], Kokkos::LayoutRight, Device> BaseTypeRight;
-    typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device> BaseTypeDefault;
-    typedef typename std::conditional<
-                std::is_same<typename ViewType::array_layout,Kokkos::LayoutStride>::value,
-                BaseTypeRight, BaseTypeDefault>::type BaseType;
-
-    static ViewType view(const BaseType& v) {
-      return Kokkos::subview(v,Kokkos::ALL,Kokkos::ALL);
-    };
-  };
-
   template<class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_dot_mv(int N, int K) {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
 
-    typedef view_factory<ViewTypeA> vfA_type;
-    typedef view_factory<ViewTypeB> vfB_type;
+    typedef multivector_layout_adapter<ViewTypeA> vfA_type;
+    typedef multivector_layout_adapter<ViewTypeB> vfB_type;
 
     typename vfA_type::BaseType b_a("A",N,K);
     typename vfB_type::BaseType b_b("B",N,K);
@@ -108,8 +76,8 @@ namespace Test {
     ViewTypeA a = vfA_type::view(b_a);
     ViewTypeB b = vfB_type::view(b_b);
 
-    typedef view_factory<typename ViewTypeA::HostMirror> h_vfA_type;
-    typedef view_factory<typename ViewTypeB::HostMirror> h_vfB_type;
+    typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
+    typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
 
     typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
     typename h_vfB_type::BaseType h_b_b = Kokkos::create_mirror_view(b_b);
@@ -202,7 +170,6 @@ int test_dot() {
   Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
 #endif
 
-
   return 1;
 }
 
@@ -240,7 +207,6 @@ int test_dot_mv() {
   Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(1024,5);
   Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(1024,5);
 #endif
-
 
   return 1;
 }
