@@ -331,7 +331,7 @@ struct MV_Dot_Right_FunctorUnroll
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: R is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert (XMV::rank == YMV::rank,
+    static_assert (int(XMV::rank) == int(YMV::rank),
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: "
                    "X and Y must have the same rank.");
     static_assert (RV::rank == 1 && XMV::rank == 2,
@@ -631,7 +631,6 @@ struct Dot_MV;
 
 template<class RV, class XMV, class YMV, class SizeType>
 struct Dot_MV<RV, XMV, YMV, SizeType, 2, 2>
-#ifndef KOKKOSKERNELS_ETI_ONLY
 {
   /// \brief Compute the dot product(s) of the column(s) of the
   ///   multivectors (2-D views) X and Y, and store result(s) in the
@@ -640,9 +639,7 @@ struct Dot_MV<RV, XMV, YMV, SizeType, 2, 2>
   {
       MV_Dot_Invoke<RV, XMV, YMV, SizeType> (r, X, Y);
   }
-}
-#endif
-;
+};
 
 /// \brief Partial specialization for XMV_rank == 2 and YMV_rank == 1
 ///   (X is a multivector, and Y is a single column).

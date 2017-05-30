@@ -60,34 +60,62 @@ namespace Test {
     EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
   }
 
+  template<class ViewType, bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value>
+  struct view_factory;
+
+  template<class ViewType>
+  struct view_factory<ViewType,true> {
+    typedef typename ViewType::value_type Scalar;
+    typedef typename ViewType::device_type Device;
+    typedef Kokkos::View<Scalar**[2], Kokkos::LayoutRight, Device> BaseTypeRight;
+    typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device> BaseTypeDefault;
+    typedef typename std::conditional<
+                std::is_same<typename ViewType::array_layout,Kokkos::LayoutStride>::value,
+                BaseTypeRight, BaseTypeDefault>::type BaseType;
+
+    static ViewType view(const BaseType& v) {
+      return Kokkos::subview(v,Kokkos::ALL,Kokkos::ALL,0);
+    };
+  };
+
+  template<class ViewType>
+  struct view_factory<ViewType,false> {
+    typedef typename ViewType::value_type Scalar;
+    typedef typename ViewType::device_type Device;
+    typedef Kokkos::View<Scalar**[2], Kokkos::LayoutRight, Device> BaseTypeRight;
+    typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device> BaseTypeDefault;
+    typedef typename std::conditional<
+                std::is_same<typename ViewType::array_layout,Kokkos::LayoutStride>::value,
+                BaseTypeRight, BaseTypeDefault>::type BaseType;
+
+    static ViewType view(const BaseType& v) {
+      return Kokkos::subview(v,Kokkos::ALL,Kokkos::ALL);
+    };
+  };
+
   template<class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_dot_mv(int N, int K) {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
 
-    typedef Kokkos::View<ScalarA**[2], Kokkos::LayoutRight, Device> BaseTypeARight;
-    typedef Kokkos::View<ScalarA**, typename ViewTypeA::array_layout, Device> BaseTypeADefault;
-    typedef typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                BaseTypeARight, BaseTypeADefault>::type BaseTypeA;
-    typedef Kokkos::View<ScalarB**[2], Kokkos::LayoutRight, Device> BaseTypeARight;
-    typedef Kokkos::View<ScalarB**, typename ViewTypeB::array_layout, Device> BaseTypeBDefault;
-    typedef typename std::conditional<
-                std::is_same<typename ViewTypeB::array_layout,Kokkos::LayoutStride>::value,
-                BaseTypeBRight, BaseTypeBDefault>::type BaseTypeB;
+    typedef view_factory<ViewTypeA> vfA_type;
+    typedef view_factory<ViewTypeB> vfB_type;
 
-    BaseTypeA b_a("A",N,K);
-    BaseTypeB b_b("B",N,K);
+    typename vfA_type::BaseType b_a("A",N,K);
+    typename vfB_type::BaseType b_b("B",N,K);
 
-    ViewTypeA a = Kokkos::subview(b_a,Kokkos::ALL(),Kokkos::ALL(),0);
-    ViewTypeB b = Kokkos::subview(b_b,Kokkos::ALL(),Kokkos::ALL(),0);
+    ViewTypeA a = vfA_type::view(b_a);
+    ViewTypeB b = vfB_type::view(b_b);
 
-    typename BaseTypeA::HostMirror h_b_a = Kokkos::create_mirror_view(b_a);
-    typename BaseTypeB::HostMirror h_b_b = Kokkos::create_mirror_view(b_b);
+    typedef view_factory<typename ViewTypeA::HostMirror> h_vfA_type;
+    typedef view_factory<typename ViewTypeB::HostMirror> h_vfB_type;
 
-    typename ViewTypeA::HostMirror h_a = Kokkos::subview(h_b_a,Kokkos::ALL(),Kokkos::ALL(),0);
-    typename ViewTypeB::HostMirror h_b = Kokkos::subview(h_b_b,Kokkos::ALL(),Kokkos::ALL(),0);
+    typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
+    typename h_vfB_type::BaseType h_b_b = Kokkos::create_mirror_view(b_b);
+
+    typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
+    typename ViewTypeB::HostMirror h_b = h_vfB_type::view(h_b_b);
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -97,28 +125,45 @@ namespace Test {
     Kokkos::deep_copy(h_b_a,b_a);
     Kokkos::deep_copy(h_b_b,b_b);
 
-    ScalarA expected_result = new ScalarA[K];
-    for(int j=0;j<K;j++) {
-      expected_result[j] = ScalarA();
-      for(int i=0;i<N;i++)
-        expected_result += h_a(i,j)*h_b(i,j);
-    }
-
-    Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Dot::Result",K);
-    ScalarA nonconst_nonconst_result = KokkosBlas::dot(r,a,b);
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
-    EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
     typename ViewTypeA::const_type c_a = a;
     typename ViewTypeB::const_type c_b = b;
 
-    ScalarA const_const_result = KokkosBlas::dot(c_a,c_b);
-    EXPECT_NEAR( const_const_result, expected_result, eps*expected_result);
+    ScalarA* expected_result = new ScalarA[K];
+    for(int j=0;j<K;j++) {
+      expected_result[j] = ScalarA();
+      for(int i=0;i<N;i++)
+        expected_result[j] += h_a(i,j)*h_b(i,j);
+    }
 
-    ScalarA nonconst_const_result = KokkosBlas::dot(a,c_b);
-    EXPECT_NEAR( nonconst_const_result, expected_result, eps*expected_result);
+    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    ScalarA const_nonconst_result = KokkosBlas::dot(c_a,b);
-    EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
+    Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Dot::Result",K);
+
+    KokkosBlas::dot(r,a,b);
+    for(int k=0;k<K;k++) {
+      ScalarA nonconst_nonconst_result = r(k);
+      EXPECT_NEAR( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
+    }
+
+    KokkosBlas::dot(r,c_a,c_b);
+    for(int k=0;k<K;k++) {
+      ScalarA const_const_result = r(k);
+      EXPECT_NEAR( const_const_result, expected_result[k], eps*expected_result[k]);
+    }
+
+    KokkosBlas::dot(r,a,c_b);
+    for(int k=0;k<K;k++) {
+      ScalarA non_const_const_result = r(k);
+      EXPECT_NEAR( non_const_const_result, expected_result[k], eps*expected_result[k]);
+    }
+
+    KokkosBlas::dot(r,c_a,b);
+    for(int k=0;k<K;k++) {
+      ScalarA const_non_const_result = r(k);
+      EXPECT_NEAR( const_non_const_result, expected_result[k], eps*expected_result[k]);
+    }
+
+    delete [] expected_result;
   }
 }
 
@@ -161,9 +206,51 @@ int test_dot() {
   return 1;
 }
 
+template<class ScalarA, class ScalarB, class Device>
+int test_dot_mv() {
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  typedef Kokkos::View<ScalarB**, Kokkos::LayoutLeft, Device> view_type_b_ll;
+  typedef Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device> view_type_b_lr;
+  typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(0,5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(13,5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(1024,5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(132231,5);
+#endif
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(0,5);
+  Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(13,5);
+  Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(1024,5);
+  Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
+#endif
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(0,5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(13,5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(1024,5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
+#endif
+
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(1024,5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(1024,5);
+#endif
+
+
+  return 1;
+}
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_float ) {
     test_dot<float,float,TestExecSpace> ();
+}
+TEST_F( TestCategory, dot_mv_float ) {
+    test_dot_mv<float,float,TestExecSpace> ();
 }
 #endif
 
@@ -171,11 +258,17 @@ TEST_F( TestCategory, dot_float ) {
 TEST_F( TestCategory, dot_double ) {
     test_dot<double,double,TestExecSpace> ();
 }
+TEST_F( TestCategory, dot_mv_double ) {
+    test_dot_mv<double,double,TestExecSpace> ();
+}
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_int ) {
     test_dot<int,int,TestExecSpace> ();
+}
+TEST_F( TestCategory, dot_mv_int ) {
+    test_dot_mv<int,int,TestExecSpace> ();
 }
 #endif
 
@@ -183,4 +276,8 @@ TEST_F( TestCategory, dot_int ) {
 TEST_F( TestCategory, dot_double_int ) {
     test_dot<double,int,TestExecSpace> ();
 }
+TEST_F( TestCategory, dot_mv_double_int ) {
+    test_dot_mv<double,int,TestExecSpace> ();
+}
 #endif
+

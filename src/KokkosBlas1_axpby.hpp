@@ -69,7 +69,7 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
                  "KokkosBlas::axpby: Y is const.  It must be nonconst, "
                  "because it is an output argument "
                  "(we must be able to write to its entries).");
-  static_assert (YMV::Rank == XMV::Rank, "KokkosBlas::axpby: "
+  static_assert (int(YMV::Rank) == int(XMV::Rank), "KokkosBlas::axpby: "
                  "X and Y must have the same rank.");
   static_assert (YMV::Rank == 1 || YMV::Rank == 2, "KokkosBlas::axpby: "
                  "XMV and YMV must either have rank 1 or rank 2.");

@@ -10,6 +10,8 @@ GTEST_PATH = ${KOKKOS_PATH}/tpls/gtest
 KOKKOS_DEVICES=OpenMP
 KOKKOS_CUDA_OPTIONS=enable_lambda
 
+KOKKOSKERNELS_OPTIONS=eti-only
+
 default: test
 
 ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
