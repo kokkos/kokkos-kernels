@@ -1,2 +1,2 @@
 #include<Test_Threads.hpp>
-#include<Test_Blas1_Dot.hpp>
+#include<Test_Blas1_dot.hpp>

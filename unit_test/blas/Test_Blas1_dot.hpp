@@ -1,7 +1,7 @@
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
-#include<Kokkos_Blas1_MV.hpp>
+#include<KokkosBlas1_dot.hpp>
 
 namespace Test {
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -45,6 +45,67 @@ namespace Test {
       expected_result += h_a(i)*h_b(i);
 
     ScalarA nonconst_nonconst_result = KokkosBlas::dot(a,b);
+    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
+    typename ViewTypeA::const_type c_a = a;
+    typename ViewTypeB::const_type c_b = b;
+
+    ScalarA const_const_result = KokkosBlas::dot(c_a,c_b);
+    EXPECT_NEAR( const_const_result, expected_result, eps*expected_result);
+
+    ScalarA nonconst_const_result = KokkosBlas::dot(a,c_b);
+    EXPECT_NEAR( nonconst_const_result, expected_result, eps*expected_result);
+
+    ScalarA const_nonconst_result = KokkosBlas::dot(c_a,b);
+    EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
+  }
+
+  template<class ViewTypeA, class ViewTypeB, class Device>
+  void impl_test_dot_mv(int N, int K) {
+
+    typedef typename ViewTypeA::value_type ScalarA;
+    typedef typename ViewTypeB::value_type ScalarB;
+
+    typedef Kokkos::View<ScalarA**[2], Kokkos::LayoutRight, Device> BaseTypeARight;
+    typedef Kokkos::View<ScalarA**, typename ViewTypeA::array_layout, Device> BaseTypeADefault;
+    typedef typename std::conditional<
+                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
+                BaseTypeARight, BaseTypeADefault>::type BaseTypeA;
+    typedef Kokkos::View<ScalarB**[2], Kokkos::LayoutRight, Device> BaseTypeARight;
+    typedef Kokkos::View<ScalarB**, typename ViewTypeB::array_layout, Device> BaseTypeBDefault;
+    typedef typename std::conditional<
+                std::is_same<typename ViewTypeB::array_layout,Kokkos::LayoutStride>::value,
+                BaseTypeBRight, BaseTypeBDefault>::type BaseTypeB;
+
+    BaseTypeA b_a("A",N,K);
+    BaseTypeB b_b("B",N,K);
+
+    ViewTypeA a = Kokkos::subview(b_a,Kokkos::ALL(),Kokkos::ALL(),0);
+    ViewTypeB b = Kokkos::subview(b_b,Kokkos::ALL(),Kokkos::ALL(),0);
+
+    typename BaseTypeA::HostMirror h_b_a = Kokkos::create_mirror_view(b_a);
+    typename BaseTypeB::HostMirror h_b_b = Kokkos::create_mirror_view(b_b);
+
+    typename ViewTypeA::HostMirror h_a = Kokkos::subview(h_b_a,Kokkos::ALL(),Kokkos::ALL(),0);
+    typename ViewTypeB::HostMirror h_b = Kokkos::subview(h_b_b,Kokkos::ALL(),Kokkos::ALL(),0);
+
+    Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
+    Kokkos::fill_random(b_b,rand_pool,ScalarB(10));
+
+    Kokkos::deep_copy(h_b_a,b_a);
+    Kokkos::deep_copy(h_b_b,b_b);
+
+    ScalarA expected_result = new ScalarA[K];
+    for(int j=0;j<K;j++) {
+      expected_result[j] = ScalarA();
+      for(int i=0;i<N;i++)
+        expected_result += h_a(i,j)*h_b(i,j);
+    }
+
+    Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Dot::Result",K);
+    ScalarA nonconst_nonconst_result = KokkosBlas::dot(r,a,b);
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
     EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
     typename ViewTypeA::const_type c_a = a;

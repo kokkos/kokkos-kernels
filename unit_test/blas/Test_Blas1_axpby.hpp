@@ -1,7 +1,8 @@
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
-#include<Kokkos_Blas1_MV.hpp>
+#include<KokkosBlas1_axpby.hpp>
+#include<KokkosBlas1_dot.hpp>
 
 namespace Test {
   template<class ViewTypeA, class ViewTypeB, class Device>
