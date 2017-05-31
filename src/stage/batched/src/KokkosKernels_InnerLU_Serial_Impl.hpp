@@ -238,38 +238,38 @@ namespace KokkosKernels {
         return 0;
       }
       
-      template<int bmn>
-      template<typename ValueType>
-      KOKKOS_INLINE_FUNCTION
-      int
-      InnerLU<bmn>::
-      serial_invoke(const int m, const int n, 
-                    ValueType *__restrict__ A) {
-        if (m <= 0 || n <= 0) return 0;
-        const int k = m < n ? m : n;
-        for (int p=0;p<k;++p) {
-          const ValueType 
-            // inv_alpha11 = 1.0/A[p*_as0+p*_as1],  
-            alpha11 = A[p*_as0+p*_as1],
-            *__restrict__ a12t = A + (p  )*_as0 + (p+1)*_as1;
+      // template<int bmn>
+      // template<typename ValueType>
+      // KOKKOS_INLINE_FUNCTION
+      // int
+      // InnerLU<bmn>::
+      // serial_invoke(const int m, const int n, 
+      //               ValueType *__restrict__ A) {
+      //   if (m <= 0 || n <= 0) return 0;
+      //   const int k = m < n ? m : n;
+      //   for (int p=0;p<k;++p) {
+      //     const ValueType 
+      //       // inv_alpha11 = 1.0/A[p*_as0+p*_as1],  
+      //       alpha11 = A[p*_as0+p*_as1],
+      //       *__restrict__ a12t = A + (p  )*_as0 + (p+1)*_as1;
           
-          ValueType
-            *__restrict__ a21  = A + (p+1)*_as0 + (p  )*_as1,
-            *__restrict__ A22  = A + (p+1)*_as0 + (p+1)*_as1;
+      //     ValueType
+      //       *__restrict__ a21  = A + (p+1)*_as0 + (p  )*_as1,
+      //       *__restrict__ A22  = A + (p+1)*_as0 + (p+1)*_as1;
           
-          const int
-            iend = m-p-1,
-            jend = n-p-1;
+      //     const int
+      //       iend = m-p-1,
+      //       jend = n-p-1;
           
-          for (int i=0;i<iend;++i) {
-            // a21[i*_as0] *= inv_alpha11; 
-            a21[i*_as0] /= alpha11;
-            for (int j=0;j<jend;++j)
-              A22[i*_as0+j*_as1] -= a21[i*_as0] * a12t[j*_as1];
-          }
-        }
-        return 0;
-      }
+      //     for (int i=0;i<iend;++i) {
+      //       // a21[i*_as0] *= inv_alpha11; 
+      //       a21[i*_as0] /= alpha11;
+      //       for (int j=0;j<jend;++j)
+      //         A22[i*_as0+j*_as1] -= a21[i*_as0] * a12t[j*_as1];
+      //     }
+      //   }
+      //   return 0;
+      // }
       
     }
   }

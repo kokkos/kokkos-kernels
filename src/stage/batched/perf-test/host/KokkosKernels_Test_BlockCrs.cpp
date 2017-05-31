@@ -19,6 +19,27 @@
    that always run before the big problem already provide good coverage.
 */
 
+#include "Kokkos_Core.hpp"
+#include "impl/Kokkos_Timer.hpp"
+
+#include "KokkosKernels_Util.hpp"
+
+#if (0)
+typedef KokkosKernels::Batched::Experimental::Algo::LU::Unblocked   AlgoLU;
+typedef KokkosKernels::Batched::Experimental::Algo::Trsm::Unblocked AlgoTrsm;
+typedef KokkosKernels::Batched::Experimental::Algo::Gemm::Unblocked AlgoGemm;
+
+typedef KokkosKernels::Batched::Experimental::Algo::Trsv::Unblocked AlgoTrsv;
+typedef KokkosKernels::Batched::Experimental::Algo::Gemv::Unblocked AlgoGemv;
+#else
+typedef KokkosKernels::Batched::Experimental::Algo::LU::Blocked   AlgoLU;
+typedef KokkosKernels::Batched::Experimental::Algo::Trsm::Blocked AlgoTrsm;
+typedef KokkosKernels::Batched::Experimental::Algo::Gemm::Blocked AlgoGemm;
+
+typedef KokkosKernels::Batched::Experimental::Algo::Trsv::Blocked AlgoTrsv;
+typedef KokkosKernels::Batched::Experimental::Algo::Gemv::Blocked AlgoGemv;
+#endif
+
 #include "KokkosKernels_Test_BlockCrs.hpp"
 
 using namespace KokkosKernels;

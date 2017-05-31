@@ -15,6 +15,8 @@
 #include <complex>
 #include "Kokkos_Complex.hpp"
 
+
+
 namespace KokkosKernels {
   namespace Batched {
     namespace Experimental {
@@ -22,6 +24,26 @@ namespace KokkosKernels {
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A,B) A B
+      
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL        
+#pragma message "KOKKOS_ENABLE_PRAGMA_UNROLL"
+#define KOKKOSKERNELS_LOOP_UNROLL #pragma unroll
+#else
+#pragma message "KOKKOS_DISABLE_PRAGMA_UNROLL"
+#define KOKKOSKERNELS_LOOP_UNROLL
+#endif
+
+// #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+// #pragma ivdep
+// #endif
+// #ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+// #pragma vector always
+// #endif
+// #ifndef KOKKOS_DEBUG
+// #ifdef KOKKOS_ENABLE_PRAGMA_SIMD
+// #pragma simd
+// #endif
+// #endif                                    
 
       // to use double, std::complex<double>, Kokkos::complex<double>
       using std::abs;
@@ -251,8 +273,11 @@ namespace KokkosKernels {
 
       struct Algo {
         struct Level3 {
-          struct Unblocked {};
+          struct Unblocked {
+            static const char* name() { return "Unblocked"; }
+          };
           struct Blocked {
+            static const char* name() { return "Blocked"; }
             // TODO:: for now harwire the blocksizes; this should reflect 
             // regieter blocking (not about team parallelism).
             // this mb should vary according to
@@ -268,8 +293,12 @@ namespace KokkosKernels {
             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
             ::type mb() { return 4; }  
           };
-          struct MKL {};
-          struct CompactMKL {};
+          struct MKL { 
+            static const char* name() { return "MKL"; } 
+          };
+          struct CompactMKL { 
+            static const char* name() { return "CompactMKL"; } 
+          };
         };
 
         using Gemm = Level3;

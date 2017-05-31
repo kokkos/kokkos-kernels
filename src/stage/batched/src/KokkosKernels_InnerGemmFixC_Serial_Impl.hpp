@@ -39,20 +39,20 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
-          a_4p = A[i4+p*_as1]; b_p4 = B[p*_bs0+j4];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
+            a_4p = A[i4+p*_as1]; b_p4 = B[p*_bs0+j4];
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; c_24 += a_2p * b_p4;
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3; c_34 += a_3p * b_p4;
-          c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; c_42 += a_4p * b_p2; c_43 += a_4p * b_p3; c_44 += a_4p * b_p4;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; c_24 += a_2p * b_p4;
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3; c_34 += a_3p * b_p4;
+            c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; c_42 += a_4p * b_p2; c_43 += a_4p * b_p3; c_44 += a_4p * b_p4;
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03; C[0*_cs0+4*_cs1] += alpha * c_04;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13; C[1*_cs0+4*_cs1] += alpha * c_14;
@@ -87,20 +87,20 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
     
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
-          a_4p = A[i4+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
+            a_4p = A[i4+p*_as1]; 
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; 
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; 
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; 
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3; 
-          c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; c_42 += a_4p * b_p2; c_43 += a_4p * b_p3; 
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; 
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; 
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; 
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3; 
+            c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; c_42 += a_4p * b_p2; c_43 += a_4p * b_p3; 
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03; 
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13; 
@@ -135,20 +135,20 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
     
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          a_3p = A[i3+p*_as1]; 
-          a_4p = A[i4+p*_as1];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            a_3p = A[i3+p*_as1]; 
+            a_4p = A[i4+p*_as1];
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; 
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; 
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; 
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; 
-          c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; c_42 += a_4p * b_p2; 
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; 
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; 
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; 
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; 
+            c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; c_42 += a_4p * b_p2; 
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; 
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; 
@@ -183,20 +183,20 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
     
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; 
-          a_3p = A[i3+p*_as1]; 
-          a_4p = A[i4+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; 
+            a_3p = A[i3+p*_as1]; 
+            a_4p = A[i4+p*_as1]; 
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; 
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; 
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; 
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; 
-          c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; 
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; 
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; 
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; 
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; 
+            c_40 += a_4p * b_p0; c_41 += a_4p * b_p1; 
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; 
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; 
@@ -231,20 +231,20 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1;
 
-#pragma unroll        
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; 
-          a_2p = A[i2+p*_as1]; 
-          a_3p = A[i3+p*_as1]; 
-          a_4p = A[i4+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL        
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; 
+            a_2p = A[i2+p*_as1]; 
+            a_3p = A[i3+p*_as1]; 
+            a_4p = A[i4+p*_as1]; 
       
-          c_00 += a_0p * b_p0; 
-          c_10 += a_1p * b_p0; 
-          c_20 += a_2p * b_p0; 
-          c_30 += a_3p * b_p0; 
-          c_40 += a_4p * b_p0; 
-        }
+            c_00 += a_0p * b_p0; 
+            c_10 += a_1p * b_p0; 
+            c_20 += a_2p * b_p0; 
+            c_30 += a_3p * b_p0; 
+            c_40 += a_4p * b_p0; 
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; 
         C[1*_cs0+0*_cs1] += alpha * c_10; 
@@ -279,19 +279,19 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
-          /**/                 b_p4 = B[p*_bs0+j4];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
+            /**/                 b_p4 = B[p*_bs0+j4];
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; c_24 += a_2p * b_p4;
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3; c_34 += a_3p * b_p4;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; c_24 += a_2p * b_p4;
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3; c_34 += a_3p * b_p4;
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03; C[0*_cs0+4*_cs1] += alpha * c_04;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13; C[1*_cs0+4*_cs1] += alpha * c_14;
@@ -325,18 +325,18 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          /**/                 b_p3 = B[p*_bs0+j3];
-          /**/                 b_p4 = B[p*_bs0+j4];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            /**/                 b_p3 = B[p*_bs0+j3];
+            /**/                 b_p4 = B[p*_bs0+j4];
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; c_24 += a_2p * b_p4;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3; c_24 += a_2p * b_p4;
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03; C[0*_cs0+4*_cs1] += alpha * c_04;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13; C[1*_cs0+4*_cs1] += alpha * c_14;
@@ -369,17 +369,17 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          /**/                 b_p2 = B[p*_bs0+j2];
-          /**/                 b_p3 = B[p*_bs0+j3];
-          /**/                 b_p4 = B[p*_bs0+j4];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            /**/                 b_p2 = B[p*_bs0+j2];
+            /**/                 b_p3 = B[p*_bs0+j3];
+            /**/                 b_p4 = B[p*_bs0+j4];
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3; c_14 += a_1p * b_p4;
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03; C[0*_cs0+4*_cs1] += alpha * c_04;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13; C[1*_cs0+4*_cs1] += alpha * c_14;
@@ -411,16 +411,16 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          /**/                 b_p1 = B[p*_bs0+j1];
-          /**/                 b_p2 = B[p*_bs0+j2];
-          /**/                 b_p3 = B[p*_bs0+j3];
-          /**/                 b_p4 = B[p*_bs0+j4];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            /**/                 b_p1 = B[p*_bs0+j1];
+            /**/                 b_p2 = B[p*_bs0+j2];
+            /**/                 b_p3 = B[p*_bs0+j3];
+            /**/                 b_p4 = B[p*_bs0+j4];
       
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3; c_04 += a_0p * b_p4;
+          }
     
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03; C[0*_cs0+4*_cs1] += alpha * c_04;
     
@@ -453,18 +453,18 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            a_3p = A[i3+p*_as1]; b_p3 = B[p*_bs0+j3];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3;
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3;
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3;
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3;
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; c_33 += a_3p * b_p3;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13;
@@ -497,18 +497,18 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          a_3p = A[i3+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            a_3p = A[i3+p*_as1]; 
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; 
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; 
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; 
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; 
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; 
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; 
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; 
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; c_32 += a_3p * b_p2; 
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; 
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; 
@@ -541,18 +541,18 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; 
-          a_3p = A[i3+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; 
+            a_3p = A[i3+p*_as1]; 
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; 
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; 
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; 
-          c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; 
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; 
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; 
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; 
+            c_30 += a_3p * b_p0; c_31 += a_3p * b_p1; 
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; 
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; 
@@ -585,18 +585,18 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; 
-          a_2p = A[i2+p*_as1]; 
-          a_3p = A[i3+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; 
+            a_2p = A[i2+p*_as1]; 
+            a_3p = A[i3+p*_as1]; 
 
-          c_00 += a_0p * b_p0; 
-          c_10 += a_1p * b_p0; 
-          c_20 += a_2p * b_p0; 
-          c_30 += a_3p * b_p0; 
-        }
+            c_00 += a_0p * b_p0; 
+            c_10 += a_1p * b_p0; 
+            c_20 += a_2p * b_p0; 
+            c_30 += a_3p * b_p0; 
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00;
         C[1*_cs0+0*_cs1] += alpha * c_10;
@@ -629,17 +629,17 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
-          /**/                 b_p3 = B[p*_bs0+j3];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+            /**/                 b_p3 = B[p*_bs0+j3];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3;
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3;
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2; c_23 += a_2p * b_p3;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13;
@@ -671,16 +671,16 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          /**/                 b_p2 = B[p*_bs0+j2];
-          /**/                 b_p3 = B[p*_bs0+j3];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            /**/                 b_p2 = B[p*_bs0+j2];
+            /**/                 b_p3 = B[p*_bs0+j3];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2; c_13 += a_1p * b_p3;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12; C[1*_cs0+3*_cs1] += alpha * c_13;
@@ -711,15 +711,15 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          /**/                 b_p1 = B[p*_bs0+j1];
-          /**/                 b_p2 = B[p*_bs0+j2];
-          /**/                 b_p3 = B[p*_bs0+j3];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            /**/                 b_p1 = B[p*_bs0+j1];
+            /**/                 b_p2 = B[p*_bs0+j2];
+            /**/                 b_p3 = B[p*_bs0+j3];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2; c_03 += a_0p * b_p3;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02; C[0*_cs0+3*_cs1] += alpha * c_03;
 
@@ -752,16 +752,16 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; b_p2 = B[p*_bs0+j2];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2;
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2;
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; c_22 += a_2p * b_p2;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12;
@@ -792,16 +792,16 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          a_2p = A[i2+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            a_2p = A[i2+p*_as1]; 
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; 
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; 
-          c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; 
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; 
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; 
+            c_20 += a_2p * b_p0; c_21 += a_2p * b_p1; 
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; 
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; 
@@ -832,16 +832,16 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
           j0 = 0*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; 
-          a_2p = A[i2+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; 
+            a_2p = A[i2+p*_as1]; 
 
-          c_00 += a_0p * b_p0; 
-          c_10 += a_1p * b_p0; 
-          c_20 += a_2p * b_p0; 
-        }
+            c_00 += a_0p * b_p0; 
+            c_10 += a_1p * b_p0; 
+            c_20 += a_2p * b_p0; 
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; 
         C[1*_cs0+0*_cs1] += alpha * c_10; 
@@ -872,15 +872,15 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
-          /**/                 b_p2 = B[p*_bs0+j2];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+            /**/                 b_p2 = B[p*_bs0+j2];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1; c_12 += a_1p * b_p2;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11; C[1*_cs0+2*_cs1] += alpha * c_12;
@@ -909,14 +909,14 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          /**/                 b_p1 = B[p*_bs0+j1];
-          /**/                 b_p2 = B[p*_bs0+j2];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            /**/                 b_p1 = B[p*_bs0+j1];
+            /**/                 b_p2 = B[p*_bs0+j2];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1; c_02 += a_0p * b_p2;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01; C[0*_cs0+2*_cs1] += alpha * c_02;
 
@@ -948,14 +948,14 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
 
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1;
-          c_10 += a_1p * b_p0; c_11 += a_1p * b_p1;
-        }
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1;
+            c_10 += a_1p * b_p0; c_11 += a_1p * b_p1;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01;
         C[1*_cs0+0*_cs1] += alpha * c_10; C[1*_cs0+1*_cs1] += alpha * c_11;
@@ -984,14 +984,14 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0,
           j0 = 0*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          a_1p = A[i1+p*_as1]; 
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            a_1p = A[i1+p*_as1]; 
 
-          c_00 += a_0p * b_p0; 
-          c_10 += a_1p * b_p0; 
-        }
+            c_00 += a_0p * b_p0; 
+            c_10 += a_1p * b_p0; 
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; 
         C[1*_cs0+0*_cs1] += alpha * c_10; 
@@ -1019,12 +1019,12 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          /* */                b_p1 = B[p*_bs0+j1];
-          c_00 += a_0p * b_p0; c_01 += a_0p * b_p1;
-        }
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            /* */                b_p1 = B[p*_bs0+j1];
+            c_00 += a_0p * b_p0; c_01 += a_0p * b_p1;
+          }
 
         C[0*_cs0+0*_cs1] += alpha * c_00; C[0*_cs0+1*_cs1] += alpha * c_01;
 
@@ -1056,11 +1056,11 @@ namespace KokkosKernels {
           i0 = 0*_as0,
           j0 = 0*_bs1;
 
-#pragma unroll    
-        for (int p=0;p<k;++p) {
-          a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
-          c_00 += a_0p * b_p0; 
-        }
+        KOKKOSKERNELS_LOOP_UNROLL    
+          for (int p=0;p<k;++p) {
+            a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
+            c_00 += a_0p * b_p0; 
+          }
         C[0*_cs0+0*_cs1] += alpha * c_00; 
 
         return 0;
@@ -1088,7 +1088,7 @@ namespace KokkosKernels {
         default: {
           Kokkos::abort("InnerGemmFixC<0,1>::serial_invoke, assert failure (m<=5)");
           break;
-          }
+        }
         }
         return 0;
       }
@@ -1229,70 +1229,6 @@ namespace KokkosKernels {
 
         return serial_invoke(alpha, A, B, k, C);;
       }
-      
-
-
-      /// the below should not be called
-
-
-
-      // ///
-      // /// Inner kernel (remainders)
-      // /// =========================
-
-      // template<>
-      // template<typename ScalarType,
-      //          typename ValueType>
-      // KOKKOS_INLINE_FUNCTION
-      // int
-      // InnerGemmFixC<0,0>::
-      // serial_invoke(const ScalarType alpha,
-      //               const ValueType *__restrict__ A,
-      //               const ValueType *__restrict__ B,
-      //               const int m, const int n, const int k,
-      //               /**/  ValueType *__restrict__ C) {
-      //   if (m <= 0 || n <= 0 || k <= 0) return 0;
-      //   const int mn = m > n ? m : n;
-      //   switch (mn) {
-      //   case 5: { InnerGemmFixC<5,5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-      //   case 4: { InnerGemmFixC<4,4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-      //   case 3: { InnerGemmFixC<3,3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-      //   case 2: { InnerGemmFixC<2,2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B, m, n, k, C); break; }
-      //   case 1: { InnerGemmFixC<1,1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1); inner.serial_invoke(alpha, A, B,       k, C); break; }
-      //   }
-      //   return 0;
-      // }
-
-
-      // ///
-      // /// default unblocked one
-      // /// 
-      // template<>
-      // template<typename ScalarType,
-      //          typename ValueType>
-      // KOKKOS_INLINE_FUNCTION
-      // int
-      // InnerGemmFixC<-1,-1>::
-      // serial_invoke(const ScalarType alpha,
-      //               const ValueType *__restrict__ A,
-      //               const ValueType *__restrict__ B,
-      //               const int m, const int n, const int k,
-      //               /**/  ValueType *__restrict__ C) {
-      //   if (m <=0 || n <= 0 || k <= 0) return 0;
-
-      //   for (int p=0;p<k;++p) {
-      //     const ValueType
-      //       *__restrict__ pA = A+p*_as1,
-      //       *__restrict__ pB = B+p*_bs0;
-      //     for (int i=0;i<m;++i) {
-      //       const ValueType tA(alpha*pA[i*_as0]);
-      //       for (int j=0;j<n;++j)
-      //         C[i*_cs0+j*_cs1] += tA*pB[j*_bs1];
-      //     }
-      //   }        
-      //   return 0;
-      // }
-      
 
     }
   }

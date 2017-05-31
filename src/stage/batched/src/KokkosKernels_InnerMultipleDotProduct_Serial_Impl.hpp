@@ -34,17 +34,17 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0, y_4 = 0;
 
-#pragma unroll            
-        for (int j=0;j<n;++j) {
-          const int jj = j*_as1;
-          const ValueType x_j = x[j*_xs0];
+        KOKKOSKERNELS_LOOP_UNROLL            
+          for (int j=0;j<n;++j) {
+            const int jj = j*_as1;
+            const ValueType x_j = x[j*_xs0];
 
-          y_0 += A[i0+jj]*x_j;
-          y_1 += A[i1+jj]*x_j;
-          y_2 += A[i2+jj]*x_j;
-          y_3 += A[i3+jj]*x_j;
-          y_4 += A[i4+jj]*x_j;
-        }
+            y_0 += A[i0+jj]*x_j;
+            y_1 += A[i1+jj]*x_j;
+            y_2 += A[i2+jj]*x_j;
+            y_3 += A[i3+jj]*x_j;
+            y_4 += A[i4+jj]*x_j;
+          }
 
         y[0*_ys0] += alpha*y_0;
         y[1*_ys0] += alpha*y_1;
@@ -75,16 +75,16 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0;
             
-#pragma unroll            
-        for (int j=0;j<n;++j) {
-          const int jj = j*_as1;
-          const ValueType x_j = x[j*_xs0];
+        KOKKOSKERNELS_LOOP_UNROLL            
+          for (int j=0;j<n;++j) {
+            const int jj = j*_as1;
+            const ValueType x_j = x[j*_xs0];
 
-          y_0 += A[i0+jj]*x_j;
-          y_1 += A[i1+jj]*x_j;
-          y_2 += A[i2+jj]*x_j;
-          y_3 += A[i3+jj]*x_j;
-        }
+            y_0 += A[i0+jj]*x_j;
+            y_1 += A[i1+jj]*x_j;
+            y_2 += A[i2+jj]*x_j;
+            y_3 += A[i3+jj]*x_j;
+          }
 
         y[0*_ys0] += alpha*y_0;
         y[1*_ys0] += alpha*y_1;
@@ -114,15 +114,15 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0, y_2 = 0;
             
-#pragma unroll            
-        for (int j=0;j<n;++j) {
-          const int jj = j*_as1;
-          const ValueType x_j = x[j*_xs0];
+        KOKKOSKERNELS_LOOP_UNROLL            
+          for (int j=0;j<n;++j) {
+            const int jj = j*_as1;
+            const ValueType x_j = x[j*_xs0];
 
-          y_0 += A[i0+jj]*x_j;
-          y_1 += A[i1+jj]*x_j;
-          y_2 += A[i2+jj]*x_j;
-        }
+            y_0 += A[i0+jj]*x_j;
+            y_1 += A[i1+jj]*x_j;
+            y_2 += A[i2+jj]*x_j;
+          }
 
         y[0*_ys0] += alpha*y_0;
         y[1*_ys0] += alpha*y_1;
@@ -151,14 +151,14 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0;
             
-#pragma unroll            
-        for (int j=0;j<n;++j) {
-          const int jj = j*_as1;
-          const ValueType x_j = x[j*_xs0];
+        KOKKOSKERNELS_LOOP_UNROLL            
+          for (int j=0;j<n;++j) {
+            const int jj = j*_as1;
+            const ValueType x_j = x[j*_xs0];
 
-          y_0 += A[i0+jj]*x_j;
-          y_1 += A[i1+jj]*x_j;
-        }
+            y_0 += A[i0+jj]*x_j;
+            y_1 += A[i1+jj]*x_j;
+          }
 
         y[0*_ys0] += alpha*y_0;
         y[1*_ys0] += alpha*y_1;
@@ -183,9 +183,9 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0;
             
-#pragma unroll            
-        for (int j=0;j<n;++j) 
-          y_0 += A[j*_as1]*x[j*_xs0];
+        KOKKOSKERNELS_LOOP_UNROLL            
+          for (int j=0;j<n;++j) 
+            y_0 += A[j*_as1]*x[j*_xs0];
 
         y[0] += alpha*y_0;
 

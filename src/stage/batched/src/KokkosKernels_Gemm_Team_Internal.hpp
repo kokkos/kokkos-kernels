@@ -60,6 +60,9 @@ namespace KokkosKernels {
           if (alpha != 0) {
             if (m <= 0 || n <= 0 || k <= 0) return 0;
 
+            if (beta != 1)
+              member.team_barrier();
+            
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m*n),[&](const int &ij) {
 #if \
   defined (KOKKOS_HAVE_CUDA) && \
@@ -99,40 +102,39 @@ namespace KokkosKernels {
           // C (m x n), A(m x k), B(k x n)
 
           typedef ValueType value_type;
-
+          enum : int {
+            mbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
+            nbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
+          };
+          
           if      (beta == 0) Team::SetInternal  ::invoke(member, m, n, value_type(0),    C, cs0, cs1);
           else if (beta != 1) Team::ScaleInternal::invoke(member, m, n, value_type(beta), C, cs0, cs1);
 
           if (alpha != 0) {
             if (m <= 0 || n <= 0 || k <= 0) return 0;
 
-            enum : int {
-              mb = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
-              nb = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
-            };
-            
-            ///
-            /// case host: team size is small and blocksize (mb,nb) is large 
+            if (beta != 1)
+              member.team_barrier();
 
             ///
             /// case cuda: team size is large and blocksize (mb,nb) is small
-            InnerGemmFixC<mb,nb> inner(as0, as1, bs0, bs1, cs0, cs1);
+            InnerGemmFixC<mbAlgo,nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
             auto gemm = [&](const int ib, 
                             const int jb,
                             const int pb,
                             const value_type *__restrict__ AA,
                             const value_type *__restrict__ BB,
                             /**/  value_type *__restrict__ CC) {
-              const int
-              mp = (ib%mb), mq = (ib/mb) + (mp>0),
-              np = (jb%nb), nq = (jb/nb) + (np>0);
+              const int              
+              mb = mbAlgo, mp = (ib%mb), mq = (ib/mb) + (mp>0),
+              nb = nbAlgo, np = (jb%nb), nq = (jb/nb) + (np>0);
               
               // square tiling
               Kokkos::parallel_for
               (Kokkos::TeamThreadRange(member, mq*nq ),
                [&](const int &ij) {
-#if \
-  defined (KOKKOS_HAVE_CUDA) && \
+#if                                                     \
+  defined (KOKKOS_HAVE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
                 const int i = ij%mq*mb, j = ij/mq*nb;
 #else

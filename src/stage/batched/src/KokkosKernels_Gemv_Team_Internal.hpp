@@ -61,10 +61,14 @@ namespace KokkosKernels {
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
 
+            if (beta != 1) 
+              member.barrier();
+            
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {
                 value_type t(0);
                 const value_type *__restrict__ tA = (A + i*as0);
-#pragma unroll
+
+                KOKKOSKERNELS_LOOP_UNROLL
                 for (int j=0;j<n;++j)
                   t += tA[j*as1]*x[j*xs0];
                 y[i*ys0] += alpha*t;
@@ -100,9 +104,11 @@ namespace KokkosKernels {
       
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
+
+            if (beta != 1) 
+              member.barrier();
         
             InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
-
             const int tsize = member.team_size();
             const int mb = min(m/tsize + (m%tsize)>0, mbAlgo), mp = m%mb;
             

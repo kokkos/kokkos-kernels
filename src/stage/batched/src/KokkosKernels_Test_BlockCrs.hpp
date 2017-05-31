@@ -266,11 +266,7 @@ namespace KokkosKernels {
           
           switch (op) {
           case 0: {
-            if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
-              std::cout << "KokkosKernels::RangeTag::Blocked\n";
-            } else {
-              std::cout << "KokkosKernels::RangeTag::Unblocked\n";
-            }
+            std::cout << "KokkosKernels::RangeTag::" << Gemm_AlgoTagType::name() << "\n";
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
             Kokkos::parallel_for(policy, *this);
             break;

@@ -137,9 +137,9 @@ namespace KokkosKernels {
           invoke(const int m, 
                  const ValueType *__restrict__ A, const int as0, 
                  /* */ ValueType *__restrict__ B, const int bs0) {
-#pragma unroll
-            for (int i=0;i<m;++i) 
-              B[i*bs0] = A[i*as0];
+            KOKKOSKERNELS_LOOP_UNROLL
+              for (int i=0;i<m;++i) 
+                B[i*bs0] = A[i*as0];
 
             // // manuall unroll: not sure if this works
             // Serial::CopyUnrolled<0> inner(as0, bs0);

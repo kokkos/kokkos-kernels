@@ -21,9 +21,9 @@ namespace KokkosKernels {
           invoke(const int m, 
                  const ScalarType alpha, 
                  /* */ ValueType *__restrict__ A, const int as0) {
-#pragma unroll
-            for (int i=0;i<m;++i)
-              A[i*as0] = alpha;
+            KOKKOSKERNELS_LOOP_UNROLL
+              for (int i=0;i<m;++i)
+                A[i*as0] = alpha;
             
             return 0;
           }

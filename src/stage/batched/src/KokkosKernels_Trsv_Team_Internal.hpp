@@ -109,52 +109,42 @@ namespace KokkosKernels {
             if (alpha != 1) Team::ScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
             if (m <= 0) return 0;
 
-            {
-              /// case cuda: team size is large and blocksize (mb,nb) is small
-              InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
-              InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+            /// case cuda: team size is large and blocksize (mb,nb) is small
+            InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
+            InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+            
+            const int mb = mbAlgo;
+            const int tsize = member.team_size();
+            for (int p=0;p<m;p+=mb) {
+              const int pb = ((p+mb) > m ? (m-p) : mb);
+              
+              // trsm update
+              const value_type *__restrict__ Ap = A+p*as0+p*as1;
+              /**/  value_type *__restrict__ bp = b+p*bs0;
 
-              auto trsv = [&](const int ib,
-                              const value_type *__restrict__ AA,
-                              /**/  value_type *__restrict__ bb) {
-                const int mb = mbAlgo;
-                const int tsize = member.team_size();
-                for (int p=0;p<ib;p+=mb) {
-                  const int pb = ((p+mb) > ib ? (ib-p) : mb);
+              member.team_barrier();
+              value_type local_bp[mbAlgo];
+              KOKKOSKERNELS_LOOP_UNROLL
+              for (int i=0;i<pb;++i)
+                local_bp[i] = bp[i*bs0];
 
-                  // trsm update
-                  const value_type *__restrict__ Ap = AA+p*as0+p*as1;
-                  /**/  value_type *__restrict__ bp = bb+p*bs0;
+              if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, &local_bp[0]);
+              else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
 
-                  member.team_barrier();
-                  value_type local_bp[mbAlgo];
-                  for (int i=0;i<pb;++i)
-                    local_bp[i] = bp[i*bs0];
+              if (member.team_rank() == 0) 
+                KOKKOSKERNELS_LOOP_UNROLL
+                for (int i=0;i<pb;++i)
+                  bp[i*bs0] = local_bp[i];
 
-                  if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, &local_bp[0]);
-                  else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
-
-                  if (member.team_rank() == 0)
-                    for (int i=0;i<pb;++i)
-                      bp[i*bs0] = local_bp[i];
-
-                  // gemv update
-                  GemvInternal<Algo::Gemv::Blocked>
-                    ::invoke(member,
-                             ib-p-pb, pb,
-                             -1,
-                             Ap+pb*as0, as0, as1,
-                             &local_bp[0], 1,
-                             1,
-                             bp+pb*bs0, bs0);
-                }
-              };
-              const bool is_small = true; //(m*n <= 64*64);
-              if (is_small) {
-                trsv(m, A, b);
-              } else {
-                // // some cache blocking may need (not priority yet);
-              }
+              // gemv update
+              GemvInternal<Algo::Gemv::Blocked>
+                ::invoke(member,
+                         m-p-pb, pb,
+                         -1,
+                         Ap+pb*as0, as0, as1,
+                         &local_bp[0], 1,
+                         1,
+                         bp+pb*bs0, bs0);
             }
           }
           return 0;
@@ -248,53 +238,43 @@ namespace KokkosKernels {
             if (alpha != 1) Team::ScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
             if (m <= 0) return 0;
 
-            {
-              InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
-              InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+            InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
+            InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+            
+            const int mb = mbAlgo;
+            for (int pp=0;pp<m;pp+=mb) {
+              const int
+                ptmp = (m - pp - mb),
+                p = (ptmp < 0 ? 0 : ptmp),
+                pb = (mb + (ptmp < 0)*ptmp);
+              
+              // trsm update
+              const value_type *__restrict__ Ap = A+p*as0+p*as1;
+              /**/  value_type *__restrict__ bp = b+p*bs0;
+              
+              member.team_barrier();
+              value_type local_bp[mbAlgo];
+              KOKKOSKERNELS_LOOP_UNROLL
+              for (int i=0;i<pb;++i)
+                local_bp[i] = bp[i*bs0];
 
-              auto trsv = [&](const int ib,
-                              const value_type *__restrict__ AA,
-                              /**/  value_type *__restrict__ bb) {
-                const int mb = mbAlgo;
-                for (int pp=0;pp<ib;pp+=mb) {
-                  const int
-                    ptmp = (ib - pp - mb),
-                    p = (ptmp < 0 ? 0 : ptmp),
-                    pb = (mb + (ptmp < 0)*ptmp);
+              if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, &local_bp[0]);
+              else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
+              
+              if (member.team_rank() == 0)
+                KOKKOSKERNELS_LOOP_UNROLL
+                for (int i=0;i<pb;++i)
+                  bp[i*bs0] = local_bp[i];
 
-                  // trsm update
-                  const value_type *__restrict__ Ap = AA+p*as0+p*as1;
-                  /**/  value_type *__restrict__ bp = bb+p*bs0;
-
-                  member.team_barrier();
-                  value_type local_bp[mbAlgo];
-                  for (int i=0;i<pb;++i)
-                    local_bp[i] = bp[i*bs0];
-
-                  if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, &local_bp[0]);
-                  else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
-
-                  if (member.team_rank() == 0)
-                    for (int i=0;i<pb;++i)
-                      bp[i*bs0] = local_bp[i];
-
-                  // gemv update
-                  GemvInternal<Algo::Gemv::Blocked>
-                    ::invoke(member,
-                             p, pb,
-                             -1,
-                             Ap-p*as0, as0, as1,
-                             &local_bp[0], 1,
-                             1,
-                             bb, bs0);
-                }
-              };
-              const bool is_small = true; //(m*n <= 64*64);
-              if (is_small) {
-                trsv(m, A, b);
-              } else {
-                // // some cache blocking may need (not priority yet);
-              }
+              // gemv update
+              GemvInternal<Algo::Gemv::Blocked>
+                ::invoke(member,
+                         p, pb,
+                         -1,
+                         Ap-p*as0, as0, as1,
+                         &local_bp[0], 1,
+                         1,
+                         b, bs0);
             }
           }
           return 0;

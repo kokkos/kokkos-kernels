@@ -9,7 +9,7 @@
 #include "KokkosKernels_Set_Internal.hpp"
 #include "KokkosKernels_Scale_Internal.hpp"
 
-#include "KokkosKernels_InnerGemmFixC_Serial_Impl.hpp"
+#include "KokkosKernels_InnerMultipleDotProduct_Serial_Impl.hpp"
 
 namespace KokkosKernels {
   namespace Batched {
@@ -51,8 +51,8 @@ namespace KokkosKernels {
 
           typedef ValueType value_type;
 
-          if      (beta == 0) Serial::SetInternal  ::invoke(m, 1, value_type(0),    y, ys0, 1);
-          else if (beta != 1) Serial::ScaleInternal::invoke(m, 1, value_type(beta), y, ys0, 1);
+          if      (beta == 0) Serial::SetInternal  ::invoke(m, value_type(0),    y, ys0);
+          else if (beta != 1) Serial::ScaleInternal::invoke(m, value_type(beta), y, ys0);
       
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
@@ -60,6 +60,8 @@ namespace KokkosKernels {
             for (int i=0;i<m;++i) {
               value_type t(0);
               const value_type *__restrict__ tA = (A + i*as0);
+
+              KOKKOSKERNELS_LOOP_UNROLL
               for (int j=0;j<n;++j)
                 t += tA[j*as1]*x[j*xs0];
               y[i*ys0] += alpha*t;
@@ -84,20 +86,20 @@ namespace KokkosKernels {
           // y (m), A(m x n), B(n)
 
           typedef ValueType value_type;
+          enum : int {
+            mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
+          };
 
-          if      (beta == 0) Serial::SetInternal  ::invoke(m, 1, value_type(0),    y, ys0, 1);
-          else if (beta != 1) Serial::ScaleInternal::invoke(m, 1, value_type(beta), y, ys0, 1);
+          if      (beta == 0) Serial::SetInternal  ::invoke(m, value_type(0),    y, ys0);
+          else if (beta != 1) Serial::ScaleInternal::invoke(m, value_type(beta), y, ys0);
       
           if (alpha != 0) {
             if (m <= 0 || n <= 0) return 0;
         
-            enum : int {
-              mb = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-            };
-
-            InnerGemmFixC<0,1> inner(as0, as1, xs0, 1, ys0, 1); 
+            InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
+            const int mb = mbAlgo;
             for (int i=0;i<m;i+=mb) 
-              inner.serial_invoke(alpha, A+i*as0,  x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
+              inner.serial_invoke(alpha, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
           }
           return 0;
         }
