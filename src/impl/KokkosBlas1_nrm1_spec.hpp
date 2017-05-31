@@ -92,7 +92,7 @@ struct nrm1_eti_spec_avail {
         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -232,7 +232,7 @@ extern template struct Nrm1< \
          Kokkos::View<SCALAR*, \
                       typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                 Kokkos::LayoutLeft, LAYOUT>::type, \
-                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                      Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -248,7 +248,7 @@ template struct Nrm1< \
          Kokkos::View<SCALAR*, \
                       typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                 Kokkos::LayoutLeft, LAYOUT>::type, \
-                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                      Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \

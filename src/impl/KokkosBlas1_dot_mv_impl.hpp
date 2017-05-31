@@ -171,7 +171,7 @@ struct MV_V_Dot_Functor
   }
 
   // On device, write the reduction result to the output View.
-  KOKKOS_INLINE_FUNCTION void
+  /*KOKKOS_INLINE_FUNCTION void
   final (const value_type dst) const
   {
     const size_type numVecs = value_count;
@@ -184,7 +184,7 @@ struct MV_V_Dot_Functor
     for (size_type k = 0; k < numVecs; ++k) {
       m_r(k) = dst[k];
     }
-  }
+  }*/
 };
 
 /// \brief Column-wise dot product functor for multivectors; works for
@@ -277,7 +277,7 @@ struct MV_Dot_Right_FunctorVector
   }
 
   // On device, write the reduction result to the output View.
-  KOKKOS_INLINE_FUNCTION void
+  /*KOKKOS_INLINE_FUNCTION void
   final (const value_type dst) const
   {
     const size_type numVecs = value_count;
@@ -290,7 +290,7 @@ struct MV_Dot_Right_FunctorVector
     for (size_type k = 0; k < numVecs; ++k) {
       m_r(k) = dst[k];
     }
-  }
+  }*/
 };
 
 /// \brief Column-wise dot product functor for multivectors with
@@ -373,7 +373,7 @@ struct MV_Dot_Right_FunctorUnroll
   }
 
   // On device, write the reduction result to the output View.
-  KOKKOS_INLINE_FUNCTION void
+  /*KOKKOS_INLINE_FUNCTION void
   final (const value_type dst) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
@@ -382,7 +382,7 @@ struct MV_Dot_Right_FunctorUnroll
     for (int k = 0; k < UNROLL; ++k) {
       m_r(k) = dst[k];
     }
-  }
+  }*/
 };
 
 
@@ -415,7 +415,7 @@ struct MV_V_Dot_Invoke_Impl<RV, XMV, YMV, SizeType, 2, 1>
     typedef MV_V_Dot_Functor<RV, XMV, YMV, size_type> op_type;
     constexpr bool reverseOrder = false;
     op_type op (r, X, Y, reverseOrder);
-    Kokkos::parallel_reduce (range_type (0, numRows), op);
+    Kokkos::parallel_reduce (range_type (0, numRows), op, r);
   }
 };
 
@@ -439,7 +439,7 @@ struct MV_V_Dot_Invoke_Impl<RV, XMV, YMV, SizeType, 1, 2>
     typedef MV_V_Dot_Functor<RV, YMV, XMV, size_type> op_type;
     constexpr bool reverseOrder = true;
     op_type op (r, Y, X, reverseOrder);
-    Kokkos::parallel_reduce (range_type (0, numRows), op);
+    Kokkos::parallel_reduce (range_type (0, numRows), op, r);
   }
 };
 
@@ -488,7 +488,7 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
     auto r_cur = Kokkos::subview (r, std::make_pair (j, j+8));
 
     MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8, SizeType> op (r_cur, X_cur, Y_cur);
-    Kokkos::parallel_reduce (policy, op);
+    Kokkos::parallel_reduce (policy, op, r_cur);
   }
   for ( ; j + 4 <= numCols; j += 4) {
     auto X_cur = Kokkos::subview (X, Kokkos::ALL (), std::make_pair (j, j+4));
@@ -496,7 +496,7 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
     auto r_cur = Kokkos::subview (r, std::make_pair (j, j+4));
 
     MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4, SizeType> op (r_cur, X_cur, Y_cur);
-    Kokkos::parallel_reduce (policy, op);
+    Kokkos::parallel_reduce (policy, op, r_cur);
   }
   for ( ; j < numCols; ++j) {
     // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
@@ -515,83 +515,83 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
 
   if (numCols > 16) {
     MV_Dot_Right_FunctorVector<RV, XMV, YMV, SizeType> op (r, X, Y);
-    Kokkos::parallel_reduce (policy, op);
+    Kokkos::parallel_reduce (policy, op, r);
   }
   else {
     switch (numCols) {
     case 16: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 16, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 15: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 15, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 14: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 14, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 13: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 13, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 12: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 12, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 11: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 11, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 10: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 10, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 9: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 9, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 8: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 7: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 7, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 6: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 6, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 5: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 5, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 4: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 3: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 3, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 2: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 2, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r);
       break;
     }
     case 1: {
@@ -605,7 +605,7 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
 
       typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, SizeType> op_type;
       op_type op (r_0, X_0, Y_0);
-      Kokkos::parallel_reduce (policy, op);
+      Kokkos::parallel_reduce (policy, op, r_0);
       break;
     }
     } // switch

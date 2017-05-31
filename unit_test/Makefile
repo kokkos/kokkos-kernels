@@ -57,12 +57,26 @@ TARGETS =
 #=======================================================================
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/openmp
-
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_OPENMP), 1)
+    KOKKOSKERNELS_INTERNAL_TEST_OPENMP = 1
+  else
+    ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+      KOKKOSKERNELS_INTERNAL_TEST_OPENMP = 0
+    else
+      KOKKOSKERNELS_INTERNAL_TEST_OPENMP = 1
+    endif
+  endif
+endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/openmp
   OBJ_OPENMP = Test_Main.o gtest-all.o
   OBJ_OPENMP += Test_OpenMP_Blas1_AXPBY.o
   OBJ_OPENMP += Test_OpenMP_Blas1_Dot.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_nrm1.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_nrm2.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_nrm2_squared.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_nrminf.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -78,12 +92,26 @@ test-openmp: KokkosKernels_UnitTest_OpenMP
 #=======================================================================
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/cuda
-
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
+    KOKKOSKERNELS_INTERNAL_TEST_CUDA = 1
+  else
+    ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+      KOKKOSKERNELS_INTERNAL_TEST_CUDA = 0
+    else
+      KOKKOSKERNELS_INTERNAL_TEST_CUDA = 1
+    endif
+  endif
+endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_AXPBY.o
   OBJ_CUDA += Test_Cuda_Blas1_Dot.o
+  OBJ_CUDA += Test_Cuda_Blas1_nrm1.o
+  OBJ_CUDA += Test_Cuda_Blas1_nrm2.o
+  OBJ_CUDA += Test_Cuda_Blas1_nrm2_squared.o
+  OBJ_CUDA += Test_Cuda_Blas1_nrminf.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
@@ -99,8 +127,19 @@ test-cuda: KokkosKernels_UnitTest_Cuda
 #=======================================================================
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/serial
-
 ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
+    KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
+  else
+    ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+      KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 0
+    else
+      KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
+    endif
+  endif
+endif
+
+ifeq ($(KOKKOS_INTERNAL_TEST_SERIAL), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/serial
   OBJ_SERIAL = Test_Main.o gtest-all.o
   OBJ_SERIAL += Test_Serial_Blas1_AXPBY.o

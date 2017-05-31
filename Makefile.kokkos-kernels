@@ -291,12 +291,40 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_OPENMP), 1)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_THREADS), 1)
-KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec*Threads*.cpp)
-KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec*Threads*.cpp)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_double*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_double*Threads_*.cpp)
+  endif
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_float*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_float*Threads_*.cpp)
+  endif
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_double*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_double*Threads_*.cpp)
+  endif
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_float*Threads_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_float*Threads_*.cpp)
+  endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
-KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec*Cuda*.cpp)
-KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec*Cuda*.cpp)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_DOUBLE), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_double*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_double*Cuda_*.cpp)
+  endif
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_FLOAT), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_float*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_float*Cuda_*.cpp)
+  endif
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_double*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_double*Cuda_*.cpp)
+  endif
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_), 1)
+    KOKKOSKERNELS_INTERNAL_SRC_BLAS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosBlas*eti_spec_inst_Kokkos_complex_float*Cuda_*.cpp)
+    KOKKOSKERNELS_INTERNAL_SRC_SPARSE += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*/KokkosSparse*eti_spec_inst_Kokkos_complex_float*Cuda_*.cpp)
+  endif
 endif
 
 KOKKOSKERNELS_INTERNAL_HEADERS = $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/*.hpp)

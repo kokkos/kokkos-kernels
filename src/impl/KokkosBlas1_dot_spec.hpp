@@ -103,7 +103,7 @@ struct dot_eti_spec_avail {
     struct dot_eti_spec_avail< \
         Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -114,7 +114,7 @@ struct dot_eti_spec_avail {
     struct dot_eti_spec_avail< \
         Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -125,7 +125,7 @@ struct dot_eti_spec_avail {
     struct dot_eti_spec_avail< \
         Kokkos::View<SCALAR*,  typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                          Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -290,7 +290,7 @@ template struct Dot< \
 extern template struct Dot< \
         Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -298,7 +298,9 @@ extern template struct Dot< \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         2,2,false,true>; \
 extern template struct Dot< \
-        Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+        Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                        Kokkos::LayoutLeft, LAYOUT>::type, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -306,7 +308,9 @@ extern template struct Dot< \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         2,1,false,true>; \
 extern template struct Dot< \
-        Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+        Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                        Kokkos::LayoutLeft, LAYOUT>::type, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -318,7 +322,7 @@ extern template struct Dot< \
 template struct Dot< \
         Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -328,7 +332,7 @@ template struct Dot< \
 template struct Dot< \
         Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -338,7 +342,7 @@ template struct Dot< \
 template struct Dot< \
         Kokkos::View<SCALAR*, typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                          Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
