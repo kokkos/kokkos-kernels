@@ -45,7 +45,6 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <KokkosBlas1_nrminf_spec.hpp>
 
 namespace KokkosBlas {

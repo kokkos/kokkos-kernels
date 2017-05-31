@@ -46,6 +46,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
+#include <Kokkos_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
@@ -88,7 +89,10 @@ struct nrminf_eti_spec_avail {
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     template<> \
     struct nrminf_eti_spec_avail< \
-        Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+        Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+                     typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                               Kokkos::LayoutLeft, LAYOUT>::type, \
+                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -225,7 +229,10 @@ template struct NrmInf< \
 //
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct NrmInf< \
-         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+         Kokkos::View<SCALAR*, \
+                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                Kokkos::LayoutLeft, LAYOUT>::type, \
+                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -238,7 +245,10 @@ extern template struct NrmInf< \
 //
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct NrmInf< \
-         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+         Kokkos::View<SCALAR*, \
+                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                Kokkos::LayoutLeft, LAYOUT>::type, \
+                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
