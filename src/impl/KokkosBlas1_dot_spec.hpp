@@ -123,8 +123,9 @@ struct dot_eti_spec_avail {
         2,1> { enum : bool { value = true }; }; \
     template<> \
     struct dot_eti_spec_avail< \
-        Kokkos::View<SCALAR*,  typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
+        Kokkos::View<SCALAR*, \
+                     typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                            Kokkos::LayoutLeft, LAYOUT>::type, \
                      Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \

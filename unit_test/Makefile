@@ -111,6 +111,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas1_axpby.o
   OBJ_CUDA += Test_Cuda_Blas1_axpy.o
   OBJ_CUDA += Test_Cuda_Blas1_dot.o
+  OBJ_CUDA += Test_Cuda_Blas1_mult.o
   OBJ_CUDA += Test_Cuda_Blas1_nrm1.o
   OBJ_CUDA += Test_Cuda_Blas1_nrm2.o
   OBJ_CUDA += Test_Cuda_Blas1_nrm2_squared.o
@@ -118,6 +119,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas1_reciprocal.o
   OBJ_CUDA += Test_Cuda_Blas1_scal.o
   OBJ_CUDA += Test_Cuda_Blas1_sum.o
+  OBJ_CUDA += Test_Cuda_Blas1_update.o
+  OBJ_CUDA += Test_Cuda_Blas2_gemv.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif

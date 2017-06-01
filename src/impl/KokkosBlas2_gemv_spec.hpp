@@ -74,9 +74,15 @@ struct gemv_eti_spec_avail {
     struct gemv_eti_spec_avail< \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+         Kokkos::View<const SCALAR*, \
+                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                             Kokkos::LayoutLeft, LAYOUT>::type, \
+                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-         Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+         Kokkos::View<SCALAR*, \
+                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                             Kokkos::LayoutLeft, LAYOUT>::type, \
+                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
          > { enum : bool { value = true }; };
 
@@ -161,9 +167,15 @@ struct GEMV {
 extern template struct GEMV< \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+     Kokkos::View<const SCALAR*, \
+                  typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
+                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+     Kokkos::View<SCALAR*, \
+                  typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
+                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      false, true>;
 
@@ -171,10 +183,16 @@ extern template struct GEMV< \
 template struct GEMV< \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+     Kokkos::View<const SCALAR*, \
+                  typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
+                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<SCALAR*, \
+                  typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
+                                                         Kokkos::LayoutLeft, LAYOUT>::type, \
+                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >,  \
      false, true>;
 
 
