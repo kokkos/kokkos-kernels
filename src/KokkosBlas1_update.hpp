@@ -75,9 +75,9 @@ update (const typename XMV::non_const_value_type& alpha, const XMV& X,
                  "KokkosBlas::update: Z is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (ZMV::rank == XMV::rank, "KokkosBlas::update: "
+  static_assert (int(ZMV::rank) == int(XMV::rank), "KokkosBlas::update: "
                  "X and Z must have the same rank.");
-  static_assert (ZMV::rank == YMV::rank, "KokkosBlas::update: "
+  static_assert (int(ZMV::rank) == int(YMV::rank), "KokkosBlas::update: "
                  "Y and Z must have the same rank.");
   static_assert (ZMV::rank == 1 || ZMV::rank == 2, "KokkosBlas::update: "
                  "XMV, YMV, and ZMV must either have rank 1 or rank 2.");
