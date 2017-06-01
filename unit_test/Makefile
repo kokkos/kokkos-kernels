@@ -107,11 +107,15 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_AXPBY.o
+  OBJ_CUDA += Test_Cuda_Blas1_abs.o
   OBJ_CUDA += Test_Cuda_Blas1_Dot.o
   OBJ_CUDA += Test_Cuda_Blas1_nrm1.o
   OBJ_CUDA += Test_Cuda_Blas1_nrm2.o
   OBJ_CUDA += Test_Cuda_Blas1_nrm2_squared.o
   OBJ_CUDA += Test_Cuda_Blas1_nrminf.o
+  OBJ_CUDA += Test_Cuda_Blas1_reciprocal.o
+  OBJ_CUDA += Test_Cuda_Blas1_scal.o
+  OBJ_CUDA += Test_Cuda_Blas1_sum.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif

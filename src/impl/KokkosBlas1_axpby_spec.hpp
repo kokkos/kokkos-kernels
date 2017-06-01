@@ -99,11 +99,11 @@ struct axpby_eti_spec_avail {
          2> { enum : bool { value = true }; }; \
     template<> \
     struct axpby_eti_spec_avail< \
-         Kokkos::View<const SCALAR*, Kokkos::LayoutRight, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+         Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-         Kokkos::View<const SCALAR*, Kokkos::LayoutRight, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+         Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -201,14 +201,14 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef int index_type;
-      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutLeft>::value,
         Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
         Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
       Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
     }
     else {
       typedef typename XMV::size_type index_type;
-      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutLeft>::value,
         Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
         Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
       Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
@@ -293,7 +293,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef int index_type;
-      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutLeft>::value,
         Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
         Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
       Axpby_MV_Invoke_Layout::run(alpha, X,
@@ -301,7 +301,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
     }
     else {
       typedef typename XMV::size_type index_type;
-      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutRight>::value,
+      typedef typename std::conditional<std::is_same<typename XMV::array_layout,Kokkos::LayoutLeft>::value,
         Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
         Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
       Axpby_MV_Invoke_Layout::run(alpha, X,
@@ -441,11 +441,11 @@ extern template struct Axpby< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      2, false, true>; \
 extern template struct Axpby< \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutRight, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutRight, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -461,11 +461,11 @@ template struct Axpby< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      2, false, true>; \
 template struct Axpby< \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutRight, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutRight, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \

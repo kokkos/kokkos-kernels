@@ -117,6 +117,13 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
     YMV_Internal>::axpby (a_internal, X_internal, b_internal, Y_internal);
 }
 
+template<class AV, class XMV, class YMV>
+void
+axpy (const AV& a, const XMV& X, const YMV& Y)
+{
+  axpby(a,X,Kokkos::Details::ArithTraits<typename YMV::non_const_value_type>::one(),Y);
+}
+
 } // KokkosBlas
 
 #endif
