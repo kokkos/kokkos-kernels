@@ -57,26 +57,26 @@ namespace KokkosBlas {
 ///
 /// \return The sum product result; a single value.
 template<class XVector>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+typename XVector::non_const_value_type
 sum (const XVector& x)
 {
   static_assert (Kokkos::Impl::is_view<XVector>::value,
                  "KokkosBlas::sum: XVector must be a Kokkos::View.");
   static_assert (XVector::rank == 1, "KokkosBlas::sum: "
                  "Both Vector inputs must have rank 1.");
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type mag_type;
 
   typedef Kokkos::View<typename XVector::const_value_type*,
     typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
     typename XVector::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVector_Internal;
 
-  typedef Kokkos::View<mag_type,
+  typedef Kokkos::View<
+    typename XVector::non_const_value_type,
     Kokkos::LayoutLeft,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 
-  mag_type result;
+  typename XVector::non_const_value_type result;
   RVector_Internal R = RVector_Internal(&result);
   XVector_Internal X = x;
 

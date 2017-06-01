@@ -68,7 +68,7 @@ struct V_Sum_Functor
   typedef typename XV::non_const_value_type             xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef Kokkos::Details::ArithTraits<typename IPT::mag_type>   AT;
-  typedef typename IPT::mag_type                         value_type;
+  typedef typename RV::non_const_value_type              value_type;
 
   typename XV::const_type m_x;
 
@@ -112,7 +112,7 @@ struct MV_Sum_Right_FunctorVector
   typedef typename XMV::non_const_value_type            xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef Kokkos::Details::ArithTraits<typename IPT::mag_type>   AT;
-  typedef typename IPT::mag_type                       value_type[];
+  typedef typename RV::non_const_value_type            value_type[];
 
   size_type value_count;
   typename XMV::const_type m_x;
