@@ -71,7 +71,7 @@ reciprocal (const RMV& R, const XMV& X)
                  "KokkosBlas::reciprocal: R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (RMV::rank == XMV::rank, "KokkosBlas::reciprocal: "
+  static_assert (int(RMV::rank) == int(XMV::rank), "KokkosBlas::reciprocal: "
                  "R and X must have the same rank.");
   static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::reciprocal: "
                  "RMV and XMV must either have rank 1 or rank 2.");
