@@ -10,6 +10,7 @@ GTEST_PATH = ${KOKKOS_PATH}/tpls/gtest
 KOKKOS_DEVICES=OpenMP
 KOKKOS_CUDA_OPTIONS=enable_lambda
 
+KOKKOSKERNELS_SCALARS="double,complex<double>"
 KOKKOSKERNELS_OPTIONS=eti-only
 
 default: build
@@ -40,8 +41,8 @@ include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 #=================== Add common source files ===========================
 #=======================================================================
 
-CXXFLAGS += -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
-CXXFLAGS += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
+INC  = -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
+INC += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
 #CXXFLAGS += -DKOKKOSKERNELS_IMPL_CHECK_ETI_CALLS
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
@@ -69,14 +70,23 @@ ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
-  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/openmp
+  INC += -I${KOKKOSKERNELS_PATH}/unit_test/openmp
   OBJ_OPENMP = Test_Main.o gtest-all.o
-  OBJ_OPENMP += Test_OpenMP_Blas1_AXPBY.o
-  OBJ_OPENMP += Test_OpenMP_Blas1_Dot.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_abs.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_asum.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_axpby.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_axpy.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_dot.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_mult.o
   OBJ_OPENMP += Test_OpenMP_Blas1_nrm1.o
   OBJ_OPENMP += Test_OpenMP_Blas1_nrm2.o
   OBJ_OPENMP += Test_OpenMP_Blas1_nrm2_squared.o
   OBJ_OPENMP += Test_OpenMP_Blas1_nrminf.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_reciprocal.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_scal.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_sum.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_update.o
+  OBJ_OPENMP += Test_OpenMP_Blas2_gemv.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -104,7 +114,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
-  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/cuda
+  INC += -I${KOKKOSKERNELS_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_abs.o
   OBJ_CUDA += Test_Cuda_Blas1_asum.o
@@ -149,7 +159,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
 endif
 
 ifeq ($(KOKKOS_INTERNAL_TEST_SERIAL), 1)
-  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/serial
+  INC += -I${KOKKOSKERNELS_PATH}/unit_test/serial
   OBJ_SERIAL = Test_Main.o gtest-all.o
   OBJ_SERIAL += Test_Serial_Blas1_AXPBY.o
   OBJ_SERIAL += Test_Serial_Blas1_Dot.o
@@ -170,7 +180,7 @@ test-serial: KokkosKernels_UnitTest_Serial
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/threads
 
 ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
-  CXXFLAGS += -I${KOKKOSKERNELS_PATH}/unit_test/threads
+  INC += -I${KOKKOSKERNELS_PATH}/unit_test/threads
   OBJ_THREADS = Test_Main.o gtest-all.o
   OBJ_THREADS += Test_Threads_Blas1_AXPBY.o
   OBJ_THREADS += Test_Threads_Blas1_Dot.o
@@ -198,8 +208,8 @@ clean: kokkos-clean kokkoskernels-clean
 # Compilation rules
 
 %.o:%.cpp $(KOKKOS_CPP_DEPENDS) $(KOKKOSKERNELS_CPP_DEPENDS) $(TEST_HEADERS)
-	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOSKERNELS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $<
+	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOSKERNELS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(INC) $(CXXFLAGS) $(EXTRA_INC) -c $<
 
 gtest-all.o:$(GTEST_PATH)/gtest/gtest-all.cc
-	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $(GTEST_PATH)/gtest/gtest-all.cc
+	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(INC) $(CXXFLAGS) $(EXTRA_INC) -c $(GTEST_PATH)/gtest/gtest-all.cc
 	
