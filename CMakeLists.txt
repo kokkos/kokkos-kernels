@@ -5,14 +5,6 @@ INCLUDE(TribitsETISupport)
 #
 TRIBITS_PACKAGE(KokkosKernels)
 
-# Define ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION,
-# which defaults to ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION.
-TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
-
-# Add this subpackage to the list of subpackages that do explicit
-# template instantiation (ETI).
-TRIBITS_ADD_ETI_SUPPORT()
-
 # If building in debug mode, define the HAVE_KOKKOSKERNELS_DEBUG macro.
 TRIBITS_ADD_DEBUG_OPTION()
 
@@ -141,6 +133,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   KOKKOSKERNELS_ETI_ONLY
   "Whether to restrict availability of kernels to ETI types only. This is off by default, i.e. any type combination can be instantiated. Turning this on guarantees that kernels are never build inside of object files which simply call KokkosKernels functions."
   OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_Test_ETI_Only
+  KOKKOSKERNELS_TEST_ETI_ONLY
+  "Whether to restrict testing to ETI types."
+  ON
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
