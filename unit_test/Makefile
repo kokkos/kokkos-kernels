@@ -195,8 +195,21 @@ vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/threads
 ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
   INC += -I${KOKKOSKERNELS_PATH}/unit_test/threads
   OBJ_THREADS = Test_Main.o gtest-all.o
-  OBJ_THREADS += Test_Threads_Blas1_AXPBY.o
-  OBJ_THREADS += Test_Threads_Blas1_Dot.o
+  OBJ_THREADS += Test_Threads_Blas1_abs.o
+  OBJ_THREADS += Test_Threads_Blas1_asum.o
+  OBJ_THREADS += Test_Threads_Blas1_axpby.o
+  OBJ_THREADS += Test_Threads_Blas1_axpy.o
+  OBJ_THREADS += Test_Threads_Blas1_dot.o
+  OBJ_THREADS += Test_Threads_Blas1_mult.o
+  OBJ_THREADS += Test_Threads_Blas1_nrm1.o
+  OBJ_THREADS += Test_Threads_Blas1_nrm2.o
+  OBJ_THREADS += Test_Threads_Blas1_nrm2_squared.o
+  OBJ_THREADS += Test_Threads_Blas1_nrminf.o
+  OBJ_THREADS += Test_Threads_Blas1_reciprocal.o
+  OBJ_THREADS += Test_Threads_Blas1_scal.o
+  OBJ_THREADS += Test_Threads_Blas1_sum.o
+  OBJ_THREADS += Test_Threads_Blas1_update.o
+  OBJ_THREADS += Test_Threads_Blas2_gemv.o
   TARGETS += KokkosKernels_UnitTest_Threads
   TEST_TARGETS += test-threads
 endif
