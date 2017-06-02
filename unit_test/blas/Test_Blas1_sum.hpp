@@ -9,7 +9,6 @@ namespace Test {
   void impl_test_sum(int N) {
 
     typedef typename ViewTypeA::value_type ScalarA;
-    typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -101,11 +100,9 @@ namespace Test {
 
 template<class ScalarA, class Device>
 int test_sum() {
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_a_lr;
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_sum<view_type_a_ll, Device>(0);
   Test::impl_test_sum<view_type_a_ll, Device>(13);
   Test::impl_test_sum<view_type_a_ll, Device>(1024);
@@ -113,6 +110,7 @@ int test_sum() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_sum<view_type_a_lr, Device>(0);
   Test::impl_test_sum<view_type_a_lr, Device>(13);
   Test::impl_test_sum<view_type_a_lr, Device>(1024);
@@ -120,6 +118,7 @@ int test_sum() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_sum<view_type_a_ls, Device>(0);
   Test::impl_test_sum<view_type_a_ls, Device>(13);
   Test::impl_test_sum<view_type_a_ls, Device>(1024);
@@ -131,11 +130,9 @@ int test_sum() {
 
 template<class ScalarA, class Device>
 int test_sum_mv() {
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_sum_mv<view_type_a_ll, Device>(0,5);
   Test::impl_test_sum_mv<view_type_a_ll, Device>(13,5);
   Test::impl_test_sum_mv<view_type_a_ll, Device>(1024,5);
@@ -143,6 +140,7 @@ int test_sum_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_sum_mv<view_type_a_lr, Device>(0,5);
   Test::impl_test_sum_mv<view_type_a_lr, Device>(13,5);
   Test::impl_test_sum_mv<view_type_a_lr, Device>(1024,5);
@@ -150,6 +148,7 @@ int test_sum_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_sum_mv<view_type_a_ls, Device>(0,5);
   Test::impl_test_sum_mv<view_type_a_ls, Device>(13,5);
   Test::impl_test_sum_mv<view_type_a_ls, Device>(1024,5);

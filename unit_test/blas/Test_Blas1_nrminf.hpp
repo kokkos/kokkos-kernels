@@ -10,7 +10,6 @@ namespace Test {
 
     typedef typename ViewTypeA::non_const_value_type ScalarA;
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
-    typedef Kokkos::Details::InnerProductSpaceTraits<typename AT::mag_type> IPT;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -52,7 +51,6 @@ namespace Test {
 
     typedef typename ViewTypeA::non_const_value_type ScalarA;
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
-    typedef Kokkos::Details::InnerProductSpaceTraits<ScalarA> IPT;
 
     typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 
@@ -106,11 +104,9 @@ namespace Test {
 
 template<class ScalarA, class Device>
 int test_nrminf() {
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_a_lr;
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_nrminf<view_type_a_ll, Device>(0);
   Test::impl_test_nrminf<view_type_a_ll, Device>(13);
   Test::impl_test_nrminf<view_type_a_ll, Device>(1024);
@@ -118,6 +114,7 @@ int test_nrminf() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_nrminf<view_type_a_lr, Device>(0);
   Test::impl_test_nrminf<view_type_a_lr, Device>(13);
   Test::impl_test_nrminf<view_type_a_lr, Device>(1024);
@@ -125,6 +122,7 @@ int test_nrminf() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_nrminf<view_type_a_ls, Device>(0);
   Test::impl_test_nrminf<view_type_a_ls, Device>(13);
   Test::impl_test_nrminf<view_type_a_ls, Device>(1024);
@@ -136,11 +134,9 @@ int test_nrminf() {
 
 template<class ScalarA, class Device>
 int test_nrminf_mv() {
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_nrminf_mv<view_type_a_ll, Device>(0,5);
   Test::impl_test_nrminf_mv<view_type_a_ll, Device>(13,5);
   Test::impl_test_nrminf_mv<view_type_a_ll, Device>(1024,5);
@@ -148,6 +144,7 @@ int test_nrminf_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_nrminf_mv<view_type_a_lr, Device>(0,5);
   Test::impl_test_nrminf_mv<view_type_a_lr, Device>(13,5);
   Test::impl_test_nrminf_mv<view_type_a_lr, Device>(1024,5);
@@ -155,6 +152,7 @@ int test_nrminf_mv() {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_nrminf_mv<view_type_a_ls, Device>(0,5);
   Test::impl_test_nrminf_mv<view_type_a_ls, Device>(13,5);
   Test::impl_test_nrminf_mv<view_type_a_ls, Device>(1024,5);
