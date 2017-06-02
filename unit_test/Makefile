@@ -10,7 +10,7 @@ GTEST_PATH = ${KOKKOS_PATH}/tpls/gtest
 KOKKOS_DEVICES=OpenMP
 KOKKOS_CUDA_OPTIONS=enable_lambda
 
-KOKKOSKERNELS_SCALARS="double,complex<double>"
+KOKKOSKERNELS_SCALARS="'double,complex<double>'"
 KOKKOSKERNELS_OPTIONS=eti-only
 
 default: build
@@ -28,7 +28,8 @@ LINKFLAGS =
 DEPFLAGS = -M
 
 OBJ =
-LIB =
+LIB = -lpthread
+
 
 #=======================================================================
 #=================== Include Kokkos and KokkosKernels ==================
@@ -43,7 +44,6 @@ include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 
 INC  = -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
 INC += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
-#CXXFLAGS += -DKOKKOSKERNELS_IMPL_CHECK_ETI_CALLS
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
 
@@ -158,11 +158,24 @@ ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
   endif
 endif
 
-ifeq ($(KOKKOS_INTERNAL_TEST_SERIAL), 1)
+ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   INC += -I${KOKKOSKERNELS_PATH}/unit_test/serial
   OBJ_SERIAL = Test_Main.o gtest-all.o
-  OBJ_SERIAL += Test_Serial_Blas1_AXPBY.o
-  OBJ_SERIAL += Test_Serial_Blas1_Dot.o
+  OBJ_SERIAL += Test_Serial_Blas1_abs.o
+  OBJ_SERIAL += Test_Serial_Blas1_asum.o
+  OBJ_SERIAL += Test_Serial_Blas1_axpby.o
+  OBJ_SERIAL += Test_Serial_Blas1_axpy.o
+  OBJ_SERIAL += Test_Serial_Blas1_dot.o
+  OBJ_SERIAL += Test_Serial_Blas1_mult.o
+  OBJ_SERIAL += Test_Serial_Blas1_nrm1.o
+  OBJ_SERIAL += Test_Serial_Blas1_nrm2.o
+  OBJ_SERIAL += Test_Serial_Blas1_nrm2_squared.o
+  OBJ_SERIAL += Test_Serial_Blas1_nrminf.o
+  OBJ_SERIAL += Test_Serial_Blas1_reciprocal.o
+  OBJ_SERIAL += Test_Serial_Blas1_scal.o
+  OBJ_SERIAL += Test_Serial_Blas1_sum.o
+  OBJ_SERIAL += Test_Serial_Blas1_update.o
+  OBJ_SERIAL += Test_Serial_Blas2_gemv.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif
