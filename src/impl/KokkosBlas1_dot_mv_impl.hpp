@@ -51,7 +51,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <type_traits>
-#include <impl/KokkosBlas1_dot_impl.hpp>
+#include <KokkosBlas1_dot_impl.hpp>
 
 namespace KokkosBlas {
 namespace Impl {

@@ -110,9 +110,9 @@ struct axpby_eti_spec_avail {
          2> { enum : bool { value = true }; };
 
 // Include the actual specialization declarations
-#include<impl/tpls/KokkosBlas1_axpby_tpl_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_axpby_eti_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_axpby_mv_eti_spec_avail.hpp>
+#include<KokkosBlas1_axpby_tpl_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_axpby_eti_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_axpby_mv_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -472,8 +472,8 @@ template struct Axpby< \
      2, false, true>;
 
 
-#include<impl/tpls/KokkosBlas1_axpby_tpl_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_axpby_eti_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_axpby_mv_eti_spec_decl.hpp>
+#include<KokkosBlas1_axpby_tpl_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_axpby_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_axpby_mv_eti_spec_decl.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_

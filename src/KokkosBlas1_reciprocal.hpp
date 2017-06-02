@@ -44,8 +44,8 @@
 #ifndef KOKKOSBLAS1_RECIPROCAL_HPP_
 #define KOKKOSBLAS1_RECIPROCAL_HPP_
 
-#include<impl/KokkosBlas1_reciprocal_spec.hpp>
-#include<impl/KokkosKernels_helpers.hpp>
+#include<KokkosBlas1_reciprocal_spec.hpp>
+#include<KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 

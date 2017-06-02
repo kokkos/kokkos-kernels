@@ -44,8 +44,8 @@
 #ifndef KOKKOSBLAS1_SUM_HPP_
 #define KOKKOSBLAS1_SUM_HPP_
 
-#include<impl/KokkosBlas1_sum_spec.hpp>
-#include<impl/KokkosKernels_helpers.hpp>
+#include<KokkosBlas1_sum_spec.hpp>
+#include<KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 

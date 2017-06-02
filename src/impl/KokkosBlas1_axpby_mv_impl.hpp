@@ -43,7 +43,7 @@
 #ifndef KOKKOSBLAS1_AXPBY_MV_IMPL_HPP_
 #define KOKKOSBLAS1_AXPBY_MV_IMPL_HPP_
 
-#include<impl/KokkosBlas1_axpby_impl.hpp>
+#include<KokkosBlas1_axpby_impl.hpp>
 
 namespace KokkosBlas {
 namespace Impl {

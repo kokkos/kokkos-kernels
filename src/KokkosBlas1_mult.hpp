@@ -44,8 +44,8 @@
 #ifndef KOKKOSBLAS1_MULT_HPP_
 #define KOKKOSBLAS1_MULT_HPP_
 
-#include<impl/KokkosBlas1_mult_spec.hpp>
-#include<impl/KokkosKernels_helpers.hpp>
+#include<KokkosBlas1_mult_spec.hpp>
+#include<KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 

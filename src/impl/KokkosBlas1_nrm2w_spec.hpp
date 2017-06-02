@@ -49,7 +49,7 @@
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
-#include <impl/KokkosBlas1_nrm2w_impl.hpp>
+#include <KokkosBlas1_nrm2w_impl.hpp>
 #endif
 
 namespace KokkosBlas {
@@ -95,9 +95,9 @@ struct nrm2w_eti_spec_avail {
         2> { enum : bool { value = true }; };
 
 // Include the actual specialization declarations
-#include<impl/tpls/KokkosBlas1_nrm2w_tpl_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2w_eti_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2w_mv_eti_spec_avail.hpp>
+#include<KokkosBlas1_nrm2w_tpl_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_nrm2w_eti_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_nrm2w_mv_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -248,8 +248,8 @@ template struct Nrm2w< \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          2, false, true>;
 
-#include<impl/tpls/KokkosBlas1_nrm2w_tpl_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2w_eti_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_nrm2w_mv_eti_spec_decl.hpp>
+#include<KokkosBlas1_nrm2w_tpl_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_nrm2w_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_nrm2w_mv_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLAS1_NRM2W_SPEC_HPP_

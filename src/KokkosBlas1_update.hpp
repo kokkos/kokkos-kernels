@@ -44,8 +44,8 @@
 #ifndef KOKKOSBLAS1_UPDATE_HPP_
 #define KOKKOSBLAS1_UPDATE_HPP_
 
-#include<impl/KokkosBlas1_update_spec.hpp>
-#include<impl/KokkosKernels_helpers.hpp>
+#include<KokkosBlas1_update_spec.hpp>
+#include<KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 

@@ -47,8 +47,8 @@
 /// \brief BLAS 2 kernels specifically optimized for typical
 ///   Tpetra::MultiVector use cases.
 
-#include <impl/KokkosBlas2_gemv_spec.hpp>
-#include <impl/KokkosKernels_helpers.hpp>
+#include <KokkosBlas2_gemv_spec.hpp>
+#include <KokkosKernels_helpers.hpp>
 #include <sstream>
 #include <type_traits> // requires C++11, but so does Kokkos
 

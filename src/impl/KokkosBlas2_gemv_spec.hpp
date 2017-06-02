@@ -88,8 +88,8 @@ struct gemv_eti_spec_avail {
 
 
 // Include the actual specialization declarations
-#include<impl/tpls/KokkosBlas2_gemv_tpl_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas2_gemv_eti_spec_avail.hpp>
+#include<KokkosBlas2_gemv_tpl_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas2_gemv_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -196,7 +196,7 @@ template struct GEMV< \
      false, true>;
 
 
-#include<impl/tpls/KokkosBlas2_gemv_tpl_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas2_gemv_eti_spec_decl.hpp>
+#include<KokkosBlas2_gemv_tpl_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas2_gemv_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLAS1_GEMV_SPEC_HPP_

@@ -44,8 +44,8 @@
 #ifndef KOKKOSBLAS1_AXPBY_HPP_
 #define KOKKOSBLAS1_AXPBY_HPP_
 
-#include<impl/KokkosBlas1_axpby_spec.hpp>
-#include<impl/KokkosKernels_helpers.hpp>
+#include<KokkosBlas1_axpby_spec.hpp>
+#include<KokkosKernels_helpers.hpp>
 
 // axpby() accepts both scalar coefficients a and b, and vector
 // coefficients (apply one for each column of the input multivectors).

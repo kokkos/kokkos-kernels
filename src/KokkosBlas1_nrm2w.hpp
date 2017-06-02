@@ -44,8 +44,8 @@
 #ifndef KOKKOSBLAS1_NRM2W_HPP_
 #define KOKKOSBLAS1_NRM2W_HPP_
 
-#include<impl/KokkosBlas1_nrm2w_spec.hpp>
-#include<impl/KokkosKernels_helpers.hpp>
+#include<KokkosBlas1_nrm2w_spec.hpp>
+#include<KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 

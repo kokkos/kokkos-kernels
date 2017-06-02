@@ -46,8 +46,8 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
-#include <impl/KokkosBlas1_scal_spec.hpp>
-#include <impl/KokkosBlas1_scal_impl.hpp>
+#include <KokkosBlas1_scal_spec.hpp>
+#include <KokkosBlas1_scal_impl.hpp>
 
 #ifndef KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL
 #define KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL 2

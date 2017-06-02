@@ -50,8 +50,8 @@
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
-#include <impl/KokkosBlas1_dot_impl.hpp>
-#include <impl/KokkosBlas1_dot_mv_impl.hpp>
+#include <KokkosBlas1_dot_impl.hpp>
+#include <KokkosBlas1_dot_mv_impl.hpp>
 #endif
 
 namespace KokkosBlas {
@@ -136,9 +136,9 @@ struct dot_eti_spec_avail {
 
 
 // Include the actual specialization declarations
-#include<impl/tpls/KokkosBlas1_dot_tpl_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_dot_eti_spec_avail.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_dot_mv_eti_spec_avail.hpp>
+#include<KokkosBlas1_dot_tpl_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_dot_eti_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_dot_mv_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -351,8 +351,8 @@ template struct Dot< \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         1,2,false,true>;
 
-#include<impl/tpls/KokkosBlas1_dot_tpl_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_dot_eti_spec_decl.hpp>
-#include<impl/generated_specializations_hpp/KokkosBlas1_dot_mv_eti_spec_decl.hpp>
+#include<KokkosBlas1_dot_tpl_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_dot_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas1_dot_mv_eti_spec_decl.hpp>
 
 #endif // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_
