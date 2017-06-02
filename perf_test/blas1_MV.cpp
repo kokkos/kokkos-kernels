@@ -40,7 +40,7 @@
 // ************************************************************************
 //@HEADER
 */
-#include <Kokkos_Blas1_MV.hpp>
+#include <KokkosBlas.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Comm.hpp>
@@ -126,7 +126,7 @@ benchmarkKokkos (std::ostream& out,
   }
 
   // Benchmark computing the (square of the) 2-norm of a MultiVector.
-  typedef Kokkos::View<double*, execution_space> norms_type;
+  typedef Kokkos::View<double*, Kokkos::DefaultHostExecutionSpace> norms_type;
   norms_type norms ("norms", numCols);
   {
     TimeMonitor timeMon (*vecNrm2Timer);
@@ -136,14 +136,12 @@ benchmarkKokkos (std::ostream& out,
   }
 
   if (numTrials > 0 && numCols > 0) {
-    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
-    Kokkos::deep_copy (norms_h, norms);
 
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = static_cast<double> (numRows);
-      if (norms_h(j) != expectedResult) {
+      if (norms(j) != expectedResult) {
         out << "Kokkos 2-norm (squared) result is wrong!  Expected "
-            << expectedResult << " but got " << norms_h(j) << " instead."
+            << expectedResult << " but got " << norms(j) << " instead."
             << endl;
         success = false;
       }
@@ -156,21 +154,18 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecNrm2Timer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::nrm2_squared (subview (norms, j),
-                                  subview (x, ALL (), j));
+        norms(j) = KokkosBlas::nrm2_squared (subview (x, ALL (), j));
       }
     }
   }
 
   if (numTrials > 0 && numCols > 0) {
-    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
-    Kokkos::deep_copy (norms_h, norms);
 
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = static_cast<double> (numRows);
-      if (norms_h(j) != expectedResult) {
+      if (norms(j) != expectedResult) {
         out << "Kokkos 2-norm (squared) result (3-arg variant) is wrong!  "
-            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << "Expected " << expectedResult << " but got " << norms(j)
             << " instead." << endl;
         success = false;
       }
@@ -186,14 +181,11 @@ benchmarkKokkos (std::ostream& out,
   }
 
   if (numTrials > 0 && numCols > 0) {
-    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
-    Kokkos::deep_copy (norms_h, norms);
-
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = static_cast<double> (numRows);
-      if (norms_h(j) != expectedResult) {
+      if (norms(j) != expectedResult) {
         out << "Kokkos 1-norm result is wrong!  Expected " << expectedResult
-            << " but got " << norms_h(j) << " instead." << endl;
+            << " but got " << norms(j) << " instead." << endl;
         success = false;
       }
     }
@@ -205,21 +197,18 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecNrm1Timer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::nrm1 (subview (norms, j),
-                          subview (x, ALL (), j));
+        norms(j) = KokkosBlas::nrm1 (subview (x, ALL (), j));
       }
     }
   }
 
   if (numTrials > 0 && numCols > 0) {
-    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
-    Kokkos::deep_copy (norms_h, norms);
 
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = static_cast<double> (numRows);
-      if (norms_h(j) != expectedResult) {
+      if (norms(j) != expectedResult) {
         out << "Kokkos 1-norm result (3-arg variant) is wrong!  "
-            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << "Expected " << expectedResult << " but got " << norms(j)
             << " instead." << endl;
         success = false;
       }
@@ -229,7 +218,7 @@ benchmarkKokkos (std::ostream& out,
   // Benchmark computing the dot product of two MultiVectors.
   mv_type y ("y", numRows, numCols);
   KokkosBlas::fill (y, -1.0);
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft, execution_space> dots_type;
+  typedef Kokkos::View<double*, Kokkos::DefaultHostExecutionSpace> dots_type;
   dots_type dots ("dots", numCols);
   {
     TimeMonitor timeMon (*vecDotTimer);
@@ -239,14 +228,11 @@ benchmarkKokkos (std::ostream& out,
   }
 
   if (numTrials > 0 && numCols > 0) {
-    dots_type::HostMirror dots_h = Kokkos::create_mirror_view (dots);
-    Kokkos::deep_copy (dots_h, dots);
-
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = static_cast<double> (numRows) * -1.0;
-      if (dots_h(j) != expectedResult) {
+      if (dots(j) != expectedResult) {
         out << "Kokkos dot product result is wrong!  Expected " << expectedResult
-            << " but got " << dots_h(j) << " instead." << endl;
+            << " but got " << (j) << " instead." << endl;
         success = false;
       }
     }
@@ -258,22 +244,18 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecDotTimer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::dot (subview (dots, j),
-                         subview (x, ALL (), j),
-                         subview (y, ALL (), j));
+        dots(j) = KokkosBlas::dot (subview (x, ALL (), j),
+                                   subview (y, ALL (), j));
       }
     }
   }
 
   if (numTrials > 0 && numCols > 0) {
-    dots_type::HostMirror dots_h = Kokkos::create_mirror_view (dots);
-    Kokkos::deep_copy (dots_h, dots);
-
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = static_cast<double> (numRows) * -1.0;
-      if (dots_h(j) != expectedResult) {
+      if (dots(j) != expectedResult) {
         out << "Kokkos dot product result (5-arg variant) is wrong!  "
-            << "Expected " << expectedResult << " but got " << dots_h(j)
+            << "Expected " << expectedResult << " but got " << (j)
             << " instead." << endl;
         success = false;
       }
@@ -284,19 +266,17 @@ benchmarkKokkos (std::ostream& out,
   {
     TimeMonitor timeMon (*vecNrmInfTimer);
     for (int k = 0; k < numTrials; ++k) {
-      KokkosBlas::nrmInf (norms, x);
+      KokkosBlas::nrminf (norms, x);
     }
   }
 
   if (numTrials > 0 && numCols > 0) {
-    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
-    Kokkos::deep_copy (norms_h, norms);
 
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = 1.0;
-      if (norms_h(j) != expectedResult) {
+      if (norms(j) != expectedResult) {
         out << "Kokkos inf-norm result is wrong!  Expected " << expectedResult
-            << " but got " << norms_h(j) << " instead." << endl;
+            << " but got " << norms(j) << " instead." << endl;
         success = false;
       }
     }
@@ -308,21 +288,18 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecNrmInfTimer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::nrmInf (subview (norms, j),
-                            subview (x, ALL (), j));
+        norms(j) = KokkosBlas::nrminf ( subview (x, ALL (), j));
       }
     }
   }
 
   if (numTrials > 0 && numCols > 0) {
-    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
-    Kokkos::deep_copy (norms_h, norms);
 
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = 1.0;
-      if (norms_h(j) != expectedResult) {
+      if (norms(j) != expectedResult) {
         out << "Kokkos inf-norm result (3-arg variant) is wrong!  "
-            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << "Expected " << expectedResult << " but got " << norms(j)
             << " instead." << endl;
         success = false;
       }

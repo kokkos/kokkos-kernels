@@ -44,7 +44,7 @@
 //#include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <stdexcept>
 
 namespace { // anonymous
@@ -135,7 +135,7 @@ namespace { // anonymous
 
   // Return the Kokkos::CrsMatrix corresponding to makeSparseMatrix().
   template<typename MemorySpace>
-  Kokkos::CrsMatrix<double, int, MemorySpace>
+  KokkosSparse::CrsMatrix<double, int, MemorySpace>
   makeCrsMatrix ()
   {
     Kokkos::View<typename MemorySpace::size_type*, MemorySpace> ptr;
@@ -147,7 +147,7 @@ namespace { // anonymous
 
     const int whichMatrix = 0;
     makeSparseMatrix<MemorySpace> (ptr, ind, val, numRows, numCols, nnz, whichMatrix);
-    typedef Kokkos::CrsMatrix<double, int, MemorySpace> crs_matrix_type;
+    typedef KokkosSparse::CrsMatrix<double, int, MemorySpace> crs_matrix_type;
     return crs_matrix_type ("A", numRows, numCols, nnz, val, ptr, ind);
   }
 
@@ -161,7 +161,7 @@ namespace { // anonymous
   {
     Kokkos::initialize();
 
-    typedef Kokkos::CrsMatrix<double, int, MemorySpace> crs_matrix_type;
+    typedef KokkosSparse::CrsMatrix<double, int, MemorySpace> crs_matrix_type;
     crs_matrix_type A = makeCrsMatrix<MemorySpace> ();
     // mfh 28 Sep 2013: Use A in some way, so the compiler can't
     // optimize it away completely.  This forces the compiler to

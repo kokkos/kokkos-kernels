@@ -57,12 +57,12 @@ namespace Test {
       expected_result += ScalarB(a*h_x(i) + b*h_y(i)) * ScalarB(a*h_x(i) + b*h_y(i));
 
     KokkosBlas::axpby(a,x,b,y);
-    ScalarA nonconst_nonconst_result = KokkosBlas::dot(y,y);
+    ScalarB nonconst_nonconst_result = KokkosBlas::dot(y,y);
     EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::axpby(a,c_x,b,y);
-    ScalarA const_nonconst_result = KokkosBlas::dot(c_y,c_y);
+    ScalarB const_nonconst_result = KokkosBlas::dot(c_y,c_y);
     EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
   }
 
@@ -115,7 +115,7 @@ namespace Test {
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Dot::Result",K);
+    Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 

@@ -75,17 +75,17 @@ namespace Test {
     }
 
     KokkosBlas::gemv(mode,a,A,x,b,y);
-    ScalarA nonconst_nonconst_result = KokkosBlas::dot(y,y);
+    ScalarY nonconst_nonconst_result = KokkosBlas::dot(y,y);
     EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::gemv(mode,a,A,c_x,b,y);
-    ScalarA const_nonconst_result = KokkosBlas::dot(y,y);
+    ScalarY const_nonconst_result = KokkosBlas::dot(y,y);
     EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
 
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::gemv(mode,a,c_A,c_x,b,y);
-    ScalarA const_const_result = KokkosBlas::dot(y,y);
+    ScalarY const_const_result = KokkosBlas::dot(y,y);
     EXPECT_NEAR_KK( const_const_result, expected_result, eps*expected_result);
   }
 }

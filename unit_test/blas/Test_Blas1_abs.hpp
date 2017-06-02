@@ -55,12 +55,12 @@ namespace Test {
       expected_result += AT::abs(h_x(i)) * AT::abs(h_x(i));
 
     KokkosBlas::abs(y,x);
-    ScalarA nonconst_nonconst_result = KokkosBlas::dot(y,y);
+    ScalarB nonconst_nonconst_result = KokkosBlas::dot(y,y);
     EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::abs(y,c_x);
-    ScalarA const_nonconst_result = KokkosBlas::dot(y,y);
+    ScalarB const_nonconst_result = KokkosBlas::dot(y,y);
     EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
   }
 
@@ -111,7 +111,7 @@ namespace Test {
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Dot::Result",K);
+    Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::abs(y,x);
     KokkosBlas::dot(r,y,y);
@@ -246,11 +246,11 @@ TEST_F( TestCategory, abs_mv_int ) {
 }
 #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+/*#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F( TestCategory, abs_double_int ) {
     test_abs<double,int,TestExecSpace> ();
 }
 TEST_F( TestCategory, abs_double_mv_int ) {
     test_abs_mv<double,int,TestExecSpace> ();
 }
-#endif
+#endif*/

@@ -45,7 +45,7 @@
 #define KOKKOS_SPARSE_IMPL_SPMV_DEF_HPP_
 
 #include "Kokkos_InnerProductSpaceTraits.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosBlas.hpp"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 
 #include "Kokkos_Sparse_impl_spmv_omp.hpp"

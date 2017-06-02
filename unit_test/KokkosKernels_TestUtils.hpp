@@ -76,10 +76,12 @@ namespace Test {
     };
   };
 
-  template<class Scalar>
-  void EXPECT_NEAR_KK(Scalar val1, Scalar val2, Scalar tol) {
-    typedef Kokkos::Details::ArithTraits<Scalar> AT;
-    EXPECT_NEAR(AT::abs(val1),AT::abs(val2),AT::abs(tol));
+  template<class Scalar1, class Scalar2, class Scalar3>
+  void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+    typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
+    typedef Kokkos::Details::ArithTraits<Scalar2> AT2;
+    typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
+    EXPECT_NEAR(double(AT1::abs(val1)),double(AT2::abs(val2)),double(AT3::abs(tol)));
   }
 }
 

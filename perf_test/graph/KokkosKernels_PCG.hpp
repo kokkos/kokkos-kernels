@@ -57,7 +57,7 @@
 #include "KokkosKernels_Handle.hpp"
 ///#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <Kokkos_Sparse.hpp>
-#include <Kokkos_Blas1_MV.hpp>
+#include <KokkosBlas.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

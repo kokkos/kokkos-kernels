@@ -11,7 +11,7 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
-    typedef typename ViewTypeB::value_type ScalarC;
+    typedef typename ViewTypeC::value_type ScalarC;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -33,8 +33,8 @@ namespace Test {
 
     BaseTypeA b_x("X",N);
     BaseTypeB b_y("Y",N);
-    BaseTypeB b_z("Y",N);
-    BaseTypeB b_org_z("Org_Z",N);
+    BaseTypeC b_z("Y",N);
+    BaseTypeC b_org_z("Org_Z",N);
     
 
     ViewTypeA x = Kokkos::subview(b_x,Kokkos::ALL(),0);
@@ -68,17 +68,17 @@ namespace Test {
       expected_result += ScalarC(b*h_z(i) + a*h_x(i)*h_y(i)) * ScalarC(b*h_z(i) + a*h_x(i)*h_y(i));
 
     KokkosBlas::mult(b,z,a,x,y);
-    ScalarA nonconst_nonconst_result = KokkosBlas::dot(z,z);
+    ScalarC nonconst_nonconst_result = KokkosBlas::dot(z,z);
     EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_z,b_org_z);
     KokkosBlas::mult(b,z,a,x,c_y);
-    ScalarA const_nonconst_result = KokkosBlas::dot(z,z);
+    ScalarC const_nonconst_result = KokkosBlas::dot(z,z);
     EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
 
     Kokkos::deep_copy(b_z,b_org_z);
     KokkosBlas::mult(b,z,a,c_x,c_y);
-    ScalarA const_const_result = KokkosBlas::dot(z,z);
+    ScalarC const_const_result = KokkosBlas::dot(z,z);
     EXPECT_NEAR_KK( const_const_result, expected_result, eps*expected_result);
   }
 
