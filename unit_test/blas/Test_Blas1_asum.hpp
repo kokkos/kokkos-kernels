@@ -39,10 +39,10 @@ namespace Test {
       expected_result += AT::abs(h_a(i));
 
     typename AT::mag_type nonconst_result = KokkosBlas::asum(a);
-    EXPECT_NEAR( nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);
 
     typename AT::mag_type const_result = KokkosBlas::asum(c_a);
-    EXPECT_NEAR( const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_result, expected_result, eps*expected_result);
 
   }
 
@@ -89,6 +89,12 @@ TEST_F( TestCategory, asum_float ) {
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, asum_double ) {
     test_asum<double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, asum_complex_double ) {
+    test_asum<Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 

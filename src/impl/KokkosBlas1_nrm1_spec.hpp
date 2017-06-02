@@ -201,7 +201,8 @@ struct Nrm1<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 //
 #define KOKKOSBLAS1_NRM1_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct Nrm1< \
-         Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
+         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
+                      LAYOUT, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -214,7 +215,8 @@ extern template struct Nrm1< \
 //
 #define KOKKOSBLAS1_NRM1_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Nrm1< \
-         Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
+         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
+                      LAYOUT, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -229,7 +231,7 @@ template struct Nrm1< \
 //
 #define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct Nrm1< \
-         Kokkos::View<SCALAR*, \
+         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
                       typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                 Kokkos::LayoutLeft, LAYOUT>::type, \
                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
@@ -245,7 +247,7 @@ extern template struct Nrm1< \
 //
 #define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Nrm1< \
-         Kokkos::View<SCALAR*, \
+         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
                       typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                 Kokkos::LayoutLeft, LAYOUT>::type, \
                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \

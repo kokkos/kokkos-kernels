@@ -56,12 +56,12 @@ namespace Test {
 
     KokkosBlas::reciprocal(y,x);
     ScalarA nonconst_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::reciprocal(y,c_x);
     ScalarA const_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
   }
 
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -117,7 +117,7 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA nonconst_result = r(k);
-      EXPECT_NEAR( nonconst_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     Kokkos::deep_copy(b_y,b_org_y);
@@ -125,7 +125,7 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA const_result = r(k);
-      EXPECT_NEAR( const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
     }
 
     delete [] expected_result;
@@ -225,6 +225,15 @@ TEST_F( TestCategory, reciprocal_double ) {
 }
 TEST_F( TestCategory, reciprocal_mv_double ) {
     test_reciprocal_mv<double,double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, reciprocal_complex_double ) {
+    test_reciprocal<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+}
+TEST_F( TestCategory, reciprocal_mv_complex_double ) {
+    test_reciprocal_mv<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 

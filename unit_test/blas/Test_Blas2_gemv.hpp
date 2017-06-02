@@ -76,17 +76,17 @@ namespace Test {
 
     KokkosBlas::gemv(mode,a,A,x,b,y);
     ScalarA nonconst_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::gemv(mode,a,A,c_x,b,y);
     ScalarA const_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
 
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::gemv(mode,a,c_A,c_x,b,y);
     ScalarA const_const_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR( const_const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_const_result, expected_result, eps*expected_result);
   }
 }
 
@@ -142,6 +142,12 @@ TEST_F( TestCategory, gemv_float ) {
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gemv_double ) {
     test_gemv<double,double,double,TestExecSpace> ("N");
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, gemv_complex_double ) {
+    test_gemv<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("N");
 }
 #endif
 

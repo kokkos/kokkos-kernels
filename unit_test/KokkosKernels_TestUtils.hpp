@@ -43,7 +43,7 @@
 
 
 namespace Test {
-template<class ViewType, bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value>
+  template<class ViewType, bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value>
   struct multivector_layout_adapter;
 
   template<class ViewType>
@@ -75,5 +75,11 @@ template<class ViewType, bool strided = std::is_same<typename ViewType::array_la
       return Kokkos::subview(v,Kokkos::ALL,Kokkos::ALL);
     };
   };
+
+  template<class Scalar>
+  void EXPECT_NEAR_KK(Scalar val1, Scalar val2, Scalar tol) {
+    typedef Kokkos::Details::ArithTraits<Scalar> AT;
+    EXPECT_NEAR(AT::abs(val1),AT::abs(val2),AT::abs(tol));
+  }
 }
 

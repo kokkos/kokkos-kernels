@@ -56,10 +56,10 @@ tmp := $(shell echo "\#define KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.t
 
 #==== ETI Macros Scalars =================================================
 KOKKOSKERNELS_INTERNAL_INST_SCALARS =
-KOKKOSKERNELS_INTERNAL_INST_DOUBLE=$(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "double" | wc -l))
-KOKKOSKERNELS_INTERNAL_INST_FLOAT=$(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "float" | wc -l))
-KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_=$(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "complex<double>" | wc -l))
-KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_=$(strip $(shell echo $(KOKKOSKERNELS_SCALARS) | grep "complex<float>" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_DOUBLE=$(strip $(shell echo "$(KOKKOSKERNELS_SCALARS)" | grep "double" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_FLOAT=$(strip $(shell echo "$(KOKKOSKERNELS_SCALARS)" | grep "float" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_COMPLEX_DOUBLE_=$(strip $(shell echo "$(KOKKOSKERNELS_SCALARS)" | grep "complex<double>" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_COMPLEX_FLOAT_=$(strip $(shell echo "$(KOKKOSKERNELS_SCALARS)" | grep "complex<float>" | wc -l))
 
 tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)

@@ -57,12 +57,12 @@ namespace Test {
 
     KokkosBlas::axpy(a,x,y);
     ScalarA nonconst_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::axpy(a,c_x,y);
     ScalarA const_nonconst_result = KokkosBlas::dot(c_y,c_y);
-    EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
   }
 
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -118,7 +118,7 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
-      EXPECT_NEAR( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     Kokkos::deep_copy(b_y,b_org_y);
@@ -126,7 +126,7 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
-      EXPECT_NEAR( const_non_const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);
     }
 
     delete [] expected_result;
@@ -226,6 +226,15 @@ TEST_F( TestCategory, axpy_double ) {
 }
 TEST_F( TestCategory, axpy_mv_double ) {
     test_axpy_mv<double,double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, axpy_complex_double ) {
+    test_axpy<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+}
+TEST_F( TestCategory, axpy_mv_complex_double ) {
+    test_axpy_mv<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 

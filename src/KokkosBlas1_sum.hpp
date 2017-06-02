@@ -112,13 +112,6 @@ sum (const RV& R, const XMV& X,
                  ((RV::rank == 1) && (XMV::rank == 2)), "KokkosBlas::sum: "
                  "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
-                 mag_type>::value,
-                 "KokkosBlas::sum: R must have the magnitude type of"
-                 "the xvectors value_type it is an output argument "
-                 "(we have to be able to write to its entries).");
-
   // Check compatibility of dimensions at run time.
   if (X.dimension_1 () != R.dimension_0 ()) {
     std::ostringstream os;

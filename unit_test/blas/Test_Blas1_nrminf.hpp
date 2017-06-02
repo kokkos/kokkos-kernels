@@ -10,7 +10,7 @@ namespace Test {
 
     typedef typename ViewTypeA::non_const_value_type ScalarA;
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
-    typedef Kokkos::Details::InnerProductSpaceTraits<ScalarA> IPT;
+    typedef Kokkos::Details::InnerProductSpaceTraits<typename AT::mag_type> IPT;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -35,15 +35,15 @@ namespace Test {
     typename ViewTypeA::const_type c_a = a;
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    typename AT::mag_type expected_result = AT::min();
+    typename AT::mag_type expected_result = Kokkos::Details::ArithTraits<typename AT::mag_type>::min();
     for(int i=0;i<N;i++)
-      if(IPT::norm(h_a(i)) > expected_result) expected_result = IPT::norm(h_a(i));
+      if(AT::abs(h_a(i)) > expected_result) expected_result = AT::abs(h_a(i));
 
     typename AT::mag_type nonconst_result = KokkosBlas::nrminf(a);
-    EXPECT_NEAR( nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);
 
     typename AT::mag_type const_result = KokkosBlas::nrminf(c_a);
-    EXPECT_NEAR( const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_result, expected_result, eps*expected_result);
 
   }
 
@@ -76,28 +76,28 @@ namespace Test {
 
     typename AT::mag_type* expected_result = new typename AT::mag_type[K];
     for(int j=0;j<K;j++) {
-      expected_result[j] = AT::min();
+      expected_result[j] = Kokkos::Details::ArithTraits<typename AT::mag_type>::min();
       for(int i=0;i<N;i++) {
-        if(IPT::norm(h_a(i,j)) > expected_result[j]) expected_result[j] = IPT::norm(h_a(i,j));
+        if(AT::abs(h_a(i,j)) > expected_result[j]) expected_result[j] = AT::abs(h_a(i,j));
       }
     }
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Dot::Result",K);
+    Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::nrminf(r,a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type nonconst_result = r(k);
       typename AT::mag_type exp_result = expected_result[k];
-      EXPECT_NEAR( nonconst_result, exp_result, eps*exp_result);
+      EXPECT_NEAR_KK( nonconst_result, exp_result, eps*exp_result);
     }
 
    /* KokkosBlas::nrminf(r,c_a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type const_result = r(k);
       typename AT::mag_type exp_result = expected_result[k];
-      EXPECT_NEAR( const_result, exp_result, eps*exp_result);
+      EXPECT_NEAR_KK( const_result, exp_result, eps*exp_result);
     }
 */
     delete [] expected_result;
@@ -179,6 +179,15 @@ TEST_F( TestCategory, nrminf_double ) {
 }
 TEST_F( TestCategory, nrminf_mv_double ) {
     test_nrminf_mv<double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, nrminf_complex_double ) {
+    test_nrminf<Kokkos::complex<double>,TestExecSpace> ();
+}
+TEST_F( TestCategory, nrminf_mv_complex_double ) {
+    test_nrminf_mv<Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 

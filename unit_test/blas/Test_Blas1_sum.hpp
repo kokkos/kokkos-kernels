@@ -39,10 +39,10 @@ namespace Test {
       expected_result += h_a(i);
 
     ScalarA nonconst_result = KokkosBlas::sum(a);
-    EXPECT_NEAR( nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);
 
     ScalarA const_result = KokkosBlas::sum(c_a);
-    EXPECT_NEAR( const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_result, expected_result, eps*expected_result);
 
   }
 
@@ -86,13 +86,13 @@ namespace Test {
     KokkosBlas::sum(r,a);
     for(int k=0;k<K;k++) {
       ScalarA nonconst_result = r(k);
-      EXPECT_NEAR( nonconst_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::sum(r,c_a);
     for(int k=0;k<K;k++) {
       ScalarA const_result = r(k);
-      EXPECT_NEAR( const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
     }
 
     delete [] expected_result;
@@ -174,6 +174,15 @@ TEST_F( TestCategory, sum_double ) {
 }
 TEST_F( TestCategory, sum_mv_double ) {
     test_sum_mv<double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, sum_complex_double ) {
+    test_sum<Kokkos::complex<double>,TestExecSpace> ();
+}
+TEST_F( TestCategory, sum_mv_complex_double ) {
+    test_sum_mv<Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 

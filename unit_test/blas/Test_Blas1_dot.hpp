@@ -47,18 +47,18 @@ namespace Test {
 
     ScalarA nonconst_nonconst_result = KokkosBlas::dot(a,b);
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
-    EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
     typename ViewTypeA::const_type c_a = a;
     typename ViewTypeB::const_type c_b = b;
 
     ScalarA const_const_result = KokkosBlas::dot(c_a,c_b);
-    EXPECT_NEAR( const_const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_const_result, expected_result, eps*expected_result);
 
     ScalarA nonconst_const_result = KokkosBlas::dot(a,c_b);
-    EXPECT_NEAR( nonconst_const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_const_result, expected_result, eps*expected_result);
 
     ScalarA const_nonconst_result = KokkosBlas::dot(c_a,b);
-    EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
   }
 
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -110,25 +110,25 @@ namespace Test {
     KokkosBlas::dot(r,a,b);
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
-      EXPECT_NEAR( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::dot(r,c_a,c_b);
     for(int k=0;k<K;k++) {
       ScalarA const_const_result = r(k);
-      EXPECT_NEAR( const_const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( const_const_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::dot(r,a,c_b);
     for(int k=0;k<K;k++) {
       ScalarA non_const_const_result = r(k);
-      EXPECT_NEAR( non_const_const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( non_const_const_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::dot(r,c_a,b);
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
-      EXPECT_NEAR( const_non_const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);
     }
 
     delete [] expected_result;
@@ -226,6 +226,15 @@ TEST_F( TestCategory, dot_double ) {
 }
 TEST_F( TestCategory, dot_mv_double ) {
     test_dot_mv<double,double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, dot_complex_double ) {
+    test_dot<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+}
+TEST_F( TestCategory, dot_mv_complex_double ) {
+    test_dot_mv<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 

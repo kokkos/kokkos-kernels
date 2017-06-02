@@ -39,10 +39,10 @@ namespace Test {
       expected_result += AT::abs(h_a(i))*AT::abs(h_a(i));
 
     typename AT::mag_type nonconst_result = KokkosBlas::nrm2_squared(a);
-    EXPECT_NEAR( nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);
 
     typename AT::mag_type const_result = KokkosBlas::nrm2_squared(c_a);
-    EXPECT_NEAR( const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_result, expected_result, eps*expected_result);
 
   }
 
@@ -81,18 +81,18 @@ namespace Test {
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Dot::Result",K);
+    Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::nrm2_squared(r,a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type nonconst_result = r(k);
-      EXPECT_NEAR( nonconst_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::nrm2_squared(r,c_a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type const_result = r(k);
-      EXPECT_NEAR( const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
     }
 
     delete [] expected_result;
@@ -174,6 +174,15 @@ TEST_F( TestCategory, nrm2_squared_double ) {
 }
 TEST_F( TestCategory, nrm2_squared_mv_double ) {
     test_nrm2_squared_mv<double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, nrm2_squared_complex_double ) {
+    test_nrm2_squared<Kokkos::complex<double>,TestExecSpace> ();
+}
+TEST_F( TestCategory, nrm2_squared_mv_complex_double ) {
+    test_nrm2_squared_mv<Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 

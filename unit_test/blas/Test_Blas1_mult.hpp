@@ -69,17 +69,17 @@ namespace Test {
 
     KokkosBlas::mult(b,z,a,x,y);
     ScalarA nonconst_nonconst_result = KokkosBlas::dot(z,z);
-    EXPECT_NEAR( nonconst_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
  
     Kokkos::deep_copy(b_z,b_org_z);
     KokkosBlas::mult(b,z,a,x,c_y);
     ScalarA const_nonconst_result = KokkosBlas::dot(z,z);
-    EXPECT_NEAR( const_nonconst_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
 
     Kokkos::deep_copy(b_z,b_org_z);
     KokkosBlas::mult(b,z,a,c_x,c_y);
     ScalarA const_const_result = KokkosBlas::dot(z,z);
-    EXPECT_NEAR( const_const_result, expected_result, eps*expected_result);
+    EXPECT_NEAR_KK( const_const_result, expected_result, eps*expected_result);
   }
 
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class Device>
@@ -148,7 +148,7 @@ namespace Test {
     KokkosBlas::dot(r,z,z);
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
-      EXPECT_NEAR( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     Kokkos::deep_copy(b_z,b_org_z);
@@ -156,7 +156,7 @@ namespace Test {
     KokkosBlas::dot(r,z,z);
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
-      EXPECT_NEAR( const_non_const_result, expected_result[k], eps*expected_result[k]);
+      EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);
     }
 
     delete [] expected_result;
@@ -262,6 +262,15 @@ TEST_F( TestCategory, mult_double ) {
 }
 TEST_F( TestCategory, mult_mv_double ) {
     test_mult_mv<double,double,double,TestExecSpace> ();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F( TestCategory, mult_complex_double ) {
+    test_mult<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+}
+TEST_F( TestCategory, mult_mv_complex_double ) {
+    test_mult_mv<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
 }
 #endif
 
