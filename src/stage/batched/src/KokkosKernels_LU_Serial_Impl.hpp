@@ -41,7 +41,7 @@ namespace KokkosKernels {
           if (A.stride_0() == 1) {
             LAPACKE_dgetrf_compact(CblasColMajor, 
                                    m, n, 
-                                   (double*)A.data(), A.stride_0(), 
+                                   (double*)A.data(), A.stride_1(), 
                                    (MKL_INT)vl, (MKL_INT)1);
           } else if (A.stride_1() == 1) {
             LAPACKE_dgetrf_compact(CblasRowMajor, 
