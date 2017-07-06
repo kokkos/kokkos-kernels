@@ -62,13 +62,19 @@ namespace KokkosKernels {
           
               if (!use_unit_diag) {
                 const value_type alpha11 = A[p*as0+p*as1];
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                   for (int j=0;j<jend;++j)
                     b1t[j*bs1] /= alpha11;
               }
           
               for (int i=0;i<iend;++i)
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                   for (int j=0;j<jend;++j)
                     B2[i*bs0+j*bs1] -= a21[i*as0] * b1t[j*bs1];
             }
@@ -178,12 +184,18 @@ namespace KokkosKernels {
             
               if (!use_unit_diag) {
                 const value_type alpha11 = A[p*as0+p*as1];
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                   for (int j=0;j<n;++j)
                     b1t[j*bs1] /= alpha11;
               }
               for (int i=0;i<iend;++i)
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                   for (int j=0;j<jend;++j)
                     B0[i*bs0+j*bs1] -= a01[i*as0] * b1t[j*bs1];
             }

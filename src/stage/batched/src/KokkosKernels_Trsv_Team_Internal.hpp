@@ -124,7 +124,10 @@ namespace KokkosKernels {
 
               member.team_barrier();
               value_type local_bp[mbAlgo];
-              KOKKOSKERNELS_LOOP_UNROLL
+              
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
               for (int i=0;i<pb;++i)
                 local_bp[i] = bp[i*bs0];
 
@@ -132,7 +135,10 @@ namespace KokkosKernels {
               else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
 
               if (member.team_rank() == 0) 
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                 for (int i=0;i<pb;++i)
                   bp[i*bs0] = local_bp[i];
 
@@ -254,7 +260,10 @@ namespace KokkosKernels {
               
               member.team_barrier();
               value_type local_bp[mbAlgo];
-              KOKKOSKERNELS_LOOP_UNROLL
+              
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
               for (int i=0;i<pb;++i)
                 local_bp[i] = bp[i*bs0];
 
@@ -262,7 +271,10 @@ namespace KokkosKernels {
               else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
               
               if (member.team_rank() == 0)
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                 for (int i=0;i<pb;++i)
                   bp[i*bs0] = local_bp[i];
 

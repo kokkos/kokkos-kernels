@@ -69,7 +69,10 @@ namespace KokkosKernels {
           B[4*_bs0+p*_bs1] = b_4p;
         };
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[5];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3], b_p[4]);
@@ -121,7 +124,10 @@ namespace KokkosKernels {
           B[3*_bs0+p*_bs1] = b_3p;
         };
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[4];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3]);
@@ -166,7 +172,10 @@ namespace KokkosKernels {
         };
 
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[3];
             trsv(p, b_p[0], b_p[1], b_p[2]);
@@ -202,7 +211,10 @@ namespace KokkosKernels {
           B[1*_bs0+p*_bs1] = b_1p;
         };
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[2];
             trsv(p, b_p[0], b_p[1]);
@@ -399,7 +411,10 @@ namespace KokkosKernels {
           B[4*_bs0+p*_bs1] = b_4p; 
         };
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[5];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3], b_p[4]);
@@ -472,7 +487,10 @@ namespace KokkosKernels {
         };
 
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[4];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3]);
@@ -532,7 +550,10 @@ namespace KokkosKernels {
           B[2*_bs0+p*_bs1] = b_2p; 
         };
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[3];
             trsv(p, b_p[0], b_p[1], b_p[2]);
@@ -581,7 +602,10 @@ namespace KokkosKernels {
           B[1*_bs0+p*_bs1] = b_1p; 
         };
 
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[2];
             trsv(p, b_p[0], b_p[1]);
@@ -612,7 +636,10 @@ namespace KokkosKernels {
           B[0*_bs0+p*_bs1] *= inv_a_00; /* b_0p /= a_00;*/   
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p;
             trsv(p, b_p);
@@ -776,7 +803,10 @@ namespace KokkosKernels {
           B[3*_bs0+p*_bs1] = b_3p;
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[5];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3], b_p[4]);
@@ -829,7 +859,10 @@ namespace KokkosKernels {
           B[2*_bs0+p*_bs1] = b_2p;
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[4];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3]);
@@ -873,7 +906,10 @@ namespace KokkosKernels {
           B[1*_bs0+p*_bs1] = b_1p;
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[3];
             trsv(p, b_p[0], b_p[1], b_p[2]);
@@ -909,7 +945,10 @@ namespace KokkosKernels {
           B[0*_bs0+p*_bs1] = b_0p;
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[2];
             trsv(p, b_p[0], b_p[1]);
@@ -1106,7 +1145,10 @@ namespace KokkosKernels {
           B[4*_bs0+p*_bs1] = b_4p; 
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[5];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3], b_p[4]);
@@ -1180,7 +1222,10 @@ namespace KokkosKernels {
           B[3*_bs0+p*_bs1] = b_3p; 
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[4];
             trsv(p, b_p[0], b_p[1], b_p[2], b_p[3]);
@@ -1242,7 +1287,10 @@ namespace KokkosKernels {
           B[2*_bs0+p*_bs1] = b_2p;
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[3];
             trsv(p, b_p[0], b_p[1], b_p[2]);
@@ -1291,7 +1339,10 @@ namespace KokkosKernels {
           B[1*_bs0+p*_bs1] = b_1p;
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p[2];
             trsv(p, b_p[0], b_p[1]);
@@ -1323,7 +1374,10 @@ namespace KokkosKernels {
           B[0*_bs0+p*_bs1] *= inv_a_00; /* b_0p /= a_00; */     
         };
       
-        KOKKOSKERNELS_LOOP_UNROLL
+        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<n;++p) {
             ValueType b_p;
             trsv(p, b_p);

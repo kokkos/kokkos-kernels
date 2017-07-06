@@ -34,7 +34,10 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0, y_4 = 0;
 
-        KOKKOSKERNELS_LOOP_UNROLL            
+                    
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int j=0;j<n;++j) {
             const int jj = j*_as1;
             const ValueType x_j = x[j*_xs0];
@@ -75,7 +78,10 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0;
             
-        KOKKOSKERNELS_LOOP_UNROLL            
+                    
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int j=0;j<n;++j) {
             const int jj = j*_as1;
             const ValueType x_j = x[j*_xs0];
@@ -114,7 +120,10 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0, y_2 = 0;
             
-        KOKKOSKERNELS_LOOP_UNROLL            
+                    
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int j=0;j<n;++j) {
             const int jj = j*_as1;
             const ValueType x_j = x[j*_xs0];
@@ -151,7 +160,10 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0, y_1 = 0;
             
-        KOKKOSKERNELS_LOOP_UNROLL            
+                    
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int j=0;j<n;++j) {
             const int jj = j*_as1;
             const ValueType x_j = x[j*_xs0];
@@ -183,7 +195,10 @@ namespace KokkosKernels {
         ValueType
           y_0 = 0;
             
-        KOKKOSKERNELS_LOOP_UNROLL            
+                    
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int j=0;j<n;++j) 
             y_0 += A[j*_as1]*x[j*_xs0];
 

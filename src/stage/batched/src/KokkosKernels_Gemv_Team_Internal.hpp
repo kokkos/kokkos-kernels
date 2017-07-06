@@ -68,7 +68,10 @@ namespace KokkosKernels {
                 value_type t(0);
                 const value_type *__restrict__ tA = (A + i*as0);
 
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                 for (int j=0;j<n;++j)
                   t += tA[j*as1]*x[j*xs0];
                 y[i*ys0] += alpha*t;

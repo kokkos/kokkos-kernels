@@ -27,10 +27,8 @@ namespace KokkosKernels {
       
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL        
 #pragma message "KOKKOS_ENABLE_PRAGMA_UNROLL"
-#define KOKKOSKERNELS_LOOP_UNROLL #pragma unroll
 #else
 #pragma message "KOKKOS_DISABLE_PRAGMA_UNROLL"
-#define KOKKOSKERNELS_LOOP_UNROLL
 #endif
 
 // #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP

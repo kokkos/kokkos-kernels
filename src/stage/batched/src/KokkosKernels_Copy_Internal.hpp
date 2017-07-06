@@ -137,7 +137,10 @@ namespace KokkosKernels {
           invoke(const int m, 
                  const ValueType *__restrict__ A, const int as0, 
                  /* */ ValueType *__restrict__ B, const int bs0) {
-            KOKKOSKERNELS_LOOP_UNROLL
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
               for (int i=0;i<m;++i) 
                 B[i*bs0] = A[i*as0];
 

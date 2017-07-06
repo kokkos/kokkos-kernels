@@ -39,7 +39,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -87,7 +90,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
     
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -135,7 +141,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
     
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -183,7 +192,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
     
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -231,7 +243,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, i4 = 4*_as0,
           j0 = 0*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL        
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; 
@@ -279,7 +294,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -325,7 +343,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -369,7 +390,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -411,7 +435,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1, j4 = 4*_bs1;
     
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             /**/                 b_p1 = B[p*_bs0+j1];
@@ -453,7 +480,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -497,7 +527,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -541,7 +574,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -585,7 +621,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
           j0 = 0*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; 
@@ -629,7 +668,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -671,7 +713,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -711,7 +756,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1, j3 = 3*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             /**/                 b_p1 = B[p*_bs0+j1];
@@ -752,7 +800,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -792,7 +843,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -832,7 +886,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
           j0 = 0*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; 
@@ -872,7 +929,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -909,7 +969,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1, j2 = 2*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             /**/                 b_p1 = B[p*_bs0+j1];
@@ -948,7 +1011,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0,
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; b_p1 = B[p*_bs0+j1];
@@ -984,7 +1050,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, i1 = 1*_as0,
           j0 = 0*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             a_1p = A[i1+p*_as1]; 
@@ -1019,7 +1088,10 @@ namespace KokkosKernels {
           i0 = 0*_as0, 
           j0 = 0*_bs1, j1 = 1*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             /* */                b_p1 = B[p*_bs0+j1];
@@ -1056,7 +1128,10 @@ namespace KokkosKernels {
           i0 = 0*_as0,
           j0 = 0*_bs1;
 
-        KOKKOSKERNELS_LOOP_UNROLL    
+            
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
           for (int p=0;p<k;++p) {
             a_0p = A[i0+p*_as1]; b_p0 = B[p*_bs0+j0];
             c_00 += a_0p * b_p0; 

@@ -65,7 +65,10 @@ namespace KokkosKernels {
               for (int i=0;i<m;++i) {
                 const value_type tA(alpha*pA[i*as0]);
 
-                KOKKOSKERNELS_LOOP_UNROLL
+                
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                   for (int j=0;j<n;++j)
                     pC[i*cs0+j*cs1] += tA*pB[j*bs1];
               }
