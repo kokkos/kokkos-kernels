@@ -217,7 +217,7 @@ benchmarkRaw (std::ostream& out,
   }
 }
 
-bool callPerformanceArchiver(int lclNumRows, int numTrials) {
+bool callPerformanceArchiver(int lclNumRows, int numTrials, int mpiRanks) {
 
   // Some tests were run and provided some times...
   // Right now we are just pulling the times from the Teuchos TimeMonitor
@@ -247,9 +247,14 @@ bool callPerformanceArchiver(int lclNumRows, int numTrials) {
   using KokkosKernels::Performance;
   Performance archiver;
 
+  // Example of how to set customized machine config - to be developed
+  // Change to generate new entries in the yaml under MachineConfiguration
+  archiver.set_machine_config("Kokkos Config", "some node type");
+
   // configure
   archiver.set_config("lclNumRows", lclNumRows);
   archiver.set_config("numTrials", numTrials);
+  archiver.set_config("mpiRanks", mpiRanks);
 
   // add times and results
   archiver.set_result("Kokkos: Vector: Create", kokkosVectorCreateTime, tolerance);
@@ -368,7 +373,7 @@ int main (int argc, char* argv[])
 
   const bool bUsePerformanceArchiver = true;
   if(bUsePerformanceArchiver && comm->getRank() == 0) {
-    success = callPerformanceArchiver(lclNumRows, numTrials);
+    success = callPerformanceArchiver(lclNumRows, numTrials, comm->getSize());
   }
   else {
     if (success) {

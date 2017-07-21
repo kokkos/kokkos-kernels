@@ -66,7 +66,7 @@
 
 #include "Kokkos_Performance_impl.hpp" // provides performance archiver
 
-bool run_example() {
+bool run_example(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   // Some tests are run and produce some times...
   double time1 = 10.0;
   double time2 = 13.3;
@@ -86,8 +86,12 @@ bool run_example() {
   // Create an archiver - steps are create, fill with members, then run
   Performance archiver;
 
+  // Example of how to set customized machine config - to be developed
+  // Change to generate new entries in the yaml under MachineConfiguration
+  archiver.set_machine_config("Kokkos Config", "some node type");
+
   // Fill config
-  archiver.set_config("MPI_Ranks", 2); // would be set to mpi comm size
+  archiver.set_config("MPI_Ranks", comm->getSize());
   archiver.set_config("Teams", 1); // just arbitrary right now
   archiver.set_config("Threads", 1); // just arbitrary right now
   archiver.set_config("Filename", "somefilename"); // arbitrary - example of a string
@@ -150,7 +154,7 @@ int main(int argc, char *argv[]) {
 
   // for now other ranks can just be done - let rank 0 update the archive
   if(comm->getRank() == 0) {
-    success = run_example();
+    success = run_example(comm);
   }
 
   if (success) {
