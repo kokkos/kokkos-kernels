@@ -55,15 +55,6 @@
   See the update() method below for the sequence of events that are tested.
 */
 
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Comm.hpp>
-#ifdef HAVE_MPI
-#  include <Teuchos_DefaultMpiComm.hpp>
-#else
-#  include <Teuchos_DefaultSerialComm.hpp>
-#endif // HAVE_MPI
-
 #include "Kokkos_Performance_impl.hpp" // provides performance archiver
 
 // a manager class to run the series of tests
@@ -373,20 +364,8 @@ class TestManager {
 };
 
 int main(int argc, char *argv[]) {
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  Kokkos::initialize (argc, argv);  // for completeness - but test doesn't actually use kokkos
-#ifdef HAVE_MPI
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
-#else
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::rcp (new Teuchos::SerialComm<int> ());
-#endif // HAVE_MPI
-
-  bool success = true;
-  if(comm->getRank() == 0) { // currently only the rank 0 processes the archive
-    TestManager manager; // loops through a series of changes and archive each
-    success = !manager.isError();
-  }
+  TestManager manager; // loops through a series of changes and archive each
+  bool success = !manager.isError();
 
   if (success) {
     std::cout << "End Result: TEST PASSED" << std::endl;
@@ -394,6 +373,5 @@ int main(int argc, char *argv[]) {
     std::cout << "End Result: TEST FAILED" << std::endl;
   }
 
-  Kokkos::finalize (); // for completeness - but test doesn't actually use kokkos
   return EXIT_SUCCESS;
 }
