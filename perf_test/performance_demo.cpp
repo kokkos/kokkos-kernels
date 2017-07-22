@@ -55,18 +55,9 @@
   See performance_demo_blas1.cpp for an example of this applied to a real test.
 */
 
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Comm.hpp>
-#ifdef HAVE_MPI
-#  include <Teuchos_DefaultMpiComm.hpp>
-#else
-#  include <Teuchos_DefaultSerialComm.hpp>
-#endif // HAVE_MPI
-
 #include "Kokkos_Performance_impl.hpp" // provides performance archiver
 
-bool run_example(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+bool run_example() {
   // Some tests are run and produce some times...
   double time1 = 10.0;
   double time2 = 13.3;
@@ -91,7 +82,7 @@ bool run_example(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   archiver.set_machine_config("Kokkos Config", "some node type");
 
   // Fill config
-  archiver.set_config("MPI_Ranks", comm->getSize());
+  archiver.set_config("MPI_Ranks", 2);
   archiver.set_config("Teams", 1); // just arbitrary right now
   archiver.set_config("Threads", 1); // just arbitrary right now
   archiver.set_config("Filename", "somefilename"); // arbitrary - example of a string
@@ -140,22 +131,7 @@ bool run_example(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 }
 
 int main(int argc, char *argv[]) {
-  // do the standard init for completeness
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  Kokkos::initialize (argc, argv); // for completeness - but demo doesn't actually use kokkos
-#ifdef HAVE_MPI
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
-#else
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::rcp (new Teuchos::SerialComm<int> ());
-#endif // HAVE_MPI
-
-  bool success = true;
-
-  // for now other ranks can just be done - let rank 0 update the archive
-  if(comm->getRank() == 0) {
-    success = run_example(comm);
-  }
+  bool success = run_example();
 
   if (success) {
     std::cout << "End Result: TEST PASSED" << std::endl;
@@ -163,6 +139,5 @@ int main(int argc, char *argv[]) {
     std::cout << "End Result: TEST FAILED" << std::endl;
   }
 
-  Kokkos::finalize (); // for completeness - but demo doesn't actually use kokkos
   return EXIT_SUCCESS;
 }

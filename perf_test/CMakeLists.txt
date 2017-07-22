@@ -42,10 +42,4 @@ IF(TPL_ENABLE_yaml-cpp)
     COMM serial mpi
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    performance_demo_blas1
-    SOURCES performance_demo_blas1.cpp
-    COMM serial mpi
-    )
-
 ENDIF()
