@@ -123,8 +123,14 @@ struct Flush {
 
   // flush a large host buffer
   Kokkos::View<value_type*,SpaceType> _buf;
-  Flush() : _buf("Flush::buf", BufSize) {
-    Kokkos::deep_copy(_buf, 1);
+  Flush(int flush_option) : _buf("Flush::buf", BufSize) {
+    Kokkos::deep_copy(_buf, 1); 
+    Kokkos::fence();
+    if (flush_option == 2){
+    for (size_t i = 0; i < BufSize; ++i){ 
+      _buf(i) = rand();
+    }
+    }
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -147,9 +153,32 @@ struct Flush {
     double sum = 0;
     Kokkos::parallel_reduce(Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
     SpaceType::fence();
+    std::cout << "Flush sum:" << sum << std::endl;
     FILE *fp = fopen("/dev/null", "w");
     fprintf(fp, "%f\n", sum);
     fclose(fp);
+   
+/*
+#pragma omp parallel 
+    {
+    const size_t cache_line = 64;
+    const char *cp = (const char *) _buf.data();
+    size_t i = 0;
+
+
+    for (i = 0; i < BufSize; i += cache_line) {
+            asm volatile("clflush (%0)\n\t"
+                         :
+                         : "r"(&cp[i])
+                         : "memory");
+    }
+
+    asm volatile("sfence\n\t"
+                 :
+                 :
+                 : "memory");
+  }
+*/
   }
 
 };
@@ -204,7 +233,7 @@ void run_experiment(
 
 
   for (int i = 0; i < repeat; ++i){
-    int rowmap_size = crsGraph.entries.dimension_0() ;
+    size_type rowmap_size = crsGraph.entries.dimension_0() ;
     switch (algorithm){
     case 16:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_AI);
@@ -212,6 +241,7 @@ void run_experiment(
       break;
     case 17:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
+      std::cout << "IA" << std::endl;
       break;
     case 18:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_UNION);
@@ -235,6 +265,7 @@ void run_experiment(
     kh.get_spgemm_handle()->set_create_lower_triangular(params.right_lower_triangle);
     kh.get_spgemm_handle()->set_compression(params.apply_compression);
     kh.get_spgemm_handle()->set_sort_option(params.sort_option);
+    kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
 
     switch (accumulator){
     case 0:
@@ -250,13 +281,17 @@ void run_experiment(
     }
 
 
-    //constexpr size_t LLC_CAPACITY = 256*1024*1024;
-    //Flush<LLC_CAPACITY, ExecSpace> flush;
+    constexpr size_t LLC_CAPACITY = 256*4*1024*1024;
+    if (params.cache_flush)
+    {
+    std::cout << "Flushing cache with option:" << params.cache_flush << std::endl;
+    Flush<LLC_CAPACITY, ExecSpace> flush(params.cache_flush);
+        flush.run();
+    }
     if (i == 0){
       kh.get_spgemm_handle()->set_read_write_cost_calc(params.calculate_read_write_cost);
     }
 
-    //flush.run();
 
 
     Kokkos::Impl::Timer timer1;
@@ -289,7 +324,9 @@ void run_experiment(
             crsGraph.entries,
             KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
 
-          row_mapC(row) += 1;
+          //row_mapC(row) += 1;
+          row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
+
         }
         );
       }

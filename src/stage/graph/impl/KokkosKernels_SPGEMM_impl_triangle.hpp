@@ -1678,6 +1678,8 @@ void KokkosSPGEMM
     min_hash_size *= 2;
   }
 
+  min_hash_size *= this->handle->get_spgemm_handle()->get_min_hash_size_scale();
+
   //set the chunksize.
   size_t sparse_accumulator_chunksize = min_hash_size ; //this is for used hash indices
   sparse_accumulator_chunksize += min_hash_size ; //this is for the hash begins
@@ -1707,7 +1709,7 @@ void KokkosSPGEMM
   int pool_init_val = -1;
 
   if (KOKKOSKERNELS_VERBOSE){
-    std::cout << "\tDense_col_size:" << dense_col_size << " max_row_size:" << max_row_size << std::endl;
+    std::cout << "\tDense_col_size:" << dense_col_size << " max_row_size:" << max_row_size << " min_hash_size:" << min_hash_size << std::endl;
     std::cout << "\tSparse chunksize:" << sparse_accumulator_chunksize << " dense_chunksize:"
                 << dense_accumulator_chunksize << " concurrency:" << concurrency << std::endl;
   }

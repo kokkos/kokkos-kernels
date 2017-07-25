@@ -342,6 +342,8 @@ void read_edgelist_bin(
 
 
 
+
+
 template <typename lno_t, typename size_type, typename scalar_t>
 void write_graph_bin(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
   std::ofstream myFile (filename, std::ios::out | std::ios::binary);
@@ -352,6 +354,65 @@ void write_graph_bin(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *
   myFile.write((char *) adj, sizeof(lno_t) * (ne));
 
   myFile.write((char *) ew, sizeof(scalar_t) * (ne));
+
+  myFile.close();
+}
+
+template <typename lno_t, typename size_type, typename scalar_t>
+void write_graph_crs(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
+  std::ofstream myFile (filename, std::ios::out );
+  myFile << nv << " " << ne << std::endl;
+
+  for (lno_t i = 0; i <= nv; ++i){
+    myFile  << (xadj)[i] << " ";
+  }
+  myFile  << std::endl;
+
+  for (lno_t i = 0; i < nv; ++i){
+    size_type b = xadj[i];
+    size_type e = xadj[i + 1];
+    for (size_type j = b; j < e; ++j){
+      myFile  << (adj)[j] << " ";
+    }
+    myFile  << std::endl;
+  }
+  for (lno_t i = 0; i < ne; ++i){
+    myFile  << (ew)[i] << " ";
+  }
+  myFile  << std::endl;
+
+  myFile.close();
+}
+
+template <typename lno_t, typename size_type, typename scalar_t>
+void write_graph_ligra(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
+
+  std::ofstream ff (filename);
+  ff << "AdjacencyGraph" << std::endl;
+  ff << nv << std::endl << ne << std::endl;
+  for (lno_t i = 0; i < nv; ++i){
+    ff << xadj[i] << std::endl;
+  }
+  for (size_type i = 0; i < ne; ++i){
+    ff << adj[i] << std::endl;
+  }
+  ff.close();
+}
+
+
+template <typename lno_t, typename size_type, typename scalar_t>
+void write_graph_mtx(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
+
+  std::ofstream myFile (filename);
+  myFile  << "%%MatrixMarket matrix coordinate real general" << std::endl;
+  myFile  << nv << " " << nv << " " << ne << std::endl;
+  for (lno_t i = 0; i < nv; ++i){
+    size_type b = xadj[i];
+    size_type e = xadj[i + 1];
+    for (size_type j = b; j < e; ++j){
+      myFile  << i + 1 << " " << (adj)[j] + 1 << " " << ew [j] << std::endl;
+    }
+  }
 
   myFile.close();
 }
@@ -374,6 +435,30 @@ void read_graph_bin(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scal
   myFile.close();
 }
 
+template <typename lno_t, typename size_type, typename scalar_t>
+void read_graph_crs(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scalar_t **ew, const char *filename){
+
+  std::ifstream myFile (filename, std::ios::in );
+  myFile >> *nv >> *ne;
+
+  md_malloc<size_type>(xadj, *nv+1);
+  md_malloc<lno_t>(adj, *ne);
+  md_malloc<scalar_t> (ew, *ne);
+
+  for (lno_t i = 0; i <= *nv; ++i){
+    myFile  >> (*xadj)[i];
+  }
+
+  for (lno_t i = 0; i < *ne; ++i){
+    myFile  >> (*adj)[i];
+  }
+  for (lno_t i = 0; i < *ne; ++i){
+    myFile  >> (*ew)[i];
+  }
+  myFile.close();
+}
+
+
 
 
 inline bool endswith (std::string const &fullString, std::string const &ending) {
@@ -383,6 +468,59 @@ inline bool endswith (std::string const &fullString, std::string const &ending) 
         return false;
     }
 }
+
+
+template <typename crs_matrix_t>
+void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
+
+
+  typedef typename crs_matrix_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename crs_matrix_t::values_type::non_const_type   values_view_t;
+
+  typedef typename cols_view_t::value_type lno_t;
+  typedef typename row_map_view_t::value_type size_type;
+  typedef typename values_view_t::value_type scalar_t;
+
+  std::string strfilename(filename);
+  if (endswith(strfilename, ".mtx")){
+    write_graph_mtx<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
+        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.row_map.data(),
+        a_crsmat.graph.entries.data(),
+        a_crsmat.values.data(),filename);
+  }
+
+  else if (endswith(strfilename, ".bin")){
+    write_graph_bin<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
+        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.row_map.data(),
+        a_crsmat.graph.entries.data(),
+        a_crsmat.values.data(),filename);
+  }
+  else if (endswith(strfilename, ".ligra")){
+    write_graph_ligra<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
+        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.row_map.data(),
+        a_crsmat.graph.entries.data(),
+        a_crsmat.values.data(),filename);
+  }
+  else if (endswith(strfilename, ".crs")){
+    write_graph_crs<lno_t, size_type, scalar_t>(a_crsmat.numRows(),
+        a_crsmat.graph.entries.dimension_0(),
+        a_crsmat.graph.row_map.data(),
+        a_crsmat.graph.entries.data(),
+        a_crsmat.values.data(),filename);
+
+  }
+  else {
+    throw std::runtime_error ("Writer is not available\n");
+  }
+
+
+}
+
 
 
 
@@ -575,6 +713,12 @@ void read_matrix(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scalar_
   else if (endswith(strfilename, ".bin")){
     read_graph_bin(nv, ne,xadj, adj, ew, filename);
   }
+
+  else if (endswith(strfilename, ".crs")){
+
+    read_graph_crs(nv, ne,xadj, adj, ew, filename);
+  }
+
   else {
     throw std::runtime_error ("Reader is not available\n");
   }

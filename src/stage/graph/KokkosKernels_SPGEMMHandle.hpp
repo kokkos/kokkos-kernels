@@ -260,7 +260,7 @@ private:
 
 
   bool create_lower_triangular;
-  bool sort_lower_triangular;
+  int sort_lower_triangular; //0 - do not sort // 1 - sort // 2 - Algorithm decides (default)
   int sort_option ;
   nnz_lno_persistent_work_view_t lower_triangular_permutation;
 
@@ -285,7 +285,15 @@ private:
   std::string coloring_input_file;
   std::string coloring_output_file;
 
+  int min_hash_size_scale;
 
+
+  void set_min_hash_size_scale(int scale){
+    min_hash_size_scale = scale;
+  }
+  int get_min_hash_size_scale(){
+    return min_hash_size_scale;
+  }
   void set_read_write_cost_calc(bool read_write_cost_cal){
     this->calculate_read_write_cost = read_write_cost_cal;
   }
@@ -377,10 +385,11 @@ private:
   //TODO: store transpose here.
   void get_c_transpose_symbolic(){}
 
-  void set_sort_lower_triangular(bool option){
+  
+  void set_sort_lower_triangular(int option){
     this->sort_lower_triangular = option;
   }
-  bool get_sort_lower_triangular(){
+  int get_sort_lower_triangular(){
     return this->sort_lower_triangular;
   }
 
@@ -459,7 +468,7 @@ private:
     min_result_row_for_each_row(),
 
     create_lower_triangular(false),
-    sort_lower_triangular(false),
+    sort_lower_triangular(2),
     sort_option (-1),
     lower_triangular_permutation(),
     lower_triangular_matrix_rowmap(),
@@ -469,7 +478,7 @@ private:
 
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
-	coloring_output_file(""),
+	coloring_output_file(""), min_hash_size_scale(1),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
     mkl_keep_output(true),
     mkl_convert_to_1base(true), is_compression_single_step(true)

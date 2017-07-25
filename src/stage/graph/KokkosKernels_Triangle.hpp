@@ -234,8 +234,20 @@ void triangle_generic(
   Kokkos::Impl::Timer timer1;
 
   //////SORT BASE ON THE SIZE OF ROWS/////
-  bool sort_lower_triangle = sh->get_sort_lower_triangular();
-  if (sort_lower_triangle){
+  int sort_lower_triangle = sh->get_sort_lower_triangular();
+  bool should_i_sort = false; 
+  if (sort_lower_triangle == 1) should_i_sort = true;
+  else if (sort_lower_triangle == 2){
+    size_type max_row_size = 0;
+    KokkosKernels::Experimental::Util::kk_view_reduce_max_row_size<size_type, ExecutionSpace>(
+	m,  row_mapA.data(), row_mapA.data() + 1, max_row_size);
+
+    if (max_row_size > 1000){
+      should_i_sort = true;
+    }
+  }
+
+  if (should_i_sort){
 
     if(sh->get_lower_triangular_permutation().data() == NULL){
       nnz_lno_persistent_work_view_t new_indices(Kokkos::ViewAllocateWithoutInitializing("new_indices"), m);
@@ -246,72 +258,15 @@ void triangle_generic(
         //if false we place the largest row to bottom, so that largest column is minimizedin lower triangle.
       }
       else if (sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LL){
-        sort_decreasing_order = 2;
+        sort_decreasing_order = 1;
         //if 2, we do an interleaved sort.
       }
-#if 0
-      if (0)
-      {
-      typename alno_row_view_t_::non_const_type new_row_map("new", m + 1);
-
-      for (nnz_lno_t i = 0; i < m; ++i){
-        nnz_lno_t used_size = 0;
-        size_type rowBegin = row_mapA(i);
-        nnz_lno_t left_work = row_mapA(i + 1) - rowBegin;
-        if (left_work > 0){
-          const nnz_lno_t n = entriesA(rowBegin);
-          nnz_lno_t prev_nset_ind = n / 32;
-          for (nnz_lno_t i = 1; i < left_work; ++i){
-
-            const size_type adjind = i + rowBegin;
-            const nnz_lno_t nn = entriesA(adjind);
-            nnz_lno_t n_set_index = nn / 32;
-            //n_set = n_set << (nn & compression_bit_mask);
-            if (prev_nset_ind != n_set_index){
-              ++used_size;
-              prev_nset_ind = n_set_index;
-            }
-          }
-          ++used_size;
-
-        }
-        /*
-        if (used_size * left_work < m)
-        new_row_map(i) = used_size * left_work;
-        else
-          new_row_map(i) = m;
-        */
-        new_row_map(i) = used_size * left_work;
-
-        std::cout << "row:" << i << " original_size:" << left_work << " used_size:" << used_size << std::endl;
-      }
-
-      /*
-      KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum
-      <typename alno_row_view_t_::non_const_type, ExecutionSpace> (m + 1, new_row_map);
-
-      KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, nnz_lno_t, ExecutionSpace>(
-          m, new_row_map.data(), new_indices.data(), sort_decreasing_order);
-      */
-      std::vector<struct KokkosKernels::Experimental::Util::Edge<nnz_lno_t, nnz_lno_t> > to_sort (m);
-
-      for (nnz_lno_t i = 0; i < m; ++i){
-        to_sort[i].src = new_row_map(i);
-        to_sort[i].dst = i;
-      }
-      std::sort (to_sort.begin(), to_sort.begin() + m);
-      for (nnz_lno_t i = 0; i < m; ++i){
-        new_indices[to_sort[i].dst] = m - i;
-      }
-      }
-      else
-#endif
       {
         if (sh->get_sort_option() != -1){
           sort_decreasing_order = sh->get_sort_option();
         }
         KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, nnz_lno_t, ExecutionSpace>(
-            m, row_mapA.data(), new_indices.data(), sort_decreasing_order);
+            m, row_mapA.data(), new_indices.data(), sort_decreasing_order, ExecutionSpace::concurrency());
       }
       sh->set_lower_triangular_permutation(new_indices);
     }
@@ -343,7 +298,7 @@ void triangle_generic(
           m,
           row_mapA, entriesA, null_values,
           lower_triangular_matrix_rowmap, lower_triangular_matrix_entries, null_values,
-          new_indices, handle->is_dynamic_scheduling()
+          new_indices , handle->is_dynamic_scheduling(), handle->get_team_work_size(1, ExecutionSpace::concurrency(), m)
       );
 
       sh->set_lower_triangular_matrix(lower_triangular_matrix_rowmap, lower_triangular_matrix_entries);

@@ -63,10 +63,12 @@ struct Parameters{
   char *coloring_input_file;
   char *coloring_output_file;
 
+  int minhashscale;
   int use_threads;
   int use_openmp;
   int use_cuda;
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
+
 
 
   char *a_mtx_bin_file, *b_mtx_bin_file, *c_mtx_bin_file;
@@ -80,11 +82,15 @@ struct Parameters{
   // 0 - triangle_count
   // 1 - first count then instantiate
   // 2- more options.
+  int cache_flush;
+  // 0 - no flush
+  // 1 - soft flush
+  // 2 - hard flush with rand.
   Parameters(){
 
-    algorithm = 7;
+    algorithm = 19;
     accumulator = 0;
-    repeat = 1;
+    repeat = 6;
     chunk_size = -1;
     multi_color_scale = 1;
     shmemsize = 16128;
@@ -99,20 +105,22 @@ struct Parameters{
     calculate_read_write_cost = 0;
     coloring_input_file = NULL;
     coloring_output_file = NULL;
+    minhashscale = 1;
     use_threads = 0;
     use_openmp = 0;
     use_cuda = 0;
     a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
     a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = NULL;
-    compression2step = false;
+    compression2step = true;
 
     left_lower_triangle = 0;
     right_lower_triangle = 0;
     left_sort = 0;
-    right_sort = 0;
-    triangle_options=2;
+    right_sort = 2; //algorithm decides
+    triangle_options=0;
     apply_compression = true;
     sort_option = -1;
+    cache_flush = 1;
   }
 };
 }

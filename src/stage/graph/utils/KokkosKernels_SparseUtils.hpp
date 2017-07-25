@@ -50,7 +50,11 @@
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include <vector>
 #include "KokkosKernels_PrintUtils.hpp"
-//#include "KokkosKernels_Handle.hpp"
+
+#ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
+#include<parallel/algorithm>
+#endif
+
 namespace KokkosKernels{
 
 namespace Experimental{
@@ -963,7 +967,7 @@ struct LowerTriangularMatrix{
         */
 
       default:
-        for (lno_t r = 0, w = 0; r <  read_left_work && w < write_left_work; ++r){
+        for (lno_t r = 0 , w = 0; r <  read_left_work && w < write_left_work; ++r){
           const size_type adjind = r + col_begin;
           const lno_t colIndex = adj[adjind];
           lno_t colperm = colIndex;
@@ -1111,71 +1115,71 @@ template <typename size_type, typename lno_t, typename ExecutionSpace>
 void kk_sort_by_row_size_parallel(
     const lno_t nv,
     const size_type *in_xadj,
-    lno_t *new_indices){
+    lno_t *new_indices, int sort_decreasing_order = 1, int num_threads=1){
 
   typedef Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
 
+  struct SortItem{ 
+    lno_t id;
+    lno_t size;
+   bool operator<(const SortItem & a) const
+  {
+    return this->size > a.size;
+  }
+  };
 
-  Kokkos::View <lno_t *, ExecutionSpace> begins (Kokkos::ViewAllocateWithoutInitializing("begins"), nv);
-  lno_t * p_begins = begins.data();
-  Kokkos::View <lno_t *, ExecutionSpace> nexts (Kokkos::ViewAllocateWithoutInitializing("begins"), nv);
-  Kokkos::View <lno_t *, ExecutionSpace> num_elements ("num_elements", nv);
-  lno_t * p_num_elements = num_elements.data();
-  const lno_t increment = 1;
+  std::vector<SortItem> vnum_elements(nv);
+  SortItem * num_elements = &(vnum_elements[0]);
 
-  Kokkos::deep_copy(begins, -1);
 
   Kokkos::parallel_for( my_exec_space(0, nv),
       KOKKOS_LAMBDA(const lno_t& row) {
         lno_t row_size = in_xadj[row+1] - in_xadj[row];
-        lno_t hashbeginning = Kokkos::atomic_exchange(p_begins+row_size, row);
-        Kokkos::atomic_add(p_num_elements + row_size, increment);
-        nexts [row] = hashbeginning;
+        num_elements[row].size = row_size; 
+        num_elements[row].id = row;
       });
-/*
-  kk_exclusive_parallel_prefix_sum< Kokkos::View <lno_t *, ExecutionSpace>, ExecutionSpace> (nv, num_elements);
+#ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
+  __gnu_parallel::sort
+  (&(num_elements[0]), &(num_elements[0])+nv,
+      std::less<struct SortItem >());
+#endif
 
-  const lno_t end_linked_list = -1;
-  Kokkos::parallel_for( my_exec_space(0, nv),
-      KOKKOS_LAMBDA(const lno_t& i) {
-    lno_t row = p_begins[i];
-    lno_t new_index = nv - 1 - p_num_elements[i];
-    while (row != end_linked_list){
-      new_indices[row] = --new_index;
-      row = nexts[row];
-    }
-  });
-  */
+      if (sort_decreasing_order == 1){
+        Kokkos::parallel_for( my_exec_space(0, nv),
+        KOKKOS_LAMBDA(const lno_t& row) {
+          new_indices[num_elements[row].id] = row;
+        });
+      }
+      else if (sort_decreasing_order == 0){
+        Kokkos::parallel_for( my_exec_space(0, nv),
+        KOKKOS_LAMBDA(const lno_t& row) {
+          new_indices[num_elements[row].id] = nv - row - 1;
+        });
+      } 
+      else {
+        Kokkos::parallel_for( my_exec_space(0, nv),
+        KOKKOS_LAMBDA(const lno_t& row) {
+          if (row   & 1){
+          new_indices[num_elements[row].id] = nv - (row + 1) / 2;
+          } 
+          else {
+          new_indices[num_elements[row].id] = row / 2 ;
+          }
+        });
+      }
 }
 template <typename size_type, typename lno_t, typename ExecutionSpace>
 void kk_sort_by_row_size(
     const lno_t nv,
     const size_type *in_xadj,
-    lno_t *new_indices, int sort_decreasing_order = 1){
+    lno_t *new_indices, int sort_decreasing_order = 1, int num_threads=64){
 
-  //Kokkos::Impl::Timer timer1;
+#ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
+  std::cout << "Parallel Sort" << std::endl;
+  kk_sort_by_row_size_parallel<size_type, lno_t, ExecutionSpace>(nv, in_xadj, new_indices, sort_decreasing_order, num_threads); 
+#else
+  std::cout << "Sequential Sort" << std::endl;
   kk_sort_by_row_size_sequential(nv, in_xadj, new_indices, sort_decreasing_order);
-  //kk_sort_by_row_size_parallel<size_type, lno_t, ExecutionSpace>(nv, in_xadj, new_indices);
-  //double sort_time = timer1.seconds();
-  //std::cout << "sort time:" << sort_time<< std::endl;
-//#define KOKKOSKERNELS_MDDEBUG
-#ifdef KOKKOSKERNELS_MDDEBUG
-  std::vector<lno_t> reverse_index(nv);
-  for(lno_t i = 0; i < nv; ++i){
-    reverse_index[new_indices[i]] = i;
-  }
-  lno_t size_of_prev_row = nv;
-  for(lno_t i = 0; i < nv; ++i){
-    lno_t row = reverse_index[i] ;
-    lno_t size_of_row = in_xadj[row+1] - in_xadj[row];
-    if (size_of_row > size_of_prev_row){
-      std::cout << "row:" << row << " new_indices[row]:" << new_indices[row] << " size_of_row:" << size_of_row << std::endl;
-      std::cout << "Prev row:" << reverse_index[i-1] << " new_indices[prev]:" << new_indices[reverse_index[i-1]] << " size_of_row:" << size_of_prev_row << std::endl;
-      exit(1);
-    }
-    size_of_prev_row = size_of_row;
-  }
-
 #endif
 }
 
@@ -1536,7 +1540,6 @@ void kk_get_lower_triangle(
       new_indices.data(),
       use_dynamic_scheduling,
       chunksize,  is_lower);
-
 
   KokkosKernels::Experimental::Util::kk_exclusive_parallel_prefix_sum
   <out_row_map_view_t, exec_space>(nr + 1, out_rowmap);
