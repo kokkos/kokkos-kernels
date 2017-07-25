@@ -43,8 +43,7 @@
 #ifndef KOKKOSKERNELS_BLAS2_MV_GEMV_HPP
 #define KOKKOSKERNELS_BLAS2_MV_GEMV_HPP
 
-#include "Kokkos_Blas1_MV.hpp"
-#include "Kokkos_Blas2_MV.hpp"
+#include "KokkosBlas.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include <sstream>
 #include <stdexcept>

@@ -40,7 +40,7 @@
 // ************************************************************************
 //@HEADER
 */
-#include <Kokkos_Blas1.hpp>
+#include <KokkosBlas.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Comm.hpp>

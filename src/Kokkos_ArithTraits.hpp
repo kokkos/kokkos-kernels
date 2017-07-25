@@ -57,7 +57,6 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
-#include <cstdlib> // strtof, strtod, strtold
 #include <complex> // std::complex
 #include <limits> // std::numeric_limits
 #ifdef __CUDACC__
@@ -647,8 +646,7 @@ public:
     return CUDART_NAN_F;
     //return nan (); //this returns 0???
 #else
-    // http://pubs.opengroup.org/onlinepubs/009696899/functions/nan.html
-    return strtof ("NAN()", (char**) NULL);
+    return std::numeric_limits<float>::quiet_NaN();
 #endif // __CUDA_ARCH__
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type eps () {
@@ -888,8 +886,7 @@ public:
     return CUDART_NAN;
     //return nan (); // this returns 0 ???
 #else
-    // http://pubs.opengroup.org/onlinepubs/009696899/functions/nan.html
-    return strtod ("NAN", (char**) NULL);
+    return std::numeric_limits<val_type>::quiet_NaN();
 #endif // __CUDA_ARCH__
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
@@ -1020,7 +1017,7 @@ public:
     return ::log10 (x);
   }
   static val_type nan () {
-    return strtold ("NAN()", (char**) NULL);
+    return std::numeric_limits<val_type>::quiet_NaN();
   }
   static mag_type epsilon () {
     return LDBL_EPSILON;
@@ -1229,8 +1226,8 @@ public:
       ArithTraits<mag_type>::isNan (x.imag ());
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
-    return sqrt (::Kokkos::real (x) * ::Kokkos::real (x) +
-                 ::Kokkos::imag (x) * ::Kokkos::imag (x));
+    return std::sqrt (::Kokkos::real (x) * ::Kokkos::real (x) +
+                         ::Kokkos::imag (x) * ::Kokkos::imag (x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return val_type (ArithTraits<mag_type>::zero (), ArithTraits<mag_type>::zero ());
@@ -1256,9 +1253,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+    return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }
@@ -1377,9 +1374,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+     return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }

@@ -18,6 +18,8 @@
 
 /* Define this macro to disallow instantiations of kernels which are not covered by ETI */
 #cmakedefine KOKKOSKERNELS_ETI_ONLY
+/* Define this macro to only test ETI types */
+#cmakedefine KOKKOSKERNELS_TEST_ETI_ONLY
 
 /* Whether to build kernels for execution space Kokkos::Cuda */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_CUDA
@@ -61,5 +63,10 @@
  * for corner cases.
  */
 #define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
+
+#ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false
+#endif
+
 
 #endif // KOKKOSKERNELS_CONFIG_H
