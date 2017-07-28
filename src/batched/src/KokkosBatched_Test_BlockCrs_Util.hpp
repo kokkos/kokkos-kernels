@@ -14,7 +14,7 @@
   }
 
 namespace KokkosKernels {
-  using namespace Batched::Experimental;
+  using namespace KokkosBatched::Experimental;
 
   namespace Test {
 

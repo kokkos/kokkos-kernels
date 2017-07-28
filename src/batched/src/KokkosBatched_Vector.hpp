@@ -5,12 +5,10 @@
 
 #include "KokkosKernels_Util.hpp"
 
-namespace KokkosKernels {
-  namespace Batched {
-    namespace Experimental {
-      template<typename T>
-      class Vector;
-    }
+namespace KokkosBatched {
+  namespace Experimental {
+    template<typename T>
+    class Vector;
   }
 }
 

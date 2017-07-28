@@ -44,7 +44,7 @@
 #include "KokkosKernels_Test_BlockCrs_Util.hpp"
 
 namespace KokkosKernels {
-  using namespace Batched::Experimental;
+  using namespace KokkosBatched::Experimental;
   namespace Test {
 
     struct RangeTag {};
@@ -259,10 +259,10 @@ namespace KokkosKernels {
         // parallel over the instances of tridiagonal matrices
         if (!fake) {
           typedef FactorizeBlockTridiagMatrices<exec_space,value_type,array_layout,
-                                                VectorLength,
-                                                LU_AlgoTagType,
-                                                Trsm_AlgoTagType,
-                                                Gemm_AlgoTagType> functor_type;
+	    VectorLength,
+	    LU_AlgoTagType,
+	    Trsm_AlgoTagType,
+	    Gemm_AlgoTagType> functor_type;
           
           switch (op) {
           case 0: {
@@ -766,9 +766,9 @@ namespace KokkosKernels {
 
         {
           typedef SolveBlockTridiagMatrices<exec_space,value_type,array_layout,
-                                            VectorLength,
-                                            Trsv_AlgoTagType,
-                                            Gemv_AlgoTagType> functor_type;
+	    VectorLength,
+	    Trsv_AlgoTagType,
+	    Gemv_AlgoTagType> functor_type;
           switch (op) {
           case 0: {
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
@@ -999,12 +999,12 @@ namespace KokkosKernels {
   defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
   defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType,
-                                      DeviceArrayLayout,
-                                      VectorLength,
-                                      Algo::LU::CompactMKL,
-                                      Algo::Trsm::CompactMKL,
-                                      Algo::Gemm::CompactMKL> factorblk;
+	  ValueType,
+	  DeviceArrayLayout,
+	  VectorLength,
+	  Algo::LU::CompactMKL,
+	  Algo::Trsm::CompactMKL,
+	  Algo::Gemm::CompactMKL> factorblk;
         factorblk.run(0, T_device); // range policy only now
         TEST_ASSERT(factorblk.check(T_org_device), success);
 #elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
@@ -1014,12 +1014,12 @@ namespace KokkosKernels {
 #endif 
       } else {
         FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType, 
-                                      DeviceArrayLayout,
-                                      VectorLength,
-                                      AlgoLU,
-                                      AlgoTrsm,
-                                      AlgoGemm> factorblk;
+	  ValueType, 
+	  DeviceArrayLayout,
+	  VectorLength,
+	  AlgoLU,
+	  AlgoTrsm,
+	  AlgoGemm> factorblk;
         factorblk.run(Oper, T_device);
         TEST_ASSERT(factorblk.check(T_org_device), success);
       }
@@ -1049,26 +1049,26 @@ namespace KokkosKernels {
   defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
   defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
           SolveBlockTridiagMatrices<DeviceSpace,
-                                    ValueType,
-                                    DeviceArrayLayout,
-                                    VectorLength,
-                                    Algo::Trsv::CompactMKL,
-                                    Algo::Gemv::CompactMKL> solveblk;
+	    ValueType,
+	    DeviceArrayLayout,
+	    VectorLength,
+	    Algo::Trsv::CompactMKL,
+	    Algo::Gemv::CompactMKL> solveblk;
 
           solveblk.run(0, T_device, x_device, b_device);
           TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
 #elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
-        std::cout << "CUBLAS compact version does not exist\n"; 
+	  std::cout << "CUBLAS compact version does not exist\n"; 
 #else
-        std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
+	  std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
 #endif 
         } else {
           SolveBlockTridiagMatrices<DeviceSpace,
-                                    ValueType, 
-                                    DeviceArrayLayout,
-                                    VectorLength,
-                                    AlgoTrsv,
-                                    AlgoGemv> solveblk;
+	    ValueType, 
+	    DeviceArrayLayout,
+	    VectorLength,
+	    AlgoTrsv,
+	    AlgoGemv> solveblk;
           
           solveblk.run(Oper, T_device, x_device, b_device);
           TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
@@ -1200,12 +1200,12 @@ namespace KokkosKernels {
   defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
   defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType,
-                                      DeviceArrayLayout,
-                                      VectorLength,
-                                      Algo::LU::CompactMKL,
-                                      Algo::Trsm::CompactMKL,
-                                      Algo::Gemm::CompactMKL> factorblk;
+	  ValueType,
+	  DeviceArrayLayout,
+	  VectorLength,
+	  Algo::LU::CompactMKL,
+	  Algo::Trsm::CompactMKL,
+	  Algo::Gemm::CompactMKL> factorblk;
         f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
         {
           Timer timer("FactorizeBlockTridiagMatrices");
@@ -1223,12 +1223,12 @@ namespace KokkosKernels {
 #endif 
       } else {
         FactorizeBlockTridiagMatrices<DeviceSpace,
-                                      ValueType, 
-                                      DeviceArrayLayout,
-                                      VectorLength,
-                                      AlgoLU,
-                                      AlgoTrsm,
-                                      AlgoGemm> factorblk;
+	  ValueType, 
+	  DeviceArrayLayout,
+	  VectorLength,
+	  AlgoLU,
+	  AlgoTrsm,
+	  AlgoGemm> factorblk;
         
         f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
         {
@@ -1270,11 +1270,11 @@ namespace KokkosKernels {
   defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
   defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
           SolveBlockTridiagMatrices<DeviceSpace,
-                                    ValueType, 
-                                    DeviceArrayLayout,
-                                    VectorLength,
-                                    Algo::Trsv::CompactMKL,
-                                    Algo::Gemv::CompactMKL> solveblk;
+	    ValueType, 
+	    DeviceArrayLayout,
+	    VectorLength,
+	    Algo::Trsv::CompactMKL,
+	    Algo::Gemv::CompactMKL> solveblk;
           {
             Timer timer("50 SolveBlockTridiagMatrices");
             timer.reset();
@@ -1288,17 +1288,17 @@ namespace KokkosKernels {
           }
           if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
 #elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
-        std::cout << "CUBLAS compact version does not exist\n"; 
+	  std::cout << "CUBLAS compact version does not exist\n"; 
 #else
-        std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
+	  std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
 #endif 
         } else {
           SolveBlockTridiagMatrices<DeviceSpace,
-                                    ValueType, 
-                                    DeviceArrayLayout,
-                                    VectorLength,
-                                    AlgoTrsv,
-                                    AlgoGemv> solveblk;
+	    ValueType, 
+	    DeviceArrayLayout,
+	    VectorLength,
+	    AlgoTrsv,
+	    AlgoGemv> solveblk;
           {
             Timer timer("50 SolveBlockTridiagMatrices");
             timer.reset();

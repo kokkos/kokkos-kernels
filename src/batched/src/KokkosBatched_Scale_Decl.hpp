@@ -4,44 +4,44 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-namespace KokkosKernels {
-  namespace Batched {
-    namespace Experimental {
 
-      ///
-      /// Serial Scale
-      ///
+namespace KokkosBatched {
+  namespace Experimental {
 
-      namespace Serial {
-        struct Scale {
-          template<typename ScalarType,
-                   typename AViewType>
-          KOKKOS_INLINE_FUNCTION
-          static int
-          invoke(const ScalarType alpha,
-                 const AViewType &A);
-        };
-      }
+    ///
+    /// Serial Scale
+    ///
 
-      ///
-      /// Team Scale
-      ///
-
-      namespace Team {
-        template<typename MemberType>
-        struct Scale {
-          template<typename ScalarType,
-                   typename AViewType>
-          KOKKOS_INLINE_FUNCTION
-          static int
-          invoke(const MemberType &member, 
-                 const ScalarType alpha,
-                 const AViewType &A);
-        };
-      }
-
+    namespace Serial {
+      struct Scale {
+	template<typename ScalarType,
+		 typename AViewType>
+	KOKKOS_INLINE_FUNCTION
+	static int
+	invoke(const ScalarType alpha,
+	       const AViewType &A);
+      };
     }
+
+    ///
+    /// Team Scale
+    ///
+
+    namespace Team {
+      template<typename MemberType>
+      struct Scale {
+	template<typename ScalarType,
+		 typename AViewType>
+	KOKKOS_INLINE_FUNCTION
+	static int
+	invoke(const MemberType &member, 
+	       const ScalarType alpha,
+	       const AViewType &A);
+      };
+    }
+
   }
 }
+
 
 #endif
