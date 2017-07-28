@@ -1,5 +1,5 @@
-#ifndef __KOKKOSKERNELS_UTIL_HPP__
-#define __KOKKOSKERNELS_UTIL_HPP__
+#ifndef __KOKKOSBATCHED_UTIL_HPP__
+#define __KOKKOSBATCHED_UTIL_HPP__
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

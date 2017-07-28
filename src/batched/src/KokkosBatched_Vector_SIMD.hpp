@@ -1,5 +1,5 @@
-#ifndef __KOKKOSKERNELS_VECTOR_SIMD_HPP__
-#define __KOKKOSKERNELS_VECTOR_SIMD_HPP__
+#ifndef __KOKKOSBATCHED_VECTOR_SIMD_HPP__
+#define __KOKKOSBATCHED_VECTOR_SIMD_HPP__
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

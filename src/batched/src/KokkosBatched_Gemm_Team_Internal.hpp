@@ -1,15 +1,15 @@
-#ifndef __KOKKOSKERNELS_GEMM_TEAM_INTERNAL_HPP__
-#define __KOKKOSKERNELS_GEMM_TEAM_INTERNAL_HPP__
+#ifndef __KOKKOSBATCHED_GEMM_TEAM_INTERNAL_HPP__
+#define __KOKKOSBATCHED_GEMM_TEAM_INTERNAL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
+#include "KokkosBatched_Util.hpp"
 
-#include "KokkosKernels_Set_Internal.hpp"
-#include "KokkosKernels_Scale_Internal.hpp"
+#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBatched_Scale_Internal.hpp"
 
-#include "KokkosKernels_InnerGemmFixC_Serial_Impl.hpp"
+#include "KokkosBatched_InnerGemmFixC_Serial_Impl.hpp"
 
 
 namespace KokkosBatched {

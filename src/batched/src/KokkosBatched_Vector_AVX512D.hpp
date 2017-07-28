@@ -1,5 +1,5 @@
-#ifndef __KOKKOSKERNELS_VECTOR_AVX512D_HPP__
-#define __KOKKOSKERNELS_VECTOR_AVX512D_HPP__
+#ifndef __KOKKOSBATCHED_VECTOR_AVX512D_HPP__
+#define __KOKKOSBATCHED_VECTOR_AVX512D_HPP__
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 #if defined(__AVX512F__)

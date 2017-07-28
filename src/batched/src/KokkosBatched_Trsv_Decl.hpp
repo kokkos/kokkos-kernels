@@ -1,5 +1,5 @@
-#ifndef __KOKKOSKERNELS_TRSV_DECL_HPP__
-#define __KOKKOSKERNELS_TRSV_DECL_HPP__
+#ifndef __KOKKOSBATCHED_TRSV_DECL_HPP__
+#define __KOKKOSBATCHED_TRSV_DECL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)

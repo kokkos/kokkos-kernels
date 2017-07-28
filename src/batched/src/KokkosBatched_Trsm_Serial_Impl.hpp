@@ -1,11 +1,11 @@
-#ifndef __KOKKOSKERNELS_TRSM_SERIAL_IMPL_HPP__
-#define __KOKKOSKERNELS_TRSM_SERIAL_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_TRSM_SERIAL_IMPL_HPP__
+#define __KOKKOSBATCHED_TRSM_SERIAL_IMPL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_Trsm_Serial_Internal.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Trsm_Serial_Internal.hpp"
 
 
 namespace KokkosBatched {
@@ -19,9 +19,9 @@ namespace KokkosBatched {
       /// A(m x m), B(m x n)
 
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)    
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)    
       template<typename ArgDiag>
       struct Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
 	template<typename ScalarType,
@@ -110,9 +110,9 @@ namespace KokkosBatched {
       /// B := (alpha*B) inv(triu(A))
       /// A(n x n), B(m x n)
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       template<typename ArgDiag>
       struct Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
 	template<typename ScalarType,
@@ -201,9 +201,9 @@ namespace KokkosBatched {
       /// B := inv(triu(A)) (alpha*B) 
       /// A(m x m), B(m x n)
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       template<typename ArgDiag>
       struct Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
 	template<typename ScalarType,

@@ -1,9 +1,9 @@
-#ifndef __KOKKOSKERNELS_VECTOR_HPP__
-#define __KOKKOSKERNELS_VECTOR_HPP__
+#ifndef __KOKKOSBATCHED_VECTOR_HPP__
+#define __KOKKOSBATCHED_VECTOR_HPP__
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
+#include "KokkosBatched_Util.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -12,8 +12,8 @@ namespace KokkosBatched {
   }
 }
 
-#include "KokkosKernels_Vector_SIMD.hpp"
-#include "KokkosKernels_Vector_AVX256D.hpp"
-#include "KokkosKernels_Vector_AVX512D.hpp"
+#include "KokkosBatched_Vector_SIMD.hpp"
+#include "KokkosBatched_Vector_AVX256D.hpp"
+#include "KokkosBatched_Vector_AVX512D.hpp"
 
 #endif

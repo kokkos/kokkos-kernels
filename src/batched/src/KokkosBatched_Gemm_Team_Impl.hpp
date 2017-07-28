@@ -1,11 +1,11 @@
-#ifndef __KOKKOSKERNELS_GEMM_TEAM_IMPL_HPP__
-#define __KOKKOSKERNELS_GEMM_TEAM_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_GEMM_TEAM_IMPL_HPP__
+#define __KOKKOSBATCHED_GEMM_TEAM_IMPL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_Gemm_Team_Internal.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Gemm_Team_Internal.hpp"
 
 
 namespace KokkosBatched {

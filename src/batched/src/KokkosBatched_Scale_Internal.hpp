@@ -1,10 +1,10 @@
-#ifndef __KOKKOSKERNELS_SCALE_INTERNAL_HPP__
-#define __KOKKOSKERNELS_SCALE_INTERNAL_HPP__
+#ifndef __KOKKOSBATCHED_SCALE_INTERNAL_HPP__
+#define __KOKKOSBATCHED_SCALE_INTERNAL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
+#include "KokkosBatched_Util.hpp"
 
 
 namespace KokkosBatched {

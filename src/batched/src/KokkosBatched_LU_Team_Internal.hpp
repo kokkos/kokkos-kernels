@@ -1,16 +1,16 @@
-#ifndef __KOKKOSKERNELS_LU_TEAM_INTERNAL_HPP__
-#define __KOKKOSKERNELS_LU_TEAM_INTERNAL_HPP__
+#ifndef __KOKKOSBATCHED_LU_TEAM_INTERNAL_HPP__
+#define __KOKKOSBATCHED_LU_TEAM_INTERNAL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
+#include "KokkosBatched_Util.hpp"
 
-#include "KokkosKernels_InnerLU_Serial_Impl.hpp"
-#include "KokkosKernels_InnerTrsm_Serial_Impl.hpp"
+#include "KokkosBatched_InnerLU_Serial_Impl.hpp"
+#include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 
-#include "KokkosKernels_Trsm_Team_Internal.hpp"
-#include "KokkosKernels_Gemm_Team_Internal.hpp"
+#include "KokkosBatched_Trsm_Team_Internal.hpp"
+#include "KokkosBatched_Gemm_Team_Internal.hpp"
 
 
 namespace KokkosBatched {

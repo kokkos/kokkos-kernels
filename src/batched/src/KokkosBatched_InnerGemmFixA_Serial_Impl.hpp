@@ -1,11 +1,11 @@
-#ifndef __KOKKOSKERNELS_INNER_GEMM_FIX_A_SERIAL_IMPL_HPP__
-#define __KOKKOSKERNELS_INNER_GEMM_FIX_A_SERIAL_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_INNER_GEMM_FIX_A_SERIAL_IMPL_HPP__
+#define __KOKKOSBATCHED_INNER_GEMM_FIX_A_SERIAL_IMPL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_InnerGemmFixA_Decl.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_InnerGemmFixA_Decl.hpp"
 
 
 namespace KokkosBatched {

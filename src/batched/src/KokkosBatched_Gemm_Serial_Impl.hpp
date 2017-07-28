@@ -1,11 +1,11 @@
-#ifndef __KOKKOSKERNELS_GEMM_SERIAL_IMPL_HPP__
-#define __KOKKOSKERNELS_GEMM_SERIAL_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP__
+#define __KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_Gemm_Serial_Internal.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Gemm_Serial_Internal.hpp"
 
 
 namespace KokkosBatched {
@@ -30,9 +30,9 @@ namespace KokkosBatched {
       ///
     
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       template<>
       template<typename ScalarType,
                typename AViewType,
@@ -135,9 +135,9 @@ namespace KokkosBatched {
       ///
 
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       template<>
       template<typename ScalarType,
                typename AViewType,
@@ -240,9 +240,9 @@ namespace KokkosBatched {
       ///
 
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       template<>
       template<typename ScalarType,
                typename AViewType,
@@ -345,9 +345,9 @@ namespace KokkosBatched {
       ///
 
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       template<>
       template<typename ScalarType,
                typename AViewType,

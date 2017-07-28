@@ -1,5 +1,5 @@
-#ifndef __KOKKOSKERNELS_GEMM_DECL_HPP__
-#define __KOKKOSKERNELS_GEMM_DECL_HPP__
+#ifndef __KOKKOSBATCHED_GEMM_DECL_HPP__
+#define __KOKKOSBATCHED_GEMM_DECL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)

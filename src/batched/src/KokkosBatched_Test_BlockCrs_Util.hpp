@@ -5,7 +5,7 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosKernels_Util.hpp"
+#include "KokkosBatched_Util.hpp"
 
 #define TEST_ASSERT(m, success)                                 \
   if ( !(m)) {                                                  \
@@ -13,8 +13,8 @@
     printf("FAILED: %s, at %d, %s\n", #m, __LINE__, __FILE__);  \
   }
 
-namespace KokkosKernels {
-  using namespace KokkosBatched::Experimental;
+namespace KokkosBatched {
+  using namespace Experimental;
 
   namespace Test {
 

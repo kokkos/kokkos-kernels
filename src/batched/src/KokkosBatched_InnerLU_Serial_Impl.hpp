@@ -1,11 +1,11 @@
-#ifndef __KOKKOSKERNELS_INNER_LU_SERIAL_IMPL_HPP__
-#define __KOKKOSKERNELS_INNER_LU_SERIAL_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_INNER_LU_SERIAL_IMPL_HPP__
+#define __KOKKOSBATCHED_INNER_LU_SERIAL_IMPL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_InnerLU_Decl.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_InnerLU_Decl.hpp"
 
 
 namespace KokkosBatched {

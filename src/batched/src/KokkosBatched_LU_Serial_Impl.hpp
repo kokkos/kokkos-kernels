@@ -1,11 +1,11 @@
-#ifndef __KOKKOSKERNELS_LU_SERIAL_IMPL_HPP__
-#define __KOKKOSKERNELS_LU_SERIAL_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_LU_SERIAL_IMPL_HPP__
+#define __KOKKOSBATCHED_LU_SERIAL_IMPL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_LU_Serial_Internal.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_LU_Serial_Internal.hpp"
 
 
 namespace KokkosBatched {
@@ -20,9 +20,9 @@ namespace KokkosBatched {
       ///
 
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       template<>
       template<typename AViewType>
       KOKKOS_INLINE_FUNCTION

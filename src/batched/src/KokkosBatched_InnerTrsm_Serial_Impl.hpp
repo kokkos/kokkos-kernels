@@ -1,11 +1,11 @@
-#ifndef __KOKKOSKERNELS_INNER_TRSM_SERIAL_IMPL_HPP__
-#define __KOKKOSKERNELS_INNER_TRSM_SERIAL_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_INNER_TRSM_SERIAL_IMPL_HPP__
+#define __KOKKOSBATCHED_INNER_TRSM_SERIAL_IMPL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_InnerTrsm_Decl.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_InnerTrsm_Decl.hpp"
 
 
 namespace KokkosBatched {

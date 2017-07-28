@@ -2,11 +2,11 @@
 #include <vector>
 #include <algorithm>
 
-#if defined(__KOKKOSKERNELS_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL__)
 #include "mkl.h"
 #endif
 
-#if defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+#if defined(__KOKKOSBATCHED_NVIDIA_CUBLAS__)
 #include "cuda_runtime.h"
 #include "cublas_v2.h"
 #include "cublas_api.h"
@@ -15,36 +15,36 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_Vector.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosKernels_Copy_Decl.hpp"
-#include "KokkosKernels_Copy_Impl.hpp"
+#include "KokkosBatched_Copy_Decl.hpp"
+#include "KokkosBatched_Copy_Impl.hpp"
 
-#include "KokkosKernels_Gemv_Decl.hpp"
-#include "KokkosKernels_Gemv_Serial_Impl.hpp"
-#include "KokkosKernels_Gemv_Team_Impl.hpp"
+#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBatched_Gemv_Serial_Impl.hpp"
+#include "KokkosBatched_Gemv_Team_Impl.hpp"
 
-#include "KokkosKernels_Trsv_Decl.hpp"
-#include "KokkosKernels_Trsv_Serial_Impl.hpp"
-#include "KokkosKernels_Trsv_Team_Impl.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
+#include "KokkosBatched_Trsv_Serial_Impl.hpp"
+#include "KokkosBatched_Trsv_Team_Impl.hpp"
 
-#include "KokkosKernels_Gemm_Decl.hpp"
-#include "KokkosKernels_Gemm_Serial_Impl.hpp"
-#include "KokkosKernels_Gemm_Team_Impl.hpp"
+#include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_Gemm_Serial_Impl.hpp"
+#include "KokkosBatched_Gemm_Team_Impl.hpp"
 
-#include "KokkosKernels_Trsm_Decl.hpp"
-#include "KokkosKernels_Trsm_Serial_Impl.hpp"
-#include "KokkosKernels_Trsm_Team_Impl.hpp"
+#include "KokkosBatched_Trsm_Decl.hpp"
+#include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Trsm_Team_Impl.hpp"
 
-#include "KokkosKernels_LU_Decl.hpp"
-#include "KokkosKernels_LU_Serial_Impl.hpp"
-#include "KokkosKernels_LU_Team_Impl.hpp"
+#include "KokkosBatched_LU_Decl.hpp"
+#include "KokkosBatched_LU_Serial_Impl.hpp"
+#include "KokkosBatched_LU_Team_Impl.hpp"
 
-#include "KokkosKernels_Test_BlockCrs_Util.hpp"
+#include "KokkosBatched_Test_BlockCrs_Util.hpp"
 
-namespace KokkosKernels {
-  using namespace KokkosBatched::Experimental;
+namespace KokkosBatched {
+  using namespace Experimental;
   namespace Test {
 
     struct RangeTag {};
@@ -266,7 +266,7 @@ namespace KokkosKernels {
           
           switch (op) {
           case 0: {
-            std::cout << "KokkosKernels::RangeTag::" << Gemm_AlgoTagType::name() << "\n";
+            std::cout << "KokkosBatched::RangeTag::" << Gemm_AlgoTagType::name() << "\n";
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
             Kokkos::parallel_for(policy, *this);
             break;
@@ -289,12 +289,12 @@ namespace KokkosKernels {
               const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
               // - max parallelism in gemm / 2 (no idea...)
               team_size = min(max(mblk*mblk/2,1), max_cuda_blocksize/VectorLength/2);
-              std::cout << "KokkosKernels::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              std::cout << "KokkosBatched::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
             } else {
               // - max parallelism in trsm * scheduling efficiency 2
               // - max cuda team size / scheduling efficiency 2
               team_size = min(max(_blocksize*2,4), max_cuda_blocksize/VectorLength/2);
-              std::cout << "KokkosKernels::TeamTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              std::cout << "KokkosBatched::TeamTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
             }
 
             const policy_type policy(_ntridiag, team_size, VectorLength);
@@ -325,10 +325,10 @@ namespace KokkosKernels {
                 const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
                 // - max parallelism in gemm / 2 (no idea...)
                 team_size = min(max(mblk*mblk/2,1), max_cuda_blocksize/VectorLength/2);
-                std::cout << "KokkosKernels::TeamShmemTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+                std::cout << "KokkosBatched::TeamShmemTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
               } else {
                 team_size = min(max(_blocksize*2,4), max_cuda_blocksize/VectorLength/2);
-                std::cout << "KokkosKernels::TeamShmemTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+                std::cout << "KokkosBatched::TeamShmemTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
               }
               
               const policy_type policy(_ntridiag, team_size, VectorLength);
@@ -995,9 +995,9 @@ namespace KokkosKernels {
       // Test Block TriDiag Factorization
       if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
 	  ValueType,
 	  DeviceArrayLayout,
@@ -1007,7 +1007,7 @@ namespace KokkosKernels {
 	  Algo::Gemm::CompactMKL> factorblk;
         factorblk.run(0, T_device); // range policy only now
         TEST_ASSERT(factorblk.check(T_org_device), success);
-#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+#elif defined(__KOKKOSBATCHED_NVIDIA_CUBLAS__)
         std::cout << "CUBLAS compact version does not exist\n"; 
 #else
         std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
@@ -1045,9 +1045,9 @@ namespace KokkosKernels {
                                                     blocksize);
         if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
           SolveBlockTridiagMatrices<DeviceSpace,
 	    ValueType,
 	    DeviceArrayLayout,
@@ -1057,7 +1057,7 @@ namespace KokkosKernels {
 
           solveblk.run(0, T_device, x_device, b_device);
           TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
-#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+#elif defined(__KOKKOSBATCHED_NVIDIA_CUBLAS__)
 	  std::cout << "CUBLAS compact version does not exist\n"; 
 #else
 	  std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
@@ -1196,9 +1196,9 @@ namespace KokkosKernels {
       double t_factorize = 0.0, f_factorize = 0.0;
       if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
 	  ValueType,
 	  DeviceArrayLayout,
@@ -1216,7 +1216,7 @@ namespace KokkosKernels {
           t_factorize = timer.seconds();
         }
         TEST_ASSERT(factorblk.check(T_org_device), success);
-#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+#elif defined(__KOKKOSBATCHED_NVIDIA_CUBLAS__)
         std::cout << "CUBLAS compact version does not exist\n"; 
 #else
         std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
@@ -1266,9 +1266,9 @@ namespace KokkosKernels {
                                                     blocksize);
         if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSKERNELS_INTEL_MKL__) &&               \
-  defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
           SolveBlockTridiagMatrices<DeviceSpace,
 	    ValueType, 
 	    DeviceArrayLayout,
@@ -1287,7 +1287,7 @@ namespace KokkosKernels {
             t_solve = timer.seconds();
           }
           if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
-#elif defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
+#elif defined(__KOKKOSBATCHED_NVIDIA_CUBLAS__)
 	  std::cout << "CUBLAS compact version does not exist\n"; 
 #else
 	  std::cout << "TPLs (CompactMKL or CUBLAS) are not found\n"; 
