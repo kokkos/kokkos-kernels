@@ -5,17 +5,17 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosKernels_Util.hpp"
-#include "KokkosKernels_Vector.hpp"
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosKernels_Gemm_Decl.hpp"
-#include "KokkosKernels_Gemm_Serial_Impl.hpp"
+#include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_Gemm_Serial_Impl.hpp"
 
-#include "KokkosKernels_Trsm_Serial_Decl.hpp"
-#include "KokkosKernels_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Trsm_Serial_Decl.hpp"
+#include "KokkosBatched_Trsm_Serial_Impl.hpp"
 
-#include "KokkosKernels_LU_Serial_Decl.hpp"
-#include "KokkosKernels_LU_Serial_Impl.hpp"
+#include "KokkosBatched_LU_Serial_Decl.hpp"
+#include "KokkosBatched_LU_Serial_Impl.hpp"
 
 namespace KokkosKernels {
 

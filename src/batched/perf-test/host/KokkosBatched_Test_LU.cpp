@@ -2,19 +2,20 @@
 
 #include <iomanip>
 
-#if defined(__KOKKOSKERNELS_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL__)
 #include "mkl.h"
 #endif
 
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosKernels_Vector.hpp"
+#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosKernels_LU_Decl.hpp"
-#include "KokkosKernels_LU_Serial_Impl.hpp"
+#include "KokkosBatched_LU_Decl.hpp"
+#include "KokkosBatched_LU_Serial_Impl.hpp"
 
-namespace KokkosKernels {
+namespace KokkosBatched {
+  namespace Experimental {
 
   namespace Test {
 
@@ -54,7 +55,7 @@ namespace KokkosKernels {
       Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
         amat("amat", N*VectorLength, BlkSize, BlkSize);
 
-      Random random;
+      Random<ValueType> random;
 
       for (int k=0;k<N*VectorLength;++k) {
         // use tridiagonal matrices; for now we just check elementwise l/u factors
@@ -96,7 +97,7 @@ namespace KokkosKernels {
       ///
       /// Reference version using MKL DGETRF
       ///
-#if defined(__KOKKOSKERNELS_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL__)
       {
         Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType> a("a", N*VectorLength, BlkSize, BlkSize);
         Kokkos::View<int**,Kokkos::LayoutRight,HostSpaceType> p("p", N*VectorLength, BlkSize);
@@ -143,10 +144,10 @@ namespace KokkosKernels {
         aref = a;
       }
 
-#if defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__)
 #endif
 
-#if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
       {
         Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType>
           a("a", N, BlkSize, BlkSize);
@@ -310,8 +311,9 @@ namespace KokkosKernels {
     }
   }
 }
+}
 
-using namespace KokkosKernels;
+using namespace KokkosBatched::Experimental;
 
 template<typename VectorType,
          typename AlgoTagType>

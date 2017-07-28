@@ -2,20 +2,19 @@
 
 #include <iomanip>
 
-#if defined(__KOKKOSKERNELS_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL__)
 #include "mkl.h"
 #endif
 
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosKernels_Vector.hpp"
+#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosKernels_Trsm_Decl.hpp"
-#include "KokkosKernels_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Trsm_Decl.hpp"
+#include "KokkosBatched_Trsm_Serial_Impl.hpp"
 
-namespace KokkosKernels {
-  namespace Batched {
+  namespace KokkosBatched {
     namespace Experimental {
       namespace PerfTest {
 
@@ -109,7 +108,7 @@ namespace KokkosKernels {
           ///
           /// Reference version using MKL DTRSM
           /// 
-#if defined(__KOKKOSKERNELS_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL__)
           {
             Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
               a("a", N*VectorLength, BlkSize, BlkSize),
@@ -204,7 +203,7 @@ namespace KokkosKernels {
               bref = b;
             }
           }
-#if defined(__KOKKOSKERNELS_INTEL_MKL_BATCHED__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__)
           {
             Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType>
               a("a", N*VectorLength, BlkSize, BlkSize),
@@ -345,7 +344,7 @@ namespace KokkosKernels {
           }
 #endif
 
-#if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
           {
             Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType>
               a("a", N, BlkSize, BlkSize),
@@ -640,9 +639,8 @@ namespace KokkosKernels {
       }
     }
   }
-}
 
-using namespace KokkosKernels::Batched::Experimental;
+using namespace KokkosBatched::Experimental;
 
 template<typename VectorType,
          typename AlgoTagType>

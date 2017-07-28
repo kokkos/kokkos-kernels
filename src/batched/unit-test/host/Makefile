@@ -7,9 +7,9 @@ info:
 	@echo " - kokkos is located at $(KOKKOS)"
 	@echo " - exec is one of $(EXECS)"
 
-EXEC  = KokkosKernels_Test_Serial
+EXEC  = KokkosBatched_Test_Serial
 EXECS = \
-	KokkosKernels_Test_Serial
+	KokkosBatched_Test_Serial
 
 include $(KOKKOS)/Makefile.kokkos
 

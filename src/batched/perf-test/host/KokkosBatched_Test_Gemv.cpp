@@ -2,17 +2,17 @@
 
 #include <iomanip>
 
-#if defined(__KOKKOSKERNELS_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL__)
 #include "mkl.h"
 #endif
 
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosKernels_Vector.hpp"
+#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosKernels_Gemv_Decl.hpp"
-#include "KokkosKernels_Gemv_Serial_Impl.hpp"
+#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBatched_Gemv_Serial_Impl.hpp"
 
 namespace KokkosKernels {
 
@@ -66,7 +66,7 @@ namespace KokkosKernels {
       ///
       /// Reference version using MKL DGEMM
       ///
-#if defined(__KOKKOSKERNELS_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL__)
       {
         Kokkos::View<ValueType***,Kokkos::LayoutRight,HostSpaceType> 
           a("a", N*VectorLength, BlkSize, BlkSize),

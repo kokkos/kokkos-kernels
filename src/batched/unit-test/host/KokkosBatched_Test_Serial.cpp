@@ -6,7 +6,7 @@
 typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 typedef Kokkos::Serial                    DeviceSpaceType;
 
-#include "KokkosKernels_Test_Batched.hpp"
+#include "KokkosBatched_Test.hpp"
 
 //using namespace KokkosKernels::Experimental;
 

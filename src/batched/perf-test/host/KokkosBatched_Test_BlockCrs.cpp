@@ -22,27 +22,27 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosKernels_Util.hpp"
+#include "KokkosBatched_Util.hpp"
 
 #if (0)
-typedef KokkosKernels::Batched::Experimental::Algo::LU::Unblocked   AlgoLU;
-typedef KokkosKernels::Batched::Experimental::Algo::Trsm::Unblocked AlgoTrsm;
-typedef KokkosKernels::Batched::Experimental::Algo::Gemm::Unblocked AlgoGemm;
+typedef KokkosBatched::Experimental::Algo::LU::Unblocked   AlgoLU;
+typedef KokkosBatched::Experimental::Algo::Trsm::Unblocked AlgoTrsm;
+typedef KokkosBatched::Experimental::Algo::Gemm::Unblocked AlgoGemm;
 
-typedef KokkosKernels::Batched::Experimental::Algo::Trsv::Unblocked AlgoTrsv;
-typedef KokkosKernels::Batched::Experimental::Algo::Gemv::Unblocked AlgoGemv;
+typedef KokkosBatched::Experimental::Algo::Trsv::Unblocked AlgoTrsv;
+typedef KokkosBatched::Experimental::Algo::Gemv::Unblocked AlgoGemv;
 #else
-typedef KokkosKernels::Batched::Experimental::Algo::LU::Blocked   AlgoLU;
-typedef KokkosKernels::Batched::Experimental::Algo::Trsm::Blocked AlgoTrsm;
-typedef KokkosKernels::Batched::Experimental::Algo::Gemm::Blocked AlgoGemm;
+typedef KokkosBatched::Experimental::Algo::LU::Blocked   AlgoLU;
+typedef KokkosBatched::Experimental::Algo::Trsm::Blocked AlgoTrsm;
+typedef KokkosBatched::Experimental::Algo::Gemm::Blocked AlgoGemm;
 
-typedef KokkosKernels::Batched::Experimental::Algo::Trsv::Blocked AlgoTrsv;
-typedef KokkosKernels::Batched::Experimental::Algo::Gemv::Blocked AlgoGemv;
+typedef KokkosBatched::Experimental::Algo::Trsv::Blocked AlgoTrsv;
+typedef KokkosBatched::Experimental::Algo::Gemv::Blocked AlgoGemv;
 #endif
 
-#include "KokkosKernels_Test_BlockCrs.hpp"
+#include "KokkosBatched_Test_BlockCrs.hpp"
 
-using namespace KokkosKernels;
+using namespace KokkosBatched;
 
 int main (int argc, char *argv[]) {
   Kokkos::initialize(argc, argv); 
@@ -85,10 +85,10 @@ int main (int argc, char *argv[]) {
     {
 #if defined(__AVX512F__)
       //typedef VectorTag<SIMD<Test::scalar_type>,8> VectorType;
-      typedef Batched::Experimental::Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
+      typedef Experimental::Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
 #elif defined(__AVX2__) || defined(__AVX__)
       //typedef VectorTag<SIMD<Test::scalar_type>,4> VectorType;
-      typedef Batched::Experimental::Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
+      typedef Experimental::Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
 #endif
       Test::run<DeviceSpace,VectorType,VectorLength,RangeTagOper>( 3,  4,  2, 25, 2);
       Test::run<DeviceSpace,VectorType,VectorLength,RangeTagOper>(44, 63, 15,  4, 1);
@@ -102,15 +102,15 @@ int main (int argc, char *argv[]) {
   }
 
   // MKL
-#if defined(__KOKKOSKERNELS_INTEL_MKL_COMPACT_BATCHED__)
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
   std::cout << " Perf Test::CompactMKL Begin\n";
   {
 #if defined(__AVX512F__)
     //typedef VectorTag<SIMD<Test::scalar_type>,8> VectorType;
-    typedef Batched::Experimental::Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
+    typedef Experimental::Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
 #elif defined(__AVX2__) || defined(__AVX__)
     //typedef VectorTag<SIMD<Test::scalar_type>,4> VectorType;
-    typedef Batched::Experimental::Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
+    typedef Experimental::Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
 #endif
     const bool test_mkl = true;
     const Test::Input input(argc, argv); 
@@ -125,10 +125,10 @@ int main (int argc, char *argv[]) {
   {
 #if defined(__AVX512F__)
     //typedef VectorTag<SIMD<Test::scalar_type>,8> VectorType;
-    typedef Batched::Experimental::Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
+    typedef Experimental::Vector<VectorTag<AVX<Test::scalar_type>,8> > VectorType;
 #elif defined(__AVX2__) || defined(__AVX__)
     //typedef VectorTag<SIMD<Test::scalar_type>,4> VectorType;
-    typedef Batched::Experimental::Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
+    typedef Experimental::Vector<VectorTag<AVX<Test::scalar_type>,4> > VectorType;
 #endif
 
     const Test::Input input(argc, argv); 
