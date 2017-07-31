@@ -46,9 +46,9 @@
 #include <Kokkos_Core.hpp>
 
 #include <KokkosKernels_GraphColor.hpp>
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
-#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include "KokkosKernels_Handle.hpp"
 
 //const char *input_filename = "sherman1.mtx";

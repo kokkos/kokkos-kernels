@@ -44,8 +44,8 @@
 //#include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <stdexcept>
+#include "KokkosSparse_CrsMatrix.hpp"
 
 namespace { // anonymous
 

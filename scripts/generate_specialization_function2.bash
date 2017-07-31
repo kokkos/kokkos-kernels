@@ -5,6 +5,7 @@ FunctionExtended=$2     #e.g. KokkosBlas1_abs: prefix for files etc.
 MasterHeader=$3         #e.g. Kokkos_Blas1_abs_spec.hpp: where the specialization layer lives 
 NameSpace=$4            #e.g. KokkosBlas: namespace it lives in 
 KokkosKernelsPath=$5
+
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
 ExecMemSpaceList="Cuda,CudaSpace Cuda,CudaUVMSpace OpenMP,HostSpace Threads,HostSpace Serial,HostSpace"

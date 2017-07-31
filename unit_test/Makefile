@@ -44,11 +44,14 @@ include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 
 INC  = -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
 INC += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
+INC += -I$(KOKKOSKERNELS_PATH)/unit_test/sparse
+
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
 
 TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/blas/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/sparse/*.hpp)
 
 TEST_TARGETS =
 TARGETS =
@@ -87,6 +90,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas1_sum.o
   OBJ_OPENMP += Test_OpenMP_Blas1_update.o
   OBJ_OPENMP += Test_OpenMP_Blas2_gemv.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_spmv.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_trsv.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -131,6 +136,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas1_sum.o
   OBJ_CUDA += Test_Cuda_Blas1_update.o
   OBJ_CUDA += Test_Cuda_Blas2_gemv.o
+  OBJ_CUDA += Test_Cuda_Sparse_spmv.o
+  OBJ_CUDA += Test_Cuda_Sparse_trsv.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
@@ -176,6 +183,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Blas1_sum.o
   OBJ_SERIAL += Test_Serial_Blas1_update.o
   OBJ_SERIAL += Test_Serial_Blas2_gemv.o
+  OBJ_SERIAL += Test_Serial_Sparse_spmv.o
+  OBJ_SERIAL += Test_Serial_Sparse_trsv.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif
@@ -210,6 +219,8 @@ ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
   OBJ_THREADS += Test_Threads_Blas1_sum.o
   OBJ_THREADS += Test_Threads_Blas1_update.o
   OBJ_THREADS += Test_Threads_Blas2_gemv.o
+  OBJ_THREADS += Test_Threads_Sparse_spmv.o
+  OBJ_THREADS += Test_Threads_Sparse_trsv.o
   TARGETS += KokkosKernels_UnitTest_Threads
   TEST_TARGETS += test-threads
 endif

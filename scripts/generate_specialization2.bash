@@ -4,6 +4,15 @@ cd ${KOKKOSKERNELS_PATH}/src/impl
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp
 
+#trsv
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash trsv KokkosSparse_trsv KokkosSparse_trsv_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+
+
+#spmv
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv KokkosSparse_spmv KokkosSparse_spmv_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv KokkosSparse_spmv_mv KokkosSparse_spmv_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+
+
 #abs
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash abs KokkosBlas1_abs KokkosBlas1_abs_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function2.bash abs KokkosBlas1_abs_mv KokkosBlas1_abs_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
