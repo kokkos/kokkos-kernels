@@ -42,11 +42,11 @@
 */
 
 //#include "Teuchos_UnitTestHarness.hpp"
-#include "Kokkos_Sparse_findRelOffset.hpp"
 #include "Kokkos_Core.hpp"
 #include <vector>
 #include <iostream>
 #include <gtest/gtest.h>
+#include "KokkosSparse_findRelOffset.hpp"
 
 namespace { // (anonymous)
   using std::endl;

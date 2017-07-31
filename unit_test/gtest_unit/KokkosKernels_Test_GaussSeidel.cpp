@@ -49,7 +49,7 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 //#include <Kokkos_Sparse_CrsMatrix.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <KokkosSparse_spmv.hpp>
 #include <Kokkos_Blas1_MV.hpp>
 
 #include "KokkosKernels_ETIHelperMacros.h"

@@ -48,10 +48,10 @@
 #include <KokkosKernels_SPGEMM.hpp>
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
-#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
+#include "KokkosSparse_CrsMatrix.hpp"
 
 //const char *input_filename = "sherman1.mtx";
 //const char *input_filename = "Si2.mtx";

@@ -55,8 +55,7 @@
 #include <iostream>
 #include "KokkosKernels_GaussSeidel.hpp"
 #include "KokkosKernels_Handle.hpp"
-///#include <Kokkos_Sparse_CrsMatrix.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

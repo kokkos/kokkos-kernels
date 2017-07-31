@@ -58,6 +58,196 @@ namespace Experimental{
 
 namespace Util{
 
+
+//MD: Bases on Christian's sparseMatrix_generate function in test_crsmatrix.cpp file.
+template< typename ScalarType , typename OrdinalType, typename SizeType>
+void kk_sparseMatrix_generate(
+    OrdinalType nrows,
+    OrdinalType ncols,
+    SizeType &nnz,
+    OrdinalType row_size_variance,
+    OrdinalType bandwidth,
+    ScalarType* &values,
+    SizeType* &rowPtr,
+    OrdinalType* &colInd)
+{
+  rowPtr = new SizeType[nrows+1];
+
+  OrdinalType elements_per_row = nnz/nrows;
+  srand(13721);
+  rowPtr[0] = 0;
+  for(int row=0;row<nrows;row++)
+  {
+    int varianz = (1.0*rand()/INT_MAX-0.5)*row_size_variance;
+    rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
+  }
+  nnz = rowPtr[nrows];
+  values = new ScalarType[nnz];
+  colInd = new OrdinalType[nnz];
+  for(OrdinalType row=0;row<nrows;row++)
+  {
+
+    for(SizeType k=rowPtr[row] ;k<rowPtr[row+1];k++)
+    {
+      OrdinalType pos = (1.0*rand()/INT_MAX-0.5)*bandwidth+row;
+      if(pos<0) pos+=ncols;
+      if(pos>=ncols) pos-=ncols;
+      colInd[k]= pos;
+      values[k] = 100.0*rand()/INT_MAX-50.0;
+    }
+  }
+}
+
+template< typename ScalarType , typename OrdinalType, typename SizeType>
+void kk_sparseMatrix_generate_lower_upper_triangle(
+    char uplo,
+    OrdinalType nrows,
+    OrdinalType ncols,
+    SizeType &nnz,
+    OrdinalType row_size_variance,
+    OrdinalType bandwidth,
+    ScalarType* &values,
+    SizeType* &rowPtr,
+    OrdinalType* &colInd)
+{
+  rowPtr = new SizeType[nrows+1];
+
+  OrdinalType elements_per_row = nnz/nrows;
+  srand(13721);
+  rowPtr[0] = 0;
+  for(int row=0;row<nrows;row++)
+  {
+    //int varianz = (1.0*rand()/INT_MAX-0.5)*row_size_variance;
+    if (uplo =='L')
+      rowPtr[row+1] = rowPtr[row] + row + 1;
+    else
+      rowPtr[row+1] = rowPtr[row] + ncols - (row) ;
+  }
+  nnz = rowPtr[nrows];
+  values = new ScalarType[nnz];
+  colInd = new OrdinalType[nnz];
+  for(OrdinalType row=0;row<nrows;row++)
+  {
+
+    for(SizeType k=rowPtr[row]; k<rowPtr[row+1]; k++) {
+      if (uplo =='L')
+        colInd[k]= k - rowPtr[row];
+      else
+        colInd[k]= row + (k - rowPtr[row]);
+      values[k] = 1.0;
+    }
+  }
+}
+
+template <typename crsMat_t>
+crsMat_t kk_generate_triangular_sparse_matrix(
+    char uplo,
+    typename crsMat_t::const_ordinal_type nrows,
+    typename crsMat_t::const_ordinal_type ncols,
+    typename crsMat_t::non_const_size_type &nnz,
+    typename crsMat_t::const_ordinal_type row_size_variance,
+    typename crsMat_t::const_ordinal_type bandwidth){
+
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+
+  typedef typename row_map_view_t::non_const_value_type size_type;
+  typedef typename cols_view_t::non_const_value_type lno_t;
+  typedef typename values_view_t::non_const_value_type scalar_t;
+  lno_t *adj;
+  size_type *xadj, nnzA;
+  scalar_t *values;
+
+  kk_sparseMatrix_generate_lower_upper_triangle<scalar_t, lno_t, size_type>(
+      uplo,
+      nrows, ncols, nnz, row_size_variance,  bandwidth,
+      values, xadj, adj);
+
+  row_map_view_t rowmap_view("rowmap_view", nrows+1);
+  cols_view_t columns_view("colsmap_view", nnz);
+  values_view_t values_view("values_view", nnz);
+
+  {
+    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+    typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+    typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+    for (lno_t i = 0; i <= nrows; ++i){
+      hr(i) = xadj[i];
+    }
+
+    for (size_type i = 0; i < nnz; ++i){
+      hc(i) = adj[i];
+      hv(i) = values[i];
+    }
+    Kokkos::deep_copy (rowmap_view , hr);
+    Kokkos::deep_copy (columns_view , hc);
+    Kokkos::deep_copy (values_view , hv);
+  }
+
+  graph_t static_graph (columns_view, rowmap_view);
+  crsMat_t crsmat("CrsMatrix", ncols, values_view, static_graph);
+  delete [] xadj; delete [] adj; delete [] values;
+  return crsmat;
+}
+
+template <typename crsMat_t>
+crsMat_t kk_generate_sparse_matrix(
+    typename crsMat_t::const_ordinal_type nrows,
+    typename crsMat_t::const_ordinal_type ncols,
+    typename crsMat_t::non_const_size_type &nnz,
+    typename crsMat_t::const_ordinal_type row_size_variance,
+    typename crsMat_t::const_ordinal_type bandwidth){
+
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+
+  typedef typename row_map_view_t::non_const_value_type size_type;
+  typedef typename cols_view_t::non_const_value_type lno_t;
+  typedef typename values_view_t::non_const_value_type scalar_t;
+  lno_t *adj;
+  size_type *xadj, nnzA;
+  scalar_t *values;
+
+  kk_sparseMatrix_generate<scalar_t, lno_t, size_type>(
+      nrows, ncols, nnz, row_size_variance,  bandwidth,
+      values, xadj, adj);
+
+  row_map_view_t rowmap_view("rowmap_view", nrows+1);
+  cols_view_t columns_view("colsmap_view", nnz);
+  values_view_t values_view("values_view", nnz);
+
+  {
+    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+    typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+    typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+    for (lno_t i = 0; i <= nrows; ++i){
+      hr(i) = xadj[i];
+    }
+
+    for (size_type i = 0; i < nnz; ++i){
+      hc(i) = adj[i];
+      hv(i) = values[i];
+    }
+    Kokkos::deep_copy (rowmap_view , hr);
+    Kokkos::deep_copy (columns_view , hc);
+    Kokkos::deep_copy (values_view , hv);
+  }
+
+  graph_t static_graph (columns_view, rowmap_view);
+  crsMat_t crsmat("CrsMatrix", ncols, values_view, static_graph);
+  delete [] xadj; delete [] adj; delete [] values;
+  return crsmat;
+}
+
+
 //TODO: need to fix the size_type. All over the reading inputs are lno_t.
 
 template <typename stype>

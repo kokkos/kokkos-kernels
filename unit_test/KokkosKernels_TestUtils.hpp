@@ -83,5 +83,24 @@ namespace Test {
     typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
     EXPECT_NEAR(double(AT1::abs(val1)),double(AT2::abs(val2)),double(AT3::abs(tol)));
   }
+
+  template<class ViewType1, class ViewType2, class Scalar>
+  void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
+    size_t v1_size = v1.dimension_0();
+    size_t v2_size = v2.dimension_0();
+    EXPECT_NEAR_KK(v1_size, v2_size, 0);
+
+
+    typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
+    typename ViewType2::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
+
+
+    Kokkos::deep_copy(h_v1,v1);
+    Kokkos::deep_copy(h_v2,v2);
+
+    for (size_t i = 0; i < v1_size; ++i){
+      EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol);
+    }
+  }
 }
 
