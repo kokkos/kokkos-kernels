@@ -42,9 +42,10 @@
 */
 
 //#include "Teuchos_UnitTestHarness.hpp"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <sstream>
+
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Test_Macros.hpp"
 // mfh 21 Jun 2016: CUDA 7.5 with GCC 4.8.4 gives me funny build
 // errors if I put this functor in an anonymous namespace.  If I name

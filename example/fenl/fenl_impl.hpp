@@ -50,7 +50,7 @@
 
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <KokkosSparse_spmv.hpp>
 #include <Kokkos_Blas1.hpp>
 #include <impl/Kokkos_Timer.hpp>
 

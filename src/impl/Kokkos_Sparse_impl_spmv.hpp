@@ -44,11 +44,10 @@
 #ifndef KOKKOS_SPARSE_IMPL_SPMV_DEF_HPP_
 #define KOKKOS_SPARSE_IMPL_SPMV_DEF_HPP_
 
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "KokkosBlas.hpp"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
-
-#include "Kokkos_Sparse_impl_spmv_omp.hpp"
+#include "KokkosSparse_spmv_impl_omp.hpp"
 
 namespace KokkosSparse {
 namespace Impl {

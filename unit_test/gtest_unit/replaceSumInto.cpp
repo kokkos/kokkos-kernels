@@ -42,9 +42,9 @@
 */
 
 //#include "Teuchos_UnitTestHarness.hpp"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <gtest/gtest.h>
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Test_Macros.hpp"
 
 

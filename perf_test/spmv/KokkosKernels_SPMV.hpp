@@ -74,7 +74,7 @@
 #endif
 
 #include <Kokkos_Blas1_MV.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <KokkosSparse_spmv.hpp>
 
 #ifdef HAVE_KK_KERNELS
 

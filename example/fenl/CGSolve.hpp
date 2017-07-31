@@ -48,7 +48,7 @@
 #include <limits>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Blas1.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <KokkosSparse_spmv.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 #include <WrapMPI.hpp>

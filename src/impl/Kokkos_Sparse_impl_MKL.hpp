@@ -44,8 +44,8 @@
 #ifndef KOKKOS_SPARSE_IMPL_MKL_HPP_
 #define KOKKOS_SPARSE_IMPL_MKL_HPP_
 
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_config.h"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_Sparse_impl_copyIntegers.hpp"
 
 #ifdef HAVE_KOKKOSKERNELS_MKL
