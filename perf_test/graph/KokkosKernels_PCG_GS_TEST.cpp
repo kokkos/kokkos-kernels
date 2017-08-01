@@ -87,7 +87,7 @@ void run_experiment(
   idx nv = crsmat.numRows();
   scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
 
-  KokkosKernels::Experimental::Util::print_1Dview(kok_x_original);
+  KokkosKernels::Impl::print_1Dview(kok_x_original);
   scalar_view_t kok_b_vector = create_y_vector(crsmat, kok_x_original);
 
   //create X vector
@@ -312,7 +312,7 @@ int main (int argc, char ** argv){
         Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
       }
 
-      KokkosKernels::Experimental::Util::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Impl::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
       Kokkos::Threads::print_configuration(std::cout);
 
       typedef Kokkos::Threads myExecSpace;
@@ -327,9 +327,9 @@ int main (int argc, char ** argv){
       cols_view_t columns_view("colsmap_view", ne);
       values_view_t values_view("values_view", ne);
 
-      KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
-      KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
-      KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+      KokkosKernels::Impl::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
+      KokkosKernels::Impl::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+      KokkosKernels::Impl::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
 
       graph_t static_graph (columns_view, rowmap_view);
       crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
@@ -362,7 +362,7 @@ int main (int argc, char ** argv){
       }
       Kokkos::OpenMP::print_configuration(std::cout);
 
-      KokkosKernels::Experimental::Util::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Impl::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::OpenMP myExecSpace;
@@ -377,9 +377,9 @@ int main (int argc, char ** argv){
       cols_view_t columns_view("colsmap_view", ne);
       values_view_t values_view("values_view", ne);
 
-      KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
-      KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
-      KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+      KokkosKernels::Impl::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
+      KokkosKernels::Impl::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+      KokkosKernels::Impl::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
 
       graph_t static_graph (columns_view, rowmap_view);
       crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
@@ -406,7 +406,7 @@ int main (int argc, char ** argv){
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
       Kokkos::Cuda::print_configuration(std::cout);
 
-      KokkosKernels::Experimental::Util::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Impl::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::Cuda myExecSpace;

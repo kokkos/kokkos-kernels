@@ -42,7 +42,7 @@
 */
 
 
-#include "KokkosKernels_SPGEMM.hpp"
+#include "../../src/graph/KokkosSparse_spgemm.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 
 
@@ -73,7 +73,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   scalar_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals1);
 
 
-  KokkosKernels::Experimental::Util::kk_sort_graph<typename graph_t::row_map_type,
+  KokkosKernels::Impl::kk_sort_graph<typename graph_t::row_map_type,
     typename graph_t::entries_type,
     typename crsMat_t::values_type,
     lno_nnz_view_t,
@@ -91,7 +91,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   if (nentries1 != nentries2) return false;
   if (nvals1 != nvals2) return false;
 
-  KokkosKernels::Experimental::Util::kk_sort_graph
+  KokkosKernels::Impl::kk_sort_graph
       <typename graph_t::row_map_type,
       typename graph_t::entries_type,
       typename crsMat_t::values_type,
@@ -104,17 +104,17 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
     );
 
   bool is_identical = true;
-  is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
+  is_identical = KokkosKernels::Impl::kk_is_identical_view
       <typename graph_t::row_map_type, typename graph_t::row_map_type, typename lno_view_t::value_type,
       typename device::execution_space>(output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
   if (!is_identical) return false;
 
-  is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
+  is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
       typename device::execution_space>(h_ent1, h_ent2, 0 );
   if (!is_identical) return false;
 
-  is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
+  is_identical = KokkosKernels::Impl::kk_is_identical_view
       <scalar_view_t, scalar_view_t, typename scalar_view_t::value_type,
       typename device::execution_space>(h_vals1, h_vals2, 0.000001);
   if (!is_identical) {
@@ -388,8 +388,8 @@ crsMat_t3 run_experiment(
   std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
   std::cout << "entriesC:" << entriesC.dimension_0() << std::endl;
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
-  KokkosKernels::Experimental::Util::print_1Dview(valuesC);
-  KokkosKernels::Experimental::Util::print_1Dview(entriesC);
+  KokkosKernels::Impl::print_1Dview(valuesC);
+  KokkosKernels::Impl::print_1Dview(entriesC);
 
 
   typename crsMat_t3::StaticCrsGraphType static_graph (entriesC, row_mapC);

@@ -53,10 +53,10 @@
 #include <Kokkos_MemoryTraits.hpp>
 
 #include <iostream>
-#include "KokkosKernels_GaussSeidel.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas.hpp>
+#include "../../src/graph/KokkosSparse_GaussSeidel.hpp"
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

@@ -80,7 +80,7 @@ int main (int argc, char ** argv){
 
   size_t numEdges = 0;
   size_t *srcs, *dst; //this type is hard coded
-  KokkosKernels::Experimental::Util::buildEdgeListFromBinSrcTarg_undirected<size_t>(
+  KokkosKernels::Impl::buildEdgeListFromBinSrcTarg_undirected<size_t>(
       in_src, in_dst,
       numEdges,
       &srcs, &dst);
@@ -99,16 +99,16 @@ int main (int argc, char ** argv){
   //std::vector<wt> ew1(ne); 
   //wt *ew = &(ew1[0]);
   wt *ew;
-  KokkosKernels::Experimental::Util::md_malloc<wt>(&ew, ne);
+  KokkosKernels::Impl::md_malloc<wt>(&ew, ne);
 
   size_type *xadj;
   lno_t *adj;
 
-  KokkosKernels::Experimental::Util::md_malloc<size_type>(&xadj, nv + 1);
-  KokkosKernels::Experimental::Util::md_malloc<lno_t>(&adj, ne);
+  KokkosKernels::Impl::md_malloc<size_type>(&xadj, nv + 1);
+  KokkosKernels::Impl::md_malloc<lno_t>(&adj, ne);
 
   std::cout << "converting" << std::endl;
-  KokkosKernels::Experimental::Util::convert_undirected_edge_list_to_csr <size_t, size_type, lno_t>(
+  KokkosKernels::Impl::convert_undirected_edge_list_to_csr <size_t, size_type, lno_t>(
       nv, numEdges, //numEdges should be num undirected edges.
       srcs, dst,
       xadj, adj);
@@ -120,17 +120,17 @@ int main (int argc, char ** argv){
   std::cout << "num_cols:" << num_cols << std::endl;
   //std::vector<size_type> i_xadj(ne / 2 + 1);
   size_type *i_xadj;
-  KokkosKernels::Experimental::Util::md_malloc<size_type>(&i_xadj, ne/2+1);
+  KokkosKernels::Impl::md_malloc<size_type>(&i_xadj, ne/2+1);
   lno_t *i_adj;
-  KokkosKernels::Experimental::Util::md_malloc<lno_t>(&i_adj, ne);
+  KokkosKernels::Impl::md_malloc<lno_t>(&i_adj, ne);
   //std::vector<lno_t> i_adj(ne);
  
 
   std::cout <<"writing original" << std::endl;
-  KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, adj, ew, "actual.bin");
+  KokkosKernels::Impl::write_graph_bin (nv, ne, xadj, adj, ew, "actual.bin");
 
   std::cout << "calculating incidence transpose" << std::endl;
-  KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix_transpose(
+  KokkosKernels::Impl::kk_sequential_create_incidence_matrix_transpose(
       nv,
       ne,
       xadj,
@@ -139,19 +139,19 @@ int main (int argc, char ** argv){
       &(i_adj[0]) //output. preallocated
   );
   std::cout << "writing bin incidence transpose" << std::endl;
-  KokkosKernels::Experimental::Util::write_graph_bin (lno_t (ne / 2), ne, &(i_xadj[0]), &(i_adj[0]), ew , "incidence-transpose.bin");
+  KokkosKernels::Impl::write_graph_bin (lno_t (ne / 2), ne, &(i_xadj[0]), &(i_adj[0]), ew , "incidence-transpose.bin");
   size_type *i_adj2;
-  KokkosKernels::Experimental::Util::md_malloc<size_type>(&i_adj2, ne);
+  KokkosKernels::Impl::md_malloc<size_type>(&i_adj2, ne);
 
   std::cout << "calculating incidence " << std::endl;
-  KokkosKernels::Experimental::Util::kk_sequential_create_incidence_matrix(
+  KokkosKernels::Impl::kk_sequential_create_incidence_matrix(
         nv,
         xadj,
         adj,
         &(i_adj2[0]) //output. preallocated
     );
   std::cout << "writing bin incidence" << std::endl;
-  KokkosKernels::Experimental::Util::write_graph_bin (nv, ne, xadj, i_adj2, ew, "incidence.bin");
+  KokkosKernels::Impl::write_graph_bin (nv, ne, xadj, i_adj2, ew, "incidence.bin");
 
   lno_t average_degree = ne/nv;
   std::vector<lno_t> row_sizes (nv, 0);

@@ -57,3 +57,6 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_trsv.hpp"
+#include "KokkosSparse_spgemm.hpp"
+#include "KokkosSparse_gauss_seidel.hpp"
+

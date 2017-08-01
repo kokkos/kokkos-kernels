@@ -42,7 +42,7 @@
 */
 
 
-#include "KokkosKernels_Triangle.hpp"
+#include "../../src/graph/KokkosGraph_Triangle.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 
 #define TRANPOSEFIRST false
@@ -71,7 +71,7 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
   lno_nnz_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nentries1);
 
 
-  KokkosKernels::Experimental::Util::kk_sort_graph<typename crsGraph_t::row_map_type,
+  KokkosKernels::Impl::kk_sort_graph<typename crsGraph_t::row_map_type,
     typename crsGraph_t::entries_type,
     lno_nnz_view_t,
     lno_nnz_view_t,
@@ -88,7 +88,7 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
   if (nrows1 != nrows2) return false;
   if (nentries1 != nentries2) return false;
 
-  KokkosKernels::Experimental::Util::kk_sort_graph
+  KokkosKernels::Impl::kk_sort_graph
       <typename crsGraph_t::row_map_type,
       typename crsGraph_t::entries_type,
       lno_nnz_view_t,
@@ -101,12 +101,12 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
     );
 
   bool is_identical = true;
-  is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
+  is_identical = KokkosKernels::Impl::kk_is_identical_view
       <typename crsGraph_t::row_map_type, typename crsGraph_t::row_map_type, typename lno_view_t::value_type,
       typename device::execution_space>(output_mat1.row_map, output_mat2.row_map, 0);
   if (!is_identical) return false;
 
-  is_identical = KokkosKernels::Experimental::Util::kk_is_identical_view
+  is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
       typename device::execution_space>(h_ent1, h_ent2, 0 );
   if (!is_identical) return false;
@@ -312,7 +312,7 @@ void run_experiment(
             crsGraph.entries,
             KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
 
-          row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
+          row_mapC(row) += KokkosKernels::Impl::set_bit_count(col_set);
         }
         );
       }
@@ -325,14 +325,14 @@ void run_experiment(
             KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
 
           //row_mapC(row) += 1;
-          row_mapC(row) += KokkosKernels::Experimental::Util::set_bit_count(col_set);
+          row_mapC(row) += KokkosKernels::Impl::set_bit_count(col_set);
 
         }
         );
       }
 
       size_t num_triangles = 0;
-      KokkosKernels::Experimental::Util::kk_reduce_view< Kokkos::View <size_t *,ExecSpace>, ExecSpace>(rowmap_size, row_mapC, num_triangles);
+      KokkosKernels::Impl::kk_reduce_view< Kokkos::View <size_t *,ExecSpace>, ExecSpace>(rowmap_size, row_mapC, num_triangles);
       ExecSpace::fence();
 
       symbolic_time = timer1.seconds();

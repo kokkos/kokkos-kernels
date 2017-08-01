@@ -104,7 +104,7 @@ int main (int argc, char ** argv){
   typedef typename graph_t::entries_type::const_type  c_cols_view_t;
   typedef typename crstmat_t::values_type::const_type   c_values_view_t;
 
-  crstmat_t a_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<crstmat_t>(in_mtx);
+  crstmat_t a_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<crstmat_t>(in_mtx);
 
   c_row_map_view_t orm = a_crsmat.graph.row_map;
   c_cols_view_t oentries = a_crsmat.graph.entries;
@@ -215,7 +215,7 @@ int main (int argc, char ** argv){
     row_map_view_t new_rowmap;
     cols_view_t new_entries;
 
-    KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
+    KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
     <c_row_map_view_t, c_cols_view_t, row_map_view_t, cols_view_t,MyExecSpace>
     (numrows, orm, oentries, new_rowmap, new_entries);
     values_view_t new_values("",new_entries.dimension_0());
@@ -223,7 +223,7 @@ int main (int argc, char ** argv){
     cols_view_t out_adj ("", new_entries.dimension_0());
     values_view_t out_vals("",new_entries.dimension_0());
 
-    KokkosKernels::Experimental::Util::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
+    KokkosKernels::Impl::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
 		(new_rowmap, new_entries, new_values, out_adj, out_vals);
     new_entries = out_adj;
     new_values = out_vals;
@@ -249,7 +249,7 @@ int main (int argc, char ** argv){
     cols_view_t new_entries ("new_rowmap", a_crsmat.nnz());
     values_view_t new_values ("new_rowmap", a_crsmat.nnz());
 
-    KokkosKernels::Experimental::Util::transpose_matrix<
+    KokkosKernels::Impl::transpose_matrix<
       c_row_map_view_t, c_cols_view_t, c_values_view_t,
       row_map_view_t, cols_view_t, values_view_t, row_map_view_t, MyExecSpace>(
           a_crsmat.numRows(), a_crsmat.numCols(),
@@ -260,14 +260,14 @@ int main (int argc, char ** argv){
     cols_view_t out_adj ("", new_entries.dimension_0());
     values_view_t out_vals("",new_entries.dimension_0());
     std::cout << 2 << std::endl;
-    KokkosKernels::Experimental::Util::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
+    KokkosKernels::Impl::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
                 (new_rowmap, new_entries, new_values, out_adj, out_vals);
     new_entries = out_adj;
     new_values = out_vals;
     std::cout << 3 << std::endl;
     MyExecSpace::fence();
-    KokkosKernels::Experimental::Util::kk_print_1Dview(out_adj);
-    KokkosKernels::Experimental::Util::kk_print_1Dview(out_vals);
+    KokkosKernels::Impl::kk_print_1Dview(out_adj);
+    KokkosKernels::Impl::kk_print_1Dview(out_vals);
 
     graph_t transpose_graph(new_entries, new_rowmap);
     crstmat_t transpose("transpose", a_crsmat.numRows(), new_values, transpose_graph);
@@ -287,7 +287,7 @@ int main (int argc, char ** argv){
   }
 
 
-  KokkosKernels::Experimental::Util::write_kokkos_crst_matrix (a_crsmat, out_bin);
+  KokkosKernels::Impl::write_kokkos_crst_matrix (a_crsmat, out_bin);
 
 
   Kokkos::OpenMP::finalize();

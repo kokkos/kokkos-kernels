@@ -60,13 +60,13 @@ void test_trsv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
   //this function creates a dense lower and upper triangular matrix.
   //TODO: SHOULD CHANGE IT TO SPARSE
-  crsMat_t lower_part = KokkosKernels::Experimental::Util::kk_generate_triangular_sparse_matrix<crsMat_t>('L', numRows,numCols,nnz,row_size_variance, bandwidth);
+  crsMat_t lower_part = KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>('L', numRows,numCols,nnz,row_size_variance, bandwidth);
 
   KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(lower_part, b_x, b_y, b_x_copy, numMV, "L");
   typedef typename Kokkos::View<lno_t*, layout, Device> indexview;
 
-  crsMat_t upper_part = KokkosKernels::Experimental::Util::kk_generate_triangular_sparse_matrix<crsMat_t>('U', numRows,numCols,nnz,row_size_variance, bandwidth);
+  crsMat_t upper_part = KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>('U', numRows,numCols,nnz,row_size_variance, bandwidth);
   KokkosSparse::spmv("N", alpha, upper_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(upper_part, b_x, b_y, b_x_copy, numMV, "U");
 
@@ -76,7 +76,7 @@ void test_trsv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
 
 #define EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE) \
-TEST_F( TestCategory, trsv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## LAYOUT ## _ ## DEVICE ) { \
+TEST_F( TestCategory,sparse ## _ ## trsv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## LAYOUT ## _ ## DEVICE ) { \
   test_trsv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (5000, 5000 * 30, 200, 10, 1); \
   test_trsv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (5000, 5000 * 30, 100, 10, 5); \
   test_trsv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (1000, 1000 * 20, 100, 5, 10); \

@@ -83,14 +83,14 @@ namespace Experiment{
     //read a and b matrices and store them on slow or fast memory.
     if (params.a_mem_space == 1){
       fast_crstmat_t a_fast_crsmat;
-      a_fast_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
+      a_fast_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
       a_fast_crsgraph = a_fast_crsmat.graph;
       a_fast_crsgraph.num_cols = a_fast_crsmat.numCols();
 
     }
     else {
       slow_crstmat_t a_slow_crsmat;
-      a_slow_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
+      a_slow_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
       a_slow_crsgraph = a_slow_crsmat.graph;
       a_slow_crsgraph.num_cols = a_slow_crsmat.numCols();
     }

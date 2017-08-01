@@ -40,7 +40,6 @@
 // ************************************************************************
 //@HEADER
 */
-#include <KokkosKernels_GraphColor.hpp>
 #include <KokkosKernels_Handle.hpp>
 
 #include <cstdlib>
@@ -50,6 +49,7 @@
 #include <algorithm>    // std::shuffle
 #include <vector>
 
+#include "../../src/graph/KokkosGraph_GraphColor.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
 int main (int argc, char ** argv){
@@ -74,7 +74,7 @@ int main (int argc, char ** argv){
   idx *xadj, *adj;
   wt *ew;
 
-  KokkosKernels::Experimental::Util::read_matrix<idx, idx, wt> (
+  KokkosKernels::Impl::read_matrix<idx, idx, wt> (
       &nr, &ne, &xadj, &adj, &ew, argv[1]);
   delete [] ew;
 
@@ -122,8 +122,8 @@ int main (int argc, char ** argv){
 
     row_index_view_type kok_xadj ("xadj", nr + 1);
     nonzero_index_view_type kok_adj("adj", ne);
-    KokkosKernels::Experimental::Util::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-    KokkosKernels::Experimental::Util::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
+    KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
+    KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
 
 
 
@@ -141,7 +141,7 @@ int main (int argc, char ** argv){
           " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
           "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
           "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-      std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
+      std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
     }
   }
 #endif
@@ -183,8 +183,8 @@ int main (int argc, char ** argv){
 
       row_index_view_type kok_xadj ("xadj", nr + 1);
       nonzero_index_view_type kok_adj("adj", ne);
-      KokkosKernels::Experimental::Util::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      KokkosKernels::Experimental::Util::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
+      KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
+      KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
 
 
 
@@ -202,7 +202,7 @@ int main (int argc, char ** argv){
             " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
             "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
+        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
 
     }
@@ -244,8 +244,8 @@ int main (int argc, char ** argv){
 
       row_index_view_type kok_xadj ("xadj", nr + 1);
       nonzero_index_view_type kok_adj("adj", ne);
-      KokkosKernels::Experimental::Util::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      KokkosKernels::Experimental::Util::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
+      KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
+      KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
 
       typedef KokkosKernels::Experimental::KokkosKernelsHandle
               <const_row_index_view_type,const_nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
@@ -261,7 +261,7 @@ int main (int argc, char ** argv){
             " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
             "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
+        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
     }
 
@@ -307,8 +307,8 @@ int main (int argc, char ** argv){
       nonzero_index_view_type kok_adj("adj", ne);
       Kokkos::deep_copy (kok_xadj , _xadj);
       Kokkos::deep_copy (kok_adj , _adj);
-      //KokkosKernels::Experimental::Util::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      //KokkosKernels::Experimental::Util::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
+      //KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
+      //KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
 
       typedef KokkosKernels::Experimental::KokkosKernelsHandle
               <row_index_view_type,nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
@@ -324,7 +324,7 @@ int main (int argc, char ** argv){
             " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
             "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
+        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
       typedef typename KernelHandle::row_lno_temp_work_view_t row_view_type;
 
@@ -380,13 +380,13 @@ int main (int argc, char ** argv){
       row_index_view_type kok_xadj ("xadj", nr + 1);
       nonzero_index_view_type kok_adj("adj", ne);
 
-      KokkosKernels::Experimental::Util::copy_vector<tmp_view_type, row_index_view_type, ExecSpace>(nr+1, __xadj, kok_xadj );
-      KokkosKernels::Experimental::Util::copy_vector<tmp_edge_view_type, nonzero_index_view_type, ExecSpace>(ne, __adj, kok_adj );
+      KokkosKernels::Impl::copy_vector<tmp_view_type, row_index_view_type, ExecSpace>(nr+1, __xadj, kok_xadj );
+      KokkosKernels::Impl::copy_vector<tmp_edge_view_type, nonzero_index_view_type, ExecSpace>(ne, __adj, kok_adj );
       __xadj = tmp_view_type("");
       __adj = tmp_edge_view_type("");
 
-      //KokkosKernels::Experimental::Util::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      //KokkosKernels::Experimental::Util::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
+      //KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
+      //KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
 
       typedef KokkosKernels::Experimental::KokkosKernelsHandle
               <const_row_index_view_type,const_nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
@@ -402,7 +402,7 @@ int main (int argc, char ** argv){
             " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
             "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
+        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
     }
 
@@ -454,8 +454,8 @@ int main (int argc, char ** argv){
       row_index_view_type kok_xadj ("xadj", nr + 1);
       nonzero_index_view_type kok_adj("adj", ne);
 
-      KokkosKernels::Experimental::Util::copy_vector<tmp_view_type, row_index_view_type, ExecSpace>(nr+1, __xadj, kok_xadj );
-      KokkosKernels::Experimental::Util::copy_vector<tmp_edge_view_type, nonzero_index_view_type, ExecSpace>(ne, __adj, kok_adj );
+      KokkosKernels::Impl::copy_vector<tmp_view_type, row_index_view_type, ExecSpace>(nr+1, __xadj, kok_xadj );
+      KokkosKernels::Impl::copy_vector<tmp_edge_view_type, nonzero_index_view_type, ExecSpace>(ne, __adj, kok_adj );
       __xadj = tmp_view_type("");
       __adj = tmp_edge_view_type("");
 
@@ -475,7 +475,7 @@ int main (int argc, char ** argv){
             " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
             "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
+        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
     }
 

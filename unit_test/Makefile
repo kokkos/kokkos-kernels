@@ -45,6 +45,10 @@ include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 INC  = -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
 INC += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
 INC += -I$(KOKKOSKERNELS_PATH)/unit_test/sparse
+INC += -I$(KOKKOSKERNELS_PATH)/unit_test/graph
+INC += -I$(KOKKOSKERNELS_PATH)/unit_test/common
+
+
 
 
 vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
@@ -52,6 +56,10 @@ vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
 TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/blas/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/sparse/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/graph/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/common/*.hpp)
+
+
 
 TEST_TARGETS =
 TARGETS =
@@ -92,6 +100,17 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas2_gemv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spmv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_trsv.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_spgemm.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_gauss_seidel.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_CrsMatrix.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_findRelOffset.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_replaceSumIntoLonger.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_replaceSumInto.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_copyIntegers.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_mkl_sparseMatrixHandle.o
+  OBJ_OPENMP += Test_OpenMP_Graph_graph_color.o
+  OBJ_OPENMP += Test_OpenMP_Common_ArithTraits.o
+#  OBJ_OPENMP += Test_OpenMP_Common_float128.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -138,6 +157,15 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas2_gemv.o
   OBJ_CUDA += Test_Cuda_Sparse_spmv.o
   OBJ_CUDA += Test_Cuda_Sparse_trsv.o
+  OBJ_CUDA += Test_Cuda_Sparse_spgemm.o
+  OBJ_CUDA += Test_Cuda_Sparse_gauss_seidel.o
+  OBJ_CUDA += Test_Cuda_Sparse_CrsMatrix.o
+  OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o
+  OBJ_CUDA += Test_Cuda_Sparse_replaceSumIntoLonger.o
+  OBJ_CUDA += Test_Cuda_Sparse_replaceSumInto.o
+  OBJ_CUDA += Test_Cuda_Sparse_copyIntegers.o
+  OBJ_CUDA += Test_Cuda_Graph_graph_color.o
+  OBJ_CUDA += Test_Cuda_Common_ArithTraits.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
@@ -185,6 +213,17 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Blas2_gemv.o
   OBJ_SERIAL += Test_Serial_Sparse_spmv.o
   OBJ_SERIAL += Test_Serial_Sparse_trsv.o
+  OBJ_SERIAL += Test_Serial_Sparse_spgemm.o
+  OBJ_SERIAL += Test_Serial_Sparse_gauss_seidel.o
+  OBJ_SERIAL += Test_Serial_Sparse_CrsMatrix.o
+  OBJ_SERIAL += Test_Serial_Sparse_findRelOffset.o
+  OBJ_SERIAL += Test_Serial_Sparse_replaceSumIntoLonger.o
+  OBJ_SERIAL += Test_Serial_Sparse_replaceSumInto.o
+  OBJ_SERIAL += Test_Serial_Sparse_copyIntegers.o
+  OBJ_SERIAL += Test_Serial_Sparse_mkl_sparseMatrixHandle.o
+  OBJ_SERIAL += Test_Serial_Graph_graph_color.o
+  OBJ_SERIAL += Test_Serial_Common_ArithTraits.o
+#  OBJ_SERIAL += Test_Serial_Common_float128.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif
@@ -221,6 +260,17 @@ ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
   OBJ_THREADS += Test_Threads_Blas2_gemv.o
   OBJ_THREADS += Test_Threads_Sparse_spmv.o
   OBJ_THREADS += Test_Threads_Sparse_trsv.o
+  OBJ_THREADS += Test_Threads_Sparse_spgemm.o
+  OBJ_THREADS += Test_Threads_Sparse_gauss_seidel.o
+  OBJ_THREADS += Test_Threads_Sparse_findRelOffset.o
+  OBJ_THREADS += Test_Threads_Sparse_replaceSumIntoLonger.o
+  OBJ_THREADS += Test_Threads_Sparse_replaceSumInto.o
+  OBJ_THREADS += Test_Threads_Sparse_copyIntegers.o
+  OBJ_THREADS += Test_Threads_Sparse_CrsMatrix.o
+  OBJ_THREADS += Test_Threads_Sparse_mkl_sparseMatrixHandle.o
+  OBJ_THREADS += Test_Threads_Graph_graph_color.o
+  OBJ_THREADS += Test_Threads_Common_ArithTraits.o
+#  OBJ_THREADS += Test_Threads_Common_float128.o
   TARGETS += KokkosKernels_UnitTest_Threads
   TEST_TARGETS += test-threads
 endif

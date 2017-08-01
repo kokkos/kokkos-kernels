@@ -86,18 +86,18 @@ namespace Experiment{
 
       fast_crstmat_t a_fast_crsmat;
 
-      a_fast_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
+      a_fast_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
       fast_cols_view_t new_indices;
       Kokkos::Impl::Timer timer1;
       if (params.left_sort){
         new_indices = fast_cols_view_t(Kokkos::ViewAllocateWithoutInitializing("new indices"), a_fast_crsmat.numRows());
-        KokkosKernels::Experimental::Util::kk_sort_by_row_size <size_type, lno_t,exec_space>(
+        KokkosKernels::Impl::kk_sort_by_row_size <size_type, lno_t,exec_space>(
             a_fast_crsmat.numRows(), a_fast_crsmat.graph.row_map.data(), new_indices.data()
             //&(new_indices[0])
             );
       }
       if (params.left_lower_triangle){
-        a_fast_crsmat = KokkosKernels::Experimental::Util::
+        a_fast_crsmat = KokkosKernels::Impl::
             kk_get_lower_crs_matrix(a_fast_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
       a_fast_crsgraph = a_fast_crsmat.graph;
@@ -106,18 +106,18 @@ namespace Experiment{
     }
     else {
       slow_crstmat_t a_slow_crsmat;
-      a_slow_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
+      a_slow_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
       fast_cols_view_t new_indices;
       Kokkos::Impl::Timer timer1;
       if (params.left_sort){
         new_indices = fast_cols_view_t(Kokkos::ViewAllocateWithoutInitializing("new indices"), a_slow_crsmat.numRows());
 
-        KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, lno_t,exec_space>(
+        KokkosKernels::Impl::kk_sort_by_row_size<size_type, lno_t,exec_space>(
             a_slow_crsmat.numRows(), a_slow_crsmat.graph.row_map.data(),
             new_indices.data());
       }
       if (params.left_lower_triangle){
-        a_slow_crsmat = KokkosKernels::Experimental::Util::
+        a_slow_crsmat = KokkosKernels::Impl::
                     kk_get_lower_crs_matrix(a_slow_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
 
@@ -138,18 +138,18 @@ namespace Experiment{
       fast_crstmat_t b_fast_crsmat;
 
       if (b_mat_file == NULL) b_mat_file = a_mat_file;
-      b_fast_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
+      b_fast_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
       fast_cols_view_t new_indices;
       Kokkos::Impl::Timer timer1;
       if (params.right_sort){
         new_indices = fast_cols_view_t(Kokkos::ViewAllocateWithoutInitializing("new indices"), b_fast_crsmat.numRows());
 
-        KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, lno_t,exec_space>(
+        KokkosKernels::Impl::kk_sort_by_row_size<size_type, lno_t,exec_space>(
             b_fast_crsmat.numRows(), b_fast_crsmat.graph.row_map.data(),
             new_indices.data());
       }
       if (params.right_lower_triangle){
-        b_fast_crsmat = KokkosKernels::Experimental::Util::
+        b_fast_crsmat = KokkosKernels::Impl::
                             kk_get_lower_crs_matrix(b_fast_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
       b_fast_crsgraph = b_fast_crsmat.graph;
@@ -160,19 +160,19 @@ namespace Experiment{
     else {
       slow_crstmat_t b_slow_crsmat;
       if (b_mat_file == NULL) b_mat_file = a_mat_file;
-      b_slow_crsmat = KokkosKernels::Experimental::Util::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
+      b_slow_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
       fast_cols_view_t new_indices;
       Kokkos::Impl::Timer timer1;
       if (params.right_sort){
         new_indices = fast_cols_view_t(Kokkos::ViewAllocateWithoutInitializing("new indices"), b_slow_crsmat.numRows());
 
-        KokkosKernels::Experimental::Util::kk_sort_by_row_size<size_type, lno_t,exec_space>(
+        KokkosKernels::Impl::kk_sort_by_row_size<size_type, lno_t,exec_space>(
             b_slow_crsmat.numRows(), b_slow_crsmat.graph.row_map.data(),
             new_indices.data());
 
       }
       if (params.right_lower_triangle){
-        b_slow_crsmat = KokkosKernels::Experimental::Util::
+        b_slow_crsmat = KokkosKernels::Impl::
                             kk_get_lower_crs_matrix(b_slow_crsmat,new_indices.data()/* , params.use_dynamic_scheduling */);
       }
       b_slow_crsgraph = b_slow_crsmat.graph;

@@ -175,18 +175,18 @@ crsMat_t get_crsmat(
     cols_view_t columns_view("colsmap_view", ne);
     values_view_t values_view("values_view", ne);
 
-    KokkosKernels::Experimental::Util::copy_vector<scalar_t * , values_view_t, myExecSpace>(ne, ew, values_view);
-    KokkosKernels::Experimental::Util::copy_vector<lno_t * , cols_view_t, myExecSpace>(ne, adj, columns_view);
-    KokkosKernels::Experimental::Util::copy_vector<size_type * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+    KokkosKernels::Impl::copy_vector<scalar_t * , values_view_t, myExecSpace>(ne, ew, values_view);
+    KokkosKernels::Impl::copy_vector<lno_t * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+    KokkosKernels::Impl::copy_vector<size_type * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
 
     size_type ncols = 0;
-    KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(ne, columns_view, ncols);
+    KokkosKernels::Impl::view_reduce_max<cols_view_t, myExecSpace>(ne, columns_view, ncols);
     ncols += 1;
 
     if (is_one_based) {
       //if algorithm is mkl_csrmultcsr convert to 1 base so that we dont dublicate the memory at the experiments/
-      KokkosKernels::Experimental::Util::kk_a_times_x_plus_b< row_map_view_t, row_map_view_t,   int, int, myExecSpace>(nv + 1,  rowmap_view, rowmap_view,  1, 1);
-      KokkosKernels::Experimental::Util::kk_a_times_x_plus_b<  cols_view_t, cols_view_t,  int, int, myExecSpace>(ne, columns_view, columns_view,  1, 1);
+      KokkosKernels::Impl::kk_a_times_x_plus_b< row_map_view_t, row_map_view_t,   int, int, myExecSpace>(nv + 1,  rowmap_view, rowmap_view,  1, 1);
+      KokkosKernels::Impl::kk_a_times_x_plus_b<  cols_view_t, cols_view_t,  int, int, myExecSpace>(ne, columns_view, columns_view,  1, 1);
     }
 
     graph_t static_graph (columns_view, rowmap_view);
@@ -221,12 +221,12 @@ out_crsMat_t copy_crsmat(in_crsMat_t inputMat){
     cols_view_t columns_view("colsmap_view", ne);
     values_view_t values_view("values_view", ne);
 
-    KokkosKernels::Experimental::Util::copy_vector<in_values_view_t , values_view_t, myExecSpace>(ne, inputMat.values, values_view);
-    KokkosKernels::Experimental::Util::copy_vector<in_cols_view_t , cols_view_t, myExecSpace>(ne, inputMat.graph.entries, columns_view);
-    KokkosKernels::Experimental::Util::copy_vector<in_row_map_view_t , row_map_view_t, myExecSpace>(nv+1, inputMat.graph.row_map, rowmap_view);
+    KokkosKernels::Impl::copy_vector<in_values_view_t , values_view_t, myExecSpace>(ne, inputMat.values, values_view);
+    KokkosKernels::Impl::copy_vector<in_cols_view_t , cols_view_t, myExecSpace>(ne, inputMat.graph.entries, columns_view);
+    KokkosKernels::Impl::copy_vector<in_row_map_view_t , row_map_view_t, myExecSpace>(nv+1, inputMat.graph.row_map, rowmap_view);
 
     size_type ncols = 0;
-    KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(ne, columns_view, ncols);
+    KokkosKernels::Impl::view_reduce_max<cols_view_t, myExecSpace>(ne, columns_view, ncols);
     ncols += 1;
 
     graph_t static_graph (columns_view, rowmap_view);
