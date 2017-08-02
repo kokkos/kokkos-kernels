@@ -43,7 +43,7 @@
 #include <iostream>
 
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_RunMultiMemSpGEMM.hpp"
+#include "KokkosSparse_multimem_spgemm.hpp"
 
 
 typedef int size_type;

@@ -56,7 +56,7 @@
 #include "KokkosKernels_Handle.hpp"
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas.hpp>
-#include "../../src/graph/KokkosSparse_GaussSeidel.hpp"
+#include <KokkosSparse_gauss_seidel.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -90,6 +90,8 @@ void pcgsolve(
             ,  CGSolveResult * result = 0
             ,  bool use_sgs = true) {
 
+  using namespace KokkosSparse;
+  using namespace KokkosSparse::Experimental;
   typedef typename KernelHandle_t::HandleExecSpace Space;
 
 
@@ -122,7 +124,7 @@ void pcgsolve(
   /* r = b - r   */  KokkosBlas::axpby(1.0, y_vector, -1.0, r);
 
   /* p  = r       */  Kokkos::deep_copy( p , r );
-
+;
   double old_rdot = KokkosBlas::dot( r , r );
   norm_res  = sqrt( old_rdot );
 
@@ -141,7 +143,7 @@ void pcgsolve(
 
     timer.reset();
 
-    KokkosKernels::Experimental::Graph::gauss_seidel_numeric
+    gauss_seidel_numeric
       (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);
 
     Space::fence();
@@ -151,7 +153,7 @@ void pcgsolve(
     Space::fence();
     timer.reset();
 
-    KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply
+    symmetric_gauss_seidel_apply
         (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, true, apply_count);
 
     Space::fence();
@@ -203,7 +205,7 @@ void pcgsolve(
     if (use_sgs){
       Space::fence();
       timer.reset();
-      KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply(
+      symmetric_gauss_seidel_apply(
           &kh,
           count_total, count_total,
           crsMat.graph.row_map,

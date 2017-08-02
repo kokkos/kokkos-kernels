@@ -42,12 +42,14 @@
 */
 #include <iostream>
 
+#include "KokkosGraph_multimem_triangle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_RunMultiMemTriangle.hpp"
 
 
-typedef int size_type;
+typedef unsigned size_type;
 typedef int idx;
+//typedef int size_type;
+//typedef int idx;
 typedef double wt;
 
 
@@ -57,20 +59,34 @@ typedef double wt;
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;
+  std::cerr << "Choose BackEnd                     : openmp [numthreads] | cuda" << std::endl;
+  std::cerr << "Input Matrix                       : amtx [path_to_input_matrix]" << std::endl;
+  std::cerr << "\tInput Matrix format can be multiple formats. If it ends with:" << std::endl;
+  std::cerr << "\t\t.mtx: it will read matrix market format." << std::endl;
+  std::cerr << "\t\t.bin: it will read binary crs matrix format." << std::endl;
+  std::cerr << "\t\t.crs: it will read text crs matrix format." << std::endl;
+  std::cerr << "algorithm                          :" << std::endl;
+  std::cerr << "\tTRIANGLEAI: for Adj x Incidence" << std::endl;
+  std::cerr << "\tTRIANGLEIA: for Incidence x Adj -- implementing set intersection (2D) -- 3rd fastest"  << std::endl;
+  std::cerr << "\tTRIANGLEIAUNION: for Incidence x Adj -- implementing set union " << std::endl;
+  std::cerr << "\tTRIANGLELL: Lower x Lower -- usually fastest " << std::endl;
+  std::cerr << "\tTRIANGLELU: Lower x Upper -- usually 2nd fastest " << std::endl;
+  std::cerr << "FLOP                               : Calculate and prints the number of operations. This will be calculated on the first run." << std::endl;
+  std::cerr << "COMPRESION [0|1]                   : Enable disable compression. Default:1." << std::endl;
+  std::cerr << "RS [0|1|2]                         : Whether to sort lower triangular matrix. 0 - no sort, 1 - sort, 2 - algorithm decides based on max row size (default)" << std::endl;
+  std::cerr << "accumulator [default|dense|sparse] : what type of accumulator to use." << std::endl;
+  std::cerr << "RLT                                : If given, lower triangle will be used for AdjxIncidence or Incidence x Adj algorithms." << std::endl;
+  std::cerr << "dynamic                            : If set, dynamic schedule will be used. Currently default is dynamic scheduling as well." << std::endl;
+  std::cerr << "verbose                            : If set, the inner timer stats will be printed." << std::endl;
+  std::cerr << "repeat [repeatnum]                 : how many repeats will be run." << std::endl;
+  std::cerr << "chunksize [chunksize]              : how many vertices are executed with in a loop index. Default is 16." << std::endl;
+  std::cerr << "sort_option [0|1|2]                : How lower triangle will be sorted. 0: for largest to bottom, 1 for largest to top, 2 for interleaved." << std::endl;
+  std::cerr << "cache_flush [0|1|2]                : Flush between repetitions. 0 - no flush, 1 - soft flush, 2 - hard flush with random numbers." << std::endl;
 
-  std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
+  std::cerr << "\nSuggested use of LL: executable amtx path_to_file.bin algorithm TRIANGLELL repeat 6 verbose chunksize [4|16]" << std::endl;
+  std::cerr << "Suggested use of LU: executable amtx path_to_file.bin algorithm TRIANGLELU repeat 6 verbose chunksize [4|16]" << std::endl;
+  std::cerr << "Suggested use of AI: executable amtx path_to_file.bin algorithm TRIANGLEIA repeat 6 verbose chunksize [4|16] rlt" << std::endl;
 
-  std::cerr << "\t[Required] INPUT MATRICES: 'amtx [left_hand_side.mtx]'  'bmtx [righ_hand_side.mtx]'" << std::endl;
-
-  std::cerr << "\t[Required] 'algorithm [KKMEM|OUTER|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
-  std::cerr << "\t[Optional] OUTPUT MATRICES: 'cmtx [output_matrix.mtx]'" << std::endl;
-
-  std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
-  std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
-  std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
-  std::cerr << "\t'COF path_to_coloring_file': If coloring variants are used, first graph coloring will be performed, then writtent to this file." << std::endl;
-  std::cerr << "\tLoop scheduling: 'dynamic': Use this for dynamic scheduling of the loops. (Better performance most of the time)" << std::endl;
-  std::cerr << "\tVerbose Output: 'verbose'" << std::endl;
 }
 
 
@@ -99,6 +115,12 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
       params.vector_size  = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "compression" ) ) {
+      params.apply_compression = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "sort_option" ) ) {
+      params.sort_option = atoi( argv[++i] ) ;
     }
     else if ( 0 == strcasecmp( argv[i] , "memspaces" ) ) {
       int memspaces = atoi( argv[++i] ) ;
@@ -141,7 +163,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       memspaceinfo  = memspaceinfo >> 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "CRWC" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "flop" ) ) {
       params.calculate_read_write_cost = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "CIF" ) ) {
@@ -150,7 +172,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "COF" ) ) {
       params.coloring_output_file = argv[++i];
     }
-
+    else if ( 0 == strcasecmp( argv[i] , "mhscale" ) ) {
+      params.minhashscale = atoi( argv[++i] ) ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "mcscale" ) ) {
       params.multi_color_scale = atoi( argv[++i] ) ;
     }
@@ -172,33 +196,32 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
       params.a_mtx_bin_file = argv[++i];
     }
+    /*
     else if ( 0 == strcasecmp( argv[i] , "cmtx" ) ) {
       params.c_mtx_bin_file = argv[++i];
     }
     else if ( 0 == strcasecmp( argv[i] , "bmtx" ) ) {
       params.b_mtx_bin_file = argv[++i];
     }
+    */
     else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
-
-    else if ( 0 == strcasecmp( argv[i] , "LLT" ) ) {
-      params.left_lower_triangle = 1;
+    else if ( 0 == strcasecmp( argv[i] , "cache_flush" ) ) {
+      params.cache_flush = atoi(argv[++i]);
     }
+
+
     else if ( 0 == strcasecmp( argv[i] , "RLT" ) ) {
       params.right_lower_triangle = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "LS" ) ) {
-      params.left_sort = 1;
-    }
     else if ( 0 == strcasecmp( argv[i] , "RS" ) ) {
-      params.right_sort = 1;
+      params.right_sort = atoi(argv[++i]);
     }
 
     else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
       params.verbose = 1;
     }
-
 
     else if ( 0 == strcasecmp( argv[i] , "accumulator" ) ) {
       ++i;
@@ -212,12 +235,11 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
         params.accumulator = 2;
       }
       else {
-        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+        std::cerr << "1-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
         print_options();
         return 1;
       }
     }
-
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
       if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
@@ -265,6 +287,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "OUTER" ) ) {
         params.algorithm = 15;
       }
+
       else if ( 0 == strcasecmp( argv[i] , "TRIANGLEAI" ) ) {
         params.algorithm = 16;
       }
@@ -281,13 +304,13 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
         params.algorithm = 20;
       }
       else {
-        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+        std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
         print_options();
         return 1;
       }
     }
     else {
-      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+      std::cerr << "3-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
       print_options();
       return 1;
     }
@@ -306,13 +329,13 @@ int main (int argc, char ** argv){
     return 1;
   }
   if (params.a_mtx_bin_file == NULL){
-    std::cerr << "Provide a and b matrix files" << std::endl ;
+    std::cerr << "Provide a matrix file" << std::endl ;
     print_options();
     return 0;
   }
-  if (params.b_mtx_bin_file == NULL){
-    std::cout << "B is not provided. Multiplying AxA." << std::endl;
-  }
+
+  std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
+
 
 #if defined( KOKKOS_HAVE_OPENMP )
 

@@ -42,7 +42,7 @@
 */
 
 
-#include "../../src/graph/KokkosGraph_Triangle.hpp"
+#include "KokkosGraph_Triangle.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 
 #define TRANPOSEFIRST false
@@ -186,6 +186,11 @@ struct Flush {
 template <typename ExecSpace, typename crsGraph_t, typename crsGraph_t2 , typename crsGraph_t3 , typename TempMemSpace , typename PersistentMemSpace >
 void run_experiment(
     crsGraph_t crsGraph, Parameters params){
+  //using namespace KokkosSparse;
+  using namespace KokkosSparse;
+  using namespace KokkosGraph::Experimental;
+  //using namespace KokkosSparse::Experimental;
+
   int algorithm = params.algorithm;
   int repeat = params.repeat;
   int chunk_size = params.chunk_size;
@@ -236,26 +241,26 @@ void run_experiment(
     size_type rowmap_size = crsGraph.entries.dimension_0() ;
     switch (algorithm){
     case 16:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_AI);
+      kh.create_spgemm_handle(SPGEMM_KK_TRIANGLE_AI);
       rowmap_size = m ;
       break;
     case 17:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
+      kh.create_spgemm_handle(SPGEMM_KK_TRIANGLE_IA);
       std::cout << "IA" << std::endl;
       break;
     case 18:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA_UNION);
+      kh.create_spgemm_handle(SPGEMM_KK_TRIANGLE_IA_UNION);
       break;
     case 19:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL);
+      kh.create_spgemm_handle(SPGEMM_KK_TRIANGLE_LL);
       rowmap_size = m ;
       break;
     case 20:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU);
+      kh.create_spgemm_handle(SPGEMM_KK_TRIANGLE_LU);
       rowmap_size = m ;
       break;
     default:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_IA);
+      kh.create_spgemm_handle(SPGEMM_KK_TRIANGLE_IA);
       break;
     }
 
@@ -270,13 +275,13 @@ void run_experiment(
     switch (accumulator){
     case 0:
     default:
-      kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT);
+      kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_DEFAULT);
       break;
     case 1:
-      kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_DENSE);
+      kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_DENSE);
       break;
     case 2:
-      kh.get_spgemm_handle()->set_accumulator_type(KokkosKernels::Experimental::Graph::SPGEMM_ACC_SPARSE);
+      kh.get_spgemm_handle()->set_accumulator_type(SPGEMM_ACC_SPARSE);
       break;
     }
 
@@ -305,7 +310,7 @@ void run_experiment(
     double symbolic_time = 0;
     if (params.triangle_options == 0 ){
       if (params.apply_compression){
-        KokkosKernels::Experimental::Graph::triangle_generic (
+        triangle_generic (
             &kh,
             m,
             crsGraph.row_map,
@@ -317,7 +322,7 @@ void run_experiment(
         );
       }
       else {
-        KokkosKernels::Experimental::Graph::triangle_generic (
+        triangle_generic (
             &kh,
             m,
             crsGraph.row_map,

@@ -41,10 +41,11 @@
 //@HEADER
 */
 
+#include "KokkosSparse_pcg.hpp"
+
 #include "KokkosKernels_Utils.hpp"
 #include <iostream>
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_PCG.hpp"
 
 #define MAXVAL 1
 

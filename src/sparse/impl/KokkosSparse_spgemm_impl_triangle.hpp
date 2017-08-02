@@ -1694,8 +1694,8 @@ void KokkosSPGEMM
   dense_accumulator_chunksize += dense_col_size ; //this is for values-1
   //std::cout << "b_col_cnt:" << b_col_cnt << " dense_col_size:" << dense_col_size << std::endl;
 
-  if (!( spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LL ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_TRIANGLE_LU)){
+  if (!( spgemm_algorithm == KokkosSparse::SPGEMM_KK_TRIANGLE_LL ||
+          spgemm_algorithm == KokkosSparse::SPGEMM_KK_TRIANGLE_LU)){
     if(apply_compression){
       dense_accumulator_chunksize += dense_col_size ; //this is for values-2
     }
@@ -1713,10 +1713,10 @@ void KokkosSPGEMM
   size_t accumulator_chunksize = sparse_accumulator_chunksize;
   bool use_dense_accumulator = false;
   if (!apply_compression ||
-      (spgemm_accumulator == KokkosKernels::Experimental::Graph::SPGEMM_ACC_DEFAULT &&
+      (spgemm_accumulator == KokkosSparse::SPGEMM_ACC_DEFAULT &&
         ((concurrency <=  sizeof (nnz_lno_t) * 8) || (dense_accumulator_chunksize < sparse_accumulator_chunksize)))
      ||
-       spgemm_accumulator == KokkosKernels::Experimental::Graph::SPGEMM_ACC_DENSE ){
+       spgemm_accumulator == KokkosSparse::SPGEMM_ACC_DENSE ){
     use_dense_accumulator = true;
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\tUsing Dense Accumulator instead. Sparse chunksize:" << sparse_accumulator_chunksize <<

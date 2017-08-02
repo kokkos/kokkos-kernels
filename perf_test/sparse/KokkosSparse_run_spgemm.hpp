@@ -42,7 +42,7 @@
 */
 
 
-#include "../../src/graph/KokkosSparse_spgemm.hpp"
+#include "KokkosSparse_spgemm.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 
 
@@ -128,6 +128,9 @@ template <typename ExecSpace, typename crsMat_t, typename crsMat_t2 , typename c
 crsMat_t3 run_experiment(
     crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params){
     //int algorithm, int repeat, int chunk_size ,int multi_color_scale, int shmemsize, int team_size, int use_dynamic_scheduling, int verbose){
+
+  using namespace KokkosSparse;
+  using namespace KokkosSparse::Experimental;
   int algorithm = params.algorithm;
   int repeat = params.repeat;
   int chunk_size = params.chunk_size;
@@ -197,14 +200,14 @@ crsMat_t3 run_experiment(
     kh.set_team_work_size(chunk_size);
     kh.set_shmem_size(shmemsize);
     kh.set_suggested_team_size(team_size);
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
+    kh.create_spgemm_handle(KokkosSparse::SPGEMM_KK_MEMORY);
 
     if (use_dynamic_scheduling){
       kh.set_dynamic_scheduling(true);
     }
 
 
-    KokkosKernels::Experimental::Graph::spgemm_symbolic (
+    spgemm_symbolic (
         &kh,
         m,
         n,
@@ -227,7 +230,7 @@ crsMat_t3 run_experiment(
       valuesC_ref = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
-    KokkosKernels::Experimental::Graph::spgemm_numeric(
+    spgemm_numeric(
         &kh,
         m,
         n,
@@ -255,57 +258,57 @@ crsMat_t3 run_experiment(
 
   switch (algorithm){
   case 1:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL);
+    kh.create_spgemm_handle(SPGEMM_MKL);
     break;
   case 2:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSPARSE);
+    kh.create_spgemm_handle(SPGEMM_CUSPARSE);
     break;
   case 3:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
+    kh.create_spgemm_handle(SPGEMM_CUSP);
     break;
   case 4:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_DEBUG);
+    kh.create_spgemm_handle(SPGEMM_DEBUG);
     break;
   case 5:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL2PHASE);
+    kh.create_spgemm_handle(SPGEMM_MKL2PHASE);
     kh.get_spgemm_handle()->set_mkl_sort_option(mkl_sort_option);
     break;
   case 6:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY2);
+    kh.create_spgemm_handle(SPGEMM_KK_MEMORY2);
     break;
   case 7:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
+      kh.create_spgemm_handle(SPGEMM_KK_MEMORY);
       break;
   case 8:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED);
+      kh.create_spgemm_handle(SPGEMM_KK_SPEED);
       break;
   case 9:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR);
+    kh.create_spgemm_handle(SPGEMM_KK_COLOR);
     break;
 
   case 10:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR);
+    kh.create_spgemm_handle(SPGEMM_KK_MULTICOLOR);
     break;
 
   case 11:
-      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2);
+      kh.create_spgemm_handle(SPGEMM_KK_MULTICOLOR2);
       break;
   case 12:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_VIENNA);
+    kh.create_spgemm_handle(SPGEMM_VIENNA);
     break;
   case 13:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMSPEED);
+    kh.create_spgemm_handle(SPGEMM_KK_MEMSPEED);
     break;
   case 14:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTIMEM);
+    kh.create_spgemm_handle(SPGEMM_KK_MULTIMEM);
     break;
   case 15:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_OUTERMULTIMEM);
+    kh.create_spgemm_handle(SPGEMM_KK_OUTERMULTIMEM);
     break;
 
 
   default:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
+    kh.create_spgemm_handle(SPGEMM_KK_MEMORY);
     break;
   }
 
@@ -331,7 +334,7 @@ crsMat_t3 run_experiment(
     valuesC = scalar_view_t ("");
 
     Kokkos::Impl::Timer timer1;
-    KokkosKernels::Experimental::Graph::spgemm_symbolic (
+    spgemm_symbolic (
         &kh,
         m,
         n,
@@ -355,7 +358,7 @@ crsMat_t3 run_experiment(
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
-    KokkosKernels::Experimental::Graph::spgemm_numeric(
+    spgemm_numeric(
         &kh,
         m,
         n,

@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#include "KokkosKernels_RunSpGemm.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
+#include "KokkosSparse_run_spgemm.hpp"
 namespace KokkosKernels{
 
 namespace Experiment{

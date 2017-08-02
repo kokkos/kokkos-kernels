@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include "KokkosKernels_RunStandaloneTriangle.hpp"
+#include "KokkosGraph_run_triangle.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 namespace KokkosKernels{
 

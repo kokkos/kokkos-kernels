@@ -49,7 +49,7 @@
 #include <algorithm>    // std::shuffle
 #include <vector>
 
-#include "../../src/graph/KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_GraphColor.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
 int main (int argc, char ** argv){
@@ -61,7 +61,9 @@ int main (int argc, char ** argv){
 
 
   const int numColoringAlgos = 6;
-  using namespace KokkosKernels::Experimental::Graph;
+  using namespace KokkosGraph::Experimental;
+  using namespace KokkosGraph;
+
   const ColoringAlgorithm ColoringAlgorithms[] = {COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB, COLORING_EB};
   const std::string ColoringAlgorithmNames[] = {"COLORING_DEFAULT", "COLORING_SERIAL", "COLORING_VB", "COLORING_VBBIT", "COLORING_VBCS", "COLORING_EB"};
 
@@ -134,7 +136,7 @@ int main (int argc, char ** argv){
     for (int i = 0; i < numColoringAlgos; ++i){
       std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
       kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-      KokkosKernels::Experimental::Graph::graph_color_symbolic
+      graph_color_symbolic
       <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
 
       std::cout << "\t:" << ColoringAlgorithmNames[i] <<
@@ -195,7 +197,7 @@ int main (int argc, char ** argv){
       for (int i = 0; i < numColoringAlgos; ++i){
         std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
         kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
+        graph_color_symbolic
               <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
 
         std::cout << "\t:" << ColoringAlgorithmNames[i] <<
@@ -254,7 +256,7 @@ int main (int argc, char ** argv){
       for (int i = 0; i < numColoringAlgos; ++i){
         std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
         kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
+        graph_color_symbolic
               <KernelHandle,const_row_index_view_type,const_nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
 
         std::cout << "\t:" << ColoringAlgorithmNames[i] <<
@@ -317,7 +319,7 @@ int main (int argc, char ** argv){
       for (int i = 0; i < numColoringAlgos; ++i){
         std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
         kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
+        graph_color_symbolic
               <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
 
         std::cout << "\t:" << ColoringAlgorithmNames[i] <<
@@ -395,7 +397,7 @@ int main (int argc, char ** argv){
       for (int i = 0; i < numColoringAlgos; ++i){
         std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
         kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
+        graph_color_symbolic
               <KernelHandle,const_row_index_view_type,const_nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
 
         std::cout << "\t:" << ColoringAlgorithmNames[i] <<
@@ -468,7 +470,7 @@ int main (int argc, char ** argv){
       for (int i = 0; i < numColoringAlgos; ++i){
         std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
         kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        KokkosKernels::Experimental::Graph::graph_color_symbolic
+        graph_color_symbolic
               <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
 
         std::cout << "\t:" << ColoringAlgorithmNames[i] <<
