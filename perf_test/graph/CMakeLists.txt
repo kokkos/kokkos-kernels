@@ -14,15 +14,31 @@ TRIBITS_ADD_EXECUTABLE(
   conMTX2BIN
   SOURCES KokkosKernels_WriteBinaryFromMTX.cpp 
   )
+  
+TRIBITS_ADD_EXECUTABLE(
+  contSRCDST2Bin
+  SOURCES KokkosKernels_WriteBinaryFromBinSrcDst.cpp 
+  )
+  
 
 #
 # Disabled temporarily per #980
 #
-# TRIBITS_ADD_EXECUTABLE(
-#   spgemm
-#   SOURCES KokkosKernels_SPMM_KK.cpp  
-#   )
+ TRIBITS_ADD_EXECUTABLE(
+   spgemm
+   SOURCES KokkosKernels_SPMM_KK.cpp  
+   )
   
+TRIBITS_ADD_EXECUTABLE(
+   triangle
+   SOURCES KokkosKernels_Triangle.cpp  
+   )
+      
+TRIBITS_ADD_EXECUTABLE(
+   StandAloneTriangle
+   SOURCES KokkosKernels_StandaloneTriangle.cpp  
+   )
+   
 #TRIBITS_ADD_EXECUTABLE(
 #  spemm_cuda
 #  SOURCES KokkosKernels_SPMM_cuda.cpp  

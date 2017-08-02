@@ -40,23 +40,49 @@
 // ************************************************************************
 //@HEADER
 */
-/// \file KokkosSparse.hpp
-/// \brief Public interface to local computational kernels on sparse
-///   matrices.
-///
-/// KokkosSparse::spmv implements local sparse matrix-vector multiply.
-/// It computes y = beta*y + alpha*Op(A)*x, where x and y are either
-/// both rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
-/// instances, A is a KokkosSparse::CrsMatrix, and Op(A) is determined
-/// by the \c mode input (either no transpose, transpose, or conjugate
-/// transpose).  If beta == 0, ignore and overwrite the initial
-/// entries of y; if alpha == 0, ignore the entries of A and x.
-///
-/// KokkosSparse::trsv implements local sparse triangular solve.
-/// It solves Ax=b, where A is either upper or lower triangular.
-#include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_spmv.hpp"
-#include "KokkosSparse_trsv.hpp"
-#include "KokkosSparse_spgemm.hpp"
-#include "KokkosSparse_gauss_seidel.hpp"
 
+#ifndef KOKKOSKERNELS_SPMV_HPP_
+#define KOKKOSKERNELS_SPMV_HPP_
+
+#ifdef MAKE_BUILD
+#ifdef KOKKOS_HAVE_CUDA
+  #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
+        typedef Kokkos::Device<Kokkos::Cuda, Kokkos::Cuda::memory_space> Kokkos_Device0Kokkos_Cuda_Kokkos_CudaSpace0; \
+        typedef Kokkos::complex<double> Kokkos_complex0double0; \
+        typedef long long longlong;
+#else
+  #ifdef KOKKOS_HAVE_OPENMP
+    #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
+        typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::OpenMP::memory_space> Kokkos_Device0Kokkos_OpenMP_Kokkos_HostSpace0; \
+        typedef Kokkos::complex<double> Kokkos_complex0double0; \
+        typedef long long longlong;
+  #else
+    #ifdef KOKKOS_HAVE_PTHREAD
+      #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
+        typedef Kokkos::Device<Kokkos::Threads, Kokkos::Threads::memory_space> Kokkos_Device0Kokkos_Threads_Kokkos_HostSpace0; \
+        typedef Kokkos::complex<double> Kokkos_complex0double0; \
+        typedef long long longlong;
+    #else
+      #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
+        typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> Kokkos_Device0Kokkos_OpenMP_Kokkos_HostSpace0; \
+        typedef Kokkos::complex<double> Kokkos_complex0double0; \
+        typedef long long longlong;
+    #endif
+  #endif
+#endif
+
+#endif
+
+#include <KokkosBlas.hpp>
+#include <KokkosSparse_spmv.hpp>
+
+#ifdef HAVE_KK_KERNELS
+
+
+template<typename AType, typename XType, typename YType>
+void kokkoskernels_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
+  KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
+}
+#endif
+
+#endif /* KOKKOSKERNELS_SPMV_HPP_ */

@@ -39,24 +39,82 @@
 //
 // ************************************************************************
 //@HEADER
-*/
-/// \file KokkosSparse.hpp
-/// \brief Public interface to local computational kernels on sparse
-///   matrices.
-///
-/// KokkosSparse::spmv implements local sparse matrix-vector multiply.
-/// It computes y = beta*y + alpha*Op(A)*x, where x and y are either
-/// both rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
-/// instances, A is a KokkosSparse::CrsMatrix, and Op(A) is determined
-/// by the \c mode input (either no transpose, transpose, or conjugate
-/// transpose).  If beta == 0, ignore and overwrite the initial
-/// entries of y; if alpha == 0, ignore the entries of A and x.
-///
-/// KokkosSparse::trsv implements local sparse triangular solve.
-/// It solves Ax=b, where A is either upper or lower triangular.
-#include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_spmv.hpp"
-#include "KokkosSparse_trsv.hpp"
-#include "KokkosSparse_spgemm.hpp"
-#include "KokkosSparse_gauss_seidel.hpp"
+ */
 
+#ifndef _KOKKOSKERNELS_BITUTILS_HPP
+#define _KOKKOSKERNELS_BITUTILS_HPP
+#include "Kokkos_Core.hpp"
+
+namespace KokkosKernels{
+
+namespace Impl{
+
+
+
+KOKKOS_INLINE_FUNCTION
+int set_bit_count(unsigned int x){
+  return __builtin_popcount(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int set_bit_count(unsigned long x){
+  return __builtin_popcountl(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int set_bit_count(unsigned long long x){
+  return __builtin_popcountl(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int set_bit_count( int x){
+  return __builtin_popcount(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int set_bit_count( long x){
+  return __builtin_popcountl(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int set_bit_count( long long x){
+  return __builtin_popcountl(x);
+}
+
+
+
+KOKKOS_INLINE_FUNCTION
+int least_set_bit(unsigned int x){
+  return __builtin_ffs (x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int least_set_bit(unsigned long x){
+  return __builtin_ffsl(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int least_set_bit(unsigned long long x){
+  return __builtin_ffsll(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int least_set_bit( int x){
+  return __builtin_ffs(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int least_set_bit( long x){
+  return __builtin_ffsl(x);
+}
+
+KOKKOS_INLINE_FUNCTION
+int least_set_bit( long long x){
+  return __builtin_popcountl(x);
+}
+
+
+}
+}
+
+#endif

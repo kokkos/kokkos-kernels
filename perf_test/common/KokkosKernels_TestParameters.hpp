@@ -40,23 +40,88 @@
 // ************************************************************************
 //@HEADER
 */
-/// \file KokkosSparse.hpp
-/// \brief Public interface to local computational kernels on sparse
-///   matrices.
-///
-/// KokkosSparse::spmv implements local sparse matrix-vector multiply.
-/// It computes y = beta*y + alpha*Op(A)*x, where x and y are either
-/// both rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
-/// instances, A is a KokkosSparse::CrsMatrix, and Op(A) is determined
-/// by the \c mode input (either no transpose, transpose, or conjugate
-/// transpose).  If beta == 0, ignore and overwrite the initial
-/// entries of y; if alpha == 0, ignore the entries of A and x.
-///
-/// KokkosSparse::trsv implements local sparse triangular solve.
-/// It solves Ax=b, where A is either upper or lower triangular.
-#include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_spmv.hpp"
-#include "KokkosSparse_trsv.hpp"
-#include "KokkosSparse_spgemm.hpp"
-#include "KokkosSparse_gauss_seidel.hpp"
 
+namespace KokkosKernels{
+
+namespace Experiment{
+struct Parameters{
+  int algorithm;
+  int accumulator;
+  int repeat;
+  int chunk_size;
+  int multi_color_scale;
+  int shmemsize;
+  int team_size;
+  int use_dynamic_scheduling;
+  int verbose;
+  int spgemm_step;
+  int vector_size;
+  int check_output;
+  int mkl_sort_option;
+  int mkl_keep_output;
+  int calculate_read_write_cost;
+  char *coloring_input_file;
+  char *coloring_output_file;
+
+  int minhashscale;
+  int use_threads;
+  int use_openmp;
+  int use_cuda;
+  int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
+
+
+
+  char *a_mtx_bin_file, *b_mtx_bin_file, *c_mtx_bin_file;
+  bool compression2step;
+  int left_lower_triangle, right_lower_triangle;
+  int left_sort, right_sort;
+
+  int triangle_options;
+  bool apply_compression;
+  int sort_option;
+  // 0 - triangle_count
+  // 1 - first count then instantiate
+  // 2- more options.
+  int cache_flush;
+  // 0 - no flush
+  // 1 - soft flush
+  // 2 - hard flush with rand.
+  Parameters(){
+
+    algorithm = 19;
+    accumulator = 0;
+    repeat = 6;
+    chunk_size = -1;
+    multi_color_scale = 1;
+    shmemsize = 16128;
+    team_size = -1;
+    use_dynamic_scheduling = 0;
+    verbose = 0;
+    spgemm_step = '0';
+    vector_size = -1;
+    check_output = 0;
+    mkl_sort_option = 7;
+    mkl_keep_output = 1;
+    calculate_read_write_cost = 0;
+    coloring_input_file = NULL;
+    coloring_output_file = NULL;
+    minhashscale = 1;
+    use_threads = 0;
+    use_openmp = 0;
+    use_cuda = 0;
+    a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
+    a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = NULL;
+    compression2step = true;
+
+    left_lower_triangle = 0;
+    right_lower_triangle = 0;
+    left_sort = 0;
+    right_sort = 2; //algorithm decides
+    triangle_options=0;
+    apply_compression = true;
+    sort_option = -1;
+    cache_flush = 1;
+  }
+};
+}
+}
