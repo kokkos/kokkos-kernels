@@ -165,6 +165,7 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   nnz = rowPtr[nrows];
   values = new ScalarType[nnz];
   colInd = new OrdinalType[nnz];
+  const ScalarType temp = 10;
   for(OrdinalType row=0;row<nrows;row++)
   {
     ScalarType total_values = 0;
@@ -182,7 +183,8 @@ void kk_diagonally_dominant_sparseMatrix_generate(
     }
 
     colInd[rowPtr[row+1] - 1]= row;
-    values[rowPtr[row+1] - 1] = total_values * 10;
+
+    values[rowPtr[row+1] - 1] = total_values * temp;
   }
 }
 

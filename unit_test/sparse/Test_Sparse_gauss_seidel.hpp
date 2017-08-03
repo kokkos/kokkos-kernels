@@ -174,7 +174,6 @@ void test_gauss_seidel(GSAlgorithm gs_algorithm,
   typedef typename graph_t::entries_type lno_nnz_view_t;
   typedef typename graph_t::entries_type::non_const_type   color_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename lno_view_t::non_const_value_type size_type;
 
   lno_t numCols = numRows;
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
