@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+#ifndef KOKKOSBLAS_HPP_
+#define KOKKOSBLAS_HPP_
+
 #include<KokkosBlas1_abs.hpp>
 #include<KokkosBlas1_axpby.hpp>
 #include<KokkosBlas1_dot.hpp>
@@ -59,3 +62,4 @@
 
 
 #include<KokkosBlas2_gemv.hpp>
+#endif
