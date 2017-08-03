@@ -40,6 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
+
+#include "KokkosKernels_Utils.hpp"
 namespace MyKokkosSparse{
 
 template <typename OrdinalType, typename Device, typename MemoryTraits, typename SizeType>
