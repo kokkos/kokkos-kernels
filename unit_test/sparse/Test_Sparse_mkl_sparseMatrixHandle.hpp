@@ -315,7 +315,6 @@ template<class LO, class OffsetType, class scalar_type>
 void testAllScalarsAndLocalOrdinals (bool& success,std::ostream &out)
 {
   {
-    typedef int LO;
     out << "Test LocalOrdinalType=int" << endl;
     //Teuchos::OSTab tab0 (out);
     {
@@ -362,7 +361,7 @@ void test_mkl_sparseMatrixHandle()
   std::ostream out(&null_buffer);
   bool success = true;
   out << "Run test" << endl;
-  testAllScalarsAndLocalOrdinals <scalar_t, lno_t, size_type>(success, out);
+  testAllScalarsAndLocalOrdinals <lno_t, size_type, scalar_t>(success, out);
   EXPECT_TRUE( success);
 }
 
