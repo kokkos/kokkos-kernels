@@ -46,6 +46,13 @@
 #include <sstream>
 
 #include "KokkosSparse_CrsMatrix.hpp"
+
+
+#ifndef kokkos_complex_double
+#define kokkos_complex_double Kokkos::complex<double>
+#define kokkos_complex_float Kokkos::complex<float>
+#endif
+
 // mfh 21 Jun 2016: CUDA 7.5 with GCC 4.8.4 gives me funny build
 // errors if I put this functor in an anonymous namespace.  If I name
 // the namespace, it builds just fine.

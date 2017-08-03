@@ -7,8 +7,10 @@
 #include<KokkosKernels_IOUtils.hpp>
 #include<KokkosKernels_Utils.hpp>
 
-typedef Kokkos::complex<double> kokkos_complex_double;
-typedef Kokkos::complex<float> kokkos_complex_float;
+#ifndef kokkos_complex_double
+#define kokkos_complex_double Kokkos::complex<double>
+#define kokkos_complex_float Kokkos::complex<float>
+#endif
 
 namespace Test {
 

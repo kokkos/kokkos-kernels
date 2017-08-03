@@ -49,6 +49,11 @@
 #include<stdexcept>
 #include <iostream>
 
+#ifndef kokkos_complex_double
+#define kokkos_complex_double Kokkos::complex<double>
+#define kokkos_complex_float Kokkos::complex<float>
+#endif
+
 namespace KokkosKernels{
 
 template <typename T>

@@ -56,6 +56,11 @@
 #include <complex>
 #include "KokkosSparse_gauss_seidel.hpp"
 
+#ifndef kokkos_complex_double
+#define kokkos_complex_double Kokkos::complex<double>
+#define kokkos_complex_float Kokkos::complex<float>
+#endif
+
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
