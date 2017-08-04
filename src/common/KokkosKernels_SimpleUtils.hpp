@@ -57,6 +57,22 @@ namespace KokkosKernels{
 
 namespace Impl{
 
+template<class ViewType>
+class SquareRootFunctor {
+public:
+typedef typename ViewType::execution_space execution_space;
+typedef typename ViewType::size_type size_type;
+
+SquareRootFunctor (const ViewType& theView) : theView_ (theView) {}
+
+KOKKOS_INLINE_FUNCTION void operator() (const size_type i) const {
+  typedef typename ViewType::value_type value_type;
+  theView_(i) = Kokkos::Details::ArithTraits<value_type>::sqrt (theView_(i));
+}
+private:
+ViewType theView_;
+};
+
 template <typename view_t>
 struct ExclusiveParallelPrefixSum{
   typedef typename view_t::value_type idx;
