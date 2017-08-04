@@ -236,10 +236,10 @@ void test_spgemm(SPGEMMAlgorithm spgemm_algorithm,
   //device::execution_space::print_configuration(std::cout);
 
   typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  //typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  //typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  //typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
+  //typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
 
   lno_t numCols = numRows;
@@ -317,7 +317,7 @@ void test_spgemm(SPGEMMAlgorithm spgemm_algorithm,
   }
   EXPECT_TRUE((failed == is_expected_to_fail));
 
-  double spgemm_time = timer1.seconds();
+  //double spgemm_time = timer1.seconds();
 
   if (!is_expected_to_fail){
 

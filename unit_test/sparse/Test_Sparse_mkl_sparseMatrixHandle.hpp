@@ -294,7 +294,7 @@ testAllScalars (bool& success,
     static_assert (std::is_same<typename converter_type::value_type, value_type>::value,
                    "RawTplMatrixHandle<double>::value_type != double");
 #ifdef HAVE_KOKKOSKERNELS_MKL
-    static_assert (std::is_same<converter_type::internal_value_type, double>::value,
+    static_assert (std::is_same<typename converter_type::internal_value_type, double>::value,
                    "RawTplMatrixHandle<double>::interval_value_type != double");
 #endif // HAVE_KOKKOSKERNELS_MKL
 

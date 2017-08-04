@@ -51,13 +51,14 @@
 typedef int size_type;
 typedef int idx;
 typedef double wt;
-typedef Kokkos::OpenMP MyExecSpace;
+//typedef Kokkos::OpenMP MyExecSpace;
 int main (int argc, char ** argv){
 
-  Kokkos::OpenMP::initialize();
+
+  Kokkos::initialize();
   bool symmetrize = false, remove_diagonal = false, transpose = false;
   char *in_mtx = NULL, *out_bin = NULL;
-  bool create_incidence = false;
+  //bool create_incidence = false;
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "symmetrize" ) ) {
       symmetrize = true;
@@ -91,7 +92,7 @@ int main (int argc, char ** argv){
 
     exit(1);
   }
-
+  typedef Kokkos::DefaultExecutionSpace MyExecSpace;
 
   typedef typename MyKokkosSparse::CrsMatrix<wt, idx, MyExecSpace, void, size_type > crstmat_t;
   typedef typename crstmat_t::StaticCrsGraphType graph_t;
@@ -115,7 +116,7 @@ int main (int argc, char ** argv){
   const wt *pvals = ovalues.data();
 
   idx numrows = a_crsmat.numRows();
-  idx numcols = a_crsmat.numCols();
+  //idx numcols = a_crsmat.numCols();
   idx nnz = ovalues.dimension_0();
 
   //Kokkos::deep_copy(new_rowmap, a_crsmat.graph.row_map);
@@ -131,7 +132,7 @@ int main (int argc, char ** argv){
       size_type end = prm[i+1];
       for (size_type j = begin; j < end; ++ j){
         idx col = pentries[j];
-        wt val = pvals[j];
+        //wt val = pvals[j];
 
         if (i == col){
           nrm[i] = 1;
@@ -206,7 +207,7 @@ int main (int argc, char ** argv){
     pvals = ovalues.data();
 
     numrows = a_crsmat.numRows();
-    numcols = a_crsmat.numCols();
+    //numcols = a_crsmat.numCols();
     nnz = ovalues.dimension_0();
   }
 
@@ -241,7 +242,7 @@ int main (int argc, char ** argv){
     pvals = ovalues.data();
 
     numrows = a_crsmat.numRows();
-    numcols = a_crsmat.numCols();
+    //numcols = a_crsmat.numCols();
     nnz = ovalues.dimension_0();
   }
   if (transpose) {
@@ -282,7 +283,7 @@ int main (int argc, char ** argv){
     pvals = ovalues.data();
 
     numrows = a_crsmat.numRows();
-    numcols = a_crsmat.numCols();
+    //numcols = a_crsmat.numCols();
     nnz = ovalues.dimension_0();
   }
 
@@ -290,6 +291,6 @@ int main (int argc, char ** argv){
   KokkosKernels::Impl::write_kokkos_crst_matrix (a_crsmat, out_bin);
 
 
-  Kokkos::OpenMP::finalize();
+  Kokkos::finalize();
 
 }

@@ -71,7 +71,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
     typename y_vector_type::non_const_value_type alpha, typename y_vector_type::non_const_value_type beta){
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  //typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename scalar_view_t::value_type ScalarA;
   double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
@@ -91,7 +91,7 @@ template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vector_type expected_y,
     typename y_vector_type::non_const_value_type alpha,
     typename y_vector_type::non_const_value_type beta, int numMV){
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  //typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename scalar_view_t::value_type ScalarA;
   double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
@@ -151,7 +151,7 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
   lno_t numCols = numRows;
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  //typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeX;
   typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeY;
@@ -166,8 +166,8 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
 
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
-  lno_t nr = input_mat.numRows();
-  lno_t nc = input_mat.numCols();
+  //lno_t nr = input_mat.numRows();
+  //lno_t nc = input_mat.numCols();
   Kokkos::deep_copy(b_y_copy, b_y);
 
 

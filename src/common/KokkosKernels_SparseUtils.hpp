@@ -485,11 +485,12 @@ struct ColorChecker{
   typedef typename in_row_view_t::value_type size_type;
   typedef typename in_nnz_view_t::value_type lno_t;
   typedef typename in_color_view_t::value_type color_t;
+  lno_t num_rows;
   in_row_view_t xadj;
   in_nnz_view_t adj;
   in_color_view_t color_view;
   lno_t team_row_chunk_size;
-  lno_t num_rows;
+
 
 
   ColorChecker(
@@ -1340,9 +1341,9 @@ crstmat_t kk_get_lower_triangle(crstmat_t in_crs_matrix,
   typedef typename crstmat_t::row_map_type::non_const_type row_map_view_t;
   typedef typename crstmat_t::index_type::non_const_type   cols_view_t;
   typedef typename crstmat_t::values_type::non_const_type values_view_t;
-  typedef typename crstmat_t::row_map_type::const_type const_row_map_view_t;
-  typedef typename crstmat_t::index_type::const_type   const_cols_view_t;
-  typedef typename crstmat_t::values_type::const_type const_values_view_t;
+  //typedef typename crstmat_t::row_map_type::const_type const_row_map_view_t;
+  //typedef typename crstmat_t::index_type::const_type   const_cols_view_t;
+  //typedef typename crstmat_t::values_type::const_type const_values_view_t;
 
   typedef typename row_map_view_t::non_const_value_type size_type;
   typedef typename cols_view_t::non_const_value_type lno_t;
@@ -1396,9 +1397,9 @@ crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
   typedef typename crstmat_t::row_map_type::non_const_type row_map_view_t;
   typedef typename crstmat_t::index_type::non_const_type   cols_view_t;
   typedef typename crstmat_t::values_type::non_const_type values_view_t;
-  typedef typename crstmat_t::row_map_type::const_type const_row_map_view_t;
-  typedef typename crstmat_t::index_type::const_type   const_cols_view_t;
-  typedef typename crstmat_t::values_type::const_type const_values_view_t;
+  //typedef typename crstmat_t::row_map_type::const_type const_row_map_view_t;
+  //typedef typename crstmat_t::index_type::const_type   const_cols_view_t;
+  //typedef typename crstmat_t::values_type::const_type const_values_view_t;
 
   typedef typename row_map_view_t::non_const_value_type size_type;
   typedef typename cols_view_t::non_const_value_type lno_t;
@@ -1453,8 +1454,8 @@ graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
 
-  typedef typename graph_t::row_map_type::const_type const_row_map_view_t;
-  typedef typename graph_t::entries_type::const_type   const_cols_view_t;
+  //typedef typename graph_t::row_map_type::const_type const_row_map_view_t;
+  //typedef typename graph_t::entries_type::const_type   const_cols_view_t;
 
 
   typedef typename row_map_view_t::non_const_value_type size_type;
@@ -1517,9 +1518,9 @@ void kk_get_lower_triangle(
     bool chunksize = 4,
     bool is_lower = true){
 
-  typedef typename row_map_view_t::const_type const_row_map_view_t;
-  typedef typename cols_view_t::const_type   const_cols_view_t;
-  typedef typename values_view_t::const_type const_values_view_t;
+  //typedef typename row_map_view_t::const_type const_row_map_view_t;
+  //typedef typename cols_view_t::const_type   const_cols_view_t;
+  //typedef typename values_view_t::const_type const_values_view_t;
 
   typedef typename row_map_view_t::non_const_value_type size_type;
   typedef typename cols_view_t::non_const_value_type lno_t;
@@ -1579,8 +1580,8 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
 
-  typedef typename row_map_view_t::const_type const_row_map_view_t;
-  typedef typename cols_view_t::const_type   const_cols_view_t;
+  //typedef typename row_map_view_t::const_type const_row_map_view_t;
+  //typedef typename cols_view_t::const_type   const_cols_view_t;
 
   typedef typename row_map_view_t::non_const_value_type size_type;
   typedef typename cols_view_t::non_const_value_type lno_t;
@@ -1598,7 +1599,7 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     });
 
 
-  typedef Kokkos::TeamPolicy<exec_space> team_policy_t;
+  //typedef Kokkos::TeamPolicy<exec_space> team_policy_t;
   //int vector_size = 2;
   //team_policy_t(ne)
   //nv  / team_work_chunk_size + 1 , suggested_team_size, vector_size
@@ -1636,8 +1637,8 @@ void kk_create_incidence_matrix_from_lower_triangle(
     out_cols_view_t &out_entries,
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
-  typedef typename row_map_view_t::const_type const_row_map_view_t;
-  typedef typename cols_view_t::const_type   const_cols_view_t;
+  //typedef typename row_map_view_t::const_type const_row_map_view_t;
+  //typedef typename cols_view_t::const_type   const_cols_view_t;
 
   typedef typename row_map_view_t::non_const_value_type size_type;
   typedef typename cols_view_t::non_const_value_type lno_t;
@@ -1725,8 +1726,8 @@ void kk_create_incidence_matrix_from_original_matrix(
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
 
-  typedef typename row_map_view_t::const_type const_row_map_view_t;
-  typedef typename cols_view_t::const_type   const_cols_view_t;
+  //typedef typename row_map_view_t::const_type const_row_map_view_t;
+  //typedef typename cols_view_t::const_type   const_cols_view_t;
 
   typedef typename row_map_view_t::non_const_value_type size_type;
   typedef typename cols_view_t::non_const_value_type lno_t;

@@ -114,7 +114,7 @@ void kk_sparseMatrix_generate_lower_upper_triangle(
 {
   rowPtr = new SizeType[nrows+1];
 
-  OrdinalType elements_per_row = nnz/nrows;
+  //OrdinalType elements_per_row = nnz/nrows;
   srand(13721);
   rowPtr[0] = 0;
   for(int row=0;row<nrows;row++)
@@ -438,7 +438,7 @@ template <typename idx_array_type>
 inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename){
 
   typedef typename idx_array_type::HostMirror host_type;
-  typedef typename idx_array_type::size_type idx;
+  //typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view (view);
   Kokkos::deep_copy (host_view , view);
   Kokkos::fence();
@@ -453,7 +453,7 @@ template <typename idx_array_type>
 inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename){
 
   typedef typename idx_array_type::HostMirror host_type;
-  typedef typename idx_array_type::size_type idx;
+  //typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view (view);
   std::ifstream myFile (filename, std::ios::in );
 

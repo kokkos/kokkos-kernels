@@ -19,7 +19,7 @@ namespace Test {
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_trsv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type b, y_vector_type expected_x, int numMV, const char uplo[]){
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  //typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename scalar_view_t::value_type ScalarA;
   double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
@@ -42,7 +42,7 @@ void test_trsv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
   lno_t numCols = numRows;
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  //typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeX;
   typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeY;
@@ -64,7 +64,7 @@ void test_trsv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
   KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(lower_part, b_x, b_y, b_x_copy, numMV, "L");
-  typedef typename Kokkos::View<lno_t*, layout, Device> indexview;
+  //typedef typename Kokkos::View<lno_t*, layout, Device> indexview;
 
   crsMat_t upper_part = KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>('U', numRows,numCols,nnz,row_size_variance, bandwidth);
   KokkosSparse::spmv("N", alpha, upper_part, b_x_copy, beta, b_y);

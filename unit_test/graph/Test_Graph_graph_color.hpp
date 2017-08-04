@@ -127,13 +127,13 @@ void test_coloring(ColoringAlgorithm coloring_algorithm,
   Kokkos::Impl::Timer timer1;
   crsMat_t output_mat;
   int res = run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
-  double coloring_time = timer1.seconds();
+  //double coloring_time = timer1.seconds();
   EXPECT_TRUE( (res == 0));
 
 
-  const size_t num_rows_1 = input_mat.numRows();
-  const size_t num_cols_1 = input_mat.numCols();
-  size_t num_conflict = KokkosKernels::Impl::kk_is_d1_coloring_valid
+  const lno_t num_rows_1 = input_mat.numRows();
+  const lno_t num_cols_1 = input_mat.numCols();
+  lno_t num_conflict = KokkosKernels::Impl::kk_is_d1_coloring_valid
       <lno_view_t,lno_nnz_view_t, color_view_t, typename device::execution_space>
   (num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, vector_colors);
 
@@ -147,7 +147,7 @@ void test_coloring(ColoringAlgorithm coloring_algorithm,
     Kokkos::deep_copy (hentries , input_mat.graph.entries);
     Kokkos::deep_copy (hcolor , vector_colors);
 
-    for (size_t i = 0; i < num_rows_1; ++i){
+    for (lno_t i = 0; i < num_rows_1; ++i){
       const size_type b = hrm(i);
       const size_type e = hrm(i + 1);
       for (size_type j = b; j < e; ++j){

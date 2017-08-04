@@ -264,7 +264,7 @@ int SparseMatrix_WriteBinaryFormat(const char* filename, OrdinalType &nrows, Ord
       if(colInd[i]>max) max = colInd[i];
     }
     if(rowPtr[row+1]>rowPtr[row]) {
-      int span = max-min;
+      size_t span = max-min;
       if(span<min_span) min_span = span;
       if(span>max_span) max_span = span;
       ave_span += span;

@@ -264,7 +264,7 @@ upperTriSolveCsr (RangeMultiVectorType X,
     const offset_type end = ptr(r+1);
     // We assume the diagonal entry is first in the row.
     const matrix_scalar_type A_rr = val(beg);
-    for (size_t k = beg + 1; k < end; ++k) {
+    for (offset_type k = beg + 1; k < end; ++k) {
       const matrix_scalar_type A_rc = val(k);
       const local_ordinal_type c = ind(k);
       for (local_ordinal_type j = 0; j < numVecs; ++j) {

@@ -84,6 +84,7 @@ namespace Test {
         A_.numCols () < static_cast<ordinal_type> (numEntToModify) ?
         A_.numCols () :
         static_cast<ordinal_type> (numEntToModify);
+
       ordinal_type cols[numEntToModify];
       scalar_type vals[numEntToModify];
 

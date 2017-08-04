@@ -28,24 +28,6 @@ TRIBITS_ADD_LIBRARY(
   TESTONLY
   )
 
-#MD: test is moved to gtest folder.
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  CrsMatrixUnitTest
-#  SOURCES
-#    TestCrsMatrix.cpp
-#    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-#  COMM serial mpi
-#  NUM_MPI_PROCS 1
-#  FAIL_REGULAR_EXPRESSION "  FAILED  "
-#  )
-
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  ArithTraits
-#  SOURCES test-arith-traits.cpp
-#  COMM serial mpi
-#  NUM_MPI_PROCS 1
-#  )
-
 
 IF (Kokkos_ENABLE_Cuda)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/cuda)
@@ -60,6 +42,41 @@ IF (Kokkos_ENABLE_Cuda)
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
     )
+    
+  APPEND_GLOB(CUDA_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Sparse*.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    sparse_cuda
+    SOURCES
+      Test_Main.cpp
+      ${CUDA_SPARSE_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  APPEND_GLOB(CUDA_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Graph*.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    graph_cuda
+    SOURCES
+      Test_Main.cpp
+      ${CUDA_GRAPH_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  #currently float 128 test is not working. So common tests are explicitly added.  
+  APPEND_GLOB(CUDA_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Common_ArithTraits.cpp)
+  
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    common_cuda
+    SOURCES
+      Test_Main.cpp
+      ${CUDA_COMMON_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
 ENDIF ()
 
 IF (Kokkos_ENABLE_OpenMP)
@@ -77,6 +94,40 @@ IF (Kokkos_ENABLE_OpenMP)
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
     )
+    
+        
+  APPEND_GLOB(OPENMP_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Sparse*.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    sparse_openmp
+    SOURCES
+      Test_Main.cpp
+      ${OPENMP_SPARSE_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  APPEND_GLOB(OPENMP_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Graph*.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    graph_openmp
+    SOURCES
+      Test_Main.cpp
+      ${OPENMP_GRAPH_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  APPEND_GLOB(OPENMP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Common_ArithTraits.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    common_openmp
+    SOURCES
+      Test_Main.cpp
+      ${OPENMP_COMMON_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
 ENDIF ()
 
 IF (Kokkos_ENABLE_Serial)
@@ -94,43 +145,90 @@ IF (Kokkos_ENABLE_Serial)
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
     )
+    
+   APPEND_GLOB(SERIAL_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Sparse*.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    sparse_serial
+    SOURCES
+      Test_Main.cpp
+      ${SERIAL_SPARSE_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  APPEND_GLOB(SERIAL_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Graph*.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    graph_serial
+    SOURCES
+      Test_Main.cpp
+      ${SERIAL_GRAPH_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Common_ArithTraits.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    common_serial
+    SOURCES
+      Test_Main.cpp
+      ${SERIAL_COMMON_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
 ENDIF ()
 
 IF (Kokkos_ENABLE_Pthread)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/threads)
   INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/threads)
 
+  APPEND_GLOB(PTHREAD_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Blas*.cpp)
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     blas_threads
     SOURCES
       Test_Main.cpp
-      threads/Test_Threads_Blas1_abs.cpp
-      threads/Test_Threads_Blas1_asum.cpp
-      threads/Test_Threads_Blas1_axpby.cpp
-      threads/Test_Threads_Blas1_axpy.cpp
-      threads/Test_Threads_Blas1_dot.cpp
-      threads/Test_Threads_Blas1_mult.cpp
-      threads/Test_Threads_Blas1_nrm1.cpp
-      threads/Test_Threads_Blas1_nrm2.cpp
-      threads/Test_Threads_Blas1_nrm2_squared.cpp
-      threads/Test_Threads_Blas1_nrminf.cpp
-      threads/Test_Threads_Blas1_reciprocal.cpp
-      threads/Test_Threads_Blas1_scal.cpp
-      threads/Test_Threads_Blas1_sum.cpp
-      threads/Test_Threads_Blas1_update.cpp
-      threads/Test_Threads_Blas2_gemv.cpp
+      ${PTHREAD_BLAS_SOURCES}
     COMM serial mpi
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
     )
+    
+  APPEND_GLOB(PTHREAD_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Sparse*.cpp)
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    blas2_MV_Threads
+    sparse_threads
     SOURCES
-      blas2_MV_Threads
-      KokkosKernels_Blas2_MV_GEMV.hpp
-    COMM serial mpi
+      Test_Main.cpp
+      ${PTHREAD_SPARSE_SOURCES}
     NUM_MPI_PROCS 1
-    )
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  APPEND_GLOB(PTHREAD_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Graph*.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    graph_threads
+    SOURCES
+      Test_Main.cpp
+      ${PTHREAD_GRAPH_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
+  
+  
+  APPEND_GLOB(PTHREAD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Common_ArithTraits.cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    common_threads
+    SOURCES
+      Test_Main.cpp
+      ${PTHREAD_COMMON_SOURCES}
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS kokkoskernels_gtest
+  )
 ENDIF ()
 
  

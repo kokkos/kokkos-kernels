@@ -169,10 +169,10 @@ void test_gauss_seidel(GSAlgorithm gs_algorithm,
   using namespace Test;
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type lno_view_t;
-  typedef typename graph_t::entries_type lno_nnz_view_t;
-  typedef typename graph_t::entries_type::non_const_type   color_view_t;
+  //typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  //typedef typename graph_t::row_map_type lno_view_t;
+  //typedef typename graph_t::entries_type lno_nnz_view_t;
+  //typedef typename graph_t::entries_type::non_const_type   color_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   lno_t numCols = numRows;
@@ -201,10 +201,10 @@ void test_gauss_seidel(GSAlgorithm gs_algorithm,
 
   Kokkos::deep_copy (x_vector , 0);
 
-  bool is_symmetric_graph = false;
-  int apply_type = 0;
-  bool skip_symbolic = false;
-  bool skip_numeric = false;
+  //bool is_symmetric_graph = false;
+  //int apply_type = 0;
+  //bool skip_symbolic = false;
+  //bool skip_numeric = false;
 
 
 
@@ -214,8 +214,9 @@ void test_gauss_seidel(GSAlgorithm gs_algorithm,
         for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
           Kokkos::Impl::Timer timer1;
-          int res = run_gauss_seidel_1<crsMat_t, device>(input_mat, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric);
-          double gs = timer1.seconds();
+          //int res =
+          run_gauss_seidel_1<crsMat_t, device>(input_mat, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric);
+          //double gs = timer1.seconds();
 
           //KokkosKernels::Impl::print_1Dview(x_vector);
           KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
