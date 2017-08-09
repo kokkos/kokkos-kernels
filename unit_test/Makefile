@@ -3,9 +3,11 @@
 #=================== Settings ==========================================
 #=======================================================================
 
-KOKKOS_PATH = ${HOME}/Kokkos/kokkos
-KOKKOSKERNELS_PATH = ${HOME}/Kokkos/kokkos-kernels
-GTEST_PATH = ${KOKKOS_PATH}/tpls/gtest
+KOKKOS_PATH ?= ${HOME}/Kokkos/kokkos
+KOKKOS_SRC_PATH ?= ${KOKKOS_PATH}
+KOKKOSKERNELS_PATH ?= ${HOME}/Kokkos/kokkos-kernels
+KOKKOSKERNELS_SRC_PATH ?= ${KOKKOSKERNELS_SRC_PATH}
+GTEST_PATH ?= ${KOKKOS_SRC_PATH}/tpls/gtest
 
 KOKKOS_DEVICES=OpenMP
 KOKKOS_CUDA_OPTIONS=enable_lambda
@@ -42,22 +44,22 @@ include $(KOKKOSKERNELS_PATH)/Makefile.kokkos-kernels
 #=================== Add common source files ===========================
 #=======================================================================
 
-INC  = -I${GTEST_PATH} -I$(KOKKOSKERNELS_PATH)/unit_test/
-INC += -I$(KOKKOSKERNELS_PATH)/unit_test/blas
-INC += -I$(KOKKOSKERNELS_PATH)/unit_test/sparse
-INC += -I$(KOKKOSKERNELS_PATH)/unit_test/graph
-INC += -I$(KOKKOSKERNELS_PATH)/unit_test/common
+INC  = -I${GTEST_PATH} -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/
+INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/blas
+INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/sparse
+INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/graph
+INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/common
 
 
 
 
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test
+vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test
 
-TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/*.hpp)
-TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/blas/*.hpp)
-TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/sparse/*.hpp)
-TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/graph/*.hpp)
-TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_PATH)/unit_test/common/*.hpp)
+TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/blas/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/sparse/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/graph/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/common/*.hpp)
 
 
 
@@ -68,7 +70,7 @@ TARGETS =
 #=================== OpenMP BACKEND ====================================
 #=======================================================================
 
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/openmp
+vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/openmp
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_OPENMP), 1)
     KOKKOSKERNELS_INTERNAL_TEST_OPENMP = 1
@@ -81,7 +83,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
-  INC += -I${KOKKOSKERNELS_PATH}/unit_test/openmp
+  INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/openmp
   OBJ_OPENMP = Test_Main.o gtest-all.o
   OBJ_OPENMP += Test_OpenMP_Blas1_abs.o
   OBJ_OPENMP += Test_OpenMP_Blas1_asum.o
@@ -116,7 +118,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
 endif
 
 KokkosKernels_UnitTest_OpenMP: $(OBJ_OPENMP) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
-	$(LINK) $(EXTRA_PATH) $(OBJ_OPENMP) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_OpenMP
+	$(LINK) $(EXTRA_PATH) $(OBJ_OPENMP) $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_OpenMP
 
 test-openmp: KokkosKernels_UnitTest_OpenMP
 	./KokkosKernels_UnitTest_OpenMP
@@ -125,7 +127,7 @@ test-openmp: KokkosKernels_UnitTest_OpenMP
 #=================== Cuda BACKEND ====================================
 #=======================================================================
 
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/cuda
+vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/cuda
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
     KOKKOSKERNELS_INTERNAL_TEST_CUDA = 1
@@ -138,7 +140,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
-  INC += -I${KOKKOSKERNELS_PATH}/unit_test/cuda
+  INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_abs.o
   OBJ_CUDA += Test_Cuda_Blas1_asum.o
@@ -171,7 +173,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
 endif
 
 KokkosKernels_UnitTest_Cuda: $(OBJ_CUDA) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
-	$(LINK) $(EXTRA_PATH) $(OBJ_CUDA) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Cuda
+	$(LINK) $(EXTRA_PATH) $(OBJ_CUDA) $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Cuda
 
 test-cuda: KokkosKernels_UnitTest_Cuda
 	./KokkosKernels_UnitTest_Cuda
@@ -180,7 +182,7 @@ test-cuda: KokkosKernels_UnitTest_Cuda
 #=================== Serial BACKEND ====================================
 #=======================================================================
 
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/serial
+vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/serial
 ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
     KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
@@ -194,7 +196,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
 endif
 
 ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
-  INC += -I${KOKKOSKERNELS_PATH}/unit_test/serial
+  INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/serial
   OBJ_SERIAL = Test_Main.o gtest-all.o
   OBJ_SERIAL += Test_Serial_Blas1_abs.o
   OBJ_SERIAL += Test_Serial_Blas1_asum.o
@@ -229,7 +231,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
 endif
 
 KokkosKernels_UnitTest_Serial: $(OBJ_SERIAL) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
-	$(LINK) $(EXTRA_PATH) $(OBJ_SERIAL) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Serial
+	$(LINK) $(EXTRA_PATH) $(OBJ_SERIAL) $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Serial
 
 test-serial: KokkosKernels_UnitTest_Serial
 	./KokkosKernels_UnitTest_Serial
@@ -238,10 +240,10 @@ test-serial: KokkosKernels_UnitTest_Serial
 #=================== Threads BACKEND ===================================
 #=======================================================================
 
-vpath %.cpp ${KOKKOSKERNELS_PATH}/unit_test/threads
+vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/threads
 
 ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
-  INC += -I${KOKKOSKERNELS_PATH}/unit_test/threads
+  INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/threads
   OBJ_THREADS = Test_Main.o gtest-all.o
   OBJ_THREADS += Test_Threads_Blas1_abs.o
   OBJ_THREADS += Test_Threads_Blas1_asum.o
@@ -276,7 +278,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
 endif
 
 KokkosKernels_UnitTest_Threads: $(OBJ_THREADS) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
-	$(LINK) $(EXTRA_PATH) $(OBJ_THREADS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Threads
+	$(LINK) $(EXTRA_PATH) $(OBJ_THREADS) $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_Threads
 
 test-threads: KokkosKernels_UnitTest_Threads
 	./KokkosKernels_UnitTest_Threads
