@@ -206,7 +206,7 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
   typedef typename cols_view_t::non_const_value_type lno_t;
   typedef typename values_view_t::non_const_value_type scalar_t;
   lno_t *adj;
-  size_type *xadj, nnzA;
+  size_type *xadj;//, nnzA;
   scalar_t *values;
 
   kk_diagonally_dominant_sparseMatrix_generate<scalar_t, lno_t, size_type>(
@@ -261,7 +261,7 @@ crsMat_t kk_generate_triangular_sparse_matrix(
   typedef typename cols_view_t::non_const_value_type lno_t;
   typedef typename values_view_t::non_const_value_type scalar_t;
   lno_t *adj;
-  size_type *xadj, nnzA;
+  size_type *xadj;//, nnzA;
   scalar_t *values;
 
   kk_sparseMatrix_generate_lower_upper_triangle<scalar_t, lno_t, size_type>(
@@ -315,7 +315,7 @@ crsMat_t kk_generate_sparse_matrix(
   typedef typename cols_view_t::non_const_value_type lno_t;
   typedef typename values_view_t::non_const_value_type scalar_t;
   lno_t *adj;
-  size_type *xadj, nnzA;
+  size_type *xadj;//, nnzA;
   scalar_t *values;
 
   kk_sparseMatrix_generate<scalar_t, lno_t, size_type>(

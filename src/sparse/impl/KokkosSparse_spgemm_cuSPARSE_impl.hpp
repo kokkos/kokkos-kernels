@@ -145,7 +145,7 @@ namespace Impl{
     }
 #else
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
-    return;
+    //return;
 #endif
 
   }

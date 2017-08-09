@@ -375,7 +375,7 @@ void triangle_generic(
       );
     }
     KokkosKernels::Impl::kk_create_incidence_tranpose_matrix_from_lower_triangle
-    <alno_row_view_t_, alno_nnz_view_t_,
+    <row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
     row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
     ExecutionSpace>
         (m,

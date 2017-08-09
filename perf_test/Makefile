@@ -74,9 +74,7 @@ TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/common/*.hpp)
 #EXECUTABLES = $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/blas/*cpp) 
 
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/sparse/*cpp)
-ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 0)
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/graph/*cpp) 
-endif
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/common/*cpp) 
 
 vpath %.cpp $(sort $(dir $(EXECUTABLES)))

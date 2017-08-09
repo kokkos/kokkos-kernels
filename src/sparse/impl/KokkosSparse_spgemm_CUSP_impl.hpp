@@ -207,7 +207,7 @@ void CUSP_apply(
 
 #else
   throw std::runtime_error ("CUSP IS NOT DEFINED\n");
-  return;
+  //return;
 #endif
 }
 }
