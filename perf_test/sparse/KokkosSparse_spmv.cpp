@@ -70,6 +70,11 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_YAML
+#include "yaml-cpp/yaml.h"
+#include "Kokkos_Performance_impl.hpp"
+#endif
+
 enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
 
@@ -277,12 +282,130 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   double vector_readwrite = (nnz+numCols)*sizeof(Scalar)/1024/1024;
 
   double problem_size = matrix_size+vector_size;
+  double ave_bandwidth = (matrix_size+vector_readwrite)/ave_time*loop/1024;
+  double min_bandwidth = (matrix_size+vector_readwrite)/max_time/1024;
+  double max_bandwidth = (matrix_size+vector_readwrite)/min_time/1024;
+  double ave_Gflop = 2.0*nnz*loop/ave_time/1e9;
+  double min_Gflop = 2.0*nnz/max_time/1e9;
+  double max_Gflop = 2.0*nnz/min_time/1e9;
+  double ave_time_ms = ave_time/loop*1000;
+  double max_time_ms = max_time*1000;
+  double min_time_ms = min_time*1000;
+
   printf("NNZ NumRows NumCols ProblemSize(MB) AveBandwidth(GB/s) MinBandwidth(GB/s) MaxBandwidth(GB/s) AveGFlop MinGFlop MaxGFlop aveTime(ms) maxTime(ms) minTime(ms) numErrors\n");
   printf("%i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %6.3lf %6.3lf %6.3lf ) %i RESULT\n",nnz, numRows,numCols,problem_size,
-          (matrix_size+vector_readwrite)/ave_time*loop/1024, (matrix_size+vector_readwrite)/max_time/1024,(matrix_size+vector_readwrite)/min_time/1024,
-          2.0*nnz*loop/ave_time/1e9, 2.0*nnz/max_time/1e9, 2.0*nnz/min_time/1e9,
-          ave_time/loop*1000, max_time*1000, min_time*1000,
+          ave_bandwidth, min_bandwidth, max_bandwidth,
+          ave_Gflop, min_Gflop, max_Gflop,
+          ave_time_ms, max_time_ms, min_time_ms,
           num_errors);
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_YAML
+
+  printf("Using Performance Archiver\n");
+
+  // set up some user options
+  std::string archiveName("KokkosSparse_spmv.yaml"); //  name of the archive
+  std::string testName = "KokkosSparse_spmv";        // name of test
+  std::string hostName;      // optional hostname - auto detected if blank
+
+  // Make a schedule string - not sure if we want this in the yaml archive
+  std::string schedule_string = "Unknown";
+  switch(schedule) {
+    case AUTO:    schedule_string = "AUTO";    break;
+    case STATIC:  schedule_string = "STATIC";  break;
+    case DYNAMIC: schedule_string = "DYNAMIC"; break;
+  }
+
+  // Make a test string
+  std::string test_string = "Unknown";
+  switch(test) {
+    case KOKKOS:          test_string = "KOKKOS";          break;
+    case KK_INSP:         test_string = "KK_INSP";         break;
+#ifdef _OPENMP
+    case OMP_STATIC:      test_string = "OMP_STATIC";      break;
+    case OMP_DYNAMIC:     test_string = "OMP_DYNAMIC";     break;
+    case OMP_INSP:        test_string = "OMP_INSP";        break;
+#endif
+#ifdef HAVE_MKL
+    case MKL:             test_string = "MKL";             break;
+#endif
+#ifdef HAVE_CUSPARSE
+    case CUSPARSE:        test_string = "CUSPARSE";        break;
+#endif
+#ifdef HAVE_KK_KERNELS
+    case KK_KERNELS:      test_string = "KK_KERNELS";      break;
+    case KK_KERNELS_INSP: test_string = "KK_KERNELS_INSP"; break;
+#endif
+  }
+
+  using KokkosKernels::Performance;
+
+  Performance archiver; // Create archiver
+
+  // Add machine config options
+  archiver.set_machine_config("Test", test_string);
+  archiver.set_machine_config("Schedule", schedule_string);
+
+  // Fill config
+  archiver.set_config("nnz", nnz);
+  archiver.set_config("numRows", numRows);
+  archiver.set_config("numCols", numCols);
+  archiver.set_config("filename", filename ? filename : ""); // null is problematic for current setup
+  archiver.set_config("binaryfile", binaryfile);
+  archiver.set_config("rows_per_thread", rows_per_thread);  
+  archiver.set_config("team_size", team_size); 
+  archiver.set_config("vector_length", vector_length);
+  archiver.set_config("idx_offset", idx_offset); 
+  archiver.set_config("loop", loop); 
+ 
+  // Fill results
+  double tolerance = 0.5; // probably to change or make specific to each value
+  archiver.set_result("AveBandwidth(GB/s)", ave_bandwidth, tolerance);
+  archiver.set_result("MinBandwidth(GB/s)", min_bandwidth, tolerance);
+  archiver.set_result("MaxBandwidth(GB/s)", max_bandwidth, tolerance);
+  archiver.set_result("AveGFlop",           ave_Gflop,     tolerance);
+  archiver.set_result("MinGFlop",           min_Gflop,     tolerance);
+  archiver.set_result("MaxGFlop",           max_Gflop,     tolerance);
+  archiver.set_result("aveTime(ms)",        ave_time_ms,   tolerance);
+  archiver.set_result("maxTime(ms)",        max_time_ms,   tolerance);
+  archiver.set_result("minTime(ms)",        min_time_ms,   tolerance);
+  archiver.set_result("numErrors",          num_errors,    tolerance);
+
+  // run it
+  Performance::Result result = archiver.run(archiveName, testName, hostName);
+
+  // print the yaml file for inspection
+  Performance::print_archive(archiveName);
+
+  // Print results
+  switch (result) {
+    case Performance::Passed:
+      std::cout << "Archiver Passed" << std::endl;
+      break;
+    case Performance::Failed:
+      std::cout << "Archiver Failed" << std::endl;
+      break;
+    case Performance::NewMachine:
+      std::cout << "Archiver Passed. Adding new machine entry." << std::endl;
+      break;
+    case Performance::NewConfiguration:
+      std::cout << "Archiver Passed. Adding new machine configuration." << std::endl;
+      break;
+    case Performance::NewTest:
+      std::cout << "Archiver Passed. Adding new test entry." << std::endl;
+      break;
+    case Performance::NewTestConfiguration:
+      std::cout << "Archiver Passed. Adding new test entry configuration." << std::endl;
+      break;
+    case Performance::UpdatedTest:
+      std::cout << "Archiver Passed. Updating test entry." << std::endl;
+      break;
+    default:
+      throw std::logic_error("Unexpected result code.");
+      break;
+  }
+
+#endif
   return (int)total_error;
 }
 
