@@ -165,8 +165,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumIntoLonger.o
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumInto.o
-  OBJ_CUDA += Test_Cuda_Sparse_copyIntegers.o
-  OBJ_CUDA += Test_Cuda_Graph_graph_color.o
+  #OBJ_CUDA += Test_Cuda_Sparse_copyIntegers.o
+  #OBJ_CUDA += Test_Cuda_Graph_graph_color.o
   OBJ_CUDA += Test_Cuda_Common_ArithTraits.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda

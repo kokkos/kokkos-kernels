@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include <KokkosKernels_config.h>
+#ifdef KOKKOSKERNELS_INST_DOUBLE 
 #include "KokkosSparse_pcg.hpp"
 
 #include "KokkosKernels_Utils.hpp"
@@ -464,3 +466,7 @@ int main (int argc, char ** argv){
 
   return 0;
 }
+#else
+int main() {
+}
+#endif
