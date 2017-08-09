@@ -648,7 +648,10 @@ struct KokkosSPGEMM
           }
           num_el += num_el2;
           */
-          num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+          //num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+
+          //num_el += KokkosKernels::Impl::set_bit_count<nnz_lno_t, MyExecSpace>(c_rows);
+          num_el += KokkosKernels::Impl::pop_count(c_rows);
         }
         rowmapC[row_index] = num_el;
         //std::cout << "row_index:" << row_index << " num_el:" << num_el << std::endl;
@@ -787,7 +790,9 @@ struct KokkosSPGEMM
           }
           num_el += num_el2;
           */
-          num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+          //num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+          num_el += KokkosKernels::Impl::pop_count(c_rows);
+
         }
         rowmapC[row_index] = num_el;
       }
@@ -940,7 +945,9 @@ struct KokkosSPGEMM
           }
           num_el += num_el2;
           */
-          num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+          //num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+          num_el += KokkosKernels::Impl::pop_count(c_rows);
+
         }
 
         //set the row size.
@@ -1226,7 +1233,9 @@ struct KokkosSPGEMM
           }
           num_el += num_el2;
           */
-          num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+          //num_el += KokkosKernels::Impl::set_bit_count(c_rows);
+          num_el += KokkosKernels::Impl::pop_count(c_rows);
+
         }
 
         //set the row size.

@@ -317,7 +317,8 @@ void run_experiment(
             crsGraph.entries,
             KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
 
-          row_mapC(row) += KokkosKernels::Impl::set_bit_count(col_set);
+          //row_mapC(row) += KokkosKernels::Impl::set_bit_count<lno_t, ExecSpace>(col_set);
+          row_mapC(row) += KokkosKernels::Impl::pop_count(col_set);
         }
         );
       }
@@ -329,8 +330,9 @@ void run_experiment(
             crsGraph.entries,
             KOKKOS_LAMBDA(const lno_t& row, const lno_t &col_set_index, const lno_t &col_set,  const lno_t &thread_id) {
 
-          //row_mapC(row) += 1;
-          row_mapC(row) += KokkosKernels::Impl::set_bit_count(col_set);
+          row_mapC(row) += 1;
+          //row_mapC(row) += KokkosKernels::Impl::set_bit_count<lno_t, ExecSpace>(col_set);
+          //row_mapC(row) += KokkosKernels::Impl::pop_count(col_set);
 
         }
         );

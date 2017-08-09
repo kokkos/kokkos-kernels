@@ -110,6 +110,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Sparse_mkl_sparseMatrixHandle.o
   OBJ_OPENMP += Test_OpenMP_Graph_graph_color.o
   OBJ_OPENMP += Test_OpenMP_Common_ArithTraits.o
+  OBJ_OPENMP += Test_OpenMP_Common_set_bit_count.o
 #  OBJ_OPENMP += Test_OpenMP_Common_float128.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
@@ -166,6 +167,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Sparse_copyIntegers.o
   OBJ_CUDA += Test_Cuda_Graph_graph_color.o
   OBJ_CUDA += Test_Cuda_Common_ArithTraits.o
+  OBJ_CUDA += Test_Cuda_Common_set_bit_count.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
@@ -223,6 +225,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Sparse_mkl_sparseMatrixHandle.o
   OBJ_SERIAL += Test_Serial_Graph_graph_color.o
   OBJ_SERIAL += Test_Serial_Common_ArithTraits.o
+  OBJ_SERIAL += Test_Serial_Common_set_bit_count.o
 #  OBJ_SERIAL += Test_Serial_Common_float128.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
@@ -270,6 +273,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
   OBJ_THREADS += Test_Threads_Sparse_mkl_sparseMatrixHandle.o
   OBJ_THREADS += Test_Threads_Graph_graph_color.o
   OBJ_THREADS += Test_Threads_Common_ArithTraits.o
+  OBJ_THREADS += Test_Threads_Common_set_bit_count.o
 #  OBJ_THREADS += Test_Threads_Common_float128.o
   TARGETS += KokkosKernels_UnitTest_Threads
   TEST_TARGETS += test-threads
