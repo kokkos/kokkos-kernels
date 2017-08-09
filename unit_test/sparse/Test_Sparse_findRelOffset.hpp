@@ -317,7 +317,7 @@ namespace Test{ // (anonymous)
   //
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
-  template <typename lno_t>
+  template <typename lno_t, typename device_t>
   void testLongArray (bool& success, std::ostream &out)
   {
     using KokkosSparse::findRelOffset;
@@ -337,13 +337,18 @@ namespace Test{ // (anonymous)
 
     const lno_t n = 100;
     const lno_t N = 2*n + 1;
-    std::vector<lno_t> indsToSearch (N);
+    //std::vector<lno_t> indsToSearch (N);
+
+    typedef Kokkos::View<const lno_t*, device_t> lno_view_t;
+    lno_view_t indsToSearch("indsToSearch", N);
+    typename lno_view_t::HostMirror h_indsToSearch = Kokkos::create_mirror_view (indsToSearch);
+
 
     for (lno_t k = 0; k < n; ++k) {
       indsToSearch[2*k] = 2*(n - k);
       indsToSearch[2*k + 1] = 2*k + 1;
     }
-
+    Kokkos::deep_copy(indsToSearch, h_indsToSearch);
     // We don't need to test all possible hints, just two per search
     // value: the correct hint and some wrong hint.
     for (lno_t k = 0; k < N; ++k) {
@@ -360,13 +365,13 @@ namespace Test{ // (anonymous)
         const lno_t wrongHint = expectedOffset + 7;
 
         const lno_t offset0 =
-          findRelOffset<lno_t, std::vector<lno_t> > (indsToSearch, N, indToFind,
+          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t > (indsToSearch, N, indToFind,
                                                correctHint, false);
 
         EXPECT_TRUE( (offset0 == expectedOffset ));
         //TEST_EQUALITY( offset0, expectedOffset );
         const lno_t offset1 =
-          findRelOffset<lno_t, std::vector<lno_t> > (indsToSearch, N, indToFind,
+          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t > (indsToSearch, N, indToFind,
                                                wrongHint, false);
         EXPECT_TRUE( (offset1 == expectedOffset ));
         //TEST_EQUALITY( offset1, expectedOffset );
@@ -377,7 +382,7 @@ namespace Test{ // (anonymous)
         const lno_t indToFind = N + 1; // not in the array
         const lno_t hint = 0;
         const lno_t offset0 =
-          findRelOffset<lno_t, std::vector<lno_t> > (indsToSearch, N, indToFind,
+          findRelOffset<lno_t, /*std::vector<lno_t>*/ lno_view_t > (indsToSearch, N, indToFind,
                                                hint, false);
         EXPECT_TRUE( (offset0 == N ));
         //TEST_EQUALITY( offset0, N );
@@ -404,7 +409,7 @@ void test_findRelOffset()
   bool success = true;
   generalTest <lno_t, device_t>(success, out);
   EXPECT_TRUE( success);
-  testLongArray<lno_t> (success, out);
+  testLongArray<lno_t, device_t> (success, out);
   EXPECT_TRUE( success);
 }
 
