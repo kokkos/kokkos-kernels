@@ -339,14 +339,14 @@ namespace Test{ // (anonymous)
     const lno_t N = 2*n + 1;
     //std::vector<lno_t> indsToSearch (N);
 
-    typedef Kokkos::View<const lno_t*, device_t> lno_view_t;
+    typedef Kokkos::View<lno_t*, device_t> lno_view_t;
     lno_view_t indsToSearch("indsToSearch", N);
     typename lno_view_t::HostMirror h_indsToSearch = Kokkos::create_mirror_view (indsToSearch);
 
 
     for (lno_t k = 0; k < n; ++k) {
-      indsToSearch[2*k] = 2*(n - k);
-      indsToSearch[2*k + 1] = 2*k + 1;
+      h_indsToSearch[2*k] = 2*(n - k);
+      h_indsToSearch[2*k + 1] = 2*k + 1;
     }
     Kokkos::deep_copy(indsToSearch, h_indsToSearch);
     // We don't need to test all possible hints, just two per search
