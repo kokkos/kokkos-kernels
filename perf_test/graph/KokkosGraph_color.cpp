@@ -51,444 +51,420 @@
 
 #include "KokkosGraph_GraphColor.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosKernels_MyCRSMatrix.hpp"
+#include "KokkosKernels_TestParameters.hpp"
+
+
+typedef unsigned size_type;
+typedef int idx;
+//typedef int size_type;
+//typedef int idx;
+typedef double wt;
+
+void print_options(){
+
+}
+int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
+  for ( int i = 1 ; i < argc ; ++i ) {
+    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+      params.use_threads = atoi( argv[++i] );
+    }
+    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+      params.use_openmp = atoi( argv[++i] );
+    }
+    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+      params.use_cuda = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
+      params.repeat = atoi( argv[++i] );
+    }
+
+    else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
+      params.chunk_size = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "teamsize" ) ) {
+      params.team_size = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
+      params.vector_size  = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
+      params.a_mtx_bin_file = argv[++i];
+    }
+    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
+      params.use_dynamic_scheduling = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
+      params.verbose = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
+      ++i;
+      if ( 0 == strcasecmp( argv[i] , "COLORING_DEFAULT" ) ) {
+        params.algorithm = 1;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_SERIAL" ) ) {
+        params.algorithm = 2;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_VB" ) ) {
+        params.algorithm = 3;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBBIT" ) ) {
+        params.algorithm = 4;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBCS" ) ) {
+        params.algorithm = 5;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_EB" ) ) {
+        params.algorithm = 6;
+      }
+      else {
+        std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+        print_options();
+        return 1;
+      }
+    }
+    else {
+      std::cerr << "3-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+      print_options();
+      return 1;
+    }
+  }
+  return 0;
+}
+
+namespace KokkosKernels{
+
+namespace Experiment{
+
+
+template <typename ExecSpace, typename crsGraph_t, typename crsGraph_t2 , typename crsGraph_t3 , typename TempMemSpace , typename PersistentMemSpace >
+void run_experiment(
+    crsGraph_t crsGraph, Parameters params){
+  //using namespace KokkosSparse;
+  using namespace KokkosGraph;
+  using namespace KokkosGraph::Experimental;
+  //using namespace KokkosSparse::Experimental;
+
+  int algorithm = params.algorithm;
+  int repeat = params.repeat;
+  int chunk_size = params.chunk_size;
+
+  int shmemsize = params.shmemsize;
+  int team_size = params.team_size;
+  int use_dynamic_scheduling = params.use_dynamic_scheduling;
+  int verbose = params.verbose;
+
+  //char spgemm_step = params.spgemm_step;
+  int vector_size = params.vector_size;
+
+  typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
+  typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
+
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+      <lno_view_t,lno_nnz_view_t, lno_nnz_view_t,
+      ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
+
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename lno_view_t::value_type size_type;
+
+  KernelHandle kh;
+  kh.set_team_work_size(chunk_size);
+  kh.set_shmem_size(shmemsize);
+  kh.set_suggested_team_size(team_size);
+  kh.set_suggested_vector_size(vector_size);
+
+
+  if (use_dynamic_scheduling){
+    kh.set_dynamic_scheduling(true);
+  }
+  if (verbose){
+    kh.set_verbose(true);
+  }
+  const lno_t m = crsGraph.numRows();;
+
+
+  for (int i = 0; i < repeat; ++i){
+
+    switch (algorithm){
+    case 1:
+      kh.create_graph_coloring_handle(COLORING_DEFAULT);
+
+      break;
+    case 2:
+      kh.create_graph_coloring_handle(COLORING_SERIAL);
+
+      break;
+    case 3:
+      kh.create_graph_coloring_handle(COLORING_VB);
+      break;
+    case 4:
+      kh.create_graph_coloring_handle(COLORING_VBBIT);
+
+      break;
+    case 5:
+      kh.create_graph_coloring_handle(COLORING_VBCS);
+
+      break;
+    case 6:
+      kh.create_graph_coloring_handle(COLORING_EB);
+      break;
+    default:
+      kh.create_graph_coloring_handle(COLORING_DEFAULT);
+
+    }
+    graph_color_symbolic(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries);
+
+    std::cout <<
+        "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
+        "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "
+        "Num Phases:" << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
+    std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
+
+  }
+}
+
+template <typename size_type, typename lno_t,
+          typename exec_space, typename hbm_mem_space, typename sbm_mem_space>
+void run_multi_mem_experiment(Parameters params){
+
+  typedef exec_space myExecSpace;
+  typedef Kokkos::Device<exec_space, hbm_mem_space> myFastDevice;
+  typedef Kokkos::Device<exec_space, sbm_mem_space> mySlowExecSpace;
+
+  typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type > fast_crstmat_t;
+  typedef typename fast_crstmat_t::StaticCrsGraphType fast_graph_t;
+  typedef typename fast_graph_t::row_map_type::non_const_type fast_row_map_view_t;
+  typedef typename fast_graph_t::entries_type::non_const_type   fast_cols_view_t;
+
+  typedef typename fast_graph_t::row_map_type::const_type const_fast_row_map_view_t;
+  typedef typename fast_graph_t::entries_type::const_type   const_fast_cols_view_t;
+
+  typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, mySlowExecSpace, void, size_type > slow_crstmat_t;
+  typedef typename slow_crstmat_t::StaticCrsGraphType slow_graph_t;
+
+  typedef typename slow_graph_t::row_map_type::non_const_type slow_row_map_view_t;
+  typedef typename slow_graph_t::entries_type::non_const_type   slow_cols_view_t;
+  typedef typename slow_graph_t::row_map_type::const_type const_slow_row_map_view_t;
+  typedef typename slow_graph_t::entries_type::const_type   const_slow_cols_view_t;
+
+  char *a_mat_file = params.a_mtx_bin_file;
+  //char *b_mat_file = params.b_mtx_bin_file;
+  //char *c_mat_file = params.c_mtx_bin_file;
+
+  slow_graph_t a_slow_crsgraph, /*b_slow_crsgraph,*/ c_slow_crsgraph;
+  fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
+
+
+
+  //read a and b matrices and store them on slow or fast memory.
+  if (params.a_mem_space == 1){
+    fast_crstmat_t a_fast_crsmat;
+    a_fast_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
+    a_fast_crsgraph = a_fast_crsmat.graph;
+    a_fast_crsgraph.num_cols = a_fast_crsmat.numCols();
+
+  }
+  else {
+    slow_crstmat_t a_slow_crsmat;
+    a_slow_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
+    a_slow_crsgraph = a_slow_crsmat.graph;
+    a_slow_crsgraph.num_cols = a_slow_crsmat.numCols();
+  }
+
+
+  if (params.a_mem_space == 1){
+    if (params.b_mem_space == 1){
+      if (params.c_mem_space == 1){
+        if (params.work_mem_space == 1){
+           /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,fast_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+        else {
+          /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,fast_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+
+      }
+      else {
+        //C is in slow memory.
+        if (params.work_mem_space == 1){
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+        else {
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+      }
+    }
+    else {
+      //B is in slow memory
+      if (params.c_mem_space == 1){
+        if (params.work_mem_space == 1){
+          /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,slow_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+        else {
+          /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,slow_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+
+      }
+      else {
+        //C is in slow memory.
+        if (params.work_mem_space == 1){
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,slow_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+        else {
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, fast_graph_t,slow_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+      }
+
+    }
+  }
+  else {
+    //A is in slow memory
+    if (params.b_mem_space == 1){
+      if (params.c_mem_space == 1){
+        if (params.work_mem_space == 1){
+          /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,fast_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+        else {
+          /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,fast_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+
+      }
+      else {
+        //C is in slow memory.
+        if (params.work_mem_space == 1){
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,fast_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+        else {
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,fast_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+        }
+      }
+    }
+    else {
+      //B is in slow memory
+      if (params.c_mem_space == 1){
+        if (params.work_mem_space == 1){
+          /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,slow_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+        else {
+          /* c_fast_crsgraph = */
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,slow_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+
+      }
+      else {
+        //C is in slow memory.
+        if (params.work_mem_space == 1){
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,slow_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+        else {
+          /*c_slow_crsgraph =*/
+              KokkosKernels::Experiment::run_experiment
+                <myExecSpace, slow_graph_t,slow_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
+                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+        }
+      }
+
+    }
+
+  }
+}
+
+
+
+}
+}
 
 int main (int argc, char ** argv){
-  if (argc < 2){
-    std::cerr << "Usage:" << argv[0] << " input_bin_file" << std::endl;
-    exit(1);
+
+  KokkosKernels::Experiment::Parameters params;
+
+  if (parse_inputs (params, argc, argv) ){
+    return 1;
   }
-  Kokkos::initialize(argc, argv);
-
-
-  const int numColoringAlgos = 6;
-  using namespace KokkosGraph::Experimental;
-  using namespace KokkosGraph;
-
-  const ColoringAlgorithm ColoringAlgorithms[] = {COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB, COLORING_EB};
-  const std::string ColoringAlgorithmNames[] = {"COLORING_DEFAULT", "COLORING_SERIAL", "COLORING_VB", "COLORING_VBBIT", "COLORING_VBCS", "COLORING_EB"};
-
-
-  typedef int idx;
-  typedef double wt;
-
-
-  idx nr = 0, ne = 0;
-  idx *xadj, *adj;
-  wt *ew;
-
-  KokkosKernels::Impl::read_matrix<idx, idx, wt> (
-      &nr, &ne, &xadj, &adj, &ew, argv[1]);
-  delete [] ew;
-
-  idx nc = 0;
-  for (idx i = 0; i < ne; ++i){
-    if (adj[i] > nc) nc = adj[i];
+  if (params.a_mtx_bin_file == NULL){
+    std::cerr << "Provide a matrix file" << std::endl ;
+    return 0;
   }
-
-  nc += 1;
-
-#if defined( KOKKOS_HAVE_SERIAL )
+  std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
 
-  {
-
-
-    std::cout << "SERIAL TEST 1" << std::endl;
-
-    typedef unsigned int size_type;
-    typedef int lno_t;
-    typedef double scalar_t;
-    //typedef unsigned int color_t;
-
-    typedef Kokkos::Serial ExecSpace;
-    typedef Kokkos::Serial RowMemorySpace;
-    typedef Kokkos::Serial NonzeroMemorySpace;
-
-    ExecSpace::print_configuration(std::cout);
-
-    typedef Kokkos::Serial::memory_space TempWorkSpace;
-    typedef Kokkos::Serial::memory_space PersistentWorkSpace;
-
-    typedef Kokkos::View<size_type *, RowMemorySpace> row_index_view_type;
-    typedef Kokkos::View<lno_t *, NonzeroMemorySpace> nonzero_index_view_type;
-    typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
-
-    //typedef Kokkos::View<color_t * , RowMemorySpace> color_view_type;
-
-    typedef Kokkos::View<idx *, RowMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
-    typedef Kokkos::View<idx *, RowMemorySpace::array_layout, NonzeroMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
-
-    um_array_type _xadj (xadj, nr + 1);
-    um_edge_array_type _adj (adj, ne);
-
-
-    row_index_view_type kok_xadj ("xadj", nr + 1);
-    nonzero_index_view_type kok_adj("adj", ne);
-    KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-    KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
-
-
-
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle
-        <row_index_view_type,nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
-    KernelHandle kkh;
-
-    for (int i = 0; i < numColoringAlgos; ++i){
-      std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
-      kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-      graph_color_symbolic
-      <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
-
-      std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-          " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-          "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-          "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-      std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-    }
-  }
-#endif
 #if defined( KOKKOS_HAVE_OPENMP )
 
+  if (params.use_openmp) {
 
-  {
-    //OPENMP TEST1
-    {
+    Kokkos::OpenMP::initialize( params.use_openmp );
+    Kokkos::OpenMP::print_configuration(std::cout);
 
-      std::cout << "OPENMP TEST 1" << std::endl;
-      typedef size_t size_type;
-      typedef int lno_t;
-      typedef double scalar_t;
-      //typedef unsigned int color_t;
-
-      typedef Kokkos::OpenMP ExecSpace;
-      typedef Kokkos::OpenMP RowMemorySpace;
-      typedef Kokkos::OpenMP::memory_space NonzeroMemorySpace;
-
-      ExecSpace::print_configuration(std::cout);
-
-      typedef Kokkos::OpenMP TempWorkSpace;
-      typedef Kokkos::OpenMP PersistentWorkSpace;
-
-      typedef Kokkos::View<size_type *, RowMemorySpace> row_index_view_type;
-      typedef Kokkos::View<lno_t *, NonzeroMemorySpace> nonzero_index_view_type;
-      typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
-
-      //typedef Kokkos::View<color_t * , RowMemorySpace> color_view_type;
-      typedef Kokkos::Device<Kokkos::OpenMP::execution_space, Kokkos::HostSpace> host_device_type;
-
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, host_device_type, Kokkos::MemoryUnmanaged> um_array_type;
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, NonzeroMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
-
-      um_array_type _xadj (xadj, nr + 1);
-      um_edge_array_type _adj (adj, ne);
-
-
-      row_index_view_type kok_xadj ("xadj", nr + 1);
-      nonzero_index_view_type kok_adj("adj", ne);
-      KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
-
-
-
-      typedef KokkosKernels::Experimental::KokkosKernelsHandle
-              <row_index_view_type,nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
-      KernelHandle kkh;
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        graph_color_symbolic
-              <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-
-    }
-
-    //OPENMP TEST2
-    {
-
-      std::cout << "OPENMP TEST 2" << std::endl;
-      typedef int size_type;
-      typedef unsigned long lno_t;
-      typedef float scalar_t;
-      //typedef int color_t;
-
-      typedef Kokkos::OpenMP ExecSpace;
-      typedef Kokkos::OpenMP RowMemorySpace;
-      typedef Kokkos::OpenMP::memory_space NonzeroMemorySpace;
-      ExecSpace::print_configuration(std::cout);
-
-      typedef Kokkos::OpenMP TempWorkSpace;
-      typedef Kokkos::OpenMP PersistentWorkSpace;
-
-      typedef Kokkos::View<size_type *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
-      typedef Kokkos::View<lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> nonzero_index_view_type;
-      typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
-
-      typedef Kokkos::View<const size_type *, Kokkos::LayoutLeft, RowMemorySpace> const_row_index_view_type;
-      typedef Kokkos::View<const lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> const_nonzero_index_view_type;
-
-
-      //typedef Kokkos::View<color_t * , Kokkos::LayoutStride, RowMemorySpace> color_view_type;
-
-      typedef Kokkos::Device<Kokkos::OpenMP::execution_space, Kokkos::HostSpace> host_device_type;
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, host_device_type, Kokkos::MemoryUnmanaged> um_array_type;
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, NonzeroMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
-
-      um_array_type _xadj (xadj, nr + 1);
-      um_edge_array_type _adj (adj, ne);
-
-
-      row_index_view_type kok_xadj ("xadj", nr + 1);
-      nonzero_index_view_type kok_adj("adj", ne);
-      KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
-
-      typedef KokkosKernels::Experimental::KokkosKernelsHandle
-              <const_row_index_view_type,const_nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
-      KernelHandle kkh;
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        graph_color_symbolic
-              <KernelHandle,const_row_index_view_type,const_nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-    }
-
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
+        params
+        );
+    Kokkos::OpenMP::finalize();
   }
+
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
+  if (params.use_cuda) {
+    Kokkos::HostSpace::execution_space::initialize();
+    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
+    Kokkos::Cuda::print_configuration(std::cout);
 
-  {
-
-    //CUDA TEST1
-    {
-
-      std::cout << "Cuda TEST 1" << std::endl;
-      typedef unsigned int size_type;
-      typedef int lno_t;
-      typedef double scalar_t;
-      typedef unsigned int color_t;
-
-      typedef Kokkos::Cuda ExecSpace;
-      typedef Kokkos::Cuda RowMemorySpace;
-      typedef Kokkos::Cuda::memory_space NonzeroMemorySpace;
-      ExecSpace::print_configuration(std::cout);
-
-      typedef Kokkos::Cuda TempWorkSpace;
-      typedef Kokkos::Cuda PersistentWorkSpace;
-
-      typedef Kokkos::View<size_type *, RowMemorySpace> row_index_view_type;
-      typedef Kokkos::View<lno_t *, NonzeroMemorySpace> nonzero_index_view_type;
-      typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
-
-      typedef Kokkos::View<color_t * , RowMemorySpace> color_view_type;
-
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_edge_array_type;
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
+        params
+        );
 
 
-      um_array_type _xadj (xadj, nr + 1);
-      um_edge_array_type _adj (adj, ne);
-
-
-      row_index_view_type kok_xadj ("xadj", nr + 1);
-      nonzero_index_view_type kok_adj("adj", ne);
-      Kokkos::deep_copy (kok_xadj , _xadj);
-      Kokkos::deep_copy (kok_adj , _adj);
-      //KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      //KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
-
-      typedef KokkosKernels::Experimental::KokkosKernelsHandle
-              <row_index_view_type,nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
-      KernelHandle kkh;
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        graph_color_symbolic
-              <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-      typedef typename KernelHandle::row_lno_temp_work_view_t row_view_type;
-
-      typedef typename KernelHandle::row_lno_persistent_work_view_t edge_view_type;
-
-
-      row_view_type sym_row_map;
-      edge_view_type sym_entries;
-
-    }
-    //CUDA TEST2
-    {
-
-      std::cout << "Cuda TEST 2" << std::endl;
-      typedef int size_type;
-      typedef unsigned long lno_t;
-      typedef float scalar_t;
-      typedef int color_t;
-
-      typedef Kokkos::Cuda ExecSpace;
-      typedef Kokkos::Cuda RowMemorySpace;
-      typedef Kokkos::Cuda::memory_space NonzeroMemorySpace;
-      ExecSpace::print_configuration(std::cout);
-
-      typedef Kokkos::Cuda TempWorkSpace;
-      typedef Kokkos::Cuda PersistentWorkSpace;
-
-      typedef Kokkos::View<size_type *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
-      typedef Kokkos::View<lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> nonzero_index_view_type;
-      typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
-
-      typedef Kokkos::View<color_t * , Kokkos::LayoutStride, RowMemorySpace> color_view_type;
-
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
-      typedef Kokkos::View<idx *, RowMemorySpace::array_layout, NonzeroMemorySpace, Kokkos::MemoryUnmanaged> um_edge_array_type;
-
-      um_array_type _xadj (xadj, nr + 1);
-      um_edge_array_type _adj (adj, ne);
-
-      typedef Kokkos::View<const size_type *, Kokkos::LayoutLeft, RowMemorySpace> const_row_index_view_type;
-      typedef Kokkos::View<const lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> const_nonzero_index_view_type;
-
-
-
-      typedef Kokkos::View<idx *, RowMemorySpace> tmp_view_type;
-      typedef Kokkos::View<idx *, NonzeroMemorySpace> tmp_edge_view_type;
-      tmp_view_type __xadj ("xadj", nr + 1);
-      tmp_edge_view_type __adj("adj", ne);
-
-      Kokkos::deep_copy (__xadj , _xadj);
-      Kokkos::deep_copy (__adj , _adj);
-
-      row_index_view_type kok_xadj ("xadj", nr + 1);
-      nonzero_index_view_type kok_adj("adj", ne);
-
-      KokkosKernels::Impl::copy_vector<tmp_view_type, row_index_view_type, ExecSpace>(nr+1, __xadj, kok_xadj );
-      KokkosKernels::Impl::copy_vector<tmp_edge_view_type, nonzero_index_view_type, ExecSpace>(ne, __adj, kok_adj );
-      __xadj = tmp_view_type("");
-      __adj = tmp_edge_view_type("");
-
-      //KokkosKernels::Impl::copy_vector<um_array_type, row_index_view_type, ExecSpace>(nr+1, _xadj, kok_xadj );
-      //KokkosKernels::Impl::copy_vector<um_edge_array_type, nonzero_index_view_type, ExecSpace>(ne, _adj, kok_adj );
-
-      typedef KokkosKernels::Experimental::KokkosKernelsHandle
-              <const_row_index_view_type,const_nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
-      KernelHandle kkh;
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        graph_color_symbolic
-              <KernelHandle,const_row_index_view_type,const_nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-    }
-
-
-#if defined( KOKKOS_USE_CUDA_UVM )
-
-    //CUDA TEST3
-    {
-      std::cout << "Cuda TEST 3" << std::endl;
-      typedef unsigned int size_type;
-      typedef unsigned long lno_t;
-      typedef float scalar_t;
-      typedef int color_t;
-
-      typedef Kokkos::Cuda ExecSpace;
-      typedef Kokkos::CudaUVMSpace RowMemorySpace;
-      typedef Kokkos::Cuda NonzeroMemorySpace;
-      ExecSpace::print_configuration(std::cout);
-
-      typedef Kokkos::CudaUVMSpace TempWorkSpace;
-      typedef Kokkos::CudaHostPinnedSpace PersistentWorkSpace;
-
-      typedef Kokkos::View<size_type *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
-      typedef Kokkos::View<lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> nonzero_index_view_type;
-      typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
-
-      typedef Kokkos::View<color_t * , Kokkos::LayoutStride, RowMemorySpace> color_view_type;
-
-      typedef Kokkos::View<idx *,NonzeroMemorySpace::array_layout, Kokkos::Serial, Kokkos::MemoryUnmanaged> um_array_type;
-      typedef Kokkos::View<idx *,NonzeroMemorySpace::array_layout,  Kokkos::Serial, Kokkos::MemoryUnmanaged> um_edge_array_type;
-
-      um_array_type _xadj (xadj, nr + 1);
-      um_edge_array_type _adj (adj, ne);
-
-
-      //row_index_view_type kok_xadj ("xadj", nr + 1);
-      //nonzero_index_view_type kok_adj("adj", ne);
-
-
-
-      typedef Kokkos::View<idx *, RowMemorySpace> tmp_view_type;
-      typedef Kokkos::View<idx *, NonzeroMemorySpace> tmp_edge_view_type;
-      tmp_view_type __xadj ("xadj", nr + 1);
-      tmp_edge_view_type __adj("adj", ne);
-
-      Kokkos::deep_copy (__xadj , _xadj);
-      Kokkos::deep_copy (__adj , _adj);
-
-      row_index_view_type kok_xadj ("xadj", nr + 1);
-      nonzero_index_view_type kok_adj("adj", ne);
-
-      KokkosKernels::Impl::copy_vector<tmp_view_type, row_index_view_type, ExecSpace>(nr+1, __xadj, kok_xadj );
-      KokkosKernels::Impl::copy_vector<tmp_edge_view_type, nonzero_index_view_type, ExecSpace>(ne, __adj, kok_adj );
-      __xadj = tmp_view_type("");
-      __adj = tmp_edge_view_type("");
-
-
-
-      typedef KokkosKernels::Experimental::KokkosKernelsHandle
-              <row_index_view_type,nonzero_index_view_type, nonzero_scalar_view_type, ExecSpace, TempWorkSpace,PersistentWorkSpace > KernelHandle;
-      KernelHandle kkh;
-
-      for (int i = 0; i < numColoringAlgos; ++i){
-        std::cout << "\t:" << "Running " << ColoringAlgorithmNames[i] << std::endl;
-        kkh.create_graph_coloring_handle(ColoringAlgorithms[i]);
-        graph_color_symbolic
-              <KernelHandle,row_index_view_type,nonzero_index_view_type> (&kkh,nr, nc, kok_xadj, kok_adj);
-
-        std::cout << "\t:" << ColoringAlgorithmNames[i] <<
-            " Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-            "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
-            "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-        std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
-      }
-    }
-
-#endif
+    Kokkos::Cuda::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
+
 #endif
-  delete [] xadj;
-  delete [] adj;
 
-
-  Kokkos::finalize();
 
   return 0;
 }
