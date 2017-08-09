@@ -51,11 +51,11 @@
 typedef int size_type;
 typedef int idx;
 typedef double wt;
-//typedef Kokkos::OpenMP MyExecSpace;
-int main (int argc, char ** argv){
 
+int main (int argc, char* argv[]){
 
-  Kokkos::initialize();
+  Kokkos::initialize(argc,argv);
+  
   bool symmetrize = false, remove_diagonal = false, transpose = false;
   char *in_mtx = NULL, *out_bin = NULL;
   //bool create_incidence = false;
