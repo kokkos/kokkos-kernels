@@ -6,4 +6,5 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES KokkosCore KokkosContainers KokkosAlgorithms 
   LIB_OPTIONAL_TPLS quadmath MKL
+  TEST_OPTIONAL_TPLS yaml-cpp
 )

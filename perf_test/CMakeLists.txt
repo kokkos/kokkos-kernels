@@ -14,3 +14,32 @@ ADD_SUBDIRECTORIES(graph)
 ADD_SUBDIRECTORIES(sparse)
 ADD_SUBDIRECTORIES(common)
 
+TRIBITS_ADD_EXECUTABLE(
+  blas1
+  SOURCES blas1.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  blas1_MV
+  SOURCES blas1_MV.cpp
+  COMM serial mpi
+  )
+
+# These test use yaml to archive performance results
+ASSERT_DEFINED(TPL_ENABLE_yaml-cpp)
+IF(TPL_ENABLE_yaml-cpp)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    performance_validate
+    SOURCES performance_validate.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    performance_demo
+    SOURCES performance_demo.cpp
+    COMM serial mpi
+    )
+
+ENDIF()
