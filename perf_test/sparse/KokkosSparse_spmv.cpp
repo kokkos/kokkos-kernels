@@ -352,12 +352,12 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   archiver.set_config("numCols", numCols);
   archiver.set_config("filename", filename ? filename : ""); // null is problematic for current setup
   archiver.set_config("binaryfile", binaryfile);
-  archiver.set_config("rows_per_thread", rows_per_thread);  
-  archiver.set_config("team_size", team_size); 
+  archiver.set_config("rows_per_thread", rows_per_thread);
+  archiver.set_config("team_size", team_size);
   archiver.set_config("vector_length", vector_length);
-  archiver.set_config("idx_offset", idx_offset); 
-  archiver.set_config("loop", loop); 
- 
+  archiver.set_config("idx_offset", idx_offset);
+  archiver.set_config("loop", loop);
+
   // Fill results
   double tolerance = 0.5; // probably to change or make specific to each value
   archiver.set_result("AveBandwidth(GB/s)", ave_bandwidth, tolerance);
@@ -369,7 +369,7 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   archiver.set_result("aveTime(ms)",        ave_time_ms,   tolerance);
   archiver.set_result("maxTime(ms)",        max_time_ms,   tolerance);
   archiver.set_result("minTime(ms)",        min_time_ms,   tolerance);
-  archiver.set_result("numErrors",          num_errors,    tolerance);
+  archiver.set_result("numErrors",          num_errors);
 
   // run it
   Performance::Result result = archiver.run(archiveName, testName, hostName);
