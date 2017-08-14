@@ -68,15 +68,44 @@ using namespace KokkosKernels::Impl;
 
 namespace Test {
 
+template <typename view_type>
+struct ppctest{
+  view_type view;
+  typename view_type::non_const_type out_view;
+  ppctest(view_type view_, typename view_type::non_const_type out_view_): view(view_), out_view (out_view_){}
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t row) const {
+    out_view(row) = pop_count(view(row));
+  }
+};
+
+template <typename view_type>
+struct ppccheck{
+  view_type view;
+  typename view_type::non_const_type out_view;
+  ppccheck(view_type view_, typename view_type::non_const_type out_view_): view(view_), out_view (out_view_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t row) const {
+    typename view_type::non_const_value_type myval = view(row);
+    int num_el2 = 0;
+    for (; myval; num_el2++) {
+      myval = myval & (myval - 1); // clear the least significant bit set
+    }
+    out_view(row) = num_el2;
+  }
+};
+
+
 template <typename view_type, typename execution_space>
 view_type get_array_bit_count(view_type view){
   typename view_type::non_const_type out_view ("out", view.dimension_0());
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()), KOKKOS_LAMBDA(const size_t row) {
-    out_view(row) = pop_count(view(row));
-    //out_view(row) = set_bit_count<typename view_type::value_type, execution_space>(view(row));
-  });
+  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()),ppctest<view_type> (view, out_view));
+  Kokkos::fence();
   return out_view;
 }
 
@@ -87,16 +116,48 @@ view_type check_array_bit_count(view_type view){
   typename view_type::non_const_type  out_view ("out", view.dimension_0());
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()), KOKKOS_LAMBDA(const size_t row) {
-    typename view_type::non_const_value_type myval = view(row);
-    int num_el2 = 0;
-    for (; myval; num_el2++) {
-      myval = myval & (myval - 1); // clear the least significant bit set
-    }
-    out_view(row) = num_el2;
-  });
+  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()), ppccheck<view_type> (view, out_view));
+  Kokkos::fence();
   return out_view;
 }
+
+
+template <typename view_type>
+struct ffstest{
+  view_type view;
+  typename view_type::non_const_type out_view;
+  ffstest(view_type view_, typename view_type::non_const_type out_view_): view(view_), out_view (out_view_){}
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t row) const {
+    if (view(row) != 0){
+      out_view(row) = least_set_bit(view(row)) - 1;
+    }
+    else
+      out_view(row) = 0;
+  }
+};
+
+template <typename view_type>
+struct ffscheck{
+  view_type view;
+  typename view_type::non_const_type out_view;
+  ffscheck(view_type view_, typename view_type::non_const_type out_view_): view(view_), out_view (out_view_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t row) const {
+    typename view_type::non_const_value_type myval = view(row);
+    typename view_type::non_const_value_type unit = 1;
+    out_view(row) = 0;
+    for (int i = 0; i < 64; ++i){
+      if (myval & unit << i){
+        out_view(row) = i;
+        break;
+      }
+    }
+  }
+};
 
 
 template <typename view_type, typename execution_space>
@@ -104,13 +165,8 @@ view_type get_ffs(view_type view){
   typename view_type::non_const_type out_view ("out", view.dimension_0());
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()), KOKKOS_LAMBDA(const size_t row) {
-    if (view(row) != 0){
-      out_view(row) = least_set_bit(view(row)) - 1;
-    }
-    else
-      out_view(row) = 0;
-  });
+  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()),  ffstest<view_type> (view, out_view));
+  Kokkos::fence();
   return out_view;
 }
 
@@ -121,17 +177,8 @@ view_type check_ffs(view_type view){
   typename view_type::non_const_type  out_view ("out", view.dimension_0());
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()), KOKKOS_LAMBDA(const size_t row) {
-    typename view_type::non_const_value_type myval = view(row);
-    typename view_type::non_const_value_type unit = 1;
-    out_view(row) = 0;
-    for (int i = 0; i < 64; ++i){
-      if (myval & unit << i){
-        out_view(row) = i;
-        break;
-      }
-    }
-  });
+  Kokkos::parallel_for( my_exec_space(0, view.dimension_0()),  ffscheck<view_type> (view, out_view));
+  Kokkos::fence();
   return out_view;
 }
 
