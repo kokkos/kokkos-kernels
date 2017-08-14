@@ -304,11 +304,17 @@ int main (int argc, char ** argv){
 
     Kokkos::OpenMP::initialize( params.use_openmp );
 	  Kokkos::OpenMP::print_configuration(std::cout);
-
+#ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_spgemm
     <size_type, idx, wt, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
         params
         );
+#else 
+    KokkosKernels::Experiment::run_multi_mem_spgemm
+    <size_type, idx, wt, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
+        params
+        );
+#endif
     Kokkos::OpenMP::finalize();
   }
 
@@ -320,11 +326,18 @@ int main (int argc, char ** argv){
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
     Kokkos::Cuda::print_configuration(std::cout);
 
+#ifdef KOKKOSKERNELS_MULTI_MEM
+
     KokkosKernels::Experiment::run_multi_mem_spgemm
     <size_type, idx, wt, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
         params
         );
-
+#else
+    KokkosKernels::Experiment::run_multi_mem_spgemm
+    <size_type, idx, wt, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
+        params
+        );
+#endif
 
     Kokkos::Cuda::finalize();
     Kokkos::HostSpace::execution_space::finalize();
