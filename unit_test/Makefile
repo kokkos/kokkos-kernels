@@ -49,6 +49,7 @@ INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/blas
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/sparse
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/graph
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/common
+INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/batched
 
 
 
@@ -222,6 +223,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Common_ArithTraits.o
   OBJ_SERIAL += Test_Serial_Common_set_bit_count.o
 #  OBJ_SERIAL += Test_Serial_Common_float128.o
+  OBJ_SERIAL += Test_Serial_Batched_MatUtil.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif
@@ -295,7 +297,7 @@ test-threads: KokkosKernels_UnitTest_Threads
 test: $(TEST_TARGETS)
 
 build: $(TARGETS)
-	
+
 clean: kokkos-clean kokkoskernels-clean
 	rm -f *.o
 
@@ -306,4 +308,3 @@ clean: kokkos-clean kokkoskernels-clean
 
 gtest-all.o:$(GTEST_PATH)/gtest/gtest-all.cc
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(INC) $(CXXFLAGS) $(EXTRA_INC) -c $(GTEST_PATH)/gtest/gtest-all.cc
-	

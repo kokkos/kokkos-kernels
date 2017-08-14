@@ -13,10 +13,10 @@
 #include <ctime>
 
 #include <complex>
+
+#include "Kokkos_Core.hpp"
 #include "Kokkos_Complex.hpp"
-
-
-
+#include "impl/Kokkos_Timer.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {

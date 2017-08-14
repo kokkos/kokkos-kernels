@@ -11,47 +11,43 @@ namespace KokkosBatched {
     /// Serial Trsv
     ///
 
-    namespace Serial {
-      template<typename ArgUplo,
-	       typename ArgTrans,
-	       typename ArgDiag,
-	       typename ArgAlgo>
-      struct Trsv {
+    template<typename ArgUplo,
+             typename ArgTrans,
+             typename ArgDiag,
+             typename ArgAlgo>
+    struct SerialTrsv {
 
-	template<typename ScalarType,
-		 typename AViewType,
-		 typename bViewType>
-	KOKKOS_INLINE_FUNCTION
-	static int
-	invoke(const ScalarType alpha,
-	       const AViewType &A,
-	       const bViewType &b);
-      };
-    }
+      template<typename ScalarType,
+               typename AViewType,
+               typename bViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const ScalarType alpha,
+             const AViewType &A,
+             const bViewType &b);
+    };
 
     ///
     /// Team Trsv
     ///
 
-    namespace Team {
-      template<typename MemberType, 
-	       typename ArgUplo,
-	       typename ArgTrans,
-	       typename ArgDiag,
-	       typename ArgAlgo>
-      struct Trsv {
+    template<typename MemberType, 
+             typename ArgUplo,
+             typename ArgTrans,
+             typename ArgDiag,
+             typename ArgAlgo>
+    struct TeamTrsv {
 
-	template<typename ScalarType,
-		 typename AViewType,
-		 typename bViewType>
-	KOKKOS_INLINE_FUNCTION
-	static int
-	invoke(const MemberType &member,
-	       const ScalarType alpha,
-	       const AViewType &A,
-	       const bViewType &b);
-      };
-    }
+      template<typename ScalarType,
+               typename AViewType,
+               typename bViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const MemberType &member,
+             const ScalarType alpha,
+             const AViewType &A,
+             const bViewType &b);
+    };
 
   }
 }
