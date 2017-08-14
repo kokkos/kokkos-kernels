@@ -95,8 +95,7 @@ int run_graphcolor(
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_coloring(ColoringAlgorithm coloring_algorithm,
-                    lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
+void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -120,74 +119,62 @@ void test_coloring(ColoringAlgorithm coloring_algorithm,
   graph_t static_graph (sym_adj, sym_xadj);
   input_mat = crsMat_t("CrsMatrix", numCols, newValues, static_graph);
 
-  color_view_t vector_colors;
-  size_t num_colors;
+  ColoringAlgorithm coloring_algorithms[] = {COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB};
+
+  for (int ii = 0; ii < 6; ++ii){
+    ColoringAlgorithm coloring_algorithm = coloring_algorithms[ii];
+    color_view_t vector_colors;
+    size_t num_colors;
 
 
-  Kokkos::Impl::Timer timer1;
-  crsMat_t output_mat;
-  int res = run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
-  //double coloring_time = timer1.seconds();
-  EXPECT_TRUE( (res == 0));
+    Kokkos::Impl::Timer timer1;
+    crsMat_t output_mat;
+    int res = run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
+    //double coloring_time = timer1.seconds();
+    EXPECT_TRUE( (res == 0));
 
 
-  const lno_t num_rows_1 = input_mat.numRows();
-  const lno_t num_cols_1 = input_mat.numCols();
-  lno_t num_conflict = KokkosKernels::Impl::kk_is_d1_coloring_valid
-      <lno_view_t,lno_nnz_view_t, color_view_t, typename device::execution_space>
-  (num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, vector_colors);
+    const lno_t num_rows_1 = input_mat.numRows();
+    const lno_t num_cols_1 = input_mat.numCols();
+    lno_t num_conflict = KokkosKernels::Impl::kk_is_d1_coloring_valid
+        <lno_view_t,lno_nnz_view_t, color_view_t, typename device::execution_space>
+    (num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, vector_colors);
 
-  lno_t conf = 0;
-  {
-    //also check the correctness of the validation code :)
-    typename lno_view_t::HostMirror hrm = Kokkos::create_mirror_view (input_mat.graph.row_map);
-    typename lno_nnz_view_t::HostMirror hentries = Kokkos::create_mirror_view (input_mat.graph.entries);
-    typename color_view_t::HostMirror hcolor = Kokkos::create_mirror_view (vector_colors);
-    Kokkos::deep_copy (hrm , input_mat.graph.row_map);
-    Kokkos::deep_copy (hentries , input_mat.graph.entries);
-    Kokkos::deep_copy (hcolor , vector_colors);
+    lno_t conf = 0;
+    {
+      //also check the correctness of the validation code :)
+      typename lno_view_t::HostMirror hrm = Kokkos::create_mirror_view (input_mat.graph.row_map);
+      typename lno_nnz_view_t::HostMirror hentries = Kokkos::create_mirror_view (input_mat.graph.entries);
+      typename color_view_t::HostMirror hcolor = Kokkos::create_mirror_view (vector_colors);
+      Kokkos::deep_copy (hrm , input_mat.graph.row_map);
+      Kokkos::deep_copy (hentries , input_mat.graph.entries);
+      Kokkos::deep_copy (hcolor , vector_colors);
 
-    for (lno_t i = 0; i < num_rows_1; ++i){
-      const size_type b = hrm(i);
-      const size_type e = hrm(i + 1);
-      for (size_type j = b; j < e; ++j){
-        lno_t d = hentries(j);
-        if (i != d){
-          if (hcolor(d) == hcolor(i)){
-            conf++;
+      for (lno_t i = 0; i < num_rows_1; ++i){
+        const size_type b = hrm(i);
+        const size_type e = hrm(i + 1);
+        for (size_type j = b; j < e; ++j){
+          lno_t d = hentries(j);
+          if (i != d){
+            if (hcolor(d) == hcolor(i)){
+              conf++;
+            }
           }
         }
       }
     }
+    EXPECT_TRUE( (num_conflict == conf));
+
+    EXPECT_TRUE( (num_conflict == 0));
   }
-  EXPECT_TRUE( (num_conflict == conf));
-
-  EXPECT_TRUE( (num_conflict == 0));
-
   //device::execution_space::finalize();
 
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, graph ## _ ## graph_color ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_DEFAULT, 50000, 50000 * 30, 200, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_DEFAULT, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_DEFAULT, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_SERIAL, 50000, 50000 * 30, 200, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_SERIAL, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_SERIAL, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VB, 50000, 50000 * 30, 200, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VB, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VB, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VBBIT, 50000, 50000 * 30, 200, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VBBIT, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VBBIT, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VBCS, 50000, 50000 * 30, 200, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VBCS, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_VBCS, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_EB, 50000, 50000 * 30, 200, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_EB, 50000, 50000 * 30, 100, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(COLORING_EB, 50000, 50000 * 30, 100, 10); \
+  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 200, 10); \
+  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10); \
 }
 
 #if (defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
