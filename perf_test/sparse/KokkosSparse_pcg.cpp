@@ -42,7 +42,9 @@
 */
 
 #include <KokkosKernels_config.h>
-#ifdef KOKKOSKERNELS_INST_DOUBLE 
+#if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
+    defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T) && \
+    defined(KOKKOSKERNELS_INST_ORDINAL_INT)
 #include "KokkosSparse_pcg.hpp"
 
 #include "KokkosKernels_Utils.hpp"

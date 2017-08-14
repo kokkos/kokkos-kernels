@@ -336,7 +336,7 @@ int main (int argc, char ** argv){
 
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
-
+#if !defined (KOKKOS_HAVE_CUDA)
 #if defined( KOKKOS_HAVE_OPENMP )
 
   if (params.use_openmp) {
@@ -358,8 +358,10 @@ int main (int argc, char ** argv){
   }
 
 #endif
+#endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+
+#if defined( KOKKOS_HAVE_CUDA1 )
   if (params.use_cuda) {
     Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
