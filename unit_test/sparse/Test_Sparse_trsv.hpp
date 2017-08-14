@@ -22,7 +22,7 @@ void check_trsv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type b, y_vecto
   //typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename scalar_view_t::value_type ScalarA;
-  double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
+  double eps = std::is_same<ScalarA,float>::value?2*1e-2:1e-7;
 
 
   KokkosSparse::trsv(uplo, "N", "N", input_mat, b, x);

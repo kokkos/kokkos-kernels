@@ -90,6 +90,7 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgo
   KernelHandle kh;
   kh.set_team_work_size(16);
   kh.set_dynamic_scheduling(true);
+  //kh.set_verbose(true);
 
   kh.create_spgemm_handle(spgemm_algorithm);
 
@@ -222,9 +223,12 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 
 
   typedef typename Kokkos::Details::ArithTraits<typename scalar_view_t::non_const_value_type>::mag_type eps_type;
+  eps_type eps = std::is_same<eps_type,float>::value?2*1e-3:1e-7;
+
+
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <scalar_view_t, scalar_view_t, eps_type,
-      typename device::execution_space>(h_vals1, h_vals2, 0.000001);
+      typename device::execution_space>(h_vals1, h_vals2, eps);
 
   if (!is_identical) return false;
   return true;
