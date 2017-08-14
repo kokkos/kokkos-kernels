@@ -41,14 +41,12 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
 
 
-  typename x_vector_type::HostMirror h_x = Kokkos::create_mirror_view(x);
-  Kokkos::deep_copy(h_x,x);
-
   typename y_vector_type::HostMirror h_y = Kokkos::create_mirror_view(y);
-  Kokkos::deep_copy(h_y,y);
+  typename x_vector_type::HostMirror h_x = Kokkos::create_mirror_view(x);
 
-  Kokkos::fence();
-  //KokkosKernels::Impl::print_1Dview(h_entries);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy (x.dimension_0(), x, h_x);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy (y.dimension_0(), y, h_y);
+
 
   lno_t nr = input_mat.numRows();
   lno_t nc = input_mat.numCols();
@@ -63,7 +61,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
     }
     h_y(i) = beta * h_y(i) + alpha * result;
   }
-  Kokkos::deep_copy(y,h_y);
+  KokkosKernels::Impl::safe_host_to_device_deep_copy (y.dimension_0(),  h_y, y);
   Kokkos::fence();
 }
 
@@ -97,9 +95,11 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
   double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
 
   Kokkos::deep_copy(expected_y, y);
+
   Kokkos::fence();
 
   KokkosSparse::spmv("N", alpha, input_mat, x, beta, y);
+
 
   for (int i = 0; i < numMV; ++i){
     auto x_i = Kokkos::subview (x, Kokkos::ALL (), i);
@@ -166,14 +166,17 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
 
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
-  //lno_t nr = input_mat.numRows();
-  //lno_t nc = input_mat.numCols();
+  lno_t nr = input_mat.numRows();
+  lno_t nc = input_mat.numCols();
+
   Kokkos::deep_copy(b_y_copy, b_y);
 
 
   Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, numMV);
   Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, numMV);
   Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, numMV);
+
+
 }
 
 
@@ -187,10 +190,12 @@ TEST_F( TestCategory,sparse ## _ ## spmv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## 
 
 #define EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## LAYOUT ## _ ## DEVICE ) { \
-  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 200, 10, 1); \
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 100, 10, 5); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 200, 10, 1); \
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10000, 10000 * 20, 100, 5, 10); \
 }
+  //
+
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \

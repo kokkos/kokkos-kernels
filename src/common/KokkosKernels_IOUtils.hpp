@@ -91,11 +91,28 @@ void kk_sparseMatrix_generate(
 
     for(SizeType k=rowPtr[row] ;k<rowPtr[row+1];k++)
     {
-      OrdinalType pos = (1.0*rand()/INT_MAX-0.5)*bandwidth+row;
-      if(pos<0) pos+=ncols;
-      if(pos>=ncols) pos-=ncols;
-      colInd[k]= pos;
-      values[k] = 100.0*rand()/INT_MAX-50.0;
+
+      while (true){
+        OrdinalType pos = (1.0*rand()/INT_MAX-0.5)*bandwidth+row;
+        if(pos<0) pos+=ncols;
+        if(pos>=ncols) pos-=ncols;
+
+        bool is_already_in_the_row = false;
+        for(SizeType j = rowPtr[row] ; j<k ;j++){
+          if (colInd[j] == pos){
+            is_already_in_the_row = true;
+            break;
+          }
+        }
+        if (!is_already_in_the_row) {
+
+          colInd[k]= pos;
+          values[k] = 100.0*rand()/INT_MAX-50.0;
+          break;
+        }
+      }
+
+
     }
   }
 }

@@ -87,7 +87,7 @@ void spgemm_debug(
   typename bscalar_nnz_view_t_::HostMirror h_valb = Kokkos::create_mirror_view (valuesB);
   Kokkos::deep_copy (h_valb, valuesB);
   typename clno_row_view_t_::HostMirror h_rmc = Kokkos::create_mirror_view (row_mapC);
-
+  Kokkos::fence();
 
   typedef typename KernelHandle::nnz_lno_t lno_t;
   typedef typename KernelHandle::size_type size_type;
@@ -163,8 +163,10 @@ void spgemm_debug(
     h_valc(i) = result_c_col_values[i];
   }
 
+  Kokkos::deep_copy (row_mapC, h_rmc);
   Kokkos::deep_copy (entriesC, h_entc);
   Kokkos::deep_copy (valuesC, h_valc);
+  Kokkos::fence();
 
 
 }

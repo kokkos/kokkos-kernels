@@ -624,8 +624,8 @@ void kk_sort_graph(
     std::sort (edges.begin(), edges.begin() + row_size);
     size_type ne = in_adj.dimension_0();
     for(size_type i = 0; i < ne; ++i){
-      out_adj(i) = edges[i].dst;
-      out_vals(i) = edges[i].ew;
+      heo(i) = edges[i].dst;
+      hvo(i) = edges[i].ew;
     }
 
 

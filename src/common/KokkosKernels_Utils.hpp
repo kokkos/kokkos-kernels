@@ -1186,6 +1186,67 @@ void copy_view(
 
 
 
+template <typename from_view>
+void safe_device_to_host_deep_copy(
+                size_t num_elements,
+                from_view from, typename from_view::HostMirror to){
+
+  typedef typename from_view::value_type scalar_t;
+  typedef typename from_view::device_type device_t;
+
+  typedef Kokkos::View <scalar_t *, device_t> unstrided_from_view_t;
+  unstrided_from_view_t unstrided_from ("unstrided", num_elements);
+
+  copy_view<from_view, unstrided_from_view_t, typename device_t::execution_space>  (num_elements, from, unstrided_from);
+
+  Kokkos::fence();
+
+  typedef typename unstrided_from_view_t::HostMirror host_unstrided_from_view_t;
+  host_unstrided_from_view_t h_unstrided_from = Kokkos::create_mirror_view(unstrided_from);
+
+  Kokkos::deep_copy(h_unstrided_from,unstrided_from);
+  Kokkos::fence();
+
+  copy_view<host_unstrided_from_view_t,
+            typename from_view::HostMirror,
+            typename host_unstrided_from_view_t::device_type::execution_space>  (num_elements, h_unstrided_from, to);
+
+  Kokkos::fence();
+}
+
+
+template <typename to_view>
+void safe_host_to_device_deep_copy(
+                size_t num_elements,
+                typename to_view::HostMirror from, to_view  to){
+
+  typedef typename to_view::value_type scalar_t;
+  typedef typename to_view::device_type device_t;
+
+  typedef typename to_view::HostMirror::device_type h_device_t;
+
+  typedef Kokkos::View <scalar_t *, h_device_t> host_unstrided_view_t;
+  typedef Kokkos::View <scalar_t *, device_t> device_unstrided_view_t;
+
+  host_unstrided_view_t host_unstrided_from ("unstrided", num_elements);
+  device_unstrided_view_t device_unstrided_to ("unstrided", num_elements);
+
+  copy_view<typename to_view::HostMirror, host_unstrided_view_t, typename h_device_t::execution_space>  (num_elements, from, host_unstrided_from);
+
+  Kokkos::fence();
+  Kokkos::deep_copy(device_unstrided_to,host_unstrided_from);
+  Kokkos::fence();
+
+  copy_view<device_unstrided_view_t,
+            to_view,
+            typename device_t::execution_space>  (num_elements, device_unstrided_to, to);
+
+  Kokkos::fence();
+}
+
+
+
+
 template<typename view_type>
 struct ReduceSumFunctor{
 

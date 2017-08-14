@@ -210,11 +210,14 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <typename graph_t::row_map_type, typename graph_t::row_map_type, typename lno_view_t::value_type,
       typename device::execution_space>(output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
+  //KokkosKernels::Impl::kk_print_1Dview(output_mat2.graph.row_map);
+
   if (!is_identical) return false;
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
       typename device::execution_space>(h_ent1, h_ent2, 0 );
+
   if (!is_identical) return false;
 
 
@@ -222,14 +225,14 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <scalar_view_t, scalar_view_t, eps_type,
       typename device::execution_space>(h_vals1, h_vals2, 0.000001);
+
   if (!is_identical) return false;
   return true;
 }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_spgemm(SPGEMMAlgorithm spgemm_algorithm,
-                 lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
+void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
 
   using namespace Test;
   //device::execution_space::initialize();
@@ -245,93 +248,99 @@ void test_spgemm(SPGEMMAlgorithm spgemm_algorithm,
   lno_t numCols = numRows;
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
-  const int max_integer = 2147483647;
-  std::string algo = "UNKNOWN";
-  bool is_expected_to_fail = false;
 
-  switch (spgemm_algorithm){
-  case SPGEMM_CUSPARSE:
-    //TODO: add these test failure cases for cusparse too.
-    algo = "SPGEMM_CUSPARSE";
+  crsMat_t output_mat2;
+  run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
+
+  SPGEMMAlgorithm algorithms [] = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED, SPGEMM_CUSPARSE,SPGEMM_MKL};
+
+  for (int ii = 0; ii < 5; ++ii){
+
+    SPGEMMAlgorithm spgemm_algorithm = algorithms[ii];
+
+    const int max_integer = 2147483647;
+    std::string algo = "UNKNOWN";
+    bool is_expected_to_fail = false;
+
+    switch (spgemm_algorithm){
+    case SPGEMM_CUSPARSE:
+      //TODO: add these test failure cases for cusparse too.
+      algo = "SPGEMM_CUSPARSE";
 #ifndef KERNELS_HAVE_CUSPARSE
-    is_expected_to_fail = true;
+      is_expected_to_fail = true;
 #endif
-    break;
+      break;
 
-  case SPGEMM_MKL:
-    algo = "SPGEMM_MKL";
+    case SPGEMM_MKL:
+      algo = "SPGEMM_MKL";
 #ifndef HAVE_KOKKOSKERNELS_MKL
-    is_expected_to_fail = true;
+      is_expected_to_fail = true;
 #endif
-    //MKL requires scalar to be either float or double
-    if (!(Kokkos::Impl::is_same<float,scalar_t>::value || Kokkos::Impl::is_same<double,scalar_t>::value)){
-      is_expected_to_fail = true;
+      //MKL requires scalar to be either float or double
+      if (!(Kokkos::Impl::is_same<float,scalar_t>::value || Kokkos::Impl::is_same<double,scalar_t>::value)){
+        is_expected_to_fail = true;
+      }
+      //mkl requires local ordinals to be int.
+      if (!(Kokkos::Impl::is_same<int,lno_t>::value)){
+        is_expected_to_fail = true;
+      }
+      //if size_type is larger than int, mkl casts it to int.
+      //it will fail if casting cause overflow.
+      if (input_mat.values.dimension_0() > max_integer){
+        is_expected_to_fail = true;
+      }
+
+      if (!(Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device::memory_space>::accessible)){
+        is_expected_to_fail = true;
+      }
+      break;
+
+    case SPGEMM_KK_MEMSPEED:
+      algo = "SPGEMM_KK_MEMSPEED";
+      break;
+    case SPGEMM_KK_SPEED:
+      algo = "SPGEMM_KK_SPEED";
+      break;
+    case SPGEMM_KK_MEMORY:
+      algo = "SPGEMM_KK_MEMORY";
+      break;
+    default:
+      break;
     }
-    //mkl requires local ordinals to be int.
-    if (!(Kokkos::Impl::is_same<int,lno_t>::value)){
-      is_expected_to_fail = true;
+
+    Kokkos::Impl::Timer timer1;
+    crsMat_t output_mat;
+
+    bool failed = false;
+    int res = 0;
+    try{
+      res = run_spgemm<crsMat_t, device>(input_mat, input_mat, spgemm_algorithm, output_mat);
     }
-    //if size_type is larger than int, mkl casts it to int.
-    //it will fail if casting cause overflow.
-    if (input_mat.values.dimension_0() > max_integer){
-      is_expected_to_fail = true;
+    catch (const char *message){
+      EXPECT_TRUE(is_expected_to_fail) << algo;
+      failed = true;
     }
-
-    if (!(Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device::memory_space>::accessible)){
-      is_expected_to_fail = true;
+    catch (std::string message){
+      EXPECT_TRUE(is_expected_to_fail)<< algo;
+      failed = true;
     }
-    break;
+    catch (std::exception& e){
+      EXPECT_TRUE(is_expected_to_fail)<< algo;
+      failed = true;
+    }
+    EXPECT_TRUE((failed == is_expected_to_fail));
 
-  case SPGEMM_KK_MEMSPEED:
-    algo = "SPGEMM_KK_MEMSPEED";
-    break;
-  case SPGEMM_KK_SPEED:
-    algo = "SPGEMM_KK_SPEED";
-    break;
-  case SPGEMM_KK_MEMORY:
-    algo = "SPGEMM_KK_MEMORY";
-    break;
-  default:
-    break;
-  }
+    double spgemm_time = timer1.seconds();
 
-  Kokkos::Impl::Timer timer1;
-  crsMat_t output_mat;
+    timer1.reset();
+    if (!is_expected_to_fail){
 
-  bool failed = false;
-  int res = 0;
-  try{
-    res = run_spgemm<crsMat_t, device>(input_mat, input_mat, spgemm_algorithm, output_mat);
-  }
-  catch (const char *message){
-	EXPECT_TRUE(is_expected_to_fail) << algo;
-    failed = true;
-  }
-  catch (std::string message){
-	EXPECT_TRUE(is_expected_to_fail)<< algo;
-    failed = true;
-  }
-  catch (std::exception& e){
-	EXPECT_TRUE(is_expected_to_fail)<< algo;
-    failed = true;
-  }
-  EXPECT_TRUE((failed == is_expected_to_fail));
-
-  //double spgemm_time = timer1.seconds();
-
-  if (!is_expected_to_fail){
-
-    EXPECT_TRUE( (res == 0)) << algo;
-
-    crsMat_t output_mat2;
-    res = run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
-
-
-    bool is_identical = is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
-
-    EXPECT_TRUE(is_identical) << algo;
-
-    //EXPECT_TRUE( equal) << algo;
+      EXPECT_TRUE( (res == 0)) << algo;
+      bool is_identical = is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
+      EXPECT_TRUE(is_identical) << algo;
+      //EXPECT_TRUE( equal) << algo;
+    }
+    //std::cout << "algo:" << algo << " spgemm_time:" << spgemm_time << " output_check_time:" << timer1.seconds() << std::endl;
   }
   //device::execution_space::finalize();
 }
@@ -340,23 +349,11 @@ void test_spgemm(SPGEMMAlgorithm spgemm_algorithm,
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## spgemm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_MEMORY, 50000, 50000 * 30, 200, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_SPEED, 50000, 50000 * 30, 200, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_MEMSPEED, 50000, 50000 * 30, 200, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_CUSPARSE, 50000, 50000 * 30, 200, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_MKL, 50000, 50000 * 30, 200, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_MEMORY, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_SPEED, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_MEMSPEED, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_CUSPARSE, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_MKL, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_MEMORY, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_SPEED, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_KK_MEMSPEED, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_CUSPARSE, 50000, 50000 * 30, 100, 10); \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(SPGEMM_MKL,50000, 50000 * 30, 100, 10); \
+  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 500, 10); \
 }
 
+//test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);
+//test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 200, 10);
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \

@@ -159,11 +159,11 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas1_update.o
   OBJ_CUDA += Test_Cuda_Blas2_gemv.o
   OBJ_CUDA += Test_Cuda_Sparse_spmv.o
-  OBJ_CUDA += Test_Cuda_Sparse_trsv.o
+  #OBJ_CUDA += Test_Cuda_Sparse_trsv.o #removing trsv from cuda unit test as it runs only sequential.
   OBJ_CUDA += Test_Cuda_Sparse_spgemm.o
   OBJ_CUDA += Test_Cuda_Sparse_gauss_seidel.o
   OBJ_CUDA += Test_Cuda_Sparse_CrsMatrix.o
-  OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o
+  #OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o #removing findRelOffset from cuda test as the implementation is sequential.
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumIntoLonger.o
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumInto.o
   #OBJ_CUDA += Test_Cuda_Sparse_copyIntegers.o

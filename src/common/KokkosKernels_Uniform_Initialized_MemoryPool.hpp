@@ -183,14 +183,14 @@ public:
                       num_chunks(1),
                     num_set_chunks(num_chunks_), modular_num_chunks(0),
                     chunk_size(set_chunk_size_),
-                    overall_size(num_chunks_ * set_chunk_size_),
+                    overall_size(),
                     //next_free_chunk(0),
                     //last_free_chunk(chunk_size_),
                     //free_chunks (),
                     chunk_locks (),
                     pchunk_locks(),
-                    data_view (Kokkos::ViewAllocateWithoutInitializing("pool data"), overall_size),
-                    data(data_view.ptr_on_device()),
+                    data_view (),
+                    data(),
                     pool_type (pool_type_)
                     {
 
@@ -199,6 +199,9 @@ public:
       num_chunks *= 2;
     }
     modular_num_chunks = num_chunks -1;
+    overall_size = num_chunks * chunk_size;
+    data_view = data_view_t(Kokkos::ViewAllocateWithoutInitializing("pool data"), overall_size),
+    data = (data_view.ptr_on_device()),
 
 
     this->set_pool_type(pool_type_);

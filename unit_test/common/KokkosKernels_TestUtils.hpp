@@ -42,6 +42,7 @@
 */
 
 
+#include "KokkosKernels_Utils.hpp"
 namespace Test {
   template<class ViewType, bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value>
   struct multivector_layout_adapter;
@@ -94,9 +95,8 @@ namespace Test {
     typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
     typename ViewType2::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
 
-
-    Kokkos::deep_copy(h_v1,v1);
-    Kokkos::deep_copy(h_v2,v2);
+    KokkosKernels::Impl::safe_device_to_host_deep_copy (v1.dimension_0(), v1, h_v1);
+    KokkosKernels::Impl::safe_device_to_host_deep_copy (v2.dimension_0(), v2, h_v2);
 
     for (size_t i = 0; i < v1_size; ++i){
       EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol);

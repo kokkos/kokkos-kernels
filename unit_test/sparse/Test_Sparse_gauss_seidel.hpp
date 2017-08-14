@@ -163,8 +163,7 @@ vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_gauss_seidel(GSAlgorithm gs_algorithm,
-                      lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
+void test_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
 
   using namespace Test;
   srand(245);
@@ -187,45 +186,46 @@ void test_gauss_seidel(GSAlgorithm gs_algorithm,
 
   const scalar_view_t solution_x = create_x_vector<scalar_view_t>(nv);
   scalar_view_t y_vector = create_y_vector(input_mat, solution_x);
-  scalar_view_t x_vector ("x vector", nv);
+
+  GSAlgorithm gs_algorithms[] ={GS_DEFAULT, GS_TEAM, GS_PERMUTED};
+
+  for (int ii = 0; ii < 3; ++ii){
+    GSAlgorithm gs_algorithm = gs_algorithms[ii];
+    scalar_view_t x_vector ("x vector", nv);
+    const scalar_t alpha = 1.0;
+    KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
+    scalar_t dot_product = KokkosBlas::dot( x_vector , x_vector );
+    typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+    mag_t initial_norm_res = Kokkos::Details::ArithTraits<scalar_t>::abs (dot_product);
+    initial_norm_res  = Kokkos::Details::ArithTraits<mag_t>::sqrt( initial_norm_res );
+    Kokkos::deep_copy (x_vector , 0);
+
+    //bool is_symmetric_graph = false;
+    //int apply_type = 0;
+    //bool skip_symbolic = false;
+    //bool skip_numeric = false;
 
 
-  const scalar_t alpha = 1.0;
-  KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
 
+    for (int is_symmetric_graph = 0; is_symmetric_graph < 2; ++is_symmetric_graph){
+      for (int apply_type = 0; apply_type < 3; ++apply_type){
+        for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
+          for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
-  scalar_t dot_product = KokkosBlas::dot( x_vector , x_vector );
-  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
-  mag_t initial_norm_res = Kokkos::Details::ArithTraits<scalar_t>::abs (dot_product);
-  initial_norm_res  = Kokkos::Details::ArithTraits<mag_t>::sqrt( initial_norm_res );
+            Kokkos::Impl::Timer timer1;
+            //int res =
+            run_gauss_seidel_1<crsMat_t, device>(input_mat, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric);
+            //double gs = timer1.seconds();
 
-  Kokkos::deep_copy (x_vector , 0);
-
-  //bool is_symmetric_graph = false;
-  //int apply_type = 0;
-  //bool skip_symbolic = false;
-  //bool skip_numeric = false;
-
-
-
-  for (int is_symmetric_graph = 0; is_symmetric_graph < 2; ++is_symmetric_graph){
-    for (int apply_type = 0; apply_type < 3; ++apply_type){
-      for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
-        for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
-
-          Kokkos::Impl::Timer timer1;
-          //int res =
-          run_gauss_seidel_1<crsMat_t, device>(input_mat, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric);
-          //double gs = timer1.seconds();
-
-          //KokkosKernels::Impl::print_1Dview(x_vector);
-          KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
-          //KokkosKernels::Impl::print_1Dview(x_vector);
-          scalar_t result_dot_product = KokkosBlas::dot( x_vector , x_vector );
-          mag_t result_norm_res  = Kokkos::Details::ArithTraits<scalar_t>::abs( result_dot_product );
-          result_norm_res = Kokkos::Details::ArithTraits<mag_t>::sqrt(result_norm_res);
-          //std::cout << "result_norm_res:" << result_norm_res << " initial_norm_res:" << initial_norm_res << std::endl;
-          EXPECT_TRUE( (result_norm_res < initial_norm_res));
+            //KokkosKernels::Impl::print_1Dview(x_vector);
+            KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
+            //KokkosKernels::Impl::print_1Dview(x_vector);
+            scalar_t result_dot_product = KokkosBlas::dot( x_vector , x_vector );
+            mag_t result_norm_res  = Kokkos::Details::ArithTraits<scalar_t>::abs( result_dot_product );
+            result_norm_res = Kokkos::Details::ArithTraits<mag_t>::sqrt(result_norm_res);
+            //std::cout << "result_norm_res:" << result_norm_res << " initial_norm_res:" << initial_norm_res << std::endl;
+            EXPECT_TRUE( (result_norm_res < initial_norm_res));
+          }
         }
       }
     }
@@ -237,15 +237,7 @@ void test_gauss_seidel(GSAlgorithm gs_algorithm,
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_DEFAULT, 50000, 50000 * 30, 200, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_PERMUTED, 50000, 50000 * 30, 200, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_TEAM, 50000, 50000 * 30, 200, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_DEFAULT, 50000, 50000 * 30, 100, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_PERMUTED, 50000, 50000 * 30, 100, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_TEAM, 50000, 50000 * 30, 100, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_DEFAULT, 50000, 50000 * 30, 100, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_PERMUTED, 50000, 50000 * 30, 100, 10); \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(GS_TEAM, 50000, 50000 * 30, 100, 10); \
+  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
 }
 
 
