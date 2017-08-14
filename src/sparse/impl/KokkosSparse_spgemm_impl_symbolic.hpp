@@ -943,21 +943,24 @@ suggested_vector_size = 4;
 
 
 #if defined( KOKKOS_HAVE_CUDA )
-  size_t free_byte ;
-  size_t total_byte ;
-  cudaMemGetInfo( &free_byte, &total_byte ) ;
-  size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-  if (KOKKOSKERNELS_VERBOSE)
-    std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-  if (required_size + num_chunks > free_byte){
-    num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-  }
-  {
-  nnz_lno_t min_chunk_size = 1;
-  while (min_chunk_size * 2 < num_chunks) {
-    min_chunk_size *= 2;
-  }
-  num_chunks = min_chunk_size;
+  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+
+    size_t free_byte ;
+    size_t total_byte ;
+    cudaMemGetInfo( &free_byte, &total_byte ) ;
+    size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
+    if (KOKKOSKERNELS_VERBOSE)
+      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
+    if (required_size + num_chunks > free_byte){
+      num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
+    }
+    {
+      nnz_lno_t min_chunk_size = 1;
+      while (min_chunk_size * 2 <= num_chunks) {
+        min_chunk_size *= 2;
+      }
+      num_chunks = min_chunk_size;
+    }
   }
 #endif
   if (KOKKOSKERNELS_VERBOSE){
