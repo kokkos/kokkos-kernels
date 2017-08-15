@@ -382,18 +382,6 @@ echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/perf_test/Makefile ${KOKKOS_SETTING
 
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOSKERNELS_PATH=${KOKKOSKERNELS_TEST_INSTALL_PATH}"
 
-#echo "KOKKOS_SETTINGS=${KOKKOS_SETTINGS}" > example/fixture/Makefile
-#echo "" >> example/fixture/Makefile
-#echo "all:" >> example/fixture/Makefile
-#echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/example/fixture/Makefile ${KOKKOS_SETTINGS}" >> example/fixture/Makefile
-#echo "" >> example/fixture/Makefile
-#echo "test: all" >> example/fixture/Makefile
-#echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/example/fixture/Makefile ${KOKKOS_SETTINGS} test" >> example/fixture/Makefile
-#echo "" >> example/fixture/Makefile
-#echo "clean:" >> example/fixture/Makefile
-#echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/example/fixture/Makefile ${KOKKOS_SETTINGS} clean" >> example/fixture/Makefile
-
-
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOS_PATH=${KOKKOS_PATH} KOKKOSKERNELS_PATH=${KOKKOSKERNELS_PATH}"
 
 # Generate top level directory makefile.
@@ -421,7 +409,7 @@ echo "" >> Makefile
 
 echo "test: build-test" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test test" >> Makefile
-echo -e "\t\$(MAKE) -C perf_test test" >> Makefile
+#echo -e "\t\$(MAKE) -C perf_test test" >> Makefile
 echo "" >> Makefile
 
 echo "clean:" >> Makefile
