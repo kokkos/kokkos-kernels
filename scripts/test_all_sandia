@@ -207,7 +207,7 @@ elif [ "$MACHINE" = "white" ]; then
 
   # Format: (compiler module-list build-list exe-name warning-flag)
   COMPILERS=("gcc/5.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "ibm/13.1.3 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
+             "ibm/13.1.5 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
              "cuda/8.0.44 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
   )
 
