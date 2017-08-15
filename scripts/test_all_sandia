@@ -144,7 +144,7 @@ fi
 
 # Set kokkos path.
 if [ -z "$KOKKOS_PATH" ]; then
-  KOKKOS_PATH=$KOKKOS_KERNELS_PATH/../kokkos
+  KOKKOS_PATH=$KOKKOSKERNELS_PATH/../kokkos
 else
   # Ensure KOKKOS_PATH is abs path.
   KOKKOS_PATH=$( cd $KOKKOS_PATH && pwd )
