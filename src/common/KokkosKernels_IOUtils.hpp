@@ -759,10 +759,10 @@ void read_graph_crs(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scal
     myFile  >> (*xadj)[i];
   }
 
-  for (lno_t i = 0; i < *ne; ++i){
+  for (size_type i = 0; i < *ne; ++i){
     myFile  >> (*adj)[i];
   }
-  for (lno_t i = 0; i < *ne; ++i){
+  for (size_type i = 0; i < *ne; ++i){
     myFile  >> (*ew)[i];
   }
   myFile.close();

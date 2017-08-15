@@ -186,7 +186,7 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
       if(colInd[i]>max) max = colInd[i];
     }
     if(rowPtr[row+1]>rowPtr[row]) {
-      int span = max-min;
+      size_t span = max-min;
       if(span<min_span) min_span = span;
       if(span>max_span) max_span = span;
       ave_span += span;
@@ -228,15 +228,15 @@ int SparseMatrix_WriteBinaryFormat(const char* filename, OrdinalType &nrows, Ord
   char line[512];
   line[0]='%';
   int count=-1;
-  char* symmetric = NULL;
-  int nlines;
+  //char* symmetric = NULL;
+  //int nlines;
 
   while(line[0]=='%')
   {
           fgets(line,511,file);
           line[511] = 0;
           count++;
-          if(count==0) symmetric=strstr(line,"symmetric");
+          //if(count==0) symmetric=strstr(line,"symmetric");
 
           if(line[0]=='%')
             fprintf ( DescrFile , "%s",line);
@@ -286,7 +286,7 @@ int SparseMatrix_ReadBinaryFormat(const char* filename, OrdinalType &nrows, Ordi
   line[0]='%';
   int count=-1;
   char* symmetric = NULL;
-  int nlines;
+  //int nlines;
 
   while(line[0]=='%')
   {
@@ -350,7 +350,7 @@ int SparseMatrix_ReadBinaryFormat(const char* filename, OrdinalType &nrows, Ordi
       if(colInd[i]>max) max = colInd[i];
     }
     if(rowPtr[row+1]>rowPtr[row]) {
-      int span = max-min;
+      size_t span = max-min;
       if(span<min_span) min_span = span;
       if(span>max_span) max_span = span;
       ave_span += span;

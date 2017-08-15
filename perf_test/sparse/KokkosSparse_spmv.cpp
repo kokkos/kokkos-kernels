@@ -316,9 +316,9 @@ void print_help() {
 int main(int argc, char **argv)
 {
  long long int size = 110503; // a prime number
- int numVecs = 4;
+ //int numVecs = 4;
  int test=KOKKOS;
- int type=-1;
+ //int type=-1;
  char* filename = NULL;
  bool binaryfile = false;
  bool write_binary = false;
@@ -338,7 +338,7 @@ int main(int argc, char **argv)
  for(int i=0;i<argc;i++)
  {
   if((strcmp(argv[i],"-s")==0)) {size=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
+  //if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--test")==0)) {
     i++;
     if((strcmp(argv[i],"mkl")==0))
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
 #endif
     continue;
   }
-  if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
+  //if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-f")==0)) {filename = argv[++i]; continue;}
   if((strcmp(argv[i],"-fb")==0)) {filename = argv[++i]; binaryfile = true; continue;}
   if((strcmp(argv[i],"-rpt")==0)) {rows_per_thread=atoi(argv[++i]); continue;}
