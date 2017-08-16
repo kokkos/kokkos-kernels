@@ -303,7 +303,7 @@ void
     c_row_view_t rowmapC_,
     c_lno_nnz_view_t entriesC_,
     c_scalar_nnz_view_t valuesC_,
-    SPGEMMAlgorithm spgemm_algorithm){
+    SPGEMMAlgorithm spgemm_algorithm_){
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tCOLOR MODE" << std::endl;
@@ -379,7 +379,7 @@ void
   for (nnz_lno_t i = 0; i < num_used_colors; ){
     nnz_lno_t color_begin = color_xadj(i);
     nnz_lno_t lastcolor = i + 1;
-    if (spgemm_algorithm == SPGEMM_KK_MULTICOLOR2){
+    if (spgemm_algorithm_ == SPGEMM_KK_MULTICOLOR2){
       lastcolor = KOKKOSKERNELS_MACRO_MIN(i + num_multi_colors, num_used_colors );
       i += num_multi_colors;
     }
@@ -396,7 +396,7 @@ void
 
 
     if (use_dynamic_schedule){
-      switch (spgemm_algorithm){
+      switch (spgemm_algorithm_){
       default:
       case SPGEMM_KK_COLOR:
         Kokkos::parallel_for( dynamic_team_numeric1_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
@@ -413,7 +413,7 @@ void
       }
     }
     else {
-      switch (spgemm_algorithm){
+      switch (spgemm_algorithm_){
       default:
       case SPGEMM_KK_COLOR:
         Kokkos::parallel_for( team_numeric1_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
@@ -456,7 +456,7 @@ void
 
     nnz_lno_t &num_colors_in_one_step,
     nnz_lno_t &num_multi_color_steps,
-    SPGEMMAlgorithm spgemm_algorithm){
+    SPGEMMAlgorithm spgemm_algorithm_){
 
   nnz_lno_persistent_work_view_t color_xadj;
 
@@ -564,7 +564,7 @@ void
       //nnz_lno_temp_work_view_t tmp_color_view = vertex_color_view;
       typename HandleType::GraphColoringHandleType::color_view_t tmp_color_view = vertex_color_view;
       //if the algorithm is spgemm, then we will have multiple colors per iteration.
-      if (spgemm_algorithm == SPGEMM_KK_MULTICOLOR){
+      if (spgemm_algorithm_ == SPGEMM_KK_MULTICOLOR){
 
         //tmp_color_view = nnz_lno_temp_work_view_t( Kokkos::ViewAllocateWithoutInitializing("tmp_color_view"), a_row_cnt);
         tmp_color_view = typename HandleType::GraphColoringHandleType::color_view_t ( Kokkos::ViewAllocateWithoutInitializing("tmp_color_view"), a_row_cnt);
@@ -602,7 +602,7 @@ void
             a_row_cnt, tmp_color_view, tmp_color_view, 1, -1);
       }
 
-      if (spgemm_algorithm == SPGEMM_KK_MULTICOLOR2){
+      if (spgemm_algorithm_ == SPGEMM_KK_MULTICOLOR2){
         num_multi_color_steps = original_num_colors;
         num_colors_in_one_step = c_nnz_size / this->b_col_cnt;
         double scale_ = this->handle->get_spgemm_handle()->get_multi_color_scale();

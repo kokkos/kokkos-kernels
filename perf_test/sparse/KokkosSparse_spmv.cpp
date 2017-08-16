@@ -224,9 +224,9 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
 
     h_y_compare(i) = 0;
     for(int j=start;j<end;j++) {
-      Scalar val = h_graph.entries(j) + i;
+      Scalar tmp_val = h_graph.entries(j) + i;
       int idx = h_graph.entries(j);
-      h_y_compare(i)+=val*h_x(idx);
+      h_y_compare(i)+=tmp_val*h_x(idx);
     }
   }
 
@@ -238,7 +238,7 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   Kokkos::deep_copy(x1,h_x);
   typename KokkosSparse::CrsMatrix<Scalar,int,execution_space,void,int>::values_type y1("Y1",numRows);
 
-  int nnz_per_row = A.nnz()/A.numRows();
+  //int nnz_per_row = A.nnz()/A.numRows();
   matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
 
   // Error Check

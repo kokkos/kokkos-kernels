@@ -827,7 +827,7 @@ void KokkosSPGEMM
   size_type bnnz =  entriesSetIndex.dimension_0();
 
   //get the SPGEMMAlgorithm to run.
-  SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
+  //SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
 
   KokkosKernels::Impl::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
   size_type compressed_b_size = bnnz;

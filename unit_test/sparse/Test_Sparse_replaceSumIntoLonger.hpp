@@ -115,6 +115,17 @@ namespace Test {
         //           << std::endl;
       }
 
+      //MD 08/2017 Note: Adding below initialization
+      //as this creates a warning where cols might be unitialized.
+      for (ordinal_type k = ncol; k < numEntToModify; ++k) {
+        if (k - 1 >= 0){
+          cols[k] = cols[0];
+        }
+        else {
+          cols[k] = cols[0];
+        }
+      }
+
       ordinal_type lclNumModified = 0;
       if (replace_) {
         lclNumModified = A_.replaceValues (lclRow, cols, ncol, vals, sorted_, atomic_);

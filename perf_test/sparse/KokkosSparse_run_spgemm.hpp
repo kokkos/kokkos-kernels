@@ -196,19 +196,19 @@ crsMat_t3 run_experiment(
     row_mapC_ref = lno_view_t ("non_const_lnow_row", m + 1);
     entriesC_ref = lno_nnz_view_t ("");
     valuesC_ref = scalar_view_t ("");
-    KernelHandle kh;
-    kh.set_team_work_size(chunk_size);
-    kh.set_shmem_size(shmemsize);
-    kh.set_suggested_team_size(team_size);
-    kh.create_spgemm_handle(KokkosSparse::SPGEMM_KK_MEMORY);
+    KernelHandle sequential_kh;
+    sequential_kh.set_team_work_size(chunk_size);
+    sequential_kh.set_shmem_size(shmemsize);
+    sequential_kh.set_suggested_team_size(team_size);
+    sequential_kh.create_spgemm_handle(KokkosSparse::SPGEMM_KK_MEMORY);
 
     if (use_dynamic_scheduling){
-      kh.set_dynamic_scheduling(true);
+      sequential_kh.set_dynamic_scheduling(true);
     }
 
 
     spgemm_symbolic (
-        &kh,
+        &sequential_kh,
         m,
         n,
         k,
@@ -224,14 +224,14 @@ crsMat_t3 run_experiment(
     ExecSpace::fence();
 
 
-    size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
       entriesC_ref = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC_ref = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
     spgemm_numeric(
-        &kh,
+        &sequential_kh,
         m,
         n,
         k,

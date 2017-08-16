@@ -659,7 +659,7 @@ struct KokkosSPGEMM
       break;
       case 1: //fill mode
       {
-        size_type num_el = rowmapC[row_index];
+        size_type adj_ind = rowmapC[row_index];
 
         for (nnz_lno_t ii = 0; ii < insertion_count; ++ii){
           const nnz_lno_t set_ind = indices[ii];
@@ -671,7 +671,7 @@ struct KokkosSPGEMM
           nnz_lno_t unit = 1;
           while (c_rows){
             int least_set = KokkosKernels::Impl::least_set_bit(c_rows) - 1;
-            entriesC[num_el++] = shift + least_set;
+            entriesC[adj_ind++] = shift + least_set;
             c_rows = c_rows & ~(unit << least_set);
 
             /*
@@ -799,7 +799,7 @@ struct KokkosSPGEMM
       break;
       case 1: //fill mode
       {
-        size_type num_el = rowmapC[row_index];
+        size_type adj_ind = rowmapC[row_index];
 
         for (nnz_lno_t ii = 0; ii < insertion_count; ++ii){
           const nnz_lno_t set_ind = indices[ii];
@@ -815,7 +815,7 @@ struct KokkosSPGEMM
           while (c_rows){
 
             int least_set = KokkosKernels::Impl::least_set_bit(c_rows) - 1;
-            entriesC[num_el++] = shift + least_set;
+            entriesC[adj_ind++] = shift + least_set;
             c_rows = c_rows & ~(unit << least_set);
             /*
             if (c_rows & unit){
@@ -1539,14 +1539,14 @@ struct KokkosSPGEMM
         nnz_lno_t num_global_el = 0;
         Kokkos::parallel_reduce(
             Kokkos::ThreadVectorRange(teamMember, used_hash_sizes[1]),
-            [&] (nnz_lno_t i, nnz_lno_t &num_el) {
+            [&] (nnz_lno_t i, nnz_lno_t &num_thread_el) {
           if (vals_counts_gmem[i] == a_row_size){
             nnz_lno_t c_rows = hm2.values[i];
-            nnz_lno_t num_el2 = 0;
-            for (; c_rows; num_el2++) {
+            nnz_lno_t num_vector_el = 0;
+            for (; c_rows; num_vector_el++) {
               c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
             }
-            num_el += num_el2;
+            num_thread_el += num_vector_el;
           }
         }, num_global_el);
         rowmapC[row_index] = num_el + num_global_el;

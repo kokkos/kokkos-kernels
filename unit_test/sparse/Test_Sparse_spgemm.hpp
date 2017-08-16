@@ -334,7 +334,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
     }
     EXPECT_TRUE((failed == is_expected_to_fail));
 
-    double spgemm_time = timer1.seconds();
+    //double spgemm_time = timer1.seconds();
 
     timer1.reset();
     if (!is_expected_to_fail){

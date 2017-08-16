@@ -166,8 +166,8 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
 
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
-  lno_t nr = input_mat.numRows();
-  lno_t nc = input_mat.numCols();
+  //lno_t nr = input_mat.numRows();
+  //lno_t nc = input_mat.numCols();
 
   Kokkos::deep_copy(b_y_copy, b_y);
 

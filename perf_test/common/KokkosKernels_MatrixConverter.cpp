@@ -194,8 +194,8 @@ int main (int argc, char* argv[]){
     }
 
     graph_t transpose_graph(new_entries, new_rowmap);
-    crstmat_t transpose("transpose", numrows, new_values, transpose_graph);
-    a_crsmat = transpose;
+    crstmat_t transpose_matrix("transpose", numrows, new_values, transpose_graph);
+    a_crsmat = transpose_matrix;
 
 
     orm = a_crsmat.graph.row_map;
@@ -271,8 +271,8 @@ int main (int argc, char* argv[]){
     KokkosKernels::Impl::kk_print_1Dview(out_vals);
 
     graph_t transpose_graph(new_entries, new_rowmap);
-    crstmat_t transpose("transpose", a_crsmat.numRows(), new_values, transpose_graph);
-    a_crsmat = transpose;
+    crstmat_t transpose_matrix("transpose", a_crsmat.numRows(), new_values, transpose_graph);
+    a_crsmat = transpose_matrix;
 
     orm = a_crsmat.graph.row_map;
     oentries = a_crsmat.graph.entries;

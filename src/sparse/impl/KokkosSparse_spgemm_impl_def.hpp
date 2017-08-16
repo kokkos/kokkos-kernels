@@ -61,7 +61,7 @@ void KokkosSPGEMM
       c_scalar_nnz_view_t &valuesC_){
 
     //get the algorithm and execution space.
-    SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
+    //SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
     KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
 
     if (KOKKOSKERNELS_VERBOSE){
