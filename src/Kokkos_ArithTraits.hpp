@@ -586,7 +586,7 @@ public:
     return 1.0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION float min () {
-    return FLT_MIN;
+    return -FLT_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION float max () {
     return FLT_MAX;
@@ -855,7 +855,7 @@ public:
     return 1.0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
-    return DBL_MIN;
+    return -DBL_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return DBL_MAX;
@@ -990,7 +990,7 @@ public:
     return 1.0;
   }
   static val_type min () {
-    return LDBL_MIN;
+    return -LDBL_MAX;
   }
   static val_type max () {
     return LDBL_MAX;
