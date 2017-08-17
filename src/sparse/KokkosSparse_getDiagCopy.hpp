@@ -47,7 +47,7 @@
 #ifndef KOKKOS_SPARSE_GETDIAGCOPY_HPP_
 #define KOKKOS_SPARSE_GETDIAGCOPY_HPP_
 
-#include "Kokkos_Sparse_impl_getDiagCopyWithOffsets.hpp"
+#include "KokkosSparse_getDiagCopyWithOffsets_impl.hpp"
 #include <type_traits>
 
 namespace KokkosSparse {
