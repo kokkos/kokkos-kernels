@@ -66,7 +66,7 @@ IF (KokkosKernels_INST_EXECSPACE_SERIAL)
   ENDIF()
 ENDIF()
 
-IF (KokkosKernels_INST_EXECSPACE_PTHREAD)
+IF (KokkosKernels_INST_EXECSPACE_THREADS)
   IF (KokkosKernels_INST_DOUBLE)
     APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_double_*_Threads_*.cpp)
   ENDIF()

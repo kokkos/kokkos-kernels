@@ -28,7 +28,7 @@
 /* Whether to build kernels for execution space Kokkos::OpenMP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMP
 /* Whether to build kernels for execution space Kokkos::Threads */
-#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_PTHREAD
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_THREADS
 /* Whether to build kernels for execution space Kokkos::Serial */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SERIAL
 

@@ -184,48 +184,48 @@ IF (Kokkos_ENABLE_Pthread)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/threads)
   INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/threads)
 
-  APPEND_GLOB(PTHREAD_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Blas*.cpp)
+  APPEND_GLOB(THREADS_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Blas*.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     blas_threads
     SOURCES
       Test_Main.cpp
-      ${PTHREAD_BLAS_SOURCES}
+      ${THREADS_BLAS_SOURCES}
     COMM serial mpi
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
     )
     
-  APPEND_GLOB(PTHREAD_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Sparse*.cpp)
+  APPEND_GLOB(THREADS_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Sparse*.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     sparse_threads
     SOURCES
       Test_Main.cpp
-      ${PTHREAD_SPARSE_SOURCES}
+      ${THREADS_SPARSE_SOURCES}
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
   )
   
-  APPEND_GLOB(PTHREAD_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Graph*.cpp)
+  APPEND_GLOB(THREADS_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Graph*.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     graph_threads
     SOURCES
       Test_Main.cpp
-      ${PTHREAD_GRAPH_SOURCES}
+      ${THREADS_GRAPH_SOURCES}
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
   )
   
   
-  APPEND_GLOB(PTHREAD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Common_ArithTraits.cpp)
+  APPEND_GLOB(THREADS_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Common_ArithTraits.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     common_threads
     SOURCES
       Test_Main.cpp
-      ${PTHREAD_COMMON_SOURCES}
+      ${THREADS_COMMON_SOURCES}
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
   )
