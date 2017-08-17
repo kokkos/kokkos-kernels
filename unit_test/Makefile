@@ -242,8 +242,18 @@ test-serial: KokkosKernels_UnitTest_Serial
 #=======================================================================
 
 vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/threads
-
 ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_THREADS), 1)
+    KOKKOSKERNELS_INTERNAL_TEST_THREADS = 1
+  else
+    ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+      KOKKOSKERNELS_INTERNAL_TEST_THREADS = 0
+    else
+      KOKKOSKERNELS_INTERNAL_TEST_THREADS = 1
+    endif
+  endif
+endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/threads
   OBJ_THREADS = Test_Main.o gtest-all.o
   OBJ_THREADS += Test_Threads_Blas1_abs.o
