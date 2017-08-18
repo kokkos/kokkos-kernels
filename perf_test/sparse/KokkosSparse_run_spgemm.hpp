@@ -255,7 +255,7 @@ crsMat_t3 run_experiment(
     Ccrsmat_ref = Ccrsmat;
   }
 
-
+  for (int i = 0; i < repeat; ++i){
   switch (algorithm){
   case 1:
     kh.create_spgemm_handle(SPGEMM_MKL);
@@ -325,7 +325,6 @@ crsMat_t3 run_experiment(
     kh.get_spgemm_handle()->coloring_output_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_output_file);
   }
 
-  for (int i = 0; i < repeat; ++i){
 
     row_mapC = lno_view_t
               ("non_const_lnow_row",

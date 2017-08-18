@@ -47,7 +47,7 @@
 #include <iostream>
 #include <gtest/gtest.h>
 #include "KokkosSparse_findRelOffset.hpp"
-
+#include "KokkosKernels_Utils.hpp"
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
 #define kokkos_complex_float Kokkos::complex<float>
@@ -67,6 +67,7 @@ namespace Test{ // (anonymous)
     //typedef int lno_t;
     //typedef Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space> DT;
     typedef Kokkos::View<const lno_t*, DT> IVT;
+    typedef Kokkos::View<lno_t*, DT> nIVT;
 
     //Teuchos::OSTab tab0 (out);
     out << "Test findRelOffset" << endl;
@@ -77,7 +78,9 @@ namespace Test{ // (anonymous)
     // Test with zero indices to search, using a raw array.
     {
       lno_t numEnt = 0;
-      const lno_t* indsToSearch = NULL;
+      IVT nullView;
+      const lno_t* indsToSearch = nullView.data();
+
       const lno_t indToFind = 42;
       for (lno_t hint = 0; hint < 3; ++hint) {
         // Length-zero array is trivially sorted, but try the unsorted
@@ -101,14 +104,24 @@ namespace Test{ // (anonymous)
     {
       lno_t numEnt = 7;
       const lno_t indsToSearch[7] = {1, 1, 2, 3, 5, 8, 13};
+      nIVT indsToSearch_view("indsToSearch", numEnt);
+      typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view (indsToSearch_view);
+      for (int i = 0; i < numEnt; ++i) {
+        std::cout << "indsToSearch[i]:" << indsToSearch[i] << std::endl;
+        h_indsToSearch_view(i) = indsToSearch[i];
+      }
+      Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
+      Kokkos::fence();
+      KokkosKernels::Impl::kk_print_1Dview(indsToSearch_view);
       const bool isSorted = true;
 
       for (lno_t hint = 0; hint < 10; ++hint) {
         // Test an index that is not in the array.
         // This one is in [min, max].
         lno_t indNotThere = 4;
+
         lno_t offset =
-          findRelOffset<lno_t, const lno_t* > (indsToSearch, numEnt,
+          findRelOffset<lno_t, const lno_t* > (indsToSearch_view.data(), numEnt,
                                          indNotThere, hint, isSorted);
 
         EXPECT_TRUE( (offset == numEnt ));
@@ -117,7 +130,7 @@ namespace Test{ // (anonymous)
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
-        offset = findRelOffset<lno_t, const lno_t* > (indsToSearch, numEnt,
+        offset = findRelOffset<lno_t, const lno_t* > (indsToSearch_view.data(), numEnt,
                                                 indNotThere, hint, isSorted);
         EXPECT_TRUE( (offset == numEnt ));
         //TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -126,7 +139,7 @@ namespace Test{ // (anonymous)
         for (lno_t k = 0; k < numEnt; ++k) {
 
           const lno_t indToFind = indsToSearch[k]; // in the array
-          offset = findRelOffset<lno_t, const lno_t* > (indsToSearch, numEnt,
+          offset = findRelOffset<lno_t, const lno_t* > (indsToSearch_view.data(), numEnt,
                                                   indToFind, hint, isSorted);
           if (indToFind == static_cast<lno_t> (1)) {
             // 1 is a duplicate in this example.  Treat it as a special
@@ -150,22 +163,21 @@ namespace Test{ // (anonymous)
     // Test the sorted case, with a Kokkos::View.
     {
       lno_t numEnt = 7;
-      Kokkos::View<lno_t*, DT> indsToSearch ("indsToSearch", numEnt);
-      // This assumes UVM.
-      indsToSearch[0] = 1;
-      indsToSearch[1] = 1;
-      indsToSearch[2] = 2;
-      indsToSearch[3] = 3;
-      indsToSearch[4] = 5;
-      indsToSearch[5] = 8;
-      indsToSearch[6] = 13;
+      const lno_t indsToSearch[7] = {1, 1, 2, 3, 5, 8, 13};
+      nIVT indsToSearch_view("indsToSearch", numEnt);
+
+      typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view (indsToSearch_view);
+      for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
+      Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
+      Kokkos::fence();
+
       const bool isSorted = true;
 
       for (lno_t hint = 0; hint < 10; ++hint) {
         // Test an index that is not in the array.
         // This one is in [min, max].
         lno_t indNotThere = 4;
-        lno_t offset = findRelOffset<lno_t, IVT> (indsToSearch, numEnt,
+        lno_t offset = findRelOffset<lno_t, IVT> (indsToSearch_view, numEnt,
                                             indNotThere, hint, isSorted);
         EXPECT_TRUE( (offset == numEnt ));
         //TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -173,7 +185,7 @@ namespace Test{ // (anonymous)
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
-        offset = findRelOffset<lno_t, IVT> (indsToSearch, numEnt,
+        offset = findRelOffset<lno_t, IVT> (indsToSearch_view, numEnt,
                                          indNotThere, hint, isSorted);
         EXPECT_TRUE( (offset == numEnt ));
         //TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -181,7 +193,7 @@ namespace Test{ // (anonymous)
         // Test all indices that are in the array.
         for (lno_t k = 0; k < numEnt; ++k) {
           const lno_t indToFind = indsToSearch[k]; // in the array
-          offset = findRelOffset<lno_t, IVT> (indsToSearch, numEnt,
+          offset = findRelOffset<lno_t, IVT> (indsToSearch_view, numEnt,
                                            indToFind, hint, isSorted);
           if (indToFind == static_cast<lno_t> (1)) {
             // 1 is a duplicate in this example.  Treat it as a special
@@ -208,12 +220,20 @@ namespace Test{ // (anonymous)
       const lno_t indsToSearch[7] = {8, 1, 13, 1, 3, 2, 5};
       const bool isSorted = false;
 
+      nIVT indsToSearch_view("indsToSearch", numEnt);
+
+      typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view (indsToSearch_view);
+      for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
+      Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
+      Kokkos::fence();
+
+
       for (lno_t hint = 0; hint < 10; ++hint) {
         // Test an index that is not in the array.
         // This one is in [min, max].
         lno_t indNotThere = 4;
         lno_t offset =
-          findRelOffset<lno_t, const lno_t* > (indsToSearch, numEnt,
+          findRelOffset<lno_t, const lno_t* > (indsToSearch_view.data(), numEnt,
                                          indNotThere, hint, isSorted);
         EXPECT_TRUE( (offset == numEnt ));
         //TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -221,7 +241,7 @@ namespace Test{ // (anonymous)
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
-        offset = findRelOffset<lno_t, const lno_t* > (indsToSearch, numEnt,
+        offset = findRelOffset<lno_t, const lno_t* > (indsToSearch_view.data(), numEnt,
                                                 indNotThere, hint, isSorted);
         EXPECT_TRUE( (offset == numEnt ));
         //TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -229,7 +249,7 @@ namespace Test{ // (anonymous)
         // Test all indices that are in the array.
         for (lno_t k = 0; k < numEnt; ++k) {
           const lno_t indToFind = indsToSearch[k]; // in the array
-          offset = findRelOffset<lno_t, const lno_t* > (indsToSearch, numEnt,
+          offset = findRelOffset<lno_t, const lno_t* > (indsToSearch_view.data(), numEnt,
                                                   indToFind, hint, isSorted);
           if (indToFind == static_cast<lno_t> (1)) {
             // 1 is a duplicate in this example.  Treat it as a special
@@ -250,7 +270,7 @@ namespace Test{ // (anonymous)
     // Test the unsorted case, with a Kokkos::View.
     {
       lno_t numEnt = 7;
-      Kokkos::View<lno_t*, DT> indsToSearch ("indsToSearch", numEnt);
+      lno_t indsToSearch[7];
       // This assumes UVM.
       indsToSearch[0] = 8;
       indsToSearch[1] = 1;
@@ -259,13 +279,23 @@ namespace Test{ // (anonymous)
       indsToSearch[4] = 3;
       indsToSearch[5] = 2;
       indsToSearch[6] = 5;
+
+
+      nIVT indsToSearch_view("indsToSearch", numEnt);
+
+      typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view (indsToSearch_view);
+      for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
+      Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
+      Kokkos::fence();
+
+
       const bool isSorted = false;
 
       for (lno_t hint = 0; hint < 10; ++hint) {
         // Test an index that is not in the array.
         // This one is in [min, max].
         lno_t indNotThere = 4;
-        lno_t offset = findRelOffset<lno_t, IVT> (indsToSearch, numEnt,
+        lno_t offset = findRelOffset<lno_t, IVT> (indsToSearch_view, numEnt,
                                             indNotThere, hint, isSorted);
         EXPECT_TRUE( (offset == numEnt ));
         //TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -273,7 +303,7 @@ namespace Test{ // (anonymous)
         // Test another index that is not in the array.
         // This one is _not_ in [min, max].
         indNotThere = 42;
-        offset = findRelOffset<lno_t, IVT> (indsToSearch, numEnt,
+        offset = findRelOffset<lno_t, IVT> (indsToSearch_view, numEnt,
                                          indNotThere, hint, isSorted);
         EXPECT_TRUE( (offset == numEnt ));
         //TEST_EQUALITY( offset, numEnt ); // not in the array
@@ -281,7 +311,7 @@ namespace Test{ // (anonymous)
         // Test all indices that are in the array.
         for (lno_t k = 0; k < numEnt; ++k) {
           const lno_t indToFind = indsToSearch[k]; // in the array
-          offset = findRelOffset<lno_t, IVT> (indsToSearch, numEnt,
+          offset = findRelOffset<lno_t, IVT> (indsToSearch_view, numEnt,
                                            indToFind, hint, isSorted);
           if (indToFind == static_cast<lno_t> (1)) {
             // 1 is a duplicate in this example.  Treat it as a special
@@ -402,13 +432,15 @@ void test_findRelOffset()
     int overflow(int c) { return c; }
   };
   NullBuffer null_buffer;
-  //std::ostream &out = std::cout;
-  std::ostream out(&null_buffer);
+  std::ostream &out = std::cout;
+  //std::ostream out(&null_buffer);
   out << "Test KokkosSparse::findRelOffset" << endl;
 
   bool success = true;
+  //host test
   generalTest <lno_t, device_t>(success, out);
   EXPECT_TRUE( success);
+  //host test
   testLongArray<lno_t, device_t> (success, out);
   EXPECT_TRUE( success);
 }
