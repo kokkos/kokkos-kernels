@@ -47,7 +47,6 @@ if [ ! -d "${KOKKOSKERNELS_PATH}" ]; then
   git clone https://github.com/kokkos/kokkos-kernels ${KOKKOSKERNELS_PATH}
 fi
 
-export OMPI_CXX=${TRILINOS_UPDATE_BRANCH}/packages/kokkos/bin/nvcc_wrapper
 
 cd ${KOKKOSKERNELS_PATH}
 git checkout $KOKKOSKERNELS_BRANCH
@@ -58,6 +57,8 @@ export CUDA_LAUNCH_BLOCKING=1
 export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 
 source ${KOKKOSKERNELS_PATH}/scripts/trilinos-integration/prepare_trilinos_repos.sh $TRILINOS_UPDATE_BRANCH $TRILINOS_PRISTINE_BRANCH
+
+export OMPI_CXX=${TRILINOS_UPDATED_PATH}/packages/kokkos/bin/nvcc_wrapper
 
 ${TRILINOS_UPDATED_PATH}/sampleScripts/Sandia-SEMS/run_repo_comparison_lsf ${TRILINOS_UPDATED_PATH} ${TRILINOS_PRISTINE_PATH} ${TRILINOS_UPDATED_PATH}/sampleScripts/Sandia-SEMS/configure-testbeds-jenkins-all TestCompare ${QUEUE}
 
