@@ -106,7 +106,7 @@ namespace KokkosBatched {
           trsm_run.serial_invoke(Ap, pb, m_abr, Ap+mb*as0);
             
           // gemm update
-          GemmInternal<Algo::Gemm::Blocked>::
+          SerialGemmInternal<Algo::Gemm::Blocked>::
             invoke(m_abr, n_abr, pb,
                    -1, 
                    Ap+mb*as0, as0, as1,
