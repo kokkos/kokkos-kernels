@@ -112,7 +112,8 @@ struct KokkosSPGEMM
       int suggested_team_size_,
       const KokkosKernels::Impl::ExecSpaceType my_exec_space_,
       nnz_lno_t team_row_chunk_size,
-      bool KOKKOSKERNELS_VERBOSE):
+      bool KOKKOSKERNELS_VERBOSE_
+      ):
         numrows(m_),
         row_mapA (row_mapA_),
         entriesA(entriesA_),
@@ -142,7 +143,7 @@ struct KokkosSPGEMM
   {
 
     shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 4) / unit_memory);
-    if (KOKKOSKERNELS_VERBOSE){
+    if (KOKKOSKERNELS_VERBOSE_){
       std::cout << "\t\tNumericCMEM -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<
           " initial key size:" << shmem_key_size << std::endl;
     }
@@ -154,7 +155,7 @@ struct KokkosSPGEMM
     shmem_key_size = shmem_key_size + ((shmem_key_size - shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(scalar_t));
     shmem_key_size = (shmem_key_size >> 1) << 1;
 
-    if (KOKKOSKERNELS_VERBOSE){
+    if (KOKKOSKERNELS_VERBOSE_){
       std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << shmem_hash_size  << " shmem_key_size:" << shmem_key_size << std::endl;
     }
 

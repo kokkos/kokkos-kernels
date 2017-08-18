@@ -106,7 +106,7 @@ struct KokkosSPGEMM
       new_nnz_view_t set_entries_,
       const int shared_mem,
       const nnz_lno_t team_row_chunk_size_,
-      int suggested_team_size_, bool KOKKOSKERNELS_VERBOSE,
+      int suggested_team_size_, bool KOKKOSKERNELS_VERBOSE_,
       KokkosKernels::Impl::ExecSpaceType my_exec_space_
       ):
     numrows(row_map_.dimension_0() - 1),
@@ -134,7 +134,7 @@ struct KokkosSPGEMM
     my_exec_space(my_exec_space_)
     {
       shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * (4 + vector_size_ * 2)) / unit_memory);
-      if (KOKKOSKERNELS_VERBOSE){
+      if (KOKKOSKERNELS_VERBOSE_){
         std::cout << "\t\tCOMPRESS -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<
           " initial key size:" << shmem_key_size << std::endl;
       }
@@ -144,7 +144,7 @@ struct KokkosSPGEMM
       shared_memory_hash_func = shmem_hash_size - 1;
       shmem_key_size = shmem_key_size + ((shmem_key_size - shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(nnz_lno_t));
       shmem_key_size = (shmem_key_size >> 1) << 1;
-      if (KOKKOSKERNELS_VERBOSE){
+      if (KOKKOSKERNELS_VERBOSE_){
         std::cout << "\t\tCOMPRESS -- adjusted hashsize:" << shmem_hash_size  << " shmem_key_size:" << shmem_key_size << std::endl;
       }
     }

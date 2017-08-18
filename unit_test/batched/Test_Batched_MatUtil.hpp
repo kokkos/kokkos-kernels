@@ -47,8 +47,9 @@ namespace Test {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const NaiveTag &, const int i) const {
-      auto A = Kokkos::subview(_a, i, Kokkos::ALL(), Kokkos::ALL());
+    void operator()(const NaiveTag &, const int k) const {
+      //MD Note: changing because of the error with -werror
+      auto A = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       const int m = A.dimension_0(), n = A.dimension_1();
       switch (TestID) {
       case BatchedSet: {
@@ -70,6 +71,9 @@ namespace Test {
     int run() {
       Kokkos::RangePolicy<DeviceType,AlgoTagType> policy(0, _a.dimension_0());
       Kokkos::parallel_for(policy, *this);
+      return 0; 
+      //MD 08/2017 NOTE: compilation was failing with werror.
+      //I added dummy return.
     }      
   };
 
