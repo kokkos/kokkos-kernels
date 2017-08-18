@@ -85,11 +85,10 @@ namespace Test {
 
     /// typedefs
     typedef typename ViewType::value_type value_type;
-    typedef ScalarType scalar_type;
     typedef Kokkos::Details::ArithTraits<value_type> ats;
 
     /// radomized input testing views 
-    const scalar_type alpha = 11.1;
+    const ScalarType alpha = 11.1;
     ViewType a("a", N, BlkSize, BlkSize);
     ViewType b("b", N, BlkSize, BlkSize);
 
@@ -109,7 +108,7 @@ namespace Test {
     Kokkos::deep_copy(b_host, b);
       
     /// check a = b
-    typename ats::mag_type eps = std::numeric_limits<typename ats::mag_type>::epsilon();
+    typename ats::mag_type eps = 100 * std::numeric_limits<typename ats::mag_type>::epsilon();
     for (int k=0;k<N;++k) 
       for (int i=0;i<BlkSize;++i) 
         for (int j=0;j<BlkSize;++j) 
@@ -146,33 +145,33 @@ int test_batched_matutil() {
   
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F( TestCategory, batched_set_float_float_set ) {
-  test_batched_matutil<TestExecSpace,float,float,0>();
+  test_batched_matutil<TestExecSpace,float,float,::Test::BatchedSet>();
 }
 TEST_F( TestCategory, batched_set_float_float_scale ) {
-  test_batched_matutil<TestExecSpace,float,float,1>();
+  test_batched_matutil<TestExecSpace,float,float,::Test::BatchedScale>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F( TestCategory, batched_set_double_double_set ) {
-  test_batched_matutil<TestExecSpace,double,double,0>();
+  test_batched_matutil<TestExecSpace,double,double,::Test::BatchedSet>();
 }
 TEST_F( TestCategory, batched_set_double_double_scale ) {
-  test_batched_matutil<TestExecSpace,double,double,1>();
+  test_batched_matutil<TestExecSpace,double,double,::Test::BatchedScale>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F( TestCategory, batched_set_dcomplex_dcomplex_set ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,0>();
+  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,::Test::BatchedSet>();
 }
 TEST_F( TestCategory, batched_set_dcomplex_dcomplex_scale ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,1>();
+  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,::Test::BatchedScale>();
 }
 TEST_F( TestCategory, batched_set_dcomplex_double_set ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,0>();
+  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,::Test::BatchedSet>();
 }
 TEST_F( TestCategory, batched_set_dcomplex_double_scale ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,1>();
+  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,::Test::BatchedScale>();
 }
 #endif

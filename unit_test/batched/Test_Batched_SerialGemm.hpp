@@ -1,482 +1,250 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include <iomanip>
-
+#include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Random.hpp"
 
-#include "KokkosBatched_Vector.hpp"
+//#include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
-//#include "KokkosBatched_Gemm_Team_Impl.hpp"
 
-namespace KokkosBatched {
-  namespace Experimental {
-    namespace GemmTest {
-
-      template<typename ValueType> 
-      double FlopCount(int mm, int nn, int kk) {
-        double m = (double)mm;    double n = (double)nn;    double k = (double)kk;
-        double FLOP_MUL = 1.0;
-        double FLOP_ADD = 1.0;
-        if (std::is_same<ValueType,std::complex<double> >::value ||
-            std::is_same<ValueType,Kokkos::complex<double> >::value) {
-          FLOP_MUL = 6.0;
-          FLOP_ADD = 2.0;
-        }
-        return (FLOP_MUL*(m*n*k) +
-                FLOP_ADD*(m*n*k));
-      }
-
-      template<typename TA, typename TB>
-      struct ParamTag { 
-        typedef TA transA;
-        typedef TB transB;
-      };
- 
-      template<typename ViewType, typename ParamTagType, typename AlgoTagType>
-      struct Functor {
-        ViewType _a, _b, _c;
-
-        KOKKOS_INLINE_FUNCTION
-        Functor(const ViewType &a,
-                const ViewType &b,
-                const ViewType &c)
-          : _a(a), _b(b), _c(c) {}
-
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const ParamTagType &, const int k) const {
-          auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-          auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
-          auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
-            
-          Serial::Gemm<typename ParamTagType::transA,typename ParamTagType::transB,AlgoTagType>::
-            invoke(1.0, aa, bb, 1.0, cc);
-        }
-
-        inline
-        void run() {
-          Kokkos::RangePolicy<DeviceSpaceType,ParamTagType> policy(0, _c.dimension_0());
-          Kokkos::parallel_for(policy, *this);            
-        }
-      };
-    
-      template<int BlkSize, typename VectorTagType, typename ParamTagType, typename AlgoTagType>
-      void Gemm(const int N) {
-        typedef ParamTagType param_tag_type;
-        typedef typename VectorTagType::value_type value_type;
-        constexpr int VectorLength = VectorTagType::length;
-          
-        const double flop = N*VectorLength*FlopCount<value_type>(BlkSize,BlkSize,BlkSize);
-        const double tmax = 1.0e15;
-
-        const int iter_begin = -3, iter_end = 10;
-        Kokkos::Impl::Timer timer;
-
-        typedef typename DeviceSpaceType::array_layout array_layout;
-        Kokkos::View<value_type***,array_layout,HostSpaceType> 
-          amat("amat", N*VectorLength, BlkSize, BlkSize),
-          bmat("bmat", N*VectorLength, BlkSize, BlkSize),
-          cref("cref", N*VectorLength, BlkSize, BlkSize);
-
-        typedef Vector<VectorTagType> VectorType;
-        Kokkos::View<VectorType***,array_layout,HostSpaceType> 
-          amat_simd("amat_simd", N, BlkSize, BlkSize),
-          bmat_simd("bmat_simd", N, BlkSize, BlkSize);
-
-        {
-          Random<value_type> random;
-          for (int k=0;k<N*VectorLength;++k) 
-            for (int i=0;i<BlkSize;++i)
-              for (int j=0;j<BlkSize;++j) {
-                amat(k, i, j) = random.value();
-                bmat(k, i, j) = random.value();
-
-                const int k0 = k/VectorLength, k1 = k%VectorLength;
-                amat_simd(k0, i, j)[k1] = amat(k, i, j);
-                bmat_simd(k0, i, j)[k1] = bmat(k, i, j);
-              }
-        }
-
-        ///
-        /// Reference version
-        ///
-        {
-          typedef Kokkos::View<value_type***,DeviceSpaceType> view_type;
-          view_type
-            a("a", N*VectorLength, BlkSize, BlkSize),
-            b("b", N*VectorLength, BlkSize, BlkSize),
-            c("c", N*VectorLength, BlkSize, BlkSize);
-            
-          Functor<view_type,param_tag_type,Algo::Gemm::Unblocked> test(a, b, c);            
-          {
-            double tavg = 0, tmin = tmax;              
-            for (int iter=iter_begin;iter<iter_end;++iter) {
-              // initialize matrices
-              Kokkos::deep_copy(a, amat);
-              Kokkos::deep_copy(b, bmat);
-              Kokkos::deep_copy(c, 0);
-
-              DeviceSpaceType::fence();
-              timer.reset();
-              test.run();                
-              DeviceSpaceType::fence();
-              const double t = timer.seconds();
-              tmin = std::min(tmin, t);
-              tavg += (iter >= 0)*t;
-            }
-            tavg /= iter_end;              
-            Kokkos::deep_copy(cref, c);
-            printf("Reference, BlkSize = %3d, time = %e, avg flop/s = %e, max flop/s = %e\n",
-                   BlkSize, tmin, (flop/tavg), (flop/tmin));
-          }
-        }
-
-        ///
-        /// Serial SIMD with appropriate data layout
-        ///
-        {
-          typedef Kokkos::View<VectorType***,DeviceSpaceType> view_type;
-          view_type
-            a("a", N, BlkSize, BlkSize),
-            b("b", N, BlkSize, BlkSize),
-            c("c", N, BlkSize, BlkSize);
-
-          Functor<view_type,param_tag_type,AlgoTagType> test(a, b, c);            
-          {         
-            double tavg = 0, tmin = tmax;
-            for (int iter=iter_begin;iter<iter_end;++iter) {
-              // initialize matrices
-              Kokkos::deep_copy(a, amat_simd);
-              Kokkos::deep_copy(b, bmat_simd);
-              Kokkos::deep_copy(c, 0);
-
-              DeviceSpaceType::fence();
-              timer.reset();
-              test.run();
-              DeviceSpaceType::fence();
-              const double t = timer.seconds();
-              tmin = std::min(tmin, t);
-              tavg += (iter >= 0)*t;
-            }
-            tavg /= iter_end;
-
-            auto c_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), c);
-            Kokkos::deep_copy(c_host, c);
-              
-            double diff = 0;
-            for (int k=0;k<cref.dimension_0();++k)
-              for (int i=0;i<cref.dimension_1();++i)
-                for (int j=0;j<cref.dimension_2();++j)
-                  diff += abs(cref(k,i,j) - c_host(k/VectorLength,i,j)[k%VectorLength]);
-
-            printf("KK,        BlkSize = %3d, time = %e, avg flop/s = %e, max flop/s = %e, diff = %e\n",
-                   BlkSize, tmin, (flop/tavg), (flop/tmin), diff);
-          }
-        }
-      }
-    }
-  }
-}
+#include "KokkosKernels_TestUtils.hpp"
 
 using namespace KokkosBatched::Experimental;
 
-///
-/// double SIMD 4
-///
+namespace Test {
 
-TEST( GemmBlocked_NT_NT, double_SIMD4 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
+  template<typename TA, typename TB>
+  struct ParamTag { 
+    typedef TA transA;
+    typedef TB transB;
+  };
+ 
+  template<typename DeviceType,
+           typename ViewType,
+           typename ScalarType,
+           typename ParamTagType, 
+           typename AlgoTagType>
+  struct Functor {
+    ViewType _a, _b, _c;
+    
+    ScalarType _alpha, _beta;
+    
+    KOKKOS_INLINE_FUNCTION
+    Functor(const ScalarType alpha, 
+            const ViewType &a,
+            const ViewType &b,
+            const ScalarType beta,
+            const ViewType &c)
+      : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const ParamTagType &, const int k) const {
+      auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
+      auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
+      auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
+      
+      SerialGemm<typename ParamTagType::transA,typename ParamTagType::transB,AlgoTagType>::
+        invoke(1.0, aa, bb, 1.0, cc);
+    }
+    
+    inline
+    void run() {
+      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.dimension_0());
+      Kokkos::parallel_for(policy, *this);            
+    }
+  };
+    
+  template<typename DeviceType,
+           typename ViewType,
+           typename ScalarType,
+           typename ParamTagType, 
+           typename AlgoTagType>
+  void impl_test_batched_gemm(const int N, const int BlkSize) {
+    typedef typename ViewType::value_type value_type;
+    typedef Kokkos::Details::ArithTraits<value_type> ats;
 
-  typedef VectorTag<SIMD<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+    /// randomized input testing views
+    ScalarType alpha = 1.5, beta = 3.0;
+
+    ViewType
+      a0("a0", N, BlkSize,BlkSize), a1("a1", N, BlkSize, BlkSize),
+      b0("b0", N, BlkSize,BlkSize), b1("b1", N, BlkSize, BlkSize),
+      c0("c0", N, BlkSize,BlkSize), c1("c1", N, BlkSize, BlkSize);
+
+    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+    Kokkos::fill_random(a0, random, value_type(1.0));
+    Kokkos::fill_random(b0, random, value_type(1.0));
+    Kokkos::fill_random(c0, random, value_type(1.0));
+
+    Kokkos::deep_copy(a1, a0);
+    Kokkos::deep_copy(b1, b0);
+    Kokkos::deep_copy(c1, c0);
+
+    /// test body
+    Functor<DeviceType,ViewType,ScalarType,
+      ParamTagType,KokkosBatched::Experimental::Algo::Gemm::Unblocked>(alpha, a0, b0, beta, c0).run();
+    Functor<DeviceType,ViewType,ScalarType,
+      ParamTagType,AlgoTagType>(alpha, a1, b1, beta, c1).run();
+
+    /// for comparison send it to host
+    typename ViewType::HostMirror c0_host = Kokkos::create_mirror_view(c0);
+    typename ViewType::HostMirror c1_host = Kokkos::create_mirror_view(c1);
+
+    Kokkos::deep_copy(c0_host, c0);
+    Kokkos::deep_copy(c1_host, c1);
+
+    /// check c0 = c1
+    typename ats::mag_type eps = 100 * std::numeric_limits<typename ats::mag_type>::epsilon();
+    for (int k=0;k<N;++k) 
+      for (int i=0;i<BlkSize;++i) 
+        for (int j=0;j<BlkSize;++j) 
+          EXPECT_NEAR_KK( c0_host(k,i,j), c1_host(k,i,j), eps);
+  }
+}
+
+template<typename DeviceType, 
+         typename ValueType, 
+         typename ScalarType,
+         typename ParamTagType,
+         typename AlgoTagType>
+int test_batched_gemm() {
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) 
+  {
+    typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(    10, 15);
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(  1024,  9);
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(132231,  3);
+  }
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) 
+  {
+    typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(    10, 15);
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(  1024,  9);
+    Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(132231,  3);
+  }
+#endif
+  
+  return 0;
+}
+
+#if defined(KOKKOSKERNELS_INST_FLOAT)
+TEST_F( TestCategory, batched_scalar_gemm_nt_nt_float_float_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  test_batched_gemm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-
-TEST( GemmBlocked_T_NT, double_SIMD4 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
-
-  typedef VectorTag<SIMD<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
+TEST_F( TestCategory, batched_scalar_gemm_t_nt_float_float_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  test_batched_gemm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-
-TEST( GemmBlocked_NT_T, double_SIMD4 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
-
-  typedef VectorTag<SIMD<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
+TEST_F( TestCategory, batched_scalar_gemm_nt_t_float_float_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  test_batched_gemm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-
-TEST( GemmBlocked_T_T, double_SIMD4 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
-
-  typedef VectorTag<SIMD<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;
+TEST_F( TestCategory, batched_scalar_gemm_t_t_float_float_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-///
-/// Kokkos::complex<double> SIMD 2
-///
-
-TEST( GemmBlocked_NT_NT, dcomplex_SIMD2 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_T_NT, dcomplex_SIMD2 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_NT_T, dcomplex_SIMD2 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_CT_NT, dcomplex_SIMD2 ) {
-  printf("Not yet implemented\n");
-  //   enum : int { N = 1024 }; // 1024*2 = 2048
-  //   typedef Kokkos::complex<double> dcomplex;
-  //   typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
-  //   typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose> param_tag_type;
-  //   typedef Algo::Gemm::Blocked algo_tag_type;
-
-  //   GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  //   GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  //   GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_NT_CT, dcomplex_SIMD2 ) {
-  printf("Not yet implemented\n");
-  //   enum : int { N = 1024 }; // 1024*2 = 2048
-  //   typedef Kokkos::complex<double> dcomplex;
-  //   typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
-  //   typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose> param_tag_type;
-  //   typedef Algo::Gemm::Blocked algo_tag_type;
-
-  //   GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  //   GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  //   GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_T_T, dcomplex_SIMD2 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_CT_CT, dcomplex_SIMD2 ) {
-  printf("not yet implemented\n");
-  // enum : int { N = 1024 }; // 1024*2 = 2048
-
-  // typedef Kokkos::complex<double> dcomplex;
-  // typedef VectorTag<SIMD<dcomplex>,2> vector_tag_type;
-  // typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose> param_tag_type;
-  // typedef Algo::Gemm::Blocked algo_tag_type;
-
-  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-///
-/// double AVX 256
-///
-
-#if defined(__AVX__) || defined(__AVX2__)
-
-TEST( GemmBlocked_NT_NT, double_AVX256 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
-
-  typedef VectorTag<AVX<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_T_NT, double_AVX256 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
-
-  typedef VectorTag<AVX<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_NT_T, double_AVX256 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
-
-  typedef VectorTag<AVX<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_T_T, double_AVX256 ) {
-  enum : int { N = 512 }; // 512*4 = 2048
-
-  typedef VectorTag<AVX<double>,4> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-///
-/// dcomplex AVX 256
-///
-#if defined(__FMA__)
-TEST( GemmBlocked_NT_NT, dcomplex_AVX256 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_T_NT, dcomplex_AVX256 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_NT_T, dcomplex_AVX256 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_CT_NT, dcomplex_AVX256 ) {
-  printf("Not yet implemented\n");
-  // enum : int { N = 1024 }; // 1024*2 = 2048
-
-  // typedef Kokkos::complex<double> dcomplex;
-  // typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
-  // typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::NoTranspose> param_tag_type;  
-  // typedef Algo::Gemm::Blocked algo_tag_type;
-
-  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_NT_CT, dcomplex_AVX256 ) {
-  printf("Not yet implemented\n");
-  // enum : int { N = 1024 }; // 1024*2 = 2048
-
-  // typedef Kokkos::complex<double> dcomplex;
-  // typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
-  // typedef GemmTest::ParamTag<Trans::NoTranspose,Trans::ConjTranspose> param_tag_type;  
-  // typedef Algo::Gemm::Blocked algo_tag_type;
-
-  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_T_T, dcomplex_AVX256 ) {
-  enum : int { N = 1024 }; // 1024*2 = 2048
-
-  typedef Kokkos::complex<double> dcomplex;
-  typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
-  typedef GemmTest::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;  
-  typedef Algo::Gemm::Blocked algo_tag_type;
-
-  GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
-}
-
-TEST( GemmBlocked_CT_CT, dcomplex_AVX256 ) {
-  printf("Not yet implemented\n");
-  // enum : int { N = 1024 }; // 1024*2 = 2048
-
-  // typedef Kokkos::complex<double> dcomplex;
-  // typedef VectorTag<AVX<dcomplex>,2> vector_tag_type;
-  // typedef GemmTest::ParamTag<Trans::ConjTranspose,Trans::ConjTranspose> param_tag_type;  
-  // typedef Algo::Gemm::Blocked algo_tag_type;
-
-  // GemmTest::Gemm< 3, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm< 5, vector_tag_type,param_tag_type,algo_tag_type>(N);
-  // GemmTest::Gemm<10, vector_tag_type,param_tag_type,algo_tag_type>(N);
+  test_batched_gemm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
 #endif
+
+#if defined(KOKKOSKERNELS_INST_DOUBLE)
+TEST_F( TestCategory, batched_scalar_gemm_nt_nt_double_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_t_nt_double_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_nt_t_double_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_t_t_double_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
+}
+#endif
+
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+
+/// dcomplex, dcomplex
+
+TEST_F( TestCategory, batched_scalar_gemm_nt_nt_dcomplex_dcomplex_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_t_nt_dcomplex_dcomplex_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_nt_t_dcomplex_dcomplex_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_t_t_dcomplex_dcomplex_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_ct_nt_dcomplex_dcomplex_gemm ) {
+  typedef ::Test::ParamTag<Trans::ConjTranspose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_nt_ct_dcomplex_dcomplex_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::ConjTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
+}
+
+/// dcomplex, double
+
+TEST_F( TestCategory, batched_scalar_gemm_nt_nt_dcomplex_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_t_nt_dcomplex_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_nt_t_dcomplex_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_t_t_dcomplex_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_ct_nt_dcomplex_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::ConjTranspose,Trans::NoTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
+}
+TEST_F( TestCategory, batched_scalar_gemm_nt_ct_dcomplex_double_gemm ) {
+  typedef ::Test::ParamTag<Trans::NoTranspose,Trans::ConjTranspose> param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
+}
+
 #endif

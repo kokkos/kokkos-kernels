@@ -224,6 +224,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Common_set_bit_count.o
 #  OBJ_SERIAL += Test_Serial_Common_float128.o
   OBJ_SERIAL += Test_Serial_Batched_MatUtil.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialGemm.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif
