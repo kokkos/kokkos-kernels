@@ -1,5 +1,5 @@
 KOKKOS_PATH=${HOME}/work/kokkos #path to kokkos source
-KOKKOSKERNELS_SCALARS=double #the scalar types to instantiate =double,float...
+KOKKOSKERNELS_SCALARS='double,"complex<double>"' #the scalar types to instantiate =double,float...
 KOKKOSKERNELS_LAYOUTS=LayoutLeft #the layout types to instantiate.
 KOKKOSKERNELS_ORDINALS=int,long #ordinal types to instantiate
 KOKKOSKERNELS_OFFSETS=int,size_t #offset types to instantiate

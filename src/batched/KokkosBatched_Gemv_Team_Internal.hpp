@@ -55,8 +55,8 @@ namespace KokkosBatched {
 
         typedef ValueType value_type;
 
-        if      (beta == 0) Team::SetInternal  ::invoke(member, m, value_type(0),    y, ys0);
-        else if (beta != 1) Team::ScaleInternal::invoke(member, m, value_type(beta), y, ys0);
+        if      (beta == 0) TeamSetInternal  ::invoke(member, m, value_type(0),    y, ys0);
+        else if (beta != 1) TeamScaleInternal::invoke(member, m, value_type(beta), y, ys0);
       
         if (alpha != 0) {
           if (m <= 0 || n <= 0) return 0;
@@ -102,8 +102,8 @@ namespace KokkosBatched {
           mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
         };
           
-        if      (beta == 0) Team::SetInternal  ::invoke(member, m, value_type(0),    y, ys0);
-        else if (beta != 1) Team::ScaleInternal::invoke(member, m, value_type(beta), y, ys0);
+        if      (beta == 0) TeamSetInternal  ::invoke(member, m, value_type(0),    y, ys0);
+        else if (beta != 1) TeamScaleInternal::invoke(member, m, value_type(beta), y, ys0);
       
         if (alpha != 0) {
           if (m <= 0 || n <= 0) return 0;

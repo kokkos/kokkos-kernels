@@ -54,9 +54,9 @@ namespace KokkosBatched {
 	     /**/  ValueType *__restrict__ b, const int bs0) {
 	typedef ValueType value_type;
 
-	if (alpha == 0)   Team::SetInternal::invoke(member, m, value_type(0), b, bs0);
+	if (alpha == 0)   TeamSetInternal::invoke(member, m, value_type(0), b, bs0);
 	else {
-	  if (alpha != 1) Team::ScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
+	  if (alpha != 1) TeamScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
 	  if (m <= 0) return 0;
 
 	  for (int p=0;p<m;++p) {
@@ -104,9 +104,9 @@ namespace KokkosBatched {
 	  mbAlgo = Algo::Trsv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
 	};
 
-	if (alpha == 0)   Team::SetInternal::invoke(member, m, value_type(0), b, bs0);
+	if (alpha == 0)   TeamSetInternal::invoke(member, m, value_type(0), b, bs0);
 	else {
-	  if (alpha != 1) Team::ScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
+	  if (alpha != 1) TeamScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
 	  if (m <= 0) return 0;
 
 	  /// case cuda: team size is large and blocksize (mb,nb) is small
@@ -190,9 +190,9 @@ namespace KokkosBatched {
 	     /**/  ValueType *__restrict__ b, const int bs0) {
 	typedef ValueType value_type;
 
-	if (alpha == 0)   Team::SetInternal::invoke(member, m, value_type(0), b, bs0);
+	if (alpha == 0)   TeamSetInternal::invoke(member, m, value_type(0), b, bs0);
 	else {
-	  if (alpha != 1) Team::ScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
+	  if (alpha != 1) TeamScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
 	  if (m <= 0) return 0;
 
 	  value_type *__restrict__ b0 = b;
@@ -239,9 +239,9 @@ namespace KokkosBatched {
 	};
 
 	// note that parallel range is different ( m*n vs m-1*n);
-	if (alpha == 0)   Team::SetInternal::invoke(member, m, value_type(0), b, bs0);
+	if (alpha == 0)   TeamSetInternal::invoke(member, m, value_type(0), b, bs0);
 	else {
-	  if (alpha != 1) Team::ScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
+	  if (alpha != 1) TeamScaleInternal::invoke(member, m, value_type(alpha), b, bs0);
 	  if (m <= 0) return 0;
 
 	  InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);

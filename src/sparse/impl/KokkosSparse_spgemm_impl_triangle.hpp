@@ -132,7 +132,7 @@ struct KokkosSPGEMM
       int mode_,
       const nnz_lno_t *min_size_row_for_each_row_,
       const struct_visit_t visit_applier_,
-      bool KOKKOSKERNELS_VERBOSE):
+      bool KOKKOSKERNELS_VERBOSE_):
         numrows(m_),
         row_mapA (row_mapA_),
         entriesA(entriesA_),
@@ -181,7 +181,7 @@ struct KokkosSPGEMM
     //round it down to 2, because of some alignment issues.
     shmem_key_size = (shmem_key_size >> 1) << 1;
 
-    if (KOKKOSKERNELS_VERBOSE){
+    if (KOKKOSKERNELS_VERBOSE_){
       std::cout << "\tTriangleCount "
           << " thread_memory:" << thread_memory
           << " unit_memory:" << unit_memory

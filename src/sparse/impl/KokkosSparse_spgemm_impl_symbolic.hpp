@@ -123,8 +123,9 @@ struct KokkosSPGEMM
       const nnz_lno_t team_row_chunk_size_,
       const int vector_size_,
       pool_memory_space mpool_,
-      const KokkosKernels::Impl::ExecSpaceType my_exec_space_,
-      bool KOKKOSKERNELS_VERBOSE):
+      const KokkosKernels::Impl::ExecSpaceType my_exec_space_
+      ,bool KOKKOSKERNELS_VERBOSE_
+      ):
         numrows(m_),
         row_mapA (row_mapA_),
         entriesA(entriesA_),
@@ -171,7 +172,7 @@ struct KokkosSPGEMM
     //round it down to 2, because of some alignment issues.
     shmem_key_size = (shmem_key_size >> 1) << 1;
 
-    if (KOKKOSKERNELS_VERBOSE){
+    if (KOKKOSKERNELS_VERBOSE_){
 
       std::cout << "\tStructureC "
                 << " thread_memory:" << thread_memory
@@ -993,7 +994,8 @@ suggested_vector_size = 4;
       team_row_chunk_size,
       suggested_vector_size,
       m_space,
-      my_exec_space,KOKKOSKERNELS_VERBOSE);
+      my_exec_space,KOKKOSKERNELS_VERBOSE
+   );
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tStructureC vector_size:" << suggested_vector_size

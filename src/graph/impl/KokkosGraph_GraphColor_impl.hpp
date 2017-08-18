@@ -1312,12 +1312,12 @@ public:
 
     functorGreedyColor_IMPLOG_EF(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        non_const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        non_const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
-        nnz_lno_t chunkSize) :nv(nv_), _idx(xadj), _adj(adj), _colors(colors),
+        nnz_lno_t chunkSize) :nv(nv_), _idx(xadj_), _adj(adj_), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
@@ -1418,13 +1418,13 @@ public:
 
     functorGreedyColor_IMPLOG(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
         nnz_lno_t chunkSize) : nv(nv_),
-          _idx(xadj), _adj(adj), _colors(colors),
+          _idx(xadj_), _adj(adj_), _colors(colors),
           _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
@@ -1503,13 +1503,13 @@ public:
 
     functorGreedyColor_IMP_EF(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        non_const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        non_const_lno_nnz_view_t adj_,
         color_view_type colors, nnz_lno_temp_work_view_t color_set,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
         nnz_lno_t chunkSize): nv(nv_),
-          _xadj(xadj), _adj(adj),
+          _xadj(xadj_), _adj(adj_),
           _colors(colors), _color_set(color_set),
           _vertexList(vertexList), _vertexListLength(vertexListLength),
           _chunkSize(chunkSize){}
@@ -1586,15 +1586,15 @@ public:
 
     functorGreedyColor_IMP(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_set,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
         nnz_lno_t chunkSize
     ) : nv (nv_),
-      _xadj(xadj), _adj(adj),
+      _xadj(xadj_), _adj(adj_),
       _colors(colors), _color_set(color_set),
       _vertexList(vertexList), _vertexListLength(vertexListLength),
       _chunkSize(chunkSize){}
@@ -1659,14 +1659,14 @@ public:
 
     functorGreedyColor_EF(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        non_const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        non_const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
         nnz_lno_t chunkSize
     ) : nv (nv_),
-      _idx(xadj), _adj(adj), _colors(colors),
+      _idx(xadj_), _adj(adj_), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
@@ -1765,14 +1765,14 @@ public:
 
     functorGreedyColor(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
         nnz_lno_t chunkSize
     ) : nv (nv_),
-      _idx(xadj), _adj(adj), _colors(colors),
+      _idx(xadj_), _adj(adj_), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
@@ -1856,10 +1856,10 @@ public:
 
     functorFindConflicts_No_Conflist(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors) : nv (nv_),
-          _idx(xadj), _adj(adj),_colors(colors)
+          _idx(xadj_), _adj(adj_),_colors(colors)
     {
     }
 
@@ -1910,13 +1910,13 @@ public:
 
     functorFindConflicts_PPS(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_temp_work_view_t recolorList) :
           nv (nv_),
-          _idx(xadj), _adj(adj), _colors(colors),
+          _idx(xadj_), _adj(adj_), _colors(colors),
           _vertexList(vertexList),
           _recolorList(recolorList){}
 
@@ -1969,14 +1969,14 @@ public:
 
     functorFindConflicts_Atomic(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_temp_work_view_t recolorList,
         single_dim_index_view_type recolorListLength
     ) : nv (nv_),
-      _idx(xadj), _adj(adj), _colors(colors),
+      _idx(xadj_), _adj(adj_), _colors(colors),
       _vertexList(vertexList),
       _recolorList(recolorList),
       _recolorListLength(recolorListLength){}
@@ -2031,12 +2031,12 @@ public:
 
     functorFindConflicts_No_Conflist_IMP(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_sets
     ) : nv (nv_),
-      _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets){}
+      _xadj(xadj_), _adj(adj_), _colors(colors), _color_sets(color_sets){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
@@ -2093,14 +2093,14 @@ public:
 
     functorFindConflicts_PPS_IMP(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_sets,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_temp_work_view_t recolorList
     ) : nv (nv_),
-      _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
+      _xadj(xadj_), _adj(adj_), _colors(colors), _color_sets(color_sets),
       _vertexList(vertexList),
       _recolorList(recolorList){}
 
@@ -2163,15 +2163,15 @@ public:
 
     functorFindConflicts_Atomic_IMP(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj,
-        const_lno_nnz_view_t adj,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_sets,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_temp_work_view_t recolorList,
         single_dim_index_view_type recolorListLength
     ) : nv (nv_),
-      _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
+      _xadj(xadj_), _adj(adj_), _colors(colors), _color_sets(color_sets),
       _vertexList(vertexList),
       _recolorList(recolorList),
       _recolorListLength(recolorListLength){}
@@ -2789,14 +2789,14 @@ public:
     char_temp_work_view_type _edge_conflict_marker;
 
     halfedge_conflict_count(
-        nnz_lno_persistent_work_view_t kok_src,
-        nnz_lno_persistent_work_view_t kok_dst,
+        nnz_lno_persistent_work_view_t kok_src_,
+        nnz_lno_persistent_work_view_t kok_dst_,
         color_view_type kok_colors,
         nnz_lno_temp_work_view_t color_set,
         size_type_temp_work_view_t edge_conflict_indices,
         char_temp_work_view_type edge_conflict_marker):
-          _kok_src( kok_src),
-          _kok_dst( kok_dst),
+          _kok_src( kok_src_),
+          _kok_dst( kok_dst_),
           _kok_colors( kok_colors),
           _color_set( color_set),
           _edge_conflict_indices( edge_conflict_indices),

@@ -13,10 +13,10 @@
 #include <ctime>
 
 #include <complex>
+
+#include "Kokkos_Core.hpp"
 #include "Kokkos_Complex.hpp"
-
-
-
+#include "impl/Kokkos_Timer.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -130,30 +130,24 @@ namespace KokkosBatched {
 
     };
 
-    template<typename ValueType>
+    template<typename T, typename dummy = T>
     struct Random;
-      
-    template<>
-    struct Random<double> {
+    
+    template<typename T>
+    struct Random<T, typename std::enable_if<std::is_same<T,double>::value || 
+                                             std::is_same<T,float>::value, T>::type> {
       Random(const unsigned int seed = 0) { srand(seed); }
-      double value() { return rand()/((double) RAND_MAX + 1.0); }
+      T value() { return rand()/((T) RAND_MAX + 1.0); }
     };
 
-    template<>
-    struct Random<std::complex<double> > {
-      Random(const unsigned int seed = 0) { srand(seed); }
-      std::complex<double> value() { 
-	return std::complex<double>(rand()/((double) RAND_MAX + 1.0),
-				    rand()/((double) RAND_MAX + 1.0)); 
-      }
-    };
-
-    template<>
-    struct Random<Kokkos::complex<double> > {
-      Random(const unsigned int seed = 0) { srand(seed); }
-      Kokkos::complex<double> value() { 
-	return Kokkos::complex<double>(rand()/((double) RAND_MAX + 1.0),
-				       rand()/((double) RAND_MAX + 1.0)); 
+    template<typename T>
+    struct Random<T, typename std::enable_if<std::is_same<T,std::complex<float> >::value || 
+                                             std::is_same<T,std::complex<double> >::value || 
+                                             std::is_same<T,Kokkos::complex<float> >::value || 
+                                             std::is_same<T,Kokkos::complex<double> >::value, T>::type> {
+      T value() { 
+	return T(rand()/((double) RAND_MAX + 1.0),
+                 rand()/((double) RAND_MAX + 1.0)); 
       }
     };
 
@@ -184,8 +178,7 @@ namespace KokkosBatched {
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid SIMD<> type." );
 
-      static_assert( std::is_same<SpT,Kokkos::Serial>::value ||
-		     std::is_same<SpT,Kokkos::OpenMP>::value,
+      static_assert( std::is_same<typename SpT::memory_space,Kokkos::HostSpace>::value,
 		     "KokkosKernels:: Invalid SIMD<> exec space." );
 
       using value_type = T; 
@@ -202,8 +195,7 @@ namespace KokkosBatched {
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid AVX<> type." );
 
-      static_assert( std::is_same<SpT,Kokkos::Serial>::value ||
-		     std::is_same<SpT,Kokkos::OpenMP>::value,
+      static_assert( std::is_same<typename SpT::memory_space,Kokkos::HostSpace>::value,
 		     "KokkosKernels:: Invalid AVX<> exec space." );
 
       using value_type = T;

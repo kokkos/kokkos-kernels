@@ -11,33 +11,29 @@ namespace KokkosBatched {
     /// Serial Set
     ///
 
-    namespace Serial {
-      struct Set {
-	template<typename ScalarType,
-		 typename AViewType>
-	KOKKOS_INLINE_FUNCTION
-	static int
-	invoke(const ScalarType alpha,
-	       const AViewType &A);
-      };
-    }
+    struct SerialSet {
+      template<typename ScalarType,
+               typename AViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const ScalarType alpha,
+             const AViewType &A);
+    };
 
     ///
     /// Team Set
     ///
 
-    namespace Team {
-      template<typename MemberType>
-      struct Set {
-	template<typename ScalarType,
-		 typename AViewType>
-	KOKKOS_INLINE_FUNCTION
-	static int
-	invoke(const MemberType &member,
-	       const ScalarType alpha,
-	       const AViewType &A);
-      };
-    }
+    template<typename MemberType>
+    struct TeamSet {
+      template<typename ScalarType,
+               typename AViewType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      invoke(const MemberType &member,
+             const ScalarType alpha,
+             const AViewType &A);
+    };
 
   }
 }
