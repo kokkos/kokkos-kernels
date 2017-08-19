@@ -104,8 +104,11 @@ void KokkosSPGEMM
     //number of rows and nnzs
     nnz_lno_t n = this->row_mapB.dimension_0() - 1;
     size_type nnz = this->entriesB.dimension_0();
-
+    KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
     bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
+    if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+	compress_in_single_step = true;
+    }
     //compressed b
     row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
     row_lno_temp_work_view_t new_row_mapB_begins;

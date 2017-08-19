@@ -80,7 +80,6 @@ namespace Experiment{
     slow_crstmat_t a_slow_crsmat, b_slow_crsmat, c_slow_crsmat;
     fast_crstmat_t a_fast_crsmat, b_fast_crsmat, c_fast_crsmat;
 
-    double preprocess_time = 0;
     //read a and b matrices and store them on slow or fast memory.
 
     if (params.a_mem_space == 1){
