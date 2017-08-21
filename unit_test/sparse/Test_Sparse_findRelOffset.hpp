@@ -432,8 +432,8 @@ void test_findRelOffset()
     int overflow(int c) { return c; }
   };
   NullBuffer null_buffer;
-  std::ostream &out = std::cout;
-  //std::ostream out(&null_buffer);
+  //std::ostream &out = std::cout;
+  std::ostream out(&null_buffer);
   out << "Test KokkosSparse::findRelOffset" << endl;
 
   bool success = true;
