@@ -46,12 +46,6 @@
 #include "KokkosKernels_IOUtils.hpp"
 
 
-typedef unsigned size_type;
-typedef int idx;
-//typedef int size_type;
-//typedef int idx;
-typedef double wt;
-
 
 
 
@@ -319,6 +313,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
 }
 
 int main (int argc, char ** argv){
+
+  typedef unsigned size_type;
+  typedef int idx;
 
 
   KokkosKernels::Experiment::Parameters params;

@@ -73,8 +73,6 @@
 enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
 
-typedef Kokkos::DefaultExecutionSpace execution_space;
-
 #ifdef INT64
 typedef long long int LocalOrdinalType;
 #else
@@ -177,9 +175,9 @@ void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int 
 
 template<typename Scalar>
 int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile, int rows_per_thread, int team_size, int vector_length,int idx_offset, int schedule, int loop) {
-  typedef KokkosSparse::CrsMatrix<Scalar,int,execution_space,void,int> matrix_type ;
-  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> mv_type;
-  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > mv_random_read_type;
+  typedef KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int> matrix_type ;
+  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft> mv_type;
+  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,Kokkos::MemoryRandomAccess > mv_random_read_type;
   typedef typename mv_type::HostMirror h_mv_type;
 
   Scalar* val = NULL;
@@ -234,9 +232,9 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   Kokkos::deep_copy(y,h_y);
   Kokkos::deep_copy(A.graph.entries,h_graph.entries);
   Kokkos::deep_copy(A.values,h_values);
-  typename KokkosSparse::CrsMatrix<Scalar,int,execution_space,void,int>::values_type x1("X1",numCols);
+  typename KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int>::values_type x1("X1",numCols);
   Kokkos::deep_copy(x1,h_x);
-  typename KokkosSparse::CrsMatrix<Scalar,int,execution_space,void,int>::values_type y1("Y1",numRows);
+  typename KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int>::values_type y1("Y1",numRows);
 
   //int nnz_per_row = A.nnz()/A.numRows();
   matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
@@ -264,7 +262,7 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   for(int i=0;i<loop;i++) {
     Kokkos::Timer timer;
     matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
-    execution_space::fence();
+    Kokkos::fence();
     double time = timer.seconds();
     ave_time += time;
     if(time>max_time) max_time = time;

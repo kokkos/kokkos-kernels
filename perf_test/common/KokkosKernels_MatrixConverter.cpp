@@ -48,11 +48,11 @@
 #include <string.h>
 #include "KokkosKernels_MyCRSMatrix.hpp"
 
-typedef int size_type;
-typedef int idx;
-typedef double wt;
 
 int main (int argc, char* argv[]){
+  typedef int size_type;
+  typedef int idx;
+  typedef double wt;
 
   Kokkos::initialize(argc,argv);
   

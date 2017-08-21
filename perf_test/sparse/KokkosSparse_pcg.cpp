@@ -53,21 +53,21 @@
 
 #define MAXVAL 1
 
-typedef size_t size_type;
-typedef int idx;
-typedef double wt;
+#define SIZE_TYPE size_t
+#define INDEX_TYPE int
+#define SCALAR_TYPE double
 
 
 
 template<typename scalar_view_t>
-scalar_view_t create_x_vector(idx nv, wt max_value = 1.0){
+scalar_view_t create_x_vector(INDEX_TYPE nv, SCALAR_TYPE max_value = 1.0){
   scalar_view_t kok_x ("X", nv);
 
   typename scalar_view_t::HostMirror h_x =  Kokkos::create_mirror_view (kok_x);
 
 
-  for (idx i = 0; i < nv; ++i){
-    wt r = static_cast <wt> (rand()) / static_cast <wt> (RAND_MAX / max_value);
+  for (INDEX_TYPE i = 0; i < nv; ++i){
+    SCALAR_TYPE r = static_cast <SCALAR_TYPE> (rand()) / static_cast <SCALAR_TYPE> (RAND_MAX / max_value);
     h_x(i) = r;
   }
   Kokkos::deep_copy (kok_x, h_x);
@@ -89,7 +89,7 @@ void run_experiment(
 
   typedef typename crsMat_t::values_type scalar_view_t;
 
-  idx nv = crsmat.numRows();
+  INDEX_TYPE nv = crsmat.numRows();
   scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
 
   KokkosKernels::Impl::print_1Dview(kok_x_original);
@@ -303,9 +303,9 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_PTHREAD )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
-      idx nv = 0, ne = 0;
-      idx *xadj, *adj;
-      wt *ew;
+      INDEX_TYPE nv = 0, ne = 0;
+      INDEX_TYPE *xadj, *adj;
+      SCALAR_TYPE *ew;
 
 
       if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
@@ -317,11 +317,11 @@ int main (int argc, char ** argv){
         Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
       }
 
-      KokkosKernels::Impl::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
       Kokkos::Threads::print_configuration(std::cout);
 
       typedef Kokkos::Threads myExecSpace;
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
+      typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
 
       typedef typename crsMat_t::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
@@ -332,9 +332,9 @@ int main (int argc, char ** argv){
       cols_view_t columns_view("colsmap_view", ne);
       values_view_t values_view("values_view", ne);
 
-      KokkosKernels::Impl::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
-      KokkosKernels::Impl::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
-      KokkosKernels::Impl::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+      KokkosKernels::Impl::copy_vector<SCALAR_TYPE * , values_view_t, myExecSpace>(ne, ew, values_view);
+      KokkosKernels::Impl::copy_vector<INDEX_TYPE * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+      KokkosKernels::Impl::copy_vector<INDEX_TYPE * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
 
       graph_t static_graph (columns_view, rowmap_view);
       crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
@@ -352,9 +352,9 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_OPENMP )
 
     if ( cmdline[ CMD_USE_OPENMP ] ) {
-      idx nv = 0, ne = 0;
-      idx *xadj, *adj;
-      wt *ew;
+      INDEX_TYPE nv = 0, ne = 0;
+      INDEX_TYPE *xadj, *adj;
+      SCALAR_TYPE *ew;
 
 
       if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
@@ -367,11 +367,11 @@ int main (int argc, char ** argv){
       }
       Kokkos::OpenMP::print_configuration(std::cout);
 
-      KokkosKernels::Impl::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::OpenMP myExecSpace;
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
+      typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
 
       typedef typename crsMat_t::StaticCrsGraphType graph_t;
       typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
@@ -382,9 +382,9 @@ int main (int argc, char ** argv){
       cols_view_t columns_view("colsmap_view", ne);
       values_view_t values_view("values_view", ne);
 
-      KokkosKernels::Impl::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
-      KokkosKernels::Impl::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
-      KokkosKernels::Impl::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+      KokkosKernels::Impl::copy_vector<SCALAR_TYPE * , values_view_t, myExecSpace>(ne, ew, values_view);
+      KokkosKernels::Impl::copy_vector<INDEX_TYPE * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+      KokkosKernels::Impl::copy_vector<INDEX_TYPE * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
 
       graph_t static_graph (columns_view, rowmap_view);
       crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
@@ -404,18 +404,18 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
-      idx nv = 0, ne = 0;
-      idx *xadj, *adj;
-      wt *ew;
+      INDEX_TYPE nv = 0, ne = 0;
+      INDEX_TYPE *xadj, *adj;
+      SCALAR_TYPE *ew;
       Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
       Kokkos::Cuda::print_configuration(std::cout);
 
-      KokkosKernels::Impl::read_matrix<idx,idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::Cuda myExecSpace;
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
+      typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
 
       typedef typename crsMat_t::StaticCrsGraphType graph_t;
       typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
@@ -432,11 +432,11 @@ int main (int argc, char ** argv){
         typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
         typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
 
-        for (idx i = 0; i <= nv; ++i){
+        for (INDEX_TYPE i = 0; i <= nv; ++i){
           hr(i) = xadj[i];
         }
 
-        for (idx i = 0; i < ne; ++i){
+        for (INDEX_TYPE i = 0; i < ne; ++i){
           hc(i) = adj[i];
           hv(i) = ew[i];
         }
@@ -449,7 +449,7 @@ int main (int argc, char ** argv){
       graph_t static_graph (columns_view, rowmap_view);
       crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
 
-//      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Cuda> crsMat_t;
+//      typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, Kokkos::Cuda> crsMat_t;
 //      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
       delete [] xadj;
       delete [] adj;

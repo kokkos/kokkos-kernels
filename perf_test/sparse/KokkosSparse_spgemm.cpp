@@ -45,18 +45,9 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
 
-
-typedef int size_type;
-typedef int idx;
-typedef double wt;
-//typedef int size_type;
-//typedef int idx;
-//typedef double wt;
-
-
-
-
-
+#define SIZE_TYPE int
+#define INDEX_TYPE int
+#define SCALAR_TYPE double
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;
@@ -281,7 +272,6 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
 
 int main (int argc, char ** argv){
 
-
   KokkosKernels::Experiment::Parameters params;
 
 
@@ -306,12 +296,12 @@ int main (int argc, char ** argv){
 	  Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <size_type, idx, wt, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
+    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
         params
         );
 #else 
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <size_type, idx, wt, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
+    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
         params
         );
 #endif
@@ -329,12 +319,12 @@ int main (int argc, char ** argv){
 #ifdef KOKKOSKERNELS_MULTI_MEM
 
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <size_type, idx, wt, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
+    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
         params
         );
 #else
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <size_type, idx, wt, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
+    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
         params
         );
 #endif

@@ -55,11 +55,6 @@
 #include "KokkosKernels_TestParameters.hpp"
 
 
-typedef unsigned size_type;
-typedef int idx;
-//typedef int size_type;
-//typedef int idx;
-typedef double wt;
 
 void print_options(){
 
@@ -418,6 +413,11 @@ void run_multi_mem_experiment(Parameters params){
 }
 
 int main (int argc, char ** argv){
+
+  typedef unsigned size_type;
+  typedef int idx;
+  //typedef int size_type;
+  //typedef int idx;
 
   KokkosKernels::Experiment::Parameters params;
 
