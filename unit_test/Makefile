@@ -117,6 +117,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsm.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialLU.o
+  OBJ_OPENMP += Test_OpenMP_Batched_VectorArithmatic.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -231,6 +232,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Batched_SerialGemm.o
   OBJ_SERIAL += Test_Serial_Batched_SerialTrsm.o
   OBJ_SERIAL += Test_Serial_Batched_SerialLU.o
+  OBJ_SERIAL += Test_Serial_Batched_VectorArithmatic.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif

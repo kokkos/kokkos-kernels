@@ -25,10 +25,22 @@ namespace KokkosBatched {
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A,B) A B
       
-#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL        
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma message "KOKKOS_ENABLE_PRAGMA_UNROLL"
 #else
 #pragma message "KOKKOS_DISABLE_PRAGMA_UNROLL"
+#endif
+
+#if defined(__AVX__) || defined(__AVX2__)
+#pragma message "KOKKOS_BATCHED_ENABLE_AVX256"
+#else
+#pragma message "KOKKOS_BATCHED_DISABLE_AVX256"
+#endif
+
+#if defined(__AVX512F__)
+#pragma message "KOKKOS_BATCHED_ENABLE_AVX512"
+#else
+#pragma message "KOKKOS_BATCHED_DISABLE_AVX512"
 #endif
 
     // #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP

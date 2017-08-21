@@ -477,7 +477,12 @@ namespace KokkosBatched {
         br = _mm512_permute_pd(b, 0x00),
         bi = _mm512_permute_pd(b, 0xff);
 
+#if defined(__FMA__)
       return _mm512_fmaddsub_pd(a, br, _mm512_mul_pd(as, bi));
+#else
+      Kokkos::abort("Not yet implemented");
+      return __m512d();
+#endif
     }
 
     template<typename SpT>
