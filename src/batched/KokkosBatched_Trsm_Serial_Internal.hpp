@@ -154,7 +154,7 @@ namespace KokkosBatched {
              const ScalarType alpha,
              const ValueType *__restrict__ A, const int as0, const int as1,
              /**/  ValueType *__restrict__ B, const int bs0, const int bs1);
-    };
+    }
 
     template<>
     template<typename ScalarType,
@@ -200,7 +200,7 @@ namespace KokkosBatched {
         }
       }
       return 0;
-    };
+    }
 
     template<>
     template<typename ScalarType,
@@ -264,7 +264,7 @@ namespace KokkosBatched {
         }
       }        
       return 0;      
-    };
+    }
 
   }
 }
