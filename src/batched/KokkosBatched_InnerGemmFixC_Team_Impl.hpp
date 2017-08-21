@@ -13,13 +13,12 @@ namespace KokkosBatched {
 
     template<int mb, int nb>
     template<typename MemberType,
-	     typename ScalarType,
 	     typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixC<mb,nb>::
     team_invoke(const MemberType &member,
-		const ScalarType alpha,
+		const ValueType alpha,
 		const ValueType *__restrict__ A,
 		const ValueType *__restrict__ B,
 		const int k,
@@ -43,13 +42,12 @@ namespace KokkosBatched {
 
     template<int mb, int nb>
     template<typename MemberType,
-	     typename ScalarType,
 	     typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixC<mb,nb>::
     team_invoke(const MemberType &member,
-		const ScalarType alpha,
+		const ValueType alpha,
 		const ValueType *__restrict__ A,
 		const ValueType *__restrict__ B,
 		const int m, const int n, const int k,

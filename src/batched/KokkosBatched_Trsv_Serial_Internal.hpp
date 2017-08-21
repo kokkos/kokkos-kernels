@@ -50,7 +50,7 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ b, const int bs0) {
       typedef ValueType value_type;
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, value_type(0), b, bs0);
+      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
         if (m <= 0) return 0;
@@ -91,7 +91,7 @@ namespace KokkosBatched {
         mbAlgo = Algo::Trsv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, value_type(0), b, bs0);
+      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
         if (m <= 0) return 0;
@@ -155,7 +155,7 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ b, const int bs0) {
       typedef ValueType value_type;
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, value_type(0), b, bs0);
+      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
         if (m <= 0) return 0;
@@ -194,7 +194,7 @@ namespace KokkosBatched {
       };
 
       // note that parallel range is different ( m*n vs m-1*n);
-      if (alpha == 0)   SerialSetInternal::invoke(m, value_type(0), b, bs0);
+      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
         if (m <= 0) return 0;

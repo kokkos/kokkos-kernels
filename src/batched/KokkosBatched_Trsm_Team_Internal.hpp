@@ -49,7 +49,7 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
       typedef ValueType value_type;
 
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
@@ -106,7 +106,7 @@ namespace KokkosBatched {
       };
 
       // note that parallel range is different ( m*n vs m-1*n);        
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
@@ -196,7 +196,7 @@ namespace KokkosBatched {
       typedef ValueType value_type;
   
       // note that parallel range is different ( m*n vs m-1*n);        
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
@@ -251,7 +251,7 @@ namespace KokkosBatched {
       };
 
       // note that parallel range is different ( m*n vs m-1*n);        
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;

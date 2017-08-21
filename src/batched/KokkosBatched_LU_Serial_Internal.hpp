@@ -84,6 +84,7 @@ namespace KokkosBatched {
       InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_llu(as0, as1, as0, as1);
       InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
 
+      const value_type one(1), minus_one(-1);
       auto lu_factorize = [&](const int ib,
                               const int jb,
                               value_type *__restrict__ AA) {
@@ -108,10 +109,10 @@ namespace KokkosBatched {
           // gemm update
           SerialGemmInternal<Algo::Gemm::Blocked>::
             invoke(m_abr, n_abr, pb,
-                   -1, 
+                   minus_one,
                    Ap+mb*as0, as0, as1,
                    Ap+mb*as1, as0, as1,
-                   1,
+                   one,
                    Ap+mb*as0+mb*as1, as0, as1);
         }
       };

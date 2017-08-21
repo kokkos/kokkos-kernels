@@ -93,6 +93,8 @@ namespace KokkosBatched {
 	const int k = (m < n ? m : n);
 	if (k <= 0) return 0;
 
+        const value_type one(1), minus_one(-1);
+
 	InnerLU<mbAlgo> lu(as0, as1);
           
 	InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_llu(as0, as1, as0, as1);
@@ -140,10 +142,10 @@ namespace KokkosBatched {
 	    GemmInternal<Algo::Gemm::Blocked>::
 	      invoke(member, 
 		     m_abr, n_abr, pb,
-		     -1, 
+                     minus_one,
 		     Ap+mb*as0, as0, as1,
 		     Ap+mb*as1, as0, as1,
-		     1,
+                     one,
 		     Ap+mb*as0+mb*as1, as0, as1);
 	  }
 	};

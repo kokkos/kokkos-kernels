@@ -50,12 +50,13 @@ namespace KokkosBatched {
 
       typedef ValueType value_type;
 
-      if      (beta == 0) SerialSetInternal  ::invoke(m, value_type(0),    y, ys0);
-      else if (beta != 1) SerialScaleInternal::invoke(m, value_type(beta), y, ys0);
+      if      (beta == 0) SerialSetInternal  ::invoke(m, 0,    y, ys0);
+      else if (beta != 1) SerialScaleInternal::invoke(m, beta, y, ys0);
       
       if (alpha != 0) {
         if (m <= 0 || n <= 0) return 0;
-        
+
+        const value_type alpha_value(alpha);
         for (int i=0;i<m;++i) {
           value_type t(0);
           const value_type *__restrict__ tA = (A + i*as0);
@@ -66,7 +67,7 @@ namespace KokkosBatched {
 #endif
           for (int j=0;j<n;++j)
             t += tA[j*as1]*x[j*xs0];
-          y[i*ys0] += alpha*t;
+          y[i*ys0] += alpha_value*t;
         }
       }
       return 0;
@@ -92,16 +93,16 @@ namespace KokkosBatched {
         mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if      (beta == 0) SerialSetInternal  ::invoke(m, value_type(0),    y, ys0);
-      else if (beta != 1) SerialScaleInternal::invoke(m, value_type(beta), y, ys0);
+      if      (beta == 0) SerialSetInternal  ::invoke(m, 0,    y, ys0);
+      else if (beta != 1) SerialScaleInternal::invoke(m, beta, y, ys0);
       
       if (alpha != 0) {
         if (m <= 0 || n <= 0) return 0;
-        
+        const value_type alpha_value(alpha);
         InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
         const int mb = mbAlgo;
         for (int i=0;i<m;i+=mb) 
-          inner.serial_invoke(alpha, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
+          inner.serial_invoke(alpha_value, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
       }
       return 0;
     }

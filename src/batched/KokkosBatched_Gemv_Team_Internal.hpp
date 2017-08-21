@@ -55,26 +55,25 @@ namespace KokkosBatched {
 
         typedef ValueType value_type;
 
-        if      (beta == 0) TeamSetInternal  ::invoke(member, m, value_type(0),    y, ys0);
-        else if (beta != 1) TeamScaleInternal::invoke(member, m, value_type(beta), y, ys0);
+        if      (beta == 0) TeamSetInternal  ::invoke(member, m, 0,    y, ys0);
+        else if (beta != 1) TeamScaleInternal::invoke(member, m, beta, y, ys0);
       
         if (alpha != 0) {
           if (m <= 0 || n <= 0) return 0;
 
+          const value_type alpha_value(alpha);
           if (beta != 1) 
             member.barrier();
             
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {
               value_type t(0);
               const value_type *__restrict__ tA = (A + i*as0);
-
-                
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
               for (int j=0;j<n;++j)
                 t += tA[j*as1]*x[j*xs0];
-              y[i*ys0] += alpha*t;
+              y[i*ys0] += alpha_value*t;
             });
         }
         return 0;
@@ -102,12 +101,13 @@ namespace KokkosBatched {
           mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
         };
           
-        if      (beta == 0) TeamSetInternal  ::invoke(member, m, value_type(0),    y, ys0);
-        else if (beta != 1) TeamScaleInternal::invoke(member, m, value_type(beta), y, ys0);
+        if      (beta == 0) TeamSetInternal  ::invoke(member, m, 0,    y, ys0);
+        else if (beta != 1) TeamScaleInternal::invoke(member, m, beta, y, ys0);
       
         if (alpha != 0) {
           if (m <= 0 || n <= 0) return 0;
 
+          const value_type alpha_value(alpha);
           if (beta != 1) 
             member.barrier();
         
@@ -119,7 +119,7 @@ namespace KokkosBatched {
             (Kokkos::TeamThreadRange(member, (m/mb) + (mp>0)),
              [&](const int &ii) {
               const int i = ii*mb;
-              inner.serial_invoke(alpha, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
+              inner.serial_invoke(alpha_value, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
             });
           member.team_barrier();
         }

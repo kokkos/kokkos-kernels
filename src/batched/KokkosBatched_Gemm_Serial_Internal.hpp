@@ -50,12 +50,13 @@ namespace KokkosBatched {
       
       typedef ValueType value_type;
       
-      if      (beta == 0) SerialSetInternal  ::invoke(m, n, value_type(0),    C, cs0, cs1);
-      else if (beta != 1) SerialScaleInternal::invoke(m, n, value_type(beta), C, cs0, cs1);
+      if      (beta == 0) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
+      else if (beta != 1) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
       
       if (alpha != 0) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
         
+        const value_type alpha_value(alpha);
         value_type
           *__restrict__ pC = C;
         for (int p=0;p<k;++p) {
@@ -63,7 +64,7 @@ namespace KokkosBatched {
             *__restrict__ pA = A+p*as1,
             *__restrict__ pB = B+p*bs0;
           for (int i=0;i<m;++i) {
-            const value_type tA(alpha*pA[i*as0]);
+            const value_type tA(alpha_value*pA[i*as0]);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -96,11 +97,12 @@ namespace KokkosBatched {
         nbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
       };
           
-      if      (beta == 0) SerialSetInternal  ::invoke(m, n, value_type(0),    C, cs0, cs1);
-      else if (beta != 1) SerialScaleInternal::invoke(m, n, value_type(beta), C, cs0, cs1);
+      if      (beta == 0) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
+      else if (beta != 1) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
       
       if (alpha != 0) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
+        const value_type alpha_value(alpha);
 
         InnerGemmFixC<mbAlgo,nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
         auto gemm = [&](const int ib, 
@@ -112,7 +114,7 @@ namespace KokkosBatched {
           const int mb = mbAlgo, nb = nbAlgo;
           for (int i=0;i<ib;i+=mb) 
             for (int j=0;j<jb;j+=nb)
-              inner.serial_invoke(alpha, 
+              inner.serial_invoke(alpha_value, 
                                   AA+i*as0, BB+j*bs1, 
                                   (i+mb) > ib ? (ib-i) : mb, 
                                   (j+nb) > jb ? (jb-j) : nb, 

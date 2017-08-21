@@ -15,12 +15,11 @@ namespace KokkosBatched {
     /// ====================
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<5>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int n, 
@@ -59,12 +58,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<4>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int n, 
@@ -101,12 +99,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<3>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int n, 
@@ -141,12 +138,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<2>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int n, 
@@ -179,12 +175,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<1>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int n, 
@@ -208,12 +203,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<5>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int m, const int n, 
@@ -230,12 +224,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<4>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int m, const int n, 
@@ -251,12 +244,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<3>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int m, const int n, 
@@ -271,12 +263,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<2>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int m, const int n, 
@@ -290,12 +281,11 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ScalarType,
-	     typename ValueType>
+    template<typename ValueType>	  
     KOKKOS_INLINE_FUNCTION
     int 
     InnerMultipleDotProduct<1>::
-    serial_invoke(const ScalarType alpha,
+    serial_invoke(const ValueType alpha,
 		  const ValueType *__restrict__ A,
 		  const ValueType *__restrict__ x,
 		  const int m, const int n, 

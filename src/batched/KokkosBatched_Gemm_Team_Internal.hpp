@@ -52,12 +52,13 @@ namespace KokkosBatched {
       
       typedef ValueType value_type;
         
-      if      (beta == 0) TeamSetInternal  ::invoke(member, m, n, value_type(0),    C, cs0, cs1);
-      else if (beta != 1) TeamScaleInternal::invoke(member, m, n, value_type(beta), C, cs0, cs1);
+      if      (beta == 0) TeamSetInternal  ::invoke(member, m, n, 0,    C, cs0, cs1);
+      else if (beta != 1) TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
         
       if (alpha != 0) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
 
+        const value_type alpha_value(alpha);
         if (beta != 1)
           member.team_barrier();
             
@@ -76,7 +77,7 @@ namespace KokkosBatched {
             value_type c = 0;
             for (int p=0;p<k;++p) 
               c += pA[p*as1]*pB[p*bs0];
-            C[i*cs0+j*cs1] += alpha*c;
+            C[i*cs0+j*cs1] += alpha_value*c;
           });
       }
       return 0;
@@ -105,12 +106,13 @@ namespace KokkosBatched {
         nbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
       };
           
-      if      (beta == 0) TeamSetInternal  ::invoke(member, m, n, value_type(0),    C, cs0, cs1);
-      else if (beta != 1) TeamScaleInternal::invoke(member, m, n, value_type(beta), C, cs0, cs1);
+      if      (beta == 0) TeamSetInternal  ::invoke(member, m, n, 0,    C, cs0, cs1);
+      else if (beta != 1) TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
 
       if (alpha != 0) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
 
+        const value_type alpha_value(alpha);
         if (beta != 1)
           member.team_barrier();
 
@@ -138,7 +140,7 @@ namespace KokkosBatched {
 #else
             const int i = ij/nq*mb, j = ij%nq*nb;
 #endif
-            inner.serial_invoke(alpha, 
+            inner.serial_invoke(alpha_value, 
                                 AA+i*as0, BB+j*bs1, 
                                 (i+mb) > ib ? mp : mb, 
                                 (j+nb) > jb ? np : nb, 

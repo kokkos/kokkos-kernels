@@ -45,7 +45,7 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
       typedef ValueType value_type;
         
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
@@ -98,10 +98,12 @@ namespace KokkosBatched {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
+
+        const value_type minus_one(-1);
 
         InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);
         InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
@@ -125,7 +127,7 @@ namespace KokkosBatched {
             // gemm update
             for (int i=p+mb;i<ib;i+=mb) {
               const int mm = (i+mb) > ib ? (ib-i) : mb;
-              gemm.serial_invoke(-1, AA+i*as0+p*as1, BB+p*bs0, mm, jb, pb, BB+i*bs0);
+              gemm.serial_invoke(minus_one, AA+i*as0+p*as1, BB+p*bs0, mm, jb, pb, BB+i*bs0);
             }
           }
         };
@@ -167,7 +169,7 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
       typedef ValueType value_type;
   
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
@@ -216,10 +218,12 @@ namespace KokkosBatched {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, value_type(0), B, bs0, bs1);
+      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
         if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
+
+        const value_type minus_one(-1);
 
         InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);
         InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
@@ -246,7 +250,7 @@ namespace KokkosBatched {
                 
             // gemm update
             for (int i=0;i<p;i+=mb) {
-              gemm.serial_invoke(-1, AA+i*as0+p*as1, Bp, (i+mb) > p ? (p-i) : mb, jb, pb, BB+i*bs0);
+              gemm.serial_invoke(minus_one, AA+i*as0+p*as1, Bp, (i+mb) > p ? (p-i) : mb, jb, pb, BB+i*bs0);
             }
           }
         };

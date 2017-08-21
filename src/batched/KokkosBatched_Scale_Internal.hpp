@@ -20,12 +20,12 @@ namespace KokkosBatched {
       invoke(const int m, 
              const ScalarType alpha, 
              /* */ ValueType *__restrict__ A, const int as0) {
-        
+        const ValueType alpha_value(alpha);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
         for (int i=0;i<m;++i)
-          A[i*as0] *= alpha;
+          A[i*as0] *= alpha_value;
         
         return 0;
       }
@@ -61,10 +61,11 @@ namespace KokkosBatched {
              const int m, 
              const ScalarType alpha, 
              /* */ ValueType *__restrict__ A, const int as0) {
+        const ValueType alpha_value(alpha);
         Kokkos::parallel_for
           (Kokkos::TeamThreadRange(member,0,m),
            [&](const int &i) {
-            A[i*as0] *= alpha;
+            A[i*as0] *= alpha_value;
           });
         //member.team_barrier();
         return 0;

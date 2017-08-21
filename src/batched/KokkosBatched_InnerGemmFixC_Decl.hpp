@@ -21,41 +21,37 @@ namespace KokkosBatched {
           _cs0(cs0), _cs1(cs1) {}
     
       // serial rank update
-      template<typename ScalarType,
-               typename ValueType>
+      template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      int serial_invoke(const ScalarType alpha,
+      int serial_invoke(const ValueType alpha,
                         const ValueType *__restrict__ A,
                         const ValueType *__restrict__ B,
                         const int k,
                         /**/  ValueType *__restrict__ C);
 
       // serial rank update for remainder
-      template<typename ScalarType,
-               typename ValueType>
+      template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      int serial_invoke(const ScalarType alpha,
+      int serial_invoke(const ValueType alpha,
                         const ValueType *__restrict__ A,
                         const ValueType *__restrict__ B,
                         const int m, const int k,
                         /**/  ValueType *__restrict__ C);
     
       // serial rank update for remainder
-      template<typename ScalarType,
-               typename ValueType>
+      template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      int serial_invoke(const ScalarType alpha,
+      int serial_invoke(const ValueType alpha,
                         const ValueType *__restrict__ A,
                         const ValueType *__restrict__ B,
                         const int m, const int n, const int k,
                         /**/  ValueType *__restrict__ C);
 
       template<typename MemberType,
-               typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int team_invoke(const MemberType &member,
-                      const ScalarType alpha,
+                      const ValueType alpha,
                       const ValueType *__restrict__ A,
                       const ValueType *__restrict__ B,
                       const int k,
@@ -63,11 +59,10 @@ namespace KokkosBatched {
     
       // team rank update for remainder
       template<typename MemberType,
-               typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int team_invoke(const MemberType &member,
-                      const ScalarType alpha,
+                      const ValueType alpha,
                       const ValueType *__restrict__ A,
                       const ValueType *__restrict__ B,
                       const int m, const int n, const int k,
