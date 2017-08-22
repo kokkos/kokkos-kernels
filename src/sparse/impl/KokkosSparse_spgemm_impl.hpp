@@ -236,7 +236,7 @@ private:
   bool transposeB;
 
   const size_t shmem_size;
-  const size_t concurrency;
+  size_t concurrency;
   const bool use_dynamic_schedule;
   const bool KOKKOSKERNELS_VERBOSE;
   //const int KOKKOSKERNELS_VERBOSE = 1;
@@ -582,7 +582,12 @@ public:
           spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
           spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
           //,row_mapC(), entriesC(), valsC()
-          {}
+          {
+            if(MyEnumExecSpace ==  KokkosKernels::Impl::Exec_CUDA){ 
+		concurrency = 131072;
+		//concurrency = 256;
+            }
+          }
 
   KokkosSPGEMM(
       HandleType *handle_,
@@ -606,7 +611,13 @@ public:
             spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
             spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
             //,row_mapB(), entriesC(), valsC()
-            {}
+            {
+            if(MyEnumExecSpace ==  KokkosKernels::Impl::Exec_CUDA){
+                concurrency = 131072;
+	//	concurrency = 256;             
+            }
+
+	    }
 
 
 
