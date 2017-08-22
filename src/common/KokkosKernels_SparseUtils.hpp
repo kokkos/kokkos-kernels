@@ -601,6 +601,7 @@ void kk_sort_graph(
     Kokkos::deep_copy (he, in_adj);
     typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
     Kokkos::deep_copy (hv, in_vals);
+    MyExecSpace::fence();
 
     typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
     typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
@@ -631,6 +632,7 @@ void kk_sort_graph(
 
     Kokkos::deep_copy (out_adj, heo);
     Kokkos::deep_copy (out_vals, hvo);
+    MyExecSpace::fence();
   }
   else {
 

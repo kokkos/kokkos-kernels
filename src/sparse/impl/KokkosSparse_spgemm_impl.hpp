@@ -236,7 +236,7 @@ private:
   bool transposeB;
 
   const size_t shmem_size;
-  const size_t concurrency;
+  size_t concurrency;
   const bool use_dynamic_schedule;
   const bool KOKKOSKERNELS_VERBOSE;
   //const int KOKKOSKERNELS_VERBOSE = 1;

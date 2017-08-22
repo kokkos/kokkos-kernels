@@ -107,12 +107,12 @@ namespace Test{ // (anonymous)
       nIVT indsToSearch_view("indsToSearch", numEnt);
       typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view (indsToSearch_view);
       for (int i = 0; i < numEnt; ++i) {
-        std::cout << "indsToSearch[i]:" << indsToSearch[i] << std::endl;
+        //std::cout << "indsToSearch[i]:" << indsToSearch[i] << std::endl;
         h_indsToSearch_view(i) = indsToSearch[i];
       }
       Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
       Kokkos::fence();
-      KokkosKernels::Impl::kk_print_1Dview(indsToSearch_view);
+      //KokkosKernels::Impl::kk_print_1Dview(indsToSearch_view);
       const bool isSorted = true;
 
       for (lno_t hint = 0; hint < 10; ++hint) {

@@ -40,7 +40,6 @@
 // ************************************************************************
 //@HEADER
 */
-
 namespace KokkosSparse{
 
 namespace Impl{
@@ -634,6 +633,7 @@ void
   chunksize += min_hash_size ; //this is for the hash begins
   chunksize += max_nnz; //this is for hash nexts
   int num_chunks = concurrency / suggested_vector_size;
+
 #ifdef KOKKOSKERNELSCHANGEPARAMS
 
   if (env_hash > 2) {
@@ -649,7 +649,9 @@ num_chunks = env_num_chunks;
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\t max_nnz: " << max_nnz
               << " chunk_size:" << chunksize
-  << " min_hash_size:" << min_hash_size
+              << " min_hash_size:" << min_hash_size
+              << " concurrency:" << concurrency
+              << " MyExecSpace::concurrency():" << MyExecSpace::concurrency()
               << " numchunks:" << num_chunks << std::endl;
   }
 
@@ -667,6 +669,7 @@ num_chunks = env_num_chunks;
     std::cout << "\t\tPool Alloc Time:" << timer1.seconds() << std::endl;
     std::cout << "\t\tPool Size(MB):" <<
         sizeof (nnz_lno_t) * (num_chunks * chunksize) / 1024. / 1024.  << std::endl;
+    m_space.print_memory_pool();
   }
 
   PortableNumericCHASH<

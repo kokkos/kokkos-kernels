@@ -87,6 +87,12 @@ namespace Test {
 
       ordinal_type cols[numEntToModify];
       scalar_type vals[numEntToModify];
+      //MD 08/2017 Note: Adding below initialization
+      //as this creates a warning where cols might be unitialized.
+      for (ordinal_type k = 0; k < numEntToModify; ++k) {
+        cols[k] = 0;
+        vals[k] = 0;
+      }
 
       // Indices A.numCols() - 1, A.numCols() - 2, ..., 0 always exist
       // in the row, given how we construct the matrix.  We put them
@@ -115,16 +121,6 @@ namespace Test {
         //           << std::endl;
       }
 
-      //MD 08/2017 Note: Adding below initialization
-      //as this creates a warning where cols might be unitialized.
-      for (ordinal_type k = ncol; k < numEntToModify; ++k) {
-        if (k - 1 >= 0){
-          cols[k] = cols[0];
-        }
-        else {
-          cols[k] = cols[0];
-        }
-      }
 
       ordinal_type lclNumModified = 0;
       if (replace_) {

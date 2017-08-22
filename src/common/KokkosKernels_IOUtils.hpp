@@ -50,7 +50,7 @@
 #ifndef _KOKKOSKERNELSIOUTILS_HPP
 #define _KOKKOSKERNELSIOUTILS_HPP
 
-
+#include "Kokkos_ArithTraits.hpp"
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_SimpleUtils.hpp"
 #include <sys/stat.h>
@@ -188,19 +188,19 @@ void kk_diagonally_dominant_sparseMatrix_generate(
     ScalarType total_values = 0;
     for(SizeType k=rowPtr[row] ;k<rowPtr[row+1] - 1;k++)
     {
-      OrdinalType pos = -1;
+      OrdinalType pos = row;
       while (pos == row){
-        pos = (1.0*rand()/INT_MAX-0.5)*bandwidth+row;
+        pos = ((1.0*rand())/INT_MAX-0.5)*bandwidth+row;
       }
       if(pos<0) pos+=ncols;
+
       if(pos>=ncols) pos-=ncols;
       colInd[k]= pos;
       values[k] = 100.0*rand()/INT_MAX-50.0;
-      total_values += values[k];
+      total_values += Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
     }
 
     colInd[rowPtr[row+1] - 1]= row;
-
     values[rowPtr[row+1] - 1] = total_values * temp;
   }
 }
@@ -359,6 +359,7 @@ crsMat_t kk_generate_sparse_matrix(
     Kokkos::deep_copy (rowmap_view , hr);
     Kokkos::deep_copy (columns_view , hc);
     Kokkos::deep_copy (values_view , hv);
+    Kokkos::fence();
   }
 
   graph_t static_graph (columns_view, rowmap_view);

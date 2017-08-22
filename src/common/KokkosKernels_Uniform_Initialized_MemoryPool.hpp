@@ -146,8 +146,7 @@ template <typename MyExecSpace, typename data_type>
 class UniformMemoryPool{
 
 private:
-  typedef bool lock_type;
-  //typedef typename Kokkos::View <size_t *, MyExecSpace> index_view_t;
+  typedef int lock_type;
   typedef typename Kokkos::View <lock_type *, MyExecSpace> lock_view_t;
   typedef typename Kokkos::View <data_type *, MyExecSpace> data_view_t;
 
@@ -203,9 +202,9 @@ public:
     data_view = data_view_t(Kokkos::ViewAllocateWithoutInitializing("pool data"), overall_size),
     data = (data_view.ptr_on_device()),
 
-
     this->set_pool_type(pool_type_);
     Kokkos::deep_copy(data_view, initialized_value);
+
   }
 
   /**
@@ -256,6 +255,7 @@ public:
     std::cout << "num_chunks:" << num_chunks << std::endl;
     std::cout << "chunk_size:" << chunk_size << std::endl;
     std::cout << "overall_size:" << overall_size << std::endl;
+    std::cout << "modular_num_chunks:" << modular_num_chunks << std::endl;
 
     //std::cout << "Printing free_chunks view" << std::endl;
     //print_1Dview(free_chunks, print_all);
@@ -293,11 +293,9 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   data_type *get_arbitrary_free_chunk(const size_t &thread_index, const size_t max_tries) const{
-    //size_t chunk_index = thread_index % num_chunks;
     size_t chunk_index = thread_index & modular_num_chunks;
     size_t num_try = 0;
-    while(!Kokkos::atomic_compare_exchange_strong(pchunk_locks + chunk_index, false, true)){
-      //chunk_index = (chunk_index + 1) % num_chunks;
+    while(!Kokkos::atomic_compare_exchange_strong(pchunk_locks + chunk_index, 0, 1)){
       chunk_index = (chunk_index + 1) & modular_num_chunks;
       ++num_try;
       if (num_try > max_tries){
@@ -335,7 +333,8 @@ public:
   void release_arbitrary_chunk(const data_type *chunk_ptr) const{
     size_t alloc_index = (chunk_ptr - data) / chunk_size;
     //printf("release:%ld #chunks:%ld\n", alloc_index, num_chunks);
-    chunk_locks(alloc_index) = false;
+    //chunk_locks(alloc_index) = false;
+    chunk_locks(alloc_index) = 0;
   }
 
   /**

@@ -133,7 +133,7 @@ namespace { // (anonymous)
     typename CrsMatrixType::values_type val = A.values;
     typename CrsMatrixType::values_type::HostMirror val_h = Kokkos::create_mirror_view (val);
     Kokkos::deep_copy (val_h, val);
-
+    Kokkos::fence();
     const LO numRows = A.numRows ();
     bool success = true;
     for (LO lclRow = 0; lclRow < numRows; ++lclRow) {
