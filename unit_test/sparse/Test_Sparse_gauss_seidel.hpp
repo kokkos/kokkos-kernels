@@ -179,6 +179,9 @@ void test_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_
 
   lno_t nv = input_mat.numRows();
 
+  //KokkosKernels::Impl::print_1Dview(input_mat.graph.row_map);
+  //KokkosKernels::Impl::print_1Dview(input_mat.graph.entries);
+  //KokkosKernels::Impl::print_1Dview(input_mat.values);
 
   //scalar_view_t solution_x ("sol", nv);
   //Kokkos::Random_XorShift64_Pool<ExecutionSpace> g(1931);
@@ -186,10 +189,15 @@ void test_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_
 
   const scalar_view_t solution_x = create_x_vector<scalar_view_t>(nv);
   scalar_view_t y_vector = create_y_vector(input_mat, solution_x);
-
+#ifdef gauss_seidel_testmore
   GSAlgorithm gs_algorithms[] ={GS_DEFAULT, GS_TEAM, GS_PERMUTED};
-
+  int apply_count = 3;
   for (int ii = 0; ii < 3; ++ii){
+#else
+  int apply_count = 1;
+  GSAlgorithm gs_algorithms[] ={GS_DEFAULT};
+  for (int ii = 0; ii < 1; ++ii){
+#endif
     GSAlgorithm gs_algorithm = gs_algorithms[ii];
     scalar_view_t x_vector ("x vector", nv);
     const scalar_t alpha = 1.0;
@@ -208,7 +216,8 @@ void test_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_
 
 
     for (int is_symmetric_graph = 0; is_symmetric_graph < 2; ++is_symmetric_graph){
-      for (int apply_type = 0; apply_type < 3; ++apply_type){
+
+      for (int apply_type = 0; apply_type < apply_count; ++apply_type){
         for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 

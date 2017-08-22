@@ -345,11 +345,11 @@ public:
     std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
-
     nnz_lno_persistent_work_host_view_t  h_color_xadj = Kokkos::create_mirror_view (color_xadj);
     Kokkos::deep_copy (h_color_xadj , color_xadj);
     MyExecSpace::fence();
-
+    
+   
 #ifdef KOKKOSKERNELS_TIME_REVERSE
     std::cout << "DEEP_COPY:" << timer.seconds() << std::endl;
     timer.reset();
@@ -361,10 +361,15 @@ public:
       for (nnz_lno_t i = 0; i < numColors; ++i){
         nnz_lno_t color_index_begin = h_color_xadj(i);
         nnz_lno_t color_index_end = h_color_xadj(i + 1);
+
         if (color_index_begin + 1 >= color_index_end ) continue;
         auto colorsubset =
             subview(color_adj, Kokkos::pair<row_lno_t, row_lno_t> (color_index_begin, color_index_end));
+        MyExecSpace::fence();
         Kokkos::sort (colorsubset);
+        //TODO: MD 08/2017: If I remove the below fence, code fails on cuda.
+        //I do not see any reason yet it to fail.
+        MyExecSpace::fence();
       }
     }
 #endif

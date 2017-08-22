@@ -191,9 +191,18 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
   scalar_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals2);
 
-  if (nrows1 != nrows2) return false;
-  if (nentries1 != nentries2) return false;
-  if (nvals1 != nvals2) return false;
+  if (nrows1 != nrows2) { 
+     std::cout << "nrows1:" << nrows1 << " nrows2:" << nrows2 << std::endl;
+     return false;
+  }
+  if (nentries1 != nentries2) {
+    std::cout << "nentries1:" << nentries1 << " nentries2:" << nentries2 << std::endl;
+    return false;
+  }
+  if (nvals1 != nvals2) {
+    std::cout << "nvals1:" << nvals1 << " nvals2:" << nvals2 << std::endl;
+    return false;
+  }
 
   KokkosKernels::Impl::kk_sort_graph
       <typename graph_t::row_map_type,
@@ -213,13 +222,23 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
       typename device::execution_space>(output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
   //KokkosKernels::Impl::kk_print_1Dview(output_mat2.graph.row_map);
 
-  if (!is_identical) return false;
+  if (!is_identical) {
+    std::cout << "rowmaps are different." << std::endl;
+    KokkosKernels::Impl::kk_print_1Dview(output_mat1.graph.row_map);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat2.graph.row_map);
+    return false;
+  }
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
       typename device::execution_space>(h_ent1, h_ent2, 0 );
 
-  if (!is_identical) return false;
+  if (!is_identical) {
+    std::cout << "entries are different." << std::endl;
+    KokkosKernels::Impl::kk_print_1Dview(h_ent1);
+    KokkosKernels::Impl::kk_print_1Dview(h_ent2);
+    return false;
+  }
 
 
   typedef typename Kokkos::Details::ArithTraits<typename scalar_view_t::non_const_value_type>::mag_type eps_type;
@@ -230,7 +249,13 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
       <scalar_view_t, scalar_view_t, eps_type,
       typename device::execution_space>(h_vals1, h_vals2, eps);
 
-  if (!is_identical) return false;
+  if (!is_identical) {
+    std::cout << "values are different." << std::endl;
+    KokkosKernels::Impl::kk_print_1Dview(output_mat1.values);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat2.values);
+
+    return false;
+  }
   return true;
 }
 }

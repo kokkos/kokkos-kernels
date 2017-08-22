@@ -583,10 +583,6 @@ public:
           spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
           //,row_mapC(), entriesC(), valsC()
           {
-            if(MyEnumExecSpace ==  KokkosKernels::Impl::Exec_CUDA){ 
-		concurrency = 131072;
-		//concurrency = 256;
-            }
           }
 
   KokkosSPGEMM(
@@ -612,11 +608,6 @@ public:
             spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
             //,row_mapB(), entriesC(), valsC()
             {
-            if(MyEnumExecSpace ==  KokkosKernels::Impl::Exec_CUDA){
-                concurrency = 131072;
-	//	concurrency = 256;             
-            }
-
 	    }
 
 
