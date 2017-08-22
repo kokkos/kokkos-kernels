@@ -582,8 +582,7 @@ public:
           spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
           spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
           //,row_mapC(), entriesC(), valsC()
-          {
-          }
+          {}
 
   KokkosSPGEMM(
       HandleType *handle_,
@@ -607,8 +606,7 @@ public:
             spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
             spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
             //,row_mapB(), entriesC(), valsC()
-            {
-	    }
+            {}
 
 
 

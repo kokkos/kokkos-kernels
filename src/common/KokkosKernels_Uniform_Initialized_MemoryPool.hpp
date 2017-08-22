@@ -146,9 +146,7 @@ template <typename MyExecSpace, typename data_type>
 class UniformMemoryPool{
 
 private:
-  //typedef bool lock_type;
   typedef int lock_type;
-  //typedef typename Kokkos::View <size_t *, MyExecSpace> index_view_t;
   typedef typename Kokkos::View <lock_type *, MyExecSpace> lock_view_t;
   typedef typename Kokkos::View <data_type *, MyExecSpace> data_view_t;
 
@@ -295,16 +293,12 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   data_type *get_arbitrary_free_chunk(const size_t &thread_index, const size_t max_tries) const{
-    //size_t chunk_index = thread_index % num_chunks;
     size_t chunk_index = thread_index & modular_num_chunks;
     size_t num_try = 0;
     while(!Kokkos::atomic_compare_exchange_strong(pchunk_locks + chunk_index, 0, 1)){
-    //while(!Kokkos::atomic_compare_exchange_strong(pchunk_locks + chunk_index, false, true)){
-      //chunk_index = (chunk_index + 1) % num_chunks;
       chunk_index = (chunk_index + 1) & modular_num_chunks;
       ++num_try;
       if (num_try > max_tries){
-        //std::cout << "thread_index:"<<thread_index << " modular_num_chunks:" << 
         return NULL;
       }
     }

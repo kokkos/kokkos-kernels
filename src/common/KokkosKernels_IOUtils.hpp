@@ -202,7 +202,6 @@ void kk_diagonally_dominant_sparseMatrix_generate(
 
     colInd[rowPtr[row+1] - 1]= row;
     values[rowPtr[row+1] - 1] = total_values * temp;
-    //std::cout << "total_values:" << total_values << 
   }
 }
 

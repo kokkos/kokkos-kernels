@@ -345,11 +345,11 @@ public:
     std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
+
     nnz_lno_persistent_work_host_view_t  h_color_xadj = Kokkos::create_mirror_view (color_xadj);
     Kokkos::deep_copy (h_color_xadj , color_xadj);
     MyExecSpace::fence();
-    
-   
+
 #ifdef KOKKOSKERNELS_TIME_REVERSE
     std::cout << "DEEP_COPY:" << timer.seconds() << std::endl;
     timer.reset();

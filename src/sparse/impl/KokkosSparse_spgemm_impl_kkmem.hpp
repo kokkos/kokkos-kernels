@@ -649,9 +649,9 @@ num_chunks = env_num_chunks;
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\t max_nnz: " << max_nnz
               << " chunk_size:" << chunksize
- 	      << " min_hash_size:" << min_hash_size
-              << " concurrency:" << concurrency 
- 	      << " MyExecSpace::concurrency():" << MyExecSpace::concurrency() 
+              << " min_hash_size:" << min_hash_size
+              << " concurrency:" << concurrency
+              << " MyExecSpace::concurrency():" << MyExecSpace::concurrency()
               << " numchunks:" << num_chunks << std::endl;
   }
 
