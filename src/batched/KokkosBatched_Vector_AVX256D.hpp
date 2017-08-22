@@ -477,11 +477,12 @@ namespace KokkosBatched {
 #ifdef __FMA__
       return _mm256_fmaddsub_pd(a, br, _mm256_mul_pd(as, bi));
 #else
-      Kokkos::abort("Not yet implemented");
-      return __m256d();
+      return _mm256_add_pd(_mm256_mul_pd(a, br),
+                           _mm256_xor_pd(_mm256_mul_pd(as, bi), 
+                                         _mm256_set_pd( 0.0, -0.0, 0.0, -0.0)));
 #endif
     }
-
+    
     template<typename SpT>
     inline
     static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator *= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {

@@ -43,6 +43,12 @@ namespace KokkosBatched {
 #pragma message "KOKKOS_BATCHED_DISABLE_AVX512"
 #endif
 
+#if defined(__FMA__)
+#pragma message "KOKKOS_BATCHED_ENABLE_FMA"
+#else
+#pragma message "KOKKOS_BATCHED_DISABLE_FMA"
+#endif
+
     // #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
     // #pragma ivdep
     // #endif
