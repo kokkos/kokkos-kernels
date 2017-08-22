@@ -1,2 +1,2 @@
-#include "Test_Serial.hpp"
+#include "Test_OpenMP.hpp"
 #include "Test_Batched_VectorArithmatic.hpp"
