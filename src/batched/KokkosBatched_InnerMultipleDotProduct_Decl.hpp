@@ -19,21 +19,19 @@ namespace KokkosBatched {
 	  _xs0(xs0),
 	  _ys0(ys0) {}
 
-      template<typename ScalarType,
-	       typename ValueType>
+      template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int 
-      serial_invoke(const ScalarType alpha,
+      serial_invoke(const ValueType alpha,
 		    const ValueType *__restrict__ A,
 		    const ValueType *__restrict__ x,
 		    const int n, 
 		    /**/  ValueType *__restrict__ y);
 
-      template<typename ScalarType,
-	       typename ValueType>
+      template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       int
-      serial_invoke(const ScalarType alpha,
+      serial_invoke(const ValueType alpha,
 		    const ValueType *__restrict__ A,
 		    const ValueType *__restrict__ x,
 		    const int m, const int n, 

@@ -480,8 +480,16 @@ namespace KokkosBatched {
 #if defined(__FMA__)
       return _mm512_fmaddsub_pd(a, br, _mm512_mul_pd(as, bi));
 #else
-      Kokkos::abort("Not yet implemented");
-      return __m512d();
+      // ** AVX512DQ 
+      // return _mm512_add_pd(_mm512_mul_pd(a, br),
+      //                      _mm512_mask_xor_pd(_mm512_mul_pd(as, bi), 0x55, _mm512_set1_pd(-0.0)));
+      return _mm512_add_pd(_mm512_mul_pd(a, br),
+                           _mm512_xor_pd(_mm512_mul_pd(as, bi),
+                                         _mm512_set_pd( 0.0, -0.0, 0.0, -0.0,
+                                                        0.0, -0.0, 0.0, -0.0 )));
+      // ** AVX512F (probably expensive, need to check cost and compare with the above)
+      // const __mm512d cc = _mm512_mul_pd(as, bi);
+      // return _mm512_mask_sub_pd(_mm512_mask_add_pd(_mm512_mul_pd(a, br), 0x55, cc), 0xaa, cc);
 #endif
     }
 
