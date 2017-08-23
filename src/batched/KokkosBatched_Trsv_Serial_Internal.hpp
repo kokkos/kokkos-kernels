@@ -50,9 +50,9 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ b, const int bs0) {
       typedef ValueType value_type;
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, alpha, b, bs0);
         if (m <= 0) return 0;
 
         for (int p=0;p<m;++p) {
@@ -91,9 +91,9 @@ namespace KokkosBatched {
         mbAlgo = Algo::Trsv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, alpha, b, bs0);
         if (m <= 0) return 0;
 
         /// case cuda: team size is large and blocksize (mb,nb) is small
@@ -112,7 +112,7 @@ namespace KokkosBatched {
           else               trsm_n.serial_invoke(Ap, pb, 1, bp);
 
           // gemv update
-          GemvInternal<Algo::Gemv::Blocked>
+          SerialGemvInternal<Algo::Gemv::Blocked>
             ::invoke(m-p-pb, pb,
                      -1,
                      Ap+pb*as0, as0, as1,
@@ -155,9 +155,9 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ b, const int bs0) {
       typedef ValueType value_type;
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, alpha, b, bs0);
         if (m <= 0) return 0;
 
         value_type *__restrict__ b0 = b;
@@ -194,9 +194,9 @@ namespace KokkosBatched {
       };
 
       // note that parallel range is different ( m*n vs m-1*n);
-      if (alpha == 0)   SerialSetInternal::invoke(m, 0, b, bs0);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, 0, b, bs0);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, value_type(alpha), b, bs0);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, alpha, b, bs0);
         if (m <= 0) return 0;
 
         InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
@@ -217,12 +217,12 @@ namespace KokkosBatched {
           else               trsm_n.serial_invoke(Ap, pb, 1, bp);
 
           // gemv update
-          GemvInternal<Algo::Gemv::Blocked>
+          SerialGemvInternal<Algo::Gemv::Blocked>
             ::invoke(p, pb,
-                     -1,
+                     -1.0,
                      Ap-p*as0, as0, as1,
-                     bp, 1,
-                     1,
+                     bp, 1.0,
+                     1.0,
                      b, bs0);
         }
       }

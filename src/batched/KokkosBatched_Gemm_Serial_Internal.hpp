@@ -50,10 +50,10 @@ namespace KokkosBatched {
       
       typedef ValueType value_type;
       
-      if      (beta == 0) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
-      else if (beta != 1) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
+      if      (beta == ScalarType(0.0)) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
+      else if (beta != ScalarType(1.0)) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
       
-      if (alpha != 0) {
+      if (alpha != ScalarType(0.0)) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
         
         const value_type alpha_value(alpha);
@@ -97,10 +97,10 @@ namespace KokkosBatched {
         nbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
       };
           
-      if      (beta == 0) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
-      else if (beta != 1) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
+      if      (beta == ScalarType(0.0)) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
+      else if (beta != ScalarType(1.0)) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
       
-      if (alpha != 0) {
+      if (alpha != ScalarType(0)) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
         const value_type alpha_value(alpha);
 

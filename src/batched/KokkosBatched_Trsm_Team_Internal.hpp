@@ -49,9 +49,9 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
       typedef ValueType value_type;
 
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
 
         for (int p=0;p<m;++p) {
@@ -106,9 +106,9 @@ namespace KokkosBatched {
       };
 
       // note that parallel range is different ( m*n vs m-1*n);        
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
 
         ///
@@ -196,9 +196,9 @@ namespace KokkosBatched {
       typedef ValueType value_type;
   
       // note that parallel range is different ( m*n vs m-1*n);        
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
         
         value_type *__restrict__ B0 = B;
@@ -251,9 +251,9 @@ namespace KokkosBatched {
       };
 
       // note that parallel range is different ( m*n vs m-1*n);        
-      if (alpha == 0)   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   TeamSetInternal::invoke(member, m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) TeamScaleInternal::invoke(member, m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
 
         InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);

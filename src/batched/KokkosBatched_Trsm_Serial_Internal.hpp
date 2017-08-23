@@ -45,9 +45,9 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
       typedef ValueType value_type;
         
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
 
         for (int p=0;p<m;++p) {
@@ -98,9 +98,9 @@ namespace KokkosBatched {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
 
         const value_type minus_one(-1);
@@ -169,9 +169,9 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
       typedef ValueType value_type;
   
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
         
         value_type *__restrict__ B0 = B;
@@ -218,9 +218,9 @@ namespace KokkosBatched {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
+      if (alpha == ScalarType(0.0))   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != ScalarType(1.0)) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
 
         const value_type minus_one(-1);
