@@ -17,7 +17,7 @@ namespace KokkosBatched {
     public:
       using type = Vector<VectorTag<AVX<double,SpT>,8> >;
       using value_type = double;
-      using real_type = double;
+      using mag_type = double;
 
       enum : int { vector_length = 8 };
 
@@ -251,7 +251,7 @@ namespace KokkosBatched {
     public:
       using type = Vector<VectorTag<AVX<double,SpT>,4> >;
       using value_type = Kokkos::complex<double>;
-      using real_type = double;
+      using mag_type = double;
 
       enum : int { vector_length = 4 };
 
@@ -272,7 +272,7 @@ namespace KokkosBatched {
         _data.v = _mm512_set_pd(val.imag(),val.real(),val.imag(),val.real(),
                                 val.imag(),val.real(),val.imag(),val.real());
       }
-      inline Vector(const real_type val) {
+      inline Vector(const mag_type val) {
         _data.v = _mm512_set_pd(0,val,0,val,
                                 0,val,0,val);
       }
@@ -292,24 +292,24 @@ namespace KokkosBatched {
 
       inline
       type& loadAligned(value_type const *p) {
-        _data.v = _mm512_load_pd((real_type*)p);
+        _data.v = _mm512_load_pd((mag_type*)p);
         return *this;
       }
 
       inline
       type& loadUnaligned(value_type const *p) {
-        _data.v = _mm512_loadu_pd((real_type*)p);
+        _data.v = _mm512_loadu_pd((mag_type*)p);
         return *this;
       }
 
       inline
       void storeAligned(value_type *p) const {
-        _mm512_store_pd((real_type*)p, _data.v);
+        _mm512_store_pd((mag_type*)p, _data.v);
       }
 
       inline
       void storeUnaligned(value_type *p) const {
-        _mm512_storeu_pd((real_type*)p, _data.v);
+        _mm512_storeu_pd((mag_type*)p, _data.v);
       }
 
       inline
