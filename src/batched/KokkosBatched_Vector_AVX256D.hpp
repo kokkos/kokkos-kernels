@@ -81,39 +81,45 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator + (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator + (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       return _mm256_add_pd(a, b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator + (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator + (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
       return a + Vector<VectorTag<AVX<double,SpT>,4> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator + (const double a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator + (const double a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       return Vector<VectorTag<AVX<double,SpT>,4> >(a) + b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator += (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator += (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       a = a + b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator += (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator += (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
       a = a + b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator ++ (Vector<VectorTag<AVX<double,SpT>,4> > & a, int) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator ++ (Vector<VectorTag<AVX<double,SpT>,4> > & a, int) {
       Vector<VectorTag<AVX<double,SpT>,4> > a0 = a;
       a = a + 1.0;
       return a0;
@@ -121,46 +127,53 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator ++ (Vector<VectorTag<AVX<double,SpT>,4> > & a) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator ++ (Vector<VectorTag<AVX<double,SpT>,4> > & a) {
       a = a + 1.0;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       return _mm256_sub_pd(a, b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
       return a - Vector<VectorTag<AVX<double,SpT>,4> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator - (const double a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator - (const double a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       return Vector<VectorTag<AVX<double,SpT>,4> >(a) - b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator -= (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator -= (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       a = a - b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator -= (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator -= (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
       a = a - b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator -- (Vector<VectorTag<AVX<double,SpT>,4> > & a, int) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator -- (Vector<VectorTag<AVX<double,SpT>,4> > & a, int) {
       Vector<VectorTag<AVX<double,SpT>,4> > a0 = a;
       a = a - 1.0;
       return a0;
@@ -168,20 +181,23 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator -- (Vector<VectorTag<AVX<double,SpT>,4> > & a) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator -- (Vector<VectorTag<AVX<double,SpT>,4> > & a) {
       a = a - 1.0;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator * (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator * (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       return _mm256_mul_pd(a, b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator * (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator * (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
       return a * Vector<VectorTag<AVX<double,SpT>,4> >(b);
     }
 
@@ -193,54 +209,62 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator *= (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator *= (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       a = a * b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator *= (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator *= (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
       a = a * b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator / (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator / (Vector<VectorTag<AVX<double,SpT>,4> > const & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       return _mm256_div_pd(a, b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator / (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator / (Vector<VectorTag<AVX<double,SpT>,4> > const & a, const double b) {
       return a / Vector<VectorTag<AVX<double,SpT>,4> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator / (const double a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator / (const double a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       return Vector<VectorTag<AVX<double,SpT>,4> >(a) / b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator /= (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator /= (Vector<VectorTag<AVX<double,SpT>,4> > & a, Vector<VectorTag<AVX<double,SpT>,4> > const & b) {
       a = a / b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > & operator /= (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
+    static Vector<VectorTag<AVX<double,SpT>,4> > & 
+    operator /= (Vector<VectorTag<AVX<double,SpT>,4> > & a, const double b) {
       a = a / b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<double,SpT>,4> > operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a) {
-      return -1*a;
+    static Vector<VectorTag<AVX<double,SpT>,4> > 
+    operator - (Vector<VectorTag<AVX<double,SpT>,4> > const & a) {
+      return -1.0*a;
     }
 
     ///
@@ -320,13 +344,15 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator + (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator + (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return _mm256_add_pd(a, b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator += (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator += (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       a = a + b;
       return a;
     }
@@ -335,19 +361,22 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator + (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator + (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
       return a + Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator + (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator + (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(a) + b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator += (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator += (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
       a = a + b;
       return a;
     }
@@ -356,19 +385,22 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator + (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator + (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
       return a + Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator + (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator + (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(a) + b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator += (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator += (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
       a = a + b;
       return a;
     }
@@ -377,7 +409,8 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator ++ (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, int) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator ++ (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, int) {
       Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > a0 = a;
       a = a + 1.0;
       return a0;
@@ -385,7 +418,8 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator ++ (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator ++ (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a) {
       a = a + 1.0;
       return a;
     }
@@ -394,13 +428,15 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return _mm256_sub_pd(a, b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator -= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator -= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       a = a - b;
       return a;
     }
@@ -409,19 +445,22 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
       return a - Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator - (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(a) - b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator -= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator -= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
       a = a - b;
       return a;
     }
@@ -430,19 +469,22 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
       return a - Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator - (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(a) - b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator -= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator -= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
       a = a - b;
       return a;
     }
@@ -451,7 +493,8 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, int) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, int) {
       Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > a0 = a;
       a = a - 1.0;
       return a0;
@@ -459,7 +502,8 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator -- (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a) {
       a = a - 1.0;
       return a;
     }
@@ -468,7 +512,8 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator * (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator * (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       const __m256d
         as = _mm256_permute_pd(a, 0x5),
         br = _mm256_permute_pd(b, 0x0),
@@ -485,7 +530,8 @@ namespace KokkosBatched {
     
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator *= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator *= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       a = a * b;
       return a;
     }
@@ -494,19 +540,22 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator * (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator * (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
       return a * Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator * (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator * (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(a) * b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator *= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator *= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
       a = a * b;
       return a;
     }
@@ -515,19 +564,22 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator * (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator * (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
       return _mm256_mul_pd(a, _mm256_set1_pd(b));
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator * (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator * (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return _mm256_mul_pd(_mm256_set1_pd(a), b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator *= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator *= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
       a = a * b;
       return a;
     }
@@ -536,15 +588,28 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator / (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
-      Kokkos::abort("Not yet implemented");
-      return _mm256_div_pd(a, b);
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator / (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
+      const __m256d
+        as = _mm256_permute_pd(a, 0x5),
+        cb = _mm256_xor_pd(b, _mm256_set_pd(-0.0, 0.0, -0.0, 0.0)),
+        br = _mm256_permute_pd(cb, 0x0),
+        bi = _mm256_permute_pd(cb, 0xf);
+
+#ifdef __FMA__
+      return _mm256_div_pd(_mm256_fmaddsub_pd(a, br, _mm256_mul_pd(as, bi)),_mm256_mul_pd(br, br) + _mm256_mul_pd(bi, bi));
+#else
+      return _mm256_div_pd(_mm256_add_pd(_mm256_mul_pd(a, br),
+                                         _mm256_xor_pd(_mm256_mul_pd(as, bi), 
+                                                       _mm256_set_pd( 0.0, -0.0, 0.0, -0.0))), 
+                           _mm256_mul_pd(br, br) + _mm256_mul_pd(bi, bi));
+#endif
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator /= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
-      Kokkos::abort("Not yet implemented");
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator /= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       a = a / b;
       return a;
     }
@@ -553,22 +618,22 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator / (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
-      Kokkos::abort("Not yet implemented");
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator / (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const Kokkos::complex<double> b) {
       return a / Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(b);
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator / (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
-      Kokkos::abort("Not yet implemented");
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator / (const Kokkos::complex<double> a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(a) / b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator /= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
-      Kokkos::abort("Not yet implemented");
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator /= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const Kokkos::complex<double> b) {
       a = a / b;
       return a;
     }
@@ -577,30 +642,31 @@ namespace KokkosBatched {
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator / (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
-      Kokkos::abort("Not yet implemented");
-      return a / Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(b);
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator / (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a, const double b) {
+      return _mm256_div_pd(a, _mm256_set1_pd(b));
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator / (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
-      Kokkos::abort("Not yet implemented");
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator / (const double a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & b) {
       return Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> >(a) / b;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & operator /= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
-      Kokkos::abort("Not yet implemented");
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & 
+    operator /= (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > & a, const double b) {
       a = a / b;
       return a;
     }
 
     template<typename SpT>
     inline
-    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a) {
-      return -1*a;
+    static Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > 
+    operator - (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,2> > const & a) {
+      return -1.0*a;
     }
 
   }

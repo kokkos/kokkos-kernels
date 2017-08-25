@@ -1,8 +1,6 @@
 #ifndef __KOKKOSBATCHED_VECTOR_SIMD_HPP__
 #define __KOKKOSBATCHED_VECTOR_SIMD_HPP__
 
-#include "Kokkos_ArithTraits.hpp"
-
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace KokkosBatched {
@@ -175,17 +173,18 @@ namespace KokkosBatched {
       }
 
     };
-
-
-    template<typename T, typename SpT, int l>
+    
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator + (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator + (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a,  Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      Vector<VectorTag<SIMD<Ta,SpT>,l> > r_val;
 #if                                                     \
   defined (KOKKOS_HAVE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<Ta,SpT>,l>::member_type>(l),
          [&](const int &i) {
           r_val[i] = a[i] + b[i];
         });
@@ -205,56 +204,70 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator + (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
-      return a + Vector<VectorTag<SIMD<T,SpT>,l> >(b);
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator + (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a, const Tb b) {
+      return a + Vector<VectorTag<SIMD<Tb,SpT>,l> >(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator + (const typename VectorTag<SIMD<T,SpT>,l>::value_type a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) + b;
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Tb,SpT>,l> > >::type 
+    operator + (const Ta a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      return Vector<VectorTag<SIMD<Tb,SpT>,l> >(a) + b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator += (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator += (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      a = a + b;
+      return a;
+    }
+
+    template<typename Ta, typename Tb, typename SpT, int l>
+    KOKKOS_INLINE_FUNCTION
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator += (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, const Tb b) {
       a = a + b;
       return a;
     }
 
     template<typename T, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator += (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
-      a = a + b;
-      return a;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
+    static 
+    Vector<VectorTag<SIMD<T,SpT>,l> >
+    operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
       Vector<VectorTag<SIMD<T,SpT>,l> > a0 = a;
-      a = a + 1.0;
+      a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a0;
     }
 
     template<typename T, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
-      a = a + 1.0;
+    static
+    Vector<VectorTag<SIMD<T,SpT>,l> > & 
+    operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
+      a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator - (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      Vector<VectorTag<SIMD<Ta,SpT>,l> > r_val;
 #if                                                     \
   defined (KOKKOS_HAVE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<Ta,SpT>,l>::member_type>(l),
          [&](const int &i) {
           r_val[i] = a[i] - b[i];
         });
@@ -276,19 +289,9 @@ namespace KokkosBatched {
 
     template<typename T, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
-      return a - Vector<VectorTag<SIMD<T,SpT>,l> >(b);
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator - (const typename VectorTag<SIMD<T,SpT>,l>::value_type a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) - b;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a) {
+    static 
+    Vector<VectorTag<SIMD<T,SpT>,l> > 
+    operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a) {
 #if                                                     \
   defined (KOKKOS_HAVE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
@@ -313,44 +316,70 @@ namespace KokkosBatched {
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator -= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator - (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a, const Tb b) {
+      return a - Vector<VectorTag<SIMD<Tb,SpT>,l> >(b);
+    }
+
+    template<typename Ta, typename Tb, typename SpT, int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Tb,SpT>,l> > >::type 
+    operator - (const Ta a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      return Vector<VectorTag<SIMD<Tb,SpT>,l> >(a) - b;
+    }
+
+    template<typename Ta, typename Tb, typename SpT, int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator -= (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      a = a - b;
+      return a;
+    }
+
+    template<typename Ta, typename Tb, typename SpT, int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator -= (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, const Tb b) {
       a = a - b;
       return a;
     }
 
     template<typename T, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator -= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
-      a = a - b;
-      return a;
-    }
-
-    template<typename T, typename SpT, int l>
-    KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
+    static 
+    Vector<VectorTag<SIMD<T,SpT>,l> > 
+    operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
       Vector<VectorTag<SIMD<T,SpT>,l> > a0 = a;
-      a = a - 1.0;
+      a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a0;
     }
 
     template<typename T, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
-      a = a - 1.0;
+    static
+    Vector<VectorTag<SIMD<T,SpT>,l> > & 
+    operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
+      a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
     }
-
-    template<typename T, typename SpT, int l>
+    
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator * (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator * (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      Vector<VectorTag<SIMD<Ta,SpT>,l> > r_val;
 #if                                                     \
   defined (KOKKOS_HAVE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<Ta,SpT>,l>::member_type>(l),
          [&](const int &i) {
           r_val[i] = a[i] * b[i];
         });
@@ -370,41 +399,51 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator * (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
-      return a * Vector<VectorTag<SIMD<T,SpT>,l> >(b);
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator * (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a, const Tb b) {
+      return a * Vector<VectorTag<SIMD<Tb,SpT>,l> >(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator * (const typename VectorTag<SIMD<T,SpT>,l>::value_type a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) * b;
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Tb,SpT>,l> > >::type 
+    operator * (const Ta a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      return Vector<VectorTag<SIMD<Tb,SpT>,l> >(a) * b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator *= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator *= (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
       a = a * b;
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator *= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator *= (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, const Tb b) {
       a = a * b;
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator / (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator / (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      Vector<VectorTag<SIMD<Ta,SpT>,l> > r_val;
 #if                                                     \
   defined (KOKKOS_HAVE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<Ta,SpT>,l>::member_type>(l),
          [&](const int &i) {
           r_val[i] = a[i] / b[i];
         });
@@ -424,28 +463,36 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator / (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
-      return a / Vector<VectorTag<SIMD<T,SpT>,l> >(b);
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type 
+    operator / (Vector<VectorTag<SIMD<Ta,SpT>,l> > const & a, const Tb b) {
+      return a / Vector<VectorTag<SIMD<Tb,SpT>,l> >(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > operator / (const typename VectorTag<SIMD<T,SpT>,l>::value_type a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) / b;
+    static 
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Tb,SpT>,l> > >::type 
+    operator / (const Ta a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
+      return Vector<VectorTag<SIMD<Tb,SpT>,l> >(a) / b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator /= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator /= (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, Vector<VectorTag<SIMD<Tb,SpT>,l> > const & b) {
       a = a / b;
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename Ta, typename Tb, typename SpT, int l>
     KOKKOS_INLINE_FUNCTION
-    static Vector<VectorTag<SIMD<T,SpT>,l> > & operator /= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const typename VectorTag<SIMD<T,SpT>,l>::value_type b) {
+    static
+    typename std::enable_if<is_convertible<Ta,Tb>::value,Vector<VectorTag<SIMD<Ta,SpT>,l> > >::type & 
+    operator /= (Vector<VectorTag<SIMD<Ta,SpT>,l> > & a, const Tb b) {
       a = a / b;
       return a;
     }
