@@ -529,18 +529,15 @@ namespace KokkosBatched {
 #if defined(__FMA__)
       return _mm512_fmaddsub_pd(a, br, _mm512_mul_pd(as, bi));
 #else
-      // ** AVX512DQ 
-      // return _mm512_add_pd(_mm512_mul_pd(a, br),
-      //                      _mm512_mask_xor_pd(_mm512_mul_pd(as, bi), 0x55, _mm512_set1_pd(-0.0)));
-
-      // let's not use mask
+#if defined(__AVX512DQ__)
       return _mm512_add_pd(_mm512_mul_pd(a, br),
                            _mm512_xor_pd(_mm512_mul_pd(as, bi),
                                          _mm512_set_pd( 0.0, -0.0, 0.0, -0.0,
                                                         0.0, -0.0, 0.0, -0.0 )));
-      // ** AVX512F (probably expensive, need to check cost and compare with the above)
-      // const __mm512d cc = _mm512_mul_pd(as, bi);
-      // return _mm512_mask_sub_pd(_mm512_mask_add_pd(_mm512_mul_pd(a, br), 0x55, cc), 0xaa, cc);
+#else 
+      const __mm512d cc = _mm512_mul_pd(as, bi);
+      return _mm512_mask_sub_pd(_mm512_mask_add_pd(_mm512_mul_pd(a, br), 0x55, cc), 0xaa, cc);
+#endif
 #endif
     }
 
@@ -608,20 +605,31 @@ namespace KokkosBatched {
     operator / (Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > const & a, Vector<VectorTag<AVX<Kokkos::complex<double>,SpT>,4> > const & b) {
       const __m512d
         as = _mm512_permute_pd(a, 0x55),
+#if defined (__AVX512DQ__)
         cb = _mm512_xor_pd(b, _mm512_set_pd(-0.0, 0.0, -0.0, 0.0,
                                             -0.0, 0.0, -0.0, 0.0)),
+#else
+        cb = _mm512_xor_epi64(b, _mm512_set_pd(-0.0, 0.0, -0.0, 0.0,
+                                               -0.0, 0.0, -0.0, 0.0)),
+#endif
         br = _mm512_permute_pd(cb, 0x00),
         bi = _mm512_permute_pd(cb, 0xff);
-
+      
 #if defined(__FMA__)
       return _mm512_div_pd(_mm512_fmaddsub_pd(a, br, _mm512_mul_pd(as, bi)),
                            _mm512_add_pd(_mm512_mul_pd(br, br), _mm512_mul_pd(bi, bi)));
 #else
+#if defined (__AVX512DQ__)      
       return _mm512_div_pd(_mm512_add_pd(_mm512_mul_pd(a, br),
-                          _mm512_xor_pd(_mm512_mul_pd(as, bi),
+                                         _mm512_xor_pd(_mm512_mul_pd(as, bi),
                                                        _mm512_set_pd( 0.0, -0.0, 0.0, -0.0,
                                                                       0.0, -0.0, 0.0, -0.0 ))),
                            _mm512_add_pd(_mm512_mul_pd(br, br), _mm512_mul_pd(bi, bi)));
+#else
+      const __mm512d cc = _mm512_mul_pd(as, bi);
+      return _mm512_div_pd(_mm512_mask_sub_pd(_mm512_mask_add_pd(_mm512_mul_pd(a, br), 0x55, cc), 0xaa, cc),
+                           _mm512_add_pd(_mm512_mul_pd(br, br), _mm512_mul_pd(bi, bi)));      
+#endif
 #endif
     }
 

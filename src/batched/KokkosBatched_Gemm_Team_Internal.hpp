@@ -23,7 +23,7 @@ namespace KokkosBatched {
                typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      static int
+      static typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
       invoke(const MemberType &member, 
              const int m, const int n, const int k,
              const ScalarType alpha, 
@@ -38,7 +38,7 @@ namespace KokkosBatched {
              typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    int
+    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
     TeamGemmInternal<Algo::Gemm::Unblocked>::
     invoke(const MemberType &member, 
            const int m, const int n, const int k,
@@ -50,16 +50,15 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       
-      typedef ValueType value_type;
+      const ScalarType one(1.0), zero(0.0);
         
-      if      (beta == ScalarType(0.0)) TeamSetInternal  ::invoke(member, m, n, 0,    C, cs0, cs1);
-      else if (beta != ScalarType(1.0)) TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
+      if      (beta == zero) TeamSetInternal  ::invoke(member, m, n, zero, C, cs0, cs1);
+      else if (beta != one ) TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
         
       if (alpha != ScalarType(0.0)) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
 
-        const value_type alpha_value(alpha);
-        if (beta != ScalarType(1.0))
+        if (beta != one) 
           member.team_barrier();
             
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m*n),[&](const int &ij) {
@@ -70,14 +69,14 @@ namespace KokkosBatched {
 #else
             const int i = ij/n, j = ij%n;
 #endif
-            const value_type
+            const ValueType
               *__restrict__ pA = A+i*as0,
               *__restrict__ pB = B+j*bs1;
             
-            value_type c = 0;
+            ValueType c = 0;
             for (int p=0;p<k;++p) 
               c += pA[p*as1]*pB[p*bs0];
-            C[i*cs0+j*cs1] += alpha_value*c;
+            C[i*cs0+j*cs1] += alpha*c;
           });
       }
       return 0;
@@ -88,7 +87,7 @@ namespace KokkosBatched {
              typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    int
+    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
     TeamGemmInternal<Algo::Gemm::Blocked>::
     invoke(const MemberType &member, 
            const int m, const int n, const int k,
@@ -100,20 +99,20 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
 
-      typedef ValueType value_type;
       enum : int {
         mbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
         nbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
       };
+
+      const ScalarType one(1.0), zero(0.0);
           
-      if      (beta == ScalarType(0.0)) TeamSetInternal  ::invoke(member, m, n, 0,    C, cs0, cs1);
-      else if (beta != ScalarType(1.0)) TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
+      if      (beta == zero) TeamSetInternal  ::invoke(member, m, n, zero, C, cs0, cs1);
+      else if (beta != one ) TeamScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
 
       if (alpha != ScalarType(0.0)) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
 
-        const value_type alpha_value(alpha);
-        if (beta != ScalarType(1.0))
+        if (beta != one)
           member.team_barrier();
 
         ///
@@ -122,9 +121,9 @@ namespace KokkosBatched {
         auto gemm = [&](const int ib, 
                         const int jb,
                         const int pb,
-                        const value_type *__restrict__ AA,
-                        const value_type *__restrict__ BB,
-                        /**/  value_type *__restrict__ CC) {
+                        const ValueType *__restrict__ AA,
+                        const ValueType *__restrict__ BB,
+                        /**/  ValueType *__restrict__ CC) {
           const int              
           mb = mbAlgo, mp = (ib%mb), mq = (ib/mb) + (mp>0),
           nb = nbAlgo, np = (jb%nb), nq = (jb/nb) + (np>0);
@@ -140,7 +139,7 @@ namespace KokkosBatched {
 #else
             const int i = ij/nq*mb, j = ij%nq*nb;
 #endif
-            inner.serial_invoke(alpha_value, 
+            inner.serial_invoke(alpha, 
                                 AA+i*as0, BB+j*bs1, 
                                 (i+mb) > ib ? mp : mb, 
                                 (j+nb) > jb ? np : nb, 
@@ -165,9 +164,9 @@ namespace KokkosBatched {
           //     for (int ii=0;ii<m;ii+=mc) {
           //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
                 
-          //       const value_type *__restrict__ AA = A+ii*as0+pp*as1;
-          //       const value_type *__restrict__ BB = B+pp*bs0+jj*bs1;
-          //       /**/  value_type *__restrict__ CC = C+ii*cs0+jj*cs1;
+          //       const ValueType *__restrict__ AA = A+ii*as0+pp*as1;
+          //       const ValueType *__restrict__ BB = B+pp*bs0+jj*bs1;
+          //       /**/  ValueType *__restrict__ CC = C+ii*cs0+jj*cs1;
                 
           //       gemm(ib, jb, pb, AA, BB, CC);                  
           //     } // for ii

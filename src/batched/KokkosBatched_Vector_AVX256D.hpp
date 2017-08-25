@@ -673,6 +673,5 @@ namespace KokkosBatched {
   }
 }
 
-
 #endif
 #endif

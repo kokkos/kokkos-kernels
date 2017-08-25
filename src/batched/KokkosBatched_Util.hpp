@@ -28,6 +28,11 @@ namespace KokkosBatched {
 
     void print_compiler_info();
 
+    template<typename T>
+    struct is_vector {
+      static constexpr bool value = false;
+    };
+
     // we do not allow mixed precision
     template<typename Ta, typename Tb>
     struct is_convertible {
