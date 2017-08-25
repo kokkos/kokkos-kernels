@@ -519,7 +519,7 @@ namespace KokkosBatched {
         br = _mm256_permute_pd(b, 0x0),
         bi = _mm256_permute_pd(b, 0xf);
 
-#ifdef __FMA__
+#if defined(__FMA__)
       return _mm256_fmaddsub_pd(a, br, _mm256_mul_pd(as, bi));
 #else
       return _mm256_add_pd(_mm256_mul_pd(a, br),
@@ -596,13 +596,14 @@ namespace KokkosBatched {
         br = _mm256_permute_pd(cb, 0x0),
         bi = _mm256_permute_pd(cb, 0xf);
 
-#ifdef __FMA__
-      return _mm256_div_pd(_mm256_fmaddsub_pd(a, br, _mm256_mul_pd(as, bi)),_mm256_mul_pd(br, br) + _mm256_mul_pd(bi, bi));
+#if defined(__FMA__)
+      return _mm256_div_pd(_mm256_fmaddsub_pd(a, br, _mm256_mul_pd(as, bi)),
+                           _mm256_add_pd(_mm256_mul_pd(br, br), _mm256_mul_pd(bi, bi)));
 #else
       return _mm256_div_pd(_mm256_add_pd(_mm256_mul_pd(a, br),
                                          _mm256_xor_pd(_mm256_mul_pd(as, bi), 
                                                        _mm256_set_pd( 0.0, -0.0, 0.0, -0.0))), 
-                           _mm256_mul_pd(br, br) + _mm256_mul_pd(bi, bi));
+                           _mm256_add_pd(_mm256_mul_pd(br, br), _mm256_mul_pd(bi, bi)));
 #endif
     }
 

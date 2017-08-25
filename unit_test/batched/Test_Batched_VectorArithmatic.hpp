@@ -72,12 +72,12 @@ namespace Test {
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], a[k]-b[k], eps*c[k]);      
       
-        /// test : scalar - vec
+        /// test : value - vec
         c = alpha - b;
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], alpha-b[k], eps*c[k]);      
       
-        /// test : vec + scalar
+        /// test : vec + value
         c = b - alpha;
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], b[k]-alpha, eps*c[k]);      
@@ -98,12 +98,12 @@ namespace Test {
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], a[k]*b[k], eps*c[k]);      
       
-        /// test : scalar * vec
+        /// test : value * vec
         c = alpha * b;
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], alpha*b[k], eps*c[k]);      
       
-        /// test : vec + scalar
+        /// test : vec + value
         c = b * alpha;
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], b[k]*alpha, eps*c[k]);      
@@ -124,15 +124,25 @@ namespace Test {
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], a[k]/b[k], eps*c[k]);      
       
-      //   /// test : scalar / vec
-      //   c = alpha / b;
-      //   for (int k=0;k<vector_length;++k) 
-      //     EXPECT_NEAR_KK( c[k], alpha/b[k], eps*c[k]);      
-      
-      //   /// test : vec / scalar
-      //   c = b / alpha;
-      //   for (int k=0;k<vector_length;++k) 
-      //     EXPECT_NEAR_KK( c[k], b[k]/alpha, eps*c[k]);      
+        //   /// test : value / vec
+        //   c = alpha / b;
+        //   for (int k=0;k<vector_length;++k) 
+        //     EXPECT_NEAR_KK( c[k], alpha/b[k], eps*c[k]);      
+        
+        //   /// test : vec / value
+        //   c = b / alpha;
+        //   for (int k=0;k<vector_length;++k) 
+        //     EXPECT_NEAR_KK( c[k], b[k]/alpha, eps*c[k]);      
+        //
+        //   /// test : mag / vec
+        //   c = beta / a;
+        //   for (int k=0;k<vector_length;++k) 
+        //     EXPECT_NEAR_KK( c[k], beta/a[k], eps*c[k]);      
+        
+        //   /// test : vec / value
+        //   c = a / beta;
+        //   for (int k=0;k<vector_length;++k) 
+        //     EXPECT_NEAR_KK( c[k], a[k]/beta, eps*c[k]);      
       }
       {
         /// test : vec  -vec
