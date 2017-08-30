@@ -124,15 +124,15 @@ namespace Test {
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], a[k]/b[k], eps*c[k]);      
       
-      //   /// test : scalar / vec
-      //   c = alpha / b;
-      //   for (int k=0;k<vector_length;++k) 
-      //     EXPECT_NEAR_KK( c[k], alpha/b[k], eps*c[k]);      
+        /// test : scalar / vec
+        c = alpha / b;
+        for (int k=0;k<vector_length;++k) 
+          EXPECT_NEAR_KK( c[k], alpha/b[k], eps*c[k]);      
       
-      //   /// test : vec / scalar
-      //   c = b / alpha;
-      //   for (int k=0;k<vector_length;++k) 
-      //     EXPECT_NEAR_KK( c[k], b[k]/alpha, eps*c[k]);      
+        /// test : vec / scalar
+        c = b / alpha;
+        for (int k=0;k<vector_length;++k) 
+          EXPECT_NEAR_KK( c[k], b[k]/alpha, eps*c[k]);      
       }
       {
         /// test : vec  -vec

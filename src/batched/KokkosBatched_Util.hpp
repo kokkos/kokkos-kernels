@@ -28,41 +28,6 @@ namespace KokkosBatched {
 
     void print_compiler_info();
 
-    // we do not allow mixed precision
-    template<typename Ta, typename Tb>
-    struct is_convertible {
-      static constexpr bool is_specialized = ( Kokkos::Details::ArithTraits<Ta>::is_specialized &&
-                                               Kokkos::Details::ArithTraits<Tb>::is_specialized );
-
-      static constexpr bool is_mag_type_same = std::is_same<typename Kokkos::Details::ArithTraits<Ta>::mag_type,
-                                                            typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
-
-      static constexpr bool value = is_specialized && is_mag_type_same;
-    };
-
-    // // allow mixed precision
-    // template<typename Ta, typename Tb>
-    // struct is_convertible {
-    //   static constexpr bool is_specialized = ( Kokkos::Details::ArithTraits<Ta>::is_specialized &&
-    //                                            Kokkos::Details::ArithTraits<Tb>::is_specialized );
-
-    //   static constexpr bool is_mag_type_same = std::is_same<typename Kokkos::Details::ArithTraits<Ta>::mag_type,
-    //                                                         typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
-
-    //   static constexpr bool is_ta_integer = Kokkos::Details::ArithTraits<Ta>::is_integer;
-    //   static constexpr bool is_tb_integer = Kokkos::Details::ArithTraits<Tb>::is_integer;;
-
-    //   static constexpr bool is_ta_complex = Kokkos::Details::ArithTraits<Ta>::is_complex;
-    //   static constexpr bool is_tb_complex = Kokkos::Details::ArithTraits<Ta>::is_complex;
-
-    //   static constexpr bool value = ( is_specialized && 
-    //                                   /// built-in real type
-    //                                   (  is_ta_integer && !is_ta_complex ?  is_tb_integer    : true ) &&
-    //                                   ( !is_ta_integer && !is_ta_complex ? !is_tb_complex    : true ) &&
-    //                                   /// complex type (complex need same mag type)
-    //                                   (                    is_ta_complex ?  is_mag_type_same : true );
-    // };
-
     // to use double, std::complex<double>, Kokkos::complex<double>
     using std::abs;
     using std::min;
