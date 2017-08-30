@@ -44,6 +44,9 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
       
+      for (int i=0;i<aa.dimension_0();++i)
+        aa(i,i) += 10.0;
+
       SerialTrsm<typename ParamTagType::side,
         typename ParamTagType::uplo,
         typename ParamTagType::trans,
@@ -69,7 +72,7 @@ namespace Test {
     typedef Kokkos::Details::ArithTraits<value_type> ats;
 
     /// randomized input testing views
-    ScalarType alpha = 1.5;
+    ScalarType alpha(1.0);
 
     ViewType
       a0("a0", N, BlkSize,BlkSize), a1("a1", N, BlkSize, BlkSize),
@@ -105,7 +108,7 @@ namespace Test {
           sum  += ats::abs(b0_host(k,i,j));
           diff += ats::abs(b0_host(k,i,j)-b1_host(k,i,j));
         }
-    EXPECT_NEAR_KK( diff/sum, 0, eps);
+    EXPECT_NEAR_KK( diff/sum, 0.0, eps);
   }
 }
 
@@ -120,18 +123,18 @@ int test_batched_trsm() {
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(    10, 15, 3);
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(  1024,  9, 2);
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(132231,  3, 1);
+    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(    10,  4, 4);
+    // Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(  1024,  9, 2);
+    // Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(132231,  3, 1);
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(    10, 15, 3);
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(  1024,  9, 2);
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(132231,  3, 1);
+    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(    10,  4, 4);
+    // Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(  1024,  9, 2);
+    // Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(132231,  3, 1);
   }
 #endif
 
