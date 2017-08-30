@@ -8,6 +8,7 @@
 
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Trsm_Team_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -39,22 +40,27 @@ namespace Test {
             const ViewType &b) 
       : _a(a), _b(b), _alpha(alpha) {}
 
+    template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const ParamTagType &, const int k) const {
+    void operator()(const ParamTagType &, const MemberType &member) const {
+      const int k = member.league_rank();
+      
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
 
-      SerialTrsm<typename ParamTagType::side,
+      TeamTrsm<MemberType,
+        typename ParamTagType::side,
         typename ParamTagType::uplo,
         typename ParamTagType::trans,
         typename ParamTagType::diag,
         AlgoTagType>::
-        invoke(_alpha, aa, bb);
+        invoke(member, _alpha, aa, bb);
     }
 
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _b.dimension_0());
+      const int league_size = _b.dimension_0();
+      Kokkos::TeamPolicy<DeviceType,ParamTagType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);
     }
   };
@@ -146,32 +152,32 @@ int test_batched_trsm() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_u_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_u_float_float ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_n_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_n_float_float ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_u_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_u_float_float ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_n_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_n_float_float ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_u_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_u_float_float ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_n_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_n_float_float ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
@@ -180,32 +186,32 @@ TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_n_float_float ) {
 
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_u_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_u_double_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_n_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_n_double_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_u_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_u_double_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_n_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_n_double_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_u_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_u_double_double ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_n_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_n_double_double ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
@@ -214,32 +220,32 @@ TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_n_double_double ) {
 
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_u_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_u_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_n_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_n_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_u_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_u_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_n_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_n_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_u_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_u_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_n_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_n_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
@@ -247,32 +253,32 @@ TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_n_dcomplex_dcomplex ) {
 
 
 
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_u_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_u_dcomplex_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_l_nt_n_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_l_nt_n_dcomplex_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_u_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_u_dcomplex_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_l_u_nt_n_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_l_u_nt_n_dcomplex_double ) {
   typedef ::Test::ParamTag<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_u_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_u_dcomplex_double ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_trsm_r_u_nt_n_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_trsm_r_u_nt_n_dcomplex_double ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
   test_batched_trsm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();

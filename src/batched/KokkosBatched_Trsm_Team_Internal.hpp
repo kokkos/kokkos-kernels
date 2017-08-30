@@ -148,7 +148,7 @@ namespace KokkosBatched {
             member.team_barrier();
                 
             // gemm update
-            GemmInternal<Algo::Gemm::Blocked>
+            TeamGemmInternal<Algo::Gemm::Blocked>
               ::invoke(member,
                        ib-p-pb, jb, pb,
                        minus_one,
@@ -296,7 +296,7 @@ namespace KokkosBatched {
             member.team_barrier();
                   
             // gemm update
-            GemmInternal<Algo::Gemm::Blocked>
+            TeamGemmInternal<Algo::Gemm::Blocked>
               ::invoke(member,
                        p, jb, pb,
                        minus_one,
