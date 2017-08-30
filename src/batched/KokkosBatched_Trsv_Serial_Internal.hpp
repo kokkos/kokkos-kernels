@@ -10,7 +10,7 @@
 #include "KokkosBatched_Scale_Internal.hpp"
 
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
-#include "KokkosBatched_Gemv_Team_Internal.hpp"
+#include "KokkosBatched_Gemv_Serial_Internal.hpp"
 
 
 namespace KokkosBatched {
@@ -112,8 +112,8 @@ namespace KokkosBatched {
           const int pb = ((p+mb) > m ? (m-p) : mb);
 
           // trsm update
-          const value_type *__restrict__ Ap = A+p*as0+p*as1;
-          /**/  value_type *__restrict__ bp = b+p*bs0;
+          const ValueType *__restrict__ Ap = A+p*as0+p*as1;
+          /**/  ValueType *__restrict__ bp = b+p*bs0;
 
           if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, bp);
           else               trsm_n.serial_invoke(Ap, pb, 1, bp);

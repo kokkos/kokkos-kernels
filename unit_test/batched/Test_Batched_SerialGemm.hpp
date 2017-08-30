@@ -48,7 +48,7 @@ namespace Test {
       SerialGemm<typename ParamTagType::transA,
         typename ParamTagType::transB,
         AlgoTagType>::
-        invoke(1.0, aa, bb, 1.0, cc);
+        invoke(_alpha, aa, bb, _beta, cc);
     }
     
     inline
