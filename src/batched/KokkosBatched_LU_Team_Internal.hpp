@@ -40,19 +40,19 @@ namespace KokkosBatched {
       invoke(const MemberType &member, 
 	     const int m, const int n,
 	     ValueType *__restrict__ A, const int as0, const int as1) {
-	typedef ValueType value_type;
+
 	const int k = (m < n ? m : n);
 	if (k <= 0) return 0;
 
 	for (int p=0;p<k;++p) {
 	  const int iend = m-p-1, jend = n-p-1;
 
-	  const value_type 
+	  const ValueType 
 	    // inv_alpha11 = 1.0/A(p,p),
 	    alpha11 = A[p*as0+p*as1],
 	    *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
             
-	  value_type
+	  ValueType
 	    *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
 	    *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
             
@@ -85,7 +85,7 @@ namespace KokkosBatched {
       invoke(const MemberType &member, 
 	     const int m, const int n,
 	     ValueType *__restrict__ A, const int as0, const int as1) {
-	typedef ValueType value_type;
+
 	enum : int {
 	  mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
 	};
@@ -93,7 +93,7 @@ namespace KokkosBatched {
 	const int k = (m < n ? m : n);
 	if (k <= 0) return 0;
 
-        const value_type one(1), minus_one(-1);
+        const typename Kokkos::Details::ArithTraits<ValueType>::mag_type one(1.0), minus_one(-1.0);
 
 	InnerLU<mbAlgo> lu(as0, as1);
           
@@ -101,7 +101,7 @@ namespace KokkosBatched {
 	InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
 	auto lu_factorize = [&](const int ib,
 				const int jb,
-				value_type *__restrict__ AA) {
+				ValueType *__restrict__ AA) {
 	  const int tsize = member.team_size();
 	  const int mb = mbAlgo;
 	  const int nb = ((jb-mb) + (ib-mb))/tsize + ((jb-mb) + (ib-mb))%tsize > 0;
@@ -111,7 +111,7 @@ namespace KokkosBatched {
 	    const int pb = (p+mb) > kb ? (kb-p) : mb;
 
 	    // diagonal block
-	    value_type *__restrict__ Ap = AA+p*as0+p*as1;
+	    ValueType *__restrict__ Ap = AA+p*as0+p*as1;
                 
 	    // lu on a block             
 	    member.team_barrier();
