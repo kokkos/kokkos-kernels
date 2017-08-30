@@ -104,8 +104,8 @@ namespace KokkosBatched {
         if (m <= 0) return 0;
 
         /// case cuda: team size is large and blocksize (mb,nb) is small
-        InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
-        InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+        InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, 0);
+        InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
 
         const int mb = mbAlgo;
         for (int p=0;p<m;p+=mb) {
@@ -123,7 +123,7 @@ namespace KokkosBatched {
             ::invoke(m-p-pb, pb,
                      minus_one,
                      Ap+pb*as0, as0, as1,
-                     bp, 1,
+                     bp, bs0,
                      one,
                      bp+pb*bs0, bs0);
         }
@@ -213,8 +213,8 @@ namespace KokkosBatched {
         if (alpha != one) SerialScaleInternal::invoke(m, alpha, b, bs0);
         if (m <= 0) return 0;
 
-        InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
-        InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+        InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, 0);
+        InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
 
         const int mb = mbAlgo;
         for (int pp=0;pp<m;pp+=mb) {
@@ -235,7 +235,7 @@ namespace KokkosBatched {
             ::invoke(p, pb,
                      minus_one,
                      Ap-p*as0, as0, as1,
-                     bp, 1,
+                     bp, bs0,
                      one,
                      b, bs0);
         }
