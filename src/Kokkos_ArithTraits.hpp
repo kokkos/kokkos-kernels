@@ -1498,9 +1498,7 @@ public:
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
-    // This may trigger a compiler warning if char is unsigned.  On
-    // all platforms I have encountered, char is signed, but the C(++)
-    // standard does not require this.
+    // This avoids warnings based on whether char is signed or unsigned 
     return integer_abs<char>::abs(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
