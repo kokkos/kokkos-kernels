@@ -134,6 +134,33 @@ intPowImpl (const IntType x, const IntType y)
 }
 
 
+// Warning free abs function for types where we don't know whether they are signed (like char)
+template<class T, bool is_signed = std::numeric_limits<T>::is_signed >
+struct integer_abs {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& val);
+};
+
+template<class T>
+struct integer_abs<T,true> {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& x) {
+    return x<0? -x:x;
+  }
+};
+
+template<class T>
+struct integer_abs<T,false> {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& x) {
+    return x;
+  }
+};
+
+
 
 /// \fn intPowSigned
 /// \tparam IntType A built-in signed integer type.
@@ -1471,10 +1498,8 @@ public:
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
-    // This may trigger a compiler warning if char is unsigned.  On
-    // all platforms I have encountered, char is signed, but the C(++)
-    // standard does not require this.
-    return x >= 0 ? x : -x;
+    // This avoids warnings based on whether char is signed or unsigned 
+    return integer_abs<char>::abs(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;
