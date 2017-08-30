@@ -24,7 +24,7 @@ namespace KokkosBatched {
       template<typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      static typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+      static int
       invoke(const int m, const int n, const int k,
              const ScalarType alpha, 
              const ValueType *__restrict__ A, const int as0, const int as1,
@@ -37,7 +37,7 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+    int
     SerialGemmInternal<Algo::Gemm::Unblocked>::
     invoke(const int m, const int n, const int k,
            const ScalarType alpha, 
@@ -45,6 +45,9 @@ namespace KokkosBatched {
            const ValueType *__restrict__ B, const int bs0, const int bs1,
            const ScalarType beta,
            /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value, 
+                    "SerialGemmInternal:: not valid template types");
+
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       
@@ -79,7 +82,7 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+    int
     SerialGemmInternal<Algo::Gemm::Blocked>::
     invoke(const int m, const int n, const int k,
            const ScalarType alpha, 
@@ -87,6 +90,9 @@ namespace KokkosBatched {
            const ValueType *__restrict__ B, const int bs0, const int bs1,
            const ScalarType beta,
            /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialGemmInternal:: not valid template types");
+
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
 

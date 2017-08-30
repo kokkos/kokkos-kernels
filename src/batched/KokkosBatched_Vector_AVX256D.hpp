@@ -296,8 +296,8 @@ namespace KokkosBatched {
 
     public:
       inline Vector() { _data.v = _mm256_setzero_pd(); }
-      inline Vector(const value_type val) { _data.v = _mm256_set_pd(val.imag(),val.real(),val.imag(),val.real()); }
-      inline Vector(const mag_type val) { _data.v = _mm256_set_pd(0, val, 0, val); }
+      inline Vector(const value_type val) { _data.v = _mm256_broadcast_pd((__m128d const *)&val);}
+      inline Vector(const mag_type val) { const value_type a(val); _data.v = _mm256_broadcast_pd((__m128d const *)&a); }
       inline Vector(const type &b) { _data.v = b._data.v; }
       inline Vector(__m256d const &val) { _data.v = val; }
 

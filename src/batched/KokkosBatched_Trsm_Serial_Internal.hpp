@@ -24,7 +24,7 @@ namespace KokkosBatched {
       template<typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      static typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+      static int 
       invoke(const bool use_unit_diag,
              const int m, const int n, 
              const ScalarType alpha,
@@ -36,13 +36,16 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+    int
     SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::
     invoke(const bool use_unit_diag,
            const int m, const int n,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
+
       const ScalarType one(1.0), zero(0.0);
         
       if (alpha == zero)   SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
@@ -86,13 +89,15 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+    int
     SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::
     invoke(const bool use_unit_diag,
            const int m, const int n,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
@@ -147,7 +152,7 @@ namespace KokkosBatched {
       template<typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      static typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+      static int
       invoke(const bool use_unit_diag,
              const int m, const int n, 
              const ScalarType alpha,
@@ -159,14 +164,15 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+    int
     SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::
     invoke(const bool use_unit_diag,
            const int m, const int n,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
       const ScalarType one(1.0), zero(0.0);
   
       if (alpha == zero)  SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
@@ -206,13 +212,15 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<(is_convertible<ValueType,ScalarType>::value && !is_vector<ScalarType>::value),int>::type
+    int
     SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::
     invoke(const bool use_unit_diag,
            const int m, const int n,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
       const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
       enum : int {

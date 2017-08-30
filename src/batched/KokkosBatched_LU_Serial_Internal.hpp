@@ -33,7 +33,6 @@ namespace KokkosBatched {
     SerialLU_Internal<Algo::LU::Unblocked>::
     invoke(const int m, const int n,
            ValueType *__restrict__ A, const int as0, const int as1) {
-
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
