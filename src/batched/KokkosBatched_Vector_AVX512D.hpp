@@ -19,7 +19,7 @@ namespace KokkosBatched {
       using value_type = double;
       using mag_type = double;
 
-      enum : int { vector_length = 8 };
+      static const int vector_length = 8;
 
       union data_type {
         __m512d v;
@@ -278,7 +278,7 @@ namespace KokkosBatched {
       using value_type = Kokkos::complex<double>;
       using mag_type = double;
 
-      enum : int { vector_length = 4 };
+      static const int vector_length = 4;
 
       union data_type {
         __m512d v;

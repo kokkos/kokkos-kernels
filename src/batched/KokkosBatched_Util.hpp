@@ -30,18 +30,18 @@ namespace KokkosBatched {
 
     template<typename T>
     struct is_vector {
-      static constexpr bool value = false;
+      static const bool value = false;
     };
 
     template<typename Ta, typename Tb>
     struct is_same_mag_type {
-      static constexpr bool is_specialized = ( Kokkos::Details::ArithTraits<Ta>::is_specialized &&
+      static const bool is_specialized = ( Kokkos::Details::ArithTraits<Ta>::is_specialized &&
                                                Kokkos::Details::ArithTraits<Tb>::is_specialized );
       
-      static constexpr bool is_mag_type_same = std::is_same<typename Kokkos::Details::ArithTraits<Ta>::mag_type,
+      static const bool is_mag_type_same = std::is_same<typename Kokkos::Details::ArithTraits<Ta>::mag_type,
                                                             typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
       
-      static constexpr bool value = is_specialized && is_mag_type_same;
+      static const bool value = is_specialized && is_mag_type_same;
     };
     
     // to use double, std::complex<double>, Kokkos::complex<double>
@@ -236,7 +236,7 @@ namespace KokkosBatched {
 		     "KokkosKernels:: Invalid VectorUnitTag<> type." );
 
       using type = VectorTag;
-      enum : int { length = l };
+      static const int length = l;
     };
 
 
@@ -258,8 +258,8 @@ namespace KokkosBatched {
     };
 
     struct Diag {
-      struct Unit    { enum : bool { use_unit_diag = true }; };
-      struct NonUnit { enum : bool { use_unit_diag = false}; };
+      struct Unit    { static const bool use_unit_diag = true;  };
+      struct NonUnit { static const bool use_unit_diag = false; };
     };
 
     struct Algo {
