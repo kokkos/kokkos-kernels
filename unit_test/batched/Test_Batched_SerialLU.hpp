@@ -29,7 +29,7 @@ namespace Test {
     void operator()(const int k) const {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
 
-      for (int i=0;i<aa.dimension_0();++i)
+      for (int i=0;i<static_cast<int>(aa.dimension_0());++i)
         aa(i,i) += 10.0;
 
       SerialLU<AlgoTagType>::invoke(aa);
