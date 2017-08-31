@@ -87,7 +87,7 @@ namespace KokkosBatched {
         Kokkos::parallel_for
           (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
            [&](const int &i) {
-
+            _data[i] = b._data[i];
           });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
