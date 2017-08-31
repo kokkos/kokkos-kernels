@@ -116,11 +116,11 @@ namespace KokkosBatched {
         if (m <= 0) return 0;
 
         /// case cuda: team size is large and blocksize (mb,nb) is small
-        InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
-        InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+        InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, 0);
+        InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
             
         const int mb = mbAlgo;
-        const int tsize = member.team_size();
+        //const int tsize = member.team_size();
         for (int p=0;p<m;p+=mb) {
           const int pb = ((p+mb) > m ? (m-p) : mb);
               
@@ -149,7 +149,7 @@ namespace KokkosBatched {
               bp[i*bs0] = local_bp[i];
 
           // gemv update
-          GemvInternal<Algo::Gemv::Blocked>
+          TeamGemvInternal<Algo::Gemv::Blocked>
             ::invoke(member,
                      m-p-pb, pb,
                      minus_one,
@@ -292,7 +292,7 @@ namespace KokkosBatched {
               bp[i*bs0] = local_bp[i];
 
           // gemv update
-          GemvInternal<Algo::Gemv::Blocked>
+          TeamGemvInternal<Algo::Gemv::Blocked>
             ::invoke(member,
                      p, pb,
                      minus_one,

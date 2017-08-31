@@ -8,6 +8,7 @@
 
 #include "KokkosBatched_Gemv_Decl.hpp"
 #include "KokkosBatched_Gemv_Serial_Impl.hpp"
+#include "KokkosBatched_Gemv_Team_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -38,20 +39,25 @@ namespace Test {
             const ViewType &c)
       : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
     
+    template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const ParamTagType &, const int k) const {
+    void operator()(const ParamTagType &, const MemberType &member) const {
+      const int k = member.league_rank();
+
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), 0);
       auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), 0);
       
-      SerialGemv<typename ParamTagType::trans,
+      TeamGemv<MemberType,
+        typename ParamTagType::trans,
         AlgoTagType>::
-        invoke(_alpha, aa, bb, _beta, cc);
+        invoke(member, _alpha, aa, bb, _beta, cc);
     }
     
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.dimension_0());
+      const int league_size = _c.dimension_0();
+      Kokkos::TeamPolicy<DeviceType,ParamTagType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);            
     }
   };
@@ -141,12 +147,12 @@ int test_batched_gemv() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_scalar_serial_gemv_nt_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_nt_float_float ) {
   typedef ::Test::ParamTag<Trans::NoTranspose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_gemv_t_float_float ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_t_float_float ) {
   typedef ::Test::ParamTag<Trans::Transpose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,float,float,param_tag_type,algo_tag_type>();
@@ -154,12 +160,12 @@ TEST_F( TestCategory, batched_scalar_serial_gemv_t_float_float ) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_scalar_serial_gemv_nt_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_nt_double_double ) {
   typedef ::Test::ParamTag<Trans::NoTranspose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_gemv_t_double_double ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_t_double_double ) {
   typedef ::Test::ParamTag<Trans::Transpose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,double,double,param_tag_type,algo_tag_type>();
@@ -171,17 +177,17 @@ TEST_F( TestCategory, batched_scalar_serial_gemv_t_double_double ) {
 
 /// dcomplex, dcomplex
 
-TEST_F( TestCategory, batched_scalar_serial_gemv_nt_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_nt_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Trans::NoTranspose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_gemv_t_dcomplex_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_t_dcomplex_dcomplex ) {
   typedef ::Test::ParamTag<Trans::Transpose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 }
-// TEST_F( TestCategory, batched_scalar_serial_gemv_ct_dcomplex_dcomplex ) {
+// TEST_F( TestCategory, batched_scalar_team_gemv_ct_dcomplex_dcomplex ) {
 //   typedef ::Test::ParamTag<Trans::ConjTranspose> param_tag_type;
 //   typedef Algo::Gemv::Blocked algo_tag_type;
 //   test_batched_gemv<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
@@ -189,17 +195,17 @@ TEST_F( TestCategory, batched_scalar_serial_gemv_t_dcomplex_dcomplex ) {
 
 /// dcomplex, double
 
-TEST_F( TestCategory, batched_scalar_serial_gemv_nt_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_nt_dcomplex_double ) {
   typedef ::Test::ParamTag<Trans::NoTranspose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 }
-TEST_F( TestCategory, batched_scalar_serial_gemv_t_dcomplex_double ) {
+TEST_F( TestCategory, batched_scalar_team_gemv_t_dcomplex_double ) {
   typedef ::Test::ParamTag<Trans::Transpose> param_tag_type;
   typedef Algo::Gemv::Blocked algo_tag_type;
   test_batched_gemv<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 }
-// TEST_F( TestCategory, batched_scalar_serial_gemv_ct_dcomplex_double ) {
+// TEST_F( TestCategory, batched_scalar_team_gemv_ct_dcomplex_double ) {
 //   typedef ::Test::ParamTag<Trans::ConjTranspose> param_tag_type;
 //   typedef Algo::Gemv::Blocked algo_tag_type;
 //   test_batched_gemv<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();

@@ -170,7 +170,8 @@ struct integer_abs<T,false> {
 /// result of this function is undefined.  However, this function will
 /// not throw an exception in that case.
 template<class IntType>
-KOKKOS_FORCEINLINE_FUNCTION IntType
+KOKKOS_FORCEINLINE_FUNCTION 
+typename std::enable_if<std::numeric_limits<IntType>::is_signed,IntType>::type
 intPowSigned (const IntType x, const IntType y)
 {
   // It's not entirely clear what to return if x and y are both zero.
@@ -190,9 +191,23 @@ intPowSigned (const IntType x, const IntType y)
     else {
       return 0; // round the fraction to zero
     }
-  } else {
-    return intPowImpl<IntType> (x, y);
   }
+  return intPowImpl<IntType> (x, y);
+}
+template<class IntType>
+KOKKOS_FORCEINLINE_FUNCTION 
+typename std::enable_if<!std::numeric_limits<IntType>::is_signed,IntType>::type
+intPowSigned (const IntType x, const IntType y)
+{
+  // It's not entirely clear what to return if x and y are both zero.
+  // In the case of floating-point numbers, 0^0 is NaN.  Here, though,
+  // I think it's safe to return 0.
+  if (x == 0) {
+    return 0;
+  } else if (y == 0) {
+    return 1;
+  }
+  return intPowImpl<IntType> (x, y);
 }
 
 /// \fn intPowUnsigned

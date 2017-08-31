@@ -8,6 +8,7 @@
 
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Serial_Impl.hpp"
+#include "KokkosBatched_LU_Team_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -25,19 +26,25 @@ namespace Test {
     Functor(const ViewType &a) 
       : _a(a) {} 
 
+    template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const int k) const {
+    void operator()(const MemberType &member) const {
+      const int k = member.league_rank();
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
 
-      for (int i=0;i<static_cast<int>(aa.dimension_0());++i)
-        aa(i,i) += 10.0;
+      if (member.team_rank() == 0) {
+        for (int i=0;i<static_cast<int>(aa.dimension_0());++i)                                                                          
+          aa(i,i) += 10.0;  
+      }
+      member.team_barrier();
 
-      SerialLU<AlgoTagType>::invoke(aa);
+      TeamLU<MemberType,AlgoTagType>::invoke(member, aa);
     }
 
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType> policy(0, _a.dimension_0());
+      const int league_size = _a.dimension_0();
+      Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);
     }
   };
@@ -113,7 +120,7 @@ int test_batched_lu() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_scalar_serial_lu_float ) {
+TEST_F( TestCategory, batched_scalar_team_lu_float ) {
   typedef Algo::LU::Blocked algo_tag_type;
   test_batched_lu<TestExecSpace,float,algo_tag_type>();
 }
@@ -121,7 +128,7 @@ TEST_F( TestCategory, batched_scalar_serial_lu_float ) {
 
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_scalar_serial_lu_double ) {
+TEST_F( TestCategory, batched_scalar_team_lu_double ) {
   typedef Algo::LU::Blocked algo_tag_type;
   test_batched_lu<TestExecSpace,double,algo_tag_type>();
 }
@@ -129,7 +136,7 @@ TEST_F( TestCategory, batched_scalar_serial_lu_double ) {
 
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_scalar_serial_lu_dcomplex ) {
+TEST_F( TestCategory, batched_scalar_team_lu_dcomplex ) {
   typedef Algo::LU::Blocked algo_tag_type;
   test_batched_lu<TestExecSpace,Kokkos::complex<double>,algo_tag_type>();
 }
