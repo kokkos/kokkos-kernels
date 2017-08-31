@@ -181,7 +181,7 @@ namespace KokkosBatched {
 
       }
       return 0;
-    };
+    }
 
   }
 }

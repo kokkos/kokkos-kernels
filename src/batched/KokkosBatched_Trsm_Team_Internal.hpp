@@ -200,7 +200,7 @@ namespace KokkosBatched {
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
       static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
                     "TeamTrsmInternal:: not valid template types");
-      const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
+      const ScalarType one(1.0), zero(0.0);
 
       // note that parallel range is different ( m*n vs m-1*n);        
       if (alpha == zero)  TeamSetInternal  ::invoke(member, m, n, zero,  B, bs0, bs1);
@@ -237,7 +237,7 @@ namespace KokkosBatched {
         }
       }
       return 0;
-    };
+    }
 
     template<>
     template<typename MemberType,

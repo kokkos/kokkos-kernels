@@ -120,7 +120,7 @@ namespace KokkosBatched {
         InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
             
         const int mb = mbAlgo;
-        const int tsize = member.team_size();
+        //const int tsize = member.team_size();
         for (int p=0;p<m;p+=mb) {
           const int pb = ((p+mb) > m ? (m-p) : mb);
               

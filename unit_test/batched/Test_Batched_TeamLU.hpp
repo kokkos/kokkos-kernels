@@ -100,7 +100,7 @@ int test_batched_lu() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft, Blksize %d\n", i); 
+      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
@@ -110,7 +110,7 @@ int test_batched_lu() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft, Blksize %d\n", i); 
+      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
