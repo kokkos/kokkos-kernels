@@ -51,7 +51,6 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
 
   lno_t nr = input_mat.numRows();
-  lno_t nc = input_mat.numCols();
 
   for (lno_t i = 0; i < nr; ++i){
     scalar_t result = 0;
