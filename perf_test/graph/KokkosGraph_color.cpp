@@ -175,8 +175,6 @@ void run_experiment(
   if (verbose){
     kh.set_verbose(true);
   }
-  const lno_t m = crsGraph.numRows();;
-
 
   for (int i = 0; i < repeat; ++i){
 
