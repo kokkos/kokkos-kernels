@@ -12,12 +12,12 @@ namespace KokkosBatched {
 
     template<typename T, typename SpT, int l>
     struct is_vector<Vector<VectorTag<SIMD<T,SpT>,l> > > {
-      static constexpr bool value = true;
+      static const bool value = true;
     };
 
     template<typename T, typename SpT, int l>
     struct is_vector<Vector<VectorTag<AVX<T,SpT>,l> > > {
-      static constexpr bool value = true;
+      static const bool value = true;
     };
 
   }

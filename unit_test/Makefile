@@ -181,6 +181,18 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Graph_graph_color.o
   OBJ_CUDA += Test_Cuda_Common_ArithTraits.o
   OBJ_CUDA += Test_Cuda_Common_set_bit_count.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialMatUtil.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialGemm.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialTrsm.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialLU.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialGemv.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialTrsv.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamMatUtil.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamGemm.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamTrsm.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamLU.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamGemv.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamTrsv.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif

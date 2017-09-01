@@ -22,7 +22,7 @@ namespace KokkosBatched {
       //   - for host, the lambda does not allow further compiler optimization 
       using member_type = typename tag_type::member_type;
 
-      enum : int { vector_length = tag_type::length };
+      static const int vector_length = tag_type::length;
 
       typedef value_type data_type[vector_length];
 
@@ -87,7 +87,7 @@ namespace KokkosBatched {
         Kokkos::parallel_for
           (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
            [&](const int &i) {
-
+            _data[i] = b._data[i];
           });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
