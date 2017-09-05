@@ -121,7 +121,8 @@ namespace Impl{
       return;
     }
 */
-    std::cout << "runing mkl" << std::endl;
+    if (verbose)
+    	std::cout << "runing mkl" << std::endl;
     if (Kokkos::Impl::is_same<idx, int>::value){
 
       int *a_xadj = NULL;

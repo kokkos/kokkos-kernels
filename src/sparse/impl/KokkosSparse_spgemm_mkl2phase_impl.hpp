@@ -82,7 +82,7 @@ void mkl2phase_symbolic(
     bool verbose = false){
 
 #ifdef HAVE_KOKKOSKERNELS_MKL
-  std::cout << "inside 2 phase" << std::endl;
+
   typedef typename KernelHandle::nnz_lno_t idx;
   
 
