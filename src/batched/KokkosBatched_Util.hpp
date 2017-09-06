@@ -308,7 +308,7 @@ namespace KokkosBatched {
 #if defined(KOKKOS_HAVE_CUDA)
 	  template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
 	  typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
-	  ::type mb() { return 2; }
+	  ::type mb() { return 1; }
 #endif
 	  template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
 	  typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>

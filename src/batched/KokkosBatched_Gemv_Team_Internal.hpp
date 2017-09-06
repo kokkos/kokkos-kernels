@@ -62,7 +62,7 @@ namespace KokkosBatched {
       if (alpha != zero) {
         if (m <= 0 || n <= 0) return 0;
         
-        if (beta != 1) 
+        if (beta != one) 
           member.team_barrier();
         
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m),[&](const int &i) {
