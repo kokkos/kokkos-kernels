@@ -208,13 +208,15 @@ test-cuda: KokkosKernels_UnitTest_Cuda
 #=======================================================================
 
 vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/serial
-ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
-  KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
-else
-  ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
-    KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 0
-  else
+ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
     KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
+  else
+    ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+      KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 0
+    else
+      KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
+    endif
   endif
 endif
 
