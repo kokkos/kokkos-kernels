@@ -80,6 +80,7 @@ namespace KokkosBatched {
             if (member.team_rank() == 0)
               *beta1 = local_beta1;
           }
+          member.team_barrier();
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
               b2[i*bs0] -= a21[i*as0] * local_beta1;
             });
@@ -127,34 +128,21 @@ namespace KokkosBatched {
           // trsm update
           const ValueType *__restrict__ Ap = A+p*as0+p*as1;
           /**/  ValueType *__restrict__ bp = b+p*bs0;
-
+          
           member.team_barrier();
-          ValueType local_bp[mbAlgo];
-              
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-          for (int i=0;i<pb;++i)
-            local_bp[i] = bp[i*bs0];
-
-          if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, &local_bp[0]);
-          else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
-
-          if (member.team_rank() == 0) 
-                
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-            for (int i=0;i<pb;++i)
-              bp[i*bs0] = local_bp[i];
+          if (member.team_rank() == 0) {
+            if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, bp);
+            else               trsm_n.serial_invoke(Ap, pb, 1, bp);
+          }
 
           // gemv update
+          member.team_barrier();
           TeamGemvInternal<Algo::Gemv::Blocked>
             ::invoke(member,
                      m-p-pb, pb,
                      minus_one,
                      Ap+pb*as0, as0, as1,
-                     &local_bp[0], 1,
+                     bp, 1,
                      one,
                      bp+pb*bs0, bs0);
         }
@@ -221,6 +209,7 @@ namespace KokkosBatched {
               *beta1 = local_beta1;
           }
 
+          member.team_barrier();
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
               b0[i*bs0] -= a01[i*as0] * local_beta1;
             });
@@ -257,8 +246,8 @@ namespace KokkosBatched {
         if (alpha != one) TeamScaleInternal::invoke(member, m, alpha, b, bs0);
         if (m <= 0) return 0;
 
-        InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, 1, 1);
-        InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, 1, 1);
+        InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, 0);
+        InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
             
         const int mb = mbAlgo;
         for (int pp=0;pp<m;pp+=mb) {
@@ -272,32 +261,19 @@ namespace KokkosBatched {
           /**/  ValueType *__restrict__ bp = b+p*bs0;
               
           member.team_barrier();
-          ValueType local_bp[mbAlgo];
+          if (member.team_rank() == 0) {
+            if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, bp);
+            else               trsm_n.serial_invoke(Ap, pb, 1, bp);
+          }
               
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-          for (int i=0;i<pb;++i)
-            local_bp[i] = bp[i*bs0];
-
-          if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, 1, &local_bp[0]);
-          else               trsm_n.serial_invoke(Ap, pb, 1, &local_bp[0]);
-              
-          if (member.team_rank() == 0)
-                
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-            for (int i=0;i<pb;++i)
-              bp[i*bs0] = local_bp[i];
-
           // gemv update
-          TeamGemvInternal<Algo::Gemv::Blocked>
+          member.team_barrier();
+          TeamGemvInternal<Algo::Gemv::Unblocked>
             ::invoke(member,
                      p, pb,
                      minus_one,
                      Ap-p*as0, as0, as1,
-                     &local_bp[0], 1,
+                     bp, 1,
                      one,
                      b, bs0);
         }
