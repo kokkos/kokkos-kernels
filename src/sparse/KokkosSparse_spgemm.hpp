@@ -51,9 +51,132 @@
 #include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
 #include "KokkosSparse_spgemm_viennaCL_impl.hpp"
 #include "KokkosKernels_Handle.hpp"
+
+//#include "KokkosSparse_spgemm_spec.hpp"
+
+
 namespace KokkosSparse{
 
 namespace Experimental{
+
+
+
+template <typename KernelHandle,
+typename alno_row_view_t_,
+typename alno_nnz_view_t_,
+typename blno_row_view_t_,
+typename blno_nnz_view_t_,
+typename clno_row_view_t_>
+void spgemm_symbolic_spec(
+    KernelHandle *handle,
+    typename KernelHandle::nnz_lno_t m,
+    typename KernelHandle::nnz_lno_t n,
+    typename KernelHandle::nnz_lno_t k,
+    alno_row_view_t_ row_mapA,
+    alno_nnz_view_t_ entriesA,
+    bool transposeA,
+    blno_row_view_t_ row_mapB,
+    blno_nnz_view_t_ entriesB,
+    bool transposeB,
+    clno_row_view_t_ row_mapC){
+
+	/*
+  typedef Kokkos::View<
+		  typename alno_row_view_t_::const_value_type*,
+	      typename KokkosKernels::Impl::GetUnifiedLayout<alno_row_view_t_>::array_layout,
+	      typename alno_row_view_t_::device_type,
+	      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > Internal_alno_row_view_t_;
+
+  typedef Kokkos::View<
+  		  typename alno_nnz_view_t_::const_value_type*,
+  	      typename KokkosKernels::Impl::GetUnifiedLayout<alno_nnz_view_t_>::array_layout,
+  	      typename alno_nnz_view_t_::device_type,
+  	      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > Internal_alno_nnz_view_t_;
+
+
+  typedef Kokkos::View<
+  		  typename blno_row_view_t_::const_value_type*,
+  	      typename KokkosKernels::Impl::GetUnifiedLayout<blno_row_view_t_>::array_layout,
+  	      typename blno_row_view_t_::device_type,
+  	      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > Internal_blno_row_view_t_;
+
+
+  typedef Kokkos::View<
+  		  typename blno_nnz_view_t_::const_value_type*,
+  	      typename KokkosKernels::Impl::GetUnifiedLayout<blno_nnz_view_t_>::array_layout,
+  	      typename blno_nnz_view_t_::device_type,
+  	      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > Internal_blno_nnz_view_t_;
+
+
+  typedef Kokkos::View<
+  		  typename clno_row_view_t_::non_const_value_type*,
+  	      typename KokkosKernels::Impl::GetUnifiedLayout<clno_row_view_t_>::array_layout,
+  	      typename clno_row_view_t_::device_type,
+  	      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > Internal_clno_row_view_t_;
+  */
+
+  using namespace KokkosSparse::Impl;
+  typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
+  spgemmHandleType *sh = handle->get_spgemm_handle();
+  switch (sh->get_algorithm_type()){
+
+  case SPGEMM_CUSPARSE:
+    cuSPARSE_symbolic
+    <spgemmHandleType,
+    alno_row_view_t_,
+    alno_nnz_view_t_,
+    blno_row_view_t_,
+    blno_nnz_view_t_,
+    clno_row_view_t_>(sh, m,n,k,
+        row_mapA, entriesA, transposeA,
+        row_mapB, entriesB, transposeB,
+        row_mapC);
+    break;
+  case SPGEMM_CUSP:
+    break;
+
+  case SPGEMM_MKL2PHASE:
+    mkl2phase_symbolic(
+        sh,
+        m, n, k,
+        row_mapA, entriesA, transposeA,
+        row_mapB, entriesB, transposeB,
+        row_mapC,handle->get_verbose());
+    break;
+
+  case SPGEMM_DEFAULT:
+  case SPGEMM_KK_MEMSPEED:
+  case SPGEMM_KK_SPEED:
+  case SPGEMM_KK_MEMORY:
+  case SPGEMM_KK_MEMORY2:
+  case SPGEMM_KK_COLOR:
+  case SPGEMM_KK_MULTICOLOR:
+  case SPGEMM_KK_MULTICOLOR2:
+  case SPGEMM_KK_MULTIMEM:
+  {
+    KokkosSPGEMM
+    <KernelHandle,
+    alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
+    blno_row_view_t_, blno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
+    kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
+    kspgemm.KokkosSPGEMM_symbolic(row_mapC);
+  }
+  break;
+  case SPGEMM_SERIAL:
+  case SPGEMM_DEBUG:
+  case SPGEMM_MKL:
+  default:
+    break;
+  }
+  sh->set_call_symbolic();
+
+}
+
+
+
+
+
+
 
   template <typename KernelHandle,
   typename alno_row_view_t_,
@@ -74,63 +197,169 @@ namespace Experimental{
       bool transposeB,
       clno_row_view_t_ row_mapC){
 
-    using namespace KokkosSparse::Impl;
-    typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
-    spgemmHandleType *sh = handle->get_spgemm_handle();
-    switch (sh->get_algorithm_type()){
-
-    case SPGEMM_CUSPARSE:
-      cuSPARSE_symbolic
-      <spgemmHandleType,
-      alno_row_view_t_,
-      alno_nnz_view_t_,
-      blno_row_view_t_,
-      blno_nnz_view_t_,
-      clno_row_view_t_>(sh, m,n,k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC);
-      break;
-    case SPGEMM_CUSP:
-      break;
-
-    case SPGEMM_MKL2PHASE:
-      mkl2phase_symbolic(
-          sh,
-          m, n, k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC,handle->get_verbose());
-      break;
-
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
-    {
-      KokkosSPGEMM
-      <KernelHandle,
-      alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
-      blno_row_view_t_, blno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
-      kspgemm.KokkosSPGEMM_symbolic(row_mapC);
-    }
-    break;
-    case SPGEMM_SERIAL:
-    case SPGEMM_DEBUG:
-    case SPGEMM_MKL:
-    default:
-      break;
-    }
-    sh->set_call_symbolic();
+	  spgemm_symbolic_spec(
+			  handle,
+		      m,
+		      n,
+		      k,
+		      row_mapA,
+		      entriesA,
+		      transposeA,
+		      row_mapB,
+		      entriesB,
+		      transposeB,
+		      row_mapC);
 
   }
 
+
+  template <typename KernelHandle,
+  typename alno_row_view_t_,
+  typename alno_nnz_view_t_,
+  typename ascalar_nnz_view_t_,
+  typename blno_row_view_t_,
+  typename blno_nnz_view_t_,
+  typename bscalar_nnz_view_t_,
+  typename clno_row_view_t_,
+  typename clno_nnz_view_t_,
+  typename cscalar_nnz_view_t_>
+void spgemm_numeric_spec(
+    KernelHandle *handle,
+    typename KernelHandle::nnz_lno_t m,
+    typename KernelHandle::nnz_lno_t n,
+    typename KernelHandle::nnz_lno_t k,
+    alno_row_view_t_ row_mapA,
+    alno_nnz_view_t_ entriesA,
+    ascalar_nnz_view_t_ valuesA,
+
+    bool transposeA,
+    blno_row_view_t_ row_mapB,
+    blno_nnz_view_t_ entriesB,
+    bscalar_nnz_view_t_ valuesB,
+    bool transposeB,
+    clno_row_view_t_ row_mapC,
+    clno_nnz_view_t_ &entriesC,
+    cscalar_nnz_view_t_ &valuesC
+    ){
+
+  using namespace KokkosSparse::Impl;
+
+  typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
+  spgemmHandleType *sh = handle->get_spgemm_handle();
+  if (!sh->is_symbolic_called()){
+    spgemm_symbolic<KernelHandle,
+                  alno_row_view_t_, alno_nnz_view_t_,
+                  blno_row_view_t_, blno_nnz_view_t_,
+                  clno_row_view_t_>(
+        handle, m, n, k,
+        row_mapA, entriesA, transposeA,
+        row_mapB, entriesB, transposeB,
+        row_mapC
+        );
+    typename clno_row_view_t_::value_type c_nnz_size = handle->get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size){
+      entriesC = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC = cscalar_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+  }
+
+
+  switch (sh->get_algorithm_type()){
+  case SPGEMM_CUSPARSE:
+    cuSPARSE_apply<spgemmHandleType>(
+        sh,
+        m,n,k,
+        row_mapA, entriesA, valuesA, transposeA,
+        row_mapB, entriesB, valuesB, transposeB,
+        row_mapC, entriesC, valuesC);
+    break;
+  case SPGEMM_CUSP:
+    CUSP_apply<spgemmHandleType,
+      alno_row_view_t_,
+      alno_nnz_view_t_,
+      ascalar_nnz_view_t_,
+      blno_row_view_t_,
+      blno_nnz_view_t_,
+      bscalar_nnz_view_t_,
+      clno_row_view_t_,
+      clno_nnz_view_t_,
+      cscalar_nnz_view_t_ >(
+        sh,
+        m,n,k,
+        row_mapA, entriesA, valuesA, transposeA,
+        row_mapB, entriesB, valuesB, transposeB,
+        row_mapC, entriesC, valuesC);
+        break;
+  case SPGEMM_MKL:
+    mkl_apply<spgemmHandleType>(
+              sh,
+              m,n,k,
+              row_mapA, entriesA, valuesA, transposeA,
+              row_mapB, entriesB, valuesB, transposeB,
+              row_mapC, entriesC, valuesC, handle->get_verbose());
+    break;
+  case SPGEMM_MKL2PHASE:
+    mkl2phase_apply(
+        sh,
+        m,n,k,
+        row_mapA, entriesA, valuesA, transposeA,
+        row_mapB, entriesB, valuesB, transposeB,
+        row_mapC, entriesC, valuesC, handle->get_verbose());
+    break;
+
+  case SPGEMM_VIENNA:
+    viennaCL_apply<spgemmHandleType>(
+              sh,
+              m,n,k,
+              row_mapA, entriesA, valuesA, transposeA,
+              row_mapB, entriesB, valuesB, transposeB,
+              row_mapC, entriesC, valuesC, handle->get_verbose());
+    break;
+
+  case SPGEMM_DEFAULT:
+  case SPGEMM_KK_MEMSPEED:
+  case SPGEMM_KK_SPEED:
+  case SPGEMM_KK_MEMORY:
+  case SPGEMM_KK_MEMORY2:
+  case SPGEMM_KK_COLOR:
+  case SPGEMM_KK_MULTICOLOR:
+  case SPGEMM_KK_MULTICOLOR2:
+  case SPGEMM_KK_MULTIMEM:
+  case SPGEMM_KK_OUTERMULTIMEM:
+  {
+    KokkosSPGEMM
+    <KernelHandle,
+    alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
+    blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
+    kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
+    kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
+  }
+  break;
+  case SPGEMM_SERIAL:
+  case SPGEMM_DEBUG:
+    spgemm_debug(
+        handle,
+        m,
+        n,
+        k,
+        row_mapA,
+        entriesA,
+        valuesA,
+
+        transposeA,
+        row_mapB,
+        entriesB,
+        valuesB,
+        transposeB,
+        row_mapC,
+        entriesC,
+        valuesC
+        );
+    break;
+  default:
+    break;
+  }
+}
 
   template <typename KernelHandle,
     typename alno_row_view_t_,
@@ -160,124 +389,23 @@ namespace Experimental{
       clno_nnz_view_t_ &entriesC,
       cscalar_nnz_view_t_ &valuesC
       ){
-
-    using namespace KokkosSparse::Impl;
-
-    typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
-    spgemmHandleType *sh = handle->get_spgemm_handle();
-    if (!sh->is_symbolic_called()){
-      spgemm_symbolic<KernelHandle,
-                    alno_row_view_t_, alno_nnz_view_t_,
-                    blno_row_view_t_, blno_nnz_view_t_,
-                    clno_row_view_t_>(
-          handle, m, n, k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC
-          );
-      typename clno_row_view_t_::value_type c_nnz_size = handle->get_spgemm_handle()->get_c_nnz();
-      if (c_nnz_size){
-        entriesC = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-        valuesC = cscalar_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-      }
-    }
-
-
-    switch (sh->get_algorithm_type()){
-    case SPGEMM_CUSPARSE:
-      cuSPARSE_apply<spgemmHandleType>(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC);
-      break;
-    case SPGEMM_CUSP:
-      CUSP_apply<spgemmHandleType,
-        alno_row_view_t_,
-        alno_nnz_view_t_,
-        ascalar_nnz_view_t_,
-        blno_row_view_t_,
-        blno_nnz_view_t_,
-        bscalar_nnz_view_t_,
-        clno_row_view_t_,
-        clno_nnz_view_t_,
-        cscalar_nnz_view_t_ >(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC);
-          break;
-    case SPGEMM_MKL:
-      mkl_apply<spgemmHandleType>(
-                sh,
-                m,n,k,
-                row_mapA, entriesA, valuesA, transposeA,
-                row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-    case SPGEMM_MKL2PHASE:
-      mkl2phase_apply(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-
-    case SPGEMM_VIENNA:
-      viennaCL_apply<spgemmHandleType>(
-                sh,
-                m,n,k,
-                row_mapA, entriesA, valuesA, transposeA,
-                row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
-    case SPGEMM_KK_OUTERMULTIMEM:
-    {
-      KokkosSPGEMM
-      <KernelHandle,
-      alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
-      blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
-      kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
-    }
-    break;
-    case SPGEMM_SERIAL:
-    case SPGEMM_DEBUG:
-      spgemm_debug(
-          handle,
-          m,
-          n,
-          k,
-          row_mapA,
-          entriesA,
-          valuesA,
-
-          transposeA,
-          row_mapB,
-          entriesB,
-          valuesB,
-          transposeB,
-          row_mapC,
-          entriesC,
-          valuesC
-          );
-      break;
-    default:
-      break;
-    }
+	  spgemm_numeric_spec(
+			  handle,
+			  m,
+			  n,
+			  k,
+			  row_mapA,
+			  entriesA,
+			  valuesA,
+			  transposeA,
+	          row_mapB,
+	          entriesB,
+	          valuesB,
+	          transposeB,
+	          row_mapC,
+	          entriesC,
+	          valuesC
+	        );
   }
 
 
