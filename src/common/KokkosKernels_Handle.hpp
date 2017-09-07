@@ -51,7 +51,7 @@ namespace KokkosKernels{
 
 namespace Experimental{
 
-template <class lno_row_view_t_, class lno_nnz_view_t_, class scalar_nnz_view_t_,
+template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class KokkosKernelsHandle{
 public:
@@ -60,47 +60,30 @@ public:
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
-  typedef lno_row_view_t_ in_lno_row_view_t;
-  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
-  typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
+  typedef typename std::remove_const<size_type_>::type  size_type;
+  typedef const size_type const_size_type;
 
-  typedef typename in_lno_row_view_t::non_const_value_type size_type;
-  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
-  typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
-  typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
-  typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
-  typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
-  typedef typename in_lno_row_view_t::const_value_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::const_value_type const_size_type;
-  typedef typename in_lno_row_view_t::non_const_value_type non_const_row_lno_t;
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-  typedef typename in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-  typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t; //nnz_scalar_t
-  typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
-  typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
+  typedef typename std::remove_const<lno_t_>::type  nnz_lno_t;
+  typedef const nnz_lno_t const_nnz_lno_t;
+
+  typedef typename std::remove_const<scalar_t_>::type  nnz_scalar_t;
+  typedef const nnz_scalar_t const_nnz_scalar_t;
+
+
   typedef typename KokkosGraph::GraphColoringHandle
-      <in_lno_row_view_t, non_const_lno_nnz_view_t, in_lno_nnz_view_t,
+      <const_size_type, const_nnz_lno_t, const_nnz_lno_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GraphColoringHandleType;
   typedef typename KokkosSparse::GaussSeidelHandle
-      <in_lno_row_view_t, in_lno_nnz_view_t, in_scalar_nnz_view_t,
+      <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GaussSeidelHandleType;
 
   typedef typename KokkosSparse::SPGEMMHandle
-      <in_lno_row_view_t, in_lno_nnz_view_t, in_scalar_nnz_view_t,
+      <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> SPGEMMHandleType;
+
+
+  typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> in_scalar_nnz_view_t;
+
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;

@@ -155,8 +155,13 @@ void run_experiment(
   typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
   typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
 
+
+
+  typedef typename lno_view_t::non_const_value_type size_type;
+  typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-      <lno_view_t,lno_nnz_view_t, lno_nnz_view_t,
+      <size_type,lno_t, lno_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 
   KernelHandle kh;
