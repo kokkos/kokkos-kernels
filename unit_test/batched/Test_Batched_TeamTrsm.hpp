@@ -29,13 +29,13 @@ namespace Test {
            typename ScalarType,
            typename ParamTagType,
            typename AlgoTagType>
-  struct Functor {
+  struct Functor_TestBatchedTeamTrsm {
     ViewType _a, _b;
     
     ScalarType _alpha;
 
     KOKKOS_INLINE_FUNCTION
-    Functor(const ScalarType alpha, 
+    Functor_TestBatchedTeamTrsm(const ScalarType alpha, 
             const ViewType &a,
             const ViewType &b) 
       : _a(a), _b(b), _alpha(alpha) {}
@@ -91,9 +91,9 @@ namespace Test {
     Kokkos::deep_copy(a1, a0);
     Kokkos::deep_copy(b1, b0);
 
-    Functor<DeviceType,ViewType,ScalarType,
+    Functor_TestBatchedTeamTrsm<DeviceType,ViewType,ScalarType,
       ParamTagType,Algo::Trsm::Unblocked>(alpha, a0, b0).run();
-    Functor<DeviceType,ViewType,ScalarType,
+    Functor_TestBatchedTeamTrsm<DeviceType,ViewType,ScalarType,
       ParamTagType,AlgoTagType>(alpha, a1, b1).run();
 
     /// for comparison send it to host

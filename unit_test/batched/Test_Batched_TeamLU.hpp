@@ -19,11 +19,11 @@ namespace Test {
   template<typename DeviceType,
            typename ViewType,
            typename AlgoTagType>
-  struct Functor {
+  struct Functor_TestBatchedTeamLU {
     ViewType _a;
 
     KOKKOS_INLINE_FUNCTION
-    Functor(const ViewType &a) 
+    Functor_TestBatchedTeamLU(const ViewType &a) 
       : _a(a) {} 
 
     template<typename MemberType>
@@ -65,8 +65,8 @@ namespace Test {
 
     Kokkos::deep_copy(a1, a0);
 
-    Functor<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
-    Functor<DeviceType,ViewType,AlgoTagType>(a1).run();
+    Functor_TestBatchedTeamLU<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
+    Functor_TestBatchedTeamLU<DeviceType,ViewType,AlgoTagType>(a1).run();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a0_host = Kokkos::create_mirror_view(a0);

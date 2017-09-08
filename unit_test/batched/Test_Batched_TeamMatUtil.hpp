@@ -27,13 +27,13 @@ namespace Test {
            typename ScalarType, 
            typename AlgoTagType, 
            int TestID>
-  struct Functor {
+  struct Functor_TestBatchedTeamMatUtil {
           
     ScalarType _alpha;
     ViewType _a;
 
     KOKKOS_INLINE_FUNCTION
-    Functor(const ScalarType alpha, 
+    Functor_TestBatchedTeamMatUtil(const ScalarType alpha, 
             const ViewType &a) 
       : _alpha(alpha), _a(a) {}
     
@@ -102,8 +102,8 @@ namespace Test {
     Kokkos::deep_copy(b, a);
 
     /// test body
-    Functor<DeviceType,ViewType,ScalarType,NaiveTag,       TestID>(alpha, a).run();
-    Functor<DeviceType,ViewType,ScalarType,KokkosKernelTag,TestID>(alpha, b).run();
+    Functor_TestBatchedTeamMatUtil<DeviceType,ViewType,ScalarType,NaiveTag,       TestID>(alpha, a).run();
+    Functor_TestBatchedTeamMatUtil<DeviceType,ViewType,ScalarType,KokkosKernelTag,TestID>(alpha, b).run();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a_host = Kokkos::create_mirror_view(a);

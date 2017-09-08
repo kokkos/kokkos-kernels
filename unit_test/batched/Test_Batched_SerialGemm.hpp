@@ -26,13 +26,13 @@ namespace Test {
            typename ScalarType,
            typename ParamTagType, 
            typename AlgoTagType>
-  struct Functor {
+  struct Functor_TestBatchedSerialGemm {
     ViewType _a, _b, _c;
     
     ScalarType _alpha, _beta;
     
     KOKKOS_INLINE_FUNCTION
-    Functor(const ScalarType alpha, 
+    Functor_TestBatchedSerialGemm(const ScalarType alpha, 
             const ViewType &a,
             const ViewType &b,
             const ScalarType beta,
@@ -85,9 +85,9 @@ namespace Test {
     Kokkos::deep_copy(c1, c0);
 
     /// test body
-    Functor<DeviceType,ViewType,ScalarType,
+    Functor_TestBatchedSerialGemm<DeviceType,ViewType,ScalarType,
       ParamTagType,Algo::Gemm::Unblocked>(alpha, a0, b0, beta, c0).run();
-    Functor<DeviceType,ViewType,ScalarType,
+    Functor_TestBatchedSerialGemm<DeviceType,ViewType,ScalarType,
       ParamTagType,AlgoTagType>(alpha, a1, b1, beta, c1).run();
 
     /// for comparison send it to host
