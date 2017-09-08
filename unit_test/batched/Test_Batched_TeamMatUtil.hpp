@@ -147,36 +147,3 @@ int test_batched_matutil() {
   
   return 0;
 }
-  
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_scalar_team_set_float_float ) {
-  test_batched_matutil<TestExecSpace,float,float,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_scalar_team_scale_float_float ) {
-  test_batched_matutil<TestExecSpace,float,float,::Test::BatchedScale>();
-}
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_scalar_team_set_double_double ) {
-  test_batched_matutil<TestExecSpace,double,double,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_scalar_team_scale_double_double ) {
-  test_batched_matutil<TestExecSpace,double,double,::Test::BatchedScale>();
-}
-#endif
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_scalar_team_set_dcomplex_dcomplex ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_scalar_team_scale_dcomplex_dcomplex ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,::Test::BatchedScale>();
-}
-TEST_F( TestCategory, batched_scalar_team_set_dcomplex_double ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_scalar_team_scale_dcomplex_double ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,::Test::BatchedScale>();
-}
-#endif
