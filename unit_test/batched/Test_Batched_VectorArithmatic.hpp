@@ -157,7 +157,8 @@ namespace Test {
 template<typename DeviceType,typename VectorTagType>
 int test_batched_vector_arithmatic() {
 
-  static_assert(std::is_same<typename DeviceType::memory_space,Kokkos::HostSpace>::value,
+
+  static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
                 "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_arithmatic<VectorTagType>();
   
