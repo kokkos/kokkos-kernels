@@ -56,7 +56,7 @@ git checkout $KOKKOSKERNELS_BRANCH
 git pull
 cd ..
 
-if [ -z $KOKKOS_UPDATE_BRANCH ]
+if [ -n $KOKKOS_UPDATE_BRANCH ]
 then
   export KOKKOS_PATH=${PWD}/kokkos
 
