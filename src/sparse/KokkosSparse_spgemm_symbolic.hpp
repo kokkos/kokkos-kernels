@@ -101,11 +101,11 @@ void spgemm_symbolic(
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
       typename alno_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: lno type of left handside matrix should be same as kernelHandle sizetype.");
+      "KokkosSparse::spgemm_symbolic: lno type of left handside matrix should be same as kernelHandle lno_t.");
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
       typename blno_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: lno type of right handside matrix should be same as kernelHandle sizetype.");
+      "KokkosSparse::spgemm_symbolic: lno type of right handside matrix should be same as kernelHandle lno_t.");
 
   if (transposeA || transposeB){
     throw std::runtime_error ("SpGEMM is not implemented for Transposes yet. "
