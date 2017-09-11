@@ -42,7 +42,7 @@ for ExecMemSpace in ${ExecMemSpaceList}; do
    ExecSpace=${ExecMemSpaceArray[0]}
    MemSpace=${ExecMemSpaceArray[1]}
    echo "Generate: " ${FunctionExtended} " " ${Scalar} " " ${Layout} " " ${ExecSpace} " " ${MemSpace}
-   ${KokkosKernelsPath}/scripts/generate_specialization_type2.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
+   ${KokkosKernelsPath}/scripts/generate_specialization_type.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
 done
 done
 done
