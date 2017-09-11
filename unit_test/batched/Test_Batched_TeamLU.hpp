@@ -19,11 +19,11 @@ namespace Test {
   template<typename DeviceType,
            typename ViewType,
            typename AlgoTagType>
-  struct Functor {
+  struct Functor_TestBatchedTeamLU {
     ViewType _a;
 
     KOKKOS_INLINE_FUNCTION
-    Functor(const ViewType &a) 
+    Functor_TestBatchedTeamLU(const ViewType &a) 
       : _a(a) {} 
 
     template<typename MemberType>
@@ -65,8 +65,8 @@ namespace Test {
 
     Kokkos::deep_copy(a1, a0);
 
-    Functor<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
-    Functor<DeviceType,ViewType,AlgoTagType>(a1).run();
+    Functor_TestBatchedTeamLU<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
+    Functor_TestBatchedTeamLU<DeviceType,ViewType,AlgoTagType>(a1).run();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a0_host = Kokkos::create_mirror_view(a0);
@@ -118,26 +118,3 @@ int test_batched_lu() {
 
   return 0;
 }
-
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_scalar_team_lu_float ) {
-  typedef Algo::LU::Blocked algo_tag_type;
-  test_batched_lu<TestExecSpace,float,algo_tag_type>();
-}
-#endif
-
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_scalar_team_lu_double ) {
-  typedef Algo::LU::Blocked algo_tag_type;
-  test_batched_lu<TestExecSpace,double,algo_tag_type>();
-}
-#endif
-
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_scalar_team_lu_dcomplex ) {
-  typedef Algo::LU::Blocked algo_tag_type;
-  test_batched_lu<TestExecSpace,Kokkos::complex<double>,algo_tag_type>();
-}
-#endif

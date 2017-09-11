@@ -179,7 +179,7 @@ namespace KokkosBatched {
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid SIMD<> type." );
 
-      static_assert( std::is_same<typename SpT::memory_space,Kokkos::HostSpace>::value,
+      static_assert( Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename SpT::memory_space,Kokkos::HostSpace>::value,
 		     "KokkosKernels:: Invalid SIMD<> exec space." );
 
       using value_type = T;
@@ -196,7 +196,7 @@ namespace KokkosBatched {
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid AVX<> type." );
 
-      static_assert( std::is_same<typename SpT::memory_space,Kokkos::HostSpace>::value,
+      static_assert( Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename SpT::memory_space,Kokkos::HostSpace>::value,
 		     "KokkosKernels:: Invalid AVX<> exec space." );
 
       using value_type = T;
