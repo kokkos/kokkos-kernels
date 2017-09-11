@@ -70,9 +70,9 @@ typename blno_nnz_view_t_,
 typename clno_row_view_t_>
 void spgemm_symbolic(
     KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t m,
-    typename KernelHandle::nnz_lno_t n,
-    typename KernelHandle::nnz_lno_t k,
+    typename KernelHandle::const_nnz_lno_t m,
+    typename KernelHandle::const_nnz_lno_t n,
+    typename KernelHandle::const_nnz_lno_t k,
     alno_row_view_t_ row_mapA,
     alno_nnz_view_t_ entriesA,
     bool transposeA,
@@ -112,17 +112,18 @@ void spgemm_symbolic(
         "If you need this case please let kokkos-kernels developers know.\n");
   }
 
-  /*
-	  typedef typename KernelHandle::const_size_type c_size_t;
-	  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
-	  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
 
-	  typedef typename KernelHandle::HandleExecSpace c_exec_t;
-	  typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
-	  typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
+  typedef typename KernelHandle::const_size_type c_size_t;
+  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
+  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
 
-	  typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
-   */
+  typedef typename KernelHandle::HandleExecSpace c_exec_t;
+  typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
+  typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
+
+  typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
+  //const_handle_type tmp_handle = *handle;
+  const_handle_type tmp_handle (*handle);
 
 
   typedef Kokkos::View<
@@ -168,11 +169,11 @@ void spgemm_symbolic(
 
   using namespace KokkosSparse::Impl;
   SPGEMM_SYMBOLIC<
-      KernelHandle,
+  	  const_handle_type, //KernelHandle,
       Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
       Internal_blno_row_view_t_, Internal_blno_nnz_view_t_,
       Internal_clno_row_view_t_>::spgemm_symbolic(
-          handle,
+    	  &tmp_handle, //handle,
           m,
           n,
           k,

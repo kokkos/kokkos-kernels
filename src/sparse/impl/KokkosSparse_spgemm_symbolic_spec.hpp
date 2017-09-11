@@ -79,7 +79,7 @@ struct spgemm_symbolic_eti_spec_avail {
     template<> \
     struct spgemm_symbolic_eti_spec_avail< \
         KokkosKernels::Experimental::KokkosKernelsHandle<\
-          OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE,  \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -132,9 +132,9 @@ struct SPGEMM_SYMBOLIC{
 
   static void spgemm_symbolic (
       KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t m,
-      typename KernelHandle::nnz_lno_t n,
-      typename KernelHandle::nnz_lno_t k,
+      typename  KernelHandle::const_nnz_lno_t m,
+      typename  KernelHandle::const_nnz_lno_t n,
+      typename  KernelHandle::const_nnz_lno_t k,
       a_size_view_t_ row_mapA,
       a_lno_view_t entriesA,
       bool transposeA,
@@ -220,6 +220,21 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
     break;
     case SPGEMM_SERIAL:
     case SPGEMM_DEBUG:
+      spgemm_debug_symbolic(
+          handle,
+          m,
+          n,
+          k,
+          row_mapA,
+          entriesA,
+
+          transposeA,
+          row_mapB,
+          entriesB,
+          transposeB,
+          row_mapC
+          );
+      break;
     case SPGEMM_MKL:
     default:
       break;
@@ -248,7 +263,7 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
     extern template struct  \
     SPGEMM_SYMBOLIC< \
         KokkosKernels::Experimental::KokkosKernelsHandle< \
-          OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE,  \
+        const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -271,7 +286,7 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
     template struct  \
     SPGEMM_SYMBOLIC< \
         KokkosKernels::Experimental::KokkosKernelsHandle<\
-          OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE,  \
+        const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \

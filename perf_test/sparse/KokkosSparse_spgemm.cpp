@@ -45,9 +45,11 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
 
+
 #define SIZE_TYPE int
 #define INDEX_TYPE int
 #define SCALAR_TYPE double
+//double
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;

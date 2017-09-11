@@ -74,9 +74,9 @@ typename clno_nnz_view_t_,
 typename cscalar_nnz_view_t_>
 void spgemm_numeric(
     KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t m,
-    typename KernelHandle::nnz_lno_t n,
-    typename KernelHandle::nnz_lno_t k,
+    typename KernelHandle::const_nnz_lno_t m,
+    typename KernelHandle::const_nnz_lno_t n,
+    typename KernelHandle::const_nnz_lno_t k,
     alno_row_view_t_ row_mapA,
     alno_nnz_view_t_ entriesA,
     ascalar_nnz_view_t_ valuesA,
@@ -148,7 +148,7 @@ void spgemm_numeric(
         "If you need this case please let kokkos-kernels developers know.\n");
   }
 
-  /*
+
     typedef typename KernelHandle::const_size_type c_size_t;
     typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
     typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
@@ -158,8 +158,10 @@ void spgemm_numeric(
     typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
 
     typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
-   */
 
+
+//  /const_handle_type tmp_handle = *handle;
+  const_handle_type tmp_handle (*handle);
 
   typedef Kokkos::View<
       typename alno_row_view_t_::const_value_type*,
@@ -226,18 +228,18 @@ void spgemm_numeric(
   Internal_blno_row_view_t_ const_b_r  = row_mapB;
   Internal_blno_nnz_view_t_ const_b_l  = entriesB;
   Internal_bscalar_nnz_view_t_ const_b_s = valuesB;
-  Internal_clno_row_view_t_ const_c_r  = row_mapC;
-  Internal_clno_nnz_view_t_ const_c_l  = entriesC;
-  Internal_cscalar_nnz_view_t_ const_c_s = valuesC;
+  Internal_clno_row_view_t_ nonconst_c_r  = row_mapC;
+  Internal_clno_nnz_view_t_ nonconst_c_l  = entriesC;
+  Internal_cscalar_nnz_view_t_ nonconst_c_s = valuesC;
 
 
   KokkosSparse::Impl::SPGEMM_NUMERIC<
-  KernelHandle,
+  const_handle_type, //KernelHandle,
   Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
   Internal_blno_row_view_t_, Internal_blno_nnz_view_t_, Internal_bscalar_nnz_view_t_,
   Internal_clno_row_view_t_, Internal_clno_nnz_view_t_, Internal_cscalar_nnz_view_t_>::
   spgemm_numeric(
-      handle,
+      &tmp_handle, //handle,
       m,
       n,
       k,
@@ -249,9 +251,9 @@ void spgemm_numeric(
       const_b_l,
       const_b_s,
       transposeB,
-      const_c_r,
-      const_c_l,
-      const_c_s);
+      nonconst_c_r,
+      nonconst_c_l,
+      nonconst_c_s);
 }
 
 
