@@ -40,7 +40,9 @@
 // ************************************************************************
 //@HEADER
 */
-
+#ifndef KOKKOSSPARSE_SPGEMM_DEBUG_HPP_
+#define KOKKOSSPARSE_SPGEMM_DEBUG_HPP_
+#include "KokkosKernels_helpers.hpp"
 namespace KokkosSparse{
 
 namespace Impl{
@@ -152,12 +154,27 @@ void spgemm_debug(
 
   }
 
-  entriesC = clno_nnz_view_t_("entriesC", result_index);
-  valuesC = cscalar_nnz_view_t_("entriesC", result_index);
+  std::cout << "hop" << std::endl;
+  //static assert clno_row_view_t_ cannot be const type.
+  typedef Kokkos::View<
+      typename clno_row_view_t_::non_const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<clno_row_view_t_>::array_layout,
+      typename clno_row_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Aligned> > Internal_clno_row_view_t_;
 
+  typedef Kokkos::View<
+        typename cscalar_nnz_view_t_::non_const_value_type*,
+        typename KokkosKernels::Impl::GetUnifiedLayout<cscalar_nnz_view_t_>::array_layout,
+        typename cscalar_nnz_view_t_::device_type,
+        Kokkos::MemoryTraits<Kokkos::Aligned> > Internal_cscalar_nnz_view_t_;
+
+
+  entriesC = Internal_clno_row_view_t_("entriesC", result_index);
+  valuesC = Internal_cscalar_nnz_view_t_("entriesC", result_index);
+  std::cout << "hop2" << std::endl;
   typename clno_nnz_view_t_::HostMirror h_entc = Kokkos::create_mirror_view (entriesC);
   typename cscalar_nnz_view_t_::HostMirror h_valc = Kokkos::create_mirror_view (valuesC);
-
+  std::cout << "hop3" << std::endl;
   for (size_type i = 0; i < result_index; ++i){
     h_entc(i) = result_c_col_indices[i];
     h_valc(i) = result_c_col_values[i];
@@ -173,3 +190,4 @@ void spgemm_debug(
 
 }
 }
+#endif
