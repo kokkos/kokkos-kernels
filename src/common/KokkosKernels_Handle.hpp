@@ -117,11 +117,12 @@ public:
 
 	  static_assert (std::is_same<typename ExecutionSpace::execution_space,  typename right_ExecutionSpace::execution_space>::value,
 			  "Kernel handle left and right sides should have same execution_space in assignment");
+	  /*
 	  static_assert (std::is_same<typename TemporaryMemorySpace::execution_space, typename right_TemporaryMemorySpace::execution_space>::value,
 			  "Kernel handle left and right sides should have same TemporaryMemorySpace in assignment");
 	  static_assert (std::is_same<typename PersistentMemorySpace::execution_space, typename right_PersistentMemorySpace::execution_space>::value,
 			  "Kernel handle left and right sides should have same PersistentMemorySpace in assignment");
-
+      */
 	  static_assert (std::is_same<typename ExecutionSpace::memory_space, typename right_ExecutionSpace::memory_space>::value,
 			  "Kernel handle left and right sides should have same ExecutionSpace in assignment");
 	  static_assert (std::is_same<typename TemporaryMemorySpace::memory_space, typename right_TemporaryMemorySpace::memory_space>::value,
@@ -153,14 +154,14 @@ public:
 
   typedef typename KokkosGraph::GraphColoringHandle
       <const_size_type, const_nnz_lno_t, const_nnz_lno_t,
-      ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GraphColoringHandleType;
+	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> GraphColoringHandleType;
   typedef typename KokkosSparse::GaussSeidelHandle
       <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
-      ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GaussSeidelHandleType;
+	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> GaussSeidelHandleType;
 
   typedef typename KokkosSparse::SPGEMMHandle
       <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
-      ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> SPGEMMHandleType;
+	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> SPGEMMHandleType;
 
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> in_scalar_nnz_view_t;
