@@ -50,7 +50,7 @@
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-#include "KokkosSparse_spgemm_symbolic.hpp"
+//#include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
@@ -80,7 +80,7 @@ struct spgemm_numeric_eti_spec_avail {
     template<> \
     struct spgemm_numeric_eti_spec_avail< \
         KokkosKernels::Experimental::KokkosKernelsHandle<\
-          OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE,  \
+        const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -146,9 +146,9 @@ struct SPGEMM_NUMERIC{
   static void
   spgemm_numeric (
       KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t m,
-      typename KernelHandle::nnz_lno_t n,
-      typename KernelHandle::nnz_lno_t k,
+      typename KernelHandle::const_nnz_lno_t m,
+      typename KernelHandle::const_nnz_lno_t n,
+      typename KernelHandle::const_nnz_lno_t k,
       a_size_view_t_ row_mapA,
       a_lno_view_t entriesA,
       a_scalar_view_t valuesA,
@@ -296,7 +296,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
     break;
     case SPGEMM_SERIAL:
     case SPGEMM_DEBUG:
-      spgemm_debug(
+      spgemm_debug_numeric(
           handle,
           m,
           n,
@@ -331,8 +331,8 @@ struct SPGEMM_NUMERIC<KernelHandle,
 #define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
     extern template struct  \
     SPGEMM_NUMERIC< \
-          KokkosKernels::Experimental::KokkosKernelsHandle<\
-            OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE,  \
+          typename KokkosKernels::Experimental::KokkosKernelsHandle<\
+          	const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
             EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
           Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
             Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -367,7 +367,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
     template struct  \
     SPGEMM_NUMERIC< \
           KokkosKernels::Experimental::KokkosKernelsHandle<\
-            OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE,  \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
             EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
           Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
             Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
