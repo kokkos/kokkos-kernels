@@ -46,7 +46,7 @@
 #include <KokkosKernels_config.h>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+//#include <Kokkos_ArithTraits.hpp>
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY

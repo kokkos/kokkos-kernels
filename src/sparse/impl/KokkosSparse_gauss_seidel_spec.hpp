@@ -118,10 +118,10 @@ struct gauss_seidel_apply_eti_spec_avail {
         Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+        Kokkos::View< SCALAR_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
+        Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> > > \
     { enum : bool { value = true }; };
@@ -377,10 +377,10 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle,
     Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+    Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-    Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
             false, true >;
@@ -401,10 +401,10 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle,
     Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+    Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-    Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
             false, true > ;
