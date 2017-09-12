@@ -161,17 +161,12 @@ void gauss_seidel_apply_spec(
 			  typename lno_nnz_view_t_::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_alno_nnz_view_t_;
 
-	  typedef Kokkos::View<
-			  typename KernelHandle::in_scalar_nnz_view_t::const_value_type*,
-			  typename KokkosKernels::Impl::GetUnifiedLayout<typename KernelHandle::in_scalar_nnz_view_t>::array_layout,
-			  typename KernelHandle::in_scalar_nnz_view_t::device_type,
-			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
 
 	  Internal_alno_row_view_t_ const_a_r  = row_map;
 	  Internal_alno_nnz_view_t_ const_a_l  = entries;
 	  using namespace KokkosSparse::Impl;
 
-	  GAUSS_SEIDEL_SYMBOLIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>::gauss_seidel_symbolic
+	  GAUSS_SEIDEL_SYMBOLIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_>::gauss_seidel_symbolic
 	  (&tmp_handle, num_rows, num_cols, const_a_r, const_a_l, is_graph_symmetric);
 
   }
@@ -322,7 +317,7 @@ void gauss_seidel_apply_spec(
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_yscalar_nnz_view_t_;
 
 	  typedef Kokkos::View<
-			  typename x_scalar_view_t::value_type*,
+			  typename x_scalar_view_t::non_const_value_type*,
 			  typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
 			  typename x_scalar_view_t::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
@@ -428,7 +423,7 @@ void gauss_seidel_apply_spec(
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_yscalar_nnz_view_t_;
 
 	  typedef Kokkos::View<
-			  typename x_scalar_view_t::nonconst_value_type*,
+			  typename x_scalar_view_t::non_const_value_type*,
 			  typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
 			  typename x_scalar_view_t::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
@@ -533,7 +528,7 @@ void gauss_seidel_apply_spec(
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_yscalar_nnz_view_t_;
 
 	  typedef Kokkos::View<
-			  typename x_scalar_view_t::nonconst_value_type*,
+			  typename x_scalar_view_t::non_const_value_type*,
 			  typename KokkosKernels::Impl::GetUnifiedLayout<x_scalar_view_t>::array_layout,
 			  typename x_scalar_view_t::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
