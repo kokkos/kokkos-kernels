@@ -121,7 +121,7 @@ void spgemm_debug_symbolic(
     }
     result_index += row_size;
     h_rmc(i+1) = result_index;
-    size_type c_row_begin = h_rmc(i);
+    //size_type c_row_begin = h_rmc(i);
 
 
     //if (i == 0) std::cout << "result_cols" << std::endl;
