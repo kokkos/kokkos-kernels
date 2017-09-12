@@ -42,6 +42,9 @@
 */
 #include <iostream>
 
+#if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
+    defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
+    defined(KOKKOSKERNELS_INST_ORDINAL_INT)
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
 
@@ -343,6 +346,10 @@ int main (int argc, char ** argv){
 }
 
 
+#else
+int main() {
+}
+#endif
 
 
 
