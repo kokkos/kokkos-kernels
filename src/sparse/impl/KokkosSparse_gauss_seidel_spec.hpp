@@ -50,14 +50,7 @@
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//#include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
-#include "KokkosSparse_spgemm_CUSP_impl.hpp"
-#include "KokkosSparse_spgemm_impl.hpp"
-#include "KokkosSparse_spgemm_impl_seq.hpp"
-#include "KokkosSparse_spgemm_mkl_impl.hpp"
-#include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
-#include "KokkosSparse_spgemm_viennaCL_impl.hpp"
+#include "KokkosSparse_gauss_seidel_impl.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -67,21 +60,52 @@ template<class KernelHandle, class a_size_view_t_, class a_lno_view_t>
 struct gauss_seidel_symbolic_eti_spec_avail {
   enum : bool { value = false };
 };
-template<class KernelHandle, class a_size_view_t_, class a_lno_view_t>
-struct gauss_seidel_symbolic_eti_spec_avail {
+template<class KernelHandle, class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t>
+struct gauss_seidel_numeric_eti_spec_avail {
   enum : bool { value = false };
 };
-template<class KernelHandle, class a_size_view_t_, class a_lno_view_t>
-struct gauss_seidel_symbolic_eti_spec_avail {
+template<class KernelHandle, class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t, class x_scalar_view_t, class y_scalar_view_t>
+struct gauss_seidel_apply_eti_spec_avail {
   enum : bool { value = false };
 };
 }
 }
 
 
-#define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+#define KOKKOSSPARSE_GAUSS_SEIDEL_SYMBOLIC_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
     template<> \
-    struct spgemm_numeric_eti_spec_avail< \
+    struct gauss_seidel_symbolic_eti_spec_avail< \
+        KokkosKernels::Experimental::KokkosKernelsHandle<\
+        const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+        Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> > > \
+    { enum : bool { value = true }; };
+
+#define KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+    template<> \
+    struct gauss_seidel_numeric_eti_spec_avail< \
+        KokkosKernels::Experimental::KokkosKernelsHandle<\
+        const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+        Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> > >\
+    { enum : bool { value = true }; };
+
+#define KOKKOSSPARSE_GAUSS_SEIDEL_APPLY_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+    template<> \
+    struct gauss_seidel_apply_eti_spec_avail< \
         KokkosKernels::Experimental::KokkosKernelsHandle<\
         const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
@@ -94,19 +118,7 @@ struct gauss_seidel_symbolic_eti_spec_avail {
         Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-        Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
@@ -114,10 +126,11 @@ struct gauss_seidel_symbolic_eti_spec_avail {
           Kokkos::MemoryTraits<Kokkos::Unmanaged> > > \
     { enum : bool { value = true }; };
 
-
 // Include the actual specialization declarations
-#include<KokkosSparse_spgemm_tpl_spec_avail.hpp>
-#include<generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_avail.hpp>
+#include<KokkosSparse_gauss_seidel_tpl_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosSparse_gauss_seidel_symbolic_eti_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosSparse_gauss_seidel_numeric_eti_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosSparse_gauss_seidel_apply_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
 namespace Impl {
@@ -130,200 +143,154 @@ namespace Impl {
 
 template<
     class KernelHandle,
-    class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t,
-    class b_size_view_t_, class b_lno_view_t, class b_scalar_view_t,
-    class c_size_view_t_, class c_lno_view_t, class c_scalar_view_t,
+    class a_size_view_t_, class a_lno_view_t,
          bool tpl_spec_avail =
-             spgemm_numeric_tpl_spec_avail<
-               KernelHandle,
-               a_size_view_t_,  a_lno_view_t,  a_scalar_view_t,
-               b_size_view_t_,  b_lno_view_t,  b_scalar_view_t,
-               c_size_view_t_,  c_lno_view_t,  c_scalar_view_t>::value,
+             gauss_seidel_symbolic_tpl_spec_avail<
+               KernelHandle, a_size_view_t_,  a_lno_view_t>::value,
          bool eti_spec_avail =
-             spgemm_numeric_eti_spec_avail<
+             gauss_seidel_symbolic_eti_spec_avail<
                KernelHandle,
-               a_size_view_t_,  a_lno_view_t,  a_scalar_view_t,
-               b_size_view_t_,  b_lno_view_t,  b_scalar_view_t,
-               c_size_view_t_,  c_lno_view_t,  c_scalar_view_t>::value >
-struct SPGEMM_NUMERIC{
+               a_size_view_t_,  a_lno_view_t>::value >
+struct GAUSS_SEIDEL_SYMBOLIC{
   static void
-  spgemm_numeric (
+  gauss_seidel_symbolic (
       KernelHandle *handle,
-      typename KernelHandle::const_nnz_lno_t m,
-      typename KernelHandle::const_nnz_lno_t n,
-      typename KernelHandle::const_nnz_lno_t k,
-      a_size_view_t_ row_mapA,
-      a_lno_view_t entriesA,
-      a_scalar_view_t valuesA,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+      a_size_view_t_ row_map,
+      a_lno_view_t entries,
+      bool is_graph_symmetric);
+};
 
-      bool transposeA,
-      b_size_view_t_ row_mapB,
-      b_lno_view_t entriesB,
-      b_scalar_view_t valuesB,
-      bool transposeB,
-      c_size_view_t_ row_mapC,
-      c_lno_view_t &entriesC,
-      c_scalar_view_t &valuesC
+template<
+    class KernelHandle,
+    class a_size_view_t_, class a_lno_view_t, class  a_scalar_view_t,
+         bool tpl_spec_avail =
+             gauss_seidel_numeric_tpl_spec_avail<
+               KernelHandle, a_size_view_t_,  a_lno_view_t, a_scalar_view_t>::value,
+         bool eti_spec_avail =
+             gauss_seidel_numeric_eti_spec_avail<
+               KernelHandle,
+               a_size_view_t_,  a_lno_view_t, a_scalar_view_t>::value >
+struct GAUSS_SEIDEL_NUMERIC{
+  static void
+  gauss_seidel_numeric (KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+      a_size_view_t_ row_map,
+      a_lno_view_t entries,
+      a_scalar_view_t values,
+      bool is_graph_symmetric
       );
 };
+
+
+template<
+    class KernelHandle,
+    class a_size_view_t_, class a_lno_view_t, class  a_scalar_view_t, class x_scalar_view_t, class y_scalar_view_t,
+         bool tpl_spec_avail =
+             gauss_seidel_apply_tpl_spec_avail<
+               KernelHandle, a_size_view_t_,  a_lno_view_t, a_scalar_view_t,x_scalar_view_t, y_scalar_view_t>::value,
+         bool eti_spec_avail =
+             gauss_seidel_apply_eti_spec_avail<
+               KernelHandle,
+               a_size_view_t_,  a_lno_view_t, a_scalar_view_t,x_scalar_view_t, y_scalar_view_t>::value >
+struct GAUSS_SEIDEL_APPLY{
+  static void
+  gauss_seidel_apply (
+      KernelHandle *handle,
+    typename KernelHandle::const_nnz_lno_t num_rows,
+    typename KernelHandle::const_nnz_lno_t num_cols,
+    a_size_view_t_ row_map,
+    a_lno_view_t entries,
+    a_scalar_view_t values,
+    x_scalar_view_t x_lhs_output_vec,
+    y_scalar_view_t y_rhs_input_vec,
+    bool init_zero_x_vector,
+    bool update_y_vector,
+    int numIter, bool apply_forward, bool apply_backward);
+};
+
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 
 
 //! Full specialization of spgemm_mv for single vectors (2-D Views).
 // Unification layer
-template<class KernelHandle,
-        class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t,
-        class b_size_view_t_, class b_lno_view_t, class b_scalar_view_t,
-        class c_size_view_t_, class c_lno_view_t, class c_scalar_view_t>
-struct SPGEMM_NUMERIC<KernelHandle,
-        a_size_view_t_,  a_lno_view_t,  a_scalar_view_t,
-        b_size_view_t_,  b_lno_view_t,  b_scalar_view_t,
-        c_size_view_t_,  c_lno_view_t,  c_scalar_view_t,
+template<class KernelHandle, class a_size_view_t_, class a_lno_view_t>
+struct GAUSS_SEIDEL_SYMBOLIC<KernelHandle,
+        a_size_view_t_,  a_lno_view_t,
         false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
 
   static void
-  spgemm_numeric (
+  gauss_seidel_symbolic (
       KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t m,
-      typename KernelHandle::nnz_lno_t n,
-      typename KernelHandle::nnz_lno_t k,
-      a_size_view_t_ row_mapA,
-      a_lno_view_t entriesA,
-      a_scalar_view_t valuesA,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+      a_size_view_t_ row_map,
+      a_lno_view_t entries,
+      bool is_graph_symmetric){
 
-      bool transposeA,
-      b_size_view_t_ row_mapB,
-      b_lno_view_t entriesB,
-      b_scalar_view_t valuesB,
-      bool transposeB,
-      c_size_view_t_ row_mapC,
-      c_lno_view_t &entriesC,
-      c_scalar_view_t &valuesC
-      )
-  {
+      typedef typename Impl::GaussSeidel<KernelHandle, a_size_view_t_,
+          a_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t> SGS;
+      SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
+      sgs.initialize_symbolic();
+  }
+};
 
-    typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
-    spgemmHandleType *sh = handle->get_spgemm_handle();
-    if (!sh->is_symbolic_called()){
-      throw std::runtime_error ("Call spgemm symbolic before calling SpGEMM numeric");
-      /*
-      KokkosSparse::Experimental::spgemm_symbolic<KernelHandle,
-                    a_size_view_t_, a_lno_view_t,
-                    b_size_view_t_, b_lno_view_t,
-                    c_size_view_t_>(
-          handle, m, n, k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC
-          );
-      typename c_size_view_t_::value_type c_nnz_size = handle->get_spgemm_handle()->get_c_nnz();
-      if (c_nnz_size){
-        entriesC = c_lno_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-        valuesC = c_scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-      }
-      */
-    }
+template<class KernelHandle, class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t>
+struct GAUSS_SEIDEL_NUMERIC<KernelHandle,
+        a_size_view_t_,  a_lno_view_t, a_scalar_view_t,
+        false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
 
-
-    switch (sh->get_algorithm_type()){
-    case SPGEMM_CUSPARSE:
-      cuSPARSE_apply<spgemmHandleType>(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC);
-      break;
-    case SPGEMM_CUSP:
-      CUSP_apply<spgemmHandleType,
-        a_size_view_t_,
-        a_lno_view_t,
-        a_scalar_view_t,
-        b_size_view_t_,
-        b_lno_view_t,
-        b_scalar_view_t,
-        c_size_view_t_,
-        c_lno_view_t,
-        c_scalar_view_t >(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC);
-          break;
-    case SPGEMM_MKL:
-      mkl_apply<spgemmHandleType>(
-                sh,
-                m,n,k,
-                row_mapA, entriesA, valuesA, transposeA,
-                row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-    case SPGEMM_MKL2PHASE:
-      mkl2phase_apply(
-          sh,
-          m,n,k,
-          row_mapA, entriesA, valuesA, transposeA,
-          row_mapB, entriesB, valuesB, transposeB,
-          row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-
-    case SPGEMM_VIENNA:
-      viennaCL_apply<spgemmHandleType>(
-                sh,
-                m,n,k,
-                row_mapA, entriesA, valuesA, transposeA,
-                row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC, handle->get_verbose());
-      break;
-
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
-    case SPGEMM_KK_OUTERMULTIMEM:
-    {
-      KokkosSPGEMM
-      <KernelHandle,
-      a_size_view_t_, a_lno_view_t, a_scalar_view_t,
-      b_size_view_t_, b_lno_view_t,  b_scalar_view_t>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
-      kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
-    }
-    break;
-    case SPGEMM_SERIAL:
-    case SPGEMM_DEBUG:
-      spgemm_debug_numeric(
-          handle,
-          m,
-          n,
-          k,
-          row_mapA,
-          entriesA,
-          valuesA,
-
-          transposeA,
-          row_mapB,
-          entriesB,
-          valuesB,
-          transposeB,
-          row_mapC,
-          entriesC,
-          valuesC
-          );
-      break;
-    default:
-      break;
-    }
+  static void
+  gauss_seidel_numeric(KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+      a_size_view_t_ row_map,
+      a_lno_view_t entries,
+      a_scalar_view_t values,
+      bool is_graph_symmetric
+      ){
+    typedef typename Impl::GaussSeidel
+        <KernelHandle,a_size_view_t_,
+        a_lno_view_t,a_scalar_view_t> SGS;
+    SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
+    sgs.initialize_numeric();
 }
 };
 
+template<class KernelHandle, class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t, class x_scalar_view_t, class y_scalar_view_t>
+struct GAUSS_SEIDEL_APPLY<KernelHandle,
+        a_size_view_t_,  a_lno_view_t, a_scalar_view_t,x_scalar_view_t, y_scalar_view_t,
+        false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
+
+  static void
+  gauss_seidel_apply(
+      KernelHandle *handle,
+    typename KernelHandle::const_nnz_lno_t num_rows,
+    typename KernelHandle::const_nnz_lno_t num_cols,
+    a_size_view_t_ row_map,
+    a_lno_view_t entries,
+    a_scalar_view_t values,
+    x_scalar_view_t x_lhs_output_vec,
+    y_scalar_view_t y_rhs_input_vec,
+    bool init_zero_x_vector,
+    bool update_y_vector,
+    int numIter, bool apply_forward, bool apply_backward){
+
+    typedef typename Impl::GaussSeidel <KernelHandle,
+            a_size_view_t_, a_lno_view_t,a_scalar_view_t > SGS;
+    SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
+    sgs.apply(
+        x_lhs_output_vec,
+        y_rhs_input_vec,
+        init_zero_x_vector,
+        numIter,
+    apply_forward,
+    apply_backward, update_y_vector);
+}
+};
 #endif
 
 
@@ -331,78 +298,122 @@ struct SPGEMM_NUMERIC<KernelHandle,
 }
 }
 
-#define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+#define KOKKOSSPARSE_GAUSS_SEIDEL_SYMBOLIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
     extern template struct  \
-    SPGEMM_NUMERIC< \
-          typename KokkosKernels::Experimental::KokkosKernelsHandle<\
-          	const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
-            EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
-          Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, false, true >;
+    GAUSS_SEIDEL_SYMBOLIC< \
+        KokkosKernels::Experimental::KokkosKernelsHandle<\
+        const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+        Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
+            false, true >;
 
 
-#define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+#define KOKKOSSPARSE_GAUSS_SEIDEL_SYMBOLIC_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
     template struct  \
-    SPGEMM_NUMERIC< \
-          KokkosKernels::Experimental::KokkosKernelsHandle<\
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
-            EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
-          Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-          Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
-            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged> >, false, true > ;
+    GAUSS_SEIDEL_SYMBOLIC< \
+    KokkosKernels::Experimental::KokkosKernelsHandle<\
+    const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+      EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+    Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
+            false, true > ;
 
+#define KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+    extern template struct  \
+    GAUSS_SEIDEL_NUMERIC< \
+    KokkosKernels::Experimental::KokkosKernelsHandle<\
+    const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+      EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+    Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
+            false, true >;
+
+
+#define KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+    template struct  \
+    GAUSS_SEIDEL_NUMERIC< \
+    KokkosKernels::Experimental::KokkosKernelsHandle<\
+    const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+      EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+    Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
+            false, true > ;
+
+#define KOKKOSSPARSE_GAUSS_SEIDEL_APPLY_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+    extern template struct  \
+    GAUSS_SEIDEL_APPLY< \
+    KokkosKernels::Experimental::KokkosKernelsHandle<\
+    const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+      EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+    Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
+            false, true >;
+
+
+#define KOKKOSSPARSE_GAUSS_SEIDEL_APPLY_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+    template struct  \
+    GAUSS_SEIDEL_APPLY< \
+    KokkosKernels::Experimental::KokkosKernelsHandle<\
+    const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
+      EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+    Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+    Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
+            false, true > ;
 
 #include<KokkosSparse_spgemm_tpl_spec_decl.hpp>
-#include<generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosSparse_gauss_seidel_symbolic_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosSparse_gauss_seidel_numeric_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosSparse_gauss_seidel_apply_eti_spec_decl.hpp>
+
 
 
 #endif // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

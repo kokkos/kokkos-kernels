@@ -43,13 +43,14 @@
 #ifndef _KOKKOS_GAUSSSEIDEL_HPP
 #define _KOKKOS_GAUSSSEIDEL_HPP
 
-#include "KokkosSparse_gauss_seidel_impl.hpp"
+#include "KokkosSparse_gauss_seidel_spec.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 namespace KokkosSparse{
 
 namespace Experimental{
 
+/*
 template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
 void gauss_seidel_symbolic_spec(
     KernelHandle *handle,
@@ -70,8 +71,8 @@ template <typename KernelHandle,
           typename lno_nnz_view_t_,
           typename scalar_nnz_view_t_>
 void gauss_seidel_numeric_spec(KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t num_cols,
+    typename KernelHandle::const_nnz_lno_t num_rows,
+    typename KernelHandle::const_nnz_lno_t num_cols,
     lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries,
     scalar_nnz_view_t_ values,
@@ -92,8 +93,8 @@ template <typename KernelHandle,
   typename y_scalar_view_t>
 void gauss_seidel_apply_spec(
 		  KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t num_cols,
+    typename KernelHandle::const_nnz_lno_t num_rows,
+    typename KernelHandle::const_nnz_lno_t num_cols,
     lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries,
     scalar_nnz_view_t_ values,
@@ -114,6 +115,7 @@ void gauss_seidel_apply_spec(
 			apply_forward,
 			apply_backward, update_y_vector);
 }
+*/
 
   template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
   void gauss_seidel_symbolic(
@@ -169,7 +171,7 @@ void gauss_seidel_apply_spec(
 	  Internal_alno_nnz_view_t_ const_a_l  = entries;
 	  using namespace KokkosSparse::Impl;
 
-	  gauss_seidel_symbolic_spec<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>
+	  GAUSS_SEIDEL_SYMBOLIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>::gauss_seidel_symbolic
 	  (&tmp_handle, num_rows, num_cols, const_a_r, const_a_l, is_graph_symmetric);
 
   }
@@ -180,8 +182,8 @@ void gauss_seidel_apply_spec(
             typename lno_nnz_view_t_,
             typename scalar_nnz_view_t_>
   void gauss_seidel_numeric(KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t num_rows,
-      typename KernelHandle::nnz_lno_t num_cols,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,
@@ -236,7 +238,7 @@ void gauss_seidel_apply_spec(
 	  Internal_ascalar_nnz_view_t_ const_a_v  = values;
 	  using namespace KokkosSparse::Impl;
 
-	  gauss_seidel_numeric_spec<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>
+	  GAUSS_SEIDEL_NUMERIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric
 	  	  (&tmp_handle, num_rows, num_cols, const_a_r, const_a_l, const_a_v, is_graph_symmetric);
 
   }
@@ -248,8 +250,8 @@ void gauss_seidel_apply_spec(
     typename x_scalar_view_t,
     typename y_scalar_view_t>
   void symmetric_gauss_seidel_apply(KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t num_rows,
-      typename KernelHandle::nnz_lno_t num_cols,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,
@@ -334,9 +336,9 @@ void gauss_seidel_apply_spec(
 
 	  using namespace KokkosSparse::Impl;
 
-	  gauss_seidel_apply_spec<const_handle_type,
+	  GAUSS_SEIDEL_APPLY<const_handle_type,
 	  Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-	  Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_> (
+	  Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_>::gauss_seidel_apply (
 	  		  &tmp_handle, num_rows, num_cols,
 			  const_a_r, const_a_l, const_a_v,
 			  nonconst_x_v, const_y_v,
@@ -354,8 +356,8 @@ void gauss_seidel_apply_spec(
   typename x_scalar_view_t, typename y_scalar_view_t>
   void forward_sweep_gauss_seidel_apply(
       KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t num_rows,
-      typename KernelHandle::nnz_lno_t num_cols,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,
@@ -440,9 +442,9 @@ void gauss_seidel_apply_spec(
 
 	  using namespace KokkosSparse::Impl;
 
-	  gauss_seidel_apply_spec<const_handle_type,
+	  GAUSS_SEIDEL_APPLY<const_handle_type,
 	  Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-	  Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_> (
+	  Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(
 	  		  &tmp_handle, num_rows, num_cols,
 			  const_a_r, const_a_l, const_a_v,
 			  nonconst_x_v, const_y_v,
@@ -459,8 +461,8 @@ void gauss_seidel_apply_spec(
   typename x_scalar_view_t, typename y_scalar_view_t>
   void backward_sweep_gauss_seidel_apply(
       KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t num_rows,
-      typename KernelHandle::nnz_lno_t num_cols,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,
@@ -545,9 +547,9 @@ void gauss_seidel_apply_spec(
 
 	  using namespace KokkosSparse::Impl;
 
-	  gauss_seidel_apply_spec<const_handle_type,
+	  GAUSS_SEIDEL_APPLY<const_handle_type,
 	  Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-	  Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_> (
+	  Internal_xscalar_nnz_view_t_, Internal_yscalar_nnz_view_t_>::gauss_seidel_apply (
 	  		  &tmp_handle, num_rows, num_cols,
 			  const_a_r, const_a_l, const_a_v,
 			  nonconst_x_v, const_y_v,
