@@ -222,6 +222,7 @@ void spgemm_numeric(
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_cscalar_nnz_view_t_;
 
   //const_handle_type *const_handle = (const_handle_type *)handle;
+  /*
   Internal_alno_row_view_t_ const_a_r  = row_mapA;
   Internal_alno_nnz_view_t_ const_a_l  = entriesA;
   Internal_ascalar_nnz_view_t_ const_a_s = valuesA;
@@ -231,6 +232,17 @@ void spgemm_numeric(
   Internal_clno_row_view_t_ nonconst_c_r  = row_mapC;
   Internal_clno_nnz_view_t_ nonconst_c_l  = entriesC;
   Internal_cscalar_nnz_view_t_ nonconst_c_s = valuesC;
+  */
+
+  Internal_alno_row_view_t_ const_a_r (row_mapA.data());
+  Internal_alno_nnz_view_t_ const_a_l (entriesA.data());
+  Internal_ascalar_nnz_view_t_ const_a_s (valuesA.data());
+  Internal_blno_row_view_t_ const_b_r (row_mapB.data());
+  Internal_blno_nnz_view_t_ const_b_l  (entriesB.data());
+  Internal_bscalar_nnz_view_t_ const_b_s ( valuesB.data());
+  Internal_clno_row_view_t_ nonconst_c_r  ( row_mapC.data());
+  Internal_clno_nnz_view_t_ nonconst_c_l  ( entriesC.data());
+  Internal_cscalar_nnz_view_t_ nonconst_c_s ( valuesC.data());
 
 
   KokkosSparse::Impl::SPGEMM_NUMERIC<
