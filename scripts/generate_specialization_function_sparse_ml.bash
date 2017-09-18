@@ -9,7 +9,7 @@ OrdinalList="int int64_t"
 OffsetList="int size_t"
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
-ExecMemSpaceList="Cuda,CudaSpace,CudaSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,HostSpace,HostSpace Threads,HostSpace,HostSpace Serial,HostSpace,HostSpace OpenMP,Experimental::HBWSpace,Experimental::HBWSpace Threads,Experimental::HBWSpace,Experimental::HBWSpace Serial,Experimental::HBWSpace,Experimental::HBWSpace Cuda,CudaSpace,CudaHostPinnedSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,Experimental::HBWSpace,HostSpace Threads,Experimental::HBWSpace,HostSpace Serial,Experimental::HBWSpace,HostSpace"
+ExecMemSpaceList="Cuda,CudaSpace,CudaSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,HostSpace,HostSpace Threads,HostSpace,HostSpace Serial,HostSpace,HostSpace OpenMP,Experimental::HBWSpace,Experimental::HBWSpace Threads,Experimental::HBWSpace,Experimental::HBWSpace Serial,Experimental::HBWSpace,Experimental::HBWSpace Cuda,CudaSpace,CudaHostPinnedSpace Cuda,CudaHostPinnedSpace,CudaHostPinnedSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,Experimental::HBWSpace,HostSpace Threads,Experimental::HBWSpace,HostSpace Serial,Experimental::HBWSpace,HostSpace"
 
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp/${Function}
