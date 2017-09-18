@@ -50,1440 +50,4160 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
- KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace)
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaHostPinnedSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
 #endif
 } // Impl
 } // KokkosSparse

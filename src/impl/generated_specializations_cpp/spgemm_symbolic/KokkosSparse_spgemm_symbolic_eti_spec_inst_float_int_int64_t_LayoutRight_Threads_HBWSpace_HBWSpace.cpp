@@ -54,7 +54,7 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
- KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_INST(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::HBWSpace, Kokkos::HBWSpace)
+ KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_INST(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace, Kokkos::Experimental::HBWSpace)
 #endif
 } // Impl
 } // KokkosSparse

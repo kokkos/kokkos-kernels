@@ -120,6 +120,7 @@ void spgemm_symbolic(
   typedef typename KernelHandle::HandleExecSpace c_exec_t;
   typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
+  typedef typename Kokkos::Device<c_exec_t, c_temp_t> UniformDevice_t;
 
   typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
   //const_handle_type tmp_handle = *handle;
@@ -129,27 +130,27 @@ void spgemm_symbolic(
   typedef Kokkos::View<
       typename alno_row_view_t_::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<alno_row_view_t_>::array_layout,
-      typename alno_row_view_t_::device_type,
+      UniformDevice_t, //      typename alno_row_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_alno_row_view_t_;
 
   typedef Kokkos::View<
       typename alno_nnz_view_t_::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<alno_nnz_view_t_>::array_layout,
-      typename alno_nnz_view_t_::device_type,
+      UniformDevice_t, //      typename alno_nnz_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_alno_nnz_view_t_;
 
 
   typedef Kokkos::View<
       typename blno_row_view_t_::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<blno_row_view_t_>::array_layout,
-      typename blno_row_view_t_::device_type,
+      UniformDevice_t, //      typename blno_row_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_blno_row_view_t_;
 
 
   typedef Kokkos::View<
       typename blno_nnz_view_t_::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<blno_nnz_view_t_>::array_layout,
-      typename blno_nnz_view_t_::device_type,
+      UniformDevice_t, //      typename blno_nnz_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_blno_nnz_view_t_;
 
 
@@ -157,15 +158,22 @@ void spgemm_symbolic(
   typedef Kokkos::View<
       typename clno_row_view_t_::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<clno_row_view_t_>::array_layout,
-      typename clno_row_view_t_::device_type,
+      UniformDevice_t, //      typename clno_row_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_clno_row_view_t_;
 
   //const_handle_type *const_handle = (const_handle_type *)handle;
+  /*
   Internal_alno_row_view_t_ const_a_r  = row_mapA;
   Internal_alno_nnz_view_t_ const_a_l  = entriesA;
   Internal_blno_row_view_t_ const_b_r  = row_mapB;
   Internal_blno_nnz_view_t_ const_b_l  = entriesB;
   Internal_clno_row_view_t_ const_c_r  = row_mapC;
+  */
+  Internal_alno_row_view_t_ const_a_r (row_mapA.data(), row_mapA.dimension_0());
+  Internal_alno_nnz_view_t_ const_a_l (entriesA.data(), entriesA.dimension_0());
+  Internal_blno_row_view_t_ const_b_r (row_mapB.data(), row_mapB.dimension_0());
+  Internal_blno_nnz_view_t_ const_b_l  (entriesB.data(), entriesB.dimension_0());
+  Internal_clno_row_view_t_ const_c_r  ( row_mapC.data(), row_mapC.dimension_0());
 
   using namespace KokkosSparse::Impl;
   SPGEMM_SYMBOLIC<
