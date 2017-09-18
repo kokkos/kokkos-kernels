@@ -321,8 +321,7 @@ int main (int argc, char ** argv){
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
     Kokkos::Cuda::print_configuration(std::cout);
 
-#ifdef KOKKOSKERNELS_MULTI_MEM
-
+#ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
     <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
         params
