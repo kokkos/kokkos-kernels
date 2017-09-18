@@ -66,6 +66,7 @@ do
       HWLOC_PATH="${key#*=}"
       ;;
     --with-memkind*)
+      KOKKOS_DEVICES="${KOKKOS_DEVICES},HBWSpace"
       MEMKIND_PATH="${key#*=}"
       ;;
     --arch*)
