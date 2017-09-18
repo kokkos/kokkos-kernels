@@ -278,6 +278,7 @@ if [ ${#HWLOC_PATH} -gt 0 ]; then
   KOKKOS_USE_TPLS="${KOKKOS_USE_TPLS},hwloc"
 fi
 
+echo "MEMKIND_PATH=${MEMKIND_PATH}"
 if [ ${#MEMKIND_PATH} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} MEMKIND_PATH=${MEMKIND_PATH}" 
   KOKKOS_USE_TPLS="${KOKKOS_USE_TPLS},experimental_memkind"

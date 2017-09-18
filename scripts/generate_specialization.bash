@@ -4,16 +4,16 @@ cd ${KOKKOSKERNELS_PATH}/src/impl
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp
 
-#spgemm_symbolic
-${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash gauss_seidel_symbolic KokkosSparse_gauss_seidel_symbolic KokkosSparse_gauss_seidel_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
-${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash gauss_seidel_numeric KokkosSparse_gauss_seidel_numeric KokkosSparse_gauss_seidel_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
-${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash gauss_seidel_apply KokkosSparse_gauss_seidel_apply KokkosSparse_gauss_seidel_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+#sgs
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash gauss_seidel_symbolic KokkosSparse_gauss_seidel_symbolic KokkosSparse_gauss_seidel_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash gauss_seidel_numeric KokkosSparse_gauss_seidel_numeric KokkosSparse_gauss_seidel_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash gauss_seidel_apply KokkosSparse_gauss_seidel_apply KokkosSparse_gauss_seidel_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 
 
 #spgemm_symbolic
-${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spgemm_symbolic KokkosSparse_spgemm_symbolic KokkosSparse_spgemm_symbolic_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash spgemm_symbolic KokkosSparse_spgemm_symbolic KokkosSparse_spgemm_symbolic_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 #spgemm_numeric
-${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spgemm_numeric  KokkosSparse_spgemm_numeric  KokkosSparse_spgemm_numeric_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash spgemm_numeric  KokkosSparse_spgemm_numeric  KokkosSparse_spgemm_numeric_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 
 #trsv
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash trsv KokkosSparse_trsv KokkosSparse_trsv_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}

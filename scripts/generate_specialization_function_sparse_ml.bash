@@ -9,7 +9,7 @@ OrdinalList="int int64_t"
 OffsetList="int size_t"
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
-ExecMemSpaceList="Cuda,CudaSpace,CudaSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,HostSpace,HostSpace Threads,HostSpace,HostSpace Serial,HostSpace,HostSpace OpenMP,HBWSpace,HBWSpace Threads,HBWSpace,HBWSpace Serial,HBWSpace,HBWSpace Cuda,CudaSpace,CudaHostPinnedSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,HBWSpace,HostSpace Threads,HBWSpace,HostSpace Serial,HBWSpace,HostSpace"
+ExecMemSpaceList="Cuda,CudaSpace,CudaSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,HostSpace,HostSpace Threads,HostSpace,HostSpace Serial,HostSpace,HostSpace OpenMP,Experimental::HBWSpace,Experimental::HBWSpace Threads,Experimental::HBWSpace,Experimental::HBWSpace Serial,Experimental::HBWSpace,Experimental::HBWSpace Cuda,CudaSpace,CudaHostPinnedSpace Cuda,CudaUVMSpace,CudaUVMSpace OpenMP,Experimental::HBWSpace,HostSpace Threads,Experimental::HBWSpace,HostSpace Serial,Experimental::HBWSpace,HostSpace"
 
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp/${Function}
@@ -44,7 +44,7 @@ for Ordinal in ${OrdinalList}; do
    ExecMemSpaceArray=(${ExecMemSpace//,/ })
    ExecSpace=${ExecMemSpaceArray[0]}
    MemSpace=${ExecMemSpaceArray[1]}
-   SlowMemSpace=${ExecMemSpaceArray[1]}
+   SlowMemSpace=${ExecMemSpaceArray[2]}
    echo "Generate: " ${FunctionExtended} " " ${Scalar} " " ${Layout} " " ${ExecSpace} " " ${MemSpace} " " ${SlowMemSpace} " " ${Offset} " " ${Ordinal} " " ${KokkosKernelsPath}
    #echo "${KokkosKernelsPath}/scripts/generate_specialization_type_sparse.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${Offset} ${Ordinal} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}"
    ${KokkosKernelsPath}/scripts/generate_specialization_type_sparse_ml.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${SlowMemSpace} ${Offset} ${Ordinal} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
