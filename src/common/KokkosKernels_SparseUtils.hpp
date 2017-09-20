@@ -1581,7 +1581,7 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
 
@@ -1639,7 +1639,7 @@ void kk_create_incidence_matrix_from_lower_triangle(
     out_cols_view_t &out_entries,
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
@@ -1730,7 +1730,7 @@ void kk_create_incidence_matrix_from_original_matrix(
     permutation_view_t permutation,
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
