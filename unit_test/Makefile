@@ -61,6 +61,7 @@ TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/blas/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/sparse/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/graph/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/common/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/batched/*.hpp)
 
 
 
