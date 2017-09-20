@@ -66,6 +66,7 @@ do
       HWLOC_PATH="${key#*=}"
       ;;
     --with-memkind*)
+      KOKKOSKERNELS_SPACES="HBWSpace,${KOKKOSKERNELS_SPACES}"
       MEMKIND_PATH="${key#*=}"
       ;;
     --arch*)
@@ -118,6 +119,9 @@ do
       ;;
     --with-tpls*)
       KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
+      ;;
+    --with-spaces*)
+      KOKKOSKERNELS_SPACES="${key#*=}"
       ;;
     --with-kokkos-options*)
       KOKKOS_OPT="${key#*=}"
@@ -297,6 +301,14 @@ fi
 
 if [ ${#KOKKOS_CUDA_OPT} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_CUDA_OPTIONS=${KOKKOS_CUDA_OPT}"
+  if [[ "${KOKKOS_CUDA_OPT}" =~ "force_uvm" ]]; then
+    KOKKOSKERNELS_SPACES="CudaUVMSpace,${KOKKOSKERNELS_SPACES}"
+  fi
+fi
+
+if [ ${#KOKKOSKERNELS_SPACES} -gt 0 ]; then 
+  KOKKOSKERNELS_SPACES="${KOKKOSKERNELS_SPACES},${KOKKOS_DEVICES}"
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_SPACES=${KOKKOSKERNELS_SPACES}"  
 fi
 
 if [ ${#KOKKOSKERNELS_SCALARS} -gt 0 ]; then
@@ -309,10 +321,6 @@ fi
 
 if [ ${#KOKKOSKERNELS_OFFSETS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_OFFSETS=${KOKKOSKERNELS_OFFSETS}"
-fi
-
-if [ ${#KOKKOSKERNELS_SPACES} -gt 0 ]; then
-  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_SPACES=${KOKKOSKERNELS_SPACES}"
 fi
 
 if [ ${#KOKKOSKERNELS_LAYOUTS} -gt 0 ]; then
