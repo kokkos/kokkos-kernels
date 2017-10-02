@@ -498,8 +498,8 @@ int main (int argc, char ** argv){
         );
 #endif
     Kokkos::Serial::finalize();
-#endif
   }
+#endif
 
 
   return 0;
