@@ -64,6 +64,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
       params.use_threads = atoi( argv[++i] );
     }
+    else if ( 0 == strcasecmp( argv[i] , "serial" ) ) {
+      params.use_serial = atoi( argv[++i] );
+    }
     else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
       params.use_openmp = atoi( argv[++i] );
     }
@@ -477,6 +480,26 @@ int main (int argc, char ** argv){
   }
 
 #endif
+
+#if defined( KOKKOS_HAVE_SERIAL )
+  if (params.use_serial) {
+    Kokkos::Serial::initialize( params.use_openmp );
+    Kokkos::Serial::print_configuration(std::cout);
+#ifdef KOKKOSKERNELS_MULTI_MEM
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(
+        params
+        );
+#else
+
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(
+        params
+        );
+#endif
+    Kokkos::Serial::finalize();
+#endif
+  }
 
 
   return 0;
