@@ -102,6 +102,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas1_sum.o
   OBJ_OPENMP += Test_OpenMP_Blas1_update.o
   OBJ_OPENMP += Test_OpenMP_Blas2_gemv.o
+  OBJ_OPENMP += Test_OpenMP_Blas3_gemm.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spmv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_trsv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spgemm.o
