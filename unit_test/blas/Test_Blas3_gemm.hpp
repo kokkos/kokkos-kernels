@@ -5,6 +5,72 @@
 #include<KokkosKernels_TestUtils.hpp>
 
 namespace Test {
+
+  template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
+  struct VanillaGEMM {
+    bool A_t, B_t, A_c, B_c;
+    int N,K;
+    ViewTypeA A;
+    ViewTypeB B;
+    ViewTypeC C;
+
+    typedef typename ViewTypeA::value_type ScalarA;
+    typedef typename ViewTypeB::value_type ScalarB;
+    typedef typename ViewTypeC::value_type ScalarC;
+    typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+    typedef typename APT::mag_type mag_type;
+    ScalarA alpha;
+    ScalarC beta;
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
+      const int i = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [=] (const int& j) {
+        ScalarC C_ij = 0.0;
+
+        // GNU 5.3, 5.4 and 6.1 (and maybe more) crash with another nested lambda here
+
+#if defined(KOKKOS_COMPILER_GNU) && !defined(KOKKOS_COMPILER_NVCC)
+        for(int k=0; k<K; k++) {
+          ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
+          ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
+          C_ij += A_ik*B_kj;
+        }
+#else
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,K), [=] (const int& k, ScalarC& lsum) {
+           ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
+           ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
+           lsum += A_ik*B_kj;
+        },C_ij);
+#endif
+
+        C(i,j) = beta*C(i,j) + alpha*C_ij;
+      });
+    }
+  };
+
+  template<class ViewTypeC, class ExecutionSpace>
+  struct DiffGEMM {
+    int N;
+    ViewTypeC C,C2;
+
+    typedef typename ViewTypeC::value_type ScalarC;
+    typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+    typedef typename APT::mag_type mag_type;
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team, mag_type& diff) const {
+      const int i = team.league_rank();
+      mag_type diff_row = 0;
+      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,N), [&] (const int& j,mag_type& diff_ij) {
+        diff_ij += APT::abs(C(i,j)-C2(i,j));
+      },diff_row);
+      Kokkos::single(Kokkos::PerTeam(team), [&] () {
+        diff += diff_row;
+      });
+    }
+  };
+
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class Device>
   void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K) {
 
@@ -40,31 +106,17 @@ namespace Test {
 
     Kokkos::fence();
  
+    struct VanillaGEMM<ViewTypeA,ViewTypeB,ViewTypeC,execution_space> vgemm;
+    vgemm.A_t = A_t; vgemm.B_t = B_t;
+    vgemm.A_c = A_c; vgemm.B_c = B_c;
+    vgemm.N = N;     vgemm.K = K;
+    vgemm.A = A;     vgemm.B = B;
+    vgemm.C = C2;
+    vgemm.alpha = alpha;
+    vgemm.beta = beta;
 
-    Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16),
-      KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<execution_space>::member_type& team) {
-      const int i = team.league_rank();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [=] (const int& j) {
-        ScalarC C_ij = 0.0;
+    Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
 
-        // GNU 5.3, 5.4 and 6.1 (and maybe more) crash with another nested lambda here
-#ifdef KOKKOS_COMPILER_GNU
-        for(int k=0; k<K; k++) {
-          ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
-          ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
-          C_ij += A_ik*B_kj;
-        }
-#else
-        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,K), [=] (const int& k, ScalarC& lsum) {
-           ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
-           ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
-           lsum += A_ik*B_kj;
-        },C_ij);
-#endif
-
-        C2(i,j) = beta*C2(i,j) + alpha*C_ij;
-      });
-    });
     int strides[8];
     A.stride(strides);
     const int LDA = strides[1];
@@ -78,31 +130,12 @@ namespace Test {
     Kokkos::fence();
 
     mag_type diff_C = 0;
-    Kokkos::parallel_reduce(Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO),
-      KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<execution_space>::member_type& team, mag_type& diff) {
-      const int i = team.league_rank();
-      mag_type diff_row = 0;
-      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,N), [&] (const int& j,mag_type& diff_ij) {
-        diff_ij += APT::abs(C(i,j)-C2(i,j));//sqrt((C(i,j) - C2(i,j)) * (C(i,j) - C2(i,j)));
-      },diff_row);
-      Kokkos::single(Kokkos::PerTeam(team), [&] () {
-        diff += diff_row;
-      });
-    },diff_C);
-    
-    mag_type abs_C = 0;
-    Kokkos::parallel_reduce(Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO),
-      KOKKOS_LAMBDA(const typename Kokkos::TeamPolicy<execution_space>::member_type& team, mag_type& abs_col) {
-      const int i = team.league_rank();
-      mag_type abs_row = 0;
-      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,N), [&] (const int& j,mag_type& abs_ij) {
-        abs_ij += APT::abs(C(i,j));
-      },abs_row);
-      Kokkos::single(Kokkos::PerTeam(team), [&] () {
-        abs_col += abs_row;
-      });
-    },abs_C);
+    struct DiffGEMM<ViewTypeC,execution_space> diffgemm;
+    diffgemm.N = N;
+    diffgemm.C = C;
+    diffgemm.C = C2;
 
+    Kokkos::parallel_reduce(Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), diffgemm, diff_C);
 
     if( N!=0 && M!=0 && K!=0 ) {
       double diff_C_average = diff_C/(N*M);
