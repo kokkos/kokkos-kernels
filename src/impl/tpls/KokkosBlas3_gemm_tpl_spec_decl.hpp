@@ -51,28 +51,28 @@ extern "C" void dgemm_( const char* transA, const char* transB,
                         const double* A, const int* LDA,
                         const double* B, const int* LDB,
                         const double* beta,
-                        const double* C, const int* LDC);
+                        double* C, const int* LDC);
 extern "C" void sgemm_( const char* transA, const char* transB,
                         const int* M, const int* N, const int* K,
                         const float* alpha,
                         const float* A, const int* LDA,
                         const float* B, const int* LDB,
                         const float* beta,
-                        const float* C, const int* LDC);
+                        float* C, const int* LDC);
 extern "C" void zgemm_( const char* transA, const char* transB,
                         const int* M, const int* N, const int* K,
                         const std::complex<double>* alpha,
                         const std::complex<double>* A, const int* LDA,
                         const std::complex<double>* B, const int* LDB,
                         const std::complex<double>* beta,
-                        const std::complex<double>* C, const int* LDC);
+                        std::complex<double>* C, const int* LDC);
 extern "C" void cgemm_( const char* transA, const char* transB,
                         const int* M, const int* N, const int* K,
                         const std::complex<float>* alpha,
                         const std::complex<float>* A, const int* LDA,
                         const std::complex<float>* B, const int* LDB,
                         const std::complex<float>* beta,
-                        const std::complex<float>* C, const int* LDC);
+                        std::complex<float>* C, const int* LDC);
 
 namespace KokkosBlas {
 namespace Impl {
@@ -92,7 +92,7 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<const SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-  typedef Kokkos::View<const SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+  typedef Kokkos::View<SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
  \
   static void \
@@ -103,19 +103,28 @@ struct GEMM< \
         const BViewType& B, \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
-    const int M = A.extent(0); \
-    const int N = B.extent(1); \
-    const int K = A.extent(1); \
+    \
+    const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
+    const int M = C.extent(0); \
+    const int N = C.extent(1); \
+    const int K = A.extent(A_t?0:1); \
     int strides[2]; \
     \
-    A.stride(strides); \
-    const int LDA = strides[1]; \
-    B.stride(strides); \
-    const int LDB = strides[1]; \
-    C.stride(strides); \
-    const int LDC = strides[1]; \
+    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
+    bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
+    bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    dgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
+    A.stride(strides); \
+    const int LDA = strides[A_is_lr?0:1]; \
+    B.stride(strides); \
+    const int LDB = strides[B_is_lr?0:1]; \
+    C.stride(strides); \
+    const int LDC = strides[C_is_lr?0:1]; \
+    \
+    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
+      dgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
+    if(A_is_lr && B_is_lr && C_is_lr ) \
+      dgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
   } \
 };
 
@@ -134,7 +143,7 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<const SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-  typedef Kokkos::View<const SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+  typedef Kokkos::View<SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
       \
   static void \
@@ -145,19 +154,28 @@ struct GEMM< \
         const BViewType& B, \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
-    const int M = A.extent(0); \
-    const int N = B.extent(1); \
-    const int K = A.extent(1); \
+    \
+    const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
+    const int M = C.extent(0); \
+    const int N = C.extent(1); \
+    const int K = A.extent(A_t?0:1); \
     int strides[2]; \
     \
-    A.stride(strides); \
-    const int LDA = strides[1]; \
-    B.stride(strides); \
-    const int LDB = strides[1]; \
-    C.stride(strides); \
-    const int LDC = strides[1]; \
+    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
+    bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
+    bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    sgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
+    A.stride(strides); \
+    const int LDA = strides[A_is_lr?0:1]; \
+    B.stride(strides); \
+    const int LDB = strides[B_is_lr?0:1]; \
+    C.stride(strides); \
+    const int LDC = strides[C_is_lr?0:1]; \
+    \
+    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
+      sgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
+    if(A_is_lr && B_is_lr && C_is_lr ) \
+      sgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
   } \
 };
 
@@ -176,7 +194,7 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<const SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-  typedef Kokkos::View<const SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+  typedef Kokkos::View<SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
       \
   static void \
@@ -187,22 +205,34 @@ struct GEMM< \
         const BViewType& B, \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
-    const int M = A.extent(0); \
-    const int N = B.extent(1); \
-    const int K = A.extent(1); \
+    \
+    const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
+    const int M = C.extent(0); \
+    const int N = C.extent(1); \
+    const int K = A.extent(A_t?0:1); \
     int strides[2]; \
     \
-    A.stride(strides); \
-    const int LDA = strides[1]; \
-    B.stride(strides); \
-    const int LDB = strides[1]; \
-    C.stride(strides); \
-    const int LDC = strides[1]; \
+    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
+    bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
+    bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    zgemm_(transA,transB,&M,&N,&K, \
-        static_cast<std::complex<double>*>(&alpha),static_cast<std::complex<double>*>(A.data()),&LDA, \
-        static_cast<std::complex<double>*>(B.data()),&LDB, \
-        static_cast<std::complex<double>*>(&beta),static_cast<std::complex<double>*>(C.data()),&LDC); \
+    A.stride(strides); \
+    const int LDA = strides[A_is_lr?0:1]; \
+    B.stride(strides); \
+    const int LDB = strides[B_is_lr?0:1]; \
+    C.stride(strides); \
+    const int LDC = strides[C_is_lr?0:1]; \
+    \
+    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
+      zgemm_(transA,transB,&M,&N,&K, \
+        reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
+        reinterpret_cast<const std::complex<double>*>(B.data()),&LDB, \
+        reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(C.data()),&LDC); \
+    if(A_is_lr && B_is_lr && C_is_lr ) \
+      zgemm_(transB,transA,&N,&M,&K, \
+        reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(B.data()),&LDB, \
+        reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
+        reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(C.data()),&LDC); \
   } \
 }; \
 
@@ -221,7 +251,7 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<const SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-  typedef Kokkos::View<const SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+  typedef Kokkos::View<SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
       \
   static void \
@@ -232,36 +262,56 @@ struct GEMM< \
         const BViewType& B, \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
-    const int M = A.extent(0); \
-    const int N = B.extent(1); \
-    const int K = A.extent(1); \
+    \
+    const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
+    const int M = C.extent(0); \
+    const int N = C.extent(1); \
+    const int K = A.extent(A_t?0:1); \
     int strides[2]; \
     \
-    A.stride(strides); \
-    const int LDA = strides[1]; \
-    B.stride(strides); \
-    const int LDB = strides[1]; \
-    C.stride(strides); \
-    const int LDC = strides[1]; \
+    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
+    bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
+    bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    cgemm_(transA,transB,&M,&N,&K, \
-        static_cast<std::complex<float>*>(&alpha),static_cast<std::complex<float>*>(A.data()),&LDA, \
-        static_cast<std::complex<float>*>(B.data()),&LDB, \
-        static_cast<std::complex<float>*>(&beta),static_cast<std::complex<float>*>(C.data()),&LDC); \
+    A.stride(strides); \
+    const int LDA = strides[A_is_lr?0:1]; \
+    B.stride(strides); \
+    const int LDB = strides[B_is_lr?0:1]; \
+    C.stride(strides); \
+    const int LDC = strides[C_is_lr?0:1]; \
+    \
+    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
+      cgemm_(transA,transB,&M,&N,&K, \
+        reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
+        reinterpret_cast<const std::complex<float>*>(B.data()),&LDB, \
+        reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(C.data()),&LDC); \
+    if(A_is_lr && B_is_lr && C_is_lr ) \
+      cgemm_(transB,transA,&N,&M,&K, \
+        reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(B.data()),&LDB, \
+        reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
+        reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(C.data()),&LDC); \
   } \
 };
 
 KOKKOSBLAS3_DGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS3_DGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS3_DGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_DGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 KOKKOSBLAS3_SGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS3_SGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS3_SGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_SGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 KOKKOSBLAS3_ZGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS3_ZGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS3_ZGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_ZGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 KOKKOSBLAS3_CGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS3_CGEMM_BLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS3_CGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_CGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 }
 }
