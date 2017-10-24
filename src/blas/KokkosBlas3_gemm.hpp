@@ -43,33 +43,33 @@
 #ifndef KOKKOSBLAS3_GEMV_HPP_
 #define KOKKOSBLAS3_GEMV_HPP_
 
-/// \file Kokkos_Blas3_MV.hpp
-/// \brief BLAS 2 kernels specifically optimized for typical
-///   Tpetra::MultiVector use cases.
+/// \file KokkosBlas3_gemm.hpp
 
+#include <KokkosKernels_Macros.hpp>
 #include <KokkosBlas3_gemm_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
 #include <sstream>
-#include <type_traits> // requires C++11, but so does Kokkos
+#include <type_traits>
 
 namespace KokkosBlas {
 
-/// \brief Dense matrix-vector multiply: y = beta*y + alpha*A*x.
+/// \brief Dense matrix-matrix multiply: C = beta*C + alpha*op(A)*op(B).
 ///
 /// \tparam AViewType Input matrix, as a 2-D Kokkos::View
-/// \tparam XViewType Input vector, as a 1-D Kokkos::View
-/// \tparam YViewType Output vector, as a nonconst 1-D Kokkos::View
-/// \tparam AlphaCoeffType Type of input coefficient alpha
-/// \tparam BetaCoeffType Type of input coefficient beta
+/// \tparam BViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam CViewType Output matrix, as a nonconst 2-D Kokkos::View
 ///
-/// \param trans [in] "N" for non-transpose, "T" for transpose, "C"
+/// \param transA [in] "N" for non-transpose, "T" for transpose, "C"
+///   for conjugate transpose.  All characters after the first are
+///   ignored.  This works just like the BLAS routines.
+/// \param transB [in] "N" for non-transpose, "T" for transpose, "C"
 ///   for conjugate transpose.  All characters after the first are
 ///   ignored.  This works just like the BLAS routines.
 /// \param alpha [in] Input coefficient of A*x
 /// \param A [in] Input matrix, as a 2-D Kokkos::View
-/// \param x [in] Input vector, as a 1-D Kokkos::View
-/// \param beta [in] Input coefficient of y
-/// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
+/// \param B [in] Input matrix, as a 2-D Kokkos::View
+/// \param beta [in] Input coefficient of C
+/// \param C [in/out] Output vector, as a nonconst 2-D Kokkos::View
 template<class AViewType,
          class BViewType,
          class CViewType>
@@ -82,6 +82,8 @@ gemm (const char transA[],
       typename CViewType::const_value_type& beta,
       const CViewType& C)
 {
+
+  #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert (Kokkos::Impl::is_view<AViewType>::value,
                  "AViewType must be a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<BViewType>::value,
@@ -95,34 +97,47 @@ gemm (const char transA[],
   static_assert (static_cast<int> (CViewType::rank) == 2,
                  "CViewType must have rank 2.");
 
-  // Check compatibility of dimensions at run time.
-  /*if (transA[0] == 'N' || transA[0] == 'n') {
-    if (A.dimension_0 () != y.dimension_0 () || A.dimension_1 () != x.dimension_0 ()) {
-      std::ostringstream os;
-      os << "KokkosBlas::gemv: Dimensions of A, x, and y do not match: "
-         << "A: " << A.dimension_0 () << " x " << A.dimension_1 ()
-         << ", x: " << x.dimension_0 () << ", y: " << y.dimension_0 ();
-      Kokkos::Impl::throw_runtime_exception (os.str ());
-    }
-  }
-  else if (trans[0] == 'T' || trans[0] == 't' ||
-           trans[0] == 'C' || trans[0] == 'c' ||
-           trans[0] == 'H' || trans[0] == 'h') {
-    if (A.dimension_1 () != y.dimension_0 () || A.dimension_0 () != x.dimension_0 ()) {
-      std::ostringstream os;
-      os << "KokkosBlas::dot: Dimensions of A, x, and y do not match: "
-         << "A: " << A.dimension_0 () << " x " << A.dimension_1 ()
-         << ", x: " << x.dimension_0 () << ", y: " << y.dimension_0 ();
-      Kokkos::Impl::throw_runtime_exception (os.str ());
-    }
-  }
-  else {
+  // Check validity of transpose argument
+  bool valid_transA = (transA[0] == 'N') || (transA[0] == 'n') ||
+                      (transA[0] == 'T') || (transA[0] == 't') ||
+                      (transA[0] == 'C') || (transA[0] == 'c');
+  bool valid_transB = (transB[0] == 'N') || (transB[0] == 'n') ||
+                      (transB[0] == 'T') || (transB[0] == 't') ||
+                      (transB[0] == 'C') || (transB[0] == 'c');
+  if(!(valid_transA && valid_transB)) {
     std::ostringstream os;
-    os << "KokkosBlas::gemv: trans[0] = '" << trans[0] << "'.  Valid values "
-      "include 'N' (No transpose), 'T' (Transpose), and 'C' (Conjugate "
-      "transpose).";
+    os << "KokkosBlas::gemm: transA[0] = '" << transA[0] << " transB[0] = '" << transB[0] << "'. " <<
+      "Valid values include 'N' or 'n' (No transpose), 'T' or 't' (Transpose), "
+      "and 'C' or 'c' (Conjugate transpose).";
     Kokkos::Impl::throw_runtime_exception (os.str ());
-  }*/
+  }
+
+  // Check compatibility of dimensions at run time.
+  bool A_t = !(transA[0] == 'N' || transA[0] == 'n');
+  bool B_t = !(transB[0] == 'N' || transB[0] == 'n');
+  int64_t A0 = A.extent(0);
+  int64_t A1 = A.extent(1);
+  int64_t B0 = B.extent(0);
+  int64_t B1 = B.extent(1);
+  int64_t C0 = C.extent(0);
+  int64_t C1 = C.extent(1);
+
+  if ( ((A_t?A1:A0) != C0) ||
+       ((B_t?B0:B1) != C1) ||
+       ((A_t?A0:A1) != (B_t?B1:B0)) ) {
+      std::ostringstream os;
+      os << "KokkosBlas::gemm: Dimensions of A, B, and C do not match: "
+         << "transA: " << transA[0] << " transB: " << transB[0]
+         << " A: " << A.extent(0) << " x " << A.extent(1)
+         << " B: " << B.extent(0) << " x " << B.extent(1)
+         << " C: " << C.extent(0) << " x " << C.extent(1);
+      Kokkos::Impl::throw_runtime_exception (os.str ());
+    }
+  #endif // KOKKOSKERNELS_DEBUG_LEVEL > 0
+
+  // Return if degenerated matrices are provided
+  if((A.extent(0) == 0) || (A.extent(1) == 0) || (C.extent(1) == 0))
+    return;
 
   // Minimize the number of Impl::GEMV instantiations, by
   // standardizing on particular View specializations for its template

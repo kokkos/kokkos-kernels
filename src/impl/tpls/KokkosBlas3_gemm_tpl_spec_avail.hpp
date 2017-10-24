@@ -71,6 +71,11 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLef
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
 
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
+
 #endif
 }
 }
