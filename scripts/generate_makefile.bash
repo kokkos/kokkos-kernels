@@ -360,7 +360,7 @@ echo "" >> kokkos/Makefile
 echo "build:" >> kokkos/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/core/src/Makefile ${KOKKOS_SETTINGS}" >> kokkos/Makefile
 echo "" >> kokkos/Makefile
-echo "install:" >> kokkos/Makefile
+echo "install-lib:" >> kokkos/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/core/src/Makefile ${KOKKOS_SETTINGS} install" >> kokkos/Makefile
 echo "" >> kokkos/Makefile
 echo "clean:" >> kokkos/Makefile
@@ -373,7 +373,7 @@ echo "" >> src/Makefile
 echo "build:" >> src/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS}" >> src/Makefile
 echo "" >> src/Makefile
-echo "install:" >> src/Makefile
+echo "install-lib:" >> src/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS} install" >> src/Makefile
 echo "" >> src/Makefile
 echo "clean:" >> src/Makefile
@@ -412,7 +412,7 @@ echo "KOKKOS_SETTINGS=${KOKKOS_SETTINGS}" > Makefile
 
 echo "" >> Makefile
 echo "kokkos-lib:" >> Makefile
-echo -e "\t\$(MAKE) -C kokkos install" >> Makefile
+echo -e "\t\$(MAKE) -C kokkos install-lib" >> Makefile
 echo "" >> Makefile
 
 echo "" >> Makefile
@@ -420,11 +420,11 @@ echo "kokkoskernels-lib: kokkos-lib" >> Makefile
 echo -e "\t\$(MAKE) -C src build" >> Makefile
 echo "" >> Makefile
 
-echo "install: kokkoskernels-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src install" >> Makefile
+echo "install-lib: kokkoskernels-lib" >> Makefile
+echo -e "\t\$(MAKE) -C src install-lib" >> Makefile
 echo "" >> Makefile
 
-echo "build-test: install" >> Makefile
+echo "build-test: install-lib" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test" >> Makefile
 echo -e "\t\$(MAKE) -C perf_test" >> Makefile
 echo "" >> Makefile
