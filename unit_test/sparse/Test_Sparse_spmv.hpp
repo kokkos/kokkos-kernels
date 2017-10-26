@@ -83,7 +83,15 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   //KokkosKernels::Impl::print_1Dview(expected_y);
   KokkosSparse::spmv("N", alpha, input_mat, x, beta, y);
   //KokkosKernels::Impl::print_1Dview(y);
-  EXPECT_NEAR_KK_1DVIEW(y, expected_y, eps);
+  typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
+  int num_errors = 0;
+  Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv",y.extent(0),
+      KOKKOS_LAMBDA(const int& i, int& err) {
+    if(AT::abs(expected_y(i)-y(i))>eps) err++;
+  },num_errors);
+  if(num_errors>0) printf("KokkosKernels::UnitTests::spmv: %i errors of %i with params: %lf %lf\n",
+      num_errors,y.extent_int(0),AT::abs(alpha),AT::abs(beta));
+  EXPECT_TRUE(num_errors==0);
 }
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
@@ -111,7 +119,15 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
     sequential_spmv(input_mat, x_i, y_i, alpha, beta);
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
-    EXPECT_NEAR_KK_1DVIEW(y_spmv, y_i, eps);
+    typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
+    int num_errors = 0;
+    Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv",y_i.extent(0),
+        KOKKOS_LAMBDA(const int& j, int& err) {
+      if(AT::abs(y_i(j)-y_spmv(j))>eps) err++;
+    },num_errors);
+    if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_mv: %i errors of %i for mv %i\n",
+        num_errors,y_i.extent_int(0),i);
+    EXPECT_TRUE(num_errors==0);
   }
 }
 
