@@ -293,7 +293,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 
     SPGEMMAlgorithm spgemm_algorithm = algorithms[ii];
 
-    const int max_integer = 2147483647;
+    const uint64_t max_integer = 2147483647;
     std::string algo = "UNKNOWN";
     bool is_expected_to_fail = false;
 
@@ -321,7 +321,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
       }
       //if size_type is larger than int, mkl casts it to int.
       //it will fail if casting cause overflow.
-      if (input_mat.values.dimension_0() > max_integer){
+      if (input_mat.values.extent(0) > max_integer){
         is_expected_to_fail = true;
       }
 
