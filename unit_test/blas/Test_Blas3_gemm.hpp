@@ -25,7 +25,7 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
       const int i = team.league_rank();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [=] (const int& j) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [&] (const int& j) {
         ScalarC C_ij = 0.0;
 
         // GNU 5.3, 5.4 and 6.1 (and maybe more) crash with another nested lambda here
@@ -37,7 +37,7 @@ namespace Test {
           C_ij += A_ik*B_kj;
         }
 #else
-        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,K), [=] (const int& k, ScalarC& lsum) {
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,K), [&] (const int& k, ScalarC& lsum) {
            ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
            ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
            lsum += A_ik*B_kj;
@@ -117,14 +117,6 @@ namespace Test {
 
     Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
 
-    int strides[8];
-    A.stride(strides);
-    const int LDA = strides[1];
-    B.stride(strides);
-    const int LDB = strides[1];
-    C.stride(strides);
-    const int LDC = strides[1];
-
     KokkosBlas::gemm(TA,TB,alpha,A,B,beta,C);
 
     Kokkos::fence();
@@ -195,7 +187,8 @@ int test_gemm(const char* mode) {
   return 1;
 }
 
-#if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_float ) {
     test_gemm<float,float,float,TestExecSpace> ("NN");
     test_gemm<float,float,float,TestExecSpace> ("TN");
@@ -204,7 +197,8 @@ TEST_F( TestCategory, gemm_float ) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_INST_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_double ) {
     test_gemm<double,double,double,TestExecSpace> ("NN");
     test_gemm<double,double,double,TestExecSpace> ("TN");
@@ -213,7 +207,8 @@ TEST_F( TestCategory, gemm_double ) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_complex_double ) {
     test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("NN");
     test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("CN");
@@ -222,7 +217,8 @@ TEST_F( TestCategory, gemm_complex_double ) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_complex_float ) {
     test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("NN");
     test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("CN");
