@@ -7,16 +7,16 @@
 
 namespace KokkosBatched {
   namespace Experimental {
-    template<typename T>
+    template<typename T, int l>
     class Vector;
 
-    template<typename T, typename SpT, int l>
-    struct is_vector<Vector<VectorTag<SIMD<T,SpT>,l> > > {
+    template<typename T, int l>
+    struct is_vector<Vector<SIMD<T>,l> > {
       static const bool value = true;
     };
 
-    template<typename T, typename SpT, int l>
-    struct is_vector<Vector<VectorTag<AVX<T,SpT>,l> > > {
+    template<typename T, int l>
+    struct is_vector<Vector<AVX<T>,l> > {
       static const bool value = true;
     };
 
@@ -32,8 +32,8 @@ namespace Kokkos {
 
     using namespace KokkosBatched::Experimental;
 
-    template<typename T, typename SpT, int l>
-    class ArithTraits<Vector<VectorTag<SIMD<T,SpT>,l> > > { 
+    template<typename T, int l>
+    class ArithTraits<Vector<SIMD<T>,l> > { 
     public:
       typedef typename ArithTraits<T>::val_type val_type;
       typedef typename ArithTraits<T>::mag_type mag_type;
@@ -44,8 +44,8 @@ namespace Kokkos {
       static const bool is_exact = ArithTraits<T>::is_exact;
       static const bool is_complex = ArithTraits<T>::is_complex;
     };
-    template<typename T, typename SpT, int l>
-    class ArithTraits<Vector<VectorTag<AVX<T,SpT>,l> > > { 
+    template<typename T, int l>
+    class ArithTraits<Vector<AVX<T>,l> > { 
     public:
       typedef typename ArithTraits<T>::val_type val_type;
       typedef typename ArithTraits<T>::mag_type mag_type;

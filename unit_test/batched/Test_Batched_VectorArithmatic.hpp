@@ -12,10 +12,11 @@ using namespace KokkosBatched::Experimental;
 
 namespace Test {
 
-  template<typename VectorTagType>
+  template<typename VectorTagType,int VectorLength>
   void impl_test_batched_vector_arithmatic() {
     /// random data initialization
-    typedef Vector<VectorTagType> vector_type;
+    typedef Vector<VectorTagType,VectorLength> vector_type;
+
     typedef typename vector_type::value_type value_type;    
     const int vector_length = vector_type::vector_length;
     
@@ -154,13 +155,11 @@ namespace Test {
   }
 }
 
-template<typename DeviceType,typename VectorTagType>
+template<typename DeviceType,typename VectorTagType,int VectorLength>
 int test_batched_vector_arithmatic() {
-
-
   static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
                 "vector datatype is only tested on host space");
-  Test::impl_test_batched_vector_arithmatic<VectorTagType>();
+  Test::impl_test_batched_vector_arithmatic<VectorTagType,VectorLength>();
   
   return 0;
 }
@@ -172,22 +171,19 @@ int test_batched_vector_arithmatic() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F( TestCategory, batched_vector_arithmatic_simd_float8 ) {
-  typedef VectorTag<SIMD<float,TestExecSpace>, 8> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,8>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F( TestCategory, batched_vector_arithmatic_simd_double4 ) {
-  typedef VectorTag<SIMD<double,TestExecSpace>, 4> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<double>,4>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
-  typedef VectorTag<SIMD<Kokkos::complex<double>,TestExecSpace>, 2> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
 }
 #endif
 
@@ -205,15 +201,13 @@ TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F( TestCategory, batched_vector_arithmatic_avx_double4 ) {
-  typedef VectorTag<AVX<double,TestExecSpace>, 4> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,AVX<double>,4>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F( TestCategory, batched_vector_arithmatic_avx_dcomplex2 ) {
-  typedef VectorTag<AVX<Kokkos::complex<double>,TestExecSpace>, 2> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,AVX<Kokkos::complex<double> >,2>();
 }
 #endif
 #endif
@@ -232,15 +226,14 @@ TEST_F( TestCategory, batched_vector_arithmatic_avx_dcomplex2 ) {
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F( TestCategory, batched_vector_arithmatic_avx_double8 ) {
-  typedef VectorTag<AVX<double,TestExecSpace>, 8> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,AVX<double>,8>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F( TestCategory, batched_vector_arithmatic_avx_dcomplex4 ) {
-  typedef VectorTag<AVX<Kokkos::complex<double>,TestExecSpace>, 4> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  typedef AVX<Kokkos::complex<double>, 4> vector_tag_type;
+  test_batched_vector_arithmatic<TestExecSpace,AVX<Kokkos::complex<double> >,4>();
 }
 #endif
 #endif

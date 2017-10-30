@@ -170,75 +170,26 @@ namespace KokkosBatched {
     };
 
     // Implicit vectorization
-    template<typename T,
-	     typename SpT = Kokkos::DefaultHostExecutionSpace>
+    template<typename T>
     struct SIMD {
       static_assert( std::is_same<T,double>::value                   ||
 		     std::is_same<T,float>::value                    ||
 		     std::is_same<T,Kokkos::complex<double> >::value ||
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid SIMD<> type." );
-
-      static_assert( Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename SpT::memory_space,Kokkos::HostSpace>::value,
-		     "KokkosKernels:: Invalid SIMD<> exec space." );
-
       using value_type = T;
-      using exec_space = SpT;
     };
 
     // Intel AVX instruction device (explicit vectorization)
-    template<typename T,
-	     typename SpT = Kokkos::DefaultHostExecutionSpace>
+    template<typename T>
     struct AVX {
       static_assert( std::is_same<T,double>::value                   ||
 		     std::is_same<T,float>::value                    ||
 		     std::is_same<T,Kokkos::complex<double> >::value ||
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid AVX<> type." );
-
-      static_assert( Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename SpT::memory_space,Kokkos::HostSpace>::value,
-		     "KokkosKernels:: Invalid AVX<> exec space." );
-
       using value_type = T;
-      using exec_space = SpT;
     };
-
-    //       // Cuda threading (explicit thread vectorization)
-    //       template<typename T,
-    //                typename SpT = Kokkos::DefaultExecutionSpace>
-    //       struct SIMT {
-    //         static_assert( std::is_same<T,double>::value ||
-    //                        std::is_same<T,float>::value,
-    //                        "KokkosKernels:: Invalid SIMT<> type." );
-
-    //         static_assert( !std::is_same<SpT,Kokkos::Serial>::value &&
-    //                        !std::is_same<SpT,Kokkos::OpenMP>::value,
-    //                        "KokkosKernels:: Invalid AVX<> exec space." );
-
-    // #if defined(KOKKOS_ENABLE_CUDA)
-    //         static_assert( std::is_same<SpT,Kokkos::Cuda>::value,
-    //                        "KokkosKernels:: Invalid SIMT<> exec space." );
-    // #endif
-
-    //         using value_type = T;
-    //         using exec_space = SpT;
-    //       };
-
-    template<class T, int l>
-    struct VectorTag {
-      using value_type = typename T::value_type;
-      using exec_space = typename T::exec_space;
-      using member_type = typename Kokkos::Impl::TeamPolicyInternal<exec_space>::member_type;
-
-      static_assert( std::is_same<T,SIMD<value_type,exec_space> >::value || // host compiler vectorization
-		     std::is_same<T,AVX<value_type, exec_space> >::value, // || // host AVX vectorization
-		     // std::is_same<T,SIMT<value_type,exec_space> >::value,   // cuda thread vectorization
-		     "KokkosKernels:: Invalid VectorUnitTag<> type." );
-
-      using type = VectorTag;
-      static const int length = l;
-    };
-
 
     // Tags for BLAS
     struct Trans {

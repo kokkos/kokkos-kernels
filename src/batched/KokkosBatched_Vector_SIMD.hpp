@@ -8,21 +8,14 @@
 namespace KokkosBatched {
   namespace Experimental {
 
-    template<typename T, typename SpT, int l>
-    class Vector<VectorTag<SIMD<T,SpT>,l> > {
+    template<typename T, int l>
+    class Vector<SIMD<T>,l> {
     public:
-      using tag_type = VectorTag<SIMD<T,SpT>,l>;
+      using type = Vector<SIMD<T>,l>;
+      using value_type = T;
+      using mag_type = typename Kokkos::Details::ArithTraits<T>::mag_type;
 
-      using type = Vector<tag_type>;
-      using value_type = typename tag_type::value_type;
-      using mag_type = typename Kokkos::Details::ArithTraits<value_type>::mag_type;
-
-      // TODO:: do I need this ? 
-      //   - for cuda, this is necessary (if this is used on cuda) and we mostly use layout left directly
-      //   - for host, the lambda does not allow further compiler optimization 
-      using member_type = typename tag_type::member_type;
-
-      static const int vector_length = tag_type::length;
+      static const int vector_length = l;
 
       typedef value_type data_type[vector_length];
 
@@ -37,11 +30,11 @@ namespace KokkosBatched {
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = 0;
-          });
+        // Kokkos::parallel_for
+        //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
+        //    [&](const int &i) {
+        //     _data[i] = 0;
+        //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -61,11 +54,11 @@ namespace KokkosBatched {
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = val;
-          });
+        // Kokkos::parallel_for
+        //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
+        //    [&](const int &i) {
+        //     _data[i] = val;
+        //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -84,11 +77,11 @@ namespace KokkosBatched {
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = b._data[i];
-          });
+        // Kokkos::parallel_for
+        //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
+        //    [&](const int &i) {
+        //     _data[i] = b._data[i];
+        //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -109,11 +102,11 @@ namespace KokkosBatched {
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            _data[i] = p[i];
-          });
+        // Kokkos::parallel_for
+        //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
+        //    [&](const int &i) {
+        //     _data[i] = p[i];
+        //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -135,20 +128,16 @@ namespace KokkosBatched {
         return loadAligned(p);
       }
       
-      // AVX has aligned version and unaligned version;
-      // aligned load store are recommended if memory is aligned
-      // in this version, there is no difference between aligned and unaligned
-
       KOKKOS_INLINE_FUNCTION
       void storeAligned(value_type *p) const {
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-        Kokkos::parallel_for
-          (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
-           [&](const int &i) {
-            p[i] = _data[i];
-          });
+        // Kokkos::parallel_for
+        //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
+        //    [&](const int &i) {
+        //     p[i] = _data[i];
+        //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -180,20 +169,20 @@ namespace KokkosBatched {
 
     /// simd, simd
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<T,SpT>,l> > const & a,  Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    Vector<SIMD<T>,l>
+    operator + (const Vector<SIMD<T>,l> &a,  const Vector<SIMD<T>,l> &b) {
+      Vector<SIMD<T>,l> r_val;
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] + b[i];
-        });
+      // Kokkos::parallel_for
+      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+      //    [&](const int &i) {
+      //     r_val[i] = a[i] + b[i];
+      //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -210,111 +199,111 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator += (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    Vector<SIMD<T>,l> &
+    operator += (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a + b;
       return a;
     }
 
     /// simd, real
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a + Vector<VectorTag<SIMD<T,SpT>,l> >(b);
+    Vector<SIMD<T>,l>
+    operator + (const Vector<SIMD<T>,l> &a, const T b) {
+      return a + Vector<SIMD<T>,l>(b);
     }
     
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator + (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) + b;
+    Vector<SIMD<T>,l> 
+    operator + (const T a, const Vector<SIMD<T>,l> &b) {
+      return Vector<SIMD<T>,l>(a) + b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > & 
-    operator += (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
+    Vector<SIMD<T>,l> & 
+    operator += (Vector<SIMD<T>,l> &a, const T b) {
       a = a + b;
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> >
-    operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > a0 = a;
+    Vector<SIMD<T>,l>
+    operator ++ (Vector<SIMD<T>,l> &a, int) {
+      Vector<SIMD<T>,l> a0 = a;
       a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a0;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > & 
-    operator ++ (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
+    Vector<SIMD<T>,l> & 
+    operator ++ (Vector<SIMD<T>,l> &a) {
       a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
     }
 
     /// simd complex, real
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a + Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l>
+    operator + (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
+      return a + Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
     
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator + (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) + b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator + (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) + b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & 
-    operator += (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> & 
+    operator += (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a + b;
       return a;
     }
 
     /// simd complex, complex 
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >
-    operator + (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a + Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l>
+    operator + (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
+      return a + Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
     
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator + (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) + b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator + (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) + b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & 
-    operator += (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> & 
+    operator += (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a + b;
       return a;
     }
@@ -323,20 +312,20 @@ namespace KokkosBatched {
 
     /// simd, simd
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    Vector<SIMD<T>,l> 
+    operator - (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
+      Vector<SIMD<T>,l> r_val;
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] - b[i];
-        });
+      // Kokkos::parallel_for
+      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+      //    [&](const int &i) {
+      //     r_val[i] = a[i] - b[i];
+      //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -353,19 +342,19 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a) {
+    Vector<SIMD<T>,l> 
+    operator - (const Vector<SIMD<T>,l> &a) {
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          a[i] = -a[i];
-        });
+      // Kokkos::parallel_for
+      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+      //    [&](const int &i) {
+      //     a[i] = -a[i];
+      //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -382,111 +371,111 @@ namespace KokkosBatched {
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    Vector<SIMD<T>,l> &
+    operator -= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a - b;
       return a;
     }
 
     /// simd, real
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a - Vector<VectorTag<SIMD<T,SpT>,l> >(b);
+    Vector<SIMD<T>,l> 
+    operator - (const Vector<SIMD<T>,l> &a, const T b) {
+      return a - Vector<SIMD<T>,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator - (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) - b;
+    Vector<SIMD<T>,l> 
+    operator - (const T a, const Vector<SIMD<T>,l> &b) {
+      return Vector<SIMD<T>,l>(a) - b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
+    Vector<SIMD<T>,l> &
+    operator -= (Vector<SIMD<T>,l> &a, const T b) {
       a = a - b;
       return a;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a, int) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > a0 = a;
+    Vector<SIMD<T>,l> 
+    operator -- (Vector<SIMD<T>,l> &a, int) {
+      Vector<SIMD<T>,l> a0 = a;
       a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a0;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > & 
-    operator -- (Vector<VectorTag<SIMD<T,SpT>,l> > & a) {
+    Vector<SIMD<T>,l> & 
+    operator -- (Vector<SIMD<T>,l> &a) {
       a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
     }
 
     /// simd complex, real
     
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a - Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
+      return a - Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) - b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator - (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) - b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> &
+    operator -= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a - b;
       return a;
     }
 
     /// simd complex, complex
     
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a - Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
+      return a - Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator - (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) - b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator - (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) - b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator -= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> &
+    operator -= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a - b;
       return a;
     }
@@ -495,20 +484,20 @@ namespace KokkosBatched {
 
     /// simd, simd
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    Vector<SIMD<T>,l> 
+    operator * (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
+      Vector<SIMD<T>,l> r_val;
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] * b[i];
-        });
+      // Kokkos::parallel_for
+      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+      //    [&](const int &i) {
+      //     r_val[i] = a[i] * b[i];
+      //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -525,11 +514,11 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    Vector<SIMD<T>,l> &
+    operator *= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a * b;
       return a;
     }
@@ -537,81 +526,81 @@ namespace KokkosBatched {
 
     /// simd, real
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a * Vector<VectorTag<SIMD<T,SpT>,l> >(b);
+    Vector<SIMD<T>,l> 
+    operator * (const Vector<SIMD<T>,l> &a, const T b) {
+      return a * Vector<SIMD<T>,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator * (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) * b;
+    Vector<SIMD<T>,l> 
+    operator * (const T a, const Vector<SIMD<T>,l> &b) {
+      return Vector<SIMD<T>,l>(a) * b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
+    Vector<SIMD<T>,l> &
+    operator *= (Vector<SIMD<T>,l> &a, const T b) {
       a = a * b;
       return a;
     }
 
     /// simd complex, real
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a * Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
+      return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) * b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator * (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) * b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> &
+    operator *= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a * b;
       return a;
     }
 
     /// simd complex, complex
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a * Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
+      return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator * (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) * b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator * (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) * b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator *= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> &
+    operator *= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a * b;
       return a;
     }
@@ -620,20 +609,20 @@ namespace KokkosBatched {
 
     /// simd, simd
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
+    Vector<SIMD<T>,l> 
+    operator / (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
+      Vector<SIMD<T>,l> r_val;
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      Kokkos::parallel_for
-        (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-         [&](const int &i) {
-          r_val[i] = a[i] / b[i];
-        });
+      // Kokkos::parallel_for
+      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
+      //    [&](const int &i) {
+      //     r_val[i] = a[i] / b[i];
+      //   });
 #else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -650,92 +639,92 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
+    Vector<SIMD<T>,l> &
+    operator /= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a / b;
       return a;
     }
 
     /// simd, real
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, const T b) {
-      return a / Vector<VectorTag<SIMD<T,SpT>,l> >(b);
+    Vector<SIMD<T>,l> 
+    operator / (const Vector<SIMD<T>,l> &a, const T b) {
+      return a / Vector<SIMD<T>,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<T,SpT>,l> > 
-    operator / (const T a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<T,SpT>,l> >(a) / b;
+    Vector<SIMD<T>,l> 
+    operator / (const T a, const Vector<SIMD<T>,l> &b) {
+      return Vector<SIMD<T>,l>(a) / b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<T,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<T,SpT>,l> > & a, const T b) {
+    Vector<SIMD<T>,l> &
+    operator /= (Vector<SIMD<T>,l> &a, const T b) {
       a = a / b;
       return a;
     }
 
     /// simd complex, real
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const T b) {
-      return a / Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator / (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
+      return a / Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (const T a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) / b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator / (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) / b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const T b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> &
+    operator /= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a / b;
       return a;
     }
 
     /// simd complex, complex
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & a, const Kokkos::complex<T> b) {
-      return a / Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(b);
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator / (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
+      return a / Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static 
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > 
-    operator / (const Kokkos::complex<T> a, Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > const & b) {
-      return Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> >(a) / b;
+    Vector<SIMD<Kokkos::complex<T> >,l> 
+    operator / (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+      return Vector<SIMD<Kokkos::complex<T> >,l>(a) / b;
     }
 
-    template<typename T, typename SpT, int l>
+    template<typename T, int l>
     KOKKOS_INLINE_FUNCTION
     static
-    Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > &
-    operator /= (Vector<VectorTag<SIMD<Kokkos::complex<T>,SpT>,l> > & a, const Kokkos::complex<T> b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> &
+    operator /= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a / b;
       return a;
     }
