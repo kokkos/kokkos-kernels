@@ -72,7 +72,7 @@ do
   key="$1"
 
   case $key in
-    --kokkos-kernels-path*)
+    --kokkoskernels-path*)
       KOKKOSKERNELS_PATH="${key#*=}"
       ;;
     --kokkos-path*)
@@ -256,12 +256,14 @@ elif [ "$MACHINE" = "shepard" ]; then
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
-  INTEL_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
-  GCC_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
+  INTEL_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>,openblas"
+  GCC_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,openblas"
+
+  BLAS_PATH=${BLAS_ROOT}
 
   # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST icpc $GCC_WARNING_FLAGS"
-             "intel/17.4.196 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+  COMPILERS=("gcc/4.9.3 $GCC_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+             "intel/17.4.196 $INTEL_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
   )
 
   if [ -z "$ARCH_FLAG" ]; then
@@ -339,7 +341,7 @@ RESULT_ROOT_PREFIX=TestAll
 
 if [ "$PRINT_HELP" = "True" ]; then
   echo "test_all_sandia <ARGS> <OPTIONS>:"
-  echo "--kokkos-kernels-path=/Path/To/Kokkos: Path to the KokkosKernels root directory"
+  echo "--kokkoskernels-path=/Path/To/Kokkos: Path to the KokkosKernels root directory"
   echo "    Defaults to root repo containing this script"
   echo "--kokkos-path=/Path/To/Kokkos: Path to the Kokkos root directory"
   echo "    Defaults to KokkosKernelsPath/../kokkos"
@@ -601,7 +603,7 @@ single_build_and_test() {
       run_cmd ls fake_problem >& ${desc}.configure.log || { report_and_log_test_result 1 $desc configure && return 0; }
     fi
   else
-    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 32 build-test >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)
