@@ -263,6 +263,18 @@ crsMat_t3 run_experiment(
 
   for (int i = 0; i < repeat; ++i){
   switch (algorithm){
+  case -2:
+	kh.create_spgemm_handle(SPGEMM_KK);
+	break;
+  case -1:
+	kh.create_spgemm_handle(SPGEMM_KK_CUCKOO);
+	break;
+  case -3:
+  	kh.create_spgemm_handle(SPGEMM_KK_TRACKED_CUCKOO);
+  	break;
+  case -4:
+  	kh.create_spgemm_handle(SPGEMM_KK_TRACKED_CUCKOO_F);
+  	break;
   case 1:
     kh.create_spgemm_handle(SPGEMM_MKL);
     break;
@@ -323,7 +335,7 @@ crsMat_t3 run_experiment(
   kh.get_spgemm_handle()->mkl_convert_to_1base = false;
   kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
   kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
-
+  kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
   if (coloring_input_file){
     kh.get_spgemm_handle()->coloring_input_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_input_file);
   }

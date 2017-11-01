@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 */
+#include "KokkosKernels_BitUtils.hpp"
 namespace KokkosSparse{
 
 namespace Impl{
@@ -270,11 +271,14 @@ struct KokkosSPGEMM
         nnz_lno_t c_rows = sets[set_ind];
         sets[set_ind] = 0;
 
+        nnz_lno_t num_el2 = KokkosKernels::Impl::pop_count(c_rows);
+/*
         //count number of set bits
         nnz_lno_t num_el2 = 0;
         for (; c_rows; num_el2++) {
           c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
         }
+        */
         num_el += num_el2;
       }
       rowmapC(row_index) = num_el;
@@ -284,7 +288,277 @@ struct KokkosSPGEMM
     m_space.release_chunk(indices);
   }
 
+  //this one will be cuckoo hashing.
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const MultiCoreTag3&, const team_member_t & teamMember) const {
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
 
+    //get memory from memory pool.
+    volatile nnz_lno_t * tmp = NULL;
+    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+    }
+
+    nnz_lno_t *hash_ids = (nnz_lno_t *) (tmp);
+    tmp += pow2_hash_size;
+    nnz_lno_t *hash_values = (nnz_lno_t *) (tmp);
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
+      nnz_lno_t globally_used_hash_count = 0;
+      nnz_lno_t used_hash_size = 0;
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
+      //traverse columns of A.
+      for (nnz_lno_t colind = 0; colind < col_size; ++colind){
+        size_type a_col = colind + col_begin;
+        nnz_lno_t rowB = entriesA[a_col];
+
+        size_type rowBegin = row_pointer_begins_B(rowB);
+        nnz_lno_t left_work = row_pointer_ends_B(rowB ) - rowBegin;
+        //traverse columns of B
+        for (nnz_lno_t i = 0; i < left_work; ++i){
+
+          const size_type adjind = i + rowBegin;
+
+          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          nnz_lno_t b_set = entriesSetsB[adjind];
+          nnz_lno_t hash = (b_set_ind * HASHSCALAR) & pow2_hash_func;
+
+          while (true){
+            if (hash_ids[hash] == -1){
+            	hash_ids[hash] = b_set_ind;
+            	hash_values[hash] = b_set;
+            	break;
+            }
+            else if (hash_ids[hash] == b_set_ind){
+            	hash_values[hash] = hash_values[hash] | b_set;
+            	break;
+            }
+            else {
+            	hash = (hash + 1) & pow2_hash_func;
+            }
+          }
+        }
+      }
+
+      //when done with all insertions, traverse insertions and get the size.
+      nnz_lno_t num_el = 0;
+      for (nnz_lno_t ii = 0; ii < pow2_hash_size; ++ii){
+    	  if (hash_ids[ii] != -1){
+    		  hash_ids[ii] = -1;
+    		  nnz_lno_t c_rows = hash_values[ii];
+    		  nnz_lno_t num_el2 = KokkosKernels::Impl::pop_count(c_rows);
+
+    		  //the number of set bits.
+    		  /*
+    		  for (; c_rows; num_el2++) {
+    			  c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
+    		  }
+    		  */
+    		  num_el += num_el2;
+    	  }
+      }
+
+      //set the row size.
+      rowmapC(row_index) = num_el;
+    });
+
+    m_space.release_chunk(hash_ids);
+  }
+
+  //this one will be cuckoo hashing with tracking.
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const MultiCoreTag4&, const team_member_t & teamMember) const {
+
+
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+
+
+    //get memory from memory pool.
+    volatile nnz_lno_t * tmp = NULL;
+    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+    }
+
+
+
+    nnz_lno_t *used_indices = (nnz_lno_t *) (tmp);
+    tmp += MaxRoughNonZero;
+    nnz_lno_t *hash_ids = (nnz_lno_t *) (tmp);
+    tmp += pow2_hash_size;
+    nnz_lno_t *hash_values = (nnz_lno_t *) (tmp);
+
+
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
+      nnz_lno_t used_count = 0;
+
+      nnz_lno_t globally_used_hash_count = 0;
+      nnz_lno_t used_hash_size = 0;
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
+      //traverse columns of A.
+      for (nnz_lno_t colind = 0; colind < col_size; ++colind){
+        size_type a_col = colind + col_begin;
+        nnz_lno_t rowB = entriesA[a_col];
+
+        size_type rowBegin = row_pointer_begins_B(rowB);
+        nnz_lno_t left_work = row_pointer_ends_B(rowB ) - rowBegin;
+        //traverse columns of B
+        for (nnz_lno_t i = 0; i < left_work; ++i){
+
+          const size_type adjind = i + rowBegin;
+
+          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          nnz_lno_t b_set = entriesSetsB[adjind];
+          nnz_lno_t hash = (b_set_ind * HASHSCALAR) & pow2_hash_func;
+
+          while (true){
+            if (hash_ids[hash] == -1){
+            	used_indices[used_count++] = hash;
+            	hash_ids[hash] = b_set_ind;
+            	hash_values[hash] = b_set;
+            	break;
+            }
+            else if (hash_ids[hash] == b_set_ind){
+            	hash_values[hash] = hash_values[hash] | b_set;
+            	break;
+            }
+            else {
+            	hash = (hash + 1) & pow2_hash_func;
+            }
+          }
+        }
+      }
+
+      //when done with all insertions, traverse insertions and get the size.
+      nnz_lno_t num_el = 0;
+      for (nnz_lno_t ii = 0; ii < used_count; ++ii){
+
+    	  nnz_lno_t used_index = used_indices[ii];
+    	  nnz_lno_t c_rows = hash_values[used_index];
+    	  hash_ids[used_index] = -1;
+
+
+		  nnz_lno_t num_el2 = KokkosKernels::Impl::pop_count(c_rows);
+/*
+    	  //the number of set bits.
+    	  for (; c_rows; num_el2++) {
+    		  c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
+    	  }
+    	  */
+    	  num_el += num_el2;
+      }
+      rowmapC(row_index) = num_el;
+    });
+
+    m_space.release_chunk(used_indices);
+  }
+
+
+  //this one will be cuckoo hashing with tracking.
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const MultiCoreTag5&, const team_member_t & teamMember) const {
+
+
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+
+
+    //get memory from memory pool.
+    volatile nnz_lno_t * tmp = NULL;
+    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+    }
+
+
+
+    nnz_lno_t *used_indices = (nnz_lno_t *) (tmp);
+    tmp += MaxRoughNonZero;
+    nnz_lno_t *hash_ids = (nnz_lno_t *) (tmp);
+    tmp += pow2_hash_size;
+    nnz_lno_t *hash_values = (nnz_lno_t *) (tmp);
+
+
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
+      nnz_lno_t used_count = 0;
+
+      nnz_lno_t globally_used_hash_count = 0;
+      nnz_lno_t used_hash_size = 0;
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
+      //traverse columns of A.
+      for (nnz_lno_t colind = 0; colind < col_size; ++colind){
+        size_type a_col = colind + col_begin;
+        nnz_lno_t rowB = entriesA[a_col];
+
+        size_type rowBegin = row_pointer_begins_B(rowB);
+        nnz_lno_t left_work = row_pointer_ends_B(rowB ) - rowBegin;
+        //traverse columns of B
+        for (nnz_lno_t i = 0; i < left_work; ++i){
+
+          const size_type adjind = i + rowBegin;
+
+          nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
+          nnz_lno_t b_set = entriesSetsB[adjind];
+
+          nnz_lno_t hash = b_set_ind;
+          hash = ((hash >> 16) ^ hash) * UINT32_C(0x45d9f3b);
+          hash = ((hash >> 16) ^ hash) * UINT32_C(0x45d9f3b);
+          hash = ((hash >> 16) ^ hash);
+          hash = hash & pow2_hash_func;
+
+          //nnz_lno_t hash = (b_set_ind * HASHSCALAR) & pow2_hash_func;
+
+          while (true){
+            if (hash_ids[hash] == -1){
+            	used_indices[used_count++] = hash;
+            	hash_ids[hash] = b_set_ind;
+            	hash_values[hash] = b_set;
+            	break;
+            }
+            else if (hash_ids[hash] == b_set_ind){
+            	hash_values[hash] = hash_values[hash] | b_set;
+            	break;
+            }
+            else {
+            	hash = (hash + 1) & pow2_hash_func;
+            }
+          }
+        }
+      }
+
+      //when done with all insertions, traverse insertions and get the size.
+      nnz_lno_t num_el = 0;
+      for (nnz_lno_t ii = 0; ii < used_count; ++ii){
+
+    	  nnz_lno_t used_index = used_indices[ii];
+    	  nnz_lno_t c_rows = hash_values[used_index];
+    	  hash_ids[used_index] = -1;
+
+
+		  nnz_lno_t num_el2 = KokkosKernels::Impl::pop_count(c_rows);
+/*
+    	  //the number of set bits.
+    	  for (; c_rows; num_el2++) {
+    		  c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
+    	  }
+    	  */
+    	  num_el += num_el2;
+      }
+      rowmapC(row_index) = num_el;
+    });
+
+    m_space.release_chunk(used_indices);
+  }
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
 
@@ -359,12 +633,13 @@ struct KokkosSPGEMM
       nnz_lno_t num_el = 0;
       for (nnz_lno_t ii = 0; ii < used_hash_size; ++ii){
         nnz_lno_t c_rows = hm2.values[ii];
-        nnz_lno_t num_el2 = 0;
-
+		nnz_lno_t num_el2 = KokkosKernels::Impl::pop_count(c_rows);
+/*
         //the number of set bits.
         for (; c_rows; num_el2++) {
           c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
         }
+        */
         num_el += num_el2;
       }
 
@@ -891,7 +1166,7 @@ KokkosKernels::Impl::kk_reduce_diff_view <b_original_row_view_t, b_compressed_ro
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\tsuggested_vector_size:" << suggested_vector_size << " setting it to 4 for Structure kernel" << std::endl;
       }
-suggested_vector_size = 4;
+      suggested_vector_size = 4;
   }
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
@@ -903,15 +1178,25 @@ suggested_vector_size = 4;
   }
 
   //set the chunksize.
-  size_t chunksize = min_hash_size ; //this is for used hash indices
-  chunksize += min_hash_size ; //this is for the hash begins
-  chunksize += maxNumRoughNonzeros ; //this is for hash nexts
-  chunksize += maxNumRoughNonzeros ; //this is for hash keys
-  chunksize += maxNumRoughNonzeros ; //this is for hash values
-
+  size_t chunksize = 1;
   //initizalize value for the mem pool
   int pool_init_val = -1;
-
+  if (this->spgemm_algorithm == SPGEMM_KK_TRACKED_CUCKOO || this->spgemm_algorithm == SPGEMM_KK_TRACKED_CUCKOO_F ){
+	  chunksize = min_hash_size ; //this is for keys
+	  chunksize += min_hash_size ; //this is for the values
+	  chunksize += maxNumRoughNonzeros ; //this is for hash values
+  }
+  else if (this->spgemm_algorithm == SPGEMM_KK_CUCKOO){
+	  chunksize = min_hash_size ; //this is for keys
+	  chunksize += min_hash_size ; //this is for the values
+  }
+  else {
+	  chunksize = min_hash_size ; //this is for used hash indices
+	  chunksize += min_hash_size ; //this is for the hash begins
+	  chunksize += maxNumRoughNonzeros ; //this is for hash nexts
+	  chunksize += maxNumRoughNonzeros ; //this is for hash keys
+	  chunksize += maxNumRoughNonzeros ; //this is for hash values
+  }
   //if KKSPEED are used on CPU, or KKMEMSPEED is run with threads less than 32
   //than we use dense accumulators.
   if ((   spgemm_algorithm == SPGEMM_KK_MEMSPEED  &&
@@ -1010,25 +1295,52 @@ suggested_vector_size = 4;
     Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
   else {
-    if (( spgemm_algorithm == SPGEMM_KK_MEMSPEED  &&
-        concurrency <=  sizeof (nnz_lno_t) * 8)  ||
-        spgemm_algorithm == SPGEMM_KK_SPEED){
+	  if (( spgemm_algorithm == SPGEMM_KK_MEMSPEED  &&
+			  concurrency <=  sizeof (nnz_lno_t) * 8)  ||
+			  spgemm_algorithm == SPGEMM_KK_SPEED){
 
-      if (use_dynamic_schedule){
-        Kokkos::parallel_for( dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-      }
-      else {
-        Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-      }
-    }
-    else {
-      if (use_dynamic_schedule){
-        Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-      }
-      else {
-        Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-      }
-    }
+		  if (use_dynamic_schedule){
+			  Kokkos::parallel_for( dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+		  else {
+			  Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+	  }
+	  else if (this->spgemm_algorithm == SPGEMM_KK_TRACKED_CUCKOO){
+		  if (use_dynamic_schedule){
+			  Kokkos::parallel_for( dynamic_multicore_team_policy4_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+		  else {
+
+			  Kokkos::parallel_for( multicore_team_policy4_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+	  }
+	  else if (this->spgemm_algorithm == SPGEMM_KK_TRACKED_CUCKOO_F){
+		  if (use_dynamic_schedule){
+			  Kokkos::parallel_for( dynamic_multicore_team_policy5_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+		  else {
+
+			  Kokkos::parallel_for( multicore_team_policy5_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+	  }
+	  else if (this->spgemm_algorithm == SPGEMM_KK_CUCKOO){
+		  if (use_dynamic_schedule){
+			  Kokkos::parallel_for( dynamic_multicore_team_policy3_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+		  else {
+
+			  Kokkos::parallel_for( multicore_team_policy3_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+	  }
+	  else {
+		  if (use_dynamic_schedule){
+			  Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+		  else {
+			  Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+	  }
   }
   MyExecSpace::fence();
 

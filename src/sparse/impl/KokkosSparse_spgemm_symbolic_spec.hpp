@@ -209,6 +209,11 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
     case SPGEMM_KK_MULTICOLOR:
     case SPGEMM_KK_MULTICOLOR2:
     case SPGEMM_KK_MULTIMEM:
+    case SPGEMM_KK_CUCKOO:
+    case SPGEMM_KK:
+    case SPGEMM_KK_TRACKED_CUCKOO:
+    case SPGEMM_KK_TRACKED_CUCKOO_F:
+    default:
     {
       KokkosSPGEMM
       <KernelHandle,
@@ -236,7 +241,6 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           );
       break;
     case SPGEMM_MKL:
-    default:
       break;
     }
     sh->set_call_symbolic();

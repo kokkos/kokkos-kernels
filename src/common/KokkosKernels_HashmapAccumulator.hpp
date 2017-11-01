@@ -367,7 +367,7 @@ struct HashmapAccumulator{
       }
     }
 
-    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    //if (*used_size_ >= max_value_size_) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1){

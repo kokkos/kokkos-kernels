@@ -41,7 +41,7 @@
 //@HEADER
 */
 #include <iostream>
-
+#include "KokkosKernels_config.h"
 #if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
     defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
     defined(KOKKOSKERNELS_INST_ORDINAL_INT)
@@ -82,12 +82,14 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.use_openmp = atoi( argv[++i] );
     }
     else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
-      params.use_cuda = 1;
+      params.use_cuda = atoi( argv[++i] ) + 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
       params.repeat = atoi( argv[++i] );
     }
-
+    else if ( 0 == strcasecmp( argv[i] , "hashscale" ) ) {
+      params.minhashscale = atoi( argv[++i] );
+    }
     else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
       params.chunk_size = atoi( argv[++i] ) ;
     }
@@ -197,7 +199,19 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
-      if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
+      if ( 0 == strcasecmp( argv[i] , "DEFAULT" ) ) {
+    	  params.algorithm = -2;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "fancy_CUCKOO" ) ) {
+    	  params.algorithm = -4;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "tracked_CUCKOO" ) ) {
+    	  params.algorithm = -3;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "CUCKOO" ) ) {
+    	  params.algorithm = -1;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
         params.algorithm = 1;
       }
       else if ( 0 == strcasecmp( argv[i] , "CUSPARSE" ) ) {
@@ -296,8 +310,10 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_OPENMP )
 
   if (params.use_openmp) {
-
+	Kokkos::Impl::Timer timer1;
     Kokkos::OpenMP::initialize( params.use_openmp );
+    std::cout << "\t\tInit time:" << timer1.seconds() << std::endl;
+
 	  Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_spgemm
@@ -310,16 +326,23 @@ int main (int argc, char ** argv){
         params
         );
 #endif
+    timer1.reset();
     Kokkos::OpenMP::finalize();
+    std::cout << "\t\tFinalize Time:" << timer1.seconds() << std::endl;
+
   }
 
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
+  std::cout << "use cuda:" << params.use_cuda <<  std::endl;
   if (params.use_cuda) {
     Kokkos::HostSpace::execution_space::initialize();
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
+    std::cout << "before initialzie" << std::endl;
+    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( params.use_cuda - 1) );
+    std::cout << "after initialize" << std::endl; 
     Kokkos::Cuda::print_configuration(std::cout);
+    std::cout << "device:" << 1 << std::endl;
 
 #ifdef KOKKOSKERNELS_MULTI_MEM
 
@@ -332,11 +355,14 @@ int main (int argc, char ** argv){
     <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
         params
         );
+
 #endif
 
     Kokkos::Cuda::finalize();
     Kokkos::HostSpace::execution_space::finalize();
   }
+#else 
+  std::cout << "dont have cuda" << std::endl;
 
 #endif
 
@@ -348,6 +374,20 @@ int main (int argc, char ** argv){
 
 #else
 int main() {
+#if !defined(KOKKOSKERNELS_INST_DOUBLE)
+std::cout  << " not defined KOKKOSKERNELS_INST_DOUBLE"  << std::endl;
+#endif
+
+#if !defined(KOKKOSKERNELS_INST_OFFSET_INT)
+std::cout  << " not defined KOKKOSKERNELS_INST_OFFSET_INT"  << std::endl;
+
+#endif
+
+#if !defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+std::cout  << " not defined KOKKOSKERNELS_INST_ORDINAL_INT"  << std::endl;
+
+#endif
+
 }
 #endif
 

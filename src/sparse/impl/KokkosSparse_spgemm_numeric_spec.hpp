@@ -285,6 +285,12 @@ struct SPGEMM_NUMERIC<KernelHandle,
     case SPGEMM_KK_MULTICOLOR2:
     case SPGEMM_KK_MULTIMEM:
     case SPGEMM_KK_OUTERMULTIMEM:
+    case SPGEMM_KK_CUCKOO:
+    case SPGEMM_KK:
+    case SPGEMM_KK_TRACKED_CUCKOO:
+    case SPGEMM_KK_TRACKED_CUCKOO_F:
+    default:
+
     {
       KokkosSPGEMM
       <KernelHandle,
@@ -314,8 +320,6 @@ struct SPGEMM_NUMERIC<KernelHandle,
           entriesC,
           valuesC
           );
-      break;
-    default:
       break;
     }
 }

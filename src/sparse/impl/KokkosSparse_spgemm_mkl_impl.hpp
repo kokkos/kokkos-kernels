@@ -44,10 +44,10 @@
 #ifndef _KOKKOSSPGEMMMKL_HPP
 #define _KOKKOSSPGEMMMKL_HPP
 
-//#define HAVE_KOKKOSKERNELS_MKL
+//#define KOKKOSKERNELS_ENABLE_TPL_MKL
 
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "mkl_spblas.h"
 #include "mkl.h"
 #endif
@@ -83,7 +83,7 @@ void mkl_symbolic(
     cin_row_index_view_type row_mapC,
     bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
   typedef typename KernelHandle::nnz_lno_t idx;
   typedef typename KernelHandle::size_type size_type;
@@ -388,7 +388,7 @@ void mkl_symbolic(
       cin_nonzero_value_view_type valuesC,
       bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
     typedef typename KernelHandle::nnz_lno_t idx;
     typedef typename KernelHandle::size_type size_type;
@@ -400,7 +400,6 @@ void mkl_symbolic(
 
 
     typedef typename KernelHandle::nnz_scalar_t value_type;
-
 
     
 
@@ -467,8 +466,8 @@ void mkl_symbolic(
 
 
  
-      value_type *a_ew = valuesA.ptr_on_device();
-      value_type *b_ew = valuesB.ptr_on_device();
+      const value_type *a_ew = valuesA.ptr_on_device();
+      const value_type *b_ew = valuesB.ptr_on_device();
 
 
       sparse_matrix_t A;
@@ -564,13 +563,13 @@ void mkl_symbolic(
         std::cout << "a_xadj[0]:" << a_xadj[0] << " a_xadj[m]:" << a_xadj[m] << std::endl;
         std::cout << "a_adj[a_xadj[m] - 1]:" << a_adj[a_xadj[m] - 1] << " a_ew[a_xadj[m] - 1]:" << a_ew[a_xadj[m] - 1] << std::endl;
         */
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&A, SPARSE_INDEX_BASE_ZERO, m, n, a_xadj, a_xadj + 1, a_adj, (double *)a_ew)){
+        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&A, SPARSE_INDEX_BASE_ZERO, m, n, a_xadj, a_xadj + 1, a_adj, ( double *)a_ew)){
           throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
           return;
         }
 
         //std::cout << "create b" << std::endl;
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, (double *) b_ew)){
+        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, ( double *) b_ew)){
           throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
           return;
         }

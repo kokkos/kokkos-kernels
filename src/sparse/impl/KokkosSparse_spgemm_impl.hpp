@@ -163,6 +163,8 @@ public:
   struct MultiCoreTag{};
   struct MultiCoreTag2{};
   struct MultiCoreTag3{};
+  struct MultiCoreTag4{};
+  struct MultiCoreTag5{};
   struct GPUTag{};
 
   struct Numeric1Tag{};
@@ -186,6 +188,8 @@ public:
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace> multicore_team_policy2_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace> multicore_team_policy3_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace> multicore_team_policy4_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace> multicore_team_policy5_t ;
 
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
@@ -208,6 +212,9 @@ public:
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy2_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy3_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy4_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy5_t ;
+
 
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_count_policy_t ;
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t ;
