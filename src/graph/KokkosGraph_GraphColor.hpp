@@ -45,6 +45,7 @@
 #define _KOKKOS_GRAPH_COLOR_HPP
 
 #include "KokkosGraph_GraphColor_impl.hpp"
+#include "KokkosGraph_Distance2Color_impl.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 namespace KokkosGraph{
@@ -108,6 +109,19 @@ void graph_color_symbolic(
 
     gc = new EBGraphColoring(num_rows, entries.dimension_0(),row_map, entries, gch);
     break;
+  case COLORING_SPGEMM:
+    if (handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA) {
+           typedef typename Impl::GraphColor_EB
+        <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
+        gc = new EBGraphColoring(num_rows, entries.dimension_0(),row_map, entries, gch);
+    } else {
+        typedef typename Impl::GraphColor_VB
+        <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
+        gc = new VBGraphColoring(
+            num_rows, entries.dimension_0(),
+            row_map, entries, gch);
+    }
+    break;
   case COLORING_DEFAULT:
     break;
 
@@ -146,6 +160,8 @@ void graph_color(
   graph_color_symbolic(handle, num_rows, num_cols, row_map, entries, is_symmetric);
 }
 
+
+// initial distance 2 graph coloring -- serial only (work in progress) - wcmclen
 template <class KernelHandle,
           typename lno_row_view_t_, typename lno_nnz_view_t_,
           typename lno_col_view_t_, typename lno_colnnz_view_t_>
@@ -165,7 +181,7 @@ void d2_graph_color(
 
   typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
 
-  color_view_type colors_out = color_view_type("Graph Colors", num_rows);
+  //color_view_type colors_out = color_view_type("Graph Colors", num_rows);
 
 
   typedef typename Impl::GraphColor <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
@@ -176,21 +192,45 @@ void d2_graph_color(
   switch (algorithm){
   case COLORING_SERIAL:
   {
+    color_view_type colors_out = color_view_type("Graph Colors", num_rows);
     BaseGraphColoring gc(
         num_rows, row_entries.dimension_0(),
         row_map, row_entries, gch);
     gc.d2_color_graph/*<lno_col_view_t_,lno_colnnz_view_t_>*/(colors_out, num_phases, num_cols, col_map, col_entries);
+    gch->set_num_phases(num_phases);
+    gch->set_vertex_colors(colors_out);
     break;
   }
-  case COLORING_SERIAL2:
+  case COLORING_SPGEMM:
   {
-
+      // WCMCLEN: distance-2 coloring inserts here.
+      // template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
+      //   GraphColor(
+      //nnz_lno_t nr_,
+      //nnz_lno_t nc_,
+      //size_type ne_,
+      //const_lno_row_view_t row_map,
+      //const_lno_nnz_view_t entries,
+      //const_lno_row_view_t t_row_map,
+      //const_lno_nnz_view_t t_entries,
+      //HandleType *coloring_handle)
+      Impl::GraphColorD2 gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
+      gc.color_graph();
+      break;
+  }
+  case COLORING_SERIAL2:            // WCMCLEN: for now we don't need to worry about this optimization.
+  {
+    color_view_type colors_out = color_view_type("Graph Colors", num_rows);
     Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> gc(
         num_rows, row_entries.dimension_0(),
         row_map, row_entries, gch);
     gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
+    gch->set_num_phases(num_phases);
+    gch->set_vertex_colors(colors_out);
     break;
   }
+#if 0
+  // comment out vertex-based and edge-based (no implementations for these ones at this time) (WCMCLEN)
   case COLORING_VB:
   case COLORING_VBBIT:
   case COLORING_VBCS:
@@ -214,6 +254,7 @@ void d2_graph_color(
 
   }
   break;
+#endif
   case COLORING_DEFAULT:
     break;
 
@@ -224,8 +265,8 @@ void d2_graph_color(
   double coloring_time = timer.seconds();
   gch->add_to_overall_coloring_time(coloring_time);
   gch->set_coloring_time(coloring_time);
-  gch->set_num_phases(num_phases);
-  gch->set_vertex_colors(colors_out);
+ // gch->set_num_phases(num_phases);
+//  gch->set_vertex_colors(colors_out);
 }
 }
 }
