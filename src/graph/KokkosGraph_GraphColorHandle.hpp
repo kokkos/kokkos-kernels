@@ -229,7 +229,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
@@ -460,7 +460,7 @@ private:
 
 
       if (
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
           Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value ||
 #endif
           0){

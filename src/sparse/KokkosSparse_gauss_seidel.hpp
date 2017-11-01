@@ -162,8 +162,11 @@ void gauss_seidel_apply_spec(
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_alno_nnz_view_t_;
 
 
-	  Internal_alno_row_view_t_ const_a_r  = row_map;
-	  Internal_alno_nnz_view_t_ const_a_l  = entries;
+	  //Internal_alno_row_view_t_ const_a_r  = row_map;
+	  //Internal_alno_nnz_view_t_ const_a_l  = entries;
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
+
 	  using namespace KokkosSparse::Impl;
 
 	  GAUSS_SEIDEL_SYMBOLIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_>::gauss_seidel_symbolic
@@ -227,10 +230,17 @@ void gauss_seidel_apply_spec(
 			  typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
 			  typename scalar_nnz_view_t_::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
-
+	  /*
 	  Internal_alno_row_view_t_ const_a_r  = row_map;
 	  Internal_alno_nnz_view_t_ const_a_l  = entries;
 	  Internal_ascalar_nnz_view_t_ const_a_v  = values;
+	  */
+
+	  Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
+	  Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
+	  Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+
+
 	  using namespace KokkosSparse::Impl;
 
 	  GAUSS_SEIDEL_NUMERIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric
@@ -322,12 +332,21 @@ void gauss_seidel_apply_spec(
 			  typename x_scalar_view_t::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
 
+	  /*
 
 	  Internal_alno_row_view_t_ const_a_r  = row_map;
 	  Internal_alno_nnz_view_t_ const_a_l  = entries;
 	  Internal_ascalar_nnz_view_t_ const_a_v  = values;
 	  Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
+	  */
+
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
 
 	  using namespace KokkosSparse::Impl;
 
@@ -428,12 +447,22 @@ void gauss_seidel_apply_spec(
 			  typename x_scalar_view_t::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
 
-
+	  /*
 	  Internal_alno_row_view_t_ const_a_r  = row_map;
 	  Internal_alno_nnz_view_t_ const_a_l  = entries;
 	  Internal_ascalar_nnz_view_t_ const_a_v  = values;
 	  Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
+	  */
+
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+
+
 
 	  using namespace KokkosSparse::Impl;
 
@@ -533,12 +562,20 @@ void gauss_seidel_apply_spec(
 			  typename x_scalar_view_t::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_xscalar_nnz_view_t_;
 
-
+	  /*
 	  Internal_alno_row_view_t_ const_a_r  = row_map;
 	  Internal_alno_nnz_view_t_ const_a_l  = entries;
 	  Internal_ascalar_nnz_view_t_ const_a_v  = values;
 	  Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
+	  */
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+
 
 	  using namespace KokkosSparse::Impl;
 

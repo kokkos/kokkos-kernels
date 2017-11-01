@@ -412,7 +412,7 @@ int main (int argc, char ** argv){
 
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
       INDEX_TYPE nv = 0, ne = 0;

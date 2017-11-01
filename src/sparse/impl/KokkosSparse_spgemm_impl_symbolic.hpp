@@ -207,7 +207,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -1228,7 +1228,7 @@ KokkosKernels::Impl::kk_reduce_diff_view <b_original_row_view_t, b_compressed_ro
   }
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
 
     size_t free_byte ;
@@ -1778,7 +1778,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif

@@ -315,9 +315,9 @@ int main (int argc, char ** argv){
     std::cout << "\t\tInit time:" << timer1.seconds() << std::endl;
 
 	  Kokkos::OpenMP::print_configuration(std::cout);
-#ifdef KOKKOSKERNELS_MULTI_MEM
+#ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
+    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(
         params
         );
 #else 
@@ -334,8 +334,7 @@ int main (int argc, char ** argv){
 
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
-  std::cout << "use cuda:" << params.use_cuda <<  std::endl;
+#if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) {
     Kokkos::HostSpace::execution_space::initialize();
     std::cout << "before initialzie" << std::endl;
@@ -344,8 +343,7 @@ int main (int argc, char ** argv){
     Kokkos::Cuda::print_configuration(std::cout);
     std::cout << "device:" << 1 << std::endl;
 
-#ifdef KOKKOSKERNELS_MULTI_MEM
-
+#ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
     <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
         params
@@ -387,7 +385,6 @@ std::cout  << " not defined KOKKOSKERNELS_INST_OFFSET_INT"  << std::endl;
 std::cout  << " not defined KOKKOSKERNELS_INST_ORDINAL_INT"  << std::endl;
 
 #endif
-
 }
 #endif
 

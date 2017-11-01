@@ -75,12 +75,12 @@ struct spgemm_symbolic_eti_spec_avail {
 }
 
 
-#define KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+#define KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE,SLOW_MEM_SPACE_TYPE) \
     template<> \
     struct spgemm_symbolic_eti_spec_avail< \
         KokkosKernels::Experimental::KokkosKernelsHandle<\
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -263,12 +263,12 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+#define KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE,SLOW_MEM_SPACE_TYPE ) \
     extern template struct  \
     SPGEMM_SYMBOLIC< \
         KokkosKernels::Experimental::KokkosKernelsHandle< \
         const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -286,12 +286,12 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, false, true > ;
 
 
-#define KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+#define KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE) \
     template struct  \
     SPGEMM_SYMBOLIC< \
         KokkosKernels::Experimental::KokkosKernelsHandle<\
         const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
