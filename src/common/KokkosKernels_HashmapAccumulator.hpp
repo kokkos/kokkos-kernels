@@ -381,6 +381,72 @@ struct HashmapAccumulator{
     return INSERT_SUCCESS;
   }
 
+  //function to be called from device.
+  //Accumulation is OR operation.
+  //Insertion is sequential, no race condition for the insertion.
+  KOKKOS_INLINE_FUNCTION
+  int sequential_sorted_insert_into_hash_mergeAdd_TrackHashes (
+      size_type hash,
+      key_type key,
+      value_type value,
+
+      size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
+
+    size_type i = hash_begins[hash];
+
+    if (i != -1){
+        if (keys[i] == key){
+          values[i] = values[i] + value;
+          return INSERT_SUCCESS;
+        }
+        else if (keys[i] < key){
+        	//if not equal at the same time not larger than the key, than rest is gouing to be even smaller so insert here.
+            size_type my_index = (*used_size_)++;
+            hash_nexts[my_index] = hash_begins[hash];
+            hash_begins[hash] = my_index;
+            keys[my_index] = key;
+            values[my_index] = value;
+        	return INSERT_SUCCESS;
+        }
+    }
+    else {
+    	//insert.
+        size_type my_index = (*used_size_)++;
+        used_hashes[used_hash_size[0]++] = hash;
+        hash_nexts[my_index] = hash_begins[hash];
+        hash_begins[hash] = my_index;
+        keys[my_index] = key;
+        values[my_index] = value;
+    	return INSERT_SUCCESS;
+    }
+    size_type prev = i;
+    i = hash_nexts[i];
+    for (; i != -1; i = hash_nexts[i]){
+      if (keys[i] == key){
+        values[i] = values[i] + value;
+        return INSERT_SUCCESS;
+      } else if (keys[i] < key){
+    	  size_type my_index = (*used_size_)++;
+    	  hash_nexts[my_index] = hash_nexts[prev];
+    	  hash_nexts[prev] = my_index;
+    	  keys[my_index] = key;
+    	  values[my_index] = value;
+    	  return INSERT_SUCCESS;
+      }
+      prev = i;
+    }
+
+    size_type my_index = (*used_size_)++;
+    hash_nexts[my_index] = hash_nexts[prev];
+    hash_nexts[prev] = my_index;
+    keys[my_index] = key;
+    values[my_index] = value;
+    return INSERT_SUCCESS;
+  }
+
 
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_TrackHashes (

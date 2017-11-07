@@ -395,7 +395,75 @@ struct KokkosSPGEMM
     });
     memory_space.release_chunk(used_indices);
   }
+/*
+  //cuckoo fancy hashing with tracking.
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const MultiCoreTag6&, const team_member_t & teamMember) const {
 
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
+
+
+    volatile nnz_lno_t * tmp = NULL;
+    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( memory_space.allocate_chunk(tid));
+    }
+
+    nnz_lno_t *used_indices = (nnz_lno_t *) (tmp);
+    tmp += max_nnz;
+    nnz_lno_t *hash_ids = (nnz_lno_t *) (tmp);
+    tmp += pow2_hash_size;
+    scalar_t *hash_values = (scalar_t *) (tmp);
+
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
+      nnz_lno_t used_count = 0;
+
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t left_work = row_mapA[row_index + 1] - col_begin;
+      for ( nnz_lno_t ii = 0; ii < left_work; ++ii){
+        size_type a_col = col_begin + ii;
+        nnz_lno_t rowB = entriesA[a_col];
+        scalar_t valA = valuesA[a_col];
+
+        size_type rowBegin = row_mapB(rowB);
+        nnz_lno_t left_workB = row_mapB(rowB + 1) - rowBegin;
+
+        for ( nnz_lno_t i = 0; i < left_workB; ++i){
+          const size_type adjind = i + rowBegin;
+          nnz_lno_t b_col_ind = entriesB[adjind];
+          scalar_t b_val = valuesB[adjind] * valA;
+          nnz_lno_t hash = (b_col_ind * HASHSCALAR) & pow2_hash_func;
+
+          while (true){
+            if (hash_ids[hash] == -1){
+            	used_indices[used_count++] = hash;
+            	hash_ids[hash] = b_col_ind;
+            	hash_values[hash] = b_val;
+            	break;
+            }
+            else if (hash_ids[hash] == b_col_ind){
+            	hash_values[hash] += b_val;
+            	break;
+            }
+            else {
+            	hash = (hash + 1) & pow2_hash_func;
+            }
+          }
+        }
+      }
+      size_type c_row_begin = rowmapC[row_index];
+      for (nnz_lno_t i = 0; i < used_count; ++i){
+    	  nnz_lno_t used_index = used_indices[i];
+    	  pEntriesC[c_row_begin] = hash_ids[used_index];
+    	  pvaluesC [c_row_begin++] = hash_values[used_index];
+    	  hash_ids[used_index] = -1;
+      }
+    });
+    memory_space.release_chunk(used_indices);
+  }
+*/
 
   //assumes that the vector lane is 1, as in cpus
   KOKKOS_INLINE_FUNCTION
@@ -465,6 +533,77 @@ struct KokkosSPGEMM
     });
     memory_space.release_chunk(globally_used_hash_indices);
   }
+
+
+  //assumes that the vector lane is 1, as in cpus
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const MultiCoreTag6&, const team_member_t & teamMember) const {
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
+
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
+    hm2(pow2_hash_size, pow2_hash_size,NULL, NULL, NULL, NULL);
+
+    volatile nnz_lno_t * tmp = NULL;
+    size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    while (tmp == NULL){
+      tmp = (volatile nnz_lno_t * )( memory_space.allocate_chunk(tid));
+    }
+    nnz_lno_t *globally_used_hash_indices = (nnz_lno_t *) tmp;
+    tmp += pow2_hash_size ;
+
+    hm2.hash_begins = (nnz_lno_t *) (tmp);
+    tmp += pow2_hash_size;
+    hm2.hash_nexts = (nnz_lno_t *) (tmp);
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
+      nnz_lno_t globally_used_hash_count = 0;
+      nnz_lno_t used_hash_sizes = 0;
+
+      const size_type c_row_begin = rowmapC[row_index];
+      const size_type c_row_end = rowmapC[row_index + 1];
+
+      const nnz_lno_t global_memory_hash_size = nnz_lno_t(c_row_end - c_row_begin);
+      hm2.max_value_size = global_memory_hash_size;
+      hm2.keys = pEntriesC + c_row_begin;
+      hm2.values = pvaluesC + c_row_begin;
+
+      const size_type col_begin = row_mapA[row_index];
+      const nnz_lno_t left_work = row_mapA[row_index + 1] - col_begin;
+      for ( nnz_lno_t ii = 0; ii < left_work; ++ii){
+        size_type a_col = col_begin + ii;
+        nnz_lno_t rowB = entriesA[a_col];
+        scalar_t valA = valuesA[a_col];
+
+        size_type rowBegin = row_mapB(rowB);
+        nnz_lno_t left_workB = row_mapB(rowB + 1) - rowBegin;
+
+        for ( nnz_lno_t i = 0; i < left_workB; ++i){
+          const size_type adjind = i + rowBegin;
+          nnz_lno_t b_col_ind = entriesB[adjind];
+          scalar_t b_val = valuesB[adjind] * valA;
+          //nnz_lno_t hash = (b_col_ind * 107) & pow2_hash_func;
+          nnz_lno_t hash = b_col_ind & pow2_hash_func;
+
+          //this has to be a success, we do not need to check for the success.
+          //int insertion =
+          hm2.sequential_sorted_insert_into_hash_mergeAdd_TrackHashes(
+              hash, b_col_ind, b_val,
+              &used_hash_sizes, hm2.max_value_size
+              ,&globally_used_hash_count,
+              globally_used_hash_indices
+          );
+        }
+      }
+      for (nnz_lno_t i = 0; i < globally_used_hash_count; ++i){
+        nnz_lno_t dirty_hash = globally_used_hash_indices[i];
+        hm2.hash_begins[dirty_hash] = -1;
+      }
+    });
+    memory_space.release_chunk(globally_used_hash_indices);
+  }
+
 
 
   //assumes that the vector lane is 1, as in cpus
@@ -965,6 +1104,15 @@ num_chunks = env_num_chunks;
 		  else {
 
 			  Kokkos::parallel_for( dynamic_multicore_team_policy5_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+	  }
+	  else 	if (this->spgemm_algorithm == SPGEMM_KK_MEMORY_SORTED){
+		  if (use_dynamic_schedule){
+			  Kokkos::parallel_for( dynamic_multicore_team_policy6_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+		  }
+		  else {
+
+			  Kokkos::parallel_for( dynamic_multicore_team_policy6_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
 		  }
 	  }
 	  else if (this->spgemm_algorithm == SPGEMM_KK_CUCKOO){

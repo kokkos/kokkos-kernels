@@ -199,7 +199,10 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
-      if ( 0 == strcasecmp( argv[i] , "DEFAULT" ) ) {
+      if ( 0 == strcasecmp( argv[i] , "KKMEMSORT" ) ) {
+        params.algorithm = -5;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "DEFAULT" ) ) {
     	  params.algorithm = -2;
       }
       else if ( 0 == strcasecmp( argv[i] , "fancy_CUCKOO" ) ) {

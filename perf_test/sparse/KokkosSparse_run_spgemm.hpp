@@ -275,6 +275,9 @@ crsMat_t3 run_experiment(
   case -4:
   	kh.create_spgemm_handle(SPGEMM_KK_TRACKED_CUCKOO_F);
   	break;
+  case -5:
+  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_SORTED);
+  	break;
   case 1:
     kh.create_spgemm_handle(SPGEMM_MKL);
     break;

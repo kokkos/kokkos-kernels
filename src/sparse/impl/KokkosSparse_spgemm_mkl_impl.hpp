@@ -44,8 +44,6 @@
 #ifndef _KOKKOSSPGEMMMKL_HPP
 #define _KOKKOSSPGEMMMKL_HPP
 
-//#define KOKKOSKERNELS_ENABLE_TPL_MKL
-
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "mkl_spblas.h"
@@ -66,8 +64,7 @@ typename in_row_index_view_type,
 typename in_nonzero_index_view_type,
 typename bin_row_index_view_type,
 typename bin_nonzero_index_view_type,
-typename cin_row_index_view_type,
-typename cin_nonzero_index_view_type>
+typename cin_row_index_view_type>
 void mkl_symbolic(
     KernelHandle *handle,
     typename KernelHandle::nnz_lno_t m,
@@ -162,8 +159,10 @@ void mkl_symbolic(
 
 
 
-    value_type *a_ew = valuesA.ptr_on_device();
-    value_type *b_ew = valuesB.ptr_on_device();
+    std::vector <value_type> tmp_values (KOKKOSKERNELS_MACRO_MAX(entriesB.dimension_0(), entriesA.dimension_0()));
+    value_type *ptmp_values = &(tmp_values[0]);
+    value_type *a_ew = ptmp_values;
+    value_type *b_ew = ptmp_values;
 
 
     sparse_matrix_t A;
@@ -232,7 +231,7 @@ void mkl_symbolic(
 
         KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
         idx nnz = row_mapC(m) =  rows_end[m - 1];
-        handle->get_spgemm_handle()->set_c_nnz(nnz);
+        handle->set_c_nnz(nnz);
 
       }
 
@@ -317,7 +316,7 @@ void mkl_symbolic(
 
           KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
-          handle->get_spgemm_handle()->set_c_nnz(nnz);
+          handle->set_c_nnz(nnz);
 
           double copy_time_d = copy_time.seconds();
           if (verbose)

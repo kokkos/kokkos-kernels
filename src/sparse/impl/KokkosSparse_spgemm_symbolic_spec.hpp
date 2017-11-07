@@ -241,6 +241,12 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           );
       break;
     case SPGEMM_MKL:
+    	mkl_symbolic(
+                  sh,
+                  m,n,k,
+                  row_mapA, entriesA,  transposeA,
+                  row_mapB, entriesB,  transposeB,
+                  row_mapC, handle->get_verbose());
       break;
     }
     sh->set_call_symbolic();

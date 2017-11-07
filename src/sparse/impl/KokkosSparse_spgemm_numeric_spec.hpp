@@ -250,7 +250,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
           row_mapC, entriesC, valuesC);
           break;
     case SPGEMM_MKL:
-      mkl_apply<spgemmHandleType>(
+      mkl_apply(
                 sh,
                 m,n,k,
                 row_mapA, entriesA, valuesA, transposeA,
