@@ -268,7 +268,8 @@ void d2_graph_color(
  // gch->set_num_phases(num_phases);
 //  gch->set_vertex_colors(colors_out);
 }
-}
-}
+
+}  // end namespace Experimental
+}  // end namespace KokkosGraph
 
 #endif//_KOKKOS_GRAPH_COLOR_HPP

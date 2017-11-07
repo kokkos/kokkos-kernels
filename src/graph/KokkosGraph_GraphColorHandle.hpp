@@ -42,24 +42,26 @@
 */
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
-#include "KokkosKernels_Utils.hpp"
+#include <KokkosKernels_Utils.hpp>
+
 #ifndef _GRAPHCOLORHANDLE_HPP
 #define _GRAPHCOLORHANDLE_HPP
+
 //#define VERBOSE
 namespace KokkosGraph{
 
 // WCMCLEN: Added COLORING_SPGEMM to the list
-enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB,COLORING_SERIAL2,COLORING_SPGEMM};
+enum ColoringAlgorithm { COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB, COLORING_SERIAL2, COLORING_SPGEMM };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
 enum ColoringType {Distance1, Distance2};
 
-template <
-	  class size_type_, class color_t_, class lno_t_,
-	  //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
-      class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
-class GraphColoringHandle{
+template <class size_type_, class color_t_, class lno_t_, 
+         //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
+          class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
+class GraphColoringHandle
+{
 
 public:
   typedef ExecutionSpace HandleExecSpace;
@@ -97,6 +99,7 @@ public:
 
   typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
+
 private:
 
   ColoringType GraphColoringType;
@@ -182,6 +185,7 @@ private:
     return this->GraphColoringType;
   }
 
+
   /** \brief Changes the graph coloring algorithm.
    *  \param col_algo: Coloring algorithm: one of COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB
    *  \param set_default_parameters: whether or not to reset the default parameters for the given algorithm.
@@ -198,10 +202,11 @@ private:
     }
   }
 
+
   /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
    */
-  void choose_default_algorithm(){
-
+  void choose_default_algorithm()
+  {
 #if defined( KOKKOS_HAVE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_SERIAL;
@@ -569,6 +574,7 @@ private:
     case COLORING_VBCS:
     case COLORING_SERIAL:
     case COLORING_SERIAL2:
+    case COLORING_SPGEMM:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;

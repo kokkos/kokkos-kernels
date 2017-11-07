@@ -54,12 +54,14 @@
 
 
 // #define EBCOLORING_HIGHER_QUALITY        //suggested
-namespace KokkosGraph{
+//
+namespace KokkosGraph { 
 
-namespace Impl{
+namespace Impl {
 
 // #define VB_COLORING_FORBIDDEN_SIZE 64
 // #define VBBIT_COLORING_FORBIDDEN_SIZE 64
+
 /*! \brief Base class for graph coloring purposes.
  *  Each color represents the set of the vertices that are independent,
  *  e.g. no vertex having same color shares an edge.
@@ -94,10 +96,10 @@ public:
 
 
 protected:
-  nnz_lno_t nr, nc; // num rows, num cols
-  size_type ne; //# edges
-  const_lno_row_view_t xadj, t_xadj; //rowmap, transpose of rowmap
-  const_lno_nnz_view_t adj, t_adj; // entries, transpose of entries
+  nnz_lno_t nr, nc;                     // num rows, num cols
+  size_type ne;                         // # edges
+  const_lno_row_view_t xadj, t_xadj;    // rowmap, transpose of rowmap
+  const_lno_nnz_view_t adj, t_adj;      // entries, transpose of entries
   HandleType *cp;
 
 public:
@@ -119,8 +121,8 @@ public:
       const_lno_row_view_t t_row_map,
       const_lno_nnz_view_t t_entries,
       HandleType *coloring_handle):
-        nr (nr_), nc (nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries),
-        cp(coloring_handle){}
+        nr (nr_), nc (nc_), ne(ne_), xadj(row_map), adj(entries), 
+        t_xadj(t_row_map), t_adj(t_entries), cp(coloring_handle){}
 
   /** \brief GraphColor destructor.
    */
@@ -135,26 +137,23 @@ public:
    *   algorithm to assume that the color is fixed for the corresponding vertex.
    * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
    */
-  virtual void color_graph(){
+  virtual void color_graph() {
 
     // WCMCLEN: Brian's Code
 
     std::string algName = "SPGEMM_KK_MEMSPEED";
     cp->create_spgemm_handle(KokkosSparse::StringToSPGEMMAlgorithm(algName));
 
-    //typedef typename rowptrs_view::const_type const_rowptrs_view;
-    //typedef typename colinds_view::const_type const_colinds_view;
+    // typedef typename rowptrs_view::const_type const_rowptrs_view;
+    // typedef typename colinds_view::const_type const_colinds_view;
     size_type_temp_work_view_t cRowptrs("cRowptrs", nr+1);
-// typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
-// typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
-// typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
+    // typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
+    // typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
+    // typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
 
 
     // Call symbolic multiplication of graph with itself (no transposes, and A and B are the same)
-    KokkosSparse::Experimental::spgemm_symbolic(cp,
-        nr, nc, nr,
-        xadj, adj, false,
-        t_xadj, t_adj, false, cRowptrs); 
+    KokkosSparse::Experimental::spgemm_symbolic(cp, nr, nc, nr, xadj, adj, false, t_xadj, t_adj, false, cRowptrs); 
     
     // Get num nz in C
     auto Cnnz = cp->get_spgemm_handle()->get_c_nnz();
@@ -168,11 +167,8 @@ public:
     scalar_temp_work_view_t cFakeValues("C placeholder values (meaningless)", Cnnz);
 
     // Run the numeric kernel
-    KokkosSparse::Experimental::spgemm_numeric(cp,
-        nr, nc, nr,
-        xadj, adj, aFakeValues, false, 
-        t_xadj, t_adj, aFakeValues, false,
-        cRowptrs, cColinds, cFakeValues);
+    KokkosSparse::Experimental::spgemm_numeric(cp, nr, nc, nr, xadj, adj, aFakeValues, false, t_xadj, t_adj, 
+                                               aFakeValues, false, cRowptrs, cColinds, cFakeValues);
 
     // done with spgemm 
     cp->destroy_spgemm_handle();
@@ -182,10 +178,7 @@ public:
     
     // cp->create_graph_coloring_handle();
 
-    KokkosGraph::Experimental::graph_color(
-        cp,
-        numRows, numRows,
-        (const_rowptrs_view) cRowptrs, (const_colinds_view) cColinds);
+    KokkosGraph::Experimental::graph_color(cp, numRows, numRows, (const_rowptrs_view)cRowptrs, (const_colinds_view)cColinds);
 
     // extract the colors
     //auto coloringHandle = cp->get_graph_coloring_handle();
@@ -195,11 +188,11 @@ public:
     // cp->destroy_graph_coloring_handle();
 
   }
-
 };
 
 
 } // end Impl namespace 
-} // end namespace
+} // end KokkosGraph namespace
 
-#endif
+#endif  // _KOKKOSCOLORINGD2IMP_HPP
+
