@@ -240,10 +240,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     }
     graph_color_d2(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
-    std::cout <<
-        "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-        "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "
-        "Num Phases:" << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
+    std::cout << "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
+                 "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "
+                 "Num Phases:" << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
     std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
 
   }

@@ -56,9 +56,7 @@ namespace Experimental{
 
 
 // initial distance 2 graph coloring -- serial only (work in progress) - wcmclen
-template <class KernelHandle,
-          typename lno_row_view_t_, typename lno_nnz_view_t_,
-          typename lno_col_view_t_, typename lno_colnnz_view_t_>
+template <class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename lno_col_view_t_, typename lno_colnnz_view_t_>
 void graph_color_d2(KernelHandle *handle,
                     typename KernelHandle::nnz_lno_t num_rows,
                     typename KernelHandle::nnz_lno_t num_cols,
