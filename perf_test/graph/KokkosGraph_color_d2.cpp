@@ -48,13 +48,37 @@
 #include <random>       // std::default_random_engine
 #include <algorithm>    // std::shuffle
 #include <vector>
+#include "KokkosKernels_config.h"
 
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_D2_GraphColor.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 
 using namespace KokkosGraph;
+#ifdef KOKKOSKERNELS_INST_DOUBLE
+typedef double scalar_t;
+#else
+#ifdef KOKKOSKERNELS_INST_FLOAT
+typedef float scalar_t;
+#endif
+#endif
+
+#ifdef KOKKOSKERNELS_INST_OFFSET_INT
+typedef int size_type;
+#else
+#ifdef KOKKOSKERNELS_INST_OFFSET_SIZE_T
+typedef size_t size_type;
+#endif
+#endif
+
+#ifdef KOKKOSKERNELS_INST_ORDINAL_INT
+typedef int idx;
+#else
+#ifdef KOKKOSKERNELS_INST_ORDINAL_INT64_T
+typedef int64_t idx;
+#endif
+#endif
 
 void print_options(){
 
@@ -164,7 +188,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   using namespace KokkosGraph;
   using namespace KokkosGraph::Experimental;
   //using namespace KokkosSparse::Experimental;
-
+ 
   int algorithm = params.algorithm;
   int repeat = params.repeat;
   int chunk_size = params.chunk_size;
@@ -173,7 +197,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   int team_size = params.team_size;
   int use_dynamic_scheduling = params.use_dynamic_scheduling;
   int verbose = params.verbose;
-
+  
   //char spgemm_step = params.spgemm_step;
   int vector_size = params.vector_size;
 
@@ -184,7 +208,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
   // WCMCLEN: This KokkosKernelsHandle is not the same handle as the one in                  KokkosGraph_GraphColorHandle.hpp?
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, lno_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;  
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;  
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
@@ -214,7 +238,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
       kh.create_graph_coloring_handle(COLORING_SPGEMM);
       break;
     }
-    d2_graph_color(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+    graph_color_d2(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
     std::cout <<
         "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
@@ -449,8 +473,6 @@ void run_multi_mem_experiment(Parameters params)
 
 int main (int argc, char ** argv)
 {
-  typedef unsigned size_type;
-  typedef int idx;
   //typedef int size_type;
   //typedef int idx;
 

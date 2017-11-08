@@ -48,7 +48,7 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <vector>
 #include "KokkosKernels_Handle.hpp"
-
+#include "KokkosGraph_GraphColor.hpp"
 #ifndef _KOKKOSCOLORINGD2IMP_HPP
 #define _KOKKOSCOLORINGD2IMP_HPP
 
@@ -67,15 +67,15 @@ namespace Impl {
  *  e.g. no vertex having same color shares an edge.
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
-template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
+template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_ >
 class GraphColorD2 {
 public:
 
   typedef lno_row_view_t_ in_lno_row_view_t;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
-  typedef typename HandleType::color_t color_t;
-  typedef typename HandleType::color_view_t color_view_t;
+  typedef typename HandleType::GraphColoringHandleType::color_t color_t;
+  typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_t;
 
   typedef typename HandleType::size_type size_type;
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
@@ -85,10 +85,15 @@ public:
   // typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
   typedef typename HandleType::const_size_type const_size_type;
-  typedef typename lno_row_view_t_::const_type const_lno_row_view_t;
 
+  typedef typename lno_row_view_t_::const_type const_lno_row_view_t;
   typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
   typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
+
+
+  typedef typename clno_row_view_t_::const_type const_clno_row_view_t;
+  typedef typename clno_nnz_view_t_::const_type const_clno_nnz_view_t;
+  typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
 
   typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
   typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
@@ -98,8 +103,11 @@ public:
 protected:
   nnz_lno_t nr, nc;                     // num rows, num cols
   size_type ne;                         // # edges
-  const_lno_row_view_t xadj, t_xadj;    // rowmap, transpose of rowmap
-  const_lno_nnz_view_t adj, t_adj;      // entries, transpose of entries
+  const_lno_row_view_t xadj;    // rowmap, transpose of rowmap
+  const_lno_nnz_view_t adj;      // entries, transpose of entries
+  const_clno_row_view_t t_xadj;    // rowmap, transpose of rowmap
+  const_clno_nnz_view_t t_adj;      // entries, transpose of entries
+
   HandleType *cp;
 
 public:
@@ -112,21 +120,21 @@ public:
    * \param coloring_handle: GraphColoringHandle object that holds the specification about the graph coloring,
    *    including parameters.
    */
-  GraphColor(
+  GraphColorD2 (
       nnz_lno_t nr_,
       nnz_lno_t nc_,
       size_type ne_,
       const_lno_row_view_t row_map,
       const_lno_nnz_view_t entries,
-      const_lno_row_view_t t_row_map,
-      const_lno_nnz_view_t t_entries,
+      const_clno_row_view_t t_row_map,
+      const_clno_nnz_view_t t_entries,
       HandleType *coloring_handle):
         nr (nr_), nc (nc_), ne(ne_), xadj(row_map), adj(entries), 
         t_xadj(t_row_map), t_adj(t_entries), cp(coloring_handle){}
 
   /** \brief GraphColor destructor.
    */
-  virtual ~GraphColor(){}
+  virtual ~GraphColorD2 (){}
 
 
   /** \brief Function to color the vertices of the graphs. This is the base class,
@@ -178,7 +186,7 @@ public:
     
     // cp->create_graph_coloring_handle();
 
-    KokkosGraph::Experimental::graph_color(cp, numRows, numRows, (const_rowptrs_view)cRowptrs, (const_colinds_view)cColinds);
+    KokkosGraph::Experimental::graph_color(cp, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
 
     // extract the colors
     //auto coloringHandle = cp->get_graph_coloring_handle();

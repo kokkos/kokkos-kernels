@@ -45,7 +45,6 @@
 #define _KOKKOS_GRAPH_COLOR_HPP
 
 #include "KokkosGraph_GraphColor_impl.hpp"
-#include "KokkosGraph_Distance2Color_impl.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 namespace KokkosGraph{
@@ -200,23 +199,6 @@ void d2_graph_color(
     gch->set_num_phases(num_phases);
     gch->set_vertex_colors(colors_out);
     break;
-  }
-  case COLORING_SPGEMM:
-  {
-      // WCMCLEN: distance-2 coloring inserts here.
-      // template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
-      //   GraphColor(
-      //nnz_lno_t nr_,
-      //nnz_lno_t nc_,
-      //size_type ne_,
-      //const_lno_row_view_t row_map,
-      //const_lno_nnz_view_t entries,
-      //const_lno_row_view_t t_row_map,
-      //const_lno_nnz_view_t t_entries,
-      //HandleType *coloring_handle)
-      Impl::GraphColorD2 gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
-      gc.color_graph();
-      break;
   }
   case COLORING_SERIAL2:            // WCMCLEN: for now we don't need to worry about this optimization.
   {
