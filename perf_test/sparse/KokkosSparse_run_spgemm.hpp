@@ -278,6 +278,9 @@ crsMat_t3 run_experiment(
   case -5:
   	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_SORTED);
   	break;
+  case -6:
+	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_TEAM);
+	break;
   case 1:
     kh.create_spgemm_handle(SPGEMM_MKL);
     break;

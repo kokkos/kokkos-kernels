@@ -702,18 +702,6 @@ struct HashmapAccumulator{
       size_type i = hash_begins[hash];
       //int count = 0;
       for (; i != -1; i = hash_nexts[i]){
-        /*
-        if (print && hash == 31 && key == 2436 && (value - 0.197059 < 0.00001)){
-          printf("inside --- hash:%d key:%d val:%lf i:%d hash_nexts[i]:%d keys[i]:%d count:%d\n", hash, key, value, i, hash_nexts[i], keys[i], count);
-        }
-
-        count++;
-
-
-        if (print && count > 1000) {
-          break;
-        }
-        */
 
         if (keys[i] == key){
           key_not_found = 0;
@@ -808,19 +796,6 @@ struct HashmapAccumulator{
       size_type i = hash_begins[hash];
       //int count = 0;
       for (; i != -1; i = hash_nexts[i]){
-        /*
-        if (print && hash == 31 && key == 2436 && (value - 0.197059 < 0.00001)){
-          printf("inside --- hash:%d key:%d val:%lf i:%d hash_nexts[i]:%d keys[i]:%d count:%d\n", hash, key, value, i, hash_nexts[i], keys[i], count);
-        }
-
-        count++;
-
-
-        if (print && count > 1000) {
-          break;
-        }
-        */
-
         if (keys[i] == key){
           key_not_found = 0;
           values[i] = values[i] + value;
@@ -882,6 +857,148 @@ struct HashmapAccumulator{
       return INSERT_SUCCESS;
     }
   }
+
+  //used_size should be a shared pointer among the thread vectors
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int team_atomic_insert_into_hash_mergeAdd_TrackHashes (
+      const team_member_t & teamMember,
+      const int vector_size,
+
+      size_type &hash,
+      const key_type key,
+      const value_type value,
+      volatile size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes
+      //,bool print = false
+      ){
+
+
+    char key_not_found = 1;
+
+    if (hash != -1){
+      size_type i = hash_begins[hash];
+      //int count = 0;
+      for (; i != -1; i = hash_nexts[i]){
+
+        if (keys[i] == key){
+          key_not_found = 0;
+          values[i] = values[i] + value;
+
+          break;
+        }
+      }
+    }
+    else {
+      key_not_found = 0;
+    }
+
+
+    if ((*used_size_) >= max_value_size_){
+      if (key_not_found == 0) {
+        return INSERT_SUCCESS;
+      }
+      else {
+        return INSERT_FULL;
+      }
+    }
+
+
+
+    size_type my_write_index = 0;
+    if (key_not_found){
+    	my_write_index = Kokkos::atomic_fetch_add(used_size_, 1);
+    }
+
+    if (key_not_found == 0) return INSERT_SUCCESS;
+
+
+    if (my_write_index >= max_value_size_) {
+      return INSERT_FULL;
+    }
+    else {
+
+      keys[my_write_index] = key;
+      values[my_write_index] = value;
+      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      if (hashbeginning == -1){
+        used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
+      }
+      hash_nexts[my_write_index] = hashbeginning;
+      return INSERT_SUCCESS;
+    }
+  }
+
+
+  //function to be called from device.
+  //Accumulation is Add operation. It is not atomicAdd, as this
+  //is for the cases where we know that none of the simultanous
+  //insertions will have the same key.
+  //Insertion is simulteanous for the vector lanes of a thread.
+  //used_size should be a shared pointer among the thread vectors
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int team_atomic_insert_into_hash_mergeAdd (
+      const team_member_t & teamMember,
+      const int vector_size,
+
+      size_type &hash,
+      const key_type key,
+      const value_type value,
+      volatile size_type *used_size_,
+      const size_type max_value_size_
+      //,bool print = false
+      ){
+
+
+    char key_not_found = 1;
+
+    if (hash != -1){
+      size_type i = hash_begins[hash];
+      for (; i != -1; i = hash_nexts[i]){
+        if (keys[i] == key){
+          key_not_found = 0;
+          values[i] = values[i] + value;
+          break;
+        }
+      }
+    }
+    else {
+      key_not_found = 0;
+    }
+
+
+    if ((*used_size_) >= max_value_size_){
+      if (key_not_found == 0) {
+        return INSERT_SUCCESS;
+      }
+      else {
+        return INSERT_FULL;
+      }
+    }
+
+    size_type my_write_index = 0;
+    if (key_not_found){
+    	my_write_index = Kokkos::atomic_fetch_add(used_size_, 1);
+    }
+
+    if (key_not_found == 0) return INSERT_SUCCESS;
+
+
+    if (my_write_index >= max_value_size_) {
+      return INSERT_FULL;
+    }
+    else {
+      keys[my_write_index] = key;
+      values[my_write_index] = value;
+      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hash_nexts[my_write_index] = hashbeginning;
+      return INSERT_SUCCESS;
+    }
+  }
+
 
 
   struct BitwiseOrReduction{

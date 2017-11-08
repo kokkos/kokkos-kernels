@@ -167,6 +167,9 @@ public:
   struct MultiCoreTag5{};
   struct MultiCoreTag6{};
   struct GPUTag{};
+  struct GPUTag2{};
+  struct GPUTag3{};
+
 
   struct Numeric1Tag{};
   struct Numeric2Tag{};
@@ -194,6 +197,9 @@ public:
   typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace> multicore_team_policy6_t ;
 
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
+  typedef Kokkos::TeamPolicy<GPUTag2, MyExecSpace> gpu_team_policy2_t ;
+  typedef Kokkos::TeamPolicy<GPUTag3, MyExecSpace> gpu_team_policy3_t ;
+
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count2_policy_t ;
 
