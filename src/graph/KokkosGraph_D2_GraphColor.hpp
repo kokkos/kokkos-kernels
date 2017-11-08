@@ -59,34 +59,33 @@ namespace Experimental{
 template <class KernelHandle,
           typename lno_row_view_t_, typename lno_nnz_view_t_,
           typename lno_col_view_t_, typename lno_colnnz_view_t_>
-void graph_color_d2(
-    KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t num_cols,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ row_entries,
-    lno_col_view_t_ col_map, //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
-    lno_colnnz_view_t_ col_entries){
+void graph_color_d2(KernelHandle *handle,
+                    typename KernelHandle::nnz_lno_t num_rows,
+                    typename KernelHandle::nnz_lno_t num_cols,
+                    lno_row_view_t_ row_map,
+                    lno_nnz_view_t_ row_entries,
+                    lno_col_view_t_ col_map, //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
+                    lno_colnnz_view_t_ col_entries)
+{
 
   Kokkos::Impl::Timer timer;
   typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
 
   ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
 
-  typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
+  //typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
 
   //color_view_type colors_out = color_view_type("Graph Colors", num_rows);
 
-
-//  typedef typename Impl::GraphColorD2 <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
+  //typedef typename Impl::GraphColorD2 <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
   //BaseGraphColoring *gc = NULL;
 
-  int num_phases = 0;
+  //int num_phases = 0;
 
-  switch (algorithm){
-
-  case COLORING_SPGEMM:
+  switch (algorithm)
   {
+    case COLORING_SPGEMM:
+    {
       // WCMCLEN: distance-2 coloring inserts here.
       // template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
       //   GraphColor(
@@ -101,49 +100,51 @@ void graph_color_d2(
       Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_> gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
       gc.color_graph();
       break;
-  }
+    }
 
 #if 0
-  // comment out vertex-based and edge-based (no implementations for these ones at this time) (WCMCLEN)
-  case COLORING_VB:
-  case COLORING_VBBIT:
-  case COLORING_VBCS:
-  {
-    typedef typename Impl::GraphColor_VB
-        <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
-    VBGraphColoring gc(
-        num_rows, row_entries.dimension_0(),
-        row_map, row_entries, gch);
-    gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
-
-  }
-  break;
-  case COLORING_EB:
-  {
-    typedef typename Impl::GraphColor_EB
-        <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
-
-    EBGraphColoring gc(num_rows, row_entries.dimension_0(),row_map, row_entries, gch);
-    gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
-
-  }
-  break;
-#endif
-  case COLORING_DEFAULT:
+    // comment out vertex-based and edge-based (no implementations for these ones at this time) (WCMCLEN)
+    case COLORING_VB:
+    case COLORING_VBBIT:
+    case COLORING_VBCS:
+    {
+      typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
+      VBGraphColoring gc(num_rows, row_entries.dimension_0(), row_map, row_entries, gch);
+      gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
+    }
     break;
 
+    case COLORING_EB:
+    {
+      typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
+      EBGraphColoring gc(num_rows, row_entries.dimension_0(),row_map, row_entries, gch);
+      gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
+    }
+    break;
+#endif
+
+    case COLORING_SERIAL:
+    case COLORING_SERIAL2:
+    case COLORING_VB:
+    case COLORING_VBBIT:
+    case COLORING_VBCS:
+    case COLORING_EB:
+    case COLORING_DEFAULT:
+    {
+      break;
+    }
+
   }
-
-
 
   double coloring_time = timer.seconds();
   gch->add_to_overall_coloring_time(coloring_time);
   gch->set_coloring_time(coloring_time);
- // gch->set_num_phases(num_phases);
-//  gch->set_vertex_colors(colors_out);
+  // gch->set_num_phases(num_phases);
+  // gch->set_vertex_colors(colors_out);
 }
 
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
 
-#endif//_KOKKOS_GRAPH_COLOR_HPP
+#endif //_KOKKOS_GRAPH_COLOR_HPP
+
