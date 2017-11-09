@@ -14,6 +14,26 @@
 
 namespace Test {
 
+template < class VectorType0, class VectorType1, class AT_Type >
+struct fSPMV {
+  typedef int value_type;
+  typedef Kokkos::Details::ArithTraits<typename AT_Type::non_const_value_type> AT;
+
+  VectorType0 expected_y;
+  VectorType1 y;
+  double eps;
+
+  fSPMV(const VectorType0 & _ex_y, const VectorType1 & _y, const double _eps)
+  : expected_y(_ex_y)
+  , y(_y)
+  , eps(_eps)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const int i, value_type& err ) const {
+    if(AT::abs(expected_y(i)-y(i))>eps) err++;
+  }
+};
 
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
@@ -85,10 +105,10 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   //KokkosKernels::Impl::print_1Dview(y);
   typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
   int num_errors = 0;
-  Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv",y.extent(0),
-      KOKKOS_LAMBDA(const int& i, int& err) {
-    if(AT::abs(expected_y(i)-y(i))>eps) err++;
-  },num_errors);
+  Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv"
+                         ,y.extent(0)
+                         ,fSPMV<y_vector_type, y_vector_type, y_vector_type>(expected_y,y,eps)
+                         ,num_errors);
   if(num_errors>0) printf("KokkosKernels::UnitTests::spmv: %i errors of %i with params: %lf %lf\n",
       num_errors,y.extent_int(0),AT::abs(alpha),AT::abs(beta));
   EXPECT_TRUE(num_errors==0);
@@ -121,10 +141,10 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
     typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
     int num_errors = 0;
-    Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv",y_i.extent(0),
-        KOKKOS_LAMBDA(const int& j, int& err) {
-      if(AT::abs(y_i(j)-y_spmv(j))>eps) err++;
-    },num_errors);
+    Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv"
+                           ,y_i.extent(0)
+                           ,fSPMV<decltype(y_i), decltype(y_spmv), y_vector_type>(y_i, y_spmv, eps)
+                           ,num_errors);
     if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_mv: %i errors of %i for mv %i\n",
         num_errors,y_i.extent_int(0),i);
     EXPECT_TRUE(num_errors==0);
