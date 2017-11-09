@@ -139,7 +139,6 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
     sequential_spmv(input_mat, x_i, y_i, alpha, beta);
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
-    typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
     int num_errors = 0;
     Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv"
                            ,y_i.extent(0)
