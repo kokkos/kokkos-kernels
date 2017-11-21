@@ -87,9 +87,18 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
   scalar_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals2);
 
-  if (nrows1 != nrows2) return false;
-  if (nentries1 != nentries2) return false;
-  if (nvals1 != nvals2) return false;
+  if (nrows1 != nrows2) {
+	  std::cout <<"row count is differnet" << std::endl;
+	  return false;
+  }
+  if (nentries1 != nentries2) {
+	  std::cout <<"nentries2 is differnet" << std::endl;
+	  return false;
+  }
+  if (nvals1 != nvals2) {
+	  std::cout <<"nvals1 is differnet" << std::endl;
+	  return false;
+  }
 
   KokkosKernels::Impl::kk_sort_graph
       <typename graph_t::row_map_type,
@@ -107,12 +116,35 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <typename graph_t::row_map_type, typename graph_t::row_map_type, typename lno_view_t::value_type,
       typename device::execution_space>(output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
-  if (!is_identical) return false;
+  if (!is_identical) {
+	  std::cout << "rowmaps differ" << std::endl;
+	  return false;
+  }
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
       typename device::execution_space>(h_ent1, h_ent2, 0 );
-  if (!is_identical) return false;
+  if (!is_identical) {
+	  for (size_t i = 0; i <  nrows1; ++i){
+		  size_t rb = output_mat1.graph.row_map[i];
+		  size_t re = output_mat1.graph.row_map[i + 1];
+		  bool incorrect =false;
+		  for (size_t j = rb; j <  re; ++j){
+			 if (h_ent1[j] != h_ent2[j]){
+				 incorrect = true;
+				 break;
+			 }
+		  }
+		  if (incorrect){
+			  for (size_t j = rb; j <  re; ++j){
+				 	 std::cout << "row:" << i << " j:" << j <<   " h_ent1[j]:" << h_ent1[j]  << " h_ent2[j]:" << h_ent2[j] << " rb:" << rb << " re:" << re<< std::endl;
+			  }
+		  }
+
+	  }
+	  std::cout << "entries differ" << std::endl;
+	  return false;
+  }
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <scalar_view_t, scalar_view_t, typename scalar_view_t::value_type,
@@ -192,21 +224,24 @@ crsMat_t3 run_experiment(
     exit(1);
   }
 
-  lno_view_t row_mapC_ref;
-  lno_nnz_view_t entriesC_ref;
-  scalar_view_t valuesC_ref;
-  crsMat_t3 Ccrsmat_ref;
+  typename lno_view_t::HostMirror row_mapC_ref;
+  typename lno_nnz_view_t::HostMirror entriesC_ref;
+  typename scalar_view_t::HostMirror valuesC_ref;
+  typename crsMat_t3::HostMirror Ccrsmat_ref;
   if (check_output)
   {
     std::cout << "Running a reference algorithm" << std::endl;
-    row_mapC_ref = lno_view_t ("non_const_lnow_row", m + 1);
-    entriesC_ref = lno_nnz_view_t ("");
-    valuesC_ref = scalar_view_t ("");
+    row_mapC_ref = typename lno_view_t::HostMirror ("non_const_lnow_row", m + 1);
+    entriesC_ref = typename lno_nnz_view_t::HostMirror ("");
+    valuesC_ref = typename scalar_view_t::HostMirror ("");
+    typedef KokkosKernels::Experimental::KokkosKernelsHandle
+        <size_type,lno_t, scalar_t,
+        Kokkos::HostSpace, Kokkos::HostSpace,Kokkos::HostSpace > SeqKernelHandle;
     KernelHandle sequential_kh;
     sequential_kh.set_team_work_size(chunk_size);
     sequential_kh.set_shmem_size(shmemsize);
     sequential_kh.set_suggested_team_size(team_size);
-    sequential_kh.create_spgemm_handle(KokkosSparse::SPGEMM_KK_MEMORY);
+    sequential_kh.create_spgemm_handle(KokkosSparse::SPGEMM_DEBUG);
 
     if (use_dynamic_scheduling){
       sequential_kh.set_dynamic_scheduling(true);
@@ -232,8 +267,8 @@ crsMat_t3 run_experiment(
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
-      entriesC_ref = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC_ref = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+      entriesC_ref = typename lno_nnz_view_t::HostMirror (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC_ref = typename scalar_view_t::HostMirror (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
     spgemm_numeric(
@@ -256,8 +291,8 @@ crsMat_t3 run_experiment(
     );
     ExecSpace::fence();
 
-    typename crsMat_t3::StaticCrsGraphType static_graph (entriesC_ref, row_mapC_ref);
-    crsMat_t3 Ccrsmat("CrsMatrixC", k, valuesC_ref, static_graph);
+    typename crsMat_t3::HostMirror::StaticCrsGraphType static_graph (entriesC_ref, row_mapC_ref);
+    typename crsMat_t3::HostMirror Ccrsmat("CrsMatrixC", k, valuesC_ref, static_graph);
     Ccrsmat_ref = Ccrsmat;
   }
 
@@ -281,6 +316,15 @@ crsMat_t3 run_experiment(
   case -6:
 	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_TEAM);
 	break;
+  case -7:
+  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_BIGTEAM);
+  	break;
+  case -8:
+  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_SPREADTEAM);
+  	break;
+  case -9:
+  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_BIGSPREADTEAM);
+  	break;
   case 1:
     kh.create_spgemm_handle(SPGEMM_MKL);
     break;
@@ -376,6 +420,7 @@ crsMat_t3 run_experiment(
 
     Kokkos::Impl::Timer timer3;
     size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    std::cout << "c_nnz_size:" << c_nnz_size << std::endl;
     if (c_nnz_size){
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
@@ -418,10 +463,21 @@ crsMat_t3 run_experiment(
   KokkosKernels::Impl::print_1Dview(entriesC);
 
 
-  typename crsMat_t3::StaticCrsGraphType static_graph (entriesC, row_mapC);
-  crsMat_t3 Ccrsmat("CrsMatrixC", k, valuesC, static_graph);
   if (check_output){
-    bool is_identical = is_same_matrix<crsMat_t3, typename crsMat_t3::device_type>(Ccrsmat_ref, Ccrsmat);
+
+	  typename lno_view_t::HostMirror row_mapC_host = Kokkos::create_mirror_view (row_mapC);
+	  typename lno_nnz_view_t::HostMirror entriesC_host = Kokkos::create_mirror_view (entriesC);
+	  typename scalar_view_t::HostMirror valuesC_host = Kokkos::create_mirror_view (valuesC);
+
+	    Kokkos::deep_copy (row_mapC_host, row_mapC);
+
+	    Kokkos::deep_copy (entriesC_host, entriesC);
+	    Kokkos::deep_copy (valuesC_host, valuesC);
+
+	typename crsMat_t3::HostMirror::StaticCrsGraphType static_graph (entriesC_host, row_mapC_host);
+	typename crsMat_t3::HostMirror Ccrsmathost("CrsMatrixC", k, valuesC_host, static_graph);
+
+    bool is_identical = is_same_matrix<typename crsMat_t3::HostMirror, typename crsMat_t3::HostMirror::device_type>(Ccrsmat_ref, Ccrsmathost);
     if (!is_identical){
       std::cout << "Result is wrong." << std::endl;
       exit(1);
@@ -429,6 +485,8 @@ crsMat_t3 run_experiment(
   }
 
 
+  typename crsMat_t3::StaticCrsGraphType static_graph (entriesC, row_mapC);
+  crsMat_t3 Ccrsmat("CrsMatrixC", k, valuesC, static_graph);
   return Ccrsmat;
 
 }

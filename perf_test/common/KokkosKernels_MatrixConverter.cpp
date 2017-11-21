@@ -48,7 +48,6 @@
 #include <string.h>
 #include "KokkosKernels_MyCRSMatrix.hpp"
 
-
 int main (int argc, char* argv[]){
   typedef int size_type;
   typedef int idx;
@@ -92,7 +91,7 @@ int main (int argc, char* argv[]){
 
     exit(1);
   }
-  typedef Kokkos::DefaultExecutionSpace MyExecSpace;
+  typedef Kokkos::OpenMP MyExecSpace;
 
   typedef typename MyKokkosSparse::CrsMatrix<wt, idx, MyExecSpace, void, size_type > crstmat_t;
   typedef typename crstmat_t::StaticCrsGraphType graph_t;
@@ -118,7 +117,7 @@ int main (int argc, char* argv[]){
   idx numrows = a_crsmat.numRows();
   //idx numcols = a_crsmat.numCols();
   idx nnz = ovalues.dimension_0();
-
+  std::cout << "numrows :" << numrows << " nnz:" << nnz << std::endl; 
   //Kokkos::deep_copy(new_rowmap, a_crsmat.graph.row_map);
 
   if (remove_diagonal) {

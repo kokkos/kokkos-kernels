@@ -206,6 +206,15 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUTEAM" ) ) {
         params.algorithm = -6;
       }
+      else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUBIGTEAM" ) ) {
+        params.algorithm = -7;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUSPREADTEAM" ) ) {
+        params.algorithm = -8;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUBIGSPREADTEAM" ) ) {
+    	  params.algorithm = -9;
+      }
       else if ( 0 == strcasecmp( argv[i] , "DEFAULT" ) ) {
     	  params.algorithm = -2;
       }

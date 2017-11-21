@@ -306,8 +306,8 @@ struct KokkosSPGEMM
     nnz_lno_t *hash_values = (nnz_lno_t *) (tmp);
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
-      nnz_lno_t globally_used_hash_count = 0;
-      nnz_lno_t used_hash_size = 0;
+      //nnz_lno_t globally_used_hash_count = 0;
+      //nnz_lno_t used_hash_size = 0;
       const size_type col_begin = row_mapA[row_index];
       const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
       //traverse columns of A.
@@ -398,8 +398,8 @@ struct KokkosSPGEMM
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t used_count = 0;
 
-      nnz_lno_t globally_used_hash_count = 0;
-      nnz_lno_t used_hash_size = 0;
+      //nnz_lno_t globally_used_hash_count = 0;
+      //nnz_lno_t used_hash_size = 0;
       const size_type col_begin = row_mapA[row_index];
       const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
       //traverse columns of A.
@@ -491,8 +491,8 @@ struct KokkosSPGEMM
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t used_count = 0;
 
-      nnz_lno_t globally_used_hash_count = 0;
-      nnz_lno_t used_hash_size = 0;
+      //nnz_lno_t globally_used_hash_count = 0;
+      //nnz_lno_t used_hash_size = 0;
       const size_type col_begin = row_mapA[row_index];
       const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
       //traverse columns of A.

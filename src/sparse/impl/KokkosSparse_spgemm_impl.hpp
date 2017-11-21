@@ -169,6 +169,9 @@ public:
   struct GPUTag{};
   struct GPUTag2{};
   struct GPUTag3{};
+  struct GPUTag4{};
+  struct GPUTag5{};
+  struct GPUTag6{};
 
 
   struct Numeric1Tag{};
@@ -199,6 +202,10 @@ public:
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
   typedef Kokkos::TeamPolicy<GPUTag2, MyExecSpace> gpu_team_policy2_t ;
   typedef Kokkos::TeamPolicy<GPUTag3, MyExecSpace> gpu_team_policy3_t ;
+  typedef Kokkos::TeamPolicy<GPUTag4, MyExecSpace> gpu_team_policy4_t ;
+  typedef Kokkos::TeamPolicy<GPUTag5, MyExecSpace> gpu_team_policy5_t ;
+  typedef Kokkos::TeamPolicy<GPUTag6, MyExecSpace> gpu_team_policy6_t ;
+
 
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count2_policy_t ;
