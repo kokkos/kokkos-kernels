@@ -149,7 +149,16 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "COF" ) ) {
       params.coloring_output_file = argv[++i];
     }
+    else if ( 0 == strcasecmp( argv[i] , "CCO" ) ) {
+      params.compression_cut_off = atof( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "FLHCO" ) ) {
+      params.first_level_hash_cut_off = atof( argv[++i] ) ;
+    }
 
+    else if ( 0 == strcasecmp( argv[i] , "flop" ) ) {
+      params.calculate_read_write_cost = 1;
+    }
     else if ( 0 == strcasecmp( argv[i] , "mcscale" ) ) {
       params.multi_color_scale = atoi( argv[++i] ) ;
     }
@@ -291,6 +300,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIADENSE" ) ) {
         params.algorithm = 21;
       }
+
       else {
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
         print_options();

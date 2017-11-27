@@ -208,12 +208,12 @@ public:
 
 
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count2_policy_t ;
+  typedef Kokkos::TeamPolicy<CountTag2, MyExecSpace> team_count2_policy_t ;
 
   typedef Kokkos::TeamPolicy<GPUCountTag, MyExecSpace> team_gpucount_policy_t ;
 
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill2_policy_t ;
+  typedef Kokkos::TeamPolicy<FillTag2, MyExecSpace> team_fill2_policy_t ;
 
   typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace> team_numeric1_policy_t ;
   typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace> team_numeric2_policy_t ;
@@ -283,7 +283,7 @@ private:
    *
    */
   template <typename in_row_view_t, typename in_nnz_view_t, typename out_rowmap_view_t, typename out_nnz_view_t>
-  void compressMatrix(
+  bool compressMatrix(
       nnz_lno_t n, size_type nnz,
       in_row_view_t in_row_map, in_nnz_view_t in_entries,
       out_rowmap_view_t out_row_map,
@@ -653,6 +653,13 @@ public:
             typename pool_memory_space>
   struct StructureC;
 
+  template <typename a_row_view_t, typename a_nnz_view_t,
+            typename b_original_row_view_t,
+            typename b_compressed_row_view_t, typename b_nnz_view_t,
+            typename c_row_view_t, //typename nnz_lno_temp_work_view_t,
+            typename pool_memory_space>
+  struct StructureC_NC;
+
 
 
   template <typename a_row_view_t, typename a_nnz_view_t,
@@ -689,7 +696,8 @@ private:
       a_nnz_view_t entriesA_,
 
       b_oldrow_view_t row_pointers_begin_B,
-      b_row_view_t row_pointers_end_B);
+      b_row_view_t row_pointers_end_B
+	  ,size_type *flops_per_row = NULL);
 
 
   size_t getMaxRoughRowNNZ_p(
@@ -728,6 +736,21 @@ private:
       nnz_lno_t maxNumRoughNonzeros
   );
 
+  template <typename a_r_view_t, typename a_nnz_view_t,
+              typename b_original_row_view_t,
+              typename b_compressed_row_view_t, typename b_nnz_view_t,
+              typename c_row_view_t>
+  void symbolic_c_no_compression(
+		    nnz_lno_t m,
+		    a_r_view_t row_mapA_,
+		    a_nnz_view_t entriesA_,
+
+		    b_original_row_view_t b_rowmap_begin,
+		    b_compressed_row_view_t b_rowmap_end,
+		    b_nnz_view_t entriesb_,
+		    c_row_view_t rowmapC,
+		    nnz_lno_t maxNumRoughNonzeros
+		  );
 };
 
 

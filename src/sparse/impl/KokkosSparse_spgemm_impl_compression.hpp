@@ -700,7 +700,7 @@ template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
 template <typename in_row_view_t, typename in_nnz_view_t, typename out_rowmap_view_t, typename out_nnz_view_t>
-void KokkosSPGEMM
+bool KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     compressMatrix(
@@ -782,8 +782,11 @@ void KokkosSPGEMM
       ,suggested_team_size, KOKKOSKERNELS_VERBOSE,
       my_exec_space
   );
+  double min_reduction = this->handle->get_spgemm_handle()->get_compression_cut_off();
+  size_t OriginaltotalFlops = this->handle->get_spgemm_handle()->original_overall_flops;
 
   timer1.reset();
+  //bool compression_applied = false;
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 #ifndef KOKKOSKERNELSMOREMEM
     size_type max_row_nnz = 0;
@@ -864,8 +867,34 @@ void KokkosSPGEMM
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\t\tCompression Count Kernel:" <<  timer_count.seconds() << std::endl;
       }
-
       KokkosKernels::Impl::exclusive_parallel_prefix_sum<out_rowmap_view_t, MyExecSpace> (n + 1, out_row_map);
+
+      {
+
+    	nnz_lno_t compressed_maxNumRoughZeros = 0;
+    	size_t compressedoverall_flops = 0;
+  		Kokkos::Impl::Timer timer1;
+  		auto new_row_mapB_begin = Kokkos::subview (out_row_map, std::make_pair (0, b_row_cnt - 1));
+  		auto new_row_mapB_end = Kokkos::subview (out_row_map, std::make_pair (1, b_row_cnt));
+  		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
+
+  		compressed_maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end, compressed_flops_per_row.data());
+  		KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t, MyExecSpace>(a_row_cnt, compressed_flops_per_row, compressedoverall_flops);
+  		if (KOKKOSKERNELS_VERBOSE){
+  			std::cout << "\t\tCompressed Max Row Flops:" << compressed_maxNumRoughZeros  << std::endl;
+  			std::cout << "\t\tCompressed Overall Row Flops:" << compressedoverall_flops  << std::endl;
+			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
+  			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1.seconds()  << std::endl;
+  		}
+
+		this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
+		this->handle->get_spgemm_handle()->compressed_overall_flops = compressedoverall_flops;
+    	if (compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
+    		return false;
+    	}
+      }
+
+
 
       auto d_c_nnz_size = Kokkos::subview(out_row_map, n);
       auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
@@ -886,18 +915,45 @@ void KokkosSPGEMM
         Kokkos::parallel_for( team_fill2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
       else
         Kokkos::parallel_for( team_fill_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+      return true;
     }
     else {
-    //USING DYNAMIC SCHEDULE HERE SLOWS DOWN SIGNIFICANTLY WITH HYPERTHREADS
+       //USING DYNAMIC SCHEDULE HERE SLOWS DOWN SIGNIFICANTLY WITH HYPERTHREADS
       Kokkos::parallel_for( multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
 
     }
   }
   MyExecSpace::fence();
-
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tCompression Kernel time:" <<  timer1.seconds() << std::endl;
   }
+  {
+	nnz_lno_t compressed_maxNumRoughZeros = 0;
+	size_t compressedoverall_flops = 0;
+		Kokkos::Impl::Timer timer1;
+		auto new_row_mapB_begin = in_row_map;
+		auto new_row_mapB_end = out_row_map;
+		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
+
+		compressed_maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end, compressed_flops_per_row.data());
+		KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t, MyExecSpace>(a_row_cnt, compressed_flops_per_row, compressedoverall_flops);
+		if (KOKKOSKERNELS_VERBOSE){
+			std::cout << "\t\tCompressed Max Row Flops:" << compressed_maxNumRoughZeros  << std::endl;
+			std::cout << "\t\tCompressed Overall Row Flops:" << compressedoverall_flops  << std::endl;
+			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
+
+
+			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1.seconds()  << std::endl;
+		}
+
+	this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
+	this->handle->get_spgemm_handle()->compressed_overall_flops = compressedoverall_flops;
+	if (compressedoverall_flops / ((double) (OriginaltotalFlops)) > min_reduction) {
+		return false;
+	}
+  }
+  return true;
+
 }
 
 

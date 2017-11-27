@@ -84,6 +84,8 @@ struct Parameters{
   // 1 - first count then instantiate
   // 2- more options.
   int cache_flush;
+  double first_level_hash_cut_off;
+  double compression_cut_off;
   // 0 - no flush
   // 1 - soft flush
   // 2 - hard flush with rand.
@@ -123,6 +125,9 @@ struct Parameters{
     apply_compression = true;
     sort_option = -1;
     cache_flush = 1;
+
+    first_level_hash_cut_off = 0.75;
+    compression_cut_off = 0.95;
   }
 };
 }

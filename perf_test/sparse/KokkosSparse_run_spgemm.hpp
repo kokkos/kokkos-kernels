@@ -383,9 +383,15 @@ crsMat_t3 run_experiment(
   kh.get_spgemm_handle()->set_multi_color_scale(multi_color_scale);
   kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
   kh.get_spgemm_handle()->mkl_convert_to_1base = false;
-  kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
+  if (i == 0){
+	  kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
+  }
   kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
   kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
+
+  kh.get_spgemm_handle()->set_first_level_hash_cut_off(params.first_level_hash_cut_off);
+  kh.get_spgemm_handle()->set_compression_cut_off(params.compression_cut_off);
+
   if (coloring_input_file){
     kh.get_spgemm_handle()->coloring_input_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_input_file);
   }
@@ -461,6 +467,7 @@ crsMat_t3 run_experiment(
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
   KokkosKernels::Impl::print_1Dview(valuesC);
   KokkosKernels::Impl::print_1Dview(entriesC);
+  KokkosKernels::Impl::print_1Dview(row_mapC);
 
 
   if (check_output){

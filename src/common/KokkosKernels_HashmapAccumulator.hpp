@@ -697,36 +697,23 @@ struct HashmapAccumulator{
       ){
 
 
-    char key_not_found = 1;
 
     if (hash != -1){
       size_type i = hash_begins[hash];
-      //int count = 0;
+
       for (; i != -1; i = hash_nexts[i]){
-
         if (keys[i] == key){
-          key_not_found = 0;
           values[i] = values[i] + value;
-
-          break;
+          return INSERT_SUCCESS;
         }
       }
     }
     else {
-      key_not_found = 0;
-    }
-
-
-    if ((*used_size_) >= max_value_size_){
-      if (key_not_found == 0) {
         return INSERT_SUCCESS;
-      }
-      else {
-        return INSERT_FULL;
-      }
     }
 
-    int write_pos = 0;
+
+    /*
     Kokkos::parallel_scan(
         Kokkos::ThreadVectorRange(teamMember, vector_size),
         [&] (const int threadid, int &update, const bool final) {
@@ -749,8 +736,8 @@ struct HashmapAccumulator{
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
       (*used_size_) += num_writes;
     });
-
-    if (key_not_found == 0) return INSERT_SUCCESS;
+     */
+    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, 1);
 
 
     if (my_write_index >= max_value_size_) {
@@ -791,73 +778,61 @@ struct HashmapAccumulator{
       ){
 
 
-    char key_not_found = 1;
 
-    if (hash != -1){
-      size_type i = hash_begins[hash];
-      //int count = 0;
-      for (; i != -1; i = hash_nexts[i]){
-        if (keys[i] == key){
-          key_not_found = 0;
-          values[i] = values[i] + value;
+	    if (hash != -1){
+	      size_type i = hash_begins[hash];
 
-          break;
-        }
-      }
-    }
-    else {
-      key_not_found = 0;
-    }
+	      for (; i != -1; i = hash_nexts[i]){
+	        if (keys[i] == key){
+	          values[i] = values[i] + value;
+	          return INSERT_SUCCESS;
+	        }
+	      }
+	    }
+	    else {
+	        return INSERT_SUCCESS;
+	    }
 
 
-    if ((*used_size_) >= max_value_size_){
-      if (key_not_found == 0) {
-        return INSERT_SUCCESS;
-      }
-      else {
-        return INSERT_FULL;
-      }
-    }
+	    /*
+	    Kokkos::parallel_scan(
+	        Kokkos::ThreadVectorRange(teamMember, vector_size),
+	        [&] (const int threadid, int &update, const bool final) {
+	      if (final){
+	        write_pos = update;
+	      }
+	      update += key_not_found;
+	    });
 
-    int write_pos = 0;
-    Kokkos::parallel_scan(
-        Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
-      if (final){
-        write_pos = update;
-      }
-      update += key_not_found;
-    });
+	    size_type my_write_index = (*used_size_) + write_pos;
+	    int num_writes = 0;
+	    Kokkos::parallel_reduce(
+	            Kokkos::ThreadVectorRange(teamMember, vector_size),
+	            [&] (const int threadid, int &num_writes_) {
+	          if (key_not_found){
+	            num_writes_ += 1;
+	          }
+	        }, num_writes);
 
-    size_type my_write_index = (*used_size_) + write_pos;
-    int num_writes = 0;
-    Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes_) {
-          if (key_not_found){
-            num_writes_ += 1;
-          }
-        }, num_writes);
-
-    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size_) += num_writes;
-    });
-
-    if (key_not_found == 0) return INSERT_SUCCESS;
+	    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+	      (*used_size_) += num_writes;
+	    });
+	     */
+	    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, 1);
 
 
-    if (my_write_index >= max_value_size_) {
-      return INSERT_FULL;
-    }
-    else {
+	    if (my_write_index >= max_value_size_) {
+	      return INSERT_FULL;
+	    }
+	    else {
 
-      keys[my_write_index] = key;
-      values[my_write_index] = value;
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
-      hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
-    }
-  }
+	      keys[my_write_index] = key;
+	      values[my_write_index] = value;
+	      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+	      hash_nexts[my_write_index] = hashbeginning;
+	      return INSERT_SUCCESS;
+	    }
+	  }
 
   //used_size should be a shared pointer among the thread vectors
   template <typename team_member_t>
@@ -1738,6 +1713,47 @@ struct HashmapAccumulator{
    // }
   }
 
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int vector_atomic_insert_into_hash (
+      const team_member_t & teamMember,
+      const int &vector_size,
+
+      const size_type &hash,
+      const key_type &key,
+      volatile size_type *used_size_,
+      const size_type &max_value_size_
+      ){
+
+
+    if (hash != -1){
+      size_type i = hash_begins[hash];
+      for (; i != -1; i = hash_nexts[i]){
+        if (keys[i] == key){
+          //values[i] = (key_type)values[i] | (key_type)value;
+          return INSERT_SUCCESS;
+        }
+      }
+    }
+    else {
+        return INSERT_SUCCESS;
+    }
+
+    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_,1 );
+
+    if (my_write_index >= max_value_size_) {
+      return INSERT_FULL;
+    }
+    else {
+
+      keys[my_write_index] = key;
+      //values[my_write_index] = value;
+      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hash_nexts[my_write_index] = hashbeginning;
+      return INSERT_SUCCESS;
+    }
+  }
+
   //function to be called from device.
   //Accumulation is Add operation. It is not atomicAdd, as this
   //is for the cases where we know that none of the simultanous
@@ -1757,58 +1773,21 @@ struct HashmapAccumulator{
       const size_type &max_value_size_
       ){
 
-    char key_not_found = 1;
 
     if (hash != -1){
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]){
         if (keys[i] == key){
-          key_not_found = 0;
           values[i] = (key_type)values[i] | (key_type)value;
-          break;
+          return INSERT_SUCCESS;
         }
       }
     }
     else {
-      key_not_found = 0;
-    }
-
-
-    if ((*used_size_) >= max_value_size_){
-      if (key_not_found == 0) {
         return INSERT_SUCCESS;
-      }
-      else {
-        return INSERT_FULL;
-      }
     }
 
-    int write_pos = 0;
-    Kokkos::parallel_scan(
-        Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
-      if (final){
-        write_pos = update;
-      }
-      update += key_not_found;
-    });
-
-    size_type my_write_index = (*used_size_) + write_pos;
-    int num_writes = 0;
-    Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes_) {
-          if (key_not_found){
-            num_writes_ += 1;
-          }
-        }, num_writes);
-
-    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size_) += num_writes;
-    });
-
-    if (key_not_found == 0) return INSERT_SUCCESS;
-
+    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_,1 );
 
     if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
@@ -1880,77 +1859,81 @@ struct HashmapAccumulator{
       volatile size_type *used_size_,
       const size_type &max_value_size_,
       size_type *used_hash_size,
-      size_type *used_hashes
-      ){
+      size_type *used_hashes){
 
-    char key_not_found = 1;
+	  if (hash != -1){
+		  size_type i = hash_begins[hash];
+		  for (; i != -1; i = hash_nexts[i]){
+			  if (keys[i] == key){
+				  values[i] = (key_type)values[i] | (key_type)value;
+				  return INSERT_SUCCESS;
+			  }
+		  }
+	  }
+	  else {
+		  return INSERT_SUCCESS;
+	  }
 
-    if (hash != -1){
-      size_type i = hash_begins[hash];
-      for (; i != -1; i = hash_nexts[i]){
-        if (keys[i] == key){
-          key_not_found = 0;
-          values[i] = (key_type)values[i] | (key_type)value;
-          break;
-        }
-      }
-    }
-    else {
-      key_not_found = 0;
-    }
+	  size_type my_write_index = Kokkos::atomic_fetch_add(used_size_,1 );
 
+	  if (my_write_index >= max_value_size_) {
+		  return INSERT_FULL;
+	  }
+	  else {
 
-    if ((*used_size_) >= max_value_size_){
-      if (key_not_found == 0) {
-        return INSERT_SUCCESS;
-      }
-      else {
-        return INSERT_FULL;
-      }
-    }
+		  keys[my_write_index] = key;
+		  values[my_write_index] = value;
+		  size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+		  if (hashbeginning == -1){
+			  used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
+		  }
+		  hash_nexts[my_write_index] = hashbeginning;
+		  return INSERT_SUCCESS;
+	  }
+  }
 
-    int write_pos = 0;
-    Kokkos::parallel_scan(
-        Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
-      if (final){
-        write_pos = update;
-      }
-      update += key_not_found;
-    });
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int vector_atomic_insert_into_hash_TrackHashes (
+      const team_member_t & teamMember,
+      const int &vector_size,
 
-    size_type my_write_index = (*used_size_) + write_pos;
-    int num_writes = 0;
-    Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes_) {
-          if (key_not_found){
-            num_writes_ += 1;
-          }
-        }, num_writes);
+      const size_type &hash,
+      const key_type &key,
+      volatile size_type *used_size_,
+      const size_type &max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
 
-    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size_) += num_writes;
-    });
+	  if (hash != -1){
+		  size_type i = hash_begins[hash];
+		  for (; i != -1; i = hash_nexts[i]){
+			  if (keys[i] == key){
+				  //values[i] = (key_type)values[i] | (key_type)value;
+				  return INSERT_SUCCESS;
+			  }
+		  }
+	  }
+	  else {
+		  return INSERT_SUCCESS;
+	  }
 
-    if (key_not_found == 0) return INSERT_SUCCESS;
+	  size_type my_write_index = Kokkos::atomic_fetch_add(used_size_,1 );
 
+	  if (my_write_index >= max_value_size_) {
+		  return INSERT_FULL;
+	  }
+	  else {
 
-    if (my_write_index >= max_value_size_) {
-      return INSERT_FULL;
-    }
-    else {
-
-      keys[my_write_index] = key;
-      values[my_write_index] = value;
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
-      if (hashbeginning == -1){
-        //Kokkos::atomic_fetch_add(used_hash_size, 1);
-        used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
-      }
-      hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
-    }
+		  keys[my_write_index] = key;
+		  //values[my_write_index] = value;
+		  size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+		  if (hashbeginning == -1){
+			  used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
+		  }
+		  hash_nexts[my_write_index] = hashbeginning;
+		  return INSERT_SUCCESS;
+	  }
   }
 
   //function to be called from device.

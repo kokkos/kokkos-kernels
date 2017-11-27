@@ -101,6 +101,7 @@ struct KokkosSPGEMM
   const nnz_lno_t rest_nnz_lno_t_bit;
   nnz_lno_t team_cuckoo_key_size, team_cuckoo_hash_func;
   const int MAX_FIRST_LEVEL_RATIO;
+  nnz_lno_t max_first_level_hash_size;
   PortableNumericCHASH(
       nnz_lno_t m_,
       a_row_view_t row_mapA_,
@@ -120,7 +121,7 @@ struct KokkosSPGEMM
       nnz_lno_t min_hash_size, nnz_lno_t max_nnz_,
       int suggested_team_size_,
       const KokkosKernels::Impl::ExecSpaceType my_exec_space_,
-      nnz_lno_t team_row_chunk_size,
+      nnz_lno_t team_row_chunk_size, double first_level_cut_off,
       bool KOKKOSKERNELS_VERBOSE_
       ):
         numrows(m_),
@@ -157,7 +158,7 @@ struct KokkosSPGEMM
 		first_nnz_lno_t_bit (1 << (sizeof(nnz_lno_t) * 8 - 1)),
 		rest_nnz_lno_t_bit (~first_nnz_lno_t_bit),
 		team_cuckoo_key_size (1),
-		team_cuckoo_hash_func(1), MAX_FIRST_LEVEL_RATIO(0.90)
+		team_cuckoo_hash_func(1), MAX_FIRST_LEVEL_RATIO(0.90), max_first_level_hash_size( 1)
 
 
   {
@@ -178,21 +179,20 @@ struct KokkosSPGEMM
     	team_shmem_hash_size = team_shmem_hash_size * 2;
     }
     team_shared_memory_hash_func = team_shmem_hash_size - 1;
-
+    thread_shared_memory_hash_func = thread_shmem_hash_size - 1;
     team_shmem_key_size = team_shmem_key_size + ((team_shmem_key_size - team_shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(scalar_t));
     team_shmem_key_size = (team_shmem_key_size >> 1) << 1;
 
     thread_shmem_key_size = thread_shmem_key_size + ((thread_shmem_key_size - thread_shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(scalar_t));
     thread_shmem_key_size = (thread_shmem_key_size >> 1) << 1;
-
+    max_first_level_hash_size = first_level_cut_off * team_cuckoo_key_size;
     if (KOKKOSKERNELS_VERBOSE_){
       std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << thread_shmem_hash_size  << " shmem_key_size:" << thread_shmem_key_size << std::endl;
       std::cout << "\t\tNumericCMEM -- adjusted team hashsize:" << team_shmem_hash_size  << " team_shmem_key_size:" << team_shmem_key_size << std::endl;
       std::cout << "\t\tfirst_nnz_lno_t_bit:" << first_nnz_lno_t_bit << " rest_nnz_lno_t_bit:" << rest_nnz_lno_t_bit << std::endl;
-      std::cout << "\t\tteam_cuckoo_key_size:" << team_cuckoo_key_size << " team_cuckoo_hash_func:" << team_cuckoo_hash_func << std::endl;
+      std::cout << "\t\tteam_cuckoo_key_size:" << team_cuckoo_key_size << " team_cuckoo_hash_func:" << team_cuckoo_hash_func << " max_first_level_hash_size:" << max_first_level_hash_size << std::endl;
+      std::cout << "\t\tpow2_hash_size:" << pow2_hash_size << " pow2_hash_func:" << pow2_hash_func << std::endl;
     }
-
-
   }
   KOKKOS_INLINE_FUNCTION
   size_t get_thread_id(const size_t row_index) const{
@@ -886,45 +886,45 @@ nnz_lno_t ii = left_work;
 
           if (overall_num_unsuccess){
 
-            if (!is_global_alloced){
-              volatile nnz_lno_t * tmp = NULL;
-              //size_t tid = get_thread_id(row_index);
-              //the code gets internal compiler error on gcc 4.7.2
-              //assuming that this part only runs on GPUs for now, below fix
-              //has the exact same behaviour and runs okay.
-              size_t tid = row_index;
+        	  if (!is_global_alloced){
+        		  volatile nnz_lno_t * tmp = NULL;
+        		  //size_t tid = get_thread_id(row_index);
+        		  //the code gets internal compiler error on gcc 4.7.2
+        		  //assuming that this part only runs on GPUs for now, below fix
+        		  //has the exact same behaviour and runs okay.
+        		  size_t tid = row_index;
 
-              while (tmp == NULL){
-                Kokkos::single(Kokkos::PerThread(teamMember),[&] (volatile nnz_lno_t * &memptr) {
-                  memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(tid));
-                }, tmp);
-              }
+        		  while (tmp == NULL){
+        			  Kokkos::single(Kokkos::PerThread(teamMember),[&] (volatile nnz_lno_t * &memptr) {
+        				  memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(tid));
+        			  }, tmp);
+        		  }
 
 
-              is_global_alloced = true;
-              globally_used_hash_indices = (nnz_lno_t *) tmp;
-              tmp += pow2_hash_size ;
+        		  is_global_alloced = true;
+        		  globally_used_hash_indices = (nnz_lno_t *) tmp;
+        		  tmp += pow2_hash_size ;
 
-              hm2.hash_begins = (nnz_lno_t *) (tmp);
-              tmp += pow2_hash_size ;
-              hm2.hash_nexts = (nnz_lno_t *) (tmp);
+        		  hm2.hash_begins = (nnz_lno_t *) (tmp);
+        		  tmp += pow2_hash_size ;
+        		  hm2.hash_nexts = (nnz_lno_t *) (tmp);
 
-            }
+        	  }
 
-            nnz_lno_t hash_ = -1;
-            if (num_unsuccess) {
-              hash_ = b_col_ind & pow2_hash_func;
-            }
+        	  nnz_lno_t hash_ = -1;
+        	  if (num_unsuccess) {
+        		  hash_ = b_col_ind & pow2_hash_func;
+        	  }
 
-            //this has to be a success, we do not need to check for the success.
-            //int insertion =
+        	  //this has to be a success, we do not need to check for the success.
+        	  //int insertion =
 
-        hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
-                teamMember, vector_size,
-                hash_,b_col_ind,b_val,
-                used_hash_sizes + 1, hm2.max_value_size
-                ,globally_used_hash_count, globally_used_hash_indices
-            );
+        	  hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
+        			  teamMember, vector_size,
+					  hash_,b_col_ind,b_val,
+					  used_hash_sizes + 1, hm2.max_value_size
+					  ,globally_used_hash_count, globally_used_hash_indices
+        	  );
 
           }
 
@@ -1388,12 +1388,10 @@ nnz_lno_t ii = left_work;
 
     nnz_lno_t team_row_begin = teamMember.league_rank()  * team_work_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
-
     char *all_shared_memory = (char *) (teamMember.team_shmem().get_shmem(shared_memory_size));
 
     volatile nnz_lno_t *used_hash_sizes = (volatile nnz_lno_t *) (all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * 2;
-
     //holds the keys
     nnz_lno_t * keys = (nnz_lno_t *) (all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * team_cuckoo_key_size;
@@ -1412,63 +1410,50 @@ nnz_lno_t ii = left_work;
     });
     int bs = vector_size * suggested_team_size;
     int vector_shift = thread_rank * vector_size + vector_rank;
+
     for (nnz_lno_t row_index = team_row_begin; row_index < team_row_end; ++row_index){
-#if 0
-  	  printf("row_index:%d ", row_index);
-#endif
+
 #if 1
         teamMember.team_barrier();
 #endif
-    //Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
       const size_type c_row_begin = rowmapC[row_index];
       const size_type c_row_end = rowmapC[row_index + 1];
       const nnz_lno_t c_row_size = c_row_end -  c_row_begin;
       nnz_lno_t *c_row = entriesC.data() + c_row_begin;
       scalar_t *c_row_vals = valuesC.data() + c_row_begin;
+      nnz_lno_t *global_acc_row_keys = c_row;
+      scalar_t *global_acc_row_vals = c_row_vals;
+	  volatile nnz_lno_t * tmp = NULL;
+
+      if (c_row_size > max_first_level_hash_size){
+    	  {
+    		  while (tmp == NULL){
+    			  Kokkos::single(Kokkos::PerTeam(teamMember),[=] (volatile nnz_lno_t * &memptr) {
+    				  memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(row_index));
+    			  }, tmp);
+    		  }
+    		  global_acc_row_keys = (nnz_lno_t *) (tmp);
+    		  global_acc_row_vals = (scalar_t *) (tmp + pow2_hash_size);
+    	  }
+      }
 
       //initialize begins.
       {
-    	  nnz_lno_t num_threads =  team_cuckoo_key_size / vector_size;// not needed as team_cuckoo_key_size is always pow2. + (team_cuckoo_key_size & (vector_size - 1)) * 1;
+    	  nnz_lno_t num_threads =  team_cuckoo_key_size / vector_size;
+    	  // not needed as team_cuckoo_key_size is always pow2. + (team_cuckoo_key_size & (vector_size - 1)) * 1;
     	  Kokkos::parallel_for( Kokkos::TeamThreadRange(teamMember, num_threads), [&] (nnz_lno_t teamind) {
-    		  //nnz_lno_t team_shift = teamind * vector_size;
-    		  //nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, team_shmem_hash_size - team_shift);
     		  Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, vector_size ), [&] (nnz_lno_t i) {
     			  keys[teamind * vector_size + i] = -1; vals[teamind * vector_size + i] = 0;
     		  });
     	  });
       }
 
-
-#if 0
-      teamMember.team_barrier();
-
-      Kokkos::single(Kokkos::PerTeam(teamMember),[&] () {
-
-      for (int i = 0; i < team_shmem_hash_size; ++i){
-    	  if (begins[i] != -1){
-    		  std::cout << "row_index:" << row_index << " i:" << i << " team_shmem_hash_size:" << team_shmem_hash_size << " is not -1 begins[i]:" << begins[i] << std::endl;
-    	  }
-      }
-      });
-
-      teamMember.team_barrier();
-#endif
       //initialize hash usage sizes
       Kokkos::single(Kokkos::PerTeam(teamMember),[&] () {
         used_hash_sizes[0] = 0;
         used_hash_sizes[1] = 0;
-#if 0
-        globally_used_hash_count[0] = 0;
-#endif
       });
-#if 0
-
-      teamMember.team_barrier();
-#endif
-#if 0
-      bool is_global_alloced = false;
-      nnz_lno_t *globally_used_hash_indices = NULL;
-#endif
+      bool insert_is_on = true;
       const size_type a_col_begin_offset = row_mapA[row_index];
       const nnz_lno_t left_work = row_mapA[row_index + 1] - a_col_begin_offset;
 
@@ -1490,16 +1475,12 @@ nnz_lno_t ii = left_work;
         	  row_flops_ += row_mapB[acol + 1] - row_mapB[acol];
           });
       }, row_flops);
+
       nnz_lno_t num_iter = row_flops / bs;
+
       if (row_flops  & (bs - 1)) ++num_iter;
 
-
-      nnz_lno_t last_dump = 0;
       for (nnz_lno_t  iter = 0; iter < num_iter; ++iter){
-#if 0
-    	  printf("iter:%d row_flops %d bs %d\n", iter, row_flops, bs);
-#endif
-
     	  nnz_lno_t flop_shift = iter * bs;
     	  nnz_lno_t vector_read_shift = vector_shift + flop_shift;
 
@@ -1510,9 +1491,6 @@ nnz_lno_t ii = left_work;
 		  if (vector_read_shift < row_flops){
 
 			  if (my_b_col_shift >= current_a_column_flops ){
-#if 0
-		    	  printf("int my_b_col_shift b:%d current_a_column_flops %d bs %d\n", my_b_col_shift, current_a_column_flops, bs);
-#endif
 				  do {
 					  ++current_a_column_offset_inrow;
 					  my_b_col_shift -= current_a_column_flops;
@@ -1523,43 +1501,32 @@ nnz_lno_t ii = left_work;
 					  current_a_column_flops = row_mapB[a_col_ind + 1] - current_b_read_offsett;
 				  } while (my_b_col_shift >= current_a_column_flops);
 				  a_col_val = valuesA[a_col_begin_offset + current_a_column_offset_inrow];
-#if 0
-		    	  printf("out my_b_col_shift b:%d current_a_column_flops %d bs %d\n", my_b_col_shift, current_a_column_flops, bs);
-#endif
 			  }
 
 			  my_b_col = entriesB[my_b_col_shift + current_b_read_offsett];
-#if 0
-			  if (row_index == 6120 && my_b_col == 6121){
-				  printf("row:%d bcol:%d a_col_begin_offset:%d current_a_column_offset_inrow:%d my_b_col_shift:%d current_b_read_offsett:%d a_col_ind:%d left_work: %d initial_my_b_col_shift:%d row_flops:%d\n",
-						  row_index, my_b_col, a_col_begin_offset, current_a_column_offset_inrow, my_b_col_shift,  current_b_read_offsett, a_col_ind, left_work, vector_read_shift - flops_on_the_left_of_offsett, row_flops);
-			  }
-#endif
 			  my_b_val = valuesB[my_b_col_shift + current_b_read_offsett] * a_col_val;
-
 			  //now insert it to first level hashmap accumulator.
 			  hash = (my_b_col * HASHSCALAR) & team_cuckoo_hash_func;
 			  fail = 1;
-#if 0
-			  printf("in inserting b:%d hash %d val %lf\n", my_b_col, hash, my_b_val);
-#endif
-			  nnz_lno_t max_tries = team_cuckoo_key_size;
-			  nnz_lno_t search_end = KOKKOSKERNELS_MACRO_MIN(team_cuckoo_key_size, hash + max_tries);
+			  bool try_to_insert = true;
+
+			  //nnz_lno_t max_tries = team_cuckoo_key_size;
+			  nnz_lno_t search_end = team_cuckoo_key_size; //KOKKOSKERNELS_MACRO_MIN(team_cuckoo_key_size, hash + max_tries);
 			  for (nnz_lno_t trial = hash; trial < search_end; ){
-#if 0
-    	    	  if (my_b_col == 174903){
-    	    		  printf("row:%d to local my_key:%d new_hash:%d trial:%d c_row[trial]:%d",row_index, my_b_col, hash, trial, keys[trial]);
-    	    	  }
-#endif
 				  if (keys[trial] == my_b_col){
 					  Kokkos::atomic_add(vals + trial, my_b_val);
 					  fail = 0;
 					  break;
 				  }
 				  else if (keys[trial] == -1){
-					  if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
-						  //Kokkos::atomic_increment(used_hash_sizes);
+					  if (!insert_is_on) {
+						  try_to_insert = false;
+						  break;
+					  }
+					  else if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
 						  Kokkos::atomic_add(vals + trial, my_b_val);
+						  Kokkos::atomic_increment(used_hash_sizes);
+						  if (used_hash_sizes[0] > max_first_level_hash_size)  insert_is_on = false;
 						  fail = 0;
 						  break;
 					  }
@@ -1569,24 +1536,19 @@ nnz_lno_t ii = left_work;
 				  }
 			  }
 			  if (fail){
-				  search_end = max_tries - (team_cuckoo_key_size -  hash);
+				  search_end = hash; //max_tries - (team_cuckoo_key_size -  hash);
 
-				  for (nnz_lno_t trial = 0; trial < search_end; ){
-#if 0
-
-					  if (my_b_col == 174903){
-						  printf("---row:%d to local my_key:%d new_hash:%d trial:%d c_row[trial]:%d",row_index, my_b_col, hash, trial, keys[trial]);
-					  }
-#endif
+				  for (nnz_lno_t trial = 0; try_to_insert && trial < search_end; ){
 					  if (keys[trial] == my_b_col){
 						  Kokkos::atomic_add(vals + trial, my_b_val);
 						  fail = 0;
 						  break;
 					  }
-					  else if (keys[trial] == -1){
+					  else if (keys[trial] == -1 && insert_is_on){
 						  if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
-							  //Kokkos::atomic_increment(used_hash_sizes);
 							  Kokkos::atomic_add(vals + trial, my_b_val);
+							  Kokkos::atomic_increment(used_hash_sizes);
+							  if (used_hash_sizes[0] > max_first_level_hash_size)  insert_is_on = false;
 							  fail = 0;
 							  break;
 						  }
@@ -1594,22 +1556,25 @@ nnz_lno_t ii = left_work;
 					  else {
 						  ++trial;
 					  }
-
 				  }
 
 
-				  if (fail){
-					  nnz_lno_t new_hash = my_b_col % c_row_size;
-					  for (nnz_lno_t trial = new_hash; trial < c_row_size; ){
-						  if (c_row[trial] == my_b_col){
-							  c_row_vals[trial] += my_b_val;
+				  if (fail) {
+				      nnz_lno_t new_hash = my_b_col & pow2_hash_func;
+
+					  for (nnz_lno_t trial = new_hash; trial < pow2_hash_size; ){
+						  if (global_acc_row_keys[trial] == my_b_col){
+							  Kokkos::atomic_add(global_acc_row_vals + trial , my_b_val);
+
+							  //c_row_vals[trial] += my_b_val;
 							  fail = 0;
 							  break;
 						  }
-						  else if (c_row[trial] == -1){
-							  if (Kokkos::atomic_compare_exchange_strong(c_row + trial, -1, my_b_col)){
+						  else if (global_acc_row_keys[trial ] == -1){
+							  if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial , -1, my_b_col)){
+								  Kokkos::atomic_add(global_acc_row_vals + trial , my_b_val);
 								  //Kokkos::atomic_increment(used_hash_sizes + 1);
-								  c_row_vals[trial] = my_b_val;
+								  //c_row_vals[trial] = my_b_val;
 								  fail = 0;
 								  break;
 							  }
@@ -1620,14 +1585,17 @@ nnz_lno_t ii = left_work;
 					  }
 					  if (fail){
 						  for (nnz_lno_t trial = 0; trial < new_hash; ){
-							  if (c_row[trial] == my_b_col){
-								  c_row_vals[trial] += my_b_val;
+							  if (global_acc_row_keys[trial ] == my_b_col){
+								  //c_row_vals[trial] += my_b_val;
+								  Kokkos::atomic_add(global_acc_row_vals + trial , my_b_val);
+
 								  break;
 							  }
-							  else if (c_row[trial] == -1){
-								  if (Kokkos::atomic_compare_exchange_strong(c_row + trial, -1, my_b_col)){
+							  else if (global_acc_row_keys[trial ] == -1){
+								  if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial , -1, my_b_col)){
 									  //Kokkos::atomic_increment(used_hash_sizes + 1);
-									  c_row_vals[trial] = my_b_val;
+									  Kokkos::atomic_add(global_acc_row_vals + trial , my_b_val);
+									  //c_row_vals[trial] = my_b_val;
 									  break;
 								  }
 							  }
@@ -1638,146 +1606,51 @@ nnz_lno_t ii = left_work;
 					  }
 				  }
 			  }
-#if 0
-	          printf("out inserting b:%d hash %d val %lf fail:%d\n", my_b_col, hash, my_b_val, fail);
-#endif
 		  }
-#if 0
-		  //if (last_dump - iter >= 4)
-		  if (fail) {
-			  used_hash_sizes[0] = 1;
-		  }
-		  teamMember.team_barrier();
-		  if (used_hash_sizes[0])
-		  {
-			  {
-#if 0
-				  printf("num_team_fails:%d\n", num_team_fails);
-#endif
-
-				  for (nnz_lno_t  my_index = vector_shift; my_index < team_cuckoo_key_size; my_index +=bs ){
-					  nnz_lno_t my_key = keys[my_index];
-					  if (my_key != -1){
-						  nnz_lno_t my_value = vals[my_index];
-						  keys[my_index] = -1;
-						  vals[my_index] = 0;
-						  nnz_lno_t new_hash = my_key % c_row_size;
-						  int new_fail = 1;
-						  for (nnz_lno_t trial = new_hash; trial < c_row_size; ){
-							  if (c_row[trial] == my_key){
-								  c_row_vals[trial] += my_value;
-								  new_fail = 0;
-								  break;
-							  }
-							  else if (c_row[trial] == -1){
-								  if (Kokkos::atomic_compare_exchange_strong(c_row + trial, -1, my_key)){
-									  c_row_vals[trial] = my_value;
-									  new_fail = 0;
-									  break;
-								  }
-							  }
-							  else {
-								  ++trial;
-							  }
-						  }
-						  if (new_fail){
-							  for (nnz_lno_t trial = 0; trial < new_hash; ){
-								  if (c_row[trial] == my_key){
-									  c_row_vals[trial] += my_value;
-									  new_fail = 0;
-									  break;
-								  }
-								  else if (c_row[trial] == -1){
-									  if (Kokkos::atomic_compare_exchange_strong(c_row + trial, -1, my_key)){
-										  c_row_vals[trial] = my_value;
-										  new_fail = 0;
-										  break;
-									  }
-								  }
-								  else {
-									  ++trial;
-								  }
-							  }
-						  }
-					  }
-				  }
-				  used_hash_sizes[0] = 0;
-				  teamMember.team_barrier();
-
-				  if (fail){
-					  for (nnz_lno_t trial = hash; trial < team_cuckoo_key_size; ){
-						  if (keys[trial] == my_b_col){
-							  Kokkos::atomic_add(vals + trial, my_b_val);
-							  fail = 0;
-							  break;
-						  }
-						  else if (keys[trial] == -1){
-							  if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
-								  //Kokkos::atomic_increment(used_hash_sizes);
-
-								  Kokkos::atomic_add(vals + trial, my_b_val);
-								  fail = 0;
-								  break;
-							  }
-						  }
-						  else {
-							  ++trial;
-						  }
-					  }
-					  if (fail){
-						  for (nnz_lno_t trial = 0; trial < hash; ){
-							  if (keys[trial] == my_b_col){
-								  Kokkos::atomic_add(vals + trial, my_b_val);
-								  fail = 0;
-								  break;
-							  }
-							  else if (keys[trial] == -1){
-								  if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
-									  //Kokkos::atomic_increment(used_hash_sizes);
-
-									  Kokkos::atomic_add(vals + trial, my_b_val);
-									  fail = 0;
-									  break;
-								  }
-							  }
-							  else {
-								  ++trial;
-							  }
-
-						  }
-					  }
-				  }
-			  }
-		  }
-#endif
       }
 
-
-#if 0
-      printf("inserting stuff to global\n");
-#endif
       teamMember.team_barrier();
+
+
+      if (tmp != NULL){
+
+
+    	  for (nnz_lno_t  my_index = vector_shift; my_index < pow2_hash_size;my_index += bs){
+    		  nnz_lno_t my_key = global_acc_row_keys[my_index];
+    		  if (my_key != -1){
+    			  scalar_t my_val = global_acc_row_vals[my_index];
+    			  nnz_lno_t write_index = 0;
+    			  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
+    			  c_row[write_index] = my_key;
+    			  c_row_vals[write_index] = my_val;
+    			  global_acc_row_keys[my_index] = -1;
+    		  }
+    	  }
+
+          teamMember.team_barrier();
+		  Kokkos::single(Kokkos::PerTeam(teamMember),[&] () {
+			  memory_space.release_chunk(global_acc_row_keys);
+		  });
+      }
+
 
       for (nnz_lno_t  my_index = vector_shift; my_index < team_cuckoo_key_size;my_index += bs){
     	  nnz_lno_t my_key = keys[my_index];
     	  if (my_key != -1){
     		  scalar_t my_val = vals[my_index];
     		  nnz_lno_t write_index = 0;
-    		  do{
-    			  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
-    		  }while (c_row[write_index] != -1);
+    		  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
     		  c_row[write_index] = my_key;
     		  c_row_vals[write_index] = my_val;
     	  }
       }
-#if 0
-      printf("out inserting stuff to global\n");
-#endif
+
+
     }
   }
 
 
-  //In this one row fits into shmem. But teams work on different rows of B.
+  //In this one row fits into shmem. But threads work on different rows of B.
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag4&, const team_member_t & teamMember) const {
 
@@ -1817,7 +1690,7 @@ nnz_lno_t ii = left_work;
     //Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
       const size_type c_row_begin = rowmapC[row_index];
       const size_type c_row_end = rowmapC[row_index + 1];
-      const nnz_lno_t c_row_size = c_row_end -  c_row_begin;
+      //const nnz_lno_t c_row_size = c_row_end -  c_row_begin;
       nnz_lno_t *c_row = entriesC.data() + c_row_begin;
       scalar_t *c_row_vals = valuesC.data() + c_row_begin;
 
@@ -2285,6 +2158,8 @@ void
   nnz_lno_t min_hash_size = 1;
   size_t chunksize  = 1;
 
+  double first_level_cut_off  = this->handle->get_spgemm_handle()->get_first_level_hash_cut_off();
+
 #ifdef KOKKOSKERNELSCHANGEPARAMS
   nnz_lno_t env_hash = atoi(getenv("MINHASHSIZE"));
   nnz_lno_t env_chunksize = atoi(getenv("CHUNKSIZE"));
@@ -2339,13 +2214,18 @@ void
 
   if (this->spgemm_algorithm == SPGEMM_KK_MEMORY_BIGSPREADTEAM){
 	  Kokkos::deep_copy (entriesC_, -1);
+	  Kokkos::deep_copy (valuesC_, -1);
   }
+
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 
-	  if (this->spgemm_algorithm == SPGEMM_KK_MEMORY_SPREADTEAM || this->spgemm_algorithm == SPGEMM_KK_MEMORY_BIGSPREADTEAM){
+	  if (this->spgemm_algorithm == SPGEMM_KK_MEMORY_SPREADTEAM){
 		  tmp_max_nnz = 1;
 	  }
-	  if (this->spgemm_algorithm == SPGEMM_KK_MEMORY_BIGTEAM || this->spgemm_algorithm == SPGEMM_KK_MEMORY_TEAM ){
+	  else if ( this->spgemm_algorithm == SPGEMM_KK_MEMORY_BIGSPREADTEAM){
+
+	  }
+	  else if (this->spgemm_algorithm == SPGEMM_KK_MEMORY_BIGTEAM || this->spgemm_algorithm == SPGEMM_KK_MEMORY_TEAM ){
 		  //tmp_max_nnz -= team_shmem_key_size;
 	  }
 	  else {
@@ -2362,13 +2242,14 @@ void
 	  chunksize += max_nnz; //this is for used hash keys
 	  chunksize += min_hash_size * sizeof(scalar_t) / sizeof(nnz_lno_t) ; //this is for the hash values
   }
-  else if (this->spgemm_algorithm == SPGEMM_KK_CUCKOO){
+  else if (this->spgemm_algorithm == SPGEMM_KK_CUCKOO ||  this->spgemm_algorithm == SPGEMM_KK_MEMORY_BIGSPREADTEAM){
 	  while (tmp_max_nnz > min_hash_size){
 	      min_hash_size *= 2;  //try to keep it as low as possible because hashes are not tracked.
  	  }
 	  chunksize = min_hash_size; //this is for used hash keys
 	  chunksize += min_hash_size * sizeof(scalar_t) / sizeof(nnz_lno_t) ; //this is for the hash values
   }
+
   else{
 	  while (tmp_max_nnz > min_hash_size){
 	    min_hash_size *= 4;
@@ -2402,6 +2283,7 @@ num_chunks = env_num_chunks;
 
   KokkosKernels::Impl::PoolType my_pool_type =
       KokkosKernels::Impl::OneThread2OneChunk;
+
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
@@ -2442,7 +2324,9 @@ num_chunks = env_num_chunks;
       suggested_team_size,
 
       my_exec_space,
-      team_row_chunk_size,KOKKOSKERNELS_VERBOSE);
+      team_row_chunk_size,
+	  first_level_cut_off,
+	  KOKKOSKERNELS_VERBOSE);
 
 
   if (KOKKOSKERNELS_VERBOSE){
@@ -2484,12 +2368,8 @@ num_chunks = env_num_chunks;
 		  Kokkos::parallel_for( gpu_team_policy2_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
 	  }
 	  else {
-		  timer1.reset();
+
 		  Kokkos::parallel_for( gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
-		  MyExecSpace::fence();
-		  if (KOKKOSKERNELS_VERBOSE){
-		    std::cout << "\t\tNumeric TIME:" << timer1.seconds() << std::endl;
-		  }
 	  }
     MyExecSpace::fence();
   }
@@ -2610,6 +2490,7 @@ void
     std::cout << "\t\tPool Size(MB):" <<
         sizeof (nnz_lno_t) * (num_chunks * chunksize) / 1024. / 1024.  << std::endl;
   }
+  double first_level_cut_off  = this->handle->get_spgemm_handle()->get_first_level_hash_cut_off();
 
   PortableNumericCHASH<
     const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
@@ -2636,6 +2517,7 @@ void
       suggested_team_size,
 
       my_exec_space,
+	  first_level_cut_off,
       team_row_chunk_size,KOKKOSKERNELS_VERBOSE);
 
 

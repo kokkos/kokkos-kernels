@@ -250,8 +250,28 @@ private:
   std::string coloring_output_file;
 
   int min_hash_size_scale;
+  double compression_cut_off;
+  double first_level_hash_cut_off;
+  size_t original_max_row_flops, original_overall_flops;
+  row_lno_persistent_work_view_t row_flops;
 
+  size_t compressed_max_row_flops, compressed_overall_flops;
 
+  void set_first_level_hash_cut_off(double first_level_hash_cut_off_){
+    this->first_level_hash_cut_off = first_level_hash_cut_off_;
+  }
+
+  double get_first_level_hash_cut_off(){
+    return this->first_level_hash_cut_off;
+  }
+
+  void set_compression_cut_off(double compression_cut_off_){
+    this->compression_cut_off = compression_cut_off_;
+  }
+
+  double get_compression_cut_off(){
+    return this->compression_cut_off;
+  }
   void set_min_hash_size_scale(int scale){
     min_hash_size_scale = scale;
   }
@@ -442,7 +462,7 @@ private:
 
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
-	coloring_output_file(""), min_hash_size_scale(1),
+	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.95), first_level_hash_cut_off(0.75),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
     mkl_keep_output(true),
     mkl_convert_to_1base(true), is_compression_single_step(true)
