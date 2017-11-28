@@ -63,7 +63,9 @@ namespace Test {
       const int i = team.league_rank();
       mag_type diff_row = 0;
       Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,N), [&] (const int& j,mag_type& diff_ij) {
+        //printf("A (%i %i) (%i %i) (%i %i)\n",C.extent(0),C.extent(1),C2.extent(0),C2.extent(1),i,j);
         diff_ij += APT::abs(C(i,j)-C2(i,j));
+        //printf("B (%i %i) (%i %i) (%i %i)\n",C.extent(0),C.extent(1),C2.extent(0),C2.extent(1),i,j);
       },diff_row);
       Kokkos::single(Kokkos::PerTeam(team), [&] () {
         diff += diff_row;
@@ -86,8 +88,8 @@ namespace Test {
     typedef Kokkos::Details::ArithTraits<ScalarC> APT;
     typedef typename APT::mag_type mag_type;
 
-    ScalarA alpha = 3;
-    ScalarC beta = 5;
+    ScalarA alpha = 1.0;
+    ScalarC beta = 0.0;
     double machine_eps = APT::epsilon();
 
     ViewTypeA A("A",A_t?K:M,A_t?M:K);
@@ -125,7 +127,7 @@ namespace Test {
     struct DiffGEMM<ViewTypeC,execution_space> diffgemm;
     diffgemm.N = N;
     diffgemm.C = C;
-    diffgemm.C = C2;
+    diffgemm.C2 = C2;
 
     Kokkos::parallel_reduce(Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), diffgemm, diff_C);
 
@@ -187,8 +189,8 @@ int test_gemm(const char* mode) {
   return 1;
 }
 
-//#if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_float ) {
     test_gemm<float,float,float,TestExecSpace> ("NN");
     test_gemm<float,float,float,TestExecSpace> ("TN");
@@ -197,8 +199,8 @@ TEST_F( TestCategory, gemm_float ) {
 }
 #endif
 
-//#if defined(KOKKOSKERNELS_INST_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_double ) {
     test_gemm<double,double,double,TestExecSpace> ("NN");
     test_gemm<double,double,double,TestExecSpace> ("TN");
@@ -207,8 +209,8 @@ TEST_F( TestCategory, gemm_double ) {
 }
 #endif
 
-//#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_complex_double ) {
     test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("NN");
     test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("CN");
@@ -217,8 +219,8 @@ TEST_F( TestCategory, gemm_complex_double ) {
 }
 #endif
 
-//#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+//#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 TEST_F( TestCategory, gemm_complex_float ) {
     test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("NN");
     test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("CN");
