@@ -165,7 +165,6 @@ void KokkosSPGEMM
     //first get the max flops for a row, which will be used for max row size.
     //If we did compression in single step, row_mapB[i] points the begining of row i,
     //and new_row_mapB[i] points to the end of row i.
-    nnz_lno_t maxNumRoughZeros = 0;
     if (compression_applied){
 
 		nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->compressed_max_row_flops;
@@ -195,9 +194,6 @@ void KokkosSPGEMM
     	set_entries = nnz_lno_temp_work_view_t ("");
     	nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->original_max_row_flops;
 
-    	//number of rows and nnzs
-    	nnz_lno_t n = this->row_mapB.dimension_0() - 1;
-    	size_type nnz = this->entriesB.dimension_0();
 
     	if (KOKKOSKERNELS_VERBOSE){
     		std::cout << "SYMBOLIC PHASE -- NO COMPRESSION: maxNumRoughZeros:" << maxNumRoughZeros << std::endl;

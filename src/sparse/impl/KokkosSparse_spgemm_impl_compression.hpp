@@ -873,7 +873,7 @@ bool KokkosSPGEMM
 
     	nnz_lno_t compressed_maxNumRoughZeros = 0;
     	size_t compressedoverall_flops = 0;
-  		Kokkos::Impl::Timer timer1;
+  		Kokkos::Impl::Timer timer1_t;
   		auto new_row_mapB_begin = Kokkos::subview (out_row_map, std::make_pair (0, b_row_cnt - 1));
   		auto new_row_mapB_end = Kokkos::subview (out_row_map, std::make_pair (1, b_row_cnt));
   		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
@@ -884,7 +884,7 @@ bool KokkosSPGEMM
   			std::cout << "\t\tCompressed Max Row Flops:" << compressed_maxNumRoughZeros  << std::endl;
   			std::cout << "\t\tCompressed Overall Row Flops:" << compressedoverall_flops  << std::endl;
 			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
-  			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1.seconds()  << std::endl;
+  			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1_t.seconds()  << std::endl;
   		}
 
 		this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
@@ -930,7 +930,7 @@ bool KokkosSPGEMM
   {
 	nnz_lno_t compressed_maxNumRoughZeros = 0;
 	size_t compressedoverall_flops = 0;
-		Kokkos::Impl::Timer timer1;
+		Kokkos::Impl::Timer timer1_t;
 		auto new_row_mapB_begin = in_row_map;
 		auto new_row_mapB_end = out_row_map;
 		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
@@ -943,7 +943,7 @@ bool KokkosSPGEMM
 			std::cout << "\t\tCompressed Flops ratio:" << compressedoverall_flops / ((double) (OriginaltotalFlops)) <<  " min_reduction:" << min_reduction  << std::endl;
 
 
-			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1.seconds()  << std::endl;
+			std::cout << "\t\tCompressed Max Row Flop Calc Time:" << timer1_t.seconds()  << std::endl;
 		}
 
 	this->handle->get_spgemm_handle()->compressed_max_row_flops = compressed_maxNumRoughZeros;
