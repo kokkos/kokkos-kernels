@@ -69,7 +69,7 @@ struct gemm_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL( SCALAR, LAYOUTA, LAYOUTB, LAYOUTC, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT( SCALAR, LAYOUTA, LAYOUTB, LAYOUTC, EXEC_SPACE, MEM_SPACE ) \
     template<> \
     struct gemm_eti_spec_avail< \
          Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -80,6 +80,11 @@ struct gemm_eti_spec_avail {
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
          > { enum : bool { value = true }; };
 
+#define KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+    KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT( SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+    KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT( SCALAR, Kokkos::LayoutLeft, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+    KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT( SCALAR, Kokkos::LayoutRight, Kokkos::LayoutLeft, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+    KOKKOSBLAS3_GEMM_ETI_SPEC_AVAIL_LAYOUT( SCALAR, Kokkos::LayoutRight, Kokkos::LayoutRight, LAYOUT, EXEC_SPACE, MEM_SPACE)
 
 // Include the actual specialization declarations
 #include<KokkosBlas3_gemm_tpl_spec_avail.hpp>
@@ -123,6 +128,7 @@ struct GEMM {
   static_assert (static_cast<int> (CViewType::rank) == 2,
                  "CViewType must have rank 2.");
 
+  Kokkos::Profiling::pushRegion(eti_spec_avail?"KokkosBlas::gemm[ETI]":"KokkosBlas::gemm[noETI]");
   // Figure out Scalar Types
   typedef typename AViewType::non_const_value_type ScalarA;
   typedef typename BViewType::non_const_value_type ScalarB;
@@ -157,41 +163,42 @@ struct GEMM {
 
   // Call the correct kernel
   if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='N' || transB[0]=='n')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,0> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,0> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='N' || transB[0]=='n')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,0> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,0> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='N' || transB[0]=='n')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,0> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,0> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='T' || transB[0]=='t')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,1> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,1> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='T' || transB[0]=='t')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,1> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,1> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='T' || transB[0]=='t')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,1> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,1> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='C' || transB[0]=='c')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,2> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,2> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='C' || transB[0]=='c')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,2> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,2> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
   if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='C' || transB[0]=='c')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,2> gemm(A,B,C);
+    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,2> gemm(alpha,A,B,beta,C);
     gemm.run(team_size,vector_length,scratch_level);
   }
+  Kokkos::Profiling::popRegion();
 }
 #else
 ;
