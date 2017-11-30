@@ -1,5 +1,5 @@
 HOST=$(shell hostname)
-include ../../Makefile.inc
+include ../Makefile.inc
 
 info:
 	@echo "make test EXEC=exec or make all"
@@ -7,7 +7,7 @@ info:
 	@echo " - kokkos is located at $(KOKKOS)"
 	@echo " - exec is one of $(EXECS)"
 
-EXEC  = KokkosBatched_Test_BlockCrs
+EXEC  = KokkosBatched_Test_SIMD
 EXECS = \
 	KokkosBatched_Test_Gemm \
 	KokkosBatched_Test_Trsm \

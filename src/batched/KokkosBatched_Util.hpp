@@ -172,10 +172,7 @@ namespace KokkosBatched {
     // Implicit vectorization
     template<typename T>
     struct SIMD {
-      static_assert( std::is_same<T,double>::value                   ||
-		     std::is_same<T,float>::value                    ||
-		     std::is_same<T,Kokkos::complex<double> >::value ||
-		     std::is_same<T,std::complex<double> >::value,
+      static_assert( std::is_fundamental<T>::value,
 		     "KokkosKernels:: Invalid SIMD<> type." );
       using value_type = T;
     };

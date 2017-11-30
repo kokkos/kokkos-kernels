@@ -1,6 +1,6 @@
 #### common
 
-INCLUDES= -I../../src
+INCLUDES= -I../../../src/batched -I../../../src
 
 #### hasen : cuda k80
 
