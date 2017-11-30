@@ -129,7 +129,79 @@ namespace KokkosBatched {
       T r_val = val[0];
       for (int i=1;i<l;++i)
         r_val = func(r_val, val[i]);
+      return r_val;
     }
+
+    template<typename T, int l, typename BinaryOp>
+    KOKKOS_INLINE_FUNCTION
+    static
+    T
+    reduce(const Vector<SIMD<T>,l> &val, const BinaryOp &func, const T init) {
+      T r_val = init;
+      for (int i=0;i<l;++i)
+        r_val = func(r_val, val[i]);
+      return r_val;
+    }
+
+    template<int l>
+    KOKKOS_INLINE_FUNCTION    
+    static
+    bool
+    is_all_true(const Vector<SIMD<bool>,l> &cond) {
+      return reduce(cond, [](const bool left, const bool right) -> bool {
+          return (left && right);
+        });
+    } 
+
+    template<int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    bool
+    is_any_true(const Vector<SIMD<bool>,l> &cond) {
+      return reduce(cond, [](const bool left, const bool right) -> bool {
+          return left || right;
+        });
+    } 
+
+    template<typename T, int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    T
+    min(const Vector<SIMD<T>,l> &val) {
+      return reduce(val, [](const T left, const T right) -> T {
+          return min(left,right);
+        });
+    } 
+
+    template<typename T, int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    T
+    max(const Vector<SIMD<T>,l> &val) {
+      return reduce(val, [](const T left, const T right) -> T {
+          return max(left,right);
+        });
+    } 
+
+    template<typename T, int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    T
+    sum(const Vector<SIMD<T>,l> &val) {
+      return reduce(val, [](const T left, const T right) -> T {
+          return left + right;
+        }, T(0));
+    } 
+
+    template<typename T, int l>
+    KOKKOS_INLINE_FUNCTION
+    static
+    T
+    prod(const Vector<SIMD<T>,l> &val) {
+      return reduce(val, [](const T left, const T right) -> T {
+          return left * right;
+        }, T(1));
+    } 
     
   }
 }
