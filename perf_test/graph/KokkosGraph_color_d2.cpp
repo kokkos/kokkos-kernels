@@ -80,7 +80,8 @@ typedef int64_t idx;
 #endif
 #endif
 
-void print_options(){
+void print_options()
+{
 
 }
 
@@ -139,6 +140,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       {
         params.algorithm = 1;
       }
+      #if 0
       else if ( 0 == strcasecmp( argv[i] , "COLORING_SERIAL" ) ) 
       {
         params.algorithm = 2;
@@ -158,6 +160,11 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "COLORING_EB" ) ) 
       {
         params.algorithm = 6;
+      }
+      #endif
+      else if ( 0 == strcasecmp( argv[i], "COLORING_WCMCLEN" ) )
+      {
+        params.algorithm = 2;
       }
       else 
       {
@@ -179,15 +186,11 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
 namespace KokkosKernels {
 namespace Experiment {
 
-
-
 template <typename ExecSpace, typename crsGraph_t, typename crsGraph_t2 , typename crsGraph_t3 , typename TempMemSpace , typename PersistentMemSpace >
 void run_experiment(crsGraph_t crsGraph, Parameters params)
 {
-  //using namespace KokkosSparse;
   using namespace KokkosGraph;
   using namespace KokkosGraph::Experimental;
-  //using namespace KokkosSparse::Experimental;
  
   int algorithm = params.algorithm;
   int repeat = params.repeat;
@@ -207,7 +210,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   typedef typename lno_view_t::non_const_value_type size_type;
   typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
-  // WCMCLEN: This KokkosKernelsHandle is not the same handle as the one in                  KokkosGraph_GraphColorHandle.hpp?
+  // WCMCLEN: This KokkosKernelsHandle is not the same handle as the one in KokkosGraph_GraphColorHandle.hpp?
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;  
 
   KernelHandle kh;
@@ -234,6 +237,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     case 1:
       kh.create_graph_coloring_handle(COLORING_SPGEMM);
       break;
+    case 2:
+      kh.create_graph_coloring_handle(COLORING_WCMCLEN);
+      break;
     default:
       kh.create_graph_coloring_handle(COLORING_SPGEMM);
       break;
@@ -259,18 +265,18 @@ void run_multi_mem_experiment(Parameters params)
   typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type > fast_crstmat_t;
   typedef typename fast_crstmat_t::StaticCrsGraphType fast_graph_t;
   //typedef typename fast_graph_t::row_map_type::non_const_type fast_row_map_view_t;
-  //typedef typename fast_graph_t::entries_type::non_const_type   fast_cols_view_t;
+  //typedef typename fast_graph_t::entries_type::non_const_type fast_cols_view_t;
 
   //typedef typename fast_graph_t::row_map_type::const_type const_fast_row_map_view_t;
-  //typedef typename fast_graph_t::entries_type::const_type   const_fast_cols_view_t;
+  //typedef typename fast_graph_t::entries_type::const_type const_fast_cols_view_t;
 
   typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, mySlowExecSpace, void, size_type > slow_crstmat_t;
   typedef typename slow_crstmat_t::StaticCrsGraphType slow_graph_t;
 
   //typedef typename slow_graph_t::row_map_type::non_const_type slow_row_map_view_t;
-  //typedef typename slow_graph_t::entries_type::non_const_type   slow_cols_view_t;
-  //typedef typename slow_graph_t::row_map_type::const_type const_slow_row_map_view_t;
-  //typedef typename slow_graph_t::entries_type::const_type   const_slow_cols_view_t;
+  //typedef typename slow_graph_t::entries_type::non_const_type slow_cols_view_t;
+  //typedef typename slow_graph_t::row_map_type::const_type     const_slow_row_map_view_t;
+  //typedef typename slow_graph_t::entries_type::const_type     const_slow_cols_view_t;
 
   char *a_mat_file = params.a_mtx_bin_file;
   //char *b_mat_file = params.b_mtx_bin_file;
@@ -278,7 +284,6 @@ void run_multi_mem_experiment(Parameters params)
 
   slow_graph_t a_slow_crsgraph, /*b_slow_crsgraph,*/ c_slow_crsgraph;
   fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
-
 
 
   //read a and b matrices and store them on slow or fast memory.
@@ -308,9 +313,9 @@ void run_multi_mem_experiment(Parameters params)
         if (params.work_mem_space == 1)
         {
            /* c_fast_crsgraph = */
-              KokkosKernels::Experiment::run_experiment
-                <myExecSpace, fast_graph_t,fast_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+           KokkosKernels::Experiment::run_experiment
+             <myExecSpace, fast_graph_t,fast_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
+             (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
         }
         else 
         {
@@ -327,16 +332,16 @@ void run_multi_mem_experiment(Parameters params)
         if (params.work_mem_space == 1)
         {
           /*c_slow_crsgraph =*/
-              KokkosKernels::Experiment::run_experiment
-                <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+          KokkosKernels::Experiment::run_experiment
+            <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
+            (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
         }
         else 
         {
           /*c_slow_crsgraph =*/
-              KokkosKernels::Experiment::run_experiment
-                <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+          KokkosKernels::Experiment::run_experiment
+            <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
+            (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
         }
       }
     }
@@ -472,9 +477,6 @@ void run_multi_mem_experiment(Parameters params)
 
 int main (int argc, char ** argv)
 {
-  //typedef int size_type;
-  //typedef int idx;
-
   KokkosKernels::Experiment::Parameters params;
 
   if (parse_inputs (params, argc, argv) )
@@ -522,7 +524,6 @@ int main (int argc, char ** argv)
     Kokkos::Cuda::finalize();
     Kokkos::HostSpace::execution_space::finalize();
   }
-
 #endif
 
 #if defined( KOKKOS_HAVE_SERIAL )
