@@ -33,7 +33,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     cbrt(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -52,7 +52,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     log(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -71,7 +71,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     log10(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -90,7 +90,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     exp(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -109,7 +109,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     pow(const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -144,7 +144,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     sin(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -163,7 +163,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     cos(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -182,7 +182,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     tan(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -201,7 +201,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     sinh(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -220,7 +220,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     cosh(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -239,7 +239,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     tanh(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -258,7 +258,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     asin(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -277,7 +277,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     acos(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -296,7 +296,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     atan(const Vector<SIMD<T>,l> &a) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -315,7 +315,7 @@ namespace KokkosBatched {
     static
     Vector<SIMD<T>,l>
     atan2(const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
+      //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep

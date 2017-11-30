@@ -47,7 +47,6 @@ namespace KokkosBatched {
       }
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
-        static_assert(std::is_convertible<T,ArgValueType>::value, "input type is not convertible");
 #if                                                     \
   defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)

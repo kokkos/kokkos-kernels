@@ -17,7 +17,7 @@ namespace KokkosBatched {
     conditional_assign(const bool cond,
                        const T &if_true_val,
                        const T &if_false_val) {
-      r_val = cond ? if_true_val : if_false_val;
+      return cond ? if_true_val : if_false_val;
     }
 
     template<typename T0, typename T1, typename T2>
