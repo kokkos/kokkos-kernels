@@ -24,7 +24,7 @@ namespace Test {
     typedef typename ats::mag_type mag_type;
 
     vector_type a, b, aref, bref;
-    const value_type zero(0), one(1), two(2);
+    const value_type one(1), two(2);
     const mag_type eps = 1.0e3 * ats::epsilon();
 
     Random<value_type> random;
