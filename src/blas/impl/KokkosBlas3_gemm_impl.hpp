@@ -461,9 +461,6 @@ struct GEMMImpl {
     });
     team.team_barrier();
 
-    const int B0 = B.extent_int(0);
-    const int B1 = B.extent_int(1);
-
     // Move along the inner dimension in blocks
     const int length = TransposeA>0?A.extent_int(0):A.extent_int(1);
     for(int A_j = 0; A_j < length; A_j += blockA1) {
