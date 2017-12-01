@@ -142,7 +142,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       else if ( 0 == strcasecmp( argv[i], "COLORING_D2_WCMCLEN" ) )
       {
-        std::cout << ">>> Using coloring algorithm: " << argv[i] << std::endl;
+        std::cout << ">>> Using coloring algorithm <<<" << argv[i] << std::endl;
         params.algorithm = 2;
       }
       else 
@@ -197,6 +197,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   kh.set_shmem_size(shmemsize);
   kh.set_suggested_team_size(team_size);
   kh.set_suggested_vector_size(vector_size);
+  // kh.set_verbose(true);
 
   if (use_dynamic_scheduling)
   {
