@@ -136,34 +136,13 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) 
     {
       ++i;
-      if ( 0 == strcasecmp( argv[i] , "COLORING_DEFAULT" ) ) 
+      if ( 0 == strcasecmp( argv[i] , "COLORING_D2_MATRIX_SQUARED" ) ) 
       {
         params.algorithm = 1;
       }
-      #if 0
-      else if ( 0 == strcasecmp( argv[i] , "COLORING_SERIAL" ) ) 
+      else if ( 0 == strcasecmp( argv[i], "COLORING_D2_WCMCLEN" ) )
       {
-        params.algorithm = 2;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "COLORING_VB" ) ) 
-      {
-        params.algorithm = 3;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBBIT" ) ) 
-      {
-        params.algorithm = 4;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBCS" ) ) 
-      {
-        params.algorithm = 5;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "COLORING_EB" ) ) 
-      {
-        params.algorithm = 6;
-      }
-      #endif
-      else if ( 0 == strcasecmp( argv[i], "COLORING_WCMCLEN" ) )
-      {
+        std::cout << ">>> Using coloring algorithm: " << argv[i] << std::endl;
         params.algorithm = 2;
       }
       else 
@@ -191,7 +170,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 {
   using namespace KokkosGraph;
   using namespace KokkosGraph::Experimental;
- 
+
   int algorithm = params.algorithm;
   int repeat = params.repeat;
   int chunk_size = params.chunk_size;
@@ -219,11 +198,11 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   kh.set_suggested_team_size(team_size);
   kh.set_suggested_vector_size(vector_size);
 
-
   if (use_dynamic_scheduling)
   {
     kh.set_dynamic_scheduling(true);
   }
+
   if (verbose)
   {
     kh.set_verbose(true);
@@ -235,13 +214,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     switch (algorithm)
     {
     case 1:
-      kh.create_graph_coloring_handle(COLORING_SPGEMM);
+      // kh.create_graph_coloring_handle(COLORING_SPGEMM);
+      kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
       break;
     case 2:
-      kh.create_graph_coloring_handle(COLORING_WCMCLEN);
+      kh.create_graph_coloring_handle(COLORING_D2_WCMCLEN);
       break;
     default:
-      kh.create_graph_coloring_handle(COLORING_SPGEMM);
+      kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
       break;
     }
     graph_color_d2(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
@@ -483,11 +463,13 @@ int main (int argc, char ** argv)
   {
     return 1;
   }
+
   if (params.a_mtx_bin_file == NULL)
   {
     std::cerr << "Provide a matrix file" << std::endl ;
     return 0;
   }
+
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
 
@@ -499,10 +481,10 @@ int main (int argc, char ** argv)
     Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
-    <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(params);
+        <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(params);
 #else
     KokkosKernels::Experiment::run_multi_mem_experiment
-    <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
+        <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
 #endif
     Kokkos::OpenMP::finalize();
   }

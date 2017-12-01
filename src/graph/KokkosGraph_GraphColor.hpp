@@ -100,6 +100,7 @@ void graph_color_symbolic(
     gc = new EBGraphColoring(num_rows, entries.dimension_0(),row_map, entries, gch);
     break;
  
+  case COLORING_D2_MATRIX_SQUARED:
   case COLORING_SPGEMM:
     if (handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA) {
         typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoringSPGEMM;
@@ -188,26 +189,6 @@ void d2_graph_color(
       gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
       gch->set_num_phases(num_phases);
       gch->set_vertex_colors(colors_out);
-      break;
-    }
-
-    case COLORING_VB:
-    case COLORING_VBBIT:
-    case COLORING_VBCS:
-    case COLORING_EB:
-    {
-      // Prevent warning/error enumeration value {value} not handled in switch [-Werror=switch]
-      break;
-    }
-
-    case COLORING_SPGEMM:
-    {
-      // Prevent warning/error enumeration value {value} not handled in switch [-Werror=switch]
-      break;
-    }
-  
-    case COLORING_DEFAULT:
-    {
       break;
     }
 

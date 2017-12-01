@@ -145,7 +145,7 @@ public:
    *   algorithm to assume that the color is fixed for the corresponding vertex.
    * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
    */
-  virtual void color_graph() {
+  virtual void color_graph_d2_matrix_squared() {
 
     // WCMCLEN: Brian's Code
 
@@ -194,9 +194,20 @@ public:
 
     //clean up coloring handle
     // cp->destroy_graph_coloring_handle();
-
   }
-};
+
+
+  // WCMCLEN COLORING_D2_WCMCLEN implement here!
+  virtual void color_graph_d2_wcmclen()
+  {
+      std::cout << ">>> COLORING_D2_WCMCLEN <<<" << std::endl;
+      std::ostringstream os;
+      os << "GraphColorD2::color_graph_d2_wcmclen() not implemented -- [STUB CODE]";
+      Kokkos::Impl::throw_runtime_exception(os.str());
+  }
+
+
+};  // end class GraphColorD2
 
 
 } // end Impl namespace 

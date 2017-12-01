@@ -79,16 +79,24 @@ void graph_color_d2(KernelHandle *handle,
 
   switch (algorithm)
   {
-    case COLORING_SPGEMM:
+    case COLORING_SPGEMM:                     // WCMCLEN: Remove SPGEMM coloring references for D2 Graph Coloring?
+    case COLORING_D2_MATRIX_SQUARED:
     {
-      // WCMCLEN: distance-2 coloring inserts here.
-      Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_> gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
-      gc.color_graph();
+      // WCMCLEN: distance-2 coloring inserts here (Brian's Algorithm)
+      Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
+      gc.color_graph_d2_matrix_squared();
       break;
     }
-    case COLORING_WCMCLEN:
+
+    case COLORING_D2_WCMCLEN:
     {
       // WCMCLEN - ADD new coloring algorithm here.
+      std::cout << ">>> Implement Distance 2 Coloring (WCMCLEN) <<<" << std::endl;
+
+      Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
+      gc.color_graph_d2_wcmclen();
       break;
     }
 
