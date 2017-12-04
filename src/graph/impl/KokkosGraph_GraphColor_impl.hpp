@@ -1821,7 +1821,7 @@ public:
 
         // Use forbidden array to find available color.
         // This array should be small enough to fit in fast memory (use Kokkos memoryspace?)
-            bool forbidden[VB_COLORING_FORBIDDEN_SIZE]; // Forbidden colors
+        bool forbidden[VB_COLORING_FORBIDDEN_SIZE]; // Forbidden colors
 
         // Do multiple passes if array is too small.
         color_t degree = _idx(i+1)-_idx(i); // My degree
