@@ -159,5 +159,6 @@ namespace KokkosBatched {
 #include "KokkosBatched_Vector_SIMD_Relation.hpp"
 #include "KokkosBatched_Vector_SIMD_Math.hpp"
 #include "KokkosBatched_Vector_SIMD_Misc.hpp"
+#include "KokkosBatched_Vector_SIMD_View.hpp"
 
 #endif
