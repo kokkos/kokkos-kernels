@@ -381,8 +381,8 @@ struct KokkosSPGEMM
     }
 
     nnz_lno_t *hash_ids = (nnz_lno_t *) (tmp);
-    tmp += pow2_hash_size;
-    nnz_lno_t *hash_values = (nnz_lno_t *) (tmp);
+    //tmp += pow2_hash_size;
+    //nnz_lno_t *hash_values = (nnz_lno_t *) (tmp);
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       //nnz_lno_t globally_used_hash_count = 0;
@@ -1783,6 +1783,7 @@ void KokkosSPGEMM
 		current_spgemm_algorithm = SPGEMM_KK_MEMORY;
 	}
 	maxNumRoughNonzeros = KOKKOSKERNELS_MACRO_MIN(this->b_col_cnt, maxNumRoughNonzeros);
+    int shmem_size_to_use = shmem_size;
 
 	typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
 
@@ -1802,6 +1803,44 @@ void KokkosSPGEMM
 	}
 	int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
 	nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
+
+
+	if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_MEMORY_BIGSPREADTEAM == this->spgemm_algorithm){
+		if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+			//then chose the best method and parameters.
+			current_spgemm_algorithm = SPGEMM_KK_MEMORY;
+			int estimate_compress = 8;
+#ifdef FIRSTPARAMS
+
+		  size_t estimate_max_nnz = maxNumRoughNonzeros / estimate_compress;
+#else
+		  size_t original_overall_flops = this->handle->get_spgemm_handle()->original_overall_flops;
+
+		  size_t estimate_max_nnz = (sqrt (maxNumRoughNonzeros) * sqrt (original_overall_flops / m)) / estimate_compress;
+		  if (KOKKOSKERNELS_VERBOSE){
+			  std::cout << "\t\t\testimate_max_nnz:" << estimate_max_nnz << " maxNumRoughNonzeros:" << maxNumRoughNonzeros << " original_overall_flops / m:" << original_overall_flops / m  << std::endl;
+		  }
+#endif
+			int unit_memory = (sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) * 2);
+
+			int thread_memory = ((shmem_size_to_use /8 / suggested_team_size) * 8);
+
+			int shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 3) / unit_memory);
+
+			if (estimate_max_nnz / shmem_key_size > 1){
+				int scale = estimate_max_nnz / shmem_key_size;
+				while (scale / 2 > 0){
+					scale = scale / 2;
+					suggested_vector_size  = suggested_vector_size * 2;
+				}
+				suggested_vector_size = KOKKOSKERNELS_MACRO_MIN(32, suggested_vector_size);
+				suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+			}
+			if (KOKKOSKERNELS_VERBOSE){
+				std::cout << "\t\t\tRunning KKMEM with suggested_vector_size:" << suggested_vector_size << " suggested_team_size:" << suggested_team_size << std::endl;
+			}
+		}
+	}
 
 	//round up maxNumRoughNonzeros to closest power of 2.
 	nnz_lno_t min_hash_size = 1;
@@ -1900,7 +1939,7 @@ void KokkosSPGEMM
 			rowmapC,
 			min_hash_size,
 			maxNumRoughNonzeros,
-			shmem_size,
+			shmem_size_to_use,
 			suggested_team_size,
 			team_row_chunk_size,
 			suggested_vector_size,
@@ -2019,19 +2058,103 @@ void KokkosSPGEMM
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 	current_spgemm_algorithm = SPGEMM_KK_MEMORY;
   }
-  maxNumRoughNonzeros = KOKKOSKERNELS_MACRO_MIN(this->b_col_cnt, maxNumRoughNonzeros);
-
-  typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
 
   //get the number of rows and nonzeroes of B.
   nnz_lno_t brows = row_mapB_.dimension_0() - 1;
   size_type bnnz =  entriesSetIndex.dimension_0();
+  size_type compressed_b_size = bnnz;
+  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+	  KokkosKernels::Impl::kk_reduce_diff_view <b_original_row_view_t, b_compressed_row_view_t, MyExecSpace> (brows, old_row_mapB, row_mapB_, compressed_b_size);
+	  if (KOKKOSKERNELS_VERBOSE){
+		  std::cout << "\tcompressed_b_size:" << compressed_b_size << " bnnz:" << bnnz << std::endl;
+	  }
+  }
+  int suggested_vector_size = this->handle->get_suggested_vector_size(brows, compressed_b_size);
+
+  //this kernel does not really work well if the vector size is less than 4.
+  if (suggested_vector_size < 4 && my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+      if (KOKKOSKERNELS_VERBOSE){
+        std::cout << "\tsuggested_vector_size:" << suggested_vector_size << " setting it to 4 for Structure kernel" << std::endl;
+      }
+      suggested_vector_size = 4;
+  }
+  int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+  maxNumRoughNonzeros = KOKKOSKERNELS_MACRO_MIN(size_t (this->b_col_cnt / sizeof (nnz_lno_t) * 8 + 1), size_t (maxNumRoughNonzeros));
+  int shmem_size_to_use = shmem_size;
+
+  if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_MEMORY_BIGSPREADTEAM == this->spgemm_algorithm){
+	  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+		  //then chose the best method and parameters.
+		  current_spgemm_algorithm = SPGEMM_KK_MEMORY;
+		  int estimate_compress = 8;
+#ifdef FIRSTPARAMS
+
+		  size_t estimate_max_nnz = maxNumRoughNonzeros / estimate_compress;
+#else
+		  size_t original_overall_flops = this->handle->get_spgemm_handle()->compressed_overall_flops;
+
+		  size_t estimate_max_nnz = (sqrt (maxNumRoughNonzeros) * sqrt (original_overall_flops / m)) / estimate_compress;
+		  if (KOKKOSKERNELS_VERBOSE){
+			  std::cout << "\t\t\testimate_max_nnz:" << estimate_max_nnz << " maxNumRoughNonzeros:" << maxNumRoughNonzeros << " original_overall_flops / m:" << original_overall_flops / m  << std::endl;
+		  }
+#endif
+
+
+	      int unit_memory = (sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) * 2);
+
+	      int thread_memory = ((shmem_size_to_use /8 / suggested_team_size) * 8);
+
+	      int shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 3) / unit_memory);
+
+#ifdef SECONDPARAMS
+		  if (estimate_max_nnz / shmem_key_size > 1){
+			  int scale = estimate_max_nnz / shmem_key_size;
+			  while (scale / 2 > 0){
+				  scale = scale / 2;
+				  suggested_vector_size  = suggested_vector_size * 2;
+			  }
+			  suggested_vector_size = KOKKOSKERNELS_MACRO_MIN(32, suggested_vector_size);
+			  suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+		  }
+#else
+		  int thread_shmem_hash_size = 1;
+		  while (thread_shmem_hash_size * 2 <=  shmem_key_size){
+			  thread_shmem_hash_size = thread_shmem_hash_size * 2;
+		  }
+		  shmem_key_size = shmem_key_size + (shmem_key_size - thread_shmem_hash_size) / 3;
+		  shmem_key_size = (shmem_key_size >> 1) << 1;
+		  while (estimate_max_nnz > size_t (shmem_key_size) && suggested_vector_size < 32){
+			  suggested_vector_size  = suggested_vector_size * 2;
+			  suggested_vector_size = KOKKOSKERNELS_MACRO_MIN(32, suggested_vector_size);
+			  suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+			  thread_memory = (shmem_size_to_use /8 / suggested_team_size) * 8;
+			  shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 3) / unit_memory);
+			  thread_shmem_hash_size = 1;
+			  while (thread_shmem_hash_size * 2 <=  shmem_key_size){
+				  thread_shmem_hash_size = thread_shmem_hash_size * 2;
+			  }
+			  shmem_key_size = shmem_key_size + (shmem_key_size - thread_shmem_hash_size) / 3;
+			  shmem_key_size = (shmem_key_size >> 1) << 1;
+			  //thread_shmem_key_size * 2;
+		  }
+#endif
+		  if (KOKKOSKERNELS_VERBOSE){
+			  std::cout << "\t\t\tRunning KKMEM with suggested_vector_size:" << suggested_vector_size << " suggested_team_size:" << suggested_team_size << std::endl;
+		  }
+	  }
+  }
+  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
+
+
+  typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
+
 
   //get the SPGEMMAlgorithm to run.
   //SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
 
   //KokkosKernels::Impl::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
-  size_type compressed_b_size = bnnz;
+
+
 #ifdef KOKKOSKERNELS_ANALYZE_COMPRESSION
   //TODO: DELETE BELOW
   {
@@ -2081,23 +2204,7 @@ std::cout << " " << a_row_cnt << " " << b_row_cnt << " " << entriesA.dimension_0
 
 
 
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
-	  KokkosKernels::Impl::kk_reduce_diff_view <b_original_row_view_t, b_compressed_row_view_t, MyExecSpace> (brows, old_row_mapB, row_mapB_, compressed_b_size);
-	  if (KOKKOSKERNELS_VERBOSE){
-		  std::cout << "\tcompressed_b_size:" << compressed_b_size << " bnnz:" << bnnz << std::endl;
-	  }
-  }
-  int suggested_vector_size = this->handle->get_suggested_vector_size(brows, compressed_b_size);
 
-  //this kernel does not really work well if the vector size is less than 4.
-  if (suggested_vector_size < 4 && my_exec_space == KokkosKernels::Impl::Exec_CUDA){
-      if (KOKKOSKERNELS_VERBOSE){
-        std::cout << "\tsuggested_vector_size:" << suggested_vector_size << " setting it to 4 for Structure kernel" << std::endl;
-      }
-      suggested_vector_size = 4;
-  }
-  int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
-  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
 
   //round up maxNumRoughNonzeros to closest power of 2.
   nnz_lno_t min_hash_size = 1;
@@ -2209,7 +2316,7 @@ std::cout << " " << a_row_cnt << " " << b_row_cnt << " " << entriesA.dimension_0
       rowmapC,
       min_hash_size,
       maxNumRoughNonzeros,
-      shmem_size,
+	  shmem_size_to_use,
       suggested_team_size,
       team_row_chunk_size,
       suggested_vector_size,
@@ -2221,7 +2328,7 @@ std::cout << " " << a_row_cnt << " " << b_row_cnt << " " << entriesA.dimension_0
     std::cout << "\tStructureC vector_size:" << suggested_vector_size
         << " team_size:" << suggested_team_size
         << " chunk_size:" << team_row_chunk_size
-        << " shmem_size:" << shmem_size << std::endl;
+        << " shmem_size:" << shmem_size_to_use << std::endl;
   }
 
   timer1.reset();
@@ -2325,7 +2432,7 @@ std::cout << " " << a_row_cnt << " " << b_row_cnt << " " << entriesA.dimension_0
 	  size_t original_flops = 0;
 	  size_t compressd_max_flops= 0;
 	  size_t original_max_flops = 0;
-	  int GROUPSIZE = 256;
+	  int GROUPSIZE = 64;
 
 	  for (int i = 0; i < a_row_cnt; ++i){
 		  size_type arb = h_row_mapA(i);
@@ -2507,7 +2614,7 @@ std::cout << " " << a_row_cnt << " " << b_row_cnt << " " << entriesA.dimension_0
       entryIndicesC_,
       min_hash_size,
       maxNumRoughNonzeros,
-      shmem_size,suggested_vector_size,m_space,
+	  shmem_size_to_use,suggested_vector_size,m_space,
       my_exec_space);
 
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {

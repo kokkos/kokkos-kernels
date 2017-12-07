@@ -818,6 +818,9 @@ struct HashmapAccumulator{
 	      (*used_size_) += num_writes;
 	    });
 	     */
+	    if (used_size_[0] >= max_value_size_){
+	    	return INSERT_FULL;
+	    }
 	    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, 1);
 
 

@@ -126,8 +126,8 @@ struct Parameters{
     sort_option = -1;
     cache_flush = 1;
 
-    first_level_hash_cut_off = 0.75;
-    compression_cut_off = 0.95;
+    first_level_hash_cut_off = 0.50;
+    compression_cut_off = 0.85;
   }
 };
 }

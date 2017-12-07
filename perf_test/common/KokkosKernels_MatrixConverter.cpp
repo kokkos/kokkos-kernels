@@ -245,7 +245,7 @@ int main (int argc, char* argv[]){
     nnz = ovalues.dimension_0();
   }
   if (transpose) {
-    row_map_view_t new_rowmap ("new_rowmap", a_crsmat.numRows() + 1);
+    row_map_view_t new_rowmap ("new_rowmap", a_crsmat.numCols() + 1);
     cols_view_t new_entries ("new_rowmap", a_crsmat.nnz());
     values_view_t new_values ("new_rowmap", a_crsmat.nnz());
 

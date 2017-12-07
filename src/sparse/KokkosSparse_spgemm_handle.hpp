@@ -46,9 +46,9 @@
 #include <iostream>
 #include <string>
 
-//#define KERNELS_HAVE_CUSPARSE
+//#define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #endif
 #ifndef _SPGEMMHANDLE_HPP
@@ -124,7 +124,7 @@ public:
 
 
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   struct cuSparseHandleType{
     cusparseHandle_t handle;
     cusparseOperation_t transA;
@@ -241,7 +241,7 @@ private:
   int mkl_sort_option;
   bool calculate_read_write_cost;
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
@@ -462,11 +462,11 @@ private:
 
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
-	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.95), first_level_hash_cut_off(0.75),
+	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
     mkl_keep_output(true),
     mkl_convert_to_1base(true), is_compression_single_step(true)
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
   {
@@ -483,7 +483,7 @@ private:
 #endif
   };
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   void create_cuSPARSE_Handle(bool transA, bool transB){
     this->destroy_cuSPARSE_Handle();
     this->cuSPARSEHandle = new cuSparseHandleType(transA, transB);
