@@ -383,6 +383,8 @@ crsMat_t3 run_experiment(
   kh.get_spgemm_handle()->set_multi_color_scale(multi_color_scale);
   kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
   kh.get_spgemm_handle()->mkl_convert_to_1base = false;
+  kh.get_spgemm_handle()->MaxColDenseAcc = params.MaxColDenseAcc; //250000 default. if cache-mode is used on KNL can increase to 1M.
+
   if (i == 0){
 	  kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
   }
