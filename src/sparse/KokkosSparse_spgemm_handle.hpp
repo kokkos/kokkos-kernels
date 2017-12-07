@@ -256,6 +256,7 @@ private:
   row_lno_persistent_work_view_t row_flops;
 
   size_t compressed_max_row_flops, compressed_overall_flops;
+  size_t MaxColDenseAcc;
 
   void set_first_level_hash_cut_off(double first_level_hash_cut_off_){
     this->first_level_hash_cut_off = first_level_hash_cut_off_;
@@ -465,7 +466,7 @@ private:
 	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
     mkl_keep_output(true),
-    mkl_convert_to_1base(true), is_compression_single_step(true)
+    mkl_convert_to_1base(true), is_compression_single_step(true), MaxColDenseAcc(250001)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif

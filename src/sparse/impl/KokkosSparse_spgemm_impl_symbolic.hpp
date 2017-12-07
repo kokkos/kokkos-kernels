@@ -1840,6 +1840,45 @@ void KokkosSPGEMM
 				std::cout << "\t\t\tRunning KKMEM with suggested_vector_size:" << suggested_vector_size << " suggested_team_size:" << suggested_team_size << std::endl;
 			}
 		}
+		else {
+			  nnz_lno_t max_column_cut_off = this->handle->get_spgemm_handle()->MaxColDenseAcc;
+
+			  nnz_lno_t col_size = this->b_col_cnt;
+			  if (col_size < max_column_cut_off){
+				  current_spgemm_algorithm = SPGEMM_KK_SPEED;
+				  if (KOKKOSKERNELS_VERBOSE){
+					  std::cout << "\t\t\tRunning SPGEMM_KK_SPEED col_size:" << col_size << " max_column_cut_off:" << max_column_cut_off << std::endl;
+				  }
+			  }
+			  else {
+				  //round up maxNumRoughNonzeros to closest power of 2.
+				  nnz_lno_t min_hash_size = 1;
+				  while (maxNumRoughNonzeros > min_hash_size){
+					  min_hash_size *= 2;
+				  }
+
+				  size_t kkmem_chunksize = min_hash_size ; //this is for used hash indices
+				  kkmem_chunksize += min_hash_size ; //this is for the hash begins
+				  kkmem_chunksize += maxNumRoughNonzeros ; //this is for hash nexts
+				  kkmem_chunksize += maxNumRoughNonzeros ; //this is for hash keys
+
+				  size_t dense_chunksize = col_size + maxNumRoughNonzeros;
+
+
+				  if (kkmem_chunksize >= dense_chunksize * 0.5){
+					  current_spgemm_algorithm = SPGEMM_KK_SPEED;
+					  if (KOKKOSKERNELS_VERBOSE){
+						  std::cout << "\t\t\tRunning SPGEMM_KK_SPEED kkmem_chunksize:" << kkmem_chunksize << " dense_chunksize:" << dense_chunksize << std::endl;
+					  }
+				  }
+				  else {
+					  current_spgemm_algorithm = SPGEMM_KK_MEMORY;
+					  if (KOKKOSKERNELS_VERBOSE){
+						  std::cout << "\t\t\tRunning SPGEMM_KK_MEMORY col_size:" << col_size << " max_column_cut_off:" << max_column_cut_off << std::endl;
+					  }
+				  }
+			  }
+		}
 	}
 
 	//round up maxNumRoughNonzeros to closest power of 2.
@@ -2142,6 +2181,46 @@ void KokkosSPGEMM
 			  std::cout << "\t\t\tRunning KKMEM with suggested_vector_size:" << suggested_vector_size << " suggested_team_size:" << suggested_team_size << std::endl;
 		  }
 	  }
+	  else {
+		  nnz_lno_t max_column_cut_off = this->handle->get_spgemm_handle()->MaxColDenseAcc;
+
+		  nnz_lno_t col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
+		  if (col_size < max_column_cut_off){
+			  current_spgemm_algorithm = SPGEMM_KK_SPEED;
+			  if (KOKKOSKERNELS_VERBOSE){
+				  std::cout << "\t\t\tRunning SPGEMM_KK_SPEED col_size:" << col_size << " max_column_cut_off:" << max_column_cut_off << std::endl;
+			  }
+		  }
+		  else {
+			  //round up maxNumRoughNonzeros to closest power of 2.
+			  nnz_lno_t min_hash_size = 1;
+			  while (maxNumRoughNonzeros > min_hash_size){
+				  min_hash_size *= 2;
+			  }
+
+			  size_t kkmem_chunksize = min_hash_size ; //this is for used hash indices
+			  kkmem_chunksize += min_hash_size ; //this is for the hash begins
+			  kkmem_chunksize += maxNumRoughNonzeros ; //this is for hash nexts
+			  kkmem_chunksize += maxNumRoughNonzeros ; //this is for hash keys
+			  kkmem_chunksize += maxNumRoughNonzeros ; //this is for hash values
+
+			  size_t dense_chunksize = col_size + maxNumRoughNonzeros;
+
+
+			  if (kkmem_chunksize >= dense_chunksize * 0.5){
+				  current_spgemm_algorithm = SPGEMM_KK_SPEED;
+				  if (KOKKOSKERNELS_VERBOSE){
+					  std::cout << "\t\t\tRunning SPGEMM_KK_SPEED kkmem_chunksize:" << kkmem_chunksize << " dense_chunksize:" << dense_chunksize << std::endl;
+				  }
+			  }
+			  else {
+				  current_spgemm_algorithm = SPGEMM_KK_MEMORY;
+				  if (KOKKOSKERNELS_VERBOSE){
+					  std::cout << "\t\t\tRunning SPGEMM_KK_MEMORY col_size:" << col_size << " max_column_cut_off:" << max_column_cut_off << std::endl;
+				  }
+			  }
+		  }
+	  }
   }
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
 
@@ -2241,11 +2320,10 @@ std::cout << " " << a_row_cnt << " " << b_row_cnt << " " << entriesA.dimension_0
   }
   //if KKSPEED are used on CPU, or KKMEMSPEED is run with threads less than 32
   //than we use dense accumulators.
-  if ((   current_spgemm_algorithm == SPGEMM_KK_MEMSPEED  &&
-      concurrency <=  sizeof (nnz_lno_t) * 8 &&
-      my_exec_space != KokkosKernels::Impl::Exec_CUDA)
-      ||
-      (   spgemm_algorithm == SPGEMM_KK_SPEED &&
+  if ((current_spgemm_algorithm == SPGEMM_KK_MEMSPEED  &&
+       concurrency <=  sizeof (nnz_lno_t) * 8 &&
+       my_exec_space != KokkosKernels::Impl::Exec_CUDA) ||
+      (   current_spgemm_algorithm == SPGEMM_KK_SPEED &&
           my_exec_space != KokkosKernels::Impl::Exec_CUDA)){
 
     nnz_lno_t col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;

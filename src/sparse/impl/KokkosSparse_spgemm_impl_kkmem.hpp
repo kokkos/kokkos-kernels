@@ -2443,6 +2443,55 @@ void
 			  }
 		  }
 	  }
+	  else {
+
+		  bool run_dense = false;
+		  nnz_lno_t max_column_cut_off = this->handle->get_spgemm_handle()->MaxColDenseAcc;
+		  nnz_lno_t col_size = this->b_col_cnt;
+		  if (col_size < max_column_cut_off){
+			  run_dense = true;
+			  if (KOKKOSKERNELS_VERBOSE){
+				  std::cout << "\t\t\tRunning SPGEMM_KK_SPEED col_size:" << col_size << " max_column_cut_off:" << max_column_cut_off << std::endl;
+			  }
+		  }
+		  else {
+			  //round up maxNumRoughNonzeros to closest power of 2.
+			  nnz_lno_t tmp_min_hash_size = 1;
+
+			  while (tmp_max_nnz > tmp_min_hash_size){
+			    tmp_min_hash_size *= 4;
+			  }
+
+			  size_t kkmem_chunksize = tmp_min_hash_size ; //this is for used hash indices
+			  kkmem_chunksize += tmp_min_hash_size ; //this is for the hash begins
+			  kkmem_chunksize += max_nnz ; //this is for hash nexts
+			  kkmem_chunksize = kkmem_chunksize * sizeof (nnz_lno_t);
+			  size_t dense_chunksize = (col_size + col_size / sizeof(scalar_t) + 1) * sizeof(scalar_t);
+
+
+			  if (kkmem_chunksize >= dense_chunksize * 0.5){
+				  run_dense = true;
+				  if (KOKKOSKERNELS_VERBOSE){
+					  std::cout << "\t\t\tRunning SPGEMM_KK_SPEED kkmem_chunksize:" << kkmem_chunksize << " dense_chunksize:" << dense_chunksize << std::endl;
+				  }
+			  }
+			  else {
+				  run_dense = false;
+				  if (KOKKOSKERNELS_VERBOSE){
+					  std::cout << "\t\t\tRunning SPGEMM_KK_MEMORY col_size:" << col_size << " max_column_cut_off:" << max_column_cut_off << std::endl;
+				  }
+			  }
+		  }
+
+		  if (run_dense){
+			  this->KokkosSPGEMM_numeric_speed(
+					  rowmapC_,
+					  entriesC_,
+					  valuesC_,
+					  my_exec_space);
+			  return;
+		  }
+	  }
   }
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
 

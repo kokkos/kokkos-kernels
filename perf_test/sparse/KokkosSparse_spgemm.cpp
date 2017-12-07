@@ -189,7 +189,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
-
+    else if ( 0 == strcasecmp( argv[i] , "DENSEACCMAX" ) ) {
+      params.MaxColDenseAcc= atoi( argv[++i] ) ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "LLT" ) ) {
       params.left_lower_triangle = 1;
     }

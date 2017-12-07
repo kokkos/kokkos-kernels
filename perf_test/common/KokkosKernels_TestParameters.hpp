@@ -86,6 +86,7 @@ struct Parameters{
   int cache_flush;
   double first_level_hash_cut_off;
   double compression_cut_off;
+  size_t MaxColDenseAcc;
   // 0 - no flush
   // 1 - soft flush
   // 2 - hard flush with rand.
@@ -128,6 +129,7 @@ struct Parameters{
 
     first_level_hash_cut_off = 0.50;
     compression_cut_off = 0.85;
+    MaxColDenseAcc = 250000;
   }
 };
 }
