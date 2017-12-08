@@ -28,10 +28,7 @@ namespace KokkosBatched {
 
     void print_compiler_info();
 
-    template<typename T>
-    struct is_vector {
-      static const bool value = false;
-    };
+    template<typename T> struct is_vector : public std::false_type {};
 
     template<typename Ta, typename Tb>
     struct is_same_mag_type {

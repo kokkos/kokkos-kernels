@@ -9,75 +9,143 @@ namespace KokkosBatched {
   namespace Experimental {
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<bool>,l> operator!(const Vector<SIMD<T>,l> &a) {
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            && std::is_integral<T>::value,
+                            const Vector<SIMD<bool>,l> >::type 
+    operator!(const Vector<SIMD<T>,l> &a) {
       Vector<SIMD<bool>,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
       for (int i=0;i<l;++i)
         r_val[i] = !a[i];
       return r_val;
     }
 
     template<typename T0, typename T1, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<bool>,l> operator||(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            && std::is_integral<T0>::value 
+                            && std::is_integral<T1>::value,
+                            const Vector<SIMD<bool>,l> >::type 
+    operator||(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] || b[i];
       return r_val;
     }
 
     template<typename T0, typename T1, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<bool>,l> operator&&(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            && std::is_integral<T0>::value 
+                            && std::is_integral<T1>::value,                            
+                            const Vector<SIMD<bool>,l> >::type 
+    operator&&(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] && b[i];
       return r_val;
     }
 
     template<typename T0, typename T1, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<bool>,l> operator||(const Vector<SIMD<T0>,l> &a, const T1 &b) {
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            && std::is_integral<T0>::value 
+                            && std::is_integral<T1>::value,                            
+                            const Vector<SIMD<bool>,l> >::type 
+    operator||(const Vector<SIMD<T0>,l> &a, const T1 &b) {
       Vector<SIMD<bool>,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] || b;
       return r_val;
     }
 
     template<typename T0, typename T1, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<bool>,l> operator&&(const Vector<SIMD<T0>,l> &a, const T1 &b) {
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            && std::is_integral<T0>::value 
+                            && std::is_integral<T1>::value,                            
+                            const Vector<SIMD<bool>,l> >::type 
+    operator&&(const Vector<SIMD<T0>,l> &a, const T1 &b) {
       Vector<SIMD<bool>,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] && b;
       return r_val;
     }
 
     template<typename T0, typename T1, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<bool>,l> operator||(const T0 &a, const Vector<SIMD<T1>,l> &b) {
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            && std::is_integral<T0>::value 
+                            && std::is_integral<T1>::value,                            
+                            const Vector<SIMD<bool>,l> >::type 
+    operator||(const T0 &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
       for (int i=0;i<l;++i)
         r_val[i] = a || b[i];
       return r_val;
     }
 
     template<typename T0, typename T1, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<bool>,l> operator&&(const T0 &a, const Vector<SIMD<T1>,l> &b) {
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            && std::is_integral<T0>::value 
+                            && std::is_integral<T1>::value,                            
+                            const Vector<SIMD<bool>,l> >::type 
+    operator&&(const T0 &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
       for (int i=0;i<l;++i)
         r_val[i] = a && b[i];
       return r_val;
     }
-
   }
 }
 

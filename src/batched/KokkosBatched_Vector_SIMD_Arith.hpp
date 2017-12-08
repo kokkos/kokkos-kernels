@@ -11,20 +11,11 @@ namespace KokkosBatched {
     /// simd, simd
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline 
     static
-    Vector<SIMD<T>,l>
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator + (const Vector<SIMD<T>,l> &a,  const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      // Kokkos::parallel_for
-      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-      //    [&](const int &i) {
-      //     r_val[i] = a[i] + b[i];
-      //   });
-#else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -33,50 +24,81 @@ namespace KokkosBatched {
 #endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] + b[i];
-#endif
       return r_val;
     }
+    
+#if defined(__AVX__) || defined(__AVX2__)
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,4> >::type
+    operator + (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
+      return _mm256_add_pd(a, b);
+    }
 
-    template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,2> >::type
+    operator + (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
+      return _mm256_add_pd(a, b);
+    }
+#endif
+
+#if defined(__AVX512F__)
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,8> >::type
+    operator + (const Vector<SIMD<double>,8> &a, const Vector<SIMD<double>,8> &b) {
+      return _mm512_add_pd(a, b);
+    }
+
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,4> >::type
+    operator + (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
+      return _mm512_add_pd(a, b);
+    }
+#endif
+    
+    template<typename T, int l>
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator += (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a + b;
       return a;
     }
-
+    
     /// simd, real
-
+    
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l>
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator + (const Vector<SIMD<T>,l> &a, const T b) {
       return a + Vector<SIMD<T>,l>(b);
     }
     
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator + (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) + b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> & 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator += (Vector<SIMD<T>,l> &a, const T b) {
       a = a + b;
       return a;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l>
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator ++ (Vector<SIMD<T>,l> &a, int) {
       Vector<SIMD<T>,l> a0 = a;
       a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
@@ -84,9 +106,9 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<T>,l> & 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator ++ (Vector<SIMD<T>,l> &a) {
       a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
@@ -95,25 +117,25 @@ namespace KokkosBatched {
     /// simd complex, real
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l>
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator + (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a + Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
     
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator + (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) + b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> & 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator += (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a + b;
       return a;
@@ -122,25 +144,25 @@ namespace KokkosBatched {
     /// simd complex, complex 
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l>
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator + (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a + Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
     
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator + (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) + b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> & 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator += (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a + b;
       return a;
@@ -151,20 +173,11 @@ namespace KokkosBatched {
     /// simd, simd
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator - (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      // Kokkos::parallel_for
-      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-      //    [&](const int &i) {
-      //     r_val[i] = a[i] - b[i];
-      //   });
-#else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -173,24 +186,46 @@ namespace KokkosBatched {
 #endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] - b[i];
-#endif
       return r_val;
     }
 
-    template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+#if defined(__AVX__) || defined(__AVX2__)
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,4> >::type
+    operator - (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
+      return _mm256_sub_pd(a, b);
+    }
+
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,2> >::type
+    operator - (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
+      return _mm256_sub_pd(a, b);
+    }
+#endif
+
+#if defined(__AVX512F__)
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,8> >::type
+    operator - (const Vector<SIMD<double>,8> &a, const Vector<SIMD<double>,8> &b) {
+      return _mm512_sub_pd(a, b);
+    }
+
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,4> >::type
+    operator - (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
+      return _mm512_sub_pd(a, b);
+    }
+#endif
+
+    template<typename T, int l>
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator - (const Vector<SIMD<T>,l> &a) {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      // Kokkos::parallel_for
-      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-      //    [&](const int &i) {
-      //     a[i] = -a[i];
-      //   });
-#else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -199,14 +234,13 @@ namespace KokkosBatched {
 #endif
       for (int i=0;i<l;++i)
         a[i] = -a[i];
-#endif
       return a;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<T>,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator -= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a - b;
       return a;
@@ -215,34 +249,34 @@ namespace KokkosBatched {
     /// simd, real
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator - (const Vector<SIMD<T>,l> &a, const T b) {
       return a - Vector<SIMD<T>,l>(b);
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator - (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) - b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<T>,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator -= (Vector<SIMD<T>,l> &a, const T b) {
       a = a - b;
       return a;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator -- (Vector<SIMD<T>,l> &a, int) {
       Vector<SIMD<T>,l> a0 = a;
       a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
@@ -250,9 +284,9 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<T>,l> & 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator -- (Vector<SIMD<T>,l> &a) {
       a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
@@ -261,25 +295,25 @@ namespace KokkosBatched {
     /// simd complex, real
     
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a - Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator - (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) - b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator -= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a - b;
       return a;
@@ -288,25 +322,25 @@ namespace KokkosBatched {
     /// simd complex, complex
     
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a - Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator - (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) - b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator -= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a - b;
       return a;
@@ -317,20 +351,11 @@ namespace KokkosBatched {
     /// simd, simd
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator * (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      // Kokkos::parallel_for
-      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-      //    [&](const int &i) {
-      //     r_val[i] = a[i] * b[i];
-      //   });
-#else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -339,14 +364,70 @@ namespace KokkosBatched {
 #endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] * b[i];
-#endif
       return r_val;
     }
-
-    template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    
+#if defined(__AVX__) || defined(__AVX2__)
+    inline
     static
-    Vector<SIMD<T>,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,4> >::type
+    operator * (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
+      return _mm256_mul_pd(a, b);
+    }
+
+    inline
+    static Vector<SIMD<Kokkos::complex<double> >,2>
+    operator * (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
+      const __m256d
+        as = _mm256_permute_pd(a, 0x5),
+        br = _mm256_permute_pd(b, 0x0),
+        bi = _mm256_permute_pd(b, 0xf);
+      
+#if defined(__FMA__)
+      return _mm256_fmaddsub_pd(a, br, _mm256_mul_pd(as, bi));
+#else
+      return _mm256_add_pd(_mm256_mul_pd(a, br),
+                           _mm256_xor_pd(_mm256_mul_pd(as, bi),
+                                         _mm256_set_pd( 0.0, -0.0, 0.0, -0.0)));
+#endif
+    }
+#endif
+
+#if defined(__AVX512F__)
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,8> >::type
+    operator * (const Vector<SIMD<double>,8> &a, const Vector<SIMD<double>,8> &b) {
+      return _mm512_mul_pd(a, b);
+    }
+
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,4> >::type
+    operator * (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
+      const __m512d
+        as = _mm512_permute_pd(a, 0x55),
+        br = _mm512_permute_pd(b, 0x00),
+        bi = _mm512_permute_pd(b, 0xff);
+      
+#if defined(__FMA__)
+      // latency 7, throughput 0.5
+      return _mm512_fmaddsub_pd(a, br, _mm512_mul_pd(as, bi));
+#else
+      return _mm512_add_pd(_mm512_mul_pd(a, br),
+                           _mm512_castsi512_pd(_mm512_xor_si512(_mm512_castpd_si512(_mm512_mul_pd(as, bi)),
+                                                                _mm512_castpd_si512(_mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55,
+                                                                                                                _mm256_set1_pd(-0.0))))));
+      // const __mm512d cc = _mm512_mul_pd(as, bi);
+      // return _mm512_mask_sub_pd(_mm512_mask_add_pd(_mm512_mul_pd(a, br), 0x55, cc), 0xaa, cc);
+#endif
+    }
+#endif
+    
+    template<typename T, int l>
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator *= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a * b;
       return a;
@@ -356,25 +437,25 @@ namespace KokkosBatched {
     /// simd, real
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator * (const Vector<SIMD<T>,l> &a, const T b) {
       return a * Vector<SIMD<T>,l>(b);
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator * (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) * b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<T>,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator *= (Vector<SIMD<T>,l> &a, const T b) {
       a = a * b;
       return a;
@@ -383,25 +464,59 @@ namespace KokkosBatched {
     /// simd complex, real
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
-    template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+#if defined(__AVX__) || defined(__AVX2__)
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,2> >::type
+    operator * (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const double b) {
+      return _mm256_mul_pd(a, _mm256_set1_pd(b));
+    }
+#endif
+
+#if defined(__AVX512F__)
+    inline
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,4> >::type
+    operator * (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const double b) {
+      return _mm512_mul_pd(a, _mm512_set1_pd(b));
+    }
+#endif
+
+    template<typename T, int l>
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator * (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) * b;
     }
 
+#if defined(__AVX__) || defined(__AVX2__)
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,2> >::type
+    operator * (const double a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
+      return _mm256_mul_pd(_mm256_set1_pd(a), b);
+    }
+#endif
+
+#if defined(__AVX512F__)
+    inline
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,4> >::type
+    operator * (const double a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
+      return _mm512_mul_pd(_mm512_set1_pd(a), b);
+    }
+#endif
+
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator *= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a * b;
       return a;
@@ -410,25 +525,25 @@ namespace KokkosBatched {
     /// simd complex, complex
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator * (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) * b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator *= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a * b;
       return a;
@@ -439,20 +554,11 @@ namespace KokkosBatched {
     /// simd, simd
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator / (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-      // Kokkos::parallel_for
-      //   (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
-      //    [&](const int &i) {
-      //     r_val[i] = a[i] / b[i];
-      //   });
-#else
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -461,14 +567,58 @@ namespace KokkosBatched {
 #endif
       for (int i=0;i<l;++i)
         r_val[i] = a[i] / b[i];
-#endif
       return r_val;
     }
 
-    template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+#if defined(__AVX__) || defined(__AVX2__)
+    inline
     static
-    Vector<SIMD<T>,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,4> >::type
+    operator / (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
+      return _mm256_div_pd(a, b);
+    }
+#endif
+
+#if defined(__AVX512F__)
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<double>,8> >::type
+    operator / (const Vector<AVX<double>,8> &a, const Vector<AVX<double>,8> &b) {
+      return _mm512_div_pd(a, b);
+    }
+
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,4> >::type
+    operator / (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
+      const __m512d
+        as = _mm512_permute_pd(a, 0x55),
+        cb = _mm512_castsi512_pd(_mm512_xor_si512(_mm512_castpd_si512(b),
+                                                  _mm512_castpd_si512(_mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0xAA,
+                                                                                                  _mm256_set1_pd(-0.0))))),
+        br = _mm512_permute_pd(cb, 0x00),
+        bi = _mm512_permute_pd(cb, 0xff);
+
+#if defined(__FMA__)
+      return _mm512_div_pd(_mm512_fmaddsub_pd(a,  br, _mm512_mul_pd(as, bi)),
+                           _mm512_fmadd_pd   (br, br, _mm512_mul_pd(bi, bi)));
+#else
+      return _mm512_div_pd(_mm512_add_pd(_mm512_mul_pd(a, br),
+                                         _mm512_castsi512_pd(_mm512_xor_si512(_mm512_castpd_si512(_mm512_mul_pd(as, bi)),
+                                                                              _mm512_castpd_si512(_mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0xAA,
+                                                                                                                              _mm256_set1_pd(-0.0)))))),
+                           _mm512_add_pd(_mm512_mul_pd(br, br), _mm512_mul_pd(bi, bi)));
+      // const __mm512d cc = _mm512_mul_pd(as, bi);
+      // return _mm512_div_pd(_mm512_mask_sub_pd(_mm512_mask_add_pd(_mm512_mul_pd(a, br), 0x55, cc), 0xaa, cc),
+      //                      _mm512_add_pd(_mm512_mul_pd(br, br), _mm512_mul_pd(bi, bi)));
+#endif
+    }
+#endif
+
+    template<typename T, int l>
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator /= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a / b;
       return a;
@@ -477,25 +627,34 @@ namespace KokkosBatched {
     /// simd, real
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator / (const Vector<SIMD<T>,l> &a, const T b) {
       return a / Vector<SIMD<T>,l>(b);
     }
 
-    template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+#if defined(__AVX512F__)
+    inline
     static 
-    Vector<SIMD<T>,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<double> >,4> >::type
+    operator / (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const double b) {
+      return _mm512_div_pd(a, _mm512_set1_pd(b));
+    }
+#endif
+
+    template<typename T, int l>
+    inline
+    static 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
     operator / (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) / b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<T>,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> &>::type
     operator /= (Vector<SIMD<T>,l> &a, const T b) {
       a = a / b;
       return a;
@@ -504,25 +663,25 @@ namespace KokkosBatched {
     /// simd complex, real
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator / (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a / Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator / (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) / b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator /= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a / b;
       return a;
@@ -531,25 +690,25 @@ namespace KokkosBatched {
     /// simd complex, complex
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator / (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a / Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
-    static 
-    Vector<SIMD<Kokkos::complex<T> >,l> 
+    inline
+    static
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator / (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) / b;
     }
 
     template<typename T, int l>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static
-    Vector<SIMD<Kokkos::complex<T> >,l> &
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
     operator /= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a / b;
       return a;

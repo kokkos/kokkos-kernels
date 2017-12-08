@@ -9,17 +9,9 @@ namespace KokkosBatched {
   namespace Experimental {
     template<typename T, int l>
     class Vector;
-
-    template<typename T, int l>
-    struct is_vector<Vector<SIMD<T>,l> > {
-      static const bool value = true;
-    };
-
-    template<typename T, int l>
-    struct is_vector<Vector<AVX<T>,l> > {
-      static const bool value = true;
-    };
-
+    
+    template<typename T, int l> struct is_vector<Vector<SIMD<T>,l> > : public std::true_type {};
+    template<typename T, int l> struct is_vector<Vector<AVX<T>,l> >  : public std::true_type {};
   }
 }
 
@@ -32,11 +24,15 @@ namespace Kokkos {
 
     using namespace KokkosBatched::Experimental;
 
+    // this is later, arith traits may not necessary to be overloaded for simd type
     template<typename T, int l>
     class ArithTraits<Vector<SIMD<T>,l> > { 
     public:
-      typedef typename ArithTraits<T>::val_type val_type;
-      typedef typename ArithTraits<T>::mag_type mag_type;
+      typedef typename ArithTraits<T>::val_type val_scalar_type;
+      typedef typename ArithTraits<T>::mag_type mag_scalar_type;
+
+      typedef Vector<SIMD<val_scalar_type>,l> val_type;
+      typedef Vector<SIMD<mag_scalar_type>,l> mag_type;
       
       static const bool is_specialized = ArithTraits<T>::is_specialized;
       static const bool is_signed = ArithTraits<T>::is_signed;
