@@ -143,6 +143,7 @@ namespace KokkosBatched {
                                              std::is_same<T,std::complex<double> >::value ||
                                              std::is_same<T,Kokkos::complex<float> >::value ||
                                              std::is_same<T,Kokkos::complex<double> >::value, T>::type> {
+      Random(const unsigned int seed = 0) { srand(seed); }
       T value() {
 	return T(rand()/((double) RAND_MAX + 1.0),
                  rand()/((double) RAND_MAX + 1.0));

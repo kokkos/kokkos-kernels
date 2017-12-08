@@ -24,7 +24,7 @@ namespace Test {
 
     vector_int_type a, b;
 
-    Random<value_type> random;
+    Random<mag_type> random;
     for (int iter=0;iter<100;++iter) {
       for (int k=0;k<vector_length;++k) {
         a[k] = (random.value() > 0 ? 1 : -1);
@@ -88,19 +88,37 @@ int test_batched_vector_logical() {
 ///
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_vector_logical_simd_int8 ) {
+TEST_F( TestCategory, batched_vector_logical_simd_float3 ) {
+  test_batched_vector_logical<TestExecSpace,float,3>();
+}
+TEST_F( TestCategory, batched_vector_logical_simd_float8 ) {
   test_batched_vector_logical<TestExecSpace,float,8>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_vector_logical_simd_int4 ) {
+TEST_F( TestCategory, batched_vector_logical_simd_double3 ) {
+  test_batched_vector_logical<TestExecSpace,double,3>();
+}
+TEST_F( TestCategory, batched_vector_logical_simd_double4 ) {
   test_batched_vector_logical<TestExecSpace,double,4>();
 }
 #endif
 
+// #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+// TEST_F( TestCategory, batched_vector_logical_simd_scomplex3 ) {
+//   test_batched_vector_logical<TestExecSpace,Kokkos::complex<float>,3>();
+// }
+// TEST_F( TestCategory, batched_vector_logical_simd_scomplex4 ) {
+//   test_batched_vector_logical<TestExecSpace,Kokkos::complex<float>,4>();
+// }
+// #endif
+
 // #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+// TEST_F( TestCategory, batched_vector_logical_simd_dcomplex3 ) {
+//   test_batched_vector_logical<TestExecSpace,Kokkos::complex<double>,3>();
+// }
 // TEST_F( TestCategory, batched_vector_logical_simd_dcomplex2 ) {
-//   test_batched_vector_logical<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
+//   test_batched_vector_logical<TestExecSpace,Kokkos::complex<double>,2>();
 // }
 // #endif

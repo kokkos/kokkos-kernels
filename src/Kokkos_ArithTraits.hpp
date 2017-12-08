@@ -887,6 +887,17 @@ public:
       return std::pow (x, y);
     }
   }
+  static std::complex<RealFloatType>
+  pow (const std::complex<RealFloatType>& x, const RealFloatType & y) {
+    // Fix for some weird gcc 4.2.1 inaccuracy.
+    if (y == ArithTraits<RealFloatType>::one ()) {
+      return x;
+    } else if (y == ArithTraits<RealFloatType>::one () + ArithTraits<RealFloatType>::one ()) {
+      return x * x;
+    } else {
+      return std::pow (x, y);
+    }
+  }
   static std::complex<RealFloatType> sqrt (const std::complex<RealFloatType>& x) {
     return std::sqrt (x);
   }
@@ -1522,9 +1533,21 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return ::Kokkos::conj (x);
   }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
-  //   return ::pow (x, y);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
+    const mag_type abs_x_square = x.real()*x.real() + x.imag()*x.imag();
+    const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+    const mag_type half = mag_type(0.5);
+    const mag_type alpha = (ArithTraits<mag_type>::pow(abs_x_square, half*y.real()) * 
+                            ArithTraits<mag_type>::exp(-y.imag()*arg_x));
+    return val_type(alpha* ArithTraits<mag_type>::cos(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)),
+                    alpha* ArithTraits<mag_type>::sin(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const mag_type y) {
+    const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+    const mag_type alpha = ArithTraits<mag_type>::pow(abs(x),y);
+    return val_type(alpha* ArithTraits<mag_type>::cos(y*arg_x), 
+                    alpha* ArithTraits<mag_type>::sin(y*arg_x));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     return ::Kokkos::sqrt (x);
   }
@@ -1712,9 +1735,22 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return ::Kokkos::conj (x);
   }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
-  //   return ::pow (x, y);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
+    const mag_type abs_x_square = x.real()*x.real() + x.imag()*x.imag();
+    const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+    const mag_type half = mag_type(0.5);
+    const mag_type alpha = (ArithTraits<mag_type>::pow(abs_x_square, half*y.real()) * 
+                            ArithTraits<mag_type>::exp(-y.imag()*arg_x));
+    return val_type(alpha* ArithTraits<mag_type>::cos(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)),
+                    alpha* ArithTraits<mag_type>::sin(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)));
+
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const mag_type y) {
+    const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+    const mag_type alpha = ArithTraits<mag_type>::pow(abs(x),y);
+    return val_type(alpha* ArithTraits<mag_type>::cos(y*arg_x), 
+                    alpha* ArithTraits<mag_type>::sin(y*arg_x));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
      return ::Kokkos::sqrt (x);
   }

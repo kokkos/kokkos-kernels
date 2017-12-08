@@ -33,7 +33,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
                             Vector<SIMD<T>,l> >::type
     cbrt(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
@@ -53,7 +53,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
                             Vector<SIMD<T>,l> >::type
     log(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
@@ -73,7 +73,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
                             Vector<SIMD<T>,l> >::type
     log10(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
@@ -93,7 +93,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
                             Vector<SIMD<T>,l> >::type
     exp(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
@@ -110,14 +110,14 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, int l>
+    template<typename T0, typename T1, int l>
     inline
     static
     typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
-    pow(const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
-      typedef Kokkos::Details::ArithTraits<T> ats;
-      Vector<SIMD<T>,l> r_val;
+                            Vector<SIMD<T0>,l> >::type
+    pow(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
+      typedef Kokkos::Details::ArithTraits<T0> ats;
+      Vector<SIMD<T0>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -130,22 +130,22 @@ namespace KokkosBatched {
       return r_val;
     }
 
-    template<typename T, int l>
+    template<typename T0, typename T1, int l>
     inline
     static
     typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
-    pow(const T &a, const Vector<SIMD<T>,l> &b) {
-      return pow(Vector<SIMD<T>,l>(a), b);
+                            Vector<SIMD<T0>,l> >::type
+    pow(const T0 &a, const Vector<SIMD<T1>,l> &b) {
+      return pow(Vector<SIMD<T0>,l>(a), b);
     }
 
-    template<typename T, int l>
+    template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            Vector<SIMD<T>,l> >::type
-    pow(const Vector<SIMD<T>,l> &a, const T &b) {
-      return pow(a, Vector<SIMD<T>,l>(b));
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+                            Vector<SIMD<T0>,l> >::type
+    pow(const Vector<SIMD<T0>,l> &a, const T1 &b) {
+      return pow(a, Vector<SIMD<T1>,l>(b));
     }
 
     template<typename T, int l>

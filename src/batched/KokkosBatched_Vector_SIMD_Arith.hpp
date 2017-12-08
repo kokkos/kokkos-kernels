@@ -466,7 +466,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> &>::type
+    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<Kokkos::complex<T> >,l> >::type
     operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
