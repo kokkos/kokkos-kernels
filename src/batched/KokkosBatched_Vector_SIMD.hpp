@@ -8,6 +8,20 @@
 namespace KokkosBatched {
   namespace Experimental {
 
+    template<typename T, int v = 0>
+    struct TypeTraits {
+      typedef T thread_private_type;
+      typedef T team_private_type;
+    };
+
+    template<typename T, int l, int v>
+    struct TypeTraits<Vector<SIMD<T>,l>, v> {
+      typedef typename std::conditional<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value, 
+                                        Vector<SIMD<T>,l>, T>::type thread_private_type;
+      typedef typename std::conditional<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value, 
+                                        Vector<SIMD<T>,l>, Vector<SIMD<T>,(l/v)+(l%v>0)> > team_private_type;      
+    };
+  
     template<typename T, int l>
     class Vector<SIMD<T>,l> {
     public:
