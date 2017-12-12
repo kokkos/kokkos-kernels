@@ -148,6 +148,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Batched_VectorLogical.o
   OBJ_OPENMP += Test_OpenMP_Batched_VectorMisc.o
   OBJ_OPENMP += Test_OpenMP_Batched_VectorView.o
+  OBJ_OPENMP += Test_OpenMP_Batched_VectorLocalPrivateType.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -230,6 +231,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Batched_TeamLU_Complex.o
   OBJ_CUDA += Test_Cuda_Batched_TeamGemv_Complex.o
   OBJ_CUDA += Test_Cuda_Batched_TeamTrsv_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_VectorLocalPrivateType.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
@@ -321,6 +323,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Batched_VectorLogical.o
   OBJ_SERIAL += Test_Serial_Batched_VectorMisc.o
   OBJ_SERIAL += Test_Serial_Batched_VectorView.o
+  OBJ_SERIAL += Test_Serial_Batched_VectorLocalPrivateType.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif
