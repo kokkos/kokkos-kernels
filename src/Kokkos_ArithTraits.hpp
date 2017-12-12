@@ -1228,7 +1228,7 @@ public:
     return ::sqrt (x);
   }
   static val_type cbrt (const val_type& x) {
-    return ::cbrt (x);
+    return ::cbrtl (x);
   }
   static val_type exp (const val_type& x) {
     return ::exp (x);
@@ -2988,7 +2988,7 @@ public:
 #ifdef __CUDA_ARCH__
     return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
 #else
-    return static_cast<val_type> ( ::cbrt (static_cast<long double> (x)));
+    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
 #endif // __CUDA_ARCH__
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
@@ -3135,7 +3135,7 @@ public:
 #ifdef __CUDA_ARCH__
     return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
 #else
-    return static_cast<val_type> ( ::cbrt (static_cast<long double> (abs (x))));
+    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (abs (x))));
 #endif // __CUDA_ARCH__
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
@@ -3268,7 +3268,7 @@ public:
 #ifdef __CUDA_ARCH__
     return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
 #else
-    return static_cast<val_type> ( ::cbrt (static_cast<long double> (x)));
+    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
 #endif // __CUDA_ARCH__
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {

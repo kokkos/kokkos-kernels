@@ -172,14 +172,15 @@ namespace Test {
       auto bb = Kokkos::subview(_Bv, k, Kokkos::ALL(), Kokkos::ALL());
       auto cc = Kokkos::subview(_Cv, k, Kokkos::ALL(), Kokkos::ALL());
       
-      const int m = cc.dimension_0();
-      const int n = cc.dimension_1();
-      const int q = aa.dimension_1();
+      int m = cc.dimension_0();
+      int n = cc.dimension_1();
+      int q = aa.dimension_1();
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
-                           [&](const int kk) {
-                             Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m*n),
-                                                  [&](const int ij) {
+                           [&](int kk) {
+                             Kokkos::parallel_for(Kokkos::TeamThreadRange(member, (m*n)),
+                                                  // lambda does not capture all variables
+                                                  [kk,m,n,q,aa,bb,cc](int ij) {
                                                     const int i = ij%m;
                                                     const int j = ij/m;
                                                     
@@ -196,9 +197,8 @@ namespace Test {
   template<typename DeviceType, 
            typename ScalarType, int VectorLength>
   void impl_test_batched_vector_local_type() {
-    
-    const int Nv = 1024;
-    const int Ns = 1024*VectorLength;
+    const int Nv = 1;
+    const int Ns = 1*VectorLength;
     const int B = 3;
 
     enum : int {  vector_length = VectorLength };
@@ -228,11 +228,11 @@ namespace Test {
             Bref(k, i,j) = random.value();
             Cref(k, i,j) = random.value();
           }
-      
+
       Kokkos::deep_copy(As, Aref);
       Kokkos::deep_copy(Bs, Bref);
       Kokkos::deep_copy(Cs, Cref);
-      
+
       auto Ah = Kokkos::create_mirror_view(Av);
       auto Bh = Kokkos::create_mirror_view(Bv);
       auto Ch = Kokkos::create_mirror_view(Cv);
@@ -247,16 +247,29 @@ namespace Test {
               cc(k,i,j) = Cref(k,i,j);
             }
       }
+
       Kokkos::deep_copy(Av, Ah);
       Kokkos::deep_copy(Bv, Bh);
       Kokkos::deep_copy(Cv, Ch);
     }
-
     {
       // compute reference on host with range policy
-      LocalTypeExample<host_type,scalar_type,vector_length> functor;
-      functor.setScalarView(Aref, Bref, Cref);
-      Kokkos::parallel_for(Kokkos::RangePolicy<host_type>(0, Ns), functor);
+      LocalTypeExample<device_type,scalar_type,vector_length> functor;
+
+      auto Ad = Kokkos::create_mirror_view(typename device_type::memory_space(), Aref);
+      auto Bd = Kokkos::create_mirror_view(typename device_type::memory_space(), Bref);
+      auto Cd = Kokkos::create_mirror_view(typename device_type::memory_space(), Cref);
+
+      Kokkos::deep_copy(Ad, Aref);
+      Kokkos::deep_copy(Bd, Bref);      
+      Kokkos::deep_copy(Cd, Cref);
+
+      functor.setScalarView(Ad, Bd, Cd);
+      Kokkos::parallel_for(Kokkos::RangePolicy<device_type>(0, Ns), functor);
+
+      Kokkos::deep_copy(Aref, Ad);
+      Kokkos::deep_copy(Bref, Bd);      
+      Kokkos::deep_copy(Cref, Cd);
     }
 
     ///
@@ -334,7 +347,8 @@ namespace Test {
     ///
     /// Case 3 : team policy on device with vector views
     ///
-    {
+#if 1
+    if (std::is_same<typename device_type::memory_space, Kokkos::HostSpace>::value) {
       // back up
       vector_view_type_device Av2("Av2",   Nv, B, B), Bv2  ("Bv2",   Nv, B, B), Cv2  ("Cv2",   Nv, B, B);      
       
@@ -367,7 +381,9 @@ namespace Test {
       Kokkos::deep_copy(Bv, Bv2);
       Kokkos::deep_copy(Cv, Cv2);      
     }
+#endif
 
+#if 1
     ///
     /// Case 4 : team policy on device with vector views
     ///
@@ -404,6 +420,7 @@ namespace Test {
       Kokkos::deep_copy(Bv, Bv2);
       Kokkos::deep_copy(Cv, Cv2);      
     }
+#endif
   }
 }
 
@@ -420,7 +437,7 @@ int test_batched_vector_local_type() {
 TEST_F( TestCategory, batched_vector_local_privae_type_simd_float ) {
   test_batched_vector_local_type<TestExecSpace,float,8>();
   test_batched_vector_local_type<TestExecSpace,float,8>();
-  test_batched_vector_local_type<TestExecSpace,float,9>();
+  //test_batched_vector_local_type<TestExecSpace,float,9>();
 }
 #endif
 
@@ -428,7 +445,8 @@ TEST_F( TestCategory, batched_vector_local_privae_type_simd_float ) {
 TEST_F( TestCategory, batched_vector_local_private_type_simd_double ) {
   test_batched_vector_local_type<TestExecSpace,double,4>();
   test_batched_vector_local_type<TestExecSpace,double,4>();
-  test_batched_vector_local_type<TestExecSpace,double,13>();
+  // not allowed as vector length is not power of 2
+  //test_batched_vector_local_type<TestExecSpace,double,13>();
 }
 #endif
 

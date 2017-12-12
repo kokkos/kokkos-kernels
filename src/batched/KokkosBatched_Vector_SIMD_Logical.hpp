@@ -11,8 +11,8 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            && std::is_integral<T>::value,
+    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            std::is_integral<T>::value,
                             const Vector<SIMD<bool>,l> >::type 
     operator!(const Vector<SIMD<T>,l> &a) {
       Vector<SIMD<bool>,l> r_val;
@@ -30,8 +30,8 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            && std::is_integral<T0>::value 
+    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            std::is_integral<T0>::value 
                             && std::is_integral<T1>::value,
                             const Vector<SIMD<bool>,l> >::type 
     operator||(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
@@ -50,8 +50,8 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            && std::is_integral<T0>::value 
+    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            std::is_integral<T0>::value 
                             && std::is_integral<T1>::value,                            
                             const Vector<SIMD<bool>,l> >::type 
     operator&&(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
@@ -70,8 +70,8 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            && std::is_integral<T0>::value 
+    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            std::is_integral<T0>::value 
                             && std::is_integral<T1>::value,                            
                             const Vector<SIMD<bool>,l> >::type 
     operator||(const Vector<SIMD<T0>,l> &a, const T1 &b) {
@@ -90,8 +90,8 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            && std::is_integral<T0>::value 
+    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            std::is_integral<T0>::value 
                             && std::is_integral<T1>::value,                            
                             const Vector<SIMD<bool>,l> >::type 
     operator&&(const Vector<SIMD<T0>,l> &a, const T1 &b) {
@@ -110,8 +110,8 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            && std::is_integral<T0>::value 
+    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            std::is_integral<T0>::value 
                             && std::is_integral<T1>::value,                            
                             const Vector<SIMD<bool>,l> >::type 
     operator||(const T0 &a, const Vector<SIMD<T1>,l> &b) {
@@ -130,8 +130,8 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            && std::is_integral<T0>::value 
+    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
+                            std::is_integral<T0>::value 
                             && std::is_integral<T1>::value,                            
                             const Vector<SIMD<bool>,l> >::type 
     operator&&(const T0 &a, const Vector<SIMD<T1>,l> &b) {

@@ -108,91 +108,89 @@ namespace Test {
       EXPECT_NEAR_KK( a(i0,i1,i2,i3,i4,i5,i6,i7/vl)[i7%vl], b(i0,i1,i2,i3,i4,i5,i6,i7), eps );
   }
   
-  template<typename VectorTagType,int VectorLength>
+  template<typename DeviceType,typename VectorTagType,int VectorLength>
   void impl_test_batched_vector_view() {
     /// random data initialization
     typedef Vector<VectorTagType,VectorLength> vector_type;
     
     typedef typename vector_type::value_type value_type;    
     const int vector_length = vector_type::vector_length;
-    
 
     { /// rank 1 array
-      Kokkos::View<vector_type*> a("a", 10);
+      Kokkos::View<vector_type*,DeviceType> a("a", 10);
       impl_init_vector_view(a);
-
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*,DeviceType>, PackDim<0> >(a));
     }
     { /// rank 2 array
-      Kokkos::View<vector_type**> a("a", 10, 10);
+      Kokkos::View<vector_type**,DeviceType> a("a", 10, 10);
       impl_init_vector_view(a);
       
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type**>, PackDim<0> >(a));
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type**>, PackDim<1> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type**,DeviceType>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type**,DeviceType>, PackDim<1> >(a));
     }
     { /// rank 3 array
-      Kokkos::View<vector_type***> a("a", 10, 10, 10);
+      Kokkos::View<vector_type***,DeviceType> a("a", 10, 10, 10);
       impl_init_vector_view(a);
       
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***>, PackDim<0> >(a));
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***>, PackDim<1> >(a));
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***>, PackDim<2> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***,DeviceType>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***,DeviceType>, PackDim<1> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***,DeviceType>, PackDim<2> >(a));
     }
     { /// rank 4 array
-      Kokkos::View<vector_type****> a("a", 10, 10, 10, 10);
+      Kokkos::View<vector_type****,DeviceType> a("a", 10, 10, 10, 10);
       impl_init_vector_view(a);
       
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****>, PackDim<0> >(a));
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****>, PackDim<1> >(a));
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****>, PackDim<2> >(a));
-      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****>, PackDim<3> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****,DeviceType>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****,DeviceType>, PackDim<1> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****,DeviceType>, PackDim<2> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****,DeviceType>, PackDim<3> >(a));
     }
-    // { /// rank 5 array
-    //   Kokkos::View<vector_type*****> a("a", 10, 10, 10, 10, 10);
-    //   impl_init_vector_view(a);
+    { /// rank 5 array
+      Kokkos::View<vector_type*****,DeviceType> a("a", 10, 10, 10, 10, 10);
+      impl_init_vector_view(a);
       
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****>, PackDim<0> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****>, PackDim<1> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****>, PackDim<2> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****>, PackDim<3> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****>, PackDim<4> >(a));
-    // }
-    // { /// rank 6 array
-    //   Kokkos::View<vector_type******> a("a", 10, 10, 10, 10, 10, 10);
-    //   impl_init_vector_view(a);
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****,DeviceType>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****,DeviceType>, PackDim<1> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****,DeviceType>, PackDim<2> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****,DeviceType>, PackDim<3> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****,DeviceType>, PackDim<4> >(a));
+    }
+    { /// rank 6 array
+      Kokkos::View<vector_type******,DeviceType> a("a", 10, 10, 10, 10, 10, 10);
+      impl_init_vector_view(a);
       
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******>, PackDim<0> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******>, PackDim<1> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******>, PackDim<2> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******>, PackDim<3> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******>, PackDim<4> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******>, PackDim<5> >(a));
-    // }
-    // { /// rank 7 array
-    //   Kokkos::View<vector_type*******> a("a", 10, 10, 10, 10, 10, 10, 10);
-    //   impl_init_vector_view(a);
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<1> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<2> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<3> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<4> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<5> >(a));
+    }
+    { /// rank 7 array
+      Kokkos::View<vector_type*******,DeviceType> a("a", 10, 10, 10, 10, 10, 10, 10);
+      impl_init_vector_view(a);
       
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******>, PackDim<0> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******>, PackDim<1> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******>, PackDim<2> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******>, PackDim<3> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******>, PackDim<4> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******>, PackDim<5> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******>, PackDim<6> >(a));
-    // }
-    // { /// rank 8 array
-    //   Kokkos::View<vector_type********> a("a", 10, 10, 10, 10, 10, 10, 10, 10);
-    //   impl_init_vector_view(a);
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<1> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<2> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<3> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<4> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<5> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<6> >(a));
+    }
+    { /// rank 8 array
+      Kokkos::View<vector_type********,DeviceType> a("a", 10, 10, 10, 10, 10, 10, 10, 10);
+      impl_init_vector_view(a);
       
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<0> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<1> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<2> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<3> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<4> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<5> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<6> >(a));
-    //   impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********>, PackDim<7> >(a));
-    // }
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<0> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<1> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<2> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<3> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<4> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<5> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<6> >(a));
+      impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<7> >(a));
+    }
   }
 }
 
@@ -200,7 +198,7 @@ template<typename DeviceType,typename VectorTagType,int VectorLength>
 int test_batched_vector_view() {
   static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
                 "vector datatype is only tested on host space");
-  Test::impl_test_batched_vector_view<VectorTagType,VectorLength>();
+  Test::impl_test_batched_vector_view<DeviceType,VectorTagType,VectorLength>();
   
   return 0;
 }

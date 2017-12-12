@@ -8,6 +8,9 @@
 namespace KokkosBatched {
   namespace Experimental {
 
+#define SIMD_MISC_RETURN_TYPE(T,l) Vector< SIMD< T >, l >
+#define SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l) typename std::enable_if<std::is_convertible< T0 , T1 >::value && std::is_convertible< T0 , T2 >::value, void >::type
+
     // scalar, scalar
 
     template<typename T>
@@ -37,8 +40,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T>,l> &if_true_val,
                        const T &if_false_val) {
@@ -51,9 +53,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && std::is_convertible<T0,T1>::value && std::is_convertible<T0,T2>::value,
-                            void >::type
+    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
                        const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T1>,l> &if_true_val,
@@ -67,8 +67,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
                        const T &if_true_val,
                        const Vector<SIMD<T>,l> &if_false_val) {
@@ -81,15 +80,11 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && std::is_convertible<T0,T1>::value && std::is_convertible<T0,T2>::value,
-                            void >::type
+    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
                        const Vector<SIMD<bool>,l> &cond,
                        const T1 &if_true_val,
                        const Vector<SIMD<T2>,l> &if_false_val){
-      static_assert(std::is_convertible<T0,T1>::value, "r_val type must be convertible to if_true_value type");
-      static_assert(std::is_convertible<T0,T2>::value, "r_val type must be convertible to if_true_value type");
       for (int i=0;i<l;++i)
         r_val[i] = cond[i] ? if_true_val : if_false_val[i];
     }
@@ -99,8 +94,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T>,l> &if_true_val,
                        const Vector<SIMD<T>,l> &if_false_val) {
@@ -113,9 +107,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && std::is_convertible<T0,T1>::value && std::is_convertible<T0,T2>::value,
-                            void >::type
+    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
                        const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T1>,l> &if_true_val,
@@ -127,8 +119,7 @@ namespace KokkosBatched {
     template<typename T, int l, typename BinaryOp>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            T>::type
+    T
     reduce(const Vector<SIMD<T>,l> &val, const BinaryOp &func) {
       T r_val = val[0];
       for (int i=1;i<l;++i)
@@ -139,8 +130,7 @@ namespace KokkosBatched {
     template<typename T, int l, typename BinaryOp>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            T>::type
+    T
     reduce(const Vector<SIMD<T>,l> &val, const BinaryOp &func, const T init) {
       T r_val = init;
       for (int i=0;i<l;++i)
@@ -151,8 +141,7 @@ namespace KokkosBatched {
     template<int l>
     inline    
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            bool>::type
+    bool
     is_all_true(const Vector<SIMD<bool>,l> &cond) {
       return reduce(cond, [](const bool left, const bool right) -> bool {
           return (left && right);
@@ -162,8 +151,7 @@ namespace KokkosBatched {
     template<int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            bool>::type
+    bool
     is_any_true(const Vector<SIMD<bool>,l> &cond) {
       return reduce(cond, [](const bool left, const bool right) -> bool {
           return left || right;
@@ -173,8 +161,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            T>::type
+    T
     min(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
           return min(left,right);
@@ -184,8 +171,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            T>::type
+    T
     max(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
           return max(left,right);
@@ -195,8 +181,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            T>::type
+    T
     sum(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
           return left + right;
@@ -206,13 +191,15 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            T>::type
+    T
     prod(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
           return left * right;
         }, T(1));
     } 
+
+#undef SIMD_MISC_RETURN_TYPE
+#undef SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE
     
   }
 }

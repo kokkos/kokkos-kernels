@@ -8,13 +8,16 @@
 namespace KokkosBatched {
   namespace Experimental {
 
+    //#define SIMD_MATH_RETURN_TYPE typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l> >::type
+#define SIMD_MATH_RETURN_TYPE(T,l) Vector< SIMD< T >, l >
+#define SIMD_MATH_RETURN_FLOAT_TYPE(T,l) typename std::enable_if<!std::is_integral< T >::value,Vector<SIMD< T >,l> >::type
+
     /// simd 
 
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T,l)
     sqrt(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -33,8 +36,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T,l)
     cbrt(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -53,8 +55,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T,l)
     log(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -73,8 +74,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T,l)
     log10(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -93,8 +93,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T,l)
     exp(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -113,8 +112,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T0>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T0,l)
     pow(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
       typedef Kokkos::Details::ArithTraits<T0> ats;
       Vector<SIMD<T0>,l> r_val;
@@ -133,8 +131,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T0>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T0,l)
     pow(const T0 &a, const Vector<SIMD<T1>,l> &b) {
       return pow(Vector<SIMD<T0>,l>(a), b);
     }
@@ -142,8 +139,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-                            Vector<SIMD<T0>,l> >::type
+    SIMD_MATH_RETURN_TYPE(T0,l)
     pow(const Vector<SIMD<T0>,l> &a, const T1 &b) {
       return pow(a, Vector<SIMD<T1>,l>(b));
     }
@@ -151,9 +147,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     sin(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -172,9 +166,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     cos(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -193,9 +185,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     tan(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -214,9 +204,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     sinh(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -235,9 +223,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     cosh(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -256,9 +242,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     tanh(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -277,9 +261,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     asin(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -298,9 +280,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     acos(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -319,9 +299,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan(const Vector<SIMD<T>,l> &a) {
       typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -340,9 +318,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan2(const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       //typedef Kokkos::Details::ArithTraits<T> ats;
       Vector<SIMD<T>,l> r_val;
@@ -361,9 +337,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan2(const T &a, const Vector<SIMD<T>,l> &b) {
       return atan2(Vector<SIMD<T>,l>(a), b);
     }
@@ -371,13 +345,13 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value
-                            && !std::is_integral<T>::value,
-                            Vector<SIMD<T>,l> >::type
+    SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan2(const Vector<SIMD<T>,l> &a, const T &b) {
       return atan2(a, Vector<SIMD<T>,l>(b));
     }
-
+  
+#undef SIMD_MATH_RETURN_TYPE
+#undef SIMD_MATH_RETURN_FLOAT_TYPE
   }
 }
 
