@@ -326,9 +326,16 @@ template<class TeamHandle, class ViewTypeA, class ViewTypeB, class ViewTypeC>
 KOKKOS_INLINE_FUNCTION
 void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const ViewTypeA& A, const ViewTypeB& B) {
   typedef typename ViewTypeC::non_const_value_type ScalarC;
+// GNU COMPILER BUG WORKAROUND
+#if defined(KOKKOS_COMPILER_GNU) || !defined(__CUDA_ARCH__)
+  int blockA0 = A.extent_int(0);
+  int blockA1 = A.extent_int(1);
+  int blockB1 = B.extent_int(1);
+#else
   const int blockA0 = A.extent_int(0);
   const int blockA1 = A.extent_int(1);
   const int blockB1 = B.extent_int(1);
+#endif
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,blockA0), [&] (const int i) {
 #if defined(__CUDA_ARCH__) || !defined(KOKKOS_ENABLE_OPENMP)
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,blockB1/4), [&] (const int B_j) {
