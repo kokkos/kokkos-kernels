@@ -24,7 +24,12 @@ namespace Test {
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
+// GNU COMPILER BUG WORKAROUND
+#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__)
+      int i = team.league_rank();
+#else
       const int i = team.league_rank();
+#endif
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [&] (const int& j) {
         ScalarC C_ij = 0.0;
 
