@@ -107,22 +107,22 @@ int test_batched_vector_math() {
   return 0;
 }
 
-template<typename ValueType>
-int test_complex_pow() {
-  typedef Kokkos::Details::ArithTraits<Kokkos::complex<ValueType> > ats;
-  typedef typename ats::mag_type mag_type;
+// template<typename ValueType>
+// int test_complex_pow() {
+//   typedef Kokkos::Details::ArithTraits<Kokkos::complex<ValueType> > ats;
+//   typedef typename ats::mag_type mag_type;
 
-  const mag_type eps = 1.0e3 * ats::epsilon();
+//   const mag_type eps = 1.0e3 * ats::epsilon();
   
-  mag_type a2 = 4.5;
-  Kokkos::complex<mag_type> a0(3.2, -1.4), a1(1.2, 2.3);
-  std::complex<mag_type> b0(3.2, -1.4), b1(1.2, 2.3);
+//   mag_type a2 = 4.5;
+//   Kokkos::complex<mag_type> a0(3.2, -1.4), a1(1.2, 2.3);
+//   std::complex<mag_type> b0(3.2, -1.4), b1(1.2, 2.3);
   
-  Test::EXPECT_NEAR_KK( ats::pow(a0,a1), std::pow(b0,b1), eps );
-  Test::EXPECT_NEAR_KK( ats::pow(a0,a2), std::pow(b0,a2), eps );
+//   Test::EXPECT_NEAR_KK( ats::pow(a0,a1), std::pow(b0,b1), eps );
+//   Test::EXPECT_NEAR_KK( ats::pow(a0,a2), std::pow(b0,a2), eps );
 
-  return 0;
-}
+//   return 0;
+// }
 
 ///
 /// SIMD
@@ -147,24 +147,24 @@ TEST_F( TestCategory, batched_vector_math_simd_double4 ) {
 #endif
 
 
-using namespace Test;
+// using namespace Test;
 
-#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
-TEST_F( TestCategory, batched_vector_math_simd_scomplex3 ) {
-  test_complex_pow<float>();
-  test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<float> >,3>();
-}
-TEST_F( TestCategory, batched_vector_math_simd_scomplex4 ) {
-  test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<float> >,4>();
-}
-#endif
+// #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+// TEST_F( TestCategory, batched_vector_math_simd_scomplex3 ) {
+//   test_complex_pow<float>();
+//   test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<float> >,3>();
+// }
+// TEST_F( TestCategory, batched_vector_math_simd_scomplex4 ) {
+//   test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<float> >,4>();
+// }
+// #endif
 
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_vector_math_simd_dcomplex3 ) {
-  test_complex_pow<double>();
-  test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<double> >,3>();
-}
-TEST_F( TestCategory, batched_vector_math_simd_dcomplex2 ) {
-  test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
-}
-#endif
+// #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+// TEST_F( TestCategory, batched_vector_math_simd_dcomplex3 ) {
+//   test_complex_pow<double>();
+//   test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<double> >,3>();
+// }
+// TEST_F( TestCategory, batched_vector_math_simd_dcomplex2 ) {
+//   test_batched_vector_math<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
+// }
+// #endif
