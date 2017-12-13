@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSSPARSE_IMPL_SPGEMM_NUMERIC_SPEC_HPP_
-#define KOKKOSSPARSE_IMPL_SPGEMM_NUMERIC_SPEC_HPP_
+#ifndef KOKKOSSPARSE_IMPL_GAUSS_SEIDEL_SPEC_HPP_
+#define KOKKOSSPARSE_IMPL_GAUSS_SEIDEL_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 
@@ -136,10 +136,6 @@ namespace KokkosSparse {
 namespace Impl {
 
 
-// Unification layer
-/// \brief Implementation of KokkosBlas::spgemm (sparse matrix - dense
-///   vector multiply) for multiple vectors at a time (multivectors)
-///   and possibly multiple coefficients at a time.
 
 template<
     class KernelHandle,
@@ -215,8 +211,6 @@ struct GAUSS_SEIDEL_APPLY{
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 
 
-//! Full specialization of spgemm_mv for single vectors (2-D Views).
-// Unification layer
 template<class KernelHandle, class a_size_view_t_, class a_lno_view_t>
 struct GAUSS_SEIDEL_SYMBOLIC<KernelHandle,
         a_size_view_t_,  a_lno_view_t,
@@ -409,7 +403,7 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > , \
             false, true > ;
 
-#include<KokkosSparse_spgemm_tpl_spec_decl.hpp>
+#include<KokkosSparse_gauss_seidel_tpl_spec_decl.hpp>
 #include<generated_specializations_hpp/KokkosSparse_gauss_seidel_symbolic_eti_spec_decl.hpp>
 #include<generated_specializations_hpp/KokkosSparse_gauss_seidel_numeric_eti_spec_decl.hpp>
 #include<generated_specializations_hpp/KokkosSparse_gauss_seidel_apply_eti_spec_decl.hpp>

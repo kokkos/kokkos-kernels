@@ -104,6 +104,7 @@ struct GEMM< \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
     \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,double]"); \
     const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
@@ -125,6 +126,7 @@ struct GEMM< \
       dgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
     if(A_is_lr && B_is_lr && C_is_lr ) \
       dgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -155,6 +157,7 @@ struct GEMM< \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
     \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,float]"); \
     const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
@@ -176,6 +179,7 @@ struct GEMM< \
       sgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
     if(A_is_lr && B_is_lr && C_is_lr ) \
       sgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -206,6 +210,7 @@ struct GEMM< \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
     \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,complex<double>]"); \
     const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
@@ -233,6 +238,7 @@ struct GEMM< \
         reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(B.data()),&LDB, \
         reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(C.data()),&LDC); \
+    Kokkos::Profiling::popRegion(); \
   } \
 }; \
 
@@ -263,6 +269,7 @@ struct GEMM< \
         typename CViewType::const_value_type& beta, \
         const CViewType& C) { \
     \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,complex<float>]"); \
     const bool A_t = (transA[0]!='N') && (transA[0]!='n'); \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
@@ -290,6 +297,7 @@ struct GEMM< \
         reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(B.data()),&LDB, \
         reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(C.data()),&LDC); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
