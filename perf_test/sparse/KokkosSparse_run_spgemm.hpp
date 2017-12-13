@@ -175,7 +175,6 @@ crsMat_t3 run_experiment(
   //char spgemm_step = params.spgemm_step;
   int vector_size = params.vector_size;
   int check_output = params.check_output;
-  int mkl_sort_option = params.mkl_sort_option;
   int mkl_keep_output = params.mkl_keep_output;
   //spgemm_step++;
   typedef typename crsMat_t3::values_type::non_const_type scalar_view_t;
@@ -298,6 +297,8 @@ crsMat_t3 run_experiment(
 	  kh.create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm(algorithm));
 
 	  kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
+          kh.get_spgemm_handle()->set_mkl_sort_option(params.mkl_sort_option);
+
 	  //if mkl2 input needs to be converted to 1base.
 	  kh.get_spgemm_handle()->mkl_convert_to_1base = true;
 

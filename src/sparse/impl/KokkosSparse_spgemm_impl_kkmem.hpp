@@ -2349,7 +2349,7 @@ void
 		  if (SPGEMM_KK_LP != this->spgemm_algorithm && (average_row_nnz < 32 || average_row_flops < 256)){
 			  algorithm_to_run = SPGEMM_KK_MEMORY;
 			  //if (average_row_nnz / double (thread_shmem_key_size) > 1.5){
-				  while (average_row_nnz > thread_shmem_key_size && suggested_vector_size < 32){
+				  while (average_row_nnz > size_type (thread_shmem_key_size) && suggested_vector_size < 32){
 					  suggested_vector_size  = suggested_vector_size * 2;
 					  suggested_vector_size = KOKKOSKERNELS_MACRO_MIN(32, suggested_vector_size);
 					  suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
