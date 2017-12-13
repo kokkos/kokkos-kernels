@@ -166,14 +166,12 @@ crsMat_t3 run_experiment(
   int algorithm = params.algorithm;
   int repeat = params.repeat;
   int chunk_size = params.chunk_size;
-  int multi_color_scale = params.multi_color_scale;
+
   int shmemsize = params.shmemsize;
   int team_size = params.team_size;
   int use_dynamic_scheduling = params.use_dynamic_scheduling;
   int verbose = params.verbose;
   int calculate_read_write_cost = params.calculate_read_write_cost;
-  char *coloring_input_file = params.coloring_input_file;
-  char *coloring_output_file = params.coloring_output_file;
   //char spgemm_step = params.spgemm_step;
   int vector_size = params.vector_size;
   int check_output = params.check_output;
@@ -218,7 +216,7 @@ crsMat_t3 run_experiment(
   const idx n = crsMat2.numRows();
   const idx k = crsMat2.numCols();
 
-  std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
+  if (verbose) std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
   if (n < crsMat.numCols()){
     std::cout << "left.numCols():" << crsMat.numCols() << " right.numRows():" << crsMat2.numRows() << std::endl;
     exit(1);
@@ -230,7 +228,7 @@ crsMat_t3 run_experiment(
   typename crsMat_t3::HostMirror Ccrsmat_ref;
   if (check_output)
   {
-    std::cout << "Running a reference algorithm" << std::endl;
+	  if (verbose) std::cout << "Running a reference algorithm" << std::endl;
     row_mapC_ref = typename lno_view_t::HostMirror ("non_const_lnow_row", m + 1);
     entriesC_ref = typename lno_nnz_view_t::HostMirror ("");
     valuesC_ref = typename scalar_view_t::HostMirror ("");
@@ -241,7 +239,7 @@ crsMat_t3 run_experiment(
     sequential_kh.set_team_work_size(chunk_size);
     sequential_kh.set_shmem_size(shmemsize);
     sequential_kh.set_suggested_team_size(team_size);
-    sequential_kh.create_spgemm_handle(KokkosSparse::SPGEMM_DEBUG);
+    sequential_kh.create_spgemm_handle(KokkosSparse::SPGEMM_SERIAL);
 
     if (use_dynamic_scheduling){
       sequential_kh.set_dynamic_scheduling(true);
@@ -297,179 +295,95 @@ crsMat_t3 run_experiment(
   }
 
   for (int i = 0; i < repeat; ++i){
-  switch (algorithm){
-  case -2:
-	kh.create_spgemm_handle(SPGEMM_KK);
-	break;
-  case -1:
-	kh.create_spgemm_handle(SPGEMM_KK_CUCKOO);
-	break;
-  case -3:
-  	kh.create_spgemm_handle(SPGEMM_KK_TRACKED_CUCKOO);
-  	break;
-  case -4:
-  	kh.create_spgemm_handle(SPGEMM_KK_TRACKED_CUCKOO_F);
-  	break;
-  case -5:
-  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_SORTED);
-  	break;
-  case -6:
-	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_TEAM);
-	break;
-  case -7:
-  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_BIGTEAM);
-  	break;
-  case -8:
-  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_SPREADTEAM);
-  	break;
-  case -9:
-  	kh.create_spgemm_handle(SPGEMM_KK_MEMORY_BIGSPREADTEAM);
-  	break;
-  case 1:
-    kh.create_spgemm_handle(SPGEMM_MKL);
-    break;
-  case 2:
-    kh.create_spgemm_handle(SPGEMM_CUSPARSE);
-    break;
-  case 3:
-    kh.create_spgemm_handle(SPGEMM_CUSP);
-    break;
-  case 4:
-    kh.create_spgemm_handle(SPGEMM_DEBUG);
-    break;
-  case 5:
-    kh.create_spgemm_handle(SPGEMM_MKL2PHASE);
-    kh.get_spgemm_handle()->set_mkl_sort_option(mkl_sort_option);
-    break;
-  case 6:
-    kh.create_spgemm_handle(SPGEMM_KK_MEMORY2);
-    break;
-  case 7:
-      kh.create_spgemm_handle(SPGEMM_KK_MEMORY);
-      break;
-  case 8:
-      kh.create_spgemm_handle(SPGEMM_KK_SPEED);
-      break;
-  case 9:
-    kh.create_spgemm_handle(SPGEMM_KK_COLOR);
-    break;
+	  kh.create_spgemm_handle(algorithm);
 
-  case 10:
-    kh.create_spgemm_handle(SPGEMM_KK_MULTICOLOR);
-    break;
+	  kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
+	  //if mkl2 input needs to be converted to 1base.
+	  kh.get_spgemm_handle()->mkl_convert_to_1base = true;
 
-  case 11:
-      kh.create_spgemm_handle(SPGEMM_KK_MULTICOLOR2);
-      break;
-  case 12:
-    kh.create_spgemm_handle(SPGEMM_VIENNA);
-    break;
-  case 13:
-    kh.create_spgemm_handle(SPGEMM_KK_MEMSPEED);
-    break;
-  case 14:
-    kh.create_spgemm_handle(SPGEMM_KK_MULTIMEM);
-    break;
-  case 15:
-    kh.create_spgemm_handle(SPGEMM_KK_OUTERMULTIMEM);
-    break;
+	  //250000 default. if cache-mode is used on KNL can increase to 1M.
+	  kh.get_spgemm_handle()->MaxColDenseAcc = params.MaxColDenseAcc;
+
+	  if (i == 0){
+		  kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
+	  }
+	  //do the compression whether in 2 step, or 1 step.
+	  kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
+	  //whether to scale the hash more. default is 1, so no scale.
+	  kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
+	  //max occupancy in 1-level LP hashes. LL hashes can be 100%
+	  kh.get_spgemm_handle()->set_first_level_hash_cut_off(params.first_level_hash_cut_off);
+	  //min reduction on FLOPs to run compression
+	  kh.get_spgemm_handle()->set_compression_cut_off(params.compression_cut_off);
 
 
-  default:
-    kh.create_spgemm_handle(SPGEMM_KK_MEMORY);
-    break;
+
+	  row_mapC = lno_view_t
+			  ("non_const_lnow_row",
+					  m + 1);
+	  entriesC = lno_nnz_view_t ("");
+	  valuesC = scalar_view_t ("");
+
+	  Kokkos::Impl::Timer timer1;
+	  spgemm_symbolic (
+			  &kh,
+			  m,
+			  n,
+			  k,
+			  crsMat.graph.row_map,
+			  crsMat.graph.entries,
+			  TRANPOSEFIRST,
+			  crsMat2.graph.row_map,
+			  crsMat2.graph.entries,
+			  TRANPOSESECOND,
+			  row_mapC
+	  );
+
+	  ExecSpace::fence();
+	  double symbolic_time = timer1.seconds();
+
+	  Kokkos::Impl::Timer timer3;
+	  size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+	  if (verbose)  std::cout << "c_nnz_size:" << c_nnz_size << std::endl;
+	  if (c_nnz_size){
+		  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+		  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+	  }
+
+	  spgemm_numeric(
+			  &kh,
+			  m,
+			  n,
+			  k,
+			  crsMat.graph.row_map,
+			  crsMat.graph.entries,
+			  crsMat.values,
+			  TRANPOSEFIRST,
+
+			  crsMat2.graph.row_map,
+			  crsMat2.graph.entries,
+			  crsMat2.values,
+			  TRANPOSESECOND,
+			  row_mapC,
+			  entriesC,
+			  valuesC
+	  );
+	  ExecSpace::fence();
+	  double numeric_time = timer3.seconds();
+
+	  std::cout
+	  << "mm_time:" << symbolic_time + numeric_time
+	  << " symbolic_time:" << symbolic_time
+	  << " numeric_time:" << numeric_time << std::endl;
   }
-
-  kh.get_spgemm_handle()->set_multi_color_scale(multi_color_scale);
-  kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
-  kh.get_spgemm_handle()->mkl_convert_to_1base = false;
-  kh.get_spgemm_handle()->MaxColDenseAcc = params.MaxColDenseAcc; //250000 default. if cache-mode is used on KNL can increase to 1M.
-
-  if (i == 0){
-	  kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
+  if (verbose) {
+	  std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
+	  std::cout << "entriesC:" << entriesC.dimension_0() << std::endl;
+	  std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
+	  KokkosKernels::Impl::print_1Dview(valuesC);
+	  KokkosKernels::Impl::print_1Dview(entriesC);
+	  KokkosKernels::Impl::print_1Dview(row_mapC);
   }
-  kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
-  kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
-
-  kh.get_spgemm_handle()->set_first_level_hash_cut_off(params.first_level_hash_cut_off);
-  kh.get_spgemm_handle()->set_compression_cut_off(params.compression_cut_off);
-
-  if (coloring_input_file){
-    kh.get_spgemm_handle()->coloring_input_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_input_file);
-  }
-  if (coloring_output_file){
-    kh.get_spgemm_handle()->coloring_output_file = /*std::string(&spgemm_step) + "_" +*/ std::string(coloring_output_file);
-  }
-
-
-    row_mapC = lno_view_t
-              ("non_const_lnow_row",
-                  m + 1);
-    entriesC = lno_nnz_view_t ("");
-    valuesC = scalar_view_t ("");
-
-    Kokkos::Impl::Timer timer1;
-    spgemm_symbolic (
-        &kh,
-        m,
-        n,
-        k,
-        crsMat.graph.row_map,
-        crsMat.graph.entries,
-        TRANPOSEFIRST,
-        crsMat2.graph.row_map,
-        crsMat2.graph.entries,
-        TRANPOSESECOND,
-        row_mapC
-    );
-
-    ExecSpace::fence();
-    double symbolic_time = timer1.seconds();
-
-    Kokkos::Impl::Timer timer3;
-    size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    std::cout << "c_nnz_size:" << c_nnz_size << std::endl;
-    if (c_nnz_size){
-      entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
-
-    spgemm_numeric(
-        &kh,
-        m,
-        n,
-        k,
-        crsMat.graph.row_map,
-        crsMat.graph.entries,
-        crsMat.values,
-        TRANPOSEFIRST,
-
-        crsMat2.graph.row_map,
-        crsMat2.graph.entries,
-        crsMat2.values,
-        TRANPOSESECOND,
-        row_mapC,
-        entriesC,
-        valuesC
-    );
-    ExecSpace::fence();
-    double numeric_time = timer3.seconds();
-
-    std::cout
-    << "mm_time:" << symbolic_time + numeric_time
-    << " symbolic_time:" << symbolic_time
-    << " numeric_time:" << numeric_time << std::endl;
-
-
-
-  }
-
-  std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
-  std::cout << "entriesC:" << entriesC.dimension_0() << std::endl;
-  std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
-  KokkosKernels::Impl::print_1Dview(valuesC);
-  KokkosKernels::Impl::print_1Dview(entriesC);
-  KokkosKernels::Impl::print_1Dview(row_mapC);
 
 
   if (check_output){
@@ -488,7 +402,7 @@ crsMat_t3 run_experiment(
 
     bool is_identical = is_same_matrix<typename crsMat_t3::HostMirror, typename crsMat_t3::HostMirror::device_type>(Ccrsmat_ref, Ccrsmathost);
     if (!is_identical){
-      std::cout << "Result is wrong." << std::endl;
+      std::cout << "Result differs. If values are differing, might be floating point order error." << std::endl;
       exit(1);
     }
   }

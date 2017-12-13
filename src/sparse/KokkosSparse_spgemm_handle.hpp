@@ -60,30 +60,34 @@ namespace KokkosSparse{
 //TODO:SPGEMM_KK_MEMORY2 option is for testing in openmp.
 //it wont work on cuda, not bind to a test program.
 //hidden parameter for StringToSPGEMMAlgorithm for now.
-enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
-                      SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA,
-                     //SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
-                      SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
-                      SPGEMM_KK_TRIANGLE_AI, //SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
-                      SPGEMM_KK_TRIANGLE_IA_UNION, //SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION, SPGEMM_KK_TRIANGLE_MEM_IA_UNION, SPGEMM_KK_TRIANGLE_DENSE_IA_UNION,
-                      SPGEMM_KK_TRIANGLE_IA,//SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
-                      SPGEMM_KK_TRIANGLE_LL,
-                      SPGEMM_KK_TRIANGLE_LU,
+enum SPGEMMAlgorithm{
+		/*DEFAULT*/SPGEMM_KK, SPGEMM_KK_DENSE, SPGEMM_KK_MEMORY, SPGEMM_KK_LP, //KKVARIANTS
+		SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA, //TPLS
 
-					  SPGEMM_KK_CUCKOO, //USE CUCKOO HASHING
-					  SPGEMM_KK_TRACKED_CUCKOO, //USE SCALED CUCKOO HASHING
-					  SPGEMM_KK_TRACKED_CUCKOO_F, //USE SCALED FANCY CUCKOO HASHING
-					  SPGEMM_KK_DENSE,  // DENSE ACCUMULATOR SAME AS SPEED
-					  SPGEMM_KK, //will BE DEFAULT
+		//TRIANGLE COUNTING SPECIALIZED
+		SPGEMM_KK_TRIANGLE_AI, //SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
+		SPGEMM_KK_TRIANGLE_IA_UNION, //SPGEMM_KK_TRIANGLE_DEFAULT_IA_UNION, SPGEMM_KK_TRIANGLE_MEM_IA_UNION, SPGEMM_KK_TRIANGLE_DENSE_IA_UNION,
+		SPGEMM_KK_TRIANGLE_IA,//SPGEMM_KK_TRIANGLE_IA_DEFAULT, SPGEMM_KK_TRIANGLE_IA_MEM, SPGEMM_KK_TRIANGLE_IA_DENSE,
+		SPGEMM_KK_TRIANGLE_LL,
+		SPGEMM_KK_TRIANGLE_LU,
 
-					  SPGEMM_KK_SPEED,
-					  SPGEMM_KK_MEMORY,
-					  SPGEMM_KK_MEMORY_SORTED, SPGEMM_KK_MEMORY_TEAM, SPGEMM_KK_MEMORY_BIGTEAM, SPGEMM_KK_MEMORY_SPREADTEAM, SPGEMM_KK_MEMORY_BIGSPREADTEAM,
-					  SPGEMM_KK_MEMORY2,
-					  SPGEMM_KK_COLOR,
-					  SPGEMM_KK_MULTICOLOR,
-					  SPGEMM_KK_MULTICOLOR2,
-					  SPGEMM_KK_MEMSPEED};
+		//below research code.
+		SPGEMM_KK_MULTIMEM, SPGEMM_KK_OUTERMULTIMEM,
+		SPGEMM_DEFAULT, SPGEMM_DEBUG, SPGEMM_SERIAL,
+		SPGEMM_KK_CUCKOO, //USE CUCKOO HASHING
+		SPGEMM_KK_TRACKED_CUCKOO, //USE SCALED CUCKOO HASHING
+		SPGEMM_KK_TRACKED_CUCKOO_F, //USE SCALED FANCY CUCKOO HASHING
+		SPGEMM_KK_SPEED,  // DENSE ACCUMULATOR SAME AS SPEED
+		SPGEMM_KK_MEMORY_SORTED,
+		SPGEMM_KK_MEMORY_TEAM,
+		SPGEMM_KK_MEMORY_BIGTEAM,
+		SPGEMM_KK_MEMORY_SPREADTEAM,
+		SPGEMM_KK_MEMORY_BIGSPREADTEAM,
+		SPGEMM_KK_MEMORY2,
+		SPGEMM_KK_COLOR,
+		SPGEMM_KK_MULTICOLOR,
+		SPGEMM_KK_MULTICOLOR2,
+		SPGEMM_KK_MEMSPEED};
 
 enum SPGEMMAccumulator{
   SPGEMM_ACC_DEFAULT, SPGEMM_ACC_DENSE, SPGEMM_ACC_SPARSE,
@@ -466,7 +470,7 @@ private:
 	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
     mkl_keep_output(true),
-    mkl_convert_to_1base(true), is_compression_single_step(true), MaxColDenseAcc(250001)
+    mkl_convert_to_1base(true), is_compression_single_step(false), MaxColDenseAcc(250001)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
@@ -682,25 +686,22 @@ private:
 
 
   inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string & name) {
-    if(name=="SPGEMM_DEFAULT")             return SPGEMM_DEFAULT;
-    else if(name=="SPGEMM_DEBUG")          return SPGEMM_DEBUG;
+    if(name=="SPGEMM_DEFAULT")             return SPGEMM_KK;
+    else if(name=="SPGEMM_KK")       	   return SPGEMM_KK;
+    else if(name=="SPGEMM_KK_MEMORY")      return SPGEMM_KK_MEMORY;
+    else if(name=="SPGEMM_KK_DENSE")       return SPGEMM_KK_DENSE;
+    else if(name=="SPGEMM_KK_LP")  		   return SPGEMM_KK_LP;
+    else if(name=="SPGEMM_KK_MEMSPEED")    return SPGEMM_KK;
+
+    else if(name=="SPGEMM_DEBUG")          return SPGEMM_SERIAL;
     else if(name=="SPGEMM_SERIAL")         return SPGEMM_SERIAL;
     else if(name=="SPGEMM_CUSPARSE")       return SPGEMM_CUSPARSE;
     else if(name=="SPGEMM_CUSP")           return SPGEMM_CUSP;
     else if(name=="SPGEMM_MKL")            return SPGEMM_MKL;
     else if(name=="SPGEMM_VIENNA")         return SPGEMM_VIENNA;
-    else if(name=="SPGEMM_KK_SPEED")       return SPGEMM_KK_SPEED;
-    else if(name=="SPGEMM_KK_MEMORY")      return SPGEMM_KK_MEMORY;
-    else if(name=="SPGEMM_KK_COLOR")       return SPGEMM_KK_COLOR;
-    else if(name=="SPGEMM_KK_MULTICOLOR")  return SPGEMM_KK_MULTICOLOR;
-    else if(name=="SPGEMM_KK_MULTICOLOR2") return SPGEMM_KK_MULTICOLOR2;
-    else if(name=="SPGEMM_KK_MEMSPEED")    return SPGEMM_KK_MEMSPEED;
     else
       throw std::runtime_error("Invalid SPGEMMAlgorithm name");
   }
-
-
-
 
 
 

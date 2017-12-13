@@ -99,6 +99,13 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
       params.vector_size  = atoi( argv[++i] ) ;
     }
+
+    else if ( 0 == strcasecmp( argv[i] , "compression2step" ) ) {
+      params.compression2step =  true ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "shmem" ) ) {
+      params.shmemsize =  atoi( argv[++i] ) ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "memspaces" ) ) {
       int memspaces = atoi( argv[++i] ) ;
       int memspaceinfo = memspaces;
@@ -150,157 +157,109 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.coloring_output_file = argv[++i];
     }
     else if ( 0 == strcasecmp( argv[i] , "CCO" ) ) {
+        //if 0.85 set, if compression does not reduce flops by at least 15% symbolic will run on original matrix.
+    	//otherwise, it will compress the graph and run symbolic on compressed one.
       params.compression_cut_off = atof( argv[++i] ) ;
     }
     else if ( 0 == strcasecmp( argv[i] , "FLHCO" ) ) {
-      params.first_level_hash_cut_off = atof( argv[++i] ) ;
+    	//if linear probing is used as hash, what is the max occupancy percantage we allow in the hash.
+        params.first_level_hash_cut_off = atof( argv[++i] ) ;
     }
 
     else if ( 0 == strcasecmp( argv[i] , "flop" ) ) {
-      params.calculate_read_write_cost = 1;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "mcscale" ) ) {
-      params.multi_color_scale = atoi( argv[++i] ) ;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "shmem" ) ) {
-      params.shmemsize =  atoi( argv[++i] ) ;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "compression2step" ) ) {
-      params.compression2step =  true ;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "mklsort" ) ) {
-      params.mkl_sort_option = atoi( argv[++i] ) ;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "mklkeepout" ) ) {
-      params.mkl_keep_output = atoi( argv[++i] ) ;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "checkoutput" ) ) {
-      params.check_output = 1;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
-      params.a_mtx_bin_file = argv[++i];
-    }
-    else if ( 0 == strcasecmp( argv[i] , "cmtx" ) ) {
-      params.c_mtx_bin_file = argv[++i];
-    }
-    else if ( 0 == strcasecmp( argv[i] , "bmtx" ) ) {
-      params.b_mtx_bin_file = argv[++i];
-    }
-    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
-      params.use_dynamic_scheduling = 1;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "DENSEACCMAX" ) ) {
-      params.MaxColDenseAcc= atoi( argv[++i] ) ;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "LLT" ) ) {
-      params.left_lower_triangle = 1;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "RLT" ) ) {
-      params.right_lower_triangle = 1;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "LS" ) ) {
-      params.left_sort = 1;
-    }
-    else if ( 0 == strcasecmp( argv[i] , "RS" ) ) {
-      params.right_sort = 1;
+    	//print flop statistics. only for the first repeat.
+        params.calculate_read_write_cost = 1;
     }
 
+    else if ( 0 == strcasecmp( argv[i] , "mklsort" ) ) {
+    	//when mkl2 is run, the sort option to use.
+    	//7:not to sort the output
+    	//8:to sort the output
+        params.mkl_sort_option = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "mklkeepout" ) ) {
+    	//mkl output is not kept.
+        params.mkl_keep_output = atoi( argv[++i] ) ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "checkoutput" ) ) {
+    	//check correctness
+        params.check_output = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
+    	//A at C=AxB
+        params.a_mtx_bin_file = argv[++i];
+    }
+
+    else if ( 0 == strcasecmp( argv[i] , "bmtx" ) ) {
+    	//B at C=AxB.
+    	//if not provided, C = AxA will be performed.
+    	params.b_mtx_bin_file = argv[++i];
+    }
+    else if ( 0 == strcasecmp( argv[i] , "cmtx" ) ) {
+    	//if provided, C will be written to given file.
+    	//has to have ".bin", or ".crs" extension.
+    	params.c_mtx_bin_file = argv[++i];
+    }
+    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
+    	//dynamic scheduling will be used for loops.
+    	//currently it is default already.
+    	//so has to use the dynamic schedulin.
+        params.use_dynamic_scheduling = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "DENSEACCMAX" ) ) {
+    	//on CPUs and KNLs if DEFAULT algorithm or KKSPGEMM is chosen,
+    	//it uses dense accumulators for smaller matrices based on the size of column (k) in B.
+    	//Max column size is 250,000 for k to use dense accumulators.
+    	//this parameter overwrites this.
+    	//with cache mode, or CPUs with smaller thread count, where memory bandwidth is not an issue,
+    	//this cut-off can be increased to be more than 250,000
+        params.MaxColDenseAcc= atoi( argv[++i] ) ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
-      params.verbose = 1;
+    	//print the timing and information about the inner steps.
+    	//if you are timing TPL libraries, for correct timing use verbose option,
+    	//because there are pre- post processing in these TPL kernel wraps.
+        params.verbose = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
 
-      if ( 0 == strcasecmp( argv[i] , "KKMEMSORT" ) ) {
-        params.algorithm = -5;
+      if ( 0 == strcasecmp( argv[i] , "DEFAULT" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_KK;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUTEAM" ) ) {
-        params.algorithm = -6;
+      else if ( 0 == strcasecmp( argv[i] , "KKDEFAULT" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_KK;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUBIGTEAM" ) ) {
-        params.algorithm = -7;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUSPREADTEAM" ) ) {
-        params.algorithm = -8;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEMGPUBIGSPREADTEAM" ) ) {
-    	  params.algorithm = -9;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "DEFAULT" ) ) {
-    	  params.algorithm = -2;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "fancy_CUCKOO" ) ) {
-    	  params.algorithm = -4;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "tracked_CUCKOO" ) ) {
-    	  params.algorithm = -3;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "CUCKOO" ) ) {
-    	  params.algorithm = -1;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
-        params.algorithm = 1;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "CUSPARSE" ) ) {
-        params.algorithm = 2;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
-        params.algorithm = 3;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKDEBUG" ) ) {
-        params.algorithm = 4;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "MKL2" ) ) {
-        params.algorithm = 5;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEM2" ) ) {
-        params.algorithm = 6;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEM" ) ) {
-        params.algorithm = 7;
+      else if ( 0 == strcasecmp( argv[i] , "KKSPGEMM" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_KK;
       }
 
-      else if ( 0 == strcasecmp( argv[i] , "KKSPEED" ) ) {
-        params.algorithm = 8;
+      else if ( 0 == strcasecmp( argv[i] , "KKMEM" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_KK_MEMORY;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKCOLOR" ) ) {
-        params.algorithm = 9;
+      else if ( 0 == strcasecmp( argv[i] , "KKDENSE" ) ) {
+        params.algorithm =  KokkosSparse::SPGEMM_KK_DENSE;;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKMULTICOLOR" ) ) {
-        params.algorithm = 10;
+      else if ( 0 == strcasecmp( argv[i] , "KKLP" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_KK_LP;
       }
-      else if ( 0 == strcasecmp( argv[i] , "KKMULTICOLOR2" ) ) {
-        params.algorithm = 11;
+      else if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_MKL;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "CUSPARSE" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_CUSPARSE;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_CUSP;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKDEBUG" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_KK_LP;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "MKL2" ) ) {
+    	  params.algorithm = KokkosSparse::SPGEMM_MKL2PHASE;
       }
       else if ( 0 == strcasecmp( argv[i] , "VIENNA" ) ) {
-        params.algorithm = 12;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEMSPEED" ) ) {
-        params.algorithm = 13;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "MULTIMEM" ) ) {
-        params.algorithm = 14;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "OUTER" ) ) {
-        params.algorithm = 15;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLE" ) ) {
-        params.algorithm = 16;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEMEM" ) ) {
-        params.algorithm = 17;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEDENSE" ) ) {
-        params.algorithm = 18;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIA" ) ) {
-        params.algorithm = 19;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIAMEM" ) ) {
-        params.algorithm = 20;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIADENSE" ) ) {
-        params.algorithm = 21;
+    	  params.algorithm = KokkosSparse::SPGEMM_VIENNA;
       }
 
       else {

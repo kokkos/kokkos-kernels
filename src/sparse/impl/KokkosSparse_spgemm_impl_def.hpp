@@ -72,17 +72,6 @@ void KokkosSPGEMM
     {
       this->KokkosSPGEMM_numeric_speed(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }
-    else if ( spgemm_algorithm == SPGEMM_KK_COLOR ||
-              spgemm_algorithm == SPGEMM_KK_MULTICOLOR ||
-              spgemm_algorithm == SPGEMM_KK_MULTICOLOR2){
-      this->KokkosSPGEMM_numeric_color(rowmapC_, entriesC_, valuesC_, spgemm_algorithm);
-    }
-    else if (spgemm_algorithm == SPGEMM_KK_MEMORY2){
-        this->KokkosSPGEMM_numeric_hash2(rowmapC_, entriesC_, valuesC_, my_exec_space);
-    }
-    else if (spgemm_algorithm == SPGEMM_KK_OUTERMULTIMEM ){
-      this->KokkosSPGEMM_numeric_outer(rowmapC_, entriesC_, valuesC_, my_exec_space);
-    }
     else {
       this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }
@@ -98,7 +87,6 @@ void KokkosSPGEMM
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_symbolic(c_row_view_t rowmapC_){
 
-  //SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
   {
 	if (KOKKOSKERNELS_VERBOSE){
 	  std::cout << "SYMBOLIC PHASE" << std::endl;
@@ -112,16 +100,18 @@ void KokkosSPGEMM
 		auto new_row_mapB_end = Kokkos::subview (row_mapB, std::make_pair (1, b_row_cnt));
 		row_lno_persistent_work_view_t flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
 
-		maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end, flops_per_row.data());
-		KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t, MyExecSpace>(a_row_cnt, flops_per_row, overall_flops);
+		//get maximum row flops.
+		maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA,
+								new_row_mapB_begin, new_row_mapB_end, flops_per_row.data());
+
+		//calculate overal flops.
+		KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t, MyExecSpace>(
+				a_row_cnt, flops_per_row, overall_flops);
 		if (KOKKOSKERNELS_VERBOSE){
 			std::cout << "\tOriginal Max Row Flops:" << maxNumRoughZeros  << std::endl;
 			std::cout << "\tOriginal overall_flops Flops:" << overall_flops  << std::endl;
-
 			std::cout << "\ttOriginal Max Row Flop Calc Time:" << timer1.seconds()  << std::endl;
 		}
-
-
 		this->handle->get_spgemm_handle()->original_max_row_flops = maxNumRoughZeros;
 		this->handle->get_spgemm_handle()->original_overall_flops = overall_flops;
 		this->handle->get_spgemm_handle()->row_flops = flops_per_row;
@@ -131,18 +121,19 @@ void KokkosSPGEMM
     nnz_lno_t n = this->row_mapB.dimension_0() - 1;
     size_type nnz = this->entriesB.dimension_0();
     KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
+
     bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
+    //compress in single step if it is cuda execution space.
     if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-	compress_in_single_step = true;
+    	compress_in_single_step = true;
     }
-    //compressed b
+
+    //compressed B fields.
     row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
     row_lno_temp_work_view_t new_row_mapB_begins;
 
     nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
     nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-
-
 
     //First Compress B.
     Kokkos::Impl::Timer timer1;
@@ -150,14 +141,16 @@ void KokkosSPGEMM
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\tCOMPRESS MATRIX-B PHASE" << std::endl;
     }
-    //get the compressed matrix.
+
+    //call compression.
+    //it might not go through to the end if ratio is not high.
     bool compression_applied = this->compressMatrix(n, nnz, this->row_mapB, this->entriesB,
-    												new_row_mapB, set_index_entries, set_entries, compress_in_single_step);
+    												new_row_mapB, set_index_entries, set_entries,
+													compress_in_single_step);
 
 
     if (KOKKOSKERNELS_VERBOSE){
-      std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds()
-                                  << std::endl << std::endl;
+      std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds() << std::endl << std::endl;
     }
 
     timer1.reset();
@@ -166,7 +159,6 @@ void KokkosSPGEMM
     //If we did compression in single step, row_mapB[i] points the begining of row i,
     //and new_row_mapB[i] points to the end of row i.
     if (compression_applied){
-
 		nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->compressed_max_row_flops;
 
     	if (compress_in_single_step){
@@ -193,8 +185,6 @@ void KokkosSPGEMM
     	set_index_entries = nnz_lno_temp_work_view_t ("");
     	set_entries = nnz_lno_temp_work_view_t ("");
     	nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->original_max_row_flops;
-
-
     	if (KOKKOSKERNELS_VERBOSE){
     		std::cout << "SYMBOLIC PHASE -- NO COMPRESSION: maxNumRoughZeros:" << maxNumRoughZeros << std::endl;
     	}

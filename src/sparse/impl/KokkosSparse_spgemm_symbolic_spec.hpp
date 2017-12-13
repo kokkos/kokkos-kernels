@@ -202,19 +202,6 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           row_mapC,handle->get_verbose());
       break;
 
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
-    case SPGEMM_KK_CUCKOO:
-    case SPGEMM_KK:
-    case SPGEMM_KK_TRACKED_CUCKOO:
-    case SPGEMM_KK_TRACKED_CUCKOO_F:
     default:
     {
       KokkosSPGEMM
