@@ -944,7 +944,7 @@ bool KokkosSPGEMM
     }
     else {
        //USING DYNAMIC SCHEDULE HERE SLOWS DOWN SIGNIFICANTLY WITH HYPERTHREADS
-      Kokkos::parallel_for("KokkosSparse::SingleStepZipMatrix::fill::use_unordered_compress" multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+      Kokkos::parallel_for("KokkosSparse::SingleStepZipMatrix::fill::use_unordered_compress", multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
 
     }
   }

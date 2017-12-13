@@ -535,8 +535,8 @@ void
     timer1.reset();
     //this is basically kkmem without memory pools.
     //only executed for to check the effect of memory pools.
-    Kokkos::parallel_for(
-        gpu_team_policy_t( "KokkosSparse::NumericCMEM::KKSPEED::GPU",
+    Kokkos::parallel_for( "KokkosSparse::NumericCMEM::KKSPEED::GPU",
+        gpu_team_policy_t(
             a_row_cnt / team_row_chunk_size + 1 ,
             suggested_team_size ,
             suggested_vector_size),

@@ -92,7 +92,7 @@ struct Parameters{
   // 2 - hard flush with rand.
   Parameters(){
 
-    algorithm = 19;
+    algorithm = 0;
     accumulator = 0;
     repeat = 6;
     chunk_size = -1;

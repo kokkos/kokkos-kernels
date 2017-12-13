@@ -284,6 +284,8 @@ void mkl_symbolic(
 
       Kokkos::Impl::Timer timer1;
       bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+      if (verbose)
+      std::cout << "Actual DOUBLE MKL SPMM Time Without Free:" << timer1.seconds() << std::endl;
       mkl_free_buffers();
       if (verbose)
       std::cout << "Actual DOUBLE MKL SPMM Time:" << timer1.seconds() << std::endl;
@@ -588,6 +590,9 @@ void mkl_symbolic(
 
         Kokkos::Impl::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        if (verbose)
+        std::cout << "Actual DOUBLE MKL SPMM Time Without Free:" << timer1.seconds() << std::endl;
+
         mkl_free_buffers();
         if (verbose)
         std::cout << "Actual DOUBLE MKL SPMM Time:" << timer1.seconds() << std::endl;

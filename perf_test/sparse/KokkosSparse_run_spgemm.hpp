@@ -295,7 +295,7 @@ crsMat_t3 run_experiment(
   }
 
   for (int i = 0; i < repeat; ++i){
-	  kh.create_spgemm_handle(algorithm);
+	  kh.create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm(algorithm));
 
 	  kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
 	  //if mkl2 input needs to be converted to 1base.
