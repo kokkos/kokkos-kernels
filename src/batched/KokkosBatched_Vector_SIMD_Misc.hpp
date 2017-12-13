@@ -26,8 +26,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2>
     KOKKOS_INLINE_FUNCTION
     static
-    typename std::enable_if<std::is_convertible<T0,T1>::value && std::is_convertible<T0,T2>::value,
-                            void >::type
+    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ T0 &r_val,
                        const bool cond,
                        const T1 &if_true_val,

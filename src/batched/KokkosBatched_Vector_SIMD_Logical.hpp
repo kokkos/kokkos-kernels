@@ -8,12 +8,12 @@
 namespace KokkosBatched {
   namespace Experimental {
 
+#define SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l) typename std::enable_if<std::is_integral< T0 >::value && std::is_integral< T1 >::value,const Vector<SIMD<bool>,l> >::type 
+
     template<typename T, int l>
     inline
     static
-    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            std::is_integral<T>::value,
-                            const Vector<SIMD<bool>,l> >::type 
+    typename std::enable_if<std::is_integral< T >::value,const Vector<SIMD<bool>,l> >::type 
     operator!(const Vector<SIMD<T>,l> &a) {
       Vector<SIMD<bool>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -30,10 +30,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            std::is_integral<T0>::value 
-                            && std::is_integral<T1>::value,
-                            const Vector<SIMD<bool>,l> >::type 
+    SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator||(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -50,10 +47,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            std::is_integral<T0>::value 
-                            && std::is_integral<T1>::value,                            
-                            const Vector<SIMD<bool>,l> >::type 
+    SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator&&(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -70,10 +64,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            std::is_integral<T0>::value 
-                            && std::is_integral<T1>::value,                            
-                            const Vector<SIMD<bool>,l> >::type 
+    SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator||(const Vector<SIMD<T0>,l> &a, const T1 &b) {
       Vector<SIMD<bool>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -90,10 +81,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            std::is_integral<T0>::value 
-                            && std::is_integral<T1>::value,                            
-                            const Vector<SIMD<bool>,l> >::type 
+    SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)    
     operator&&(const Vector<SIMD<T0>,l> &a, const T1 &b) {
       Vector<SIMD<bool>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -110,10 +98,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            std::is_integral<T0>::value 
-                            && std::is_integral<T1>::value,                            
-                            const Vector<SIMD<bool>,l> >::type 
+    SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator||(const T0 &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -130,10 +115,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, int l>
     inline
     static
-    typename std::enable_if<//std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value 
-                            std::is_integral<T0>::value 
-                            && std::is_integral<T1>::value,                            
-                            const Vector<SIMD<bool>,l> >::type 
+    SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator&&(const T0 &a, const Vector<SIMD<T1>,l> &b) {
       Vector<SIMD<bool>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
