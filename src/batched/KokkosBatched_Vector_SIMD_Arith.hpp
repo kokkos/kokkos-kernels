@@ -35,7 +35,6 @@ namespace KokkosBatched {
     inline
     static
     SIMD_ARITH_RETURN_TYPE(double,4)
-    Vector<SIMD<double>,4>
     operator + (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
       return _mm256_add_pd(a, b);
     }
@@ -43,7 +42,6 @@ namespace KokkosBatched {
     inline
     static 
     SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
-    Vector<SIMD<Kokkos::complex<double> >,2>
     operator + (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
       return _mm256_add_pd(a, b);
     }

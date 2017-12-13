@@ -128,6 +128,7 @@ namespace KokkosBatched {
         r_val[i] = a && b[i];
       return r_val;
     }
+#undef SIMD_LOGICAL_RETURN_BOOL_TYPE
   }
 }
 
