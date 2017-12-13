@@ -8,16 +8,16 @@
 namespace KokkosBatched {
   namespace Experimental {
 
-    //#define SIMD_ARITH_RETURN_TYPE(A) typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,A >::type
-#define SIMD_ARITH_RETURN_TYPE(T,l) Vector< SIMD< T >, l >
-#define SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l) Vector< SIMD < T >, l> &
+    //#define KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(A) typename std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,A >::type
+#define KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l) Vector< SIMD< T >, l >
+#define KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l) Vector< SIMD < T >, l> &
 
     /// simd, simd
 
     template<typename T, int l>
     inline 
     static
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator + (const Vector<SIMD<T>,l> &a,  const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -34,14 +34,14 @@ namespace KokkosBatched {
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(double,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
     operator + (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
       return _mm256_add_pd(a, b);
     }
 
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator + (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
       return _mm256_add_pd(a, b);
     }
@@ -50,14 +50,14 @@ namespace KokkosBatched {
 #if defined(__AVX512F__)
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(double,8)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,8)
     operator + (const Vector<SIMD<double>,8> &a, const Vector<SIMD<double>,8> &b) {
       return _mm512_add_pd(a, b);
     }
 
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator + (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_add_pd(a, b);
     }
@@ -66,7 +66,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator += (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a + b;
       return a;
@@ -77,7 +77,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator + (const Vector<SIMD<T>,l> &a, const T b) {
       return a + Vector<SIMD<T>,l>(b);
     }
@@ -85,7 +85,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator + (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) + b;
     }
@@ -93,7 +93,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator += (Vector<SIMD<T>,l> &a, const T b) {
       a = a + b;
       return a;
@@ -102,7 +102,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator ++ (Vector<SIMD<T>,l> &a, int) {
       Vector<SIMD<T>,l> a0 = a;
       a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
@@ -112,7 +112,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator ++ (Vector<SIMD<T>,l> &a) {
       a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
@@ -123,7 +123,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator + (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a + Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -131,7 +131,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator + (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) + b;
     }
@@ -139,7 +139,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator += (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a + b;
       return a;
@@ -150,7 +150,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator + (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a + Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -158,7 +158,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator + (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) + b;
     }
@@ -166,7 +166,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator += (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a + b;
       return a;
@@ -179,7 +179,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -196,14 +196,14 @@ namespace KokkosBatched {
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(double,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
     operator - (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
       return _mm256_sub_pd(a, b);
     }
 
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator - (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
       return _mm256_sub_pd(a, b);
     }
@@ -212,14 +212,14 @@ namespace KokkosBatched {
 #if defined(__AVX512F__)
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(double,8)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,8)
     operator - (const Vector<SIMD<double>,8> &a, const Vector<SIMD<double>,8> &b) {
       return _mm512_sub_pd(a, b);
     }
 
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator - (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_sub_pd(a, b);
     }
@@ -228,7 +228,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -244,7 +244,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator -= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a - b;
       return a;
@@ -255,7 +255,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a, const T b) {
       return a - Vector<SIMD<T>,l>(b);
     }
@@ -263,7 +263,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) - b;
     }
@@ -271,7 +271,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator -= (Vector<SIMD<T>,l> &a, const T b) {
       a = a - b;
       return a;
@@ -280,7 +280,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator -- (Vector<SIMD<T>,l> &a, int) {
       Vector<SIMD<T>,l> a0 = a;
       a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
@@ -290,7 +290,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator -- (Vector<SIMD<T>,l> &a) {
       a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
       return a;
@@ -301,7 +301,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a - Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -309,7 +309,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator - (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) - b;
     }
@@ -317,7 +317,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator -= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a - b;
       return a;
@@ -328,7 +328,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a - Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -336,7 +336,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator - (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) - b;
     }
@@ -344,7 +344,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator -= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a - b;
       return a;
@@ -357,7 +357,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator * (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -374,7 +374,7 @@ namespace KokkosBatched {
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(double,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
     operator * (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
       return _mm256_mul_pd(a, b);
     }
@@ -400,14 +400,14 @@ namespace KokkosBatched {
 #if defined(__AVX512F__)
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(double,8)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,8)
     operator * (const Vector<SIMD<double>,8> &a, const Vector<SIMD<double>,8> &b) {
       return _mm512_mul_pd(a, b);
     }
 
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator * (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       const __m512d
         as = _mm512_permute_pd(a, 0x55),
@@ -431,7 +431,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator *= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a * b;
       return a;
@@ -443,7 +443,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator * (const Vector<SIMD<T>,l> &a, const T b) {
       return a * Vector<SIMD<T>,l>(b);
     }
@@ -451,7 +451,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator * (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) * b;
     }
@@ -459,7 +459,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator *= (Vector<SIMD<T>,l> &a, const T b) {
       a = a * b;
       return a;
@@ -470,7 +470,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -478,7 +478,7 @@ namespace KokkosBatched {
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator * (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const double b) {
       return _mm256_mul_pd(a, _mm256_set1_pd(b));
     }
@@ -486,7 +486,7 @@ namespace KokkosBatched {
 
 #if defined(__AVX512F__)
     inline
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator * (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const double b) {
       return _mm512_mul_pd(a, _mm512_set1_pd(b));
     }
@@ -495,7 +495,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator * (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) * b;
     }
@@ -503,7 +503,7 @@ namespace KokkosBatched {
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator * (const double a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
       return _mm256_mul_pd(_mm256_set1_pd(a), b);
     }
@@ -511,7 +511,7 @@ namespace KokkosBatched {
 
 #if defined(__AVX512F__)
     inline
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator * (const double a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_mul_pd(_mm512_set1_pd(a), b);
     }
@@ -520,7 +520,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator *= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a * b;
       return a;
@@ -531,7 +531,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -539,7 +539,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator * (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) * b;
     }
@@ -547,7 +547,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator *= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a * b;
       return a;
@@ -560,7 +560,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator / (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -577,7 +577,7 @@ namespace KokkosBatched {
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(double,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
     operator / (const Vector<SIMD<double>,4> & a, const Vector<SIMD<double>,4> & b) {
       return _mm256_div_pd(a, b);
     }
@@ -586,14 +586,14 @@ namespace KokkosBatched {
 #if defined(__AVX512F__)
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(double,8)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,8)
     operator / (const Vector<AVX<double>,8> &a, const Vector<AVX<double>,8> &b) {
       return _mm512_div_pd(a, b);
     }
 
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator / (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       const __m512d
         as = _mm512_permute_pd(a, 0x55),
@@ -622,7 +622,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator /= (Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
       a = a / b;
       return a;
@@ -633,7 +633,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator / (const Vector<SIMD<T>,l> &a, const T b) {
       return a / Vector<SIMD<T>,l>(b);
     }
@@ -641,7 +641,7 @@ namespace KokkosBatched {
 #if defined(__AVX512F__)
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator / (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const double b) {
       return _mm512_div_pd(a, _mm512_set1_pd(b));
     }
@@ -650,7 +650,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator / (const T a, const Vector<SIMD<T>,l> &b) {
       return Vector<SIMD<T>,l>(a) / b;
     }
@@ -658,7 +658,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T,l)
     operator /= (Vector<SIMD<T>,l> &a, const T b) {
       a = a / b;
       return a;
@@ -669,7 +669,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator / (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       return a / Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -677,7 +677,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator / (const T a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) / b;
     }
@@ -685,7 +685,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator /= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const T b) {
       a = a / b;
       return a;
@@ -696,7 +696,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static 
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator / (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       return a / Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
@@ -704,7 +704,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
     operator / (const Kokkos::complex<T> a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) / b;
     }
@@ -712,13 +712,13 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(Kokkos::complex<T>,l)
     operator /= (Vector<SIMD<Kokkos::complex<T> >,l> &a, const Kokkos::complex<T> b) {
       a = a / b;
       return a;
     }
-#undef SIMD_ARITH_RETURN_TYPE
-#undef SIMD_ARITH_RETURN_REFERENCE_TYPE
+#undef KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE
+#undef KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE
   }
 }
 

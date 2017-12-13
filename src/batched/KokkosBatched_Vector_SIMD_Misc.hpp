@@ -8,8 +8,8 @@
 namespace KokkosBatched {
   namespace Experimental {
 
-#define SIMD_MISC_RETURN_TYPE(T,l) Vector< SIMD< T >, l >
-#define SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l) typename std::enable_if<std::is_convertible< T0 , T1 >::value && std::is_convertible< T0 , T2 >::value, void >::type
+#define KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l) Vector< SIMD< T >, l >
+#define KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l) typename std::enable_if<std::is_convertible< T0 , T1 >::value && std::is_convertible< T0 , T2 >::value, void >::type
 
     // scalar, scalar
 
@@ -26,7 +26,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2>
     KOKKOS_INLINE_FUNCTION
     static
-    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
+    KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ T0 &r_val,
                        const bool cond,
                        const T1 &if_true_val,
@@ -39,7 +39,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_MISC_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T>,l> &if_true_val,
                        const T &if_false_val) {
@@ -52,7 +52,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2, int l>
     inline
     static
-    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
+    KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
                        const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T1>,l> &if_true_val,
@@ -66,7 +66,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_MISC_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
                        const T &if_true_val,
                        const Vector<SIMD<T>,l> &if_false_val) {
@@ -79,7 +79,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2, int l>
     inline
     static
-    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
+    KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
                        const Vector<SIMD<bool>,l> &cond,
                        const T1 &if_true_val,
@@ -93,7 +93,7 @@ namespace KokkosBatched {
     template<typename T, int l>
     inline
     static
-    SIMD_MISC_RETURN_TYPE(T,l)
+    KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T>,l> &if_true_val,
                        const Vector<SIMD<T>,l> &if_false_val) {
@@ -106,7 +106,7 @@ namespace KokkosBatched {
     template<typename T0, typename T1, typename T2, int l>
     inline
     static
-    SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
+    KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
                        const Vector<SIMD<bool>,l> &cond,
                        const Vector<SIMD<T1>,l> &if_true_val,
@@ -197,8 +197,8 @@ namespace KokkosBatched {
         }, T(1));
     } 
 
-#undef SIMD_MISC_RETURN_TYPE
-#undef SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE
+#undef KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE
+#undef KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE
     
   }
 }
