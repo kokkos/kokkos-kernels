@@ -59,15 +59,13 @@ void print_options(){
 
   std::cerr << "\t[Required] BACKEND: 'threads[numThreads]' | 'openmp [numThreads]' | 'cuda'" << std::endl;
 
-  std::cerr << "\t[Required] INPUT MATRICES: 'amtx [left_hand_side.mtx]'  'bmtx [righ_hand_side.mtx]'" << std::endl;
+  std::cerr << "\t[Required] INPUT MATRIX: 'amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
 
-  std::cerr << "\t[Required] 'algorithm [KKMEM|OUTER|KKSPEED|KKCOLOR|KKMULTICOLOR|KKMULTICOLOR2|MKL|CUSPARSE|CUSP|]'" << std::endl;
-  std::cerr << "\t[Optional] OUTPUT MATRICES: 'cmtx [output_matrix.mtx]'" << std::endl;
-
-  std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, then compile SPGEMM executable with -DKOKKOSKERNELS_MULTILEVELMEM." << std::endl;
-  std::cerr << "\t'CRWC': it will perform hypergraph analysis for memory accesses" << std::endl;
-  std::cerr << "\t'CIF path_to_coloring_file': If coloring variants are used, colors will be read from this file." << std::endl;
-  std::cerr << "\t'COF path_to_coloring_file': If coloring variants are used, first graph coloring will be performed, then writtent to this file." << std::endl;
+  std::cerr << "\t[Optional] 'algorithm [DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE|MKL|CUSPARSE|CUSP|VIENNA|MKL2]' --> to choose algorithm. KKMEM is outdated, use KKSPGEMM instead." << std::endl;
+  std::cerr << "\t[Optional] bmtx [righ_hand_side.mtx]' for C= AxB" << std::endl;
+  std::cerr << "\t[Optional] OUTPUT MATRICES: 'cmtx [output_matrix.mtx]' --> to write output C=AxB"  << std::endl;
+  std::cerr << "\t[Optional] DENSEACCMAX: on CPUs default algorithm may choose to use dense accumulators. This parameter defaults to 250k, which is max k value to choose dense accumulators. This can be increased with more memory bandwidth." << std::endl;
+  std::cerr << "\tThe memory space used for each matrix: 'memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, check generate_makefile.sh" << std::endl;
   std::cerr << "\tLoop scheduling: 'dynamic': Use this for dynamic scheduling of the loops. (Better performance most of the time)" << std::endl;
   std::cerr << "\tVerbose Output: 'verbose'" << std::endl;
 }
