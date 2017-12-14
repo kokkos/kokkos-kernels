@@ -1702,6 +1702,7 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
+      std::cout << ">>> WCMCLEN functorGreedyColor_EF <<<" << std::endl;
       nnz_lno_t i = 0;
       for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
