@@ -68,7 +68,7 @@ void KokkosSPGEMM
       std::cout << "Numeric PHASE" << std::endl;
     }
 
-    if (spgemm_algorithm == SPGEMM_KK_SPEED)
+    if (spgemm_algorithm == SPGEMM_KK_SPEED || spgemm_algorithm == SPGEMM_KK_DENSE)
     {
       this->KokkosSPGEMM_numeric_speed(rowmapC_, entriesC_, valuesC_, my_exec_space);
     }

@@ -166,7 +166,7 @@ void mkl2phase_symbolic(
         mynullptr, mynulladj, c_xadj,
         &nzmax, &info);
     if (verbose)
-      std::cout << "Sort:" << sort << "Actual MKL2 Symbolic Time:" << timer1.seconds() << std::endl;
+      std::cout << "Sort:" << sort << " Actual MKL2 Symbolic Time:" << timer1.seconds() << std::endl;
 
     if (handle->mkl_convert_to_1base){
       KokkosKernels::Impl::kk_a_times_x_plus_b< cin_row_index_view_type, int_persistent_work_view_t,  int, int, MyExecSpace>(m + 1, row_mapC, handle->persistent_c_xadj,  1, -1);

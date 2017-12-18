@@ -236,7 +236,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     	  params.algorithm = KokkosSparse::SPGEMM_KK_MEMORY;
       }
       else if ( 0 == strcasecmp( argv[i] , "KKDENSE" ) ) {
-        params.algorithm =  KokkosSparse::SPGEMM_KK_DENSE;;
+        params.algorithm =  KokkosSparse::SPGEMM_KK_DENSE;
       }
       else if ( 0 == strcasecmp( argv[i] , "KKLP" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_KK_LP;
@@ -296,9 +296,7 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_HAVE_OPENMP )
 
   if (params.use_openmp) {
-	Kokkos::Impl::Timer timer1;
     Kokkos::OpenMP::initialize( params.use_openmp );
-    std::cout << "\t\tInit time:" << timer1.seconds() << std::endl;
 
 	  Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
@@ -312,9 +310,7 @@ int main (int argc, char ** argv){
         params
         );
 #endif
-    timer1.reset();
     Kokkos::OpenMP::finalize();
-    std::cout << "\t\tFinalize Time:" << timer1.seconds() << std::endl;
 
   }
 
@@ -346,8 +342,6 @@ int main (int argc, char ** argv){
     Kokkos::HostSpace::execution_space::finalize();
   }
 #else 
-  std::cout << "dont have cuda" << std::endl;
-
 #endif
 
 

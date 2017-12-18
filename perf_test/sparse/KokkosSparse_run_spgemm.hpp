@@ -345,7 +345,7 @@ crsMat_t3 run_experiment(
 
 	  Kokkos::Impl::Timer timer3;
 	  size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-	  if (verbose)  std::cout << "c_nnz_size:" << c_nnz_size << std::endl;
+	  if (verbose)  std::cout << "C SIZE:" << c_nnz_size << std::endl;
 	  if (c_nnz_size){
 		  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
 		  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);

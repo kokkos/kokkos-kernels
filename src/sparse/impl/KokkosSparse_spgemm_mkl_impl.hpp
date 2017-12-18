@@ -109,8 +109,6 @@ void mkl_symbolic(
     return;
   }
 */
-  if (verbose)
-  	std::cout << "runing mkl symbolic" << std::endl;
   if (Kokkos::Impl::is_same<idx, int>::value){
 
     int *a_xadj = NULL;
@@ -417,8 +415,6 @@ void mkl_symbolic(
       return;
     }
 */
-    if (verbose)
-    	std::cout << "runing mkl" << std::endl;
     if (Kokkos::Impl::is_same<idx, int>::value){
 
       int *a_xadj = NULL;
