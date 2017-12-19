@@ -1,3 +1,6 @@
+Kokkos C++ Performance Portability Programming EcoSystem: Math Kernels -
+Provides BLAS, Sparse BLAS and Graph Kernels 
+
 KokkosKernels implements local computational kernels for linear
 algebra and graph operations, using the Kokkos shared-memory parallel
 programming model.  "Local" means not using MPI, or running within a
