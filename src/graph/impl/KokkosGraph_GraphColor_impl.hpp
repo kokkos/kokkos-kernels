@@ -865,6 +865,9 @@ public:
    * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
    */
   virtual void color_graph(color_view_type colors,int &num_loops){
+
+    std::cout << ">>> WCMCLEN GraphColor_VB::color_graph (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
+
     if (this->_ticToc) {
       std::cout
           << "\tVB params:" << std::endl
@@ -1118,11 +1121,13 @@ private:
    */
   void  colorGreedyEF(
       const_lno_row_view_t xadj_,
-	  nnz_lno_temp_work_view_t adj_,
+      nnz_lno_temp_work_view_t adj_,
       color_view_type vertex_colors_,
       nnz_lno_temp_work_view_t vertex_color_set,
       nnz_lno_temp_work_view_t current_vertexList_,
       nnz_lno_t current_vertexListLength_) {
+
+    std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
 
     nnz_lno_t chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
 
@@ -1154,7 +1159,7 @@ private:
     //VB algorithm
     else if (this->_use_color_set == 0)
     {
-
+      std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF --- (call the functor)" << std::endl;
       functorGreedyColor_EF  gc(
           this->nv,
           xadj_, adj_,
@@ -1271,7 +1276,7 @@ private:
   void  resolveConflicts(
       nnz_lno_t _nv,
       const_lno_row_view_t xadj_,
-	  adj_view_t adj_,
+      adj_view_t adj_,
       color_view_type vertex_colors_,
       nnz_lno_temp_work_view_t current_vertexList_,
       size_type current_vertexListLength_) {
@@ -1526,15 +1531,15 @@ public:
     functorGreedyColor_IMP_EF(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-		nnz_lno_temp_work_view_t adj_,
+        nnz_lno_temp_work_view_t adj_,
         color_view_type colors, nnz_lno_temp_work_view_t color_set,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
         nnz_lno_t chunkSize): nv(nv_),
-          _xadj(xadj_), _adj(adj_),
-          _colors(colors), _color_set(color_set),
-          _vertexList(vertexList), _vertexListLength(vertexListLength),
-          _chunkSize(chunkSize){}
+        _xadj(xadj_), _adj(adj_),
+        _colors(colors), _color_set(color_set),
+        _vertexList(vertexList), _vertexListLength(vertexListLength),
+        _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t &ii) const {
@@ -1702,7 +1707,7 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
-      std::cout << ">>> WCMCLEN functorGreedyColor_EF <<<" << std::endl;
+      std::cout << ">>> WCMCLEN functorGreedyColor_EF (KokkosGraph_GraphColor_impl.hpp) <<<" << std::endl;
       nnz_lno_t i = 0;
       for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
@@ -1809,6 +1814,8 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
+      std::cout << ">>> WCMCLEN functorGreedyColor (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
+
       nnz_lno_t i = 0;
       for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
@@ -2444,6 +2451,8 @@ public:
    */
   virtual void color_graph(color_view_type kok_colors, int &num_loops ){
 
+
+    std::cout << ">>> WCMCLEN GraphColor_EB::color_graph()" << std::endl;
 
     //get EB parameters
     color_t numInitialColors = this->cp->get_eb_num_initial_colors();

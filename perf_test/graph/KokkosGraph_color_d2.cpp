@@ -225,6 +225,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
       kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
       break;
     }
+
+    std::cout << ">>> WCMCLEN run_experiment (KokkosGraph_color_d2.hpp)" << std::endl;
+
     graph_color_d2(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
     std::cout << "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
@@ -234,6 +237,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
   }
 }
+
+
 
 template <typename size_type, typename lno_t, typename exec_space, typename hbm_mem_space, typename sbm_mem_space>
 void run_multi_mem_experiment(Parameters params)

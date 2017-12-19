@@ -60,7 +60,8 @@ void graph_color_d2(KernelHandle *handle,
                     typename KernelHandle::nnz_lno_t num_cols,
                     lno_row_view_t_ row_map,
                     lno_nnz_view_t_ row_entries,
-                    lno_col_view_t_ col_map, //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
+                    // If graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
+                    lno_col_view_t_ col_map, 
                     lno_colnnz_view_t_ col_entries)
 {
 
@@ -82,7 +83,8 @@ void graph_color_d2(KernelHandle *handle,
     case COLORING_SPGEMM:                     // WCMCLEN: Remove SPGEMM coloring references for D2 Graph Coloring?
     case COLORING_D2_MATRIX_SQUARED:
     {
-      // WCMCLEN: distance-2 coloring inserts here (Brian's Algorithm)
+      std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_D2_GraphColor.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
+
       Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
       gc.color_graph_d2_matrix_squared();
@@ -92,7 +94,7 @@ void graph_color_d2(KernelHandle *handle,
     case COLORING_D2_WCMCLEN:
     {
       // WCMCLEN - ADD new coloring algorithm here.
-      std::cout << ">>> Implement Distance 2 Coloring (WCMCLEN) <<<" << std::endl;
+      std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_D2_GraphColor.hpp) [ COLORNG_D2_WCMCLEN ] <<<" << std::endl;
 
       Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
@@ -100,13 +102,7 @@ void graph_color_d2(KernelHandle *handle,
       break;
     }
 
-    case COLORING_SERIAL:
-    case COLORING_SERIAL2:
-    case COLORING_VB:
-    case COLORING_VBBIT:
-    case COLORING_VBCS:
-    case COLORING_EB:
-    case COLORING_DEFAULT:
+    default:
     {
       break;
     }

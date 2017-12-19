@@ -59,7 +59,7 @@ namespace KokkosGraph {
 
 namespace Impl {
 
-// #define VB_COLORING_FORBIDDEN_SIZE 64
+#define VB_COLORING_FORBIDDEN_SIZE 64
 // #define VBBIT_COLORING_FORBIDDEN_SIZE 64
 
 /*! \brief Base class for graph coloring purposes.
@@ -130,7 +130,7 @@ public:
       const_clno_nnz_view_t t_entries,
       HandleType *coloring_handle):
         nr (nr_), nc (nc_), ne(ne_), xadj(row_map), adj(entries), 
-        t_xadj(t_row_map), t_adj(t_entries), cp(coloring_handle){}
+        t_xadj(t_row_map), t_adj(t_entries), cp(coloring_handle) {}
 
   /** \brief GraphColor destructor.
    */
@@ -145,23 +145,18 @@ public:
    *   algorithm to assume that the color is fixed for the corresponding vertex.
    * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
    */
-  virtual void color_graph_d2_matrix_squared() {
-
+  virtual void color_graph_d2_matrix_squared() 
+  {
     // WCMCLEN: Brian's Code
+    std::cout << ">>> WCMCLEN color_graph_d2_matrix_squared (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
 
     std::string algName = "SPGEMM_KK_MEMSPEED";
     cp->create_spgemm_handle(KokkosSparse::StringToSPGEMMAlgorithm(algName));
 
-    // typedef typename rowptrs_view::const_type const_rowptrs_view;
-    // typedef typename colinds_view::const_type const_colinds_view;
     size_type_temp_work_view_t cRowptrs("cRowptrs", nr+1);
-    // typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
-    // typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
-    // typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
-
 
     // Call symbolic multiplication of graph with itself (no transposes, and A and B are the same)
-    KokkosSparse::Experimental::spgemm_symbolic(cp, nr, nc, nr, xadj, adj, false, t_xadj, t_adj, false, cRowptrs); 
+    KokkosSparse::Experimental::spgemm_symbolic(cp, nr, nc, nr, xadj, adj, false, t_xadj, t_adj, false, cRowptrs);
     
     // Get num nz in C
     auto Cnnz = cp->get_spgemm_handle()->get_c_nnz();
@@ -183,9 +178,6 @@ public:
 
     // Now run distance-1 graph coloring on C
     // Use LocalOrdinal for storing colors
-    
-    // cp->create_graph_coloring_handle();
-
     KokkosGraph::Experimental::graph_color(cp, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
 
     // extract the colors
@@ -200,10 +192,13 @@ public:
   // WCMCLEN COLORING_D2_WCMCLEN implement here!
   virtual void color_graph_d2_wcmclen()
   {
-      std::cout << ">>> COLORING_D2_WCMCLEN <<<" << std::endl;
-      std::ostringstream os;
-      os << "GraphColorD2::color_graph_d2_wcmclen() not implemented -- [STUB CODE]";
-      Kokkos::Impl::throw_runtime_exception(os.str());
+    std::cout << ">>> WCMCLEN color_graph_d2_wcmclen (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
+
+    KokkosGraph::Experimental::graph_color(cp, nr, nc, xadg, adj);    // This compiles, but never gets called???
+    
+    std::ostringstream os;
+    os << "GraphColorD2::color_graph_d2_wcmclen() not implemented -- [STUB CODE -X-]";
+    Kokkos::Impl::throw_runtime_exception(os.str());
   }
 
 
@@ -213,5 +208,105 @@ public:
 } // end Impl namespace 
 } // end KokkosGraph namespace
 
-#endif  // _KOKKOSCOLORINGD2IMP_HPP
 
+#if 0
+  /**
+   * Functor for VB algorithm speculative coloring without edge filtering.
+   */
+  struct functorGreedyColor_WCMCLEN {
+    nnz_lno_t nv;
+    const_lno_row_view_t _idx;
+    const_lno_nnz_view_t _adj;
+    color_view_type _colors;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_t _vertexListLength;
+    nnz_lno_t _chunkSize;
+
+    functorGreedyColor_WCMCLEN(
+        nnz_lno_t nv_,
+        const_lno_row_view_t xadj_,
+        const_lno_nnz_view_t adj_,
+        color_view_type colors,
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_t vertexListLength,
+        nnz_lno_t chunkSize
+    ) : nv (nv_),
+      _idx(xadj_), _adj(adj_), _colors(colors),
+      _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const nnz_lno_t ii) const {
+      // Color vertex i with smallest available color.
+      //
+      // Each thread colors a chunk of vertices to prevent all
+      // vertices getting the same color.
+      //
+      // This version uses a bool array of size FORBIDDEN_SIZE.
+      // TODO: With chunks, the forbidden array should be char/int
+      //       and reused for all vertices in the chunk.
+      //
+      nnz_lno_t i = 0;
+      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
+        if (ii*_chunkSize +ichunk < _vertexListLength)
+          i = _vertexList(ii*_chunkSize +ichunk);
+        else
+          continue;
+
+        if (_colors(i) > 0) continue; // Already colored this vertex
+
+        bool foundColor = false; // Have we found a valid color?
+
+        // Use forbidden array to find available color.
+        // This array should be small enough to fit in fast memory (use Kokkos memoryspace?)
+        bool forbidden[VB_COLORING_FORBIDDEN_SIZE]; // Forbidden colors
+
+        // Do multiple passes if array is too small.
+        color_t degree = _idx(i+1)-_idx(i); // My degree
+        color_t offset = 0;
+        for (; (offset <= degree + VB_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_COLORING_FORBIDDEN_SIZE){
+          // initialize
+          for (int j=0; j< VB_COLORING_FORBIDDEN_SIZE; j++){
+            forbidden[j] = false;
+          }
+          if (offset == 0) forbidden[0] = true; // by convention, start at 1
+
+          // Check nbors, fill forbidden array.
+          for (size_type j=_idx(i); j<_idx(i+1); j++){
+            if (_adj(j) == i|| _adj(j)  >= nv) continue; // Skip self-loops
+            color_t c= _colors(_adj(j));
+            // Removed option to leave potentially conflicted vertices uncolored.
+            //if (c== -1){ // Nbor is being colored at same time
+            //  _colors[i] = 0; // Neutral color, skip and recolor later
+            //  foundColor = true;
+            //  return;
+            //}
+            if ((c>= offset) && (c-offset < VB_COLORING_FORBIDDEN_SIZE))
+              forbidden[c-offset] = true;
+          }
+
+          // color vertex i with smallest available color (FirstFit)
+          // TODO: Add options for other color choices (Random, LeastUsed)
+          for (int c=0; c< VB_COLORING_FORBIDDEN_SIZE; c++){
+            if (!forbidden[c]){
+              _colors(i) = offset+c;
+              //_colors[i] += (i&1); // RandX strategy to reduce conflicts
+              foundColor = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+  };
+#endif
+
+
+
+
+
+
+
+
+
+
+#endif  // _KOKKOSCOLORINGD2IMP_HPP

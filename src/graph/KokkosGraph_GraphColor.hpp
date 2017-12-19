@@ -43,9 +43,12 @@
 #ifndef _KOKKOS_GRAPH_COLOR_HPP
 #define _KOKKOS_GRAPH_COLOR_HPP
 
+#include <sstream>
+
 #include "KokkosGraph_GraphColor_impl.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
+
 namespace KokkosGraph{
 
 namespace Experimental{
@@ -100,14 +103,24 @@ void graph_color_symbolic(
     gc = new EBGraphColoring(num_rows, entries.dimension_0(),row_map, entries, gch);
     break;
  
-  case COLORING_D2_MATRIX_SQUARED:
   case COLORING_SPGEMM:
+  case COLORING_D2_MATRIX_SQUARED:
+    std::cout << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_GraphColor.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
+
     if (handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA) {
         typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoringSPGEMM;
         gc = new EBGraphColoringSPGEMM(num_rows, entries.dimension_0(),row_map, entries, gch);
     } else {
         typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoringSPGEMM;
         gc = new VBGraphColoringSPGEMM(num_rows, entries.dimension_0(), row_map, entries, gch);
+    }
+    break;
+
+  case COLORING_D2_WCMCLEN:
+    {
+      std::ostringstream os;
+      os << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_GraphColor.hpp) COLORING_D2_WCMCLEN not implemented";
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
     break;
 
@@ -129,6 +142,8 @@ void graph_color_symbolic(
   gch->set_vertex_colors(colors_out);
 }
 
+
+
 template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
 void graph_color(
     KernelHandle *handle,
@@ -136,9 +151,12 @@ void graph_color(
     typename KernelHandle::nnz_lno_t num_cols,
     lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries,
-    bool is_symmetric = true){
+    bool is_symmetric = true)
+{
+  std::cout << ">>> WCMCLEN graph_color (KokkosGraph_GraphColor.hpp)" << std::endl;
   graph_color_symbolic(handle, num_rows, num_cols, row_map, entries, is_symmetric);
 }
+
 
 
 // initial distance 2 graph coloring -- serial only (work in progress) - wcmclen
