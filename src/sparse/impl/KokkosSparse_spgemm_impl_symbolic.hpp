@@ -1493,6 +1493,7 @@ void KokkosSPGEMM
     c_row_view_t rowmapC,
     nnz_lno_t maxNumRoughNonzeros
   ){
+
 	SPGEMMAlgorithm current_spgemm_algorithm = this->spgemm_algorithm;
 	KokkosKernels::Impl::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
 	if (my_exec_space == KokkosKernels::Impl::Exec_CUDA)
@@ -1557,7 +1558,7 @@ void KokkosSPGEMM
 			}
 		}
 		else {
-			  nnz_lno_t max_column_cut_off = this->handle->get_spgemm_handle()->MaxColDenseAcc;
+			  nnz_lno_t max_column_cut_off = nnz_lno_t (this->handle->get_spgemm_handle()->MaxColDenseAcc);
 
 			  nnz_lno_t col_size = this->b_col_cnt;
 			  if (col_size < max_column_cut_off){
@@ -1875,7 +1876,7 @@ void KokkosSPGEMM
 		  }
 	  }
 	  else {
-		  nnz_lno_t max_column_cut_off = this->handle->get_spgemm_handle()->MaxColDenseAcc;
+		  nnz_lno_t max_column_cut_off = nnz_lno_t(this->handle->get_spgemm_handle()->MaxColDenseAcc);
 		  nnz_lno_t col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
 		  if (col_size < max_column_cut_off){
 			  current_spgemm_algorithm = SPGEMM_KK_DENSE;

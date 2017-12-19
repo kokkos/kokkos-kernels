@@ -260,7 +260,6 @@ private:
   row_lno_persistent_work_view_t row_flops;
 
   size_t compressed_max_row_flops, compressed_overall_flops;
-  size_t MaxColDenseAcc;
 
   void set_first_level_hash_cut_off(double first_level_hash_cut_off_){
     this->first_level_hash_cut_off = first_level_hash_cut_off_;
@@ -291,6 +290,7 @@ private:
   }
 
   typename Kokkos::View<int *, HandlePersistentMemorySpace> persistent_c_xadj, persistent_a_xadj, persistent_b_xadj, persistent_a_adj, persistent_b_adj;
+  size_t MaxColDenseAcc;
   bool mkl_keep_output;
   bool mkl_convert_to_1base;
   bool is_compression_single_step;
@@ -468,9 +468,9 @@ private:
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
 	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
-    persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(),
+    persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(), MaxColDenseAcc(250001),
     mkl_keep_output(true),
-    mkl_convert_to_1base(true), is_compression_single_step(false), MaxColDenseAcc(250001)
+    mkl_convert_to_1base(true), is_compression_single_step(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif

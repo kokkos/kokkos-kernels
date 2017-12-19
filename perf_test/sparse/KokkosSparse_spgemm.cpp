@@ -319,11 +319,8 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) {
     Kokkos::HostSpace::execution_space::initialize();
-    std::cout << "before initialzie" << std::endl;
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( params.use_cuda - 1) );
-    std::cout << "after initialize" << std::endl; 
     Kokkos::Cuda::print_configuration(std::cout);
-    std::cout << "device:" << 1 << std::endl;
 
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm

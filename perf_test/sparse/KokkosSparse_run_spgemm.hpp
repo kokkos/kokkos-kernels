@@ -231,9 +231,6 @@ crsMat_t3 run_experiment(
     row_mapC_ref = typename lno_view_t::HostMirror ("non_const_lnow_row", m + 1);
     entriesC_ref = typename lno_nnz_view_t::HostMirror ("");
     valuesC_ref = typename scalar_view_t::HostMirror ("");
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle
-        <size_type,lno_t, scalar_t,
-        Kokkos::HostSpace, Kokkos::HostSpace,Kokkos::HostSpace > SeqKernelHandle;
     KernelHandle sequential_kh;
     sequential_kh.set_team_work_size(chunk_size);
     sequential_kh.set_shmem_size(shmemsize);
