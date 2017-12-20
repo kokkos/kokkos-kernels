@@ -605,7 +605,7 @@ private:
   int get_min_elements_for_conflictlist() const{ return this->min_elements_for_conflictlist;}
   bool get_serial_conflict_resolution() const{return this->serial_conflict_resolution;}
   bool get_tictoc() const{return this->tictoc;}
-  bool get_vb_edge_filtering() const{return this-vb_edge_filtering;}
+  bool get_vb_edge_filtering() const{return this->vb_edge_filtering;}
   int get_vb_chunk_size() const{return this->vb_chunk_size;}
   int get_max_number_of_iterations() const{return this->max_number_of_iterations;}
   int get_eb_num_initial_colors() const{return this->eb_num_initial_colors;}
@@ -622,7 +622,7 @@ private:
   void set_min_elements_for_conflictlist(const int &min_elements){ this->min_elements_for_conflictlist = min_elements;}
   void set_serial_conflict_resolution(const bool &use_serial_conflist_resolution){this->serial_conflict_resolution = use_serial_conflist_resolution;}
   void set_tictoc(const bool use_tictoc){this->tictoc = use_tictoc;}
-  void set_vb_edge_filtering(const bool  &use_vb_edge_filtering){this-vb_edge_filtering = use_vb_edge_filtering;}
+  void set_vb_edge_filtering(const bool  &use_vb_edge_filtering){this->vb_edge_filtering = use_vb_edge_filtering;}
   void set_vb_chunk_size(const int &chunksize){this->vb_chunk_size = chunksize;}
   void set_max_number_of_iterations(const int &max_phases){this->max_number_of_iterations = max_phases;}
   void set_eb_num_initial_colors(const int &num_initial_colors){this->eb_num_initial_colors = num_initial_colors;}
