@@ -59,24 +59,24 @@ int main (int argc, char* argv[]){
   char *in_mtx = NULL, *out_bin = NULL;
   //bool create_incidence = false;
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "symmetrize" ) ) {
+    if ( 0 == strcasecmp( argv[i] , "--symmetrize" ) ) {
       symmetrize = true;
     }
-    else if ( 0 == strcasecmp( argv[i] , "remove_diagonal" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--remove_diagonal" ) ) {
       remove_diagonal = true;
     }
-    else if ( 0 == strcasecmp( argv[i] , "transpose" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--transpose" ) ) {
       transpose = true;
     }
-    else if ( 0 == strcasecmp( argv[i] , "in_mtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--in_mtx" ) ) {
       in_mtx = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "out_mtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--out_mtx" ) ) {
       out_bin = argv[++i];
     }
     else {
       std::cerr << "Usage:" << argv[0]
-                << " in_mtx matrixfile out_mtx output_file [symmetrize] [remove_diagonal] [transpose]" << std::endl;
+                << " --in_mtx matrixfile --out_mtx output_file [--symmetrize] [--remove_diagonal] [--transpose]" << std::endl;
     std::cerr << "Input format .mtx for matrix market, .bin for binary, .crs for crs format" << std::endl;
     std::cerr << "Output format .mtx for matrix market, .bin for binary, .crs for crs format, .ligra for ligra output format" << std::endl;
 
@@ -85,7 +85,7 @@ int main (int argc, char* argv[]){
   }
   if (in_mtx == NULL || out_bin == NULL){
     std::cerr << "Usage:" << argv[0]
-              << " in_mtx matrixfile out_mtx output_file [symmetrize] [remove_diagonal] [transpose]" << std::endl;
+              << " --in_mtx matrixfile --out_mtx output_file [--symmetrize] [--remove_diagonal] [--transpose]" << std::endl;
     std::cerr << "Input format .mtx for matrix market, .bin for binary, .crs for crs format" << std::endl;
     std::cerr << "Output format .mtx for matrix market, .bin for binary, .crs for crs format, .ligra for ligra output format" << std::endl;
 
