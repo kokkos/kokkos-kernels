@@ -91,7 +91,7 @@ int main (int argc, char* argv[]){
 
     exit(1);
   }
-  typedef Kokkos::OpenMP MyExecSpace;
+  typedef Kokkos::DefaultHostExecutionSpace MyExecSpace;
 
   typedef typename MyKokkosSparse::CrsMatrix<wt, idx, MyExecSpace, void, size_type > crstmat_t;
   typedef typename crstmat_t::StaticCrsGraphType graph_t;

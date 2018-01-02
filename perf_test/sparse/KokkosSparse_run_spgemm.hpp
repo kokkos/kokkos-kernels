@@ -88,15 +88,15 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   scalar_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals2);
 
   if (nrows1 != nrows2) {
-	  std::cout <<"row count is differnet" << std::endl;
+	  std::cerr <<"row count is different" << std::endl;
 	  return false;
   }
   if (nentries1 != nentries2) {
-	  std::cout <<"nentries2 is differnet" << std::endl;
+	  std::cerr <<"nentries2 is different" << std::endl;
 	  return false;
   }
   if (nvals1 != nvals2) {
-	  std::cout <<"nvals1 is differnet" << std::endl;
+	  std::cerr <<"nvals1 is different" << std::endl;
 	  return false;
   }
 
@@ -117,7 +117,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
       <typename graph_t::row_map_type, typename graph_t::row_map_type, typename lno_view_t::value_type,
       typename device::execution_space>(output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
   if (!is_identical) {
-	  std::cout << "rowmaps differ" << std::endl;
+	  std::cerr << "rowmaps differ" << std::endl;
 	  return false;
   }
 
@@ -137,12 +137,12 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 		  }
 		  if (incorrect){
 			  for (size_t j = rb; j <  re; ++j){
-				 	 std::cout << "row:" << i << " j:" << j <<   " h_ent1[j]:" << h_ent1[j]  << " h_ent2[j]:" << h_ent2[j] << " rb:" << rb << " re:" << re<< std::endl;
+				 	 std::cerr << "row:" << i << " j:" << j <<   " h_ent1[j]:" << h_ent1[j]  << " h_ent2[j]:" << h_ent2[j] << " rb:" << rb << " re:" << re<< std::endl;
 			  }
 		  }
 
 	  }
-	  std::cout << "entries differ" << std::endl;
+	  std::cerr << "entries differ" << std::endl;
 	  return false;
   }
 
@@ -150,7 +150,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
       <scalar_view_t, scalar_view_t, typename scalar_view_t::value_type,
       typename device::execution_space>(h_vals1, h_vals2, 0.000001);
   if (!is_identical) {
-    std::cout << "Incorret values" << std::endl;
+    std::cerr << "Incorret values" << std::endl;
   }
   return true;
 }
@@ -217,7 +217,7 @@ crsMat_t3 run_experiment(
 
   if (verbose) std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
   if (n < crsMat.numCols()){
-    std::cout << "left.numCols():" << crsMat.numCols() << " right.numRows():" << crsMat2.numRows() << std::endl;
+    std::cerr << "left.numCols():" << crsMat.numCols() << " right.numRows():" << crsMat2.numRows() << std::endl;
     exit(1);
   }
 
@@ -400,7 +400,7 @@ crsMat_t3 run_experiment(
 
     bool is_identical = is_same_matrix<typename crsMat_t3::HostMirror, typename crsMat_t3::HostMirror::device_type>(Ccrsmat_ref, Ccrsmathost);
     if (!is_identical){
-      std::cout << "Result differs. If values are differing, might be floating point order error." << std::endl;
+      std::cerr << "Result differs. If values are differing, might be floating point order error." << std::endl;
       exit(1);
     }
   }
