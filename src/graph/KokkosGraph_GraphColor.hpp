@@ -116,13 +116,13 @@ void graph_color_symbolic(
     }
     break;
 
-  case COLORING_D2_WCMCLEN:
-    {
-      std::ostringstream os;
-      os << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_GraphColor.hpp) COLORING_D2_WCMCLEN not implemented";
-      Kokkos::Impl::throw_runtime_exception(os.str());
-    }
-    break;
+//  case COLORING_D2_WCMCLEN:
+//    {
+//      std::ostringstream os;
+//      os << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_GraphColor.hpp) COLORING_D2_WCMCLEN not implemented";
+//      Kokkos::Impl::throw_runtime_exception(os.str());
+//    }
+//    break;
 
   case COLORING_DEFAULT:
     break;

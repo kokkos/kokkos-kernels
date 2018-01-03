@@ -1049,10 +1049,7 @@ public:
     	}
     }
     num_loops = iter;
-  }
-
-
-
+  }    // color_graph (end)
 
 
 private:
@@ -1109,7 +1106,9 @@ private:
       Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
 
     }
-  }
+  }      // colorGreedy (end)
+
+
 
   /** \brief Performs speculative coloring based on the given colorings.
    *  \param xadj_: row map of the graph
@@ -1186,7 +1185,7 @@ private:
   nnz_lno_t findConflicts(
       bool &swap_work_arrays,
       const_lno_row_view_t xadj_,
-	  adj_view_t adj_,
+      adj_view_t adj_,
       color_view_type vertex_colors_,
       nnz_lno_temp_work_view_t vertex_color_set_,
       nnz_lno_temp_work_view_t current_vertexList_,
@@ -1868,8 +1867,7 @@ public:
         }
       }
     }
-
-  };
+  };      // functorGreedyColor  (end)
 
 
   //Conflict find and worklist creation functors.
@@ -2003,7 +2001,7 @@ public:
     functorFindConflicts_Atomic(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-		adj_view_t adj_,
+        adj_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_temp_work_view_t recolorList,
@@ -2047,7 +2045,7 @@ public:
         }
       }
     }
-  };
+  };    // struct functorFindConflicts_Atomic (end)
 
 
   /**
@@ -2111,7 +2109,7 @@ public:
 
       }
     }
-  };
+  };    // functorFindConflicts_No_Conflist_IMP (end)
 
 
   /**
@@ -2179,7 +2177,7 @@ public:
         }
       }
     }
-  };
+  };    // functorFindConflicts_PPS_IMP (end)
 
 
   /**
@@ -2255,7 +2253,7 @@ public:
         }
       }
     }
-  };
+  };      // functorFindConflicts_Atomic_IMP (end)
 
   //Helper Functors
   /**
@@ -2271,6 +2269,7 @@ public:
       _vertexList(i) = i;
     }
   };
+
 
   /**
    * Functor for parallel prefix sum
@@ -2296,6 +2295,7 @@ public:
       }
     }
   };
+
 
   /**
    * Functor for creating new worklist using pps
@@ -2362,9 +2362,7 @@ public:
       }
     }
   };
-
-
-};
+};  // class GraphColor_VB
 
 
 /*! \brief Class for modular parallel graph coloring using Kokkos.
