@@ -72,8 +72,9 @@ namespace Impl {
  *  e.g. no vertex having same color shares an edge.
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
+// TODO: This routine has a lot of extra typedefs, members, etc. that should be cleaned.
 template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_ >
-class GraphColorD2 
+class GraphColorD2_MatrixSquared
 {
 public:
 
@@ -81,7 +82,7 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
   typedef typename HandleType::GraphColoringHandleType::color_t      color_t;
-  typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_t;
+  typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_type;
 
   typedef typename HandleType::size_type size_type;
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
@@ -119,14 +120,10 @@ protected:
   const_clno_row_view_t t_xadj;   // rowmap, transpose of rowmap
   const_clno_nnz_view_t t_adj;    // entries, transpose of entries
   nnz_lno_t             nv;       // num vertices
-
-  HandleType *cp;
-
-private:
-
-  int _max_num_iterations;
+  HandleType*           cp;       // the handle.
 
 public:
+
   /**
    * \brief GraphColor constructor.
    * \param nv_: number of vertices in the graph
@@ -136,7 +133,7 @@ public:
    * \param coloring_handle: GraphColoringHandle object that holds the specification about the graph coloring,
    *    including parameters.
    */
-  GraphColorD2 (nnz_lno_t             nr_,
+  GraphColorD2_MatrixSquared (nnz_lno_t             nr_,
                 nnz_lno_t             nc_,
                 size_type             ne_,
                 const_lno_row_view_t  row_map,
@@ -144,18 +141,23 @@ public:
                 const_clno_row_view_t t_row_map,
                 const_clno_nnz_view_t t_entries,
                 HandleType*           coloring_handle):
-        nr (nr_), nc (nc_), ne(ne_), xadj(row_map), adj(entries), 
-        t_xadj(t_row_map), t_adj(t_entries),
+        nr (nr_), 
+        nc (nc_), 
+        ne(ne_), 
+        xadj(row_map), 
+        adj(entries), 
+        t_xadj(t_row_map), 
+        t_adj(t_entries),
         nv (nr_), 
-        // ne(entries.dimension_0()),
-        cp(coloring_handle),
-        _max_num_iterations(1000)
+        cp(coloring_handle)
+        //_chunkSize(coloring_handle->get_vb_chunk_size()),
+        // _max_num_iterations(1000)
   {}
 
 
   /** \brief GraphColor destructor.
    */
-  virtual ~GraphColorD2 () 
+  virtual ~GraphColorD2_MatrixSquared () 
   {}
 
 
@@ -206,16 +208,125 @@ public:
 
     // extract the colors
     //auto coloringHandle = cp->get_graph_coloring_handle();
-    //color_view_t colorsDevice = coloringHandle->get_vertex_colors();
+    //color_view_type colorsDevice = coloringHandle->get_vertex_colors();
 
     //clean up coloring handle
     // cp->destroy_graph_coloring_handle();
   }
 
+};  // GraphColorD2_MatrixSquared (end)
 
 
-  // WCMCLEN COLORING_D2_WCMCLEN implement here!
-  virtual void color_graph_d2_wcmclen(color_view_t colors_out)
+
+
+
+
+/*! \brief Base class for graph coloring purposes.
+ *  Each color represents the set of the vertices that are independent,
+ *  e.g. no vertex having same color shares an edge.
+ *  General aim is to find the minimum number of colors, minimum number of independent sets.
+ */
+template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_ >
+class GraphColorD2 
+{
+public:
+
+  typedef lno_row_view_t_ in_lno_row_view_t;
+  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+
+  // typedef typename HandleType::GraphColoringHandleType::color_t      color_t;
+  // typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_type;
+  typedef typename HandleType::color_view_t color_view_type;
+  typedef typename HandleType::color_t      color_t;
+
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+
+  typedef typename HandleType::HandleExecSpace        MyExecSpace;
+  typedef typename HandleType::HandleTempMemorySpace  MyTempMemorySpace;
+  // typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
+  typedef typename HandleType::const_size_type        const_size_type;
+
+  typedef typename lno_row_view_t_::device_type    row_lno_view_device_t;
+  typedef typename lno_row_view_t_::const_type     const_lno_row_view_t;
+  typedef typename lno_nnz_view_t_::const_type     const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
+
+  typedef typename clno_row_view_t_::const_type     const_clno_row_view_t;
+  typedef typename clno_nnz_view_t_::const_type     const_clno_nnz_view_t;
+  typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
+
+  //typedef typename HandleType::size_type_temp_work_view_t     size_type_temp_work_view_t;
+  //typedef typename HandleType::scalar_temp_work_view_t        scalar_temp_work_view_t;
+  //typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
+
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
+
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+
+
+protected:
+  nnz_lno_t             nr;       // num_rows  (# verts)
+  nnz_lno_t             nc;       // num cols
+  size_type             ne;       // # edges
+  const_lno_row_view_t  xadj;     // rowmap, transpose of rowmap
+  const_lno_nnz_view_t  adj;      // entries, transpose of entries   (size = # edges)
+  const_clno_row_view_t t_xadj;   // rowmap, transpose of rowmap
+  const_clno_nnz_view_t t_adj;    // entries, transpose of entries
+  nnz_lno_t             nv;       // num vertices
+  HandleType*           cp;       // pointer to the handle
+
+private:
+
+  int _chunkSize;                 // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
+  int _max_num_iterations;
+
+public:
+
+  /**
+   * \brief GraphColor constructor.
+   * \param nv_: number of vertices in the graph
+   * \param ne_: number of edges in the graph
+   * \param row_map: the xadj array of the graph. Its size is nv_ +1
+   * \param entries: adjacency array of the graph. Its size is ne_
+   * \param coloring_handle: GraphColoringHandle object that holds the specification about the graph coloring,
+   *    including parameters.
+   */
+  GraphColorD2 (nnz_lno_t             nr_,
+                nnz_lno_t             nc_,
+                size_type             ne_,
+                const_lno_row_view_t  row_map,
+                const_lno_nnz_view_t  entries,
+                const_clno_row_view_t t_row_map,
+                const_clno_nnz_view_t t_entries,
+                HandleType*           coloring_handle):
+        nr (nr_), 
+        nc (nc_), 
+        ne(ne_), 
+        xadj(row_map), 
+        adj(entries), 
+        t_xadj(t_row_map), 
+        t_adj(t_entries),
+        nv (nr_), 
+        cp(coloring_handle),
+        //_chunkSize(coloring_handle->get_vb_chunk_size()),
+        _max_num_iterations(1000)
+  {}
+
+
+  /** \brief GraphColor destructor.
+   */
+  virtual ~GraphColorD2 () 
+  {}
+
+
+  // -----------------------------------------------------------------
+  //
+  // GraphColorD2::color_graph_d2()
+  //
+  // -----------------------------------------------------------------
+  virtual void color_graph_d2(color_view_type colors_out)
   {
     std::cout << ">>> WCMCLEN color_graph_d2_wcmclen (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
 
@@ -318,24 +429,39 @@ public:
 private:
 
 
+  // -----------------------------------------------------------------
+  //
+  // GraphColorD2::colorGreedy()
+  //
+  // -----------------------------------------------------------------
   void colorGreedy(const_lno_row_view_t     xadj_,
                    const_lno_nnz_view_t     adj_,
-                   color_view_t             vertex_colors_,
+                   color_view_type          vertex_colors_,
                    nnz_lno_temp_work_view_t current_vertexList_,
                    nnz_lno_t                current_vertexListLength_)
   {
     // WCMCLEN TODO: Fill this in.
     std::cout << ">>> WCMCLEN colorGreedy (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
+
+    // nnz_lno_t chunkSize_ = this->_chunkSize;
+
+
+
   }
 
 
 
+  // -----------------------------------------------------------------
+  //
+  // GraphColorD2::findConflicts()
+  //
+  // -----------------------------------------------------------------
   // NOTE: not using colorset algorithm in this so we don't include colorset data
   template <typename adj_view_t>
   nnz_lno_t findConflicts(bool&                      swap_work_arrays,
                           const_lno_row_view_t       xadj_,
                           adj_view_t                 adj_,
-                          color_view_t               vertex_colors_,
+                          color_view_type            vertex_colors_,
                           nnz_lno_temp_work_view_t   current_vertexList_,
                           nnz_lno_t                  current_vertexListLength_,
                           nnz_lno_temp_work_view_t   next_iteration_recolorList_,
@@ -350,14 +476,11 @@ private:
     return output_numUncolored;
   }
 
-
-
-
-
-
+  // ------------------------------------------------------
   // Helper Functors
+  // ------------------------------------------------------
 
-  // Helper function to pretty-print views.
+  // pretty-print a 1D View with label
   template<typename kokkos_view_t>
   void prettyPrint1DView(kokkos_view_t & view, const char* label)
   {

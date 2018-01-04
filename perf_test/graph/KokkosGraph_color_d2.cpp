@@ -189,8 +189,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   typedef typename lno_view_t::non_const_value_type size_type;
   typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
-  // WCMCLEN: This KokkosKernelsHandle is not the same handle as the one in KokkosGraph_GraphColorHandle.hpp?
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;  
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);

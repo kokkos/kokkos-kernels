@@ -75,8 +75,8 @@ void graph_color_d2(KernelHandle *handle,
   // Create a view to save the colors to.
   // - Note: color_view_t is a Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t    (KokkosGraph_GraphColorHandle.hpp)
   //         a 1D array of color_t
-  //typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
-  typename KernelHandle::GraphColoringHandleType::color_view_t colors_out("Graph Colors", num_rows);
+  typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
+  color_view_type colors_out("Graph Colors", num_rows);
 
 /*
   std::cout << "colors_out: ";
@@ -98,7 +98,7 @@ void graph_color_d2(KernelHandle *handle,
     {
       std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
 
-      Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+      Impl::GraphColorD2_MatrixSquared <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
       gc.color_graph_d2_matrix_squared();
       break;
@@ -109,9 +109,11 @@ void graph_color_d2(KernelHandle *handle,
       // WCMCLEN - ADD new coloring algorithm here.
       std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORNG_D2_WCMCLEN ] <<<" << std::endl;
 
-      Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
-      gc.color_graph_d2_wcmclen(colors_out);
+      //Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+      //    gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
+      Impl::GraphColorD2 <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, gch);
+      gc.color_graph_d2(colors_out);
       break;
     }
 
