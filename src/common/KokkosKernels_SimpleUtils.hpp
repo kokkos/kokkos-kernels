@@ -145,6 +145,18 @@ struct ReductionFunctor{
 };
 
 
+template <typename view_t>
+struct ReductionFunctor2{
+  view_t array_sum;
+  ReductionFunctor2(view_t arr_): array_sum(arr_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii, size_t & update) const {
+	  update += array_sum(ii);
+  }
+};
+
+
 template <typename view_t, typename view2_t>
 struct DiffReductionFunctor{
   view_t array_begins;
@@ -195,6 +207,11 @@ inline void kk_reduce_view(size_t num_elements, view_t arr, typename view_t::val
   Kokkos::parallel_reduce( my_exec_space(0, num_elements), ReductionFunctor<view_t>(arr), reduction);
 }
 
+template <typename view_t, typename MyExecSpace>
+inline void kk_reduce_view2(size_t num_elements, view_t arr, size_t & reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0, num_elements), ReductionFunctor2<view_t>(arr), reduction);
+}
 
 template<typename view_type1, typename view_type2, typename eps_type = typename Kokkos::Details::ArithTraits<typename view_type2::non_const_value_type>::mag_type>
 struct IsIdenticalFunctor{
