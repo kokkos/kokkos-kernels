@@ -66,7 +66,7 @@ void print_options(){
   std::cerr << "\tTRIANGLELL: Lower x Lower -- usually fastest " << std::endl;
   std::cerr << "\tTRIANGLELU: Lower x Upper -- usually 2nd fastest " << std::endl;
   std::cerr << "--FLOP                               : Calculate and print the number of operations. This will be calculated on the first run." << std::endl;
-  std::cerr << "--COMPRESION [0|1]                   : Enable disable compression. Default:1." << std::endl;
+  std::cerr << "--COMPRESSION [0|1]                   : Enable disable compression. Default:1." << std::endl;
   std::cerr << "--RS [0|1|2]                         : Whether to sort lower triangular matrix. 0 - no sort, 1 - sort, 2 - algorithm decides based on max row size (default)" << std::endl;
   std::cerr << "--accumulator [default|dense|sparse] : what type of accumulator to use." << std::endl;
   std::cerr << "--RLT                                : If given, lower triangle will be used for AdjxIncidence or Incidence x Adj algorithms." << std::endl;
