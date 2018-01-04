@@ -310,7 +310,7 @@ public:
         t_adj(t_entries),
         nv (nr_), 
         cp(coloring_handle),
-        //_chunkSize(coloring_handle->get_vb_chunk_size()),
+        _chunkSize(coloring_handle->get_vb_chunk_size()),
         _max_num_iterations(1000)
   {}
 
@@ -434,20 +434,35 @@ private:
   // GraphColorD2::colorGreedy()
   //
   // -----------------------------------------------------------------
+  // WCMCLEN (SCAFFOLDING) TODO: Find out why we're passing xadj_ and adj_ in as parameters to the method when they're class members...
+  // WCMCLEN (SCAFFOLDING) TODO: Copying the D1 colorGreedy (for now).  Need to adapt this to the D2 version.
   void colorGreedy(const_lno_row_view_t     xadj_,
                    const_lno_nnz_view_t     adj_,
                    color_view_type          vertex_colors_,
                    nnz_lno_temp_work_view_t current_vertexList_,
                    nnz_lno_t                current_vertexListLength_)
   {
-    // WCMCLEN TODO: Fill this in.
     std::cout << ">>> WCMCLEN colorGreedy (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
 
-    // nnz_lno_t chunkSize_ = this->_chunkSize;
+    nnz_lno_t chunkSize_ = this->_chunkSize;
 
+    if (current_vertexListLength_ < 100*chunkSize_)
+    {
+      chunkSize_ = 1;
+    }
 
+    functorGreedyColor gc(this->nv,
+                          xadj_, 
+                          adj_,
+                          vertex_colors_,
+                          current_vertexList_,
+                          current_vertexListLength_,
+                          chunkSize_
+                          );
 
-  }
+    Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_+1), gc);
+
+  }  // colorGreedy (end)
 
 
 
@@ -475,6 +490,8 @@ private:
 
     return output_numUncolored;
   }
+
+
 
   // ------------------------------------------------------
   // Helper Functors
@@ -511,110 +528,61 @@ private:
   };
 
 
+
+  /**
+   * Functor for VB algorithm speculative coloring without edge filtering.
+   */
+  struct functorGreedyColor 
+  {
+    nnz_lno_t                nv;
+    const_lno_row_view_t     _idx;
+    const_lno_nnz_view_t     _adj;
+    color_view_type          _colors;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_t                _vertexListLength;
+    nnz_lno_t                _chunkSize;
+
+    functorGreedyColor (nnz_lno_t                nv_,
+                        const_lno_row_view_t     xadj_,
+                        const_lno_nnz_view_t     adj_,
+                        color_view_type          colors,
+                        nnz_lno_temp_work_view_t vertexList,
+                        nnz_lno_t                vertexListLength,
+                        nnz_lno_t                chunkSize) 
+          : nv(nv_),
+            _idx(xadj_),
+            _adj(adj_),
+            _colors(colors),
+            _vertexList(vertexList),
+            _vertexListLength(vertexListLength),
+            _chunkSize(chunkSize)
+    {
+    }
+
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const nnz_lno_t ii) const
+    {
+
+      std::cout << ">>> WCMCLEN functorGreedyColor (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
+
+      // TODO: Implement this (copy in the Distance-1 version initially and then adapt it.)
+
+    }  // operator() (end)
+
+
+  };  // functorGreedyColor (end)
+
+
+
+
+
+
 };  // end class GraphColorD2
 
 
 }  // end Impl namespace 
 }  // end KokkosGraph namespace
-
-
-
-
-#if 0
-  /**
-   * Functor for VB algorithm speculative coloring without edge filtering.
-   */
-  struct functorGreedyColor_WCMCLEN {
-    nnz_lno_t nv;
-    const_lno_row_view_t _idx;
-    const_lno_nnz_view_t _adj;
-    color_view_type _colors;
-    nnz_lno_temp_work_view_t _vertexList;
-    nnz_lno_t _vertexListLength;
-    nnz_lno_t _chunkSize;
-
-    functorGreedyColor_WCMCLEN(
-        nnz_lno_t nv_,
-        const_lno_row_view_t xadj_,
-        const_lno_nnz_view_t adj_,
-        color_view_type colors,
-        nnz_lno_temp_work_view_t vertexList,
-        nnz_lno_t vertexListLength,
-        nnz_lno_t chunkSize
-    ) : nv (nv_),
-      _idx(xadj_), _adj(adj_), _colors(colors),
-      _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const nnz_lno_t ii) const {
-      // Color vertex i with smallest available color.
-      //
-      // Each thread colors a chunk of vertices to prevent all
-      // vertices getting the same color.
-      //
-      // This version uses a bool array of size FORBIDDEN_SIZE.
-      // TODO: With chunks, the forbidden array should be char/int
-      //       and reused for all vertices in the chunk.
-      //
-      nnz_lno_t i = 0;
-      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
-        if (ii*_chunkSize +ichunk < _vertexListLength)
-          i = _vertexList(ii*_chunkSize +ichunk);
-        else
-          continue;
-
-        if (_colors(i) > 0) continue; // Already colored this vertex
-
-        bool foundColor = false; // Have we found a valid color?
-
-        // Use forbidden array to find available color.
-        // This array should be small enough to fit in fast memory (use Kokkos memoryspace?)
-        bool forbidden[VB_COLORING_FORBIDDEN_SIZE]; // Forbidden colors
-
-        // Do multiple passes if array is too small.
-        color_t degree = _idx(i+1)-_idx(i); // My degree
-        color_t offset = 0;
-        for (; (offset <= degree + VB_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_COLORING_FORBIDDEN_SIZE){
-          // initialize
-          for (int j=0; j< VB_COLORING_FORBIDDEN_SIZE; j++){
-            forbidden[j] = false;
-          }
-          if (offset == 0) forbidden[0] = true; // by convention, start at 1
-
-          // Check nbors, fill forbidden array.
-          for (size_type j=_idx(i); j<_idx(i+1); j++){
-            if (_adj(j) == i|| _adj(j)  >= nv) continue; // Skip self-loops
-            color_t c= _colors(_adj(j));
-            // Removed option to leave potentially conflicted vertices uncolored.
-            //if (c== -1){ // Nbor is being colored at same time
-            //  _colors[i] = 0; // Neutral color, skip and recolor later
-            //  foundColor = true;
-            //  return;
-            //}
-            if ((c>= offset) && (c-offset < VB_COLORING_FORBIDDEN_SIZE))
-              forbidden[c-offset] = true;
-          }
-
-          // color vertex i with smallest available color (FirstFit)
-          // TODO: Add options for other color choices (Random, LeastUsed)
-          for (int c=0; c< VB_COLORING_FORBIDDEN_SIZE; c++){
-            if (!forbidden[c]){
-              _colors(i) = offset+c;
-              //_colors[i] += (i&1); // RandX strategy to reduce conflicts
-              foundColor = true;
-              break;
-            }
-          }
-        }
-      }
-    }
-  };
-#endif
-
-
-
-
-
 
 
 
