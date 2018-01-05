@@ -97,10 +97,8 @@ struct KokkosSPGEMM
   nnz_lno_t team_shared_memory_hash_func;
   nnz_lno_t team_shmem_hash_size;
 
-  const nnz_lno_t first_nnz_lno_t_bit;
-  const nnz_lno_t rest_nnz_lno_t_bit;
   nnz_lno_t team_cuckoo_key_size, team_cuckoo_hash_func;
-  const int MAX_FIRST_LEVEL_RATIO;
+
   nnz_lno_t max_first_level_hash_size;
   row_lno_persistent_work_view_t flops_per_row;
   PortableNumericCHASH(
@@ -157,10 +155,8 @@ struct KokkosSPGEMM
 		team_shmem_key_size(),
 		team_shared_memory_hash_func(),
 		team_shmem_hash_size(1),
-		first_nnz_lno_t_bit (1 << (sizeof(nnz_lno_t) * 8 - 1)),
-		rest_nnz_lno_t_bit (~first_nnz_lno_t_bit),
 		team_cuckoo_key_size (1),
-		team_cuckoo_hash_func(1), MAX_FIRST_LEVEL_RATIO(0.90), max_first_level_hash_size( 1), flops_per_row(flops_per_row_)
+		team_cuckoo_hash_func(1), max_first_level_hash_size( 1), flops_per_row(flops_per_row_)
 
 
   {
@@ -191,7 +187,6 @@ struct KokkosSPGEMM
     if (KOKKOSKERNELS_VERBOSE_){
       std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << thread_shmem_hash_size  << " shmem_key_size:" << thread_shmem_key_size << std::endl;
       std::cout << "\t\tNumericCMEM -- adjusted team hashsize:" << team_shmem_hash_size  << " team_shmem_key_size:" << team_shmem_key_size << std::endl;
-      std::cout << "\t\tfirst_nnz_lno_t_bit:" << first_nnz_lno_t_bit << " rest_nnz_lno_t_bit:" << rest_nnz_lno_t_bit << std::endl;
       std::cout << "\t\tteam_cuckoo_key_size:" << team_cuckoo_key_size << " team_cuckoo_hash_func:" << team_cuckoo_hash_func << " max_first_level_hash_size:" << max_first_level_hash_size << std::endl;
       std::cout << "\t\tpow2_hash_size:" << pow2_hash_size << " pow2_hash_func:" << pow2_hash_func << std::endl;
     }
@@ -613,6 +608,7 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
     char *all_shared_memory = (char *) (teamMember.team_shmem().get_shmem(shared_memory_size));
 
+    const nnz_lno_t init_value = -1;
     volatile nnz_lno_t *used_hash_sizes = (volatile nnz_lno_t *) (all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * 2;
     //holds the keys
@@ -676,7 +672,7 @@ struct KokkosSPGEMM
     	  // not needed as team_cuckoo_key_size is always pow2. + (team_cuckoo_key_size & (vector_size - 1)) * 1;
     	  Kokkos::parallel_for( Kokkos::TeamThreadRange(teamMember, num_threads), [&] (nnz_lno_t teamind) {
     		  Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, vector_size ), [&] (nnz_lno_t i) {
-    			  keys[teamind * vector_size + i] = -1; vals[teamind * vector_size + i] = 0;
+    			  keys[teamind * vector_size + i] = init_value; vals[teamind * vector_size + i] = 0;
     		  });
     	  });
       }
@@ -689,7 +685,7 @@ struct KokkosSPGEMM
 
       bool insert_is_on = true;
       const size_type a_col_begin_offset = row_mapA[row_index];
-      const nnz_lno_t left_work = row_mapA[row_index + 1] - a_col_begin_offset;
+
 
       nnz_lno_t a_col_ind = entriesA[a_col_begin_offset];
       scalar_t a_col_val = valuesA[a_col_begin_offset];
@@ -707,7 +703,7 @@ struct KokkosSPGEMM
         for (nnz_lno_t vector_read_shift = vector_shift; vector_read_shift< row_flops; vector_read_shift += bs){
         {
       	  nnz_lno_t my_b_col_shift = vector_read_shift - flops_on_the_left_of_offsett;
-    	  nnz_lno_t my_b_col = -1; scalar_t my_b_val = 0; nnz_lno_t hash = -1;
+    	  nnz_lno_t my_b_col = init_value; scalar_t my_b_val = 0; nnz_lno_t hash = init_value;
     	  int fail = 0;
 
 			  if (my_b_col_shift >= current_a_column_flops ){
@@ -738,12 +734,12 @@ struct KokkosSPGEMM
 					  fail = 0;
 					  break;
 				  }
-				  else if (keys[trial] == -1){
+				  else if (keys[trial] == init_value){
 					  if (!insert_is_on) {
 						  try_to_insert = false;
 						  break;
 					  }
-					  else if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
+					  else if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)){
 						  Kokkos::atomic_add(vals + trial, my_b_val);
 						  Kokkos::atomic_increment(used_hash_sizes);
 						  if (used_hash_sizes[0] > max_first_level_hash_size)  insert_is_on = false;
@@ -764,11 +760,11 @@ struct KokkosSPGEMM
 						  fail = 0;
 						  break;
 					  }
-					  else if (keys[trial] == -1){
+					  else if (keys[trial] == init_value){
 						  if (!insert_is_on) {
 							  break;
 						  }
-						  else if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
+						  else if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)){
 							  Kokkos::atomic_add(vals + trial, my_b_val);
 							  Kokkos::atomic_increment(used_hash_sizes);
 							  if (used_hash_sizes[0] > max_first_level_hash_size)  insert_is_on = false;
@@ -793,8 +789,8 @@ struct KokkosSPGEMM
 							  fail = 0;
 							  break;
 						  }
-						  else if (global_acc_row_keys[trial ] == -1){
-							  if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial , -1, my_b_col)){
+						  else if (global_acc_row_keys[trial ] == init_value){
+							  if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial , init_value, my_b_col)){
 								  Kokkos::atomic_add(global_acc_row_vals + trial , my_b_val);
 								  //Kokkos::atomic_increment(used_hash_sizes + 1);
 								  //c_row_vals[trial] = my_b_val;
@@ -814,8 +810,8 @@ struct KokkosSPGEMM
 
 								  break;
 							  }
-							  else if (global_acc_row_keys[trial ] == -1){
-								  if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial , -1, my_b_col)){
+							  else if (global_acc_row_keys[trial ] == init_value){
+								  if (Kokkos::atomic_compare_exchange_strong(global_acc_row_keys + trial , init_value, my_b_col)){
 									  //Kokkos::atomic_increment(used_hash_sizes + 1);
 									  Kokkos::atomic_add(global_acc_row_vals + trial , my_b_val);
 									  //c_row_vals[trial] = my_b_val;
@@ -840,7 +836,7 @@ struct KokkosSPGEMM
 
     	  for (nnz_lno_t  my_index = vector_shift; my_index < pow2_hash_size;my_index += bs){
     		  nnz_lno_t my_b_col = global_acc_row_keys[my_index];
-    		  if (my_b_col != -1){
+    		  if (my_b_col != init_value){
     			  scalar_t my_b_val = global_acc_row_vals[my_index];
 				  int fail = 1;
     			  {
@@ -854,7 +850,7 @@ struct KokkosSPGEMM
     						  fail = 0;
     						  break;
     					  }
-    					  else if (keys[trial] == -1){
+    					  else if (keys[trial] == init_value){
     						  break;
     					  }
     				  }
@@ -866,7 +862,7 @@ struct KokkosSPGEMM
     						  fail = 0;
     						  break;
     					  }
-    					  else if (keys[trial] == -1){
+    					  else if (keys[trial] == init_value){
     						  break;
     					  }
     				  }
@@ -878,7 +874,7 @@ struct KokkosSPGEMM
     				  c_row[write_index] = my_b_col;
     				  c_row_vals[write_index] = my_b_val;
     			  }
-    			  global_acc_row_keys[my_index] = -1;
+    			  global_acc_row_keys[my_index] = init_value;
     		  }
     	  }
 
@@ -891,7 +887,7 @@ struct KokkosSPGEMM
 
       for (nnz_lno_t  my_index = vector_shift; my_index < team_cuckoo_key_size;my_index += bs){
     	  nnz_lno_t my_key = keys[my_index];
-    	  if (my_key != -1){
+    	  if (my_key != init_value){
     		  scalar_t my_val = vals[my_index];
     		  nnz_lno_t write_index = 0;
     		  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
@@ -909,6 +905,8 @@ struct KokkosSPGEMM
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag4&, const team_member_t & teamMember) const {
 
+
+	const nnz_lno_t init_value = -1;
     nnz_lno_t team_row_begin = teamMember.league_rank()  * team_work_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
 
@@ -941,7 +939,7 @@ struct KokkosSPGEMM
         teamMember.team_barrier();
 #endif
       const size_type c_row_begin = rowmapC[row_index];
-      const size_type c_row_end = rowmapC[row_index + 1];
+      //const size_type c_row_end = rowmapC[row_index + 1];
       //const nnz_lno_t c_row_size = c_row_end -  c_row_begin;
       nnz_lno_t *c_row = entriesC.data() + c_row_begin;
       scalar_t *c_row_vals = valuesC.data() + c_row_begin;
@@ -953,7 +951,7 @@ struct KokkosSPGEMM
     		  //nnz_lno_t team_shift = teamind * vector_size;
     		  //nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, team_shmem_hash_size - team_shift);
     		  Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, vector_size ), [&] (nnz_lno_t i) {
-    			  keys[teamind * vector_size + i] = -1; vals[teamind * vector_size + i] = 0;
+    			  keys[teamind * vector_size + i] = init_value; vals[teamind * vector_size + i] = 0;
     		  });
     	  });
       }
@@ -965,8 +963,8 @@ struct KokkosSPGEMM
       Kokkos::single(Kokkos::PerTeam(teamMember),[&] () {
 
       for (int i = 0; i < team_shmem_hash_size; ++i){
-    	  if (begins[i] != -1){
-    		  std::cout << "row_index:" << row_index << " i:" << i << " team_shmem_hash_size:" << team_shmem_hash_size << " is not -1 begins[i]:" << begins[i] << std::endl;
+    	  if (begins[i] != init_value){
+    		  std::cout << "row_index:" << row_index << " i:" << i << " team_shmem_hash_size:" << team_shmem_hash_size << " is not init_value begins[i]:" << begins[i] << std::endl;
     	  }
       }
       });
@@ -990,7 +988,7 @@ struct KokkosSPGEMM
       nnz_lno_t *globally_used_hash_indices = NULL;
 #endif
       const size_type a_col_begin_offset = row_mapA[row_index];
-      const nnz_lno_t left_work = row_mapA[row_index + 1] - a_col_begin_offset;
+
 
       nnz_lno_t a_col_ind = entriesA[a_col_begin_offset];
       scalar_t a_col_val = valuesA[a_col_begin_offset];
@@ -1012,7 +1010,7 @@ struct KokkosSPGEMM
         for (nnz_lno_t vector_read_shift = vector_shift; vector_read_shift< row_flops; vector_read_shift += bs){
         {
               	  nnz_lno_t my_b_col_shift = vector_read_shift - flops_on_the_left_of_offsett;
-            	  nnz_lno_t my_b_col = -1; scalar_t my_b_val = 0; nnz_lno_t hash = -1;
+            	  nnz_lno_t my_b_col = init_value; scalar_t my_b_val = 0; nnz_lno_t hash = init_value;
             	  int fail = 0;
 
 
@@ -1046,8 +1044,8 @@ struct KokkosSPGEMM
 					  fail = 0;
 					  break;
 				  }
-				  else if (keys[trial] == -1){
-					  if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
+				  else if (keys[trial] == init_value){
+					  if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)){
 						  Kokkos::atomic_add(vals + trial, my_b_val);
 						  fail = 0;
 						  break;
@@ -1065,8 +1063,8 @@ struct KokkosSPGEMM
 						  fail = 0;
 						  break;
 					  }
-					  else if (keys[trial] == -1){
-						  if (Kokkos::atomic_compare_exchange_strong(keys + trial, -1, my_b_col)){
+					  else if (keys[trial] == init_value){
+						  if (Kokkos::atomic_compare_exchange_strong(keys + trial, init_value, my_b_col)){
 							  Kokkos::atomic_add(vals + trial, my_b_val);
 							  fail = 0;
 							  break;
@@ -1084,7 +1082,7 @@ struct KokkosSPGEMM
       teamMember.team_barrier();
       for (nnz_lno_t  my_index = vector_shift; my_index < team_cuckoo_key_size;my_index += bs){
     	  nnz_lno_t my_key = keys[my_index];
-    	  if (my_key != -1){
+    	  if (my_key != init_value){
     		  scalar_t my_val = vals[my_index];
     		  nnz_lno_t write_index = Kokkos::atomic_fetch_add(used_hash_sizes, 1);
     		  c_row[write_index] = my_key;

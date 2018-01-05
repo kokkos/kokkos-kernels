@@ -2068,9 +2068,10 @@ void KokkosSPGEMM
     std::cout << "\tStructureC Kernel time:" << timer1.seconds() << std::endl<< std::endl;
   }
 
-  int read_write_cost = this->handle->get_spgemm_handle()->get_read_write_cost_calc();
 
 #if 0
+  int read_write_cost = this->handle->get_spgemm_handle()->get_read_write_cost_calc();
+
   if (read_write_cost && KOKKOSKERNELS_VERBOSE)
   {
 	  std::cout << "\t\t!!!!DELETE THIS PART!!!! PRINTING STATS HERE!!!!!" << std::endl;
