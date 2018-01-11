@@ -378,6 +378,8 @@ public:
     this->colorGreedy(this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
 
     MyExecSpace::fence();
+    prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out");
+
 
     // Find conflicts
     std::cout << "--------------------------------------------------" << std::endl;
@@ -534,13 +536,13 @@ private:
    */
   struct functorGreedyColor 
   {
-    nnz_lno_t                nv;
-    const_lno_row_view_t     _idx;
-    const_lno_nnz_view_t     _adj;
-    color_view_type          _colors;
-    nnz_lno_temp_work_view_t _vertexList;
-    nnz_lno_t                _vertexListLength;
-    nnz_lno_t                _chunkSize;
+    nnz_lno_t                nv;                  // num vertices
+    const_lno_row_view_t     _idx;                // vertex degree list
+    const_lno_nnz_view_t     _adj;                // vertex adjacency list
+    color_view_type          _colors;             // vertex colors
+    nnz_lno_temp_work_view_t _vertexList;         // 
+    nnz_lno_t                _vertexListLength;   // 
+    nnz_lno_t                _chunkSize;          // 
 
     functorGreedyColor (nnz_lno_t                nv_,
                         const_lno_row_view_t     xadj_,
@@ -557,20 +559,107 @@ private:
             _vertexListLength(vertexListLength),
             _chunkSize(chunkSize)
     {
+      std::cout << ">>> WCMCLEN functorGreedyColor() <<C'TOR>> (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
+                << ">>> WCMCLEN - nv                = " << nv << std::endl
+                << ">>> WCMCLEN - _vertexListLength = " << _vertexListLength << std::endl
+                << ">>> WCMCLEN - _chunkSize        = " << _chunkSize << std::endl;
     }
 
 
+    // Color vertex i with smallest available color.
+    //
+    // Each thread colors a chunk of vertices to prevent all vertices getting the same color.
+    // 
+    // This version uses a bool array of size FORBIDDEN_SIZE.
+    //
+    // param: ii = vertex id
+    // 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const nnz_lno_t ii) const
+    void operator()(const nnz_lno_t vid_) const
     {
 
-      std::cout << ">>> WCMCLEN functorGreedyColor (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
+//      std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
 
-      // TODO: Implement this (copy in the Distance-1 version initially and then adapt it.)
+      nnz_lno_t vid = 0;
+      for (nnz_lno_t ichunk=0; ichunk < _chunkSize; ichunk++)
+      {
+        if (vid_ * _chunkSize + ichunk < _vertexListLength)
+          vid = _vertexList(vid_ * _chunkSize + ichunk);
+        else
+          continue;
 
-    }  // operator() (end)
+//        std::cout << ">>> WCMCLEN vid_ = " << vid_ << std::endl
+//                  << ">>> WCMCLEN vid  = " << vid  << std::endl;
 
+        // Already colored this vertex.
+        if(_colors(vid) > 0) { continue; }
 
+        bool foundColor = false;    // Have we found a valid color?
+
+        // Use forbidden array to find available color.
+        // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
+        bool forbidden[VB_COLORING_FORBIDDEN_SIZE];     // Forbidden Colors
+
+        // Do multiple passes if the array is too small.
+        color_t degree = _idx(vid+1) - _idx(vid);
+        color_t offset = 0;
+        for( ; offset <= (degree + VB_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_COLORING_FORBIDDEN_SIZE)
+        {
+          // initialize
+          for(int j=0; j < VB_COLORING_FORBIDDEN_SIZE; j++)
+          {
+            forbidden[j] = false;
+          }
+          // by convention, start at 1
+          if(offset == 0)
+          {
+            forbidden[0] = true;
+          }
+
+          // Check neighbors, fill forbidden array.
+          // -- TODO: Edit this for neighbors of neighbors loop
+          for(size_type vid_1adj=_idx(vid); vid_1adj < _idx(vid+1); vid_1adj++) 
+          {
+            size_type vid_1idx = _adj(vid_1adj);
+//            std::cout << ">>> WCMCLEN vid_1idx = " << vid_1idx << std::endl;
+//            std::cout << ">>> WCMCLEN     vid_2idx = ";
+            for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
+            { 
+              size_type vid_2idx = _adj(vid_2adj);
+//              std::cout << vid_2idx;
+
+              // Skip distance-2-self-loops
+              if(vid_2idx == vid || vid_2idx >= nv) 
+              { 
+//                std::cout << "* ";
+                continue;   
+              }
+//              std::cout << " ";
+
+              color_t c = _colors(vid_2idx);
+
+              if((c >= offset) && (c - offset < VB_COLORING_FORBIDDEN_SIZE))
+              {
+                forbidden[c - offset] = true;
+              }
+
+            }
+//            std::cout << std::endl;
+          }
+
+          // color vertex i with smallest available color (firstFit)
+          for(int c=0; c < VB_COLORING_FORBIDDEN_SIZE; c++)
+          {
+            if(!forbidden[c]) 
+            {
+              _colors(vid) = offset + c;
+              foundColor = true;
+              break;
+            }
+          }   // for c...
+        }   // for offset...
+      }   // for ichunk...
+    }   // operator() (end)
   };  // functorGreedyColor (end)
 
 
