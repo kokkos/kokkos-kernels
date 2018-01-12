@@ -279,8 +279,11 @@ protected:
 
 private:
 
-  int _chunkSize;                 // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
-  int _max_num_iterations;
+  int  _chunkSize;                 // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
+  int  _max_num_iterations;
+  char _conflictList;              // 0: none, 1: atomic (default), 2: parallel prefix sums (0, 2 not implemented)
+  bool _serialConflictResolution;  // true if using serial conflict resolution, false otherwise (default)
+  char _use_color_set;             // The VB Algorithm Type: 0: VB,  1: VBCS,  2: VBBIT  (1, 2 not implemented).
 
 public:
 
@@ -311,8 +314,15 @@ public:
         nv (nr_), 
         cp(coloring_handle),
         _chunkSize(coloring_handle->get_vb_chunk_size()),
-        _max_num_iterations(1000)
-  {}
+        _max_num_iterations(1000),
+        _conflictList(1),
+        _serialConflictResolution(false),
+        _use_color_set(0)
+  {
+    std::cout << ">>> WCMCLEN GraphColorD2() (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
+    //std::cout << ">>> WCMCLEN coloring_algo_type = " << coloring_handle->get_coloring_algo_type() << std::endl;
+    //std::cout << ">>> WCMCLEN conflict_list_type = " << coloring_handle->get_conflict_list_type() << std::endl;
+  }
 
 
   /** \brief GraphColor destructor.
@@ -355,15 +365,19 @@ public:
     // init conflictlist sequentially.
     Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
 
-    // Next iteratons's conflictlist
+    // Next iteratons's conflictList
     nnz_lno_temp_work_view_t next_iteration_recolorList;
 
-    // Size the next iteration conflictlist
+    // Size the next iteration conflictList
     single_dim_index_view_type next_iteration_recolorListLength;
 
-    // Vertices to recolor.  Will swap with vertexList
-    next_iteration_recolorList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
-    next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
+    // if we're using a conflictList
+    if(this->_conflictList > 0)
+    {
+      // Vertices to recolor.  Will swap with vertexList
+      next_iteration_recolorList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
+      next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
+    }
 
     nnz_lno_t numUncolored = this->nv;
     nnz_lno_t current_vertexListLength = this->nv;
@@ -380,7 +394,6 @@ public:
     MyExecSpace::fence();
     prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out");
 
-
     // Find conflicts
     std::cout << "--------------------------------------------------" << std::endl;
     bool swap_work_arrays = true;
@@ -395,23 +408,26 @@ public:
                                        next_iteration_recolorList,
                                        next_iteration_recolorListLength); 
 
-
-
     MyExecSpace::fence();
 
-    // break after first iteration if serial
-    break;      // DEBUGGING
+    // Break after first iteration if using Serial Conflict Resolution
+    //if(this->_serialConflictResolution) break;
 
-    // Swap Work Arrays
-    if(iter+1 < _max_num_iterations)
+    // If conflictList is used and we need to swap the work arrays
+    if(this->_conflictList && swap_work_arrays) 
     {
-      nnz_lno_temp_work_view_t temp = current_vertexList;
-      current_vertexList = next_iteration_recolorList;
-      next_iteration_recolorList = temp;
+      // Swap Work Arrays
+      if(iter+1 < this->_max_num_iterations)
+      {
+        nnz_lno_temp_work_view_t temp = current_vertexList;
+        current_vertexList = next_iteration_recolorList;
+        next_iteration_recolorList = temp;
 
-      current_vertexListLength = numUncolored;
-      next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
+        current_vertexListLength = numUncolored;
+        next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
+      }
     }
+    break;      // DEBUGGING (STOP HERE)
 
   }
 
@@ -462,7 +478,7 @@ private:
                           chunkSize_
                           );
 
-    Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_+1), gc);
+    Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
 
   }  // colorGreedy (end)
 
@@ -488,7 +504,43 @@ private:
     // WCMCLEN TODO: Fill this in.
     std::cout << ">>> WCMCLEN findConflicts (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
 
-    nnz_lno_t output_numUncolored=0;
+    swap_work_arrays = true;
+    nnz_lno_t output_numUncolored = 0;
+
+    // conflictList mode: 
+    if(0 == this->_conflictList)
+    {
+      // Throw an error -- we aren't using this mode (yet).
+    }
+
+    // conflictList mode: Parallel Prefix Sums (PPS)
+    else if(2 == this->_conflictList)
+    {
+      // Throw an error -- we aren't using this mode (yet)
+    }
+
+    // conflictList mode: ATOMIC
+    else if(1 == this->_conflictList)
+    {
+      if(0 == this->_use_color_set)
+      {
+        // TODO: call functorFindConflicts_Atomic from here...
+        functorFindConflicts_Atomic<adj_view_t> conf(this->nv,
+                                                     xadj_,
+                                                     adj_,
+                                                     vertex_colors_,
+                                                     current_vertexList_,
+                                                     next_iteration_recolorList_,
+                                                     next_iteration_recolorListLength_);
+        Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
+      }
+    }
+    else
+    {
+      // Throw an error becaue we should not be here...
+    }
+
+    std::cout << ">>> WCMCLEN num_uncolored: " << output_numUncolored << std::endl;
 
     return output_numUncolored;
   }
@@ -496,7 +548,7 @@ private:
 
 
   // ------------------------------------------------------
-  // Helper Functors
+  // Functors: Helpers
   // ------------------------------------------------------
 
   // pretty-print a 1D View with label
@@ -511,6 +563,11 @@ private:
     std::cout << " ]" << std::endl;
   }
 
+
+
+  // ------------------------------------------------------
+  // Functors: Distance-2 Graph Coloring
+  // ------------------------------------------------------
 
   /**
    * Functor to init a list sequentialy, that is list[i] = i
@@ -559,10 +616,10 @@ private:
             _vertexListLength(vertexListLength),
             _chunkSize(chunkSize)
     {
-      std::cout << ">>> WCMCLEN functorGreedyColor() <<C'TOR>> (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
-                << ">>> WCMCLEN - nv                = " << nv << std::endl
-                << ">>> WCMCLEN - _vertexListLength = " << _vertexListLength << std::endl
-                << ">>> WCMCLEN - _chunkSize        = " << _chunkSize << std::endl;
+//      std::cout << ">>> WCMCLEN functorGreedyColor() <<C'TOR>> (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
+//                << ">>> WCMCLEN - nv                = " << nv << std::endl
+//                << ">>> WCMCLEN - _vertexListLength = " << _vertexListLength << std::endl
+//                << ">>> WCMCLEN - _chunkSize        = " << _chunkSize << std::endl;
     }
 
 
@@ -632,7 +689,7 @@ private:
               if(vid_2idx == vid || vid_2idx >= nv) 
               { 
 //                std::cout << "* ";
-                continue;   
+                continue;
               }
 //              std::cout << " ";
 
@@ -660,9 +717,50 @@ private:
         }   // for offset...
       }   // for ichunk...
     }   // operator() (end)
-  };  // functorGreedyColor (end)
+  };  // struct functorGreedyColor (end)
 
 
+
+template <typename adj_view_t>
+struct functorFindConflicts_Atomic
+{
+  nnz_lno_t                  nv;           // num verts
+  const_lno_row_view_t       _idx;
+  adj_view_t                 _adj;
+  color_view_type            _colors;
+  nnz_lno_temp_work_view_t   _vertexList;
+  nnz_lno_temp_work_view_t   _recolorList;
+  single_dim_index_view_type _recolorListLength;
+
+
+  functorFindConflicts_Atomic(nnz_lno_t                  nv_,
+                              const_lno_row_view_t       xadj_,
+                              adj_view_t                 adj_,
+                              color_view_type            colors,
+                              nnz_lno_temp_work_view_t   vertexList,
+                              nnz_lno_temp_work_view_t   recolorList,
+                              single_dim_index_view_type recolorListLength)
+           : nv (nv_),
+             _idx(xadj_),
+             _adj(adj_),
+             _colors(colors),
+             _vertexList(vertexList),
+             _recolorList(recolorList),
+             _recolorListLength(recolorListLength)
+  { }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const nnz_lno_t vid_, nnz_lno_t &numConflicts) const
+  {
+    // NOTE: ii ===> vid_
+    std::cout << ">>> WCMCLEN functorFindConflicts_Atomic::operator()(" 
+              << vid_ << ", " << numConflicts
+              << ") (KokkosGraph_Distance2Color_impl.hpp)" 
+              << std::endl;
+
+  }
+
+}; // struct functorFindConflicts_Atomic (end)
 
 
 
