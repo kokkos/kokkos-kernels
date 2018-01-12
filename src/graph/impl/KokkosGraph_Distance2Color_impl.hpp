@@ -750,16 +750,42 @@ struct functorFindConflicts_Atomic
   { }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const nnz_lno_t vid_, nnz_lno_t &numConflicts) const
+  void operator()(const nnz_lno_t vid_, nnz_lno_t& numConflicts) const
   {
-    // NOTE: ii ===> vid_
-    std::cout << ">>> WCMCLEN functorFindConflicts_Atomic::operator()(" 
-              << vid_ << ", " << numConflicts
-              << ") (KokkosGraph_Distance2Color_impl.hpp)" 
-              << std::endl;
+//    std::cout << ">>> WCMCLEN functorFindConflicts_Atomic::operator()(" 
+//              << vid_ << ", " << numConflicts
+//              << ") (KokkosGraph_Distance2Color_impl.hpp)" 
+//              << std::endl;
 
+    nnz_lno_t vid      = _vertexList(vid_);
+    color_t   my_color = _colors(vid);
+
+    size_type vid_1adj     = _idx(vid);
+    size_type vid_1adj_end = _idx(vid+1);
+
+    for(; vid_1adj < vid_1adj_end; vid_1adj++)
+    {
+      nnz_lno_t vid_1idx = _adj(vid_1adj);
+
+      for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
+      { 
+        size_type vid_2idx = _adj(vid_2adj);
+
+        if(vid == vid_2idx || vid_2idx >= nv) continue;
+
+        if(_colors(vid_2idx) == my_color)
+        {
+          _colors(vid) = 0;   // uncolor vertex
+          // Atomically add vertex to recolorList
+          const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+          _recolorList(k) = vid;
+          numConflicts += 1;
+//          std::cout << ">>> WCMCLEN vertex " << vid << " marked as conflict" << std::endl;
+          break;  // Can exit if vertex gets marked as a conflict.
+        }
+      }
+    }
   }
-
 }; // struct functorFindConflicts_Atomic (end)
 
 
