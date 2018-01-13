@@ -62,7 +62,8 @@ namespace KokkosGraph {
 
 namespace Impl {
 
-#define VB_COLORING_FORBIDDEN_SIZE 64
+#define VB_D2_COLORING_FORBIDDEN_SIZE 64
+// #define VB_D2_COLORING_FORBIDDEN_SIZE 20000
 // #define VBBIT_COLORING_FORBIDDEN_SIZE 64
 
 
@@ -655,15 +656,15 @@ private:
 
         // Use forbidden array to find available color.
         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-        bool forbidden[VB_COLORING_FORBIDDEN_SIZE];     // Forbidden Colors
+        bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];     // Forbidden Colors
 
         // Do multiple passes if the array is too small.
         color_t degree = _idx(vid+1) - _idx(vid);
         color_t offset = 0;
-        for( ; offset <= (degree + VB_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_COLORING_FORBIDDEN_SIZE)
+        for( ; offset <= (degree + VB_D2_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_D2_COLORING_FORBIDDEN_SIZE)
         {
           // initialize
-          for(int j=0; j < VB_COLORING_FORBIDDEN_SIZE; j++)
+          for(int j=0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++)
           {
             forbidden[j] = false;
           }
@@ -695,7 +696,7 @@ private:
 
               color_t c = _colors(vid_2idx);
 
-              if((c >= offset) && (c - offset < VB_COLORING_FORBIDDEN_SIZE))
+              if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
               {
                 forbidden[c - offset] = true;
               }
@@ -705,7 +706,7 @@ private:
           }
 
           // color vertex i with smallest available color (firstFit)
-          for(int c=0; c < VB_COLORING_FORBIDDEN_SIZE; c++)
+          for(int c=0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
           {
             if(!forbidden[c]) 
             {
@@ -762,6 +763,8 @@ struct functorFindConflicts_Atomic
 
     size_type vid_1adj     = _idx(vid);
     size_type vid_1adj_end = _idx(vid+1);
+
+//    if(0 == _colors(vid)) std::cout << "Vertex " << vid << " color is already 0..." << std::endl;
 
     for(; vid_1adj < vid_1adj_end; vid_1adj++)
     {
