@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 */
+#include <iomanip>
 #include <vector>
 
 #include <Kokkos_Core.hpp>
@@ -321,8 +322,9 @@ public:
         _use_color_set(0)
   {
     std::cout << ">>> WCMCLEN GraphColorD2() (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
-    //std::cout << ">>> WCMCLEN coloring_algo_type = " << coloring_handle->get_coloring_algo_type() << std::endl;
-    //std::cout << ">>> WCMCLEN conflict_list_type = " << coloring_handle->get_conflict_list_type() << std::endl;
+    std::cout << ">>> WCMCLEN :    _chunkSize = " << this->_chunkSize << std::endl;
+    //std::cout << ">>> WCMCLEN :    coloring_algo_type = " << coloring_handle->get_coloring_algo_type() << std::endl;
+    //std::cout << ">>> WCMCLEN :    conflict_list_type = " << coloring_handle->get_conflict_list_type() << std::endl;
   }
 
 
@@ -342,7 +344,7 @@ public:
     std::cout << ">>> WCMCLEN color_graph_d2_wcmclen (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
 
     // Data:
-    // cp   = coloring_handle  
+    // cp   = coloring_handle
     // nr   = num_rows  (scalar)
     // nc   = num_cols  (scalar)
     // xadj = row_map   (view 1 dimension - [num_verts+1] - entries index into adj )
@@ -355,8 +357,8 @@ public:
     std::cout << ">>> WCMCLEN num_edges = " << this->adj.dimension_0() << std::endl;
     // std::cout << ">>> WCMCLEN " << std::endl;
 
-    prettyPrint1DView(this->xadj, ">>> WCMCLEN xadj     ");
-    prettyPrint1DView(this->adj, ">>> WCMCLEN adj      ");
+    // prettyPrint1DView(this->xadj, ">>> WCMCLEN xadj     ", 1000);
+    // prettyPrint1DView(this->adj,  ">>> WCMCLEN adj      ", 1000);
 
 
 
@@ -383,55 +385,62 @@ public:
     nnz_lno_t numUncolored = this->nv;
     nnz_lno_t current_vertexListLength = this->nv;
 
-  // int _max_num_iterations = 2000;   // WCMCLEN - SCAFFOLDING 
+    // int _max_num_iterations = 2000;   // WCMCLEN - SCAFFOLDING 
 
-  int iter=0; 
-  for (; (iter < _max_num_iterations) && (numUncolored>0); iter++)
-  {
-    // Do greedy color
-    std::cout << "--------------------------------------------------" << std::endl;
-    this->colorGreedy(this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
-
-    MyExecSpace::fence();
-    prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out");
-
-    // Find conflicts
-    std::cout << "--------------------------------------------------" << std::endl;
-    bool swap_work_arrays = true;
-
-    // NOTE: not using colorset algorithm in this so we don't include colorset data
-    numUncolored = this->findConflicts(swap_work_arrays,
-                                       this->xadj,
-                                       this->adj,
-                                       colors_out,
-                                       current_vertexList,
-                                       current_vertexListLength,
-                                       next_iteration_recolorList,
-                                       next_iteration_recolorListLength); 
-
-    MyExecSpace::fence();
-
-    // Break after first iteration if using Serial Conflict Resolution
-    //if(this->_serialConflictResolution) break;
-
-    // If conflictList is used and we need to swap the work arrays
-    if(this->_conflictList && swap_work_arrays) 
+    int iter=0; 
+    for (; (iter < _max_num_iterations) && (numUncolored>0); iter++)
     {
-      // Swap Work Arrays
-      if(iter+1 < this->_max_num_iterations)
+      // Do greedy color
+//      std::cout << "--------------------------------------------------" << std::endl;
+      this->colorGreedy(this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
+
+      MyExecSpace::fence();
+      prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out", 100);
+
+      // Find conflicts
+//      std::cout << "--------------------------------------------------" << std::endl;
+      bool swap_work_arrays = true;   // NOTE: swap_work_arrays can go away in this example -- was only ever 
+                                      //       set false in the PPS code in the original D1 coloring...
+
+      // NOTE: not using colorset algorithm in this so we don't include colorset data
+      numUncolored = this->findConflicts(swap_work_arrays,
+                                         this->xadj,
+                                         this->adj,
+                                         colors_out,
+                                         current_vertexList,
+                                         current_vertexListLength,
+                                         next_iteration_recolorList,
+                                         next_iteration_recolorListLength); 
+
+      MyExecSpace::fence();
+
+      // If conflictList is used and we need to swap the work arrays
+      if(this->_conflictList && swap_work_arrays) 
       {
-        nnz_lno_temp_work_view_t temp = current_vertexList;
-        current_vertexList = next_iteration_recolorList;
-        next_iteration_recolorList = temp;
+        // Swap Work Arrays
+        if(iter+1 < this->_max_num_iterations)
+        {
+          nnz_lno_temp_work_view_t temp = current_vertexList;
+          current_vertexList = next_iteration_recolorList;
+          next_iteration_recolorList = temp;
 
-        current_vertexListLength = numUncolored;
-        next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
+          current_vertexListLength = numUncolored;
+          next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
+        }
       }
+      std::cout << ">>> WCMCLEN After iter " << iter << ": " << std::endl;
+      std::cout << ">>> WCMCLEN numUncolored = " << numUncolored << std::endl;
+      std::cout << "--------------------------------------------------" << std::endl;
+    } // end for iter...
+
+    // clean up in serial
+    if (numUncolored > 0)
+    {
+      std::cout << ">>> WCMCLEN: Final cleanup (serial) start..." << std::endl;
+      this->resolveConflicts(this->nv, this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
     }
-    break;      // DEBUGGING (STOP HERE)
 
-  }
-
+    MyExecSpace::fence();
 
 
     std::cout << std::endl;
@@ -441,7 +450,7 @@ public:
     std::ostringstream os;
     os << "GraphColorD2::color_graph_d2_wcmclen() not implemented -- [STUB CODE -X-]";
     Kokkos::Impl::throw_runtime_exception(os.str());
-  }
+  }   // color_graph_d2 (end)
 
 
 
@@ -512,12 +521,18 @@ private:
     if(0 == this->_conflictList)
     {
       // Throw an error -- we aren't using this mode (yet).
+      std::ostringstream os;
+      os << "GraphColorD2::findConflicts() not implemented for conflictList == 0";
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
 
     // conflictList mode: Parallel Prefix Sums (PPS)
     else if(2 == this->_conflictList)
     {
       // Throw an error -- we aren't using this mode (yet)
+      std::ostringstream os;
+      os << "GraphColorD2::findConflicts() not implemented for conflictList == 2";
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
 
     // conflictList mode: ATOMIC
@@ -539,11 +554,33 @@ private:
     else
     {
       // Throw an error becaue we should not be here...
+      std::ostringstream os;
+      os << "GraphColorD2::findConflicts() - unknown conflictList Flag value: " << this->_conflictList << " ";
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
-
-    std::cout << ">>> WCMCLEN num_uncolored: " << output_numUncolored << std::endl;
-
     return output_numUncolored;
+  }
+
+
+
+  // -----------------------------------------------------------------
+  //
+  // GraphColorD2::resolveConflicts()
+  //
+  // -----------------------------------------------------------------
+  template<typename adj_view_t>
+  void resolveConflicts(nnz_lno_t                _nv,
+                        const_lno_row_view_t     xadj_,
+                        adj_view_t               adj_,
+                        color_view_type          vertex_colors_,
+                        nnz_lno_temp_work_view_t current_vertexList_,
+                        size_type                current_vertexListLength_)
+  {
+
+    std::cout << ">>> WCMCLEN resolveConflicts (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
+    // See linke 1275 in KokkosGraph_GraphColor_impl.hpp for this code...
+    // -- might be difficult to test (?)
+
   }
 
 
@@ -554,14 +591,24 @@ private:
 
   // pretty-print a 1D View with label
   template<typename kokkos_view_t>
-  void prettyPrint1DView(kokkos_view_t & view, const char* label)
-  {
-    std::cout << label << " = [ ";
+  void prettyPrint1DView(kokkos_view_t & view, const char* label, const size_t max_entries=500) const
+  { 
+    int max_per_line=20;
+    int line_count=1;
+    std::cout << label << " = [ \n\t";
     for(size_t i=0; i<view.dimension_0(); i++)
     {
-      std::cout << view(i) << " ";
+      std::cout << std::setw(5) << view(i) << " ";
+      if (line_count >= max_per_line) {
+        std::cout << std::endl << "\t"; 
+        line_count = 0; 
+      }
+      line_count++;
+      if(i >= max_entries-1) { std::cout << "<snip>"; break; }
     }
-    std::cout << " ]" << std::endl;
+    if(line_count > 1) 
+      std::cout << std::endl;
+    std::cout << "\t ]" << std::endl;
   }
 
 
@@ -659,9 +706,14 @@ private:
         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];     // Forbidden Colors
 
         // Do multiple passes if the array is too small.
-        color_t degree = _idx(vid+1) - _idx(vid);
+        // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
+        //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.  
+        //   This could be as big as all the vertices in the graph if diameter(G)=2...
+        // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
         color_t offset = 0;
-        for( ; offset <= (degree + VB_D2_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_D2_COLORING_FORBIDDEN_SIZE)
+//        color_t degree = _idx(vid+1) - _idx(vid);
+//        for( ; offset <= (degree + VB_D2_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_D2_COLORING_FORBIDDEN_SIZE)
+        while(!foundColor)
         {
           // initialize
           for(int j=0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++)
@@ -687,7 +739,7 @@ private:
 //              std::cout << vid_2idx;
 
               // Skip distance-2-self-loops
-              if(vid_2idx == vid || vid_2idx >= nv) 
+              if(vid_2idx == vid || vid_2idx >= nv) // MOD!!!
               { 
 //                std::cout << "* ";
                 continue;
@@ -710,11 +762,13 @@ private:
           {
             if(!forbidden[c]) 
             {
+//              std::cout << ">>> WCMCLEN Set color(" << vid << ") = " << offset+c << std::endl;
               _colors(vid) = offset + c;
               foundColor = true;
               break;
             }
           }   // for c...
+          offset += VB_D2_COLORING_FORBIDDEN_SIZE;
         }   // for offset...
       }   // for ichunk...
     }   // operator() (end)
@@ -765,6 +819,7 @@ struct functorFindConflicts_Atomic
     size_type vid_1adj_end = _idx(vid+1);
 
 //    if(0 == _colors(vid)) std::cout << "Vertex " << vid << " color is already 0..." << std::endl;
+//    IF the color is already 0, should we skip over the vertex and just increment numConflicts?
 
     for(; vid_1adj < vid_1adj_end; vid_1adj++)
     {
