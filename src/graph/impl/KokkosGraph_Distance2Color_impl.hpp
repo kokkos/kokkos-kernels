@@ -244,6 +244,10 @@ public:
   typedef typename HandleType::size_type size_type;
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
 
+  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t;  // host view type
+  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t;  // host view type
+  typedef typename HandleType::color_host_view_t color_host_view_t;    // host view type
+
   typedef typename HandleType::HandleExecSpace        MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace  MyTempMemorySpace;
   // typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
@@ -436,20 +440,19 @@ public:
     // clean up in serial
     if (numUncolored > 0)
     {
-      std::cout << ">>> WCMCLEN: Final cleanup (serial) start..." << std::endl;
+//      std::cout << ">>> WCMCLEN: Final cleanup (serial) start..." << std::endl;
       this->resolveConflicts(this->nv, this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
     }
 
     MyExecSpace::fence();
 
-
     std::cout << std::endl;
     std::cout << std::endl; 
     std::cout << std::endl;
 
-    std::ostringstream os;
-    os << "GraphColorD2::color_graph_d2_wcmclen() not implemented -- [STUB CODE -X-]";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+//    std::ostringstream os;
+//    os << "GraphColorD2::color_graph_d2_wcmclen() not implemented -- [STUB CODE -X-]";
+//    Kokkos::Impl::throw_runtime_exception(os.str());
   }   // color_graph_d2 (end)
 
 
@@ -576,11 +579,62 @@ private:
                         nnz_lno_temp_work_view_t current_vertexList_,
                         size_type                current_vertexListLength_)
   {
+    color_t*  forbidden = new color_t[_nv];
+    nnz_lno_t vid       = 0;
+    nnz_lno_t end       = _nv;
 
-    std::cout << ">>> WCMCLEN resolveConflicts (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
-    // See linke 1275 in KokkosGraph_GraphColor_impl.hpp for this code...
-    // -- might be difficult to test (?)
+    typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
 
+    if(this->_conflictList) 
+    {
+      end = current_vertexListLength_;
+      h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
+      Kokkos::deep_copy(h_recolor_list, current_vertexList_);
+    }
+
+    color_host_view_t h_colors = Kokkos::create_mirror_view(vertex_colors_);
+    typename const_lno_row_view_t::HostMirror h_idx = Kokkos::create_mirror_view(xadj_);
+    typename adj_view_t::HostMirror h_adj = Kokkos::create_mirror_view(adj_);
+
+    Kokkos::deep_copy(h_colors, vertex_colors_);
+    Kokkos::deep_copy(h_idx,    xadj_);
+    Kokkos::deep_copy(h_adj,    adj_);
+
+    for(nnz_lno_t k=0; k<end; k++)
+    {
+      if(this->_conflictList)
+      {
+        vid = h_recolor_list(k);
+      }
+      else
+      {
+        vid = k;  // check for uncolored vertices
+      }
+      if(h_colors(vid) > 0) continue;
+      // loop over distance-1 neighbors of vid
+      for(size_type vid_1adj=h_idx(vid); vid_1adj < h_idx(vid+1); vid_1adj++) 
+      {
+        size_type vid_1idx = h_adj(vid_1adj);
+
+        // loop over distance-1 neighbors of vid_1idx (distance-2 from vid)
+        for(size_type vid_2adj=h_idx(vid_1idx); vid_2adj < h_idx(vid_1idx+1); vid_2adj++)
+        {
+          size_type vid_2idx = h_adj(vid_2adj);
+
+          // skip over loops vid -- ??? -- vid
+          if(vid_2idx == vid)
+            continue;
+
+          forbidden[h_colors(vid_2idx)] = vid;
+        }
+      }
+      // color vertex vid with smallest available color
+      int c=1;
+      while (forbidden[c]==vid) c++;
+      h_colors(vid) = c;
+    }
+    Kokkos::deep_copy(vertex_colors_, h_colors);
+    delete [] forbidden;
   }
 
 
