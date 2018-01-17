@@ -105,7 +105,7 @@ public:
   typedef typename HandleType::scalar_temp_work_view_t        scalar_temp_work_view_t;
   typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
 
-  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_temp_work_view_t           nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
@@ -130,17 +130,17 @@ public:
    * \param ne_: number of edges in the graph
    * \param row_map: the xadj array of the graph. Its size is nv_ +1
    * \param entries: adjacency array of the graph. Its size is ne_
-   * \param coloring_handle: GraphColoringHandle object that holds the specification about the graph coloring,
+   * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
    *    including parameters.
    */
   GraphColorD2_MatrixSquared (nnz_lno_t             nr_,
-                nnz_lno_t             nc_,
-                size_type             ne_,
-                const_lno_row_view_t  row_map,
-                const_lno_nnz_view_t  entries,
-                const_clno_row_view_t t_row_map,
-                const_clno_nnz_view_t t_entries,
-                HandleType*           coloring_handle):
+                              nnz_lno_t             nc_,
+                              size_type             ne_,
+                              const_lno_row_view_t  row_map,
+                              const_lno_nnz_view_t  entries,
+                              const_clno_row_view_t t_row_map,
+                              const_clno_nnz_view_t t_entries,
+                              HandleType*           handle):
         nr (nr_), 
         nc (nc_), 
         ne(ne_), 
@@ -149,7 +149,7 @@ public:
         t_xadj(t_row_map), 
         t_adj(t_entries),
         nv (nr_), 
-        cp(coloring_handle)
+        cp(handle)
   {}
 
 
@@ -224,21 +224,27 @@ public:
   typedef lno_row_view_t_ in_lno_row_view_t;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
-  // typedef typename HandleType::GraphColoringHandleType::color_t      color_t;
-  // typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_type;
-  typedef typename HandleType::color_view_t color_view_type;
-  typedef typename HandleType::color_t      color_t;
+  //typedef typename HandleType::color_view_t color_view_type;
+  typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_type;
+  //typedef typename HandleType::color_t      color_t;
+  typedef typename HandleType::GraphColoringHandleType::color_t      color_t;
 
-  typedef typename HandleType::size_type size_type;
-  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+  //typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::GraphColoringHandleType::size_type size_type;
+  //typedef typename HandleType::nnz_lno_t nnz_lno_t;
+  typedef typename HandleType::GraphColoringHandleType::nnz_lno_t nnz_lno_t;
 
   typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t;  // host view type
   typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t;  // host view type
-  typedef typename HandleType::color_host_view_t color_host_view_t;    // host view type
+  //typedef typename HandleType::color_host_view_t color_host_view_t;    // host view type
+  typedef typename HandleType::GraphColoringHandleType::color_host_view_t color_host_view_t;    // host view type
 
-  typedef typename HandleType::HandleExecSpace        MyExecSpace;
-  typedef typename HandleType::HandleTempMemorySpace  MyTempMemorySpace;
-  typedef typename HandleType::const_size_type        const_size_type;
+  //typedef typename HandleType::HandleExecSpace        MyExecSpace;
+  typedef typename HandleType::GraphColoringHandleType::HandleExecSpace        MyExecSpace;
+  //typedef typename HandleType::HandleTempMemorySpace  MyTempMemorySpace;
+  typedef typename HandleType::GraphColoringHandleType::HandleTempMemorySpace  MyTempMemorySpace;
+  //typedef typename HandleType::const_size_type        const_size_type;
+  typedef typename HandleType::GraphColoringHandleType::const_size_type        const_size_type;
 
   typedef typename lno_row_view_t_::device_type    row_lno_view_device_t;
   typedef typename lno_row_view_t_::const_type     const_lno_row_view_t;
@@ -249,7 +255,8 @@ public:
   typedef typename clno_nnz_view_t_::const_type     const_clno_nnz_view_t;
   typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
 
-  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  //typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::GraphColoringHandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
@@ -264,7 +271,8 @@ protected:
   const_clno_row_view_t t_xadj;   // rowmap, transpose of rowmap
   const_clno_nnz_view_t t_adj;    // entries, transpose of entries
   nnz_lno_t             nv;       // num vertices
-  HandleType*           cp;       // pointer to the handle
+  
+  typename HandleType::GraphColoringHandleType* cp;    // pointer to the graph coloring handle
 
 private:
 
@@ -283,7 +291,7 @@ public:
    * \param ne_: number of edges in the graph
    * \param row_map: the xadj array of the graph. Its size is nv_ +1
    * \param entries: adjacency array of the graph. Its size is ne_
-   * \param coloring_handle: GraphColoringHandle object that holds the specification about the graph coloring,
+   * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
    *    including parameters.
    */
   GraphColorD2 (nnz_lno_t             nr_,
@@ -293,7 +301,7 @@ public:
                 const_lno_nnz_view_t  entries,
                 const_clno_row_view_t t_row_map,
                 const_clno_nnz_view_t t_entries,
-                HandleType*           coloring_handle):
+                HandleType*           handle):
         nr (nr_), 
         nc (nc_), 
         ne(ne_), 
@@ -302,17 +310,17 @@ public:
         t_xadj(t_row_map), 
         t_adj(t_entries),
         nv (nr_), 
-        cp(coloring_handle),
-        _chunkSize(coloring_handle->get_vb_chunk_size()),
-        _max_num_iterations(coloring_handle->get_max_number_of_iterations()),
+        cp(handle->get_graph_coloring_handle()),
+        _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size()),
+        _max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations()),
         _conflictList(1),
         _serialConflictResolution(false),
         _use_color_set(0),
-        _ticToc(coloring_handle->get_tictoc())
+        _ticToc(handle->get_verbose())
   {
     //std::cout << ">>> WCMCLEN GraphColorD2() (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
-    //          << ">>> WCMCLEN :    coloring_algo_type = " << coloring_handle->get_coloring_algo_type() << std::endl
-    //          << ">>> WCMCLEN :    conflict_list_type = " << coloring_handle->get_conflict_list_type() << std::endl;
+    //          << ">>> WCMCLEN :    coloring_algo_type = " << handle->get_coloring_algo_type() << std::endl
+    //          << ">>> WCMCLEN :    conflict_list_type = " << handle->get_conflict_list_type() << std::endl;
   }
 
 
@@ -336,7 +344,7 @@ public:
     color_view_type colors_out("Graph Colors", this->nv);
 
     // Data:
-    // cp   = coloring_handle
+    // cp   = graph coloring handle
     // nr   = num_rows  (scalar)
     // nc   = num_cols  (scalar)
     // xadj = row_map   (view 1 dimension - [num_verts+1] - entries index into adj )
@@ -459,6 +467,7 @@ public:
       std::cout << "\tTime serial conflict resolution : " << t << std::endl;
     }
 
+    // Save out the number of phases and vertex colors
     this->cp->set_vertex_colors( colors_out );
     this->cp->set_num_phases( (double)iter );
 

@@ -93,8 +93,8 @@ void graph_color_d2(KernelHandle *handle,
 
     case COLORING_D2:
     {
-      Impl::GraphColorD2 <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, gch);
+      Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
       gc.color_graph_d2();
       break;
     }
