@@ -142,7 +142,6 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       else if ( 0 == strcasecmp( argv[i], "COLORING_D2" ) )
       {
-        std::cout << ">>> Using coloring algorithm <<<" << argv[i] << std::endl;
         params.algorithm = 2;
       }
       else 
@@ -224,8 +223,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
       kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
       break;
     }
-
-    //std::cout << ">>> WCMCLEN run_experiment (KokkosGraph_color_d2.hpp)" << std::endl;
 
     graph_color_d2(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
@@ -476,7 +473,6 @@ int main (int argc, char ** argv)
   }
 
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
-
 
 #if defined( KOKKOS_HAVE_OPENMP )
 

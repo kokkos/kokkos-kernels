@@ -74,7 +74,6 @@ namespace Impl {
  *  e.g. no vertex having same color shares an edge.
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
-// TODO: This routine has a lot of extra typedefs, members, etc. that should be cleaned.
 template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_ >
 class GraphColorD2_MatrixSquared
 {
@@ -91,7 +90,6 @@ public:
 
   typedef typename HandleType::HandleExecSpace        MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace  MyTempMemorySpace;
-  // typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
   typedef typename HandleType::const_size_type        const_size_type;
 
   typedef typename lno_row_view_t_::device_type    row_lno_view_device_t;
@@ -152,8 +150,6 @@ public:
         t_adj(t_entries),
         nv (nr_), 
         cp(coloring_handle)
-        //_chunkSize(coloring_handle->get_vb_chunk_size()),
-        // _max_num_iterations(1000)
   {}
 
 
@@ -173,9 +169,6 @@ public:
    */
   virtual void color_graph_d2_matrix_squared()
   {
-    // WCMCLEN: Brian's Code
-//    std::cout << ">>> WCMCLEN color_graph_d2_matrix_squared (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
-
     std::string algName = "SPGEMM_KK_MEMSPEED";
     cp->create_spgemm_handle(KokkosSparse::StringToSPGEMMAlgorithm(algName));
 
@@ -206,8 +199,6 @@ public:
     // Use LocalOrdinal for storing colors
     KokkosGraph::Experimental::graph_color(cp, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
 
-    // WCMCLEN: Is this actually returning the colors anywhere???
-
     // extract the colors
     //auto coloringHandle = cp->get_graph_coloring_handle();
     //color_view_type colorsDevice = coloringHandle->get_vertex_colors();
@@ -217,9 +208,6 @@ public:
   }
 
 };  // GraphColorD2_MatrixSquared (end)
-
-
-
 
 
 
@@ -250,7 +238,6 @@ public:
 
   typedef typename HandleType::HandleExecSpace        MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace  MyTempMemorySpace;
-  // typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
   typedef typename HandleType::const_size_type        const_size_type;
 
   typedef typename lno_row_view_t_::device_type    row_lno_view_device_t;
@@ -261,10 +248,6 @@ public:
   typedef typename clno_row_view_t_::const_type     const_clno_row_view_t;
   typedef typename clno_nnz_view_t_::const_type     const_clno_nnz_view_t;
   typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
-
-  //typedef typename HandleType::size_type_temp_work_view_t     size_type_temp_work_view_t;
-  //typedef typename HandleType::scalar_temp_work_view_t        scalar_temp_work_view_t;
-  //typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
 
   typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
@@ -290,6 +273,7 @@ private:
   char _conflictList;              // 0: none, 1: atomic (default), 2: parallel prefix sums (0, 2 not implemented)
   bool _serialConflictResolution;  // true if using serial conflict resolution, false otherwise (default)
   char _use_color_set;             // The VB Algorithm Type: 0: VB,  1: VBCS,  2: VBBIT  (1, 2 not implemented).
+  bool _ticToc;                    // if true print info in each step
 
 public:
 
@@ -323,13 +307,12 @@ public:
         _max_num_iterations(coloring_handle->get_max_number_of_iterations()),
         _conflictList(1),
         _serialConflictResolution(false),
-        _use_color_set(0)
+        _use_color_set(0),
+        _ticToc(coloring_handle->get_tictoc())
   {
-    //std::cout << ">>> WCMCLEN GraphColorD2() (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
-    //std::cout << ">>> WCMCLEN :    _chunkSize = " << this->_chunkSize << std::endl;
-    //std::cout << ">>> WCMCLEN :    coloring_algo_type = " << coloring_handle->get_coloring_algo_type() << std::endl;
-    //std::cout << ">>> WCMCLEN :    conflict_list_type = " << coloring_handle->get_conflict_list_type() << std::endl;
-    //std::cout << ">>> WCMCLEN :    max_num_iterations = " << coloring_handle->get_max_number_of_iterations() << std::endl;
+    //std::cout << ">>> WCMCLEN GraphColorD2() (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
+    //          << ">>> WCMCLEN :    coloring_algo_type = " << coloring_handle->get_coloring_algo_type() << std::endl
+    //          << ">>> WCMCLEN :    conflict_list_type = " << coloring_handle->get_conflict_list_type() << std::endl;
   }
 
 
@@ -346,8 +329,7 @@ public:
   // -----------------------------------------------------------------
   virtual void color_graph_d2()
   {
-    //std::cout << ">>> WCMCLEN color_graph_d2_wcmclen (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
-    // create the colors view (TODO: Check with Mehmet if this is the right place for this -- we copy it into
+    // create the colors view (TODO: Check if this is the right place for this -- we copy it into
     //                               the graph coloring handle later using gc->set_vertex_colors()... but that
     //                               might be more work than is necessary if the vertex_colors view is already
     //                               allocated when the handle was created...)
@@ -360,14 +342,23 @@ public:
     // xadj = row_map   (view 1 dimension - [num_verts+1] - entries index into adj )
     // adj  = entries   (view 1 dimension - [num_edges]   - adjacency list )
 
-    //std::cout << ">>> WCMCLEN num_rows  = " << this->nr << std::endl;
-    //std::cout << ">>> WCMCLEN num_cols  = " << this->nc << std::endl;
-    //std::cout << ">>> WCMCLEN nv        = " << this->nv << std::endl;
-    //std::cout << ">>> WCMCLEN ne        = " << this->ne << std::endl;
-    //std::cout << ">>> WCMCLEN num_edges = " << this->adj.dimension_0() << std::endl;
+    if(this->_ticToc)
+    {
+      std::cout << "\tcolor_graph_d2 params:" << std::endl
+                << "\t  algorithm                : " << (int) this->_use_color_set << std::endl 
+                << "\t  useConflictList          : " << (int) this->_conflictList << std::endl 
+                << "\t  ticToc                   : " << this->_ticToc << std::endl
+                << "\t  max_num_iterations       : " << this->_max_num_iterations << std::endl 
+                << "\t  serialConflictResolution : " << (int) this->_serialConflictResolution << std::endl 
+                << "\t  chunkSize                : " << this->_chunkSize << std::endl 
+                << "\t  use_color_set            : " << (int) this->_use_color_set << std::endl
+                << "\tgraph information:" << std::endl
+                << "\t  nv                       : " << this->nv << std::endl 
+                << "\t  ne                       : " << this->ne << std::endl;
+    }
 
-    //prettyPrint1DView(this->xadj, ">>> WCMCLEN xadj     ", 1000);
-    //prettyPrint1DView(this->adj,  ">>> WCMCLEN adj      ", 1000);
+    //prettyPrint1DView(this->xadj, ">>> WCMCLEN xadj     ", 500);
+    //prettyPrint1DView(this->adj,  ">>> WCMCLEN adj      ", 500);
 
     // conflictlist - store conflicts that can happen when we're coloring in parallel.
     nnz_lno_temp_work_view_t current_vertexList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
@@ -392,19 +383,28 @@ public:
     nnz_lno_t numUncolored = this->nv;
     nnz_lno_t current_vertexListLength = this->nv;
 
+    double t, total=0.0;
+    Kokkos::Impl::Timer timer;
+
     int iter=0; 
     for (; (iter < _max_num_iterations) && (numUncolored>0); iter++)
     {
       // Do greedy color
-      //std::cout << "--------------------------------------------------" << std::endl;
       this->colorGreedy(this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
 
       MyExecSpace::fence();
+
+      if(this->_ticToc)
+      {
+        t = timer.seconds();
+        total += t;
+        std::cout << "\tTime speculative greedy phase " << std::setw(-2) << iter << " : " << t << std::endl;
+        timer.reset();
+      }
       
       //prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out", 100);
 
       // Find conflicts
-      //std::cout << ">>> WCMCLEN --------------------------------------------------" << std::endl;
       bool swap_work_arrays = true;   // NOTE: swap_work_arrays can go away in this example -- was only ever 
                                       //       set false in the PPS code in the original D1 coloring...
 
@@ -420,6 +420,14 @@ public:
 
       MyExecSpace::fence();
 
+      if (_ticToc)
+      {
+        t = timer.seconds();
+        total += t;
+        std::cout << "\tTime conflict detection " << std::setw(-2) << iter << "       : " << t << std::endl;
+        timer.reset();
+      }
+
       // If conflictList is used and we need to swap the work arrays
       if(this->_conflictList && swap_work_arrays) 
       {
@@ -434,23 +442,22 @@ public:
           next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
         }
       }
-      //std::cout << ">>> WCMCLEN After iter " << iter << ": " << std::endl;
-      //std::cout << ">>> WCMCLEN numUncolored = " << numUncolored << std::endl;
-      //std::cout << ">>> WCMCLEN --------------------------------------------------" << std::endl;
     } // end for iter...
 
     // clean up in serial
     if (numUncolored > 0)
     {
-      //std::cout << ">>> WCMCLEN: Final cleanup (serial) start..." << std::endl;
       this->resolveConflicts(this->nv, this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
     }
 
     MyExecSpace::fence();
-
-    //std::cout << std::endl;
-    //std::cout << std::endl; 
-    //std::cout << std::endl;
+    
+    if (_ticToc)
+    {
+      t = timer.seconds();
+      total += t;
+      std::cout << "\tTime serial conflict resolution : " << t << std::endl;
+    }
 
     this->cp->set_vertex_colors( colors_out );
     this->cp->set_num_phases( (double)iter );
@@ -513,15 +520,13 @@ private:
                           single_dim_index_view_type next_iteration_recolorListLength_
                           )
   {
-    //std::cout << ">>> WCMCLEN findConflicts (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
-
     swap_work_arrays = true;
     nnz_lno_t output_numUncolored = 0;
 
     // conflictList mode: 
     if(0 == this->_conflictList)
     {
-      // Throw an error -- we aren't using this mode (yet).
+      // Throw an error -- not implemented (yet)
       std::ostringstream os;
       os << "GraphColorD2::findConflicts() not implemented for conflictList == 0";
       Kokkos::Impl::throw_runtime_exception(os.str());
@@ -530,7 +535,7 @@ private:
     // conflictList mode: Parallel Prefix Sums (PPS)
     else if(2 == this->_conflictList)
     {
-      // Throw an error -- we aren't using this mode (yet)
+      // Throw an error -- not implemented (yet)
       std::ostringstream os;
       os << "GraphColorD2::findConflicts() not implemented for conflictList == 2";
       Kokkos::Impl::throw_runtime_exception(os.str());
@@ -541,7 +546,6 @@ private:
     {
       if(0 == this->_use_color_set)
       {
-        // TODO: call functorFindConflicts_Atomic from here...
         functorFindConflicts_Atomic<adj_view_t> conf(this->nv,
                                                      xadj_,
                                                      adj_,
@@ -619,7 +623,7 @@ private:
         {
           size_type vid_2idx = h_adj(vid_2adj);
 
-          // skip over loops vid -- ??? -- vid
+          // skip over loops vid -- x -- vid
           if(vid_2idx == vid)
             continue;
 
@@ -669,6 +673,7 @@ private:
   // Functors: Distance-2 Graph Coloring
   // ------------------------------------------------------
 
+
   /**
    * Functor to init a list sequentialy, that is list[i] = i
    */
@@ -716,10 +721,6 @@ private:
             _vertexListLength(vertexListLength),
             _chunkSize(chunkSize)
     {
-      //std::cout << ">>> WCMCLEN functorGreedyColor() <<C'TOR>> (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
-      //          << ">>> WCMCLEN - nv                = " << nv << std::endl
-      //          << ">>> WCMCLEN - _vertexListLength = " << _vertexListLength << std::endl
-      //          << ">>> WCMCLEN - _chunkSize        = " << _chunkSize << std::endl;
     }
 
 
@@ -742,9 +743,6 @@ private:
           vid = _vertexList(vid_ * _chunkSize + ichunk);
         else
           continue;
-
-        //std::cout << ">>> WCMCLEN vid_ = " << vid_ << std::endl
-        //          << ">>> WCMCLEN vid  = " << vid  << std::endl;
 
         // Already colored this vertex.
         if(_colors(vid) > 0) { continue; }
@@ -776,24 +774,18 @@ private:
           }
 
           // Check neighbors, fill forbidden array.
-          // -- TODO: Edit this for neighbors of neighbors loop
           for(size_type vid_1adj=_idx(vid); vid_1adj < _idx(vid+1); vid_1adj++) 
           {
             size_type vid_1idx = _adj(vid_1adj);
-            //std::cout << ">>> WCMCLEN vid_1idx = " << vid_1idx << std::endl;
-            //std::cout << ">>> WCMCLEN     vid_2idx = ";
             for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
             { 
               size_type vid_2idx = _adj(vid_2adj);
-              //std::cout << vid_2idx;
 
               // Skip distance-2-self-loops
-              if(vid_2idx == vid || vid_2idx >= nv) // MOD!!!
+              if(vid_2idx == vid || vid_2idx >= nv)
               { 
-                //std::cout << "* ";
                 continue;
               }
-              //std::cout << " ";
 
               color_t c = _colors(vid_2idx);
 
@@ -801,9 +793,7 @@ private:
               {
                 forbidden[c - offset] = true;
               }
-
             }
-            //std::cout << std::endl;
           }
 
           // color vertex i with smallest available color (firstFit)
@@ -811,7 +801,6 @@ private:
           {
             if(!forbidden[c]) 
             {
-              //std::cout << ">>> WCMCLEN Set color(" << vid << ") = " << offset+c << std::endl;
               _colors(vid) = offset + c;
               foundColor = true;
               break;
@@ -892,9 +881,6 @@ private:
 
 }  // end Impl namespace 
 }  // end KokkosGraph namespace
-
-
-
 
 
 #endif  // _KOKKOSCOLORINGD2IMP_HPP

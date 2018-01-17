@@ -78,13 +78,13 @@ void graph_color_d2(KernelHandle *handle,
   typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
   color_view_type colors_out("Graph Colors", num_rows);
 
+  gch->set_tictoc( handle->get_verbose() );
+
   switch (algorithm)
   {
     case COLORING_SPGEMM:                     // WCMCLEN: Remove SPGEMM coloring references for D2 Graph Coloring?
     case COLORING_D2_MATRIX_SQUARED:
     {
-      //std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
-
       Impl::GraphColorD2_MatrixSquared <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
       gc.color_graph_d2_matrix_squared();
@@ -93,8 +93,6 @@ void graph_color_d2(KernelHandle *handle,
 
     case COLORING_D2:
     {
-      //std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORNG_D2_WCMCLEN ] <<<" << std::endl;
-
       Impl::GraphColorD2 <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, gch);
       gc.color_graph_d2();
@@ -106,8 +104,6 @@ void graph_color_d2(KernelHandle *handle,
       break;
     }
   }
-
-  // WCMCLEN: Save the results into the output (TODO: check with mehmet on how this is supposed to happen.)
 
   double coloring_time = timer.seconds();
   gch->add_to_overall_coloring_time(coloring_time);
