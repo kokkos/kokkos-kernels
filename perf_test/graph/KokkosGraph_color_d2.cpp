@@ -57,26 +57,26 @@
 
 using namespace KokkosGraph;
 #ifdef KOKKOSKERNELS_INST_DOUBLE
-typedef double scalar_t;
+typedef double kk_scalar_t;
 #else
 #ifdef KOKKOSKERNELS_INST_FLOAT
-typedef float scalar_t;
+typedef float kk_scalar_t;
 #endif
 #endif
 
 #ifdef KOKKOSKERNELS_INST_OFFSET_INT
-typedef int size_type;
+typedef int kk_size_type;
 #else
 #ifdef KOKKOSKERNELS_INST_OFFSET_SIZE_T
-typedef size_t size_type;
+typedef size_t kk_size_type;
 #endif
 #endif
 
 #ifdef KOKKOSKERNELS_INST_ORDINAL_INT
-typedef int idx;
+typedef int kk_lno_t;
 #else
 #ifdef KOKKOSKERNELS_INST_ORDINAL_INT64_T
-typedef int64_t idx;
+typedef int64_t kk_lno_t;
 #endif
 #endif
 
@@ -188,7 +188,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   typedef typename lno_view_t::non_const_value_type size_type;
   typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
@@ -472,7 +472,7 @@ int main (int argc, char ** argv)
     return 0;
   }
 
-  std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
+  std::cout << "Sizeof(kk_lno_t):" << sizeof(kk_lno_t) << " sizeof(size_type):" << sizeof(kk_size_type) << std::endl;
 
 #if defined( KOKKOS_HAVE_OPENMP )
 
@@ -482,10 +482,10 @@ int main (int argc, char ** argv)
     Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
-        <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(params);
+        <kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(params);
 #else
     KokkosKernels::Experiment::run_multi_mem_experiment
-        <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
+        <kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
 #endif
     Kokkos::OpenMP::finalize();
   }
@@ -499,10 +499,10 @@ int main (int argc, char ** argv)
     Kokkos::Cuda::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
-    <size_type, idx, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(params);
+    <kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(params);
 #else
     KokkosKernels::Experiment::run_multi_mem_experiment
-    <size_type, idx, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(params);
+    <kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(params);
 #endif
     Kokkos::Cuda::finalize();
     Kokkos::HostSpace::execution_space::finalize();
@@ -516,10 +516,10 @@ int main (int argc, char ** argv)
     Kokkos::Serial::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
-    <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(params);
+    <kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(params);
 #else
     KokkosKernels::Experiment::run_multi_mem_experiment
-    <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(params);
+    <kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(params);
 #endif
     Kokkos::Serial::finalize();
   }
