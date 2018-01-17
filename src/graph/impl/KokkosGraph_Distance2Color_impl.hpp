@@ -448,9 +448,9 @@ public:
 
     MyExecSpace::fence();
 
-    std::cout << std::endl;
-    std::cout << std::endl; 
-    std::cout << std::endl;
+    //std::cout << std::endl;
+    //std::cout << std::endl; 
+    //std::cout << std::endl;
 
     this->cp->set_vertex_colors( colors_out );
     this->cp->set_num_phases( (double)iter );
