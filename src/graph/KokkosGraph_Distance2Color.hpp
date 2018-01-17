@@ -78,25 +78,12 @@ void graph_color_d2(KernelHandle *handle,
   typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
   color_view_type colors_out("Graph Colors", num_rows);
 
-/*
-  std::cout << "colors_out: ";
-  for(int i=0; i<num_rows; i++)
-  {
-    std::cout << colors_out(i) << " ";
-  }
-  std::cout << endl;
-*/
-
-  // typedef typename Impl::GraphColorD2 <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
-  // BaseGraphColoring *gc = NULL;
-  // int num_phases = 0;
-
   switch (algorithm)
   {
     case COLORING_SPGEMM:                     // WCMCLEN: Remove SPGEMM coloring references for D2 Graph Coloring?
     case COLORING_D2_MATRIX_SQUARED:
     {
-      std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
+      //std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
 
       Impl::GraphColorD2_MatrixSquared <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
@@ -104,16 +91,13 @@ void graph_color_d2(KernelHandle *handle,
       break;
     }
 
-    case COLORING_D2_WCMCLEN:
+    case COLORING_D2:
     {
-      // WCMCLEN - ADD new coloring algorithm here.
-      std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORNG_D2_WCMCLEN ] <<<" << std::endl;
+      //std::cout << ">>> WCMCLEN graph_color_d2 (KokkosGraph_Distance2Color.hpp) [ COLORNG_D2_WCMCLEN ] <<<" << std::endl;
 
-      //Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-      //    gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
       Impl::GraphColorD2 <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, gch);
-      gc.color_graph_d2(colors_out);
+      gc.color_graph_d2();
       break;
     }
 

@@ -105,7 +105,7 @@ void graph_color_symbolic(
  
   case COLORING_SPGEMM:
   case COLORING_D2_MATRIX_SQUARED:
-    std::cout << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_GraphColor.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
+    //std::cout << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_GraphColor.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
 
     if (handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA) {
         typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoringSPGEMM;
@@ -153,7 +153,7 @@ void graph_color(
     lno_nnz_view_t_ entries,
     bool is_symmetric = true)
 {
-  std::cout << ">>> WCMCLEN graph_color (KokkosGraph_GraphColor.hpp)" << std::endl;
+  //std::cout << ">>> WCMCLEN graph_color (KokkosGraph_GraphColor.hpp)" << std::endl;
   graph_color_symbolic(handle, num_rows, num_cols, row_map, entries, is_symmetric);
 }
 

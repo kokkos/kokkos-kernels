@@ -866,7 +866,7 @@ public:
    */
   virtual void color_graph(color_view_type colors,int &num_loops){
 
-    std::cout << ">>> WCMCLEN GraphColor_VB::color_graph (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
+//    std::cout << ">>> WCMCLEN GraphColor_VB::color_graph (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
 
     if (this->_ticToc) {
       std::cout
@@ -1126,7 +1126,7 @@ private:
       nnz_lno_temp_work_view_t current_vertexList_,
       nnz_lno_t current_vertexListLength_) {
 
-    std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
+//    std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
 
     nnz_lno_t chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
 
@@ -1158,7 +1158,7 @@ private:
     //VB algorithm
     else if (this->_use_color_set == 0)
     {
-      std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF --- (call the functor)" << std::endl;
+//      std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF --- (call the functor)" << std::endl;
       functorGreedyColor_EF  gc(
           this->nv,
           xadj_, adj_,
@@ -1706,7 +1706,7 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
-      std::cout << ">>> WCMCLEN functorGreedyColor_EF (KokkosGraph_GraphColor_impl.hpp) <<<" << std::endl;
+//      std::cout << ">>> WCMCLEN functorGreedyColor_EF (KokkosGraph_GraphColor_impl.hpp) <<<" << std::endl;
       nnz_lno_t i = 0;
       for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
@@ -1813,7 +1813,7 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
-      std::cout << ">>> WCMCLEN functorGreedyColor (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
+//      std::cout << ">>> WCMCLEN functorGreedyColor (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
 
       nnz_lno_t i = 0;
       for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
@@ -2450,7 +2450,7 @@ public:
   virtual void color_graph(color_view_type kok_colors, int &num_loops ){
 
 
-    std::cout << ">>> WCMCLEN GraphColor_EB::color_graph()" << std::endl;
+//    std::cout << ">>> WCMCLEN GraphColor_EB::color_graph()" << std::endl;
 
     //get EB parameters
     color_t numInitialColors = this->cp->get_eb_num_initial_colors();

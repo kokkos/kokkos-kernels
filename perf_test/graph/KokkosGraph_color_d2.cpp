@@ -140,7 +140,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       {
         params.algorithm = 1;
       }
-      else if ( 0 == strcasecmp( argv[i], "COLORING_D2_WCMCLEN" ) )
+      else if ( 0 == strcasecmp( argv[i], "COLORING_D2" ) )
       {
         std::cout << ">>> Using coloring algorithm <<<" << argv[i] << std::endl;
         params.algorithm = 2;
@@ -218,14 +218,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
       kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
       break;
     case 2:
-      kh.create_graph_coloring_handle(COLORING_D2_WCMCLEN);
+      kh.create_graph_coloring_handle(COLORING_D2);
       break;
     default:
       kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
       break;
     }
 
-    std::cout << ">>> WCMCLEN run_experiment (KokkosGraph_color_d2.hpp)" << std::endl;
+    //std::cout << ">>> WCMCLEN run_experiment (KokkosGraph_color_d2.hpp)" << std::endl;
 
     graph_color_d2(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
