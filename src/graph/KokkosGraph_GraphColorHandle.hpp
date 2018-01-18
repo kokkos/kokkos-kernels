@@ -42,24 +42,35 @@
 */
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
-#include "KokkosKernels_Utils.hpp"
+#include <KokkosKernels_Utils.hpp>
+
 #ifndef _GRAPHCOLORHANDLE_HPP
 #define _GRAPHCOLORHANDLE_HPP
+
 //#define VERBOSE
-namespace KokkosGraph{
+namespace KokkosGraph {
 
-
-enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB,COLORING_SERIAL2};
+enum ColoringAlgorithm { COLORING_DEFAULT,
+                         COLORING_SERIAL,
+                         COLORING_VB,
+                         COLORING_VBBIT,
+                         COLORING_VBCS,
+                         COLORING_EB,
+                         COLORING_SERIAL2,
+                         COLORING_SPGEMM,
+                         COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring (Brian's Code)
+                         COLORING_D2_WCMCLEN                  // Distance-2 Graph Coloring (WCMCLEN)
+                       };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
 enum ColoringType {Distance1, Distance2};
 
-template <
-	  class size_type_, class color_t_, class lno_t_,
-	  //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
-      class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
-class GraphColoringHandle{
+template <class size_type_, class color_t_, class lno_t_, 
+         //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
+          class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
+class GraphColoringHandle
+{
 
 public:
   typedef ExecutionSpace HandleExecSpace;
@@ -97,6 +108,7 @@ public:
 
   typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
+
 private:
 
   ColoringType GraphColoringType;
@@ -182,6 +194,7 @@ private:
     return this->GraphColoringType;
   }
 
+
   /** \brief Changes the graph coloring algorithm.
    *  \param col_algo: Coloring algorithm: one of COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB
    *  \param set_default_parameters: whether or not to reset the default parameters for the given algorithm.
@@ -198,10 +211,11 @@ private:
     }
   }
 
+
   /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
    */
-  void choose_default_algorithm(){
-
+  void choose_default_algorithm()
+  {
 #if defined( KOKKOS_HAVE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_SERIAL;
@@ -281,6 +295,8 @@ private:
     }
   };
 
+
+
   template<typename v1, typename v2, typename v3>
   struct CountLowerTriangleTeam{
 
@@ -328,8 +344,9 @@ private:
         lower_xadj_counts(ii + 1) = new_edge_count;
       });
     }
-
   };
+
+
 
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangleTeam{
@@ -382,6 +399,7 @@ private:
   };
 
 
+
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangle{
     nnz_lno_t nv;
@@ -419,6 +437,9 @@ private:
       }
     }
   };
+
+
+
   template <typename row_index_view_type, typename nonzero_view_type>
   void symmetrize_and_calculate_lower_diagonal_edge_list(
       nnz_lno_t nv,
@@ -436,6 +457,8 @@ private:
     size_of_edge_list = lower_triangle_src.dimension_0();
 
   }
+
+
 
   template <typename row_index_view_type, typename nonzero_view_type>
   void get_lower_diagonal_edge_list(
@@ -457,7 +480,6 @@ private:
       size_type_temp_work_view_t lower_count("LowerXADJ", nv + 1);
       size_type new_num_edge = 0;
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
-
 
       if (
 #if defined( KOKKOS_ENABLE_CUDA )
@@ -524,9 +546,10 @@ private:
         dst = lower_triangle_dst = half_dst;
         num_out_edges = size_of_edge_list = new_num_edge;
       }
-
     }
   }
+
+
 
   struct ReduceMaxFunctor{
     color_view_t colors;
@@ -551,6 +574,7 @@ private:
   };
 
 
+
   nnz_lno_t get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
@@ -559,6 +583,8 @@ private:
     }
     return num_colors;
   }
+
+
 
   /** \brief Sets Default Parameter settings for the given algorithm.
    */
@@ -569,6 +595,9 @@ private:
     case COLORING_VBCS:
     case COLORING_SERIAL:
     case COLORING_SERIAL2:
+    case COLORING_SPGEMM:
+    case COLORING_D2_MATRIX_SQUARED:
+    case COLORING_D2_WCMCLEN:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;
@@ -596,7 +625,9 @@ private:
     }
   }
 
+
   virtual ~GraphColoringHandle(){};
+
 
   //getters
   ColoringAlgorithm get_coloring_algo_type() const {return this->coloring_algorithm_type;}
@@ -637,6 +668,7 @@ private:
 
 
 };
-}
+
+}   // namespace KokkosGraph
 
 #endif // _GRAPHCOLORHANDLE_HPP
