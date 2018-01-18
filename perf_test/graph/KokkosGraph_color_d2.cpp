@@ -44,6 +44,8 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <string>
+
 
 #include <random>       // std::default_random_engine
 #include <algorithm>    // std::shuffle
@@ -80,14 +82,45 @@ typedef int64_t kk_lno_t;
 #endif
 #endif
 
-void print_options()
-{
 
+void print_options(std::ostream& os, const char* app_name, unsigned int indent=0)
+{
+  std::string spaces(indent, ' ');
+  os << "Usage:" << std::endl 
+     << spaces << app_name << " [parameters]" << std::endl 
+     << std::endl
+     << spaces << "Parameters:"
+     << spaces << "  Parallelism (select one of the following):" << std::endl
+     << spaces << "      serial <N>        Execute serially." << std::endl
+     << spaces << "      threads <N>       Use N posix threads." << std::endl
+     << spaces << "      openmp <N>        Use OpenMP with N threads." << std::endl
+     << spaces << "      cuda              Use CUDA" << std::endl
+     << std::endl
+     << spaces << "  Required Parameters:" << std::endl 
+     << spaces << "      amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
+     << std::endl
+     << spaces << "      algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
+     << spaces << "                 COLORING_D2_MATRIX_SQUARED  - Distance-2 coloring using matrix-squared + Distance-1 coloring method." << std::endl
+     << spaces << "                 COLORING_D2                 - Distance-2 coloring using traversal based method." << std::endl
+     << std::endl
+     << spaces << "  Optional Parameters:" << std::endl
+     << spaces << "      chunksize <N>     Set the chunk size." << std::endl
+     << spaces << "      dynamic           Use dynamic scheduling." << std::endl
+     << spaces << "      repeat <N>        Set number of test repetitions (Default: 6) " << std::endl
+     << spaces << "      teamsize  <N>     Set the team size." << std::endl
+     << spaces << "      vectorsize <N>    Set the vector size." << std::endl
+     << spaces << "      verbose           Enable verbose mode (print timing + extra information" << std::endl
+     << spaces << "      help              Print out command line help." << std::endl
+     << spaces << " " << std::endl;
 }
 
 
-int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
-  for ( int i = 1 ; i < argc ; ++i ) 
+int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
+{
+  bool got_required_param_amtx=false;
+  bool got_required_param_algorithm=false;
+
+  for(int i = 1; i < argc; ++i) 
   {
     if ( 0 == strcasecmp( argv[i] , "threads" ) ) 
     {
@@ -123,6 +156,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) 
     {
+      got_required_param_amtx = true;
       params.a_mtx_bin_file = argv[++i];
     }
     else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) 
@@ -139,24 +173,49 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       if ( 0 == strcasecmp( argv[i] , "COLORING_D2_MATRIX_SQUARED" ) ) 
       {
         params.algorithm = 1;
+        got_required_param_algorithm = true;
       }
       else if ( 0 == strcasecmp( argv[i], "COLORING_D2" ) )
       {
         params.algorithm = 2;
+        got_required_param_algorithm = true;
       }
       else 
       {
         std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-        print_options();
+        print_options(std::cout, argv[0]);
         return 1;
       }
+    }
+    else if ( 0 == strcasecmp( argv[i], "help") || 0 == strcasecmp(argv[i], "-h") )
+    {
+      print_options(std::cout, argv[0]);
+      return 1;
     }
     else 
     {
       std::cerr << "3-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      print_options();
+      print_options(std::cout, argv[0]);
       return 1;
     }
+  }
+
+  if(!got_required_param_amtx)
+  {
+    std::cout << "Missing required parameter amtx" << std::endl << std::endl;
+    print_options(std::cout, argv[0]);
+    return 1;
+  }
+  if(!got_required_param_algorithm)
+  {
+    std::cout << "Missing required parameter algorithm" << std::endl << std::endl;
+    print_options(std::cout, argv[0]);
+    return 1;
+  }
+  if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+  {
+    print_options(std::cout, argv[0]);
+    return 1;
   }
   return 0;
 }
@@ -195,7 +254,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   kh.set_shmem_size(shmemsize);
   kh.set_suggested_team_size(team_size);
   kh.set_suggested_vector_size(vector_size);
-  // kh.set_verbose(true);
 
   if (use_dynamic_scheduling)
   {
@@ -261,8 +319,6 @@ void run_multi_mem_experiment(Parameters params)
   //typedef typename slow_graph_t::entries_type::const_type     const_slow_cols_view_t;
 
   char *a_mat_file = params.a_mtx_bin_file;
-  //char *b_mat_file = params.b_mtx_bin_file;
-  //char *c_mat_file = params.c_mtx_bin_file;
 
   slow_graph_t a_slow_crsgraph, /*b_slow_crsgraph,*/ c_slow_crsgraph;
   fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
