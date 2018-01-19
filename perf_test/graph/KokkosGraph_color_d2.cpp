@@ -248,6 +248,12 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
+    
+  // Note: crsGraph.numRows() == number of vertices in the 'graph'
+  //       crsGraph.entries.dimension_0() == number of edges in the 'graph'
+
+  std::cout << "Num verts: " << crsGraph.numRows() << std::endl
+            << "Num edges: " << crsGraph.entries.dimension_0() << std::endl;
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
@@ -282,12 +288,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
       break;
     }
 
-    graph_color_d2(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+    graph_color_d2(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
-    std::cout << "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
-                 "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "
-                 "Num Phases:" << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
-    std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
+    std::cout << "Time      : " << kh.get_graph_coloring_handle()->get_overall_coloring_time() << std::endl
+              << "Num colors: " << kh.get_graph_coloring_handle()->get_num_colors() << std::endl
+              << "Num Phases: " << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
+    std::cout << "\t"; 
+    KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
+    std::cout << std::endl;
 
   }
 }
@@ -528,7 +536,8 @@ int main (int argc, char ** argv)
     return 0;
   }
 
-  std::cout << "Sizeof(kk_lno_t):" << sizeof(kk_lno_t) << " sizeof(size_type):" << sizeof(kk_size_type) << std::endl;
+  std::cout << "Sizeof(kk_lno_t) : " << sizeof(kk_lno_t) << std::endl 
+            << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
 #if defined( KOKKOS_HAVE_OPENMP )
 
