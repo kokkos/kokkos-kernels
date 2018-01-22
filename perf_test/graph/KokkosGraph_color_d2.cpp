@@ -271,6 +271,11 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     kh.set_verbose(true);
   }
 
+  // accumulators for average stats
+  double total_time   = 0.0;
+  size_t total_colors = 0;
+  size_t total_phases = 0;
+
   for (int i = 0; i < repeat; ++i)
   {
 
@@ -297,7 +302,20 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
     std::cout << std::endl;
 
+    total_time   += kh.get_graph_coloring_handle()->get_overall_coloring_time();
+    total_colors += kh.get_graph_coloring_handle()->get_num_colors();
+    total_phases += kh.get_graph_coloring_handle()->get_num_phases();
   }
+
+  double avg_time   = total_time / repeat;
+  double avg_colors = total_colors / (double)repeat;
+  double avg_phases = total_phases / (double)repeat;
+
+  std::cout << "Summary:" << std::endl
+            << "  Avg Time  : " << avg_time   << std::endl
+            << "  Avg colors: " << avg_colors << std::endl
+            << "  Avg Phases: " << avg_phases << std::endl;
+
 }
 
 
