@@ -902,7 +902,8 @@ public:
         nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
 
     //init vertexList sequentially.
-    Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t> (current_vertexList));
+    Kokkos::parallel_for("KokkosGraph::GraphColoring::InitList",
+        my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t> (current_vertexList));
 
 
     // the next iteration's conflict list
@@ -1013,7 +1014,8 @@ public:
 
     //if VBCS algorithm is used, the colors are converted back to original form.
     if (this->_use_color_set == 1){
-      Kokkos::parallel_for(my_exec_space(0, this->nv), set_final_colors (colors, vertex_color_set));
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::SetFinalColors",
+          my_exec_space(0, this->nv), set_final_colors (colors, vertex_color_set));
     }
     if (numUncolored > 0){
 
@@ -1081,7 +1083,8 @@ private:
           xadj_, adj_,
           vertex_colors_,  current_vertexList_,
           current_vertexListLength_, chunkSize_);
-      Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor_IMPLOG",
+          my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
 
     }
     // VBCS algorithm
@@ -1091,7 +1094,8 @@ private:
           xadj_, adj_,
           vertex_colors_, vertex_color_set, current_vertexList_,
           current_vertexListLength_, chunkSize_);
-      Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor_IMP",
+          my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
 
     }
     //VB algorithm
@@ -1103,7 +1107,8 @@ private:
           xadj_, adj_,
           vertex_colors_,
           current_vertexList_, current_vertexListLength_, chunkSize_);
-      Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor",
+          my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
 
     }
   }
@@ -1138,7 +1143,8 @@ private:
           xadj_, adj_,
           vertex_colors_, current_vertexList_,
           current_vertexListLength_, chunkSize_);
-      Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor_IMPLOG_EF",
+          my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
 
 
     }
@@ -1149,7 +1155,8 @@ private:
           xadj_, adj_,
           vertex_colors_, vertex_color_set, current_vertexList_,
           current_vertexListLength_, chunkSize_);
-      Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor_IMP_EF",
+          my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
     }
     //VB algorithm
     else if (this->_use_color_set == 0)
@@ -1160,7 +1167,8 @@ private:
           xadj_, adj_,
           vertex_colors_,
           current_vertexList_, current_vertexListLength_, chunkSize_);
-      Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor_EF",
+          my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
 
     }
   }
@@ -1227,11 +1235,13 @@ private:
 
         MyExecSpace::fence();
 
-        Kokkos::parallel_scan (my_exec_space(0, current_vertexListLength_),
+        Kokkos::parallel_scan ("KokkosGraph::GraphColoring::PrefixSum",
+            my_exec_space(0, current_vertexListLength_),
             parallel_prefix_sum<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
 
         MyExecSpace::fence();
-        Kokkos::parallel_for (my_exec_space(0, current_vertexListLength_),
+        Kokkos::parallel_for ("KokkosGraph::GraphColoring::CreateNewWorkArray",
+            my_exec_space(0, current_vertexListLength_),
             create_new_work_array<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
       }
       else {
@@ -1244,13 +1254,15 @@ private:
         functorFindConflicts_Atomic<adj_view_t> conf(this->nv,
             xadj_, adj_,vertex_colors_,current_vertexList_,
             next_iteration_recolorList_, next_iteration_recolorListLength_);
-        Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
+        Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflictsAtomic",
+            my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
         functorFindConflicts_Atomic_IMP<adj_view_t> conf(this->nv,
             xadj_, adj_,vertex_colors_, vertex_color_set_,
             current_vertexList_,next_iteration_recolorList_, next_iteration_recolorListLength_);
-        Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
+        Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflictsAtomic_IMP",
+            my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
     }
     if (this->_ticToc){
@@ -2475,7 +2487,8 @@ public:
     //allocate memory for vertex color set shifts.
     nnz_lno_temp_work_view_t color_set ("color_set", this->nv); //initialized with zero.
     //initialize colors, color bans
-    Kokkos::parallel_for (my_exec_space (0, this->nv) , init_colors (kok_colors, color_ban, numInitialColors));
+    Kokkos::parallel_for ("KokkosGraph::GraphColoring::initColors",
+        my_exec_space (0, this->nv) , init_colors (kok_colors, color_ban, numInitialColors));
     //std::cout << "nv:" << this->nv << " init_colors" << std::endl;
 
     //worklist
@@ -2493,7 +2506,7 @@ public:
 
 
     //initialize the worklist sequentiall, and markers as 1.
-    Kokkos::parallel_for (
+    Kokkos::parallel_for ("KokkosGraph::GraphColoring::InitWorkArrays",
         my_exec_space (0, num_work_edges),
         init_work_arrays(edge_conflict_indices, edge_conflict_marker)
     );
@@ -2524,6 +2537,7 @@ public:
       //conflict detection mark conflicts as color 0.
       //update their bans
       Kokkos::parallel_for(
+          "KokkosGraph::GraphColoring::HalfEdgeMarkConflicts",
           my_exec_space(0,num_work_edges),
           halfedge_mark_conflicts (
               _kok_src, _kok_dst,
@@ -2549,6 +2563,7 @@ public:
 
       if (num_work_edges > 0)
       Kokkos::parallel_reduce(
+          "KokkosGraph::GraphColoring::HalfEdgeConflictsCount",
           my_exec_space(0, num_work_edges),
           halfedge_conflict_count(
               _kok_src, _kok_dst,
@@ -2589,6 +2604,7 @@ public:
         if (use_pps){
           //calculate new positions of the edges in new worklist
           Kokkos::parallel_scan (
+              "KokkosGraph::GraphColoring::CalcEdgePositions",
               my_exec_space(0, num_work_edges),
               parallel_prefix_sum(edge_conflict_indices, edge_conflict_marker, pps)
           );
@@ -2596,6 +2612,7 @@ public:
 
           //write the edge indices to new worklist.
           Kokkos::parallel_for (
+              "KokkosGraph::GraphColoring::CreateNewWorkArray",
               my_exec_space(0, num_work_edges),
               create_new_work_array(edge_conflict_indices, edge_conflict_marker, pps, new_edge_conflict_indices));
           MyExecSpace::fence();
@@ -2604,6 +2621,7 @@ public:
           //create new worklist
           single_dim_index_view_type new_index = single_dim_index_view_type("recolorListLength");;
           Kokkos::parallel_for (
+              "KokkosGraph::GraphColoring::CreateNewWorkArrayAtomic",
               my_exec_space(0, num_work_edges),
               atomic_create_new_work_array(new_index, edge_conflict_indices, edge_conflict_marker, new_edge_conflict_indices));
           MyExecSpace::fence();
@@ -2624,6 +2642,7 @@ public:
 
       //create ban colors using the colored neighbors
       Kokkos::parallel_for (
+          "KokkosGraph::GraphColoring::HalfEdgeBancColors",
           my_exec_space(0,num_work_edges),
           halfedge_ban_colors(
               _kok_src, _kok_dst,
@@ -2642,6 +2661,7 @@ public:
 
       //create tentative ban using the uncolored neighbors.
       Kokkos::parallel_for (
+          "KokkosGraph::GraphColoring::HalfEdgeExpandBanForUnmatchedNeighbors",
           my_exec_space(0,num_work_edges),
           halfedge_expand_ban_for_unmatched_neighbors(
               _kok_src, _kok_dst,
@@ -2659,7 +2679,8 @@ public:
 
       //chose a color based on the ban arrays.
       //if all colors in current set are taken, increase the color set, try again in the next iteration.
-      Kokkos::parallel_for(my_exec_space(0,this->nv), choose_colors(kok_colors, color_set, color_ban, tentative_color_ban));
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::ChooseColors",
+          my_exec_space(0,this->nv), choose_colors(kok_colors, color_set, color_ban, tentative_color_ban));
       if (tictoc){
         color_time += timer->seconds();
         timer->reset();
@@ -2677,7 +2698,8 @@ public:
     }
 
     //set the final colors.
-    Kokkos::parallel_for(my_exec_space(0,this->nv), set_final_colors (kok_colors, color_set));
+    Kokkos::parallel_for("KokkosGraph::GraphColoring::SetFinalColors",
+        my_exec_space(0,this->nv), set_final_colors (kok_colors, color_set));
 
     num_loops = i;
 

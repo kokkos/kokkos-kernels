@@ -774,18 +774,18 @@ void create_reverse_map(
         tmp_color_xadj,
         multiply_shift_for_scale,
         division_shift_for_bucket);
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
+    Kokkos::parallel_for ("KokkosKernels::Impl::ReverseMapScaleInit",my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
 
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
     MyExecSpace::fence();
 
-    Kokkos::parallel_for (my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
+    Kokkos::parallel_for ("KokkosKernels::Impl::StridedCopy",my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
     MyExecSpace::fence();
     Fill_Reverse_Scale_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj,
         multiply_shift_for_scale, division_shift_for_bucket);
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
+    Kokkos::parallel_for ("KokkosKernels::Impl::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
   }
   else
@@ -795,7 +795,7 @@ void create_reverse_map(
 
     Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
 
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
+    Kokkos::parallel_for ("KokkosKernels::Impl::ReverseMapInit",my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
     //print_1Dview(reverse_map_xadj);
 
@@ -805,7 +805,7 @@ void create_reverse_map(
     Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
     MyExecSpace::fence();
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
+    Kokkos::parallel_for ("KokkosKernels::Impl::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
   }
 }
@@ -842,7 +842,7 @@ void permute_vector(
     ){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  Kokkos::parallel_for( my_exec_space(0,num_elements),
+  Kokkos::parallel_for("KokkosKernels::Impl::PermuteVector", my_exec_space(0,num_elements),
       PermuteVector<value_array_type, out_value_array_type, idx_array_type>(old_vector, new_vector, old_to_new_index_map));
 
 }

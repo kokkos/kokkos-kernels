@@ -308,14 +308,14 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
     else
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for(policy,func);
+    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>",policy,func);
   } else {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
     if(team_size<0)
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
     else
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for(policy,func);
+    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",policy,func);
   }
 }
 
@@ -363,7 +363,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
   const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>::team_size_recommended (op, vector_length);
   const int rows_per_team = rows_per_thread * team_size;
   const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-  Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+  Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
      ( nteams , team_size , vector_length ) , op );
 
 }
@@ -921,7 +921,7 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta
@@ -942,7 +942,7 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
@@ -1002,7 +1002,7 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for ( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for ("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta
@@ -1023,7 +1023,7 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
