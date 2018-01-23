@@ -89,7 +89,7 @@ void print_options(std::ostream& os, const char* app_name, unsigned int indent=0
   os << "Usage:" << std::endl 
      << spaces << app_name << " [parameters]" << std::endl 
      << std::endl
-     << spaces << "Parameters:"
+     << spaces << "Parameters:" << std::endl
      << spaces << "  Parallelism (select one of the following):" << std::endl
      << spaces << "      serial <N>        Execute serially." << std::endl
      << spaces << "      threads <N>       Use N posix threads." << std::endl
