@@ -42,16 +42,16 @@
 */
 #include <KokkosKernels_Handle.hpp>
 
+// STL
 #include <cstdlib>
 #include <iostream>
 #include <string>
-
-
 #include <random>       // std::default_random_engine
 #include <algorithm>    // std::shuffle
 #include <vector>
-#include "KokkosKernels_config.h"
 
+// Kokkos
+#include "KokkosKernels_config.h"
 #include "KokkosGraph_Distance2Color.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
@@ -252,9 +252,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   // Note: crsGraph.numRows() == number of vertices in the 'graph'
   //       crsGraph.entries.dimension_0() == number of edges in the 'graph'
 
-  std::cout << "Num verts: " << crsGraph.numRows() << std::endl
-            << "Num edges: " << crsGraph.entries.dimension_0() << std::endl;
-
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
   kh.set_shmem_size(shmemsize);
@@ -275,6 +272,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   double total_time   = 0.0;
   size_t total_colors = 0;
   size_t total_phases = 0;
+  
+  std::string label_algorithm;
 
   for (int i = 0; i < repeat; ++i)
   {
@@ -284,12 +283,15 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     case 1:
       // kh.create_graph_coloring_handle(COLORING_SPGEMM);
       kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
+      label_algorithm = "COLORING_D2_MATRIX_SQUARED";
       break;
     case 2:
       kh.create_graph_coloring_handle(COLORING_D2);
+      label_algorithm = "COLORING_D2";
       break;
     default:
       kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
+      label_algorithm = "COLORING_D2_MATRIX_SQUARED";
       break;
     }
 
@@ -311,10 +313,33 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   double avg_colors = total_colors / (double)repeat;
   double avg_phases = total_phases / (double)repeat;
 
+  std::string a_mtx_bin_file = params.a_mtx_bin_file;
+  a_mtx_bin_file = a_mtx_bin_file.substr( a_mtx_bin_file.find_last_of("/\\")+1 );
+
   std::cout << "Summary:" << std::endl
-            << "  Avg Time  : " << avg_time   << std::endl
-            << "  Avg colors: " << avg_colors << std::endl
-            << "  Avg Phases: " << avg_phases << std::endl;
+            << "  KExecSName : " << Kokkos::DefaultExecutionSpace::name()         << std::endl
+            << "  Filename   : " << a_mtx_bin_file << std::endl
+            << "  Num Verts  : " << crsGraph.numRows()                            << std::endl
+            << "  Num Edges  : " << crsGraph.entries.dimension_0()                << std::endl
+            << "  Concurrency: " << Kokkos::DefaultExecutionSpace::concurrency()  << std::endl
+            << "  Algorithm  : " << label_algorithm                               << std::endl
+            << "  Avg Time   : " << avg_time                                      << std::endl
+            << "  Avg colors : " << avg_colors                                    << std::endl
+            << "  Avg Phases : " << avg_phases                                    << std::endl
+            << std::endl;
+
+  std::cout << "CSV"
+            << "," << a_mtx_bin_file
+            << "," << crsGraph.numRows()
+            << "," << crsGraph.entries.dimension_0()
+            << "," << Kokkos::DefaultExecutionSpace::name()
+            << "," << Kokkos::DefaultExecutionSpace::concurrency()
+            << "," << label_algorithm
+            << "," << avg_time
+            << "," << avg_colors
+            << "," << avg_phases
+            << std::endl;
+  //Kokkos::print_configuration(std::cout);
 
 }
 
