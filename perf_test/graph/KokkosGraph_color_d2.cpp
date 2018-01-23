@@ -87,7 +87,7 @@ void print_options(std::ostream& os, const char* app_name, unsigned int indent=0
 {
   std::string spaces(indent, ' ');
   os << "Usage:" << std::endl 
-     << spaces << app_name << " [parameters]" << std::endl 
+     << spaces << "  " << app_name << " [parameters]" << std::endl 
      << std::endl
      << spaces << "Parameters:" << std::endl
      << spaces << "  Parallelism (select one of the following):" << std::endl
