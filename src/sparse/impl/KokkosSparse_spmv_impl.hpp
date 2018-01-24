@@ -231,8 +231,15 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
 
   // Determine rows per thread
   if(rows_per_thread < 1) {
-    #ifdef KOKKOS_ENABLE_CUDA
-    if(std::is_same<Kokkos::Cuda,execution_space>::value)
+    #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCM)
+    if( false
+#if defined(KOKKOS_ENABLE_CUDA)
+        || std::is_same<Kokkos::Cuda,execution_space>::value
+#endif
+#if defined(KOKKOS_ENABLE_ROCM)
+        || std::is_same<Kokkos::ROCM,execution_space>::value
+#endif
+      )
       rows_per_thread = 1;
     else
     #endif
