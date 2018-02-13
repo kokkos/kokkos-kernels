@@ -75,6 +75,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
     LIST(APPEND DEVICE_LIST "<Cuda,CudaUVMSpace>")
   ENDIF()
 
+  IF (NOT ${CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS})
+    MESSAGE( FATAL_ERROR "Kokkos-Kernels configuration failed: CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS is required be set to ON when compiling with Cuda." )
+  ENDIF()
+
 ENDIF()
 
 IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP})
