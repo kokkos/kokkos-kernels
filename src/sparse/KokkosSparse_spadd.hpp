@@ -396,7 +396,7 @@ namespace Experimental {
             typename blno_nnz_view_t_,
             typename clno_row_view_t_,
             typename clno_nnz_view_t_>
-  void matrixmatrix_add_symbolic(
+  void spadd_symbolic(
       KernelHandle* handle, 
       const alno_row_view_t_ a_rowmap,
       const alno_nnz_view_t_ a_entries,
@@ -459,7 +459,12 @@ namespace Experimental {
         Kokkos::parallel_scan(range_type(0, nrows + 1), prefix);
         //compute uncompressed entries of C (just indices, no scalars)
         execution_space::fence();
-        c_nnz_upperbound = c_rowmap_upperbound(nrows);
+
+        auto d_c_nnz_size = Kokkos::subview(c_rowmap_upperbound, nrows);
+        auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
+        Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
+        execution_space::fence();
+        c_nnz_upperbound = h_c_nnz_size();
       }
       clno_nnz_view_t_ c_entries_uncompressed("C entries uncompressed", c_nnz_upperbound);
       clno_nnz_view_t_ ab_perm("A and B permuted entry indices", c_nnz_upperbound);
@@ -474,8 +479,8 @@ namespace Experimental {
         sortEntries(c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
       Kokkos::parallel_for(range_type(0, nrows), sortEntries);
       execution_space::fence();
-      clno_nnz_view_t_ a_pos("A entry positions", a_rowmap(nrows));
-      clno_nnz_view_t_ b_pos("B entry positions", b_rowmap(nrows));
+      clno_nnz_view_t_ a_pos("A entry positions", a_entries.dimension_0());
+      clno_nnz_view_t_ b_pos("B entry positions", b_entries.dimension_0());
       //merge the entries and compute Apos/Bpos, as well as Crowcounts
       {
         clno_row_view_t_ c_rowcounts("C row counts", nrows);
@@ -491,7 +496,16 @@ namespace Experimental {
       addHandle->set_a_b_pos(a_pos, b_pos);
     }
     //provide the number of NNZ in C to user through handle
-    addHandle->set_max_result_nnz(c_rowmap(nrows));
+    //addHandle->set_max_result_nnz(c_rowmap(nrows));
+
+    auto d_c_nnz_size = Kokkos::subview(c_rowmap, nrows);
+    auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
+    Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
+    execution_space::fence();
+    size_type cmax = h_c_nnz_size();
+    addHandle->set_max_result_nnz(cmax);
+
+
     addHandle->set_call_symbolic();
     addHandle->set_call_numeric(false);
   }
@@ -653,7 +667,7 @@ namespace Experimental {
             typename clno_row_view_t_,
             typename clno_nnz_view_t_,
             typename cscalar_nnz_view_t_>
-  void matrixmatrix_add_numeric(
+  void spadd_numeric(
       KernelHandle* kernel_handle,
       const alno_row_view_t_ a_rowmap,
       const alno_nnz_view_t_ a_entries,
