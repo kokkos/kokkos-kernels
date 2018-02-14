@@ -1,4 +1,4 @@
-#include<gtest/gtest.h>
+#include<gtest/gtest.h>   
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
 
@@ -148,7 +148,7 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
   crsMat_t B = Test::randomMatrix<crsMat_t, lno_t>(numRows, minNNZ, maxNNZ, sortRows);
   row_map_type c_row_map("C row map", numRows + 1);
   auto addHandle = handle.get_spadd_handle();
-  KokkosSparse::Experimental::matrixmatrix_add_symbolic<
+  KokkosSparse::Experimental::spadd_symbolic<
     KernelHandle,
     typename row_map_type::const_type,
     typename entries_type::const_type,
@@ -159,7 +159,7 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
   (&handle, A.graph.row_map, A.graph.entries, B.graph.row_map, B.graph.entries, c_row_map);
   values_type c_values("C values", addHandle->get_max_result_nnz());
   entries_type c_entries("C entries", addHandle->get_max_result_nnz());
-  KokkosSparse::Experimental::matrixmatrix_add_numeric<
+  KokkosSparse::Experimental::spadd_numeric<
     KernelHandle,
     typename row_map_type::const_type,
     typename entries_type::const_type,
@@ -172,9 +172,10 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
      B.graph.row_map, B.graph.entries, B.values, 1,
      c_row_map, c_entries, c_values);
   //done with handle
-  handle.destroy_spadd_handle();
   //create C using CRS arrays
   crsMat_t C("C", numRows, numRows, addHandle->get_max_result_nnz(), c_values, c_row_map, c_entries);
+  handle.destroy_spadd_handle();
+
   //check that C is correct
   for(lno_t i = 0; i < numRows; i++)
   {
