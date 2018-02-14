@@ -44,12 +44,12 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "KokkosGraph_Distance2Color.hpp"
+#include "KokkosGraph_graph_color_d2.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosKernels_Handle.hpp"
-
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
@@ -154,7 +154,12 @@ void test_coloring_d2(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_si
    // done with spgemm 
    cp.destroy_spgemm_handle();
 
-  for (int ii = 0; ii < 2; ++ii){
+  int num_algorithms = 2;
+  KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::kk_get_exec_space_type<typename device::execution_space>();
+  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+    num_algorithms = 1; //for cuda dont run d2 for now.
+  }
+  for (int ii = 0; ii < num_algorithms; ++ii){
 
 
     ColoringAlgorithm coloring_algorithm = coloring_algorithms[ii];

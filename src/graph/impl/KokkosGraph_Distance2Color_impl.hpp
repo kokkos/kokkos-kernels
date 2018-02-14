@@ -51,7 +51,7 @@
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_graph_color.hpp"
 
 #ifndef _KOKKOSCOLORINGD2IMP_HPP
 #define _KOKKOSCOLORINGD2IMP_HPP

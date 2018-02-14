@@ -52,7 +52,7 @@
 #include <vector>
 #include "KokkosKernels_config.h"
 
-#include "KokkosGraph_Distance2Color.hpp"
+#include "KokkosGraph_graph_color_d2.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
