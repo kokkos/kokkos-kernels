@@ -49,7 +49,7 @@
 #include <algorithm>    // std::shuffle
 #include <vector>
 
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_graph_color.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"

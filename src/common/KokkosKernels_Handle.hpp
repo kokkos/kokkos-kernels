@@ -387,6 +387,8 @@ public:
     this->is_owner_of_the_gc_handle = true;
     this->gcHandle = new GraphColoringHandleType();
     this->gcHandle->set_algorithm(coloring_type, true);
+    this->gcHandle->set_tictoc(KKVERBOSE);
+
   }
   void destroy_graph_coloring_handle(){
     if (is_owner_of_the_gc_handle &&  this->gcHandle != NULL){
