@@ -673,7 +673,7 @@ private:
   // Functors: Distance-2 Graph Coloring
   // ------------------------------------------------------
 
-
+  public:
   /**
    * Functor to init a list sequentialy, that is list[i] = i
    */

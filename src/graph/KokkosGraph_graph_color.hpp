@@ -142,16 +142,6 @@ void graph_color_symbolic(
   gch->set_vertex_colors(colors_out);
 }
 
-template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
-void graph_color(
-    KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t num_cols,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries,
-    bool is_symmetric = true){
-  graph_color_symbolic(handle,num_rows,num_cols,row_map,entries,is_symmetric);
-}
 
 
 template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
