@@ -782,7 +782,7 @@ private:
               size_type vid_2idx = _adj(vid_2adj);
 
               // Skip distance-2-self-loops
-              if(vid_2idx == vid || vid_2idx >= nv)
+              if(vid_2idx == vid || vid_2idx >= static_cast<nnz_lno_t>(nv))
               { 
                 continue;
               }
@@ -859,7 +859,7 @@ private:
         { 
           size_type vid_2idx = _adj(vid_2adj);
 
-          if(vid == vid_2idx || vid_2idx >= nv) continue;
+          if(vid == vid_2idx || vid_2idx >= static_cast<nnz_lno_t>(nv)) continue;
 
           if(_colors(vid_2idx) == my_color)
           {
