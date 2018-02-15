@@ -621,7 +621,7 @@ private:
         // loop over distance-1 neighbors of vid_1idx (distance-2 from vid)
         for(size_type vid_2adj=h_idx(vid_1idx); vid_2adj < h_idx(vid_1idx+1); vid_2adj++)
         {
-          size_type vid_2idx = h_adj(vid_2adj);
+          nnz_lno_t vid_2idx = h_adj(vid_2adj);
 
           // skip over loops vid -- x -- vid
           if(vid_2idx == vid)
