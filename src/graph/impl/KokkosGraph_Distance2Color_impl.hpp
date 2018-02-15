@@ -776,10 +776,10 @@ private:
           // Check neighbors, fill forbidden array.
           for(size_type vid_1adj=_idx(vid); vid_1adj < _idx(vid+1); vid_1adj++) 
           {
-            size_type vid_1idx = _adj(vid_1adj);
+            nnz_lno_t vid_1idx = _adj(vid_1adj);
             for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
             { 
-              size_type vid_2idx = _adj(vid_2adj);
+              nnz_lno_t vid_2idx = _adj(vid_2adj);
 
               // Skip distance-2-self-loops
               if(vid_2idx == vid || vid_2idx >= nv)
@@ -857,7 +857,7 @@ private:
 
         for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
         { 
-          size_type vid_2idx = _adj(vid_2adj);
+          nnz_lno_t vid_2idx = _adj(vid_2adj);
 
           if(vid == vid_2idx || vid_2idx >= nv) continue;
 
