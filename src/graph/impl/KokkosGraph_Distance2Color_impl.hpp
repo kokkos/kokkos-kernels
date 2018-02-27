@@ -817,6 +817,7 @@ private:
   template <typename adj_view_t>
   struct functorFindConflicts_Atomic
   {
+    typedef typename single_dim_index_view_type::value_type atomic_increment_type;
     nnz_lno_t                  nv;           // num verts
     const_lno_row_view_t       _idx;
     adj_view_t                 _adj;
@@ -865,7 +866,7 @@ private:
           {
             _colors(vid) = 0;   // uncolor vertex
             // Atomically add vertex to recolorList
-            const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+            const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), (atomic_increment_type)1);
             _recolorList(k) = vid;
             numConflicts += 1;
             break;  // Can exit if vertex gets marked as a conflict.

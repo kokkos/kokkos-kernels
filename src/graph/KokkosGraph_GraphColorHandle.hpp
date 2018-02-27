@@ -350,6 +350,7 @@ private:
 
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangleTeam{
+    typedef typename v3::value_type atomic_increment_type;
     nnz_lno_t nv;
     v1 xadj;
     v2 adj;
@@ -390,7 +391,7 @@ private:
         nnz_lno_t n = adj[adjind];
         if (ii < n && n < nv){
           size_type position =
-              Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), 1);
+              Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), (atomic_increment_type)1);
           lower_srcs(position) = ii;
           lower_dsts(position) = n;
         }
