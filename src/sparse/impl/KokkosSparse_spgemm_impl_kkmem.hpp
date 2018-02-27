@@ -57,6 +57,8 @@ struct KokkosSPGEMM
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     PortableNumericCHASH{
 
+  typedef nnz_lno_t atomic_increment_type;
+
   nnz_lno_t numrows;
 
   a_row_view_t row_mapA;
@@ -870,7 +872,7 @@ struct KokkosSPGEMM
     			  }
     			  if (fail){
     				  nnz_lno_t write_index = 0;
-    				  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
+    				  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, (atomic_increment_type)1);
     				  c_row[write_index] = my_b_col;
     				  c_row_vals[write_index] = my_b_val;
     			  }
@@ -890,7 +892,7 @@ struct KokkosSPGEMM
     	  if (my_key != init_value){
     		  scalar_t my_val = vals[my_index];
     		  nnz_lno_t write_index = 0;
-    		  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
+    		  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, (atomic_increment_type)1);
     		  c_row[write_index] = my_key;
     		  c_row_vals[write_index] = my_val;
     	  }
@@ -1084,7 +1086,7 @@ struct KokkosSPGEMM
     	  nnz_lno_t my_key = keys[my_index];
     	  if (my_key != init_value){
     		  scalar_t my_val = vals[my_index];
-    		  nnz_lno_t write_index = Kokkos::atomic_fetch_add(used_hash_sizes, 1);
+    		  nnz_lno_t write_index = Kokkos::atomic_fetch_add(used_hash_sizes, (atomic_increment_type)1);
     		  c_row[write_index] = my_key;
     		  c_row_vals[write_index] = my_val;
     	  }

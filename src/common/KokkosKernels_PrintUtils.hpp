@@ -57,13 +57,15 @@ namespace Impl{
 template <typename in_lno_view_t,
           typename out_lno_view_t>
 struct Histogram{
+  typedef typename out_lno_view_t::value_type atomic_increment_type;
+
   in_lno_view_t inview;
   out_lno_view_t outview;
   Histogram (in_lno_view_t inview_, out_lno_view_t outview_): inview(inview_), outview(outview_){}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
-    Kokkos::atomic_fetch_add(&(outview(inview(ii))),1);
+    Kokkos::atomic_fetch_add(&(outview(inview(ii))),(atomic_increment_type)1);
   }
 };
 

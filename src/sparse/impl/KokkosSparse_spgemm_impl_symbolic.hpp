@@ -2484,6 +2484,8 @@ struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
   NonzeroesC{
+  typedef typename nnz_lno_t::value_type atomic_increment_type;
+
   nnz_lno_t numrows;
 
   a_row_view_t row_mapA;
@@ -2847,7 +2849,7 @@ struct KokkosSPGEMM
       while (c_rows){
         if (c_rows & unit){
 
-          size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, 1);
+          size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, (atomic_increment_type)1);
           entriesSetIndicesC(wind + row_begin) = set_size * c_rows_setind + current_row;
         }
         current_row++;
@@ -2871,7 +2873,7 @@ struct KokkosSPGEMM
         while (c_rows){
           if (c_rows & unit){
 
-            size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, 1);
+            size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, (atomic_increment_type)1);
             entriesSetIndicesC(wind + row_begin) = set_size * c_rows_setind + current_row;
           }
           current_row++;

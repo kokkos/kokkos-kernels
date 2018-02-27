@@ -209,6 +209,7 @@ template <typename in_lno_row_view_t,
           typename team_member>
 struct FillSymmetricEdgesHashMap{
   typedef typename in_lno_row_view_t::value_type idx;
+  typedef typename out_lno_row_view_t::value_type atomic_increment_type;
   idx num_rows;
   idx nnz;
   in_lno_row_view_t xadj;
@@ -244,22 +245,22 @@ struct FillSymmetricEdgesHashMap{
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(colIndex, ii));
           if (r.success()){
 
-            Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(ii)),(atomic_increment_type)1);
 
-            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),(atomic_increment_type)1);
           }
         }
         else if (colIndex > ii){
 
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(ii, colIndex));
           if (r.success()){
-            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),(atomic_increment_type)1);
 
-            Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(ii)),(atomic_increment_type)1);
           }
         }
         else {
-          Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+          Kokkos::atomic_fetch_add(&(pre_pps(ii)),(atomic_increment_type)1);
         }
       }
 
@@ -275,6 +276,7 @@ template <typename in_lno_row_view_t,
           typename team_member>
 struct FillSymmetricLowerEdgesHashMap{
   typedef typename in_lno_row_view_t::value_type idx;
+  typedef typename out_lno_row_view_t::value_type atomic_increment_type;
   idx num_rows;
   idx nnz;
   in_lno_row_view_t xadj;
@@ -312,14 +314,14 @@ struct FillSymmetricLowerEdgesHashMap{
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(colIndex, ii));
           if (r.success()){
 
-            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),(atomic_increment_type)1);
           }
         }
         else if (colIndex > ii){
 
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(ii, colIndex));
           if (r.success()){
-            Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(ii)),(atomic_increment_type)1);
           }
         }
 
@@ -337,6 +339,7 @@ template <typename in_lno_row_view_t,
           typename team_member_t>
 struct FillSymmetricCRS_HashMap{
   typedef typename in_lno_row_view_t::value_type idx;
+  typedef typename out_lno_row_view_t::value_type atomic_increment_type;
   idx num_rows;
   idx nnz;
   in_lno_row_view_t xadj;
@@ -372,22 +375,22 @@ struct FillSymmetricCRS_HashMap{
       if (colIndex < num_rows){
         if (colIndex < ii){
           if (umap.insert(Kokkos::pair<idx, idx>(colIndex, ii)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
-            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),(atomic_increment_type)1);
+            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)),(atomic_increment_type)1);
             sym_adj[cAdjInd] = ii;
             sym_adj[iAdjInd] = colIndex;
           }
         }
         else if (colIndex > ii){
           if (umap.insert(Kokkos::pair<idx, idx>(ii, colIndex)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
-            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),(atomic_increment_type)1);
+            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)),(atomic_increment_type)1);
             sym_adj[cAdjInd] = ii;
             sym_adj[iAdjInd] = colIndex;
           }
         }
         else {
-          idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+          idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),(atomic_increment_type)1);
           sym_adj[cAdjInd] = ii;
         }
       }
@@ -405,6 +408,7 @@ template <typename in_lno_row_view_t,
           typename team_member_t>
 struct FillSymmetricEdgeList_HashMap{
   typedef typename in_lno_row_view_t::value_type idx;
+  typedef typename out_lno_row_view_t::value_type atomic_increment_type;
   idx num_rows;
   idx nnz;
   in_lno_row_view_t xadj;
@@ -443,14 +447,14 @@ struct FillSymmetricEdgeList_HashMap{
       if (colIndex < num_rows){
         if (colIndex < ii){
           if (umap.insert(Kokkos::pair<idx, idx>(colIndex, ii)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(colIndex)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(colIndex)),(atomic_increment_type)1);
             sym_src[cAdjInd] = colIndex;
             sym_dst[cAdjInd] = ii;
           }
         }
         else if (colIndex > ii){
           if (umap.insert(Kokkos::pair<idx, idx>(ii, colIndex)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(ii)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(ii)),(atomic_increment_type)1);
             sym_src[cAdjInd] = ii;
             sym_dst[cAdjInd] = colIndex;
           }
@@ -486,7 +490,7 @@ struct Reverse_Map_Init{
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
     forward_type fm = forward_map[ii];
-    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), 1);
+    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), (reverse_type)1);
   }
 
   /*
