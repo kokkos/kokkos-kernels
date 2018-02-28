@@ -256,10 +256,10 @@ private:
   int min_hash_size_scale;
   double compression_cut_off;
   double first_level_hash_cut_off;
-  size_t original_max_row_flops, original_overall_flops;
+  int64_t original_max_row_flops, original_overall_flops;
   row_lno_persistent_work_view_t row_flops;
 
-  size_t compressed_max_row_flops, compressed_overall_flops;
+  int64_t compressed_max_row_flops, compressed_overall_flops;
 
   void set_first_level_hash_cut_off(double first_level_hash_cut_off_){
     this->first_level_hash_cut_off = first_level_hash_cut_off_;
