@@ -173,8 +173,16 @@ int test_batched_vector_arithmatic() {
 TEST_F( TestCategory, batched_vector_arithmatic_simd_float3 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,3>();
 }
+TEST_F( TestCategory, batched_vector_arithmatic_simd_float4 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,4>();
+}
+// avx
 TEST_F( TestCategory, batched_vector_arithmatic_simd_float8 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,8>();
+}
+// avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_float16 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,16>();
 }
 #endif
 
@@ -182,8 +190,13 @@ TEST_F( TestCategory, batched_vector_arithmatic_simd_float8 ) {
 TEST_F( TestCategory, batched_vector_arithmatic_simd_double3 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<double>,3>();
 }
+// avx
 TEST_F( TestCategory, batched_vector_arithmatic_simd_double4 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<double>,4>();
+}
+//avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_double8 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<double>,8>();
 }
 #endif
 
@@ -191,8 +204,13 @@ TEST_F( TestCategory, batched_vector_arithmatic_simd_double4 ) {
 TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex3 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<float> >,3>();
 }
+// avx
 TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex4 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<float> >,4>();
+}
+// avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex8 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<float> >,8>();
 }
 #endif
 
@@ -200,58 +218,12 @@ TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex4 ) {
 TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex3 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,3>();
 }
+// avx
 TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
 }
-#endif
-
-///
-/// AVX
-///
-
-#if defined(__AVX__) || defined(__AVX2__)
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-// TEST_F( TestCategory, batched_vector_arithmatic_avx_float8 ) {
-//   typedef VectorTag<AVX<float,TestExecSpace>, 8> vector_tag_type;
-//   test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-// }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_double4 ) {
-  test_batched_vector_arithmatic<TestExecSpace,AVX<double>,4>();
+// avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,4>();
 }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_dcomplex2 ) {
-  test_batched_vector_arithmatic<TestExecSpace,AVX<Kokkos::complex<double> >,2>();
-}
-#endif
-#endif
-
-///
-/// AVX 512
-///
-
-#if defined(__AVX512F__)
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-// TEST_F( TestCategory, batched_vector_arithmatic_avx_float16 ) {
-//   typedef VectorTag<AVX<float,TestExecSpace>, 16> vector_tag_type;
-//   test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-// }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_double8 ) {
-  test_batched_vector_arithmatic<TestExecSpace,AVX<double>,8>();
-}
-#endif
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_dcomplex4 ) {
-  typedef AVX<Kokkos::complex<double>, 4> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,AVX<Kokkos::complex<double> >,4>();
-}
-#endif
 #endif

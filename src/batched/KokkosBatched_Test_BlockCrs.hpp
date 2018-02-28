@@ -864,7 +864,7 @@ namespace KokkosBatched {
         
         // diffs
         Kokkos::View<value_type****,Kokkos::DefaultHostExecutionSpace> 
-          rr("rr", bb.dimension_0(), bb.dimension_1(), bb.dimension_2(), bb.dimension_3()); 
+          rr("rr", bb.extent(0)(), bb.extent(1)(), bb.extent(2)(), bb.extent(3)()); 
         
         Kokkos::deep_copy(rr, bb);
 
@@ -1129,7 +1129,7 @@ namespace KokkosBatched {
       }
 
       // memory size
-      const double memsize_A = A_device.Values().dimension_0()*blocksize*blocksize*8;
+      const double memsize_A = A_device.Values().extent(0)()*blocksize*blocksize*8;
       
       ///
       /// matrix vector multiplication test

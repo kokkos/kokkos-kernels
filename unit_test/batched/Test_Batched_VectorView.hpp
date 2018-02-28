@@ -115,21 +115,21 @@ namespace Test {
     
     typedef typename vector_type::value_type value_type;    
     const int vector_length = vector_type::vector_length;
-
+    const int test_view_size = 4;
     { /// rank 1 array
-      Kokkos::View<vector_type*,DeviceType> a("a", 10);
+      Kokkos::View<vector_type*,DeviceType> a("a", test_view_size);
       impl_init_vector_view(a);
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*,DeviceType>, PackDim<0> >(a));
     }
     { /// rank 2 array
-      Kokkos::View<vector_type**,DeviceType> a("a", 10, 10);
+      Kokkos::View<vector_type**,DeviceType> a("a", test_view_size, test_view_size);
       impl_init_vector_view(a);
       
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type**,DeviceType>, PackDim<0> >(a));
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type**,DeviceType>, PackDim<1> >(a));
     }
     { /// rank 3 array
-      Kokkos::View<vector_type***,DeviceType> a("a", 10, 10, 10);
+      Kokkos::View<vector_type***,DeviceType> a("a", test_view_size, test_view_size, test_view_size);
       impl_init_vector_view(a);
       
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***,DeviceType>, PackDim<0> >(a));
@@ -137,7 +137,7 @@ namespace Test {
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type***,DeviceType>, PackDim<2> >(a));
     }
     { /// rank 4 array
-      Kokkos::View<vector_type****,DeviceType> a("a", 10, 10, 10, 10);
+      Kokkos::View<vector_type****,DeviceType> a("a", test_view_size, test_view_size, test_view_size, test_view_size);
       impl_init_vector_view(a);
       
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****,DeviceType>, PackDim<0> >(a));
@@ -146,7 +146,7 @@ namespace Test {
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type****,DeviceType>, PackDim<3> >(a));
     }
     { /// rank 5 array
-      Kokkos::View<vector_type*****,DeviceType> a("a", 10, 10, 10, 10, 10);
+      Kokkos::View<vector_type*****,DeviceType> a("a", test_view_size, test_view_size, test_view_size, test_view_size, test_view_size);
       impl_init_vector_view(a);
       
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****,DeviceType>, PackDim<0> >(a));
@@ -156,7 +156,7 @@ namespace Test {
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*****,DeviceType>, PackDim<4> >(a));
     }
     { /// rank 6 array
-      Kokkos::View<vector_type******,DeviceType> a("a", 10, 10, 10, 10, 10, 10);
+      Kokkos::View<vector_type******,DeviceType> a("a", test_view_size, test_view_size, test_view_size, test_view_size, test_view_size, test_view_size);
       impl_init_vector_view(a);
       
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<0> >(a));
@@ -167,7 +167,7 @@ namespace Test {
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type******,DeviceType>, PackDim<5> >(a));
     }
     { /// rank 7 array
-      Kokkos::View<vector_type*******,DeviceType> a("a", 10, 10, 10, 10, 10, 10, 10);
+      Kokkos::View<vector_type*******,DeviceType> a("a", test_view_size, test_view_size, test_view_size, test_view_size, test_view_size, test_view_size, test_view_size);
       impl_init_vector_view(a);
       
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<0> >(a));
@@ -179,7 +179,7 @@ namespace Test {
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type*******,DeviceType>, PackDim<6> >(a));
     }
     { /// rank 8 array
-      Kokkos::View<vector_type********,DeviceType> a("a", 10, 10, 10, 10, 10, 10, 10, 10);
+      Kokkos::View<vector_type********,DeviceType> a("a", test_view_size, test_view_size, test_view_size, test_view_size, test_view_size, test_view_size, test_view_size, test_view_size);
       impl_init_vector_view(a);
       
       impl_verify_vector_view(a, SimdViewAccess<Kokkos::View<vector_type********,DeviceType>, PackDim<0> >(a));

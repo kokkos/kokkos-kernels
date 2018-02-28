@@ -23,8 +23,8 @@ namespace KokkosBatched {
     invoke(const AViewType &A,
            /* */ BViewType &B) {
       return CopyInternal::
-        invoke(A.dimension_0(), 
-               A.dimension_1(), 
+        invoke(A.extent(0)(), 
+               A.extent(1)(), 
                A.data(), A.stride_0(), A.stride_1(),
                B.data(), B.stride_0(), B.stride_1());
     }
@@ -38,8 +38,8 @@ namespace KokkosBatched {
     invoke(const AViewType &A,
            /* */ BViewType &B) {
       return CopyInternal::
-        invoke(A.dimension_1(), 
-               A.dimension_0(), 
+        invoke(A.extent(1)(), 
+               A.extent(0)(), 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_0(), B.stride_1());
     }
@@ -60,8 +60,8 @@ namespace KokkosBatched {
              /* */ BViewType &B) {
         return CopyInternal::
             invoke(member,
-                   A.dimension_0(), 
-                   A.dimension_1(), 
+                   A.extent(0)(), 
+                   A.extent(1)(), 
                    A.data(), A.stride_0(), A.stride_1(),
                    B.data(), B.stride_0(), B.stride_1());
       }
@@ -78,8 +78,8 @@ namespace KokkosBatched {
              /* */ BViewType &B) {
         return CopyInternal::
           invoke(member,
-                 A.dimension_1(), 
-                 A.dimension_0(), 
+                 A.extent(1)(), 
+                 A.extent(0)(), 
                  A.data(), A.stride_1(), A.stride_0(),
                  B.data(), B.stride_0(), B.stride_1());
       }

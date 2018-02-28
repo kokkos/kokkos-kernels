@@ -59,7 +59,7 @@ namespace Test {
 
     inline
     void run() {
-      const int league_size = _b.dimension_0();
+      const int league_size = _b.extent(0)();
       Kokkos::TeamPolicy<DeviceType,ParamTagType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);
     }
