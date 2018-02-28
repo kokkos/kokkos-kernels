@@ -51,7 +51,7 @@ namespace Test {
     
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.extent(0)());
+      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.extent(0));
       Kokkos::parallel_for(policy, *this);            
     }
   };

@@ -61,10 +61,10 @@ namespace KokkosBatched {
       auto bb = Kokkos::create_mirror_view(b); Kokkos::deep_copy(bb, b);
 
       double diff2 = 0, norm2 = 0;
-      for (ordinal_type i=0;i<aa.extent(0)();++i)
-        for (ordinal_type j=0;j<aa.extent(1)();++j)
-          for (ordinal_type k=0;k<aa.extent(2)();++k)
-            for (ordinal_type l=0;l<aa.extent(3)();++l) {
+      for (ordinal_type i=0;i<aa.extent(0);++i)
+        for (ordinal_type j=0;j<aa.extent(1);++j)
+          for (ordinal_type k=0;k<aa.extent(2);++k)
+            for (ordinal_type l=0;l<aa.extent(3);++l) {
               const double 
                 val  = aa(i,j,k,l),
                 diff = aa(i,j,k,l) - bb(i,j,k,l);
@@ -146,17 +146,17 @@ namespace KokkosBatched {
 
       KOKKOS_INLINE_FUNCTION
       bool isEmpty() const { 
-        return (rowptr.extent(0)() <= 1 || colidx.extent(0)() == 0 || rowidx.extent(0)() == 0); 
+        return (rowptr.extent(0) <= 1 || colidx.extent(0) == 0 || rowidx.extent(0) == 0); 
       }
       
       KOKKOS_INLINE_FUNCTION
       ordinal_type NumRows() const { 
-        return (isEmpty() ? 0 : static_cast<ordinal_type>(rowptr.extent(0)()) - 1); 
+        return (isEmpty() ? 0 : static_cast<ordinal_type>(rowptr.extent(0)) - 1); 
       }
       
       KOKKOS_INLINE_FUNCTION
       size_type NumNonZeros() const { 
-        return (isEmpty() ? 0 : static_cast<size_type>(colidx.extent(0)())); 
+        return (isEmpty() ? 0 : static_cast<size_type>(colidx.extent(0))); 
       }
     };
 
@@ -372,9 +372,9 @@ namespace KokkosBatched {
       BlockMultiVector(const value_array_type values) 
         : _values(values) {}
 
-      ordinal_type NumVectors() const { return _values.extent(0)(); }
-      ordinal_type NumRows() const { return _values.extent(1)(); }
-      ordinal_type BlockSize() const { return _values.extent(2)(); }
+      ordinal_type NumVectors() const { return _values.extent(0); }
+      ordinal_type NumRows() const { return _values.extent(1); }
+      ordinal_type BlockSize() const { return _values.extent(2); }
 
       value_array_type Values() const { return _values; }
     };
@@ -536,10 +536,10 @@ namespace KokkosBatched {
       PartitionedBlockMultiVector(const value_array_type values) 
         : _values(values) {}
       
-      ordinal_type NumPartitions() const { return _values.extent(0)(); }
-      ordinal_type NumVectors() const { return _values.extent(1)(); }      
-      ordinal_type NumRows() const { return _values.extent(2)(); }
-      ordinal_type BlockSize() const { return _values.extent(3)(); }
+      ordinal_type NumPartitions() const { return _values.extent(0); }
+      ordinal_type NumVectors() const { return _values.extent(1); }      
+      ordinal_type NumRows() const { return _values.extent(2); }
+      ordinal_type BlockSize() const { return _values.extent(3); }
 
       value_array_type Values() const { return _values; }
     };
@@ -619,7 +619,7 @@ namespace KokkosBatched {
         const ordinal_type ii = idx%_blocksize;
         
         // loop over multivectors
-        const ordinal_type jend = _y.extent(0)();
+        const ordinal_type jend = _y.extent(0);
         for (ordinal_type j=0;j<jend;++j) {
           scalar_type tmp = 0;
           
@@ -648,7 +648,7 @@ namespace KokkosBatched {
         _x = x.Values();
         _y = y.Values();
 
-        Kokkos::parallel_for(_x.extent(1)()*_blocksize, *this);
+        Kokkos::parallel_for(_x.extent(1)*_blocksize, *this);
       }
     };
 
@@ -676,7 +676,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION 
       void operator()(const ordinal_type i) const {
         // loop over multivector colums
-        const ordinal_type jend = _y.extent(0)();
+        const ordinal_type jend = _y.extent(0);
         for (ordinal_type j=0;j<jend;++j) {
           // set zero
           for (ordinal_type ii=0;ii<_blocksize;++ii) 
@@ -710,7 +710,7 @@ namespace KokkosBatched {
         _x = x.Values();
         _y = y.Values();
 
-        Kokkos::parallel_for(_x.extent(1)(), *this);
+        Kokkos::parallel_for(_x.extent(1), *this);
       }
     };
 
@@ -789,7 +789,7 @@ namespace KokkosBatched {
         _TC = T.C();
 
         _blocksize = A.BlockSize();
-        Kokkos::parallel_for(_A.extent(0)(), *this);
+        Kokkos::parallel_for(_A.extent(0), *this);
       }
 
       template<typename TViewType,
@@ -819,9 +819,9 @@ namespace KokkosBatched {
           ijend = adjustDimension<value_type>(_mesh.ni*_mesh.nj),
           kend = _mesh.nk;
 
-        assert(ijend == TA.extent(0)()); assert((kend - 0) == TA.extent(1)()); 
-        assert(ijend == TB.extent(0)()); assert((kend - 1) == TB.extent(1)());
-        assert(ijend == TC.extent(0)()); assert((kend - 1) == TC.extent(1)());
+        assert(ijend == TA.extent(0)); assert((kend - 0) == TA.extent(1)); 
+        assert(ijend == TB.extent(0)); assert((kend - 1) == TB.extent(1));
+        assert(ijend == TC.extent(0)); assert((kend - 1) == TC.extent(1));
 
         for (ordinal_type ij=0;ij<ijend;++ij) {
           ordinal_type i, j;

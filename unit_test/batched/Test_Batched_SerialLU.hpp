@@ -29,7 +29,7 @@ namespace Test {
     void operator()(const int k) const {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
 
-      for (int i=0;i<static_cast<int>(aa.extent(0)());++i)
+      for (int i=0;i<static_cast<int>(aa.extent(0));++i)
         aa(i,i) += 10.0;
 
       SerialLU<AlgoTagType>::invoke(aa);
@@ -37,7 +37,7 @@ namespace Test {
 
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0)());
+      Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0));
       Kokkos::parallel_for(policy, *this);
     }
   };
