@@ -12,6 +12,9 @@ namespace KokkosBatched {
     template<typename T, int l>
     class Vector;
 
+    template<typename T, int l>
+    struct is_vector<Vector<SIMD<T>,l> > : public std::true_type {};
+
     template<typename ValueType, typename MemorySpace>
     struct DefaultVectorLength {
       enum : int { value = 1 };
@@ -64,6 +67,18 @@ namespace KokkosBatched {
     };
 #endif
 
+    template<typename T>
+    struct MagnitudeScalarType;
+
+    template<> struct MagnitudeScalarType<float> { typedef float type; };
+    template<> struct MagnitudeScalarType<double> { typedef double type; };
+    template<> struct MagnitudeScalarType<Kokkos::complex<float> > { typedef float type; };
+    template<> struct MagnitudeScalarType<Kokkos::complex<double> > { typedef double type; };
+
+    template<int l> struct MagnitudeScalarType<Vector<SIMD<float>,l> > { typedef float type; };
+    template<int l> struct MagnitudeScalarType<Vector<SIMD<double>,l> > { typedef double type; };
+    template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<float> >,l> > { typedef float type; };
+    template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double> >,l> > { typedef double type; };
   }
 }
 
@@ -78,9 +93,6 @@ namespace Kokkos {
     template<typename T, int l>
     class ArithTraits<Vector<SIMD<T>,l> > { 
     public:
-      typedef typename ArithTraits<T>::val_type val_scalar_type;
-      typedef typename ArithTraits<T>::mag_type mag_scalar_type;
-
       typedef Vector<SIMD<val_scalar_type>,l> val_type;
       typedef Vector<SIMD<mag_scalar_type>,l> mag_type;
       

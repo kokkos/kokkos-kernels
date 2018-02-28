@@ -87,9 +87,9 @@ namespace KokkosBatched {
         Kokkos::parallel_for
           (Kokkos::RangePolicy<HostSpaceType>(0, N*VectorLength),
            KOKKOS_LAMBDA(const int k) {
+            const int k0 = k/VectorLength, k1 = k%VectorLength;
             for (int i=0;i<BlkSize;++i)
               for (int j=0;j<BlkSize;++j) {
-                const int k0 = k/VectorLength, k1 = k%VectorLength;
                 amat_simd(k0, i, j)[k1] = amat(k, i, j);
                 bmat_simd(k0, i, j)[k1] = bmat(k, i, j);                  
               }
