@@ -619,6 +619,7 @@ struct KokkosSPGEMM
     int thread_rank =  teamMember.team_rank();
 
     int vector_rank = 0;
+    typedef typename std::remove_reference< decltype( *used_hash_sizes ) >::type atomic_incr_type;
     Kokkos::parallel_scan(
         Kokkos::ThreadVectorRange(teamMember, vector_size),
         [&] (const int threadid, int &update, const bool final) {
@@ -870,7 +871,7 @@ struct KokkosSPGEMM
     			  }
     			  if (fail){
     				  nnz_lno_t write_index = 0;
-    				  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
+    				  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, atomic_incr_type(1));
     				  c_row[write_index] = my_b_col;
     				  c_row_vals[write_index] = my_b_val;
     			  }
@@ -890,7 +891,7 @@ struct KokkosSPGEMM
     	  if (my_key != init_value){
     		  scalar_t my_val = vals[my_index];
     		  nnz_lno_t write_index = 0;
-    		  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, 1);
+    		  write_index = Kokkos::atomic_fetch_add(used_hash_sizes + 1, atomic_incr_type(1));
     		  c_row[write_index] = my_key;
     		  c_row_vals[write_index] = my_val;
     	  }
@@ -923,6 +924,7 @@ struct KokkosSPGEMM
     int thread_rank =  teamMember.team_rank();
 
     int vector_rank = 0;
+    typedef typename std::remove_reference< decltype( *used_hash_sizes ) >::type atomic_incr_type;
     Kokkos::parallel_scan(
         Kokkos::ThreadVectorRange(teamMember, vector_size),
         [&] (const int threadid, int &update, const bool final) {
@@ -1084,7 +1086,7 @@ struct KokkosSPGEMM
     	  nnz_lno_t my_key = keys[my_index];
     	  if (my_key != init_value){
     		  scalar_t my_val = vals[my_index];
-    		  nnz_lno_t write_index = Kokkos::atomic_fetch_add(used_hash_sizes, 1);
+    		  nnz_lno_t write_index = Kokkos::atomic_fetch_add(used_hash_sizes, atomic_incr_type(1));
     		  c_row[write_index] = my_key;
     		  c_row_vals[write_index] = my_val;
     	  }

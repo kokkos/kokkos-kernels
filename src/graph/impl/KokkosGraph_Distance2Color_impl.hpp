@@ -845,6 +845,7 @@ private:
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t vid_, nnz_lno_t& numConflicts) const
     {
+      typedef typename std::remove_reference< decltype( _recolorListLength() ) >::type atomic_incr_type;
       nnz_lno_t vid      = _vertexList(vid_);
       color_t   my_color = _colors(vid);
 
@@ -865,7 +866,7 @@ private:
           {
             _colors(vid) = 0;   // uncolor vertex
             // Atomically add vertex to recolorList
-            const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+            const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), atomic_incr_type(1));
             _recolorList(k) = vid;
             numConflicts += 1;
             break;  // Can exit if vertex gets marked as a conflict.
