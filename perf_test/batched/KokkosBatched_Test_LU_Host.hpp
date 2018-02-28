@@ -72,8 +72,6 @@ namespace KokkosBatched {
         const double flop = (N*VectorLength)*FlopCount(BlkSize,BlkSize);
         const double tmax = 1.0e15;
 
-        typedef typename
-          Kokkos::Impl::is_space<HostSpaceType>::host_mirror_space::execution_space HostSpaceType ;
         const int iter_begin = -10, iter_end = 100;
         Kokkos::Impl::Timer timer;
 
