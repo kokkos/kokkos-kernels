@@ -22,7 +22,7 @@ namespace KokkosBatched {
       //   - for host, the lambda does not allow further compiler optimization 
       using member_type = typename tag_type::member_type;
 
-      static const int vector_length = tag_type::length;
+      enum {vector_length = tag_type::length};
 
       typedef value_type data_type[vector_length];
 
