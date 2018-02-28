@@ -1,4 +1,6 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+#define __KOKKOSBATCHED_INTEL_MKL__
+//#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__
 
 #include <iomanip>
 #if defined(__KOKKOSBATCHED_LIBXSMM__)
@@ -134,7 +136,6 @@ namespace KokkosBatched {
                 
                   const double one = 1.0;
                   if (std::is_same<value_type,double>::value) {
-                    std::cout << "dgemm called \n";
                     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                                 BlkSize, BlkSize, BlkSize,
                                 one,
@@ -143,7 +144,6 @@ namespace KokkosBatched {
                                 one,
                                 (double*)cc.data(), cc.stride_0());
                   } else if (std::is_same<value_type,Kokkos::complex<double> >::value) {
-                    std::cout << "zgemm called \n";
                     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                                 BlkSize, BlkSize, BlkSize,
                                 (void*)&one,

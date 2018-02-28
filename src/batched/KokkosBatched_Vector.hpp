@@ -93,6 +93,9 @@ namespace Kokkos {
     template<typename T, int l>
     class ArithTraits<Vector<SIMD<T>,l> > { 
     public:
+      typedef typename ArithTraits<T>::val_type val_scalar_type;
+      typedef typename ArithTraits<T>::mag_type mag_scalar_type;
+
       typedef Vector<SIMD<val_scalar_type>,l> val_type;
       typedef Vector<SIMD<mag_scalar_type>,l> mag_type;
       
