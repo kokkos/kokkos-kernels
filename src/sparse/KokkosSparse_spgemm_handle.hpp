@@ -256,10 +256,10 @@ private:
   int min_hash_size_scale;
   double compression_cut_off;
   double first_level_hash_cut_off;
-  int64_t original_max_row_flops, original_overall_flops;
+  size_t original_max_row_flops, original_overall_flops;
   row_lno_persistent_work_view_t row_flops;
 
-  int64_t compressed_max_row_flops, compressed_overall_flops;
+  size_t compressed_max_row_flops, compressed_overall_flops;
 
   void set_first_level_hash_cut_off(double first_level_hash_cut_off_){
     this->first_level_hash_cut_off = first_level_hash_cut_off_;
@@ -468,7 +468,7 @@ private:
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
 	coloring_input_file(""),
 	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
-	original_max_row_flops(-1), original_overall_flops(-1),
+	original_max_row_flops(std::numeric_limits<size_t>::max()), original_overall_flops(std::numeric_limits<size_t>::max()),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(), MaxColDenseAcc(250001),
     mkl_keep_output(true),
     mkl_convert_to_1base(true), is_compression_single_step(false)
