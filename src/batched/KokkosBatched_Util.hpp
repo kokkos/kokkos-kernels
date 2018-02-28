@@ -33,10 +33,10 @@ namespace KokkosBatched {
     template<typename Ta, typename Tb>
     struct is_same_mag_type {
       static const bool is_specialized = ( Kokkos::Details::ArithTraits<Ta>::is_specialized &&
-                                               Kokkos::Details::ArithTraits<Tb>::is_specialized );
+                                           Kokkos::Details::ArithTraits<Tb>::is_specialized );
       
       static const bool is_mag_type_same = std::is_same<typename Kokkos::Details::ArithTraits<Ta>::mag_type,
-                                                            typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
+                                                        typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
       
       static const bool value = is_specialized && is_mag_type_same;
     };

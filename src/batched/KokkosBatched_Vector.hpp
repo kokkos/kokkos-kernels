@@ -11,8 +11,59 @@ namespace KokkosBatched {
   namespace Experimental {
     template<typename T, int l>
     class Vector;
+
+    template<typename ValueType, typename MemorySpace>
+    struct DefaultVectorLength {
+      enum : int { value = 1 };
+    };
     
-    template<typename T, int l> struct is_vector<Vector<SIMD<T>,l> > : public std::true_type {};
+    template<>
+    struct DefaultVectorLength<float,Kokkos::HostSpace> {
+#if   defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 8 };
+#elif defined(__AVX512F__)
+      enum : int { value = 16 };
+#endif
+    };
+    template<>
+    struct DefaultVectorLength<double,Kokkos::HostSpace> {
+#if   defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 4 };
+#elif defined(__AVX512F__)
+      enum : int { value = 8 };
+#endif
+    };
+    
+    struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::HostSpace> {
+#if   defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 4 };
+#elif defined(__AVX512F__)
+      enum : int { value = 8 };
+#endif
+    };
+    struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::HostSpace> {
+#if   defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 2 };
+#elif defined(__AVX512F__)
+      enum : int { value = 4 };
+#endif
+    };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+    struct DefaultVectorLength<float,Kokkos::CudaSpace> {
+      enum : int { value = 16 };
+    };
+    struct DefaultVectorLength<double,Kokkos::CudaSpace> {
+      enum : int { value = 16 };
+    };
+    struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
+      enum : int { value = 16 };
+    };
+    struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
+      enum : int { value = 16 };
+    };
+#endif
+
   }
 }
 
