@@ -816,9 +816,9 @@ public:
         nnz_lno_t color_index_begin = h_color_xadj(i);
         nnz_lno_t color_index_end = h_color_xadj(i + 1);
 
-        int overall_work = color_index_end - color_index_begin;// /256 + 1;
+        nnz_lno_t overall_work = color_index_end - color_index_begin;// /256 + 1;
 
-        nnz_lno_t average_nnz = values.extent(0)/num_rows;
+        /*nnz_lno_t average_nnz = values.extent(0)/num_rows;
         if(average_nnz == 0) average_nnz = 1;
 
         int team_size = -1;
@@ -827,14 +827,17 @@ public:
 
         int64_t rows_per_team = spmv_launch_parameters<MyExecSpace>(overall_work,average_nnz*overall_work,rows_per_thread,team_size,vector_length);
         int64_t worksets = (overall_work+rows_per_team-1)/rows_per_team;
-
+        */
 
         gs._color_set_begin = color_index_begin;
         gs._color_set_end = color_index_end;
+        gs._rows_per_team = teamSizeMax;
 
+        //printf("A TeamSize: %i RowsPerTeam: %i (%i %i %i)\n",team_size,rows_per_team,vector_length,teamSizeMax,vector_size );
         Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
-            team_policy_t(worksets , team_size, vector_length),
+            team_policy_t(overall_work / teamSizeMax + 1 , teamSizeMax, vector_size),
             gs );
+
         //MyExecSpace::fence();
       }
     }
@@ -844,11 +847,9 @@ public:
         nnz_lno_t color_index_begin = h_color_xadj(i);
         nnz_lno_t color_index_end = h_color_xadj(i + 1);
 
-        gs._color_set_begin = color_index_begin;
-        gs._color_set_end = color_index_end;
-
         nnz_lno_t overall_work = color_index_end - color_index_begin;
-        nnz_lno_t average_nnz = values.extent(0)/num_rows;
+
+        /*nnz_lno_t average_nnz = values.extent(0)/num_rows;
         if(average_nnz == 0) average_nnz = 1;
 
         int team_size = -1;
@@ -856,10 +857,15 @@ public:
         int64_t rows_per_thread = -1;
 
         int64_t rows_per_team = spmv_launch_parameters<MyExecSpace>(overall_work,average_nnz*overall_work,rows_per_thread,team_size,vector_length);
-        int64_t worksets = (overall_work+rows_per_team-1)/rows_per_team;
+        int64_t worksets = (overall_work+rows_per_team-1)/rows_per_team;*/
 
+        gs._color_set_begin = color_index_begin;
+        gs._color_set_end = color_index_end;
+        gs._rows_per_team = teamSizeMax;
+
+        //printf("B TeamSize: %i RowsPerTeam: %i (%i %i %i)\n",team_size,rows_per_team,vector_length,teamSizeMax,vector_size );
         Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::backward",
-            team_policy_t(worksets, team_size, vector_length),
+            team_policy_t(overall_work / teamSizeMax + 1 , teamSizeMax, vector_size),
             gs );
         //MyExecSpace::fence();
         if (i == 0){
