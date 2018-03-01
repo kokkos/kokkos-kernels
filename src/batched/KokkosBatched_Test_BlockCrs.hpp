@@ -293,7 +293,7 @@ namespace KokkosBatched {
             Kokkos::parallel_for(policy, *this);
             break;
           }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
             typedef typename policy_type::member_type member_type;
@@ -825,7 +825,7 @@ namespace KokkosBatched {
             Kokkos::parallel_for(policy, *this);
             break;
           }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
             typedef typename policy_type::member_type member_type;

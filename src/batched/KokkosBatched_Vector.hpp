@@ -26,6 +26,8 @@ namespace KokkosBatched {
       enum : int { value = 16 };
 #elif defined(__AVX__) || defined(__AVX2__)
       enum : int { value = 8 };
+#else
+      enum : int { value = 16 };      
 #endif
     };
     template<>
@@ -34,34 +36,45 @@ namespace KokkosBatched {
       enum : int { value = 8 };
 #elif defined(__AVX__) || defined(__AVX2__)
       enum : int { value = 4 };
+#else
+      enum : int { value = 8 };      
 #endif
     };
-    
+    template<>    
     struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::HostSpace> {
 #if   defined(__AVX512F__)
       enum : int { value = 8 };
 #elif defined(__AVX__) || defined(__AVX2__)
       enum : int { value = 4 };
+#else
+      enum : int { value = 8 };      
 #endif
     };
+    template<>
     struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::HostSpace> {
 #if   defined(__AVX512F__)
       enum : int { value = 4 };
 #elif defined(__AVX__) || defined(__AVX2__)
       enum : int { value = 2 };
+#else 
+      enum : int { value = 4 };      
 #endif
     };
 
 #if defined(KOKKOS_ENABLE_CUDA)
+    template<>
     struct DefaultVectorLength<float,Kokkos::CudaSpace> {
       enum : int { value = 16 };
     };
+    template<>
     struct DefaultVectorLength<double,Kokkos::CudaSpace> {
       enum : int { value = 16 };
     };
+    template<>
     struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
       enum : int { value = 16 };
     };
+    template<>
     struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
       enum : int { value = 16 };
     };

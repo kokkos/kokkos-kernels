@@ -58,7 +58,7 @@ int main (int argc, char *argv[]) {
   if (std::is_same<HostSpaceType,Kokkos::Serial>::value)
     std::cout << "Kokkos::Serial " << std::endl;
   else
-    HostSpaceType::print_configuration(std::cout, false);
+    HostSpaceType::print_configuration(std::cout, detail);
 
   constexpr int VectorLength = DefaultVectorLength<Test::scalar_type,typename HostSpaceType::memory_space>::value;
   constexpr int RangeTagOper = 0;
@@ -96,8 +96,7 @@ int main (int argc, char *argv[]) {
   {
     const bool test_mkl = true;
     const Test::Input<HostSpaceType> input(argc, argv); 
-    int r_val = Test::run<HostSpaceType,VectorType,VectorLength>(input, test_mkl);
-    r_val = 0;
+    Test::run<HostSpaceType,VectorType,VectorLength>(input, test_mkl);
   } 
   std::cout << " Perf Test::CompactMKL End\n";  
 #endif
@@ -106,8 +105,7 @@ int main (int argc, char *argv[]) {
   std::cout << " Perf Test::Vector Begin\n";
   {
     const Test::Input<HostSpaceType> input(argc, argv); 
-    int r_val = Test::run<HostSpaceType,VectorType,VectorLength>(input);
-    r_val = 0;
+    Test::run<HostSpaceType,VectorType,VectorLength>(input);
   } 
   std::cout << " Perf Test::Vector End\n";
 

@@ -2,6 +2,8 @@
 #define __KOKKOSBATCHED_VECTOR_SIMD_VIEW_HPP__
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -207,5 +209,7 @@ namespace KokkosBatched {
     };
   }
 }
+
+#pragma GCC diagnostic pop
   
 #endif

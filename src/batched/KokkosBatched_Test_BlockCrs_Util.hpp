@@ -61,10 +61,10 @@ namespace KokkosBatched {
       auto bb = Kokkos::create_mirror_view(b); Kokkos::deep_copy(bb, b);
 
       double diff2 = 0, norm2 = 0;
-      for (ordinal_type i=0;i<aa.extent(0);++i)
-        for (ordinal_type j=0;j<aa.extent(1);++j)
-          for (ordinal_type k=0;k<aa.extent(2);++k)
-            for (ordinal_type l=0;l<aa.extent(3);++l) {
+      for (ordinal_type i=0,iend=aa.extent(0);i<iend;++i)
+        for (ordinal_type j=0,jend=aa.extent(1);j<jend;++j)
+          for (ordinal_type k=0,kend=aa.extent(2);k<kend;++k)
+            for (ordinal_type l=0,lend=aa.extent(3);l<lend;++l) {
               const double 
                 val  = aa(i,j,k,l),
                 diff = aa(i,j,k,l) - bb(i,j,k,l);
@@ -648,7 +648,8 @@ namespace KokkosBatched {
         _x = x.Values();
         _y = y.Values();
 
-        Kokkos::parallel_for(_x.extent(1)*_blocksize, *this);
+        Kokkos::RangePolicy<ExecSpace> policy(0, _x.extent(1)*_blocksize);
+        Kokkos::parallel_for(policy, *this);
       }
     };
 
@@ -709,8 +710,9 @@ namespace KokkosBatched {
         _A = A.Values();
         _x = x.Values();
         _y = y.Values();
-
-        Kokkos::parallel_for(_x.extent(1), *this);
+        
+        Kokkos::RangePolicy<ExecSpace> policy(0, _x.extent(1));
+        Kokkos::parallel_for(policy, *this);
       }
     };
 
@@ -789,7 +791,8 @@ namespace KokkosBatched {
         _TC = T.C();
 
         _blocksize = A.BlockSize();
-        Kokkos::parallel_for(_A.extent(0), *this);
+        Kokkos::RangePolicy<ExecSpace> policy(0, _A.extent(0));
+        Kokkos::parallel_for(policy, *this);
       }
 
       template<typename TViewType,
@@ -819,9 +822,9 @@ namespace KokkosBatched {
           ijend = adjustDimension<value_type>(_mesh.ni*_mesh.nj),
           kend = _mesh.nk;
 
-        assert(ijend == TA.extent(0)); assert((kend - 0) == TA.extent(1)); 
-        assert(ijend == TB.extent(0)); assert((kend - 1) == TB.extent(1));
-        assert(ijend == TC.extent(0)); assert((kend - 1) == TC.extent(1));
+        assert(ijend == ordinal_type(TA.extent(0))); assert((kend - 0) == ordinal_type(TA.extent(1))); 
+        assert(ijend == ordinal_type(TB.extent(0))); assert((kend - 1) == ordinal_type(TB.extent(1)));
+        assert(ijend == ordinal_type(TC.extent(0))); assert((kend - 1) == ordinal_type(TC.extent(1)));
 
         for (ordinal_type ij=0;ij<ijend;++ij) {
           ordinal_type i, j;

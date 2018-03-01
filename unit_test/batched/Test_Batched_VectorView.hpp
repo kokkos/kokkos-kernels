@@ -114,7 +114,7 @@ namespace Test {
     typedef Vector<VectorTagType,VectorLength> vector_type;
     
     typedef typename vector_type::value_type value_type;    
-    const int vector_length = vector_type::vector_length;
+    //const int vector_length = vector_type::vector_length;
     const int test_view_size = 4;
     { /// rank 1 array
       Kokkos::View<vector_type*,DeviceType> a("a", test_view_size);
@@ -218,7 +218,7 @@ TEST_F( TestCategory, batched_vector_view_simd_float8 ) {
 TEST_F( TestCategory, batched_vector_view_simd_double4 ) {
   test_batched_vector_view<TestExecSpace,SIMD<double>,4>();
 }
-TEST_F( TestCategory, batched_vector_view_simd_double4 ) {
+TEST_F( TestCategory, batched_vector_view_simd_double8 ) {
   test_batched_vector_view<TestExecSpace,SIMD<double>,8>();
 }
 #endif
