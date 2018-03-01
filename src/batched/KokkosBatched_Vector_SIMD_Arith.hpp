@@ -230,6 +230,7 @@ namespace KokkosBatched {
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a) {
+      Vector<SIMD<T>,l> r_val;
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -237,8 +238,8 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
       for (int i=0;i<l;++i)
-        a[i] = -a[i];
-      return a;
+        r_val[i] = -a[i];
+      return r_val;
     }
 
     template<typename T, int l>

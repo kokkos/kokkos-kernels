@@ -28,8 +28,8 @@ namespace KokkosBatched {
 #pragma unroll
 #endif
         for (int i=0;i<m;++i) {
-          A[i*as] +=  (A[i*as] <  0)*minus_abs_tiny;
-          A[i*as] +=  (A[i*as] >= 0)*      abs_tiny;
+          A[i*as] +=  minus_abs_tiny*(A[i*as] <  0);
+          A[i*as] +=  abs_tiny      *(A[i*as] >= 0);
         }
         
         return 0;
@@ -56,8 +56,8 @@ namespace KokkosBatched {
         Kokkos::parallel_for
           (Kokkos::TeamThreadRange(member,0,m),
            [&](const int &i) {
-            A[i*as] +=  (A[i*as] <  0)*minus_abs_tiny;
-            A[i*as] +=  (A[i*as] >= 0)*      abs_tiny;
+            A[i*as] +=  minus_abs_tiny*ValueType(A[i*as] <  0));
+           A[i*as] +=        abs_tiny*ValueType(A[i*as] >= 0);
           });
         //member.team_barrier();
         return 0;

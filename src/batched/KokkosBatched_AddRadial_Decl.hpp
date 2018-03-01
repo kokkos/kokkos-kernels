@@ -29,7 +29,7 @@ namespace KokkosBatched {
     ///
 
     template<typename MemberType>
-    struct TeamAddRadiao {
+    struct TeamAddRadial {
       template<typename ScalarType,
                typename AViewType>
       KOKKOS_INLINE_FUNCTION

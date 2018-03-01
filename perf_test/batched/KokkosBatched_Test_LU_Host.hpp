@@ -98,7 +98,7 @@ namespace KokkosBatched {
 
         typedef Vector<SIMD<value_type>,VectorLength> VectorType;
         Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType>
-          amat_simd("amat_simd", N, BlkSize, BlkSize), a("a", N, BlkSize, BlkSize);
+          amat_simd("amat_simd", N, BlkSize, BlkSize); //, a("a", N, BlkSize, BlkSize);
       
         Kokkos::parallel_for
           (Kokkos::RangePolicy<HostSpaceType>(0, N*VectorLength),
@@ -208,9 +208,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<aref.dimension(0);++i)
-              for (int j=0;j<aref.dimension(1);++j)
-                for (int k=0;k<aref.dimension(2);++k)
+            for (int i=0,iend=aref.extent(0);i<iend;++i)
+              for (int j=0,jend=aref.extent(1);j<jend;++j)
+                for (int k=0,kend=aref.extent(2);k<kend;++k)
                   diff += abs(aref(i,j,k) - a(i/VectorLength,j,k)[i%VectorLength]);
 
             std::cout << std::setw(10) << "MKL Cmpt"
@@ -262,9 +262,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<aref.dimension(0);++i)
-              for (int j=0;j<aref.dimension(1);++j)
-                for (int k=0;k<aref.dimension(2);++k)
+            for (int i=0,iend=aref.extent(0);i<iend;++i)
+              for (int j=0,jend=aref.extent(1);j<jend;++j)
+                for (int k=0,kend=aref.extent(2);k<kend;++k)
                   diff += abs(aref(i,j,k) - a(i,j,k));
 
             std::cout << std::setw(10) << "Plain"
@@ -314,9 +314,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<aref.dimension(0);++i)
-              for (int j=0;j<aref.dimension(1);++j)
-                for (int k=0;k<aref.dimension(2);++k)
+            for (int i=0,iend=aref.extent(0);i<iend;++i)
+              for (int j=0,jend=aref.extent(1);j<jend;++j)
+                for (int k=0,kend=aref.extent(2);k<kend;++k)
                   diff += abs(aref(i,j,k) - a(i/VectorLength,j,k)[i%VectorLength]);
             std::cout << std::setw(10) << "SIMD"
                       << " BlkSize = " << std::setw(3) << BlkSize

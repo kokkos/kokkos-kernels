@@ -250,9 +250,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<cref.dimension(0);++i)
-              for (int j=0;j<cref.dimension(1);++j)
-                for (int k=0;k<cref.dimension(2);++k)
+            for (int i=0,iend=cref.extent(2);i<iend;++i)
+              for (int j=0,jend=cref.extent(2);j<jend;++j)
+                for (int k=0,kend=cref.extent(2);k<kend;++k)
                   diff += abs(cref(i,j,k) - c(i,j,k));
 
             std::cout << std::setw(12) << "MKL Batch"
@@ -352,9 +352,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<cref.dimension(0);++i)
-              for (int j=0;j<cref.dimension(1);++j)
-                for (int k=0;k<cref.dimension(2);++k)
+            for (int i=0,iend=cref.extent(2);i<iend;++i)
+              for (int j=0,jend=cref.extent(2);j<jend;++j)
+                for (int k=0,kend=cref.extent(2);k<kend;++k)
                   diff += abs(cref(i,j,k) - c(i/VectorLength,j,k)[i%VectorLength]);
           
             std::cout << std::setw(12) << "MKL Cmpct"
@@ -432,9 +432,9 @@ namespace KokkosBatched {
 
             // adjust transpose
             double diff = 0;
-            for (int i=0;i<cref.dimension(0);++i)
-              for (int j=0;j<cref.dimension(1);++j)
-                for (int k=0;k<cref.dimension(2);++k)
+            for (int i=0,iend=cref.extent(2);i<iend;++i)
+              for (int j=0,jend=cref.extent(2);j<jend;++j)
+                for (int k=0,kend=cref.extent(2);k<kend;++k)
                   diff += abs(cref(i,j,k) - c(i,j,k));
 
             std::cout << std::setw(12) << "libxsmm"
@@ -493,9 +493,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<cref.dimension(0);++i)
-              for (int j=0;j<cref.dimension(1);++j)
-                for (int k=0;k<cref.dimension(2);++k)
+            for (int i=0,iend=cref.extent(2);i<iend;++i)
+              for (int j=0,jend=cref.extent(2);j<jend;++j)
+                for (int k=0,kend=cref.extent(2);k<kend;++k)
                   diff += abs(cref(i,j,k) - c(i,j,k));
 
             std::cout << std::setw(12) << "KK Scalar"
@@ -553,9 +553,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<cref.dimension(0);++i)
-              for (int j=0;j<cref.dimension(1);++j)
-                for (int k=0;k<cref.dimension(2);++k)
+            for (int i=0,iend=cref.extent(2);i<iend;++i)
+              for (int j=0,jend=cref.extent(2);j<jend;++j)
+                for (int k=0,kend=cref.extent(2);k<kend;++k)
                   diff += abs(cref(i,j,k) - c(i/VectorLength,j,k)[i%VectorLength]);
 
             std::cout << std::setw(12) << "KK Vector"

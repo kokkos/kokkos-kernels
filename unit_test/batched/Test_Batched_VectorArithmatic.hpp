@@ -38,7 +38,7 @@ namespace Test {
       }
       alpha = a_random.value();
       beta  = b_random.value();
-
+      
       const mag_type eps = 1.0e3 * ats::epsilon();
 
       {
@@ -151,6 +151,19 @@ namespace Test {
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], -a[k], eps*c[k]);      
       }
+#if defined(__DO_NOT_TEST__)
+      {
+        /// test : add radial
+        const mag_type tiny = 1.0;
+
+        c = vector_type(0); 
+        c += -vector_type(tiny)*vector_type(a <  0);
+        c +=  vector_type(tiny)*vector_type(a >= 0);
+
+        for (int k=0;k<vector_length;++k) 
+          EXPECT_NEAR_KK( c[k], (a[k] < 0 ? -tiny : tiny), eps*c[k]);      
+      }
+#endif
     }    
   }
 }
@@ -200,6 +213,7 @@ TEST_F( TestCategory, batched_vector_arithmatic_simd_double8 ) {
 }
 #endif
 
+#define __DO_NOT_TEST__ 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex3 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<float> >,3>();
@@ -227,3 +241,4 @@ TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,4>();
 }
 #endif
+#undef __DO_NOT_TEST__

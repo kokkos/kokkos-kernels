@@ -212,9 +212,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double sum = 0;
-            for (int i=0;i<b.dimension(0);++i)
-              for (int j=0;j<b.dimension(1);++j)
-                for (int k=0;k<b.dimension(2);++k)
+            for (int i=0,iend=b.extent(0);i<iend;++i)
+              for (int j=0,jend=b.extent(1);j<jend;++j)
+                for (int k=0,kend=b.extent(2);k<kend;++k)
                   sum += std::abs(bmat(i,j,k));
 
             std::cout << std::setw(10) << "MKL TRSM"
@@ -353,9 +353,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<bref.dimension(0);++i)
-              for (int j=0;j<bref.dimension(1);++j)
-                for (int k=0;k<bref.dimension(2);++k)
+            for (int i=0,iend=bref.extent(0);i<iend;++i)
+              for (int j=0,jend=bref.extent(1);j<jend;++j)
+                for (int k=0,kend=bref.extent(2);k<kend;++k)
                   diff += std::abs(bref(i,j,k) - b(i,j,k));
 
             std::cout << std::setw(10) << "MKL Batch"
@@ -489,9 +489,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<bref.dimension(0);++i)
-              for (int j=0;j<bref.dimension(1);++j)
-                for (int k=0;k<bref.dimension(2);++k)
+            for (int i=0,iend=bref.extent(0);i<iend;++i)
+              for (int j=0,jend=bref.extent(1);j<jend;++j)
+                for (int k=0,kend=bref.extent(2);k<kend;++k)
                   diff += std::abs(bref(i,j,k) - b(i/VectorLength,j,k)[i%VectorLength]);
 
             std::cout << std::setw(10) << "MKL Cmpt"
@@ -568,9 +568,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<bref.dimension(0);++i)
-              for (int j=0;j<bref.dimension(1);++j)
-                for (int k=0;k<bref.dimension(2);++k)
+            for (int i=0,iend=bref.extent(0);i<iend;++i)
+              for (int j=0,jend=bref.extent(1);j<jend;++j)
+                for (int k=0,kend=bref.extent(2);k<kend;++k)
                   diff += std::abs(bref(i,j,k) - b(i,j,k));
 
             std::cout << std::setw(10) << "KK Scalar"
@@ -644,9 +644,9 @@ namespace KokkosBatched {
             tavg /= iter_end;
 
             double diff = 0;
-            for (int i=0;i<bref.dimension(0);++i)
-              for (int j=0;j<bref.dimension(1);++j)
-                for (int k=0;k<bref.dimension(2);++k)
+            for (int i=0,iend=bref.extent(0);i<iend;++i)
+              for (int j=0,jend=bref.extent(1);j<jend;++j)
+                for (int k=0,kend=bref.extent(2);k<kend;++k)
                   diff += std::abs(bref(i,j,k) - b(i/VectorLength,j,k)[i%VectorLength]);
 
             std::cout << std::setw(10) << "KK Vector"

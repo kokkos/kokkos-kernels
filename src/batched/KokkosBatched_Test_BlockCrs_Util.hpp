@@ -83,10 +83,10 @@ namespace KokkosBatched {
     struct StructuredBlock {
       const ordinal_type ni, nj, nk;
 
-      StructuredBlock (const ordinal_type ni, 
-                       const ordinal_type nj, 
-                       const ordinal_type nk)
-        : ni(ni), nj(nj), nk(nk), _njnk(nj*nk) {}
+      StructuredBlock (const ordinal_type ni_, 
+                       const ordinal_type nj_, 
+                       const ordinal_type nk_)
+        : ni(ni_), nj(nj_), nk(nk_), _njnk(nj_*nk_) {}
 
       KOKKOS_INLINE_FUNCTION 
       size_type size () const { return ni*nj*nk; }

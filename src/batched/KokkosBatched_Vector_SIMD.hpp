@@ -35,6 +35,9 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "SIMD"; }
 
+      template<typename,int>
+      friend class Vector;
+
     private:
       mutable data_type _data;
 
@@ -63,8 +66,8 @@ namespace KokkosBatched {
           _data[i] = val;
       }
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,l> &b) {
-        static_assert(std::is_convertible<T,ArgValueType>::value, "input type is not convertible");
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+        static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -72,7 +75,7 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data[i] = b._data[i];
+          _data[i] = b[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -137,6 +140,9 @@ namespace KokkosBatched {
       inline
       static const char* label() { return "AVX256"; }
 
+      template<typename,int>
+      friend class Vector;
+
     private:
       mutable data_type _data;
 
@@ -145,6 +151,30 @@ namespace KokkosBatched {
       inline Vector(const value_type val) { _data.v = _mm256_set1_pd(val); }
       inline Vector(const type &b) { _data.v = b._data.v; }
       inline Vector(const __m256d &val) { _data.v = val; }
+
+      template<typename ArgValueType>
+      inline Vector(const ArgValueType val) {
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          _data.d[i] = val;
+      }
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+        static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          _data.d[i] = b[i];
+      }
 
       inline
       type& operator=(const __m256d &val) {
@@ -205,6 +235,9 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "AVX256"; }
 
+      template<typename,int>
+      friend class Vector;
+
     private:
       mutable data_type _data;
 
@@ -214,6 +247,30 @@ namespace KokkosBatched {
       inline Vector(const mag_type val) { const value_type a(val); _data.v = _mm256_broadcast_pd((__m128d const *)&a); }
       inline Vector(const type &b) { _data.v = b._data.v; }
       inline Vector(const __m256d &val) { _data.v = val; }
+
+//       template<typename ArgValueType>
+//       inline Vector(const ArgValueType val) {
+// #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+// #pragma ivdep
+// #endif
+// #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+// #pragma vector always
+// #endif
+//         for (int i=0;i<vector_length;++i)
+//           _data.d[i] = value_type(val);
+//       }
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+        static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          _data.d[i] = b[i];
+      }
 
       inline
       type& operator=(const __m256d &val) {
@@ -274,6 +331,9 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "AVX512"; }
 
+      template<typename,int>
+      friend class Vector;
+
     private:
       mutable data_type _data;
 
@@ -282,6 +342,30 @@ namespace KokkosBatched {
       inline Vector(const value_type val) { _data.v = _mm512_set1_pd(val); }
       inline Vector(const type &b) { _data.v = b._data.v; }
       inline Vector(const __m512d &val) { _data.v = val; }
+
+      template<typename ArgValueType>
+      inline Vector(const ArgValueType val) {
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          _data.d[i] = val;
+      }
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+        static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          _data.d[i] = b[i];
+      }
 
       inline
       type& operator=(const __m512d &val) {
@@ -342,6 +426,9 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "AVX512"; }
 
+      template<typename,int>
+      friend class Vector;
+
     private:
       mutable data_type _data;
 
@@ -355,6 +442,30 @@ namespace KokkosBatched {
       }
       inline Vector(const type &b) { _data.v = b._data.v; }
       inline Vector(const __m512d &val) { _data.v = val; }
+
+      template<typename ArgValueType>
+      inline Vector(const ArgValueType val) {
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          _data.d[i] = val;
+      }
+      template<typename ArgValueType>
+      inline Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+        static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+        for (int i=0;i<vector_length;++i)
+          _data.d[i] = b[i];
+      }
 
       inline
       type& operator=(const __m512d &val) {

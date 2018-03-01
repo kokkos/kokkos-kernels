@@ -3,6 +3,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#define __KOKKOSBATCHED_PROMOTION__ 1
 
 #include <iomanip>
 #include <random>
@@ -135,7 +136,10 @@ namespace KokkosBatched {
     struct Random<T, typename std::enable_if<std::is_same<T,double>::value ||
                                              std::is_same<T,float>::value, T>::type> {
       Random(const unsigned int seed = 0) { srand(seed); }
-      T value() { return rand()/((T) RAND_MAX + 1.0); }
+      T value() { 
+        const auto val = (rand()/((T) RAND_MAX) - 0.5)*2.0;
+        return val > 0 ? val + 1.0e-7 : val - 1.0e-7;
+      }
     };
 
     template<typename T>
@@ -145,8 +149,10 @@ namespace KokkosBatched {
                                              std::is_same<T,Kokkos::complex<double> >::value, T>::type> {
       Random(const unsigned int seed = 0) { srand(seed); }
       T value() {
-	return T(rand()/((double) RAND_MAX + 1.0),
-                 rand()/((double) RAND_MAX + 1.0));
+        const auto rval = (rand()/((double) RAND_MAX) - 0.5)*2.0;        
+        const auto ival = (rand()/((double) RAND_MAX) - 0.5)*2.0;        
+	return T(rval > 0 ? rval + 1.0e-7 : rval - 1.0e-7,
+                 ival > 0 ? ival + 1.0e-7 : ival - 1.0e-7);
       }
     };
 
