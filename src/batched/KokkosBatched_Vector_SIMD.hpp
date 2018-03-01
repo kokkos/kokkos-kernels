@@ -3,7 +3,8 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Kokkos_Complex.hpp"
+#include <Kokkos_Complex.hpp>
+#include <KokkosBatched_Vector.hpp>
 
 namespace KokkosBatched {
   namespace Experimental {
