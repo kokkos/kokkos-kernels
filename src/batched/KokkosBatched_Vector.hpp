@@ -22,33 +22,33 @@ namespace KokkosBatched {
     
     template<>
     struct DefaultVectorLength<float,Kokkos::HostSpace> {
-#if   defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 8 };
-#elif defined(__AVX512F__)
+#if   defined(__AVX512F__)
       enum : int { value = 16 };
+#elif defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 8 };
 #endif
     };
     template<>
     struct DefaultVectorLength<double,Kokkos::HostSpace> {
-#if   defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 4 };
-#elif defined(__AVX512F__)
+#if   defined(__AVX512F__)
       enum : int { value = 8 };
+#elif defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 4 };
 #endif
     };
     
     struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::HostSpace> {
-#if   defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 4 };
-#elif defined(__AVX512F__)
+#if   defined(__AVX512F__)
       enum : int { value = 8 };
+#elif defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 4 };
 #endif
     };
     struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::HostSpace> {
-#if   defined(__AVX__) || defined(__AVX2__)
-      enum : int { value = 2 };
-#elif defined(__AVX512F__)
+#if   defined(__AVX512F__)
       enum : int { value = 4 };
+#elif defined(__AVX__) || defined(__AVX2__)
+      enum : int { value = 2 };
 #endif
     };
 

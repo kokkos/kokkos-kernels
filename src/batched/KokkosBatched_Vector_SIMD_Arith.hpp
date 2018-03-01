@@ -587,7 +587,7 @@ namespace KokkosBatched {
     inline
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,8)
-    operator / (const Vector<AVX<double>,8> &a, const Vector<AVX<double>,8> &b) {
+    operator / (const Vector<SIMD<double>,8> &a, const Vector<SIMD<double>,8> &b) {
       return _mm512_div_pd(a, b);
     }
 

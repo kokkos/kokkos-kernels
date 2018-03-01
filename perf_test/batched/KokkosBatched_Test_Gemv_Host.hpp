@@ -1,6 +1,6 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#define __KOKKOSBATCHED_INTEL_MKL__
+//#define __KOKKOSBATCHED_INTEL_MKL__
 //#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__
 
 #include <iomanip>

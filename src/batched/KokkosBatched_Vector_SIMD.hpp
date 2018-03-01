@@ -325,7 +325,7 @@ namespace KokkosBatched {
     template<>
     class Vector<SIMD<Kokkos::complex<double> >,4> {
     public:
-      using type = Vector<SIMD<double>,4> >;
+      using type = Vector<SIMD<Kokkos::complex<double> >,4>;
       using value_type = Kokkos::complex<double>;
       using mag_type = double;
 

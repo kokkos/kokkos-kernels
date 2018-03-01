@@ -5,7 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-
+#include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 
