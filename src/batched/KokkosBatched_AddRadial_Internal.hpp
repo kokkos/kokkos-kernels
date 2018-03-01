@@ -54,7 +54,7 @@ namespace KokkosBatched {
         const auto minus_abs_tiny = -abs_tiny;
         
         Kokkos::parallel_for
-          (Kokkos::TeamThreadRange(member,0,m),
+          (Kokkos::TeamThreadRange(member,m),
            [&](const int &i) {
             A[i*as] +=  ValueType(minus_abs_tiny)*ValueType(A[i*as] <  0);
             A[i*as] +=  ValueType(      abs_tiny)*ValueType(A[i*as] >= 0);

@@ -86,17 +86,17 @@ int main (int argc, char *argv[]) {
   
 
   if (!profile) {
-    std::cout << " Unit Test::Range :: Begin\n";
-    {
-      Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>( 3,  4,  2, 25, 2);
-      Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>(44, 63, 15,  4, 1);
-      Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>( 2,  2, 15,  3, 3);
-      Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>( 1,  1,  2, 63, 8);
+    // std::cout << " Unit Test::Range :: Begin\n";
+    // {
+    //   Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>( 3,  4,  2, 25, 2);
+    //   Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>(44, 63, 15,  4, 1);
+    //   Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>( 2,  2, 15,  3, 3);
+    //   Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>( 1,  1,  2, 63, 8);
       
-      for (int nrhs=1;nrhs<=33;++nrhs)
-        Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>(2, 2, 15, 3, nrhs);
-    }
-    std::cout << " Unit Test::Range :: End\n";
+    //   for (int nrhs=1;nrhs<=33;++nrhs)
+    //     Test::run<DeviceSpaceType,Test::scalar_type,VectorLength,RangeTagOper>(2, 2, 15, 3, nrhs);
+    // }
+    // std::cout << " Unit Test::Range :: End\n";
     
     std::cout << " Unit Test::Team :: Begin\n";
     {

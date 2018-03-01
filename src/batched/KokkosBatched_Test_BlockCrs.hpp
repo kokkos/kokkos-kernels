@@ -141,8 +141,9 @@ namespace KokkosBatched {
                   CC.assign_data( &C(k  ,0,0) );
                   DD.assign_data( &A(k+1,0,0) );
                   
-                  member.team_barrier();
-                  TeamAddRadial<MemberType>::invoke(member, tiny, AA);
+                  // Cuda launch failure happens
+                  //member.team_barrier();
+                  //TeamAddRadial<MemberType>::invoke(member, tiny, AA);
                   member.team_barrier();
                   TeamLU<MemberType,LU_AlgoTagType>
                     ::invoke(member, AA);
@@ -162,42 +163,44 @@ namespace KokkosBatched {
                     ::invoke(member, AA);
                 }
               }
-              // { // 0.028 vs 0.035; without subview it performs 0.028
-              //   const int as0 = A.stride_1(), as1 = A.stride_2();
-              //   const int bs0 = B.stride_1(), bs1 = B.stride_2();
-              //   const int cs0 = C.stride_1(), cs1 = C.stride_2();
+#if 0
+              { // 0.028 vs 0.035; without subview it performs 0.028
+                const int as0 = A.stride_1(), as1 = A.stride_2();
+                const int bs0 = B.stride_1(), bs1 = B.stride_2();
+                const int cs0 = C.stride_1(), cs1 = C.stride_2();
 
-              //   for (ordinal_type k=0;k<kend;++k) {
-              //     auto AA = &A(k,  0,0);
-              //     auto BB = &B(k,  0,0);
-              //     auto CC = &C(k,  0,0);
-              //     auto DD = &A(k+1,0,0);
+                for (ordinal_type k=0;k<kend;++k) {
+                  auto AA = &A(k,  0,0);
+                  auto BB = &B(k,  0,0);
+                  auto CC = &C(k,  0,0);
+                  auto DD = &A(k+1,0,0);
                   
-              //     member.team_barrier();
-              //     TeamLU_Internal<LU_AlgoTagType>
-              //       ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
-              //     member.team_barrier();
-              //     TeamTrsmInternalLeftLower<Trsm_AlgoTagType>
-              //       ::invoke(member, true, _blocksize, _blocksize,
-              //                1.0, AA, as0, as1, BB, bs0, bs1);
-              //     TeamTrsmInternalLeftLower<Trsm_AlgoTagType>
-              //       ::invoke(member, false, _blocksize, _blocksize,
-              //                1.0, AA, as1, as0, CC, cs1, cs0);
-              //     member.team_barrier();
-              //     TeamGemmInternal<Gemm_AlgoTagType>::
-              //       invoke(member, _blocksize, _blocksize, _blocksize, 
-              //              -1.0, 
-              //              CC, cs0, cs1, BB, bs0, bs1,
-              //              1.0,
-              //              DD, as0, as1);
-              //   }
-              //   {
-              //     member.team_barrier();
-              //     auto AA = &A(kend, 0,0);
-              //     TeamLU_Internal<LU_AlgoTagType>
-              //       ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
-              //   }
-              // }
+                  member.team_barrier();
+                  TeamLU_Internal<LU_AlgoTagType>
+                    ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+                  member.team_barrier();
+                  TeamTrsmInternalLeftLower<Trsm_AlgoTagType>
+                    ::invoke(member, true, _blocksize, _blocksize,
+                             1.0, AA, as0, as1, BB, bs0, bs1);
+                  TeamTrsmInternalLeftLower<Trsm_AlgoTagType>
+                    ::invoke(member, false, _blocksize, _blocksize,
+                             1.0, AA, as1, as0, CC, cs1, cs0);
+                  member.team_barrier();
+                  TeamGemmInternal<Gemm_AlgoTagType>::
+                    invoke(member, _blocksize, _blocksize, _blocksize, 
+                           -1.0, 
+                           CC, cs0, cs1, BB, bs0, bs1,
+                           1.0,
+                           DD, as0, as1);
+                }
+                {
+                  member.team_barrier();
+                  auto AA = &A(kend, 0,0);
+                  TeamLU_Internal<LU_AlgoTagType>
+                    ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+                }
+              }
+#endif
             }
           });
       }

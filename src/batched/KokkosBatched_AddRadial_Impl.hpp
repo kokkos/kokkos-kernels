@@ -24,7 +24,7 @@ namespace KokkosBatched {
       return SerialAddRadialInternal::
         invoke(min(A.extent(0), A.extent(1)),
                tiny, 
-               A.data(), A.stride_0() + A.stride_1());
+               A.data(), (A.stride_0() + A.stride_1()));
     }
 
     ///
@@ -44,9 +44,9 @@ namespace KokkosBatched {
         invoke(member, 
                min(A.extent(0), A.extent(1)),
                tiny, 
-               A.data(), A.stride_0() + A.stride_1());
+               A.data(), (A.stride_0() + A.stride_1()));
     }
- 
+    
   } // end namespace Experimental
 } //end namespace KokkosBatched
 
