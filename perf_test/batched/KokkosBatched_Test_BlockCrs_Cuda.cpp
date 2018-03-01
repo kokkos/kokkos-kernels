@@ -70,13 +70,10 @@ int main (int argc, char *argv[]) {
     DeviceSpaceType::print_configuration(std::cout, detail);
   std::cout << std::endl;
 
-  constexpr int VectorLength = DefaultVectorLength<Test::scalar_type,typename DeviceSpaceType::memory_space>::value;
-  constexpr int RangeTagOper = 0;
-  constexpr int TeamTagOper = 1;
-
-  // vector type
-  //typedef Experimental::Vector<SIMD<Test::scalar_type>,VectorLength> VectorType;  
-
+  enum : int { VectorLength = DefaultVectorLength<Test::scalar_type,typename DeviceSpaceType::memory_space>::value,
+               RangeTagOper = 0,
+               TeamTagOper = 1 };
+  
   // Unit tests
   bool profile = false;
   for (int i=1;i<argc;++i) {

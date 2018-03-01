@@ -22,7 +22,7 @@ namespace KokkosBatched {
     invoke(const ScalarType tiny,
            const AViewType &A) {
       return SerialAddRadialInternal::
-        invoke(min(A.extent(0), A.extent(1)),
+        invoke((A.extent(0) < A.extent(1) ? A.extent(0) : A.extent(1)),
                tiny, 
                A.data(), (A.stride_0() + A.stride_1()));
     }
@@ -42,7 +42,7 @@ namespace KokkosBatched {
            const AViewType &A) {
       return TeamAddRadialInternal::
         invoke(member, 
-               min(A.extent(0), A.extent(1)),
+               (A.extent(0) < A.extent(1) ? A.extent(0) : A.extent(1)),
                tiny, 
                A.data(), (A.stride_0() + A.stride_1()));
     }

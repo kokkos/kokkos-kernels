@@ -60,8 +60,8 @@ int main (int argc, char *argv[]) {
   else
     HostSpaceType::print_configuration(std::cout, detail);
 
-  constexpr int VectorLength = DefaultVectorLength<Test::scalar_type,typename HostSpaceType::memory_space>::value;
-  constexpr int RangeTagOper = 0;
+  enum : int { VectorLength = DefaultVectorLength<Test::scalar_type,typename HostSpaceType::memory_space>::value,
+               RangeTagOper = 0 };
 
   // vector type
   typedef Experimental::Vector<SIMD<Test::scalar_type>,VectorLength> VectorType;  

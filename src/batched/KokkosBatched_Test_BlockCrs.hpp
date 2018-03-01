@@ -141,9 +141,8 @@ namespace KokkosBatched {
                   CC.assign_data( &C(k  ,0,0) );
                   DD.assign_data( &A(k+1,0,0) );
                   
-                  // Cuda launch failure happens
-                  //member.team_barrier();
-                  //TeamAddRadial<MemberType>::invoke(member, tiny, AA);
+                  member.team_barrier();
+                  TeamAddRadial<MemberType>::invoke(member, tiny, AA);
                   member.team_barrier();
                   TeamLU<MemberType,LU_AlgoTagType>
                     ::invoke(member, AA);

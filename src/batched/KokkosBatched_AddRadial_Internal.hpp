@@ -20,8 +20,7 @@ namespace KokkosBatched {
       invoke(const int m, 
              const ScalarType tiny, 
              /* */ ValueType *__restrict__ A, const int as) {
-        typedef Kokkos::Details::ArithTraits<ScalarType> ats;
-        const auto       abs_tiny =  ats::abs(tiny);
+        const auto       abs_tiny =  tiny > 0 ? tiny : -tiny;
         const auto minus_abs_tiny = -abs_tiny;
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -49,8 +48,7 @@ namespace KokkosBatched {
              const int m, 
              const ScalarType tiny, 
              /* */ ValueType *__restrict__ A, const int as) {
-        typedef Kokkos::Details::ArithTraits<ScalarType> ats;
-        const auto       abs_tiny =  ats::abs(tiny);
+        const auto       abs_tiny =  tiny > 0 ? tiny : -tiny;
         const auto minus_abs_tiny = -abs_tiny;
         
         Kokkos::parallel_for
@@ -59,7 +57,7 @@ namespace KokkosBatched {
             A[i*as] +=  ValueType(minus_abs_tiny)*ValueType(A[i*as] <  0);
             A[i*as] +=  ValueType(      abs_tiny)*ValueType(A[i*as] >= 0);
           });
-        //member.team_barrier();
+
         return 0;
       }
       
