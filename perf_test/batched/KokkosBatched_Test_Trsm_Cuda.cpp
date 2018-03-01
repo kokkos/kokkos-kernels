@@ -747,12 +747,8 @@ template<typename AlgoTagType>
 void run(const int N, const int B, const int R) {
   typedef Kokkos::DefaultExecutionSpace ExecSpace;
 
-  std::cout << "ExecSpace::  ";
-  if (std::is_same<ExecSpace,Kokkos::Serial>::value)
-    std::cout << "Kokkos::Serial " << std::endl;
-  else
-    ExecSpace::print_configuration(std::cout, false);
-  
+  Kokkos::print_configuration(std::cout, false);
+
   if (B != 0 && R != 0) {
     PerfTest::Trsm<0, ExecSpace, AlgoTagType>(N,B,R);
   } else {

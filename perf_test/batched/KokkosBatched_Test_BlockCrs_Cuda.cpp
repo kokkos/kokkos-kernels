@@ -58,17 +58,8 @@ int main (int argc, char *argv[]) {
   typedef Kokkos::DefaultExecutionSpace DeviceSpaceType;
 
   const bool detail = false;
-  std::cout << "HostSpace::  ";
-  if (std::is_same<HostSpaceType,Kokkos::Serial>::value)
-    std::cout << "Kokkos::Serial " << std::endl;
-  else
-    HostSpaceType::print_configuration(std::cout, detail);
-  std::cout << "DeviceSpace::  ";
-  if (std::is_same<DeviceSpaceType,Kokkos::Serial>::value)
-    std::cout << "Kokkos::Serial " << std::endl;
-  else
-    DeviceSpaceType::print_configuration(std::cout, detail);
-  std::cout << std::endl;
+
+  Kokkos::print_configuration(std::cout, detail);
 
   enum : int { VectorLength = DefaultVectorLength<Test::scalar_type,typename DeviceSpaceType::memory_space>::value,
                RangeTagOper = 0,
