@@ -7,13 +7,13 @@
 
 #include <iomanip>
 
+#include "KokkosBatched_Util.hpp"
 #if defined(__KOKKOSKERNELS_NVIDIA_CUBLAS__)
 #include "cuda_runtime.h"
 #include "cublas_v2.h"
 #include "cublas_api.h"
 #endif
 
-#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Copy_Decl.hpp"

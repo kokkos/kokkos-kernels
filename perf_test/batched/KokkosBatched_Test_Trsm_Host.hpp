@@ -5,6 +5,7 @@
 
 #include <iomanip>
 
+#include "KokkosBatched_Util.hpp"
 #if defined(__KOKKOSBATCHED_INTEL_MKL__)
 #include "mkl.h"
 #endif

@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "KokkosBatched_Util.hpp"
 #if defined(__KOKKOSBATCHED_INTEL_MKL__)
 #include "mkl.h"
 #endif
@@ -15,7 +16,6 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Copy_Decl.hpp"

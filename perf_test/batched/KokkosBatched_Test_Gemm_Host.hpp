@@ -3,6 +3,8 @@
 //#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__
 
 #include <iomanip>
+
+#include "KokkosBatched_Util.hpp"
 #if defined(__KOKKOSBATCHED_LIBXSMM__)
 #include "libxsmm.h"
 #endif
