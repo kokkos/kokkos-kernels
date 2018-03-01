@@ -79,24 +79,29 @@ namespace KokkosBatched {
         auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+        auto AA = Kokkos::subview(A, 0,   Kokkos::ALL(), Kokkos::ALL());
+        auto BB = Kokkos::subview(B, 0,   Kokkos::ALL(), Kokkos::ALL());
+        auto CC = Kokkos::subview(C, 0,   Kokkos::ALL(), Kokkos::ALL());
+        auto DD = AA;
+
         const ordinal_type kend = _m - 1;
         for (ordinal_type k=0;k<kend;++k) {
-          auto AA = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-          auto BB = Kokkos::subview(B, k,   Kokkos::ALL(), Kokkos::ALL());
-          auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
-          auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
+          AA.assign_data( &A(k  ,0,0) );
+          BB.assign_data( &B(k  ,0,0) );
+          CC.assign_data( &C(k  ,0,0) );
+          DD.assign_data( &A(k+1,0,0) );
 
-          Serial::LU<LU_AlgoTagType>
+          SerialLU<LU_AlgoTagType>
             ::invoke(AA);
-          Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
+          SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
             ::invoke(1.0, AA, BB);
-          Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
+          SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
             ::invoke(1.0, AA, CC);
-          Serial::Gemm<Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
+          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
             ::invoke(-1.0, CC, BB, 1.0, DD);
         }
-        auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-        Serial::LU<LU_AlgoTagType>
+        AA.assign_data( &A(kend,0,0) );
+        SerialLU<LU_AlgoTagType>
           ::invoke(AA);
       }
 
@@ -114,68 +119,74 @@ namespace KokkosBatched {
               auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
               const ordinal_type kend = _m - 1;
-              // {
-              //   for (ordinal_type k=0;k<kend;++k) {
-              //     auto AA = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-              //     auto BB = Kokkos::subview(B, k,   Kokkos::ALL(), Kokkos::ALL());
-              //     auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
-              //     auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
-                  
-              //     member.team_barrier();
-              //     Team::LU<MemberType,LU_AlgoTagType>
-              //       ::invoke(member, AA);
-              //     member.team_barrier();
-              //     Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
-              //       ::invoke(member, 1.0, AA, BB);
-              //     Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
-              //       ::invoke(member, 1.0, AA, CC);
-              //     member.team_barrier();
-              //     Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
-              //       ::invoke(member, -1.0, CC, BB, 1.0, DD);
-              //   }
-              //   {
-              //     member.team_barrier();
-              //     auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-              //     Team::LU<MemberType,LU_AlgoTagType>
-              //       ::invoke(member, AA);
-              //   }
-              // }
-              { // 0.028 vs 0.035; without subview it performs 0.028
-                const int as0 = A.stride_1(), as1 = A.stride_2();
-                const int bs0 = B.stride_1(), bs1 = B.stride_2();
-                const int cs0 = C.stride_1(), cs1 = C.stride_2();
+              {
+                auto AA = Kokkos::subview(A, 0,   Kokkos::ALL(), Kokkos::ALL());
+                auto BB = Kokkos::subview(B, 0,   Kokkos::ALL(), Kokkos::ALL());
+                auto CC = Kokkos::subview(C, 0,   Kokkos::ALL(), Kokkos::ALL());
+                auto DD = AA;
 
                 for (ordinal_type k=0;k<kend;++k) {
-                  auto AA = &A(k,  0,0);
-                  auto BB = &B(k,  0,0);
-                  auto CC = &C(k,  0,0);
-                  auto DD = &A(k+1,0,0);
+
+                  AA.assign_data( &A(k  ,0,0) );
+                  BB.assign_data( &B(k  ,0,0) );
+                  CC.assign_data( &C(k  ,0,0) );
+                  DD.assign_data( &A(k+1,0,0) );
                   
                   member.team_barrier();
-                  Team::LU_Internal<LU_AlgoTagType>
-                    ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+                  Team::LU<MemberType,LU_AlgoTagType>
+                    ::invoke(member, AA);
                   member.team_barrier();
-                  Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
-                    ::invoke(member, true, _blocksize, _blocksize,
-                             1.0, AA, as0, as1, BB, bs0, bs1);
-                  Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
-                    ::invoke(member, false, _blocksize, _blocksize,
-                             1.0, AA, as1, as0, CC, cs1, cs0);
+                  Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
+                    ::invoke(member, 1.0, AA, BB);
+                  Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
+                    ::invoke(member, 1.0, AA, CC);
                   member.team_barrier();
-                  Team::GemmInternal<Gemm_AlgoTagType>::
-                    invoke(member, _blocksize, _blocksize, _blocksize, 
-                           -1.0, 
-                           CC, cs0, cs1, BB, bs0, bs1,
-                           1.0,
-                           DD, as0, as1);
+                  Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
+                    ::invoke(member, -1.0, CC, BB, 1.0, DD);
                 }
                 {
                   member.team_barrier();
-                  auto AA = &A(kend, 0,0);
-                  Team::LU_Internal<LU_AlgoTagType>
-                    ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+                  AA.assign_data( &A(kend,0,0) );
+                  Team::LU<MemberType,LU_AlgoTagType>
+                    ::invoke(member, AA);
                 }
               }
+              // { // 0.028 vs 0.035; without subview it performs 0.028
+              //   const int as0 = A.stride_1(), as1 = A.stride_2();
+              //   const int bs0 = B.stride_1(), bs1 = B.stride_2();
+              //   const int cs0 = C.stride_1(), cs1 = C.stride_2();
+
+              //   for (ordinal_type k=0;k<kend;++k) {
+              //     auto AA = &A(k,  0,0);
+              //     auto BB = &B(k,  0,0);
+              //     auto CC = &C(k,  0,0);
+              //     auto DD = &A(k+1,0,0);
+                  
+              //     member.team_barrier();
+              //     Team::LU_Internal<LU_AlgoTagType>
+              //       ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+              //     member.team_barrier();
+              //     Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
+              //       ::invoke(member, true, _blocksize, _blocksize,
+              //                1.0, AA, as0, as1, BB, bs0, bs1);
+              //     Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
+              //       ::invoke(member, false, _blocksize, _blocksize,
+              //                1.0, AA, as1, as0, CC, cs1, cs0);
+              //     member.team_barrier();
+              //     Team::GemmInternal<Gemm_AlgoTagType>::
+              //       invoke(member, _blocksize, _blocksize, _blocksize, 
+              //              -1.0, 
+              //              CC, cs0, cs1, BB, bs0, bs1,
+              //              1.0,
+              //              DD, as0, as1);
+              //   }
+              //   {
+              //     member.team_barrier();
+              //     auto AA = &A(kend, 0,0);
+              //     Team::LU_Internal<LU_AlgoTagType>
+              //       ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
+              //   }
+              // }
             }
           });
       }
@@ -482,70 +493,98 @@ namespace KokkosBatched {
         auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+        // subview patterns
+        auto A_0_all_all = Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto B_0_all_all = Kokkos::subview(B, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto C_0_all_all = Kokkos::subview(C, 0, Kokkos::ALL(), Kokkos::ALL());
+        
+        auto mx_0_0_all_all = Kokkos::subview(_x, 0, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto mb_0_0_all_all = Kokkos::subview(_b, 0, 0, Kokkos::ALL(), Kokkos::ALL());
+
+        auto x_0_all = Kokkos::subview(mx_0_0_all_all, 0, Kokkos::ALL());
+        auto b_0_all = Kokkos::subview(mb_0_0_all_all, 0, Kokkos::ALL());
+
         ///
         /// loop over multivectors
         ///
-        for (int jvec=0;jvec<_nvectors;++jvec) {
-          auto x = Kokkos::subview(_x, ij, jvec, Kokkos::ALL(), Kokkos::ALL());
-          auto b = Kokkos::subview(_b, ij, jvec, Kokkos::ALL(), Kokkos::ALL());
 
+        auto &x = mx_0_0_all_all;
+        auto &b = mb_0_0_all_all;
+
+        auto &xt = x_0_all;
+        auto  xb = x_0_all;
+
+        auto &bt = b_0_all;
+        auto  bb = b_0_all;
+
+        for (int jvec=0;jvec<_nvectors;++jvec) {
+          x.assign_data( &_x(ij,jvec,0,0) );
+          b.assign_data( &_b(ij,jvec,0,0) );
+          
           ///
           /// forward substitution
           ///
           {
+            auto &LT = A_0_all_all; 
+            auto &LB = C_0_all_all; 
+            
             const bool is_same_x_and_b = (x.data() == b.data());
             {
               if (!is_same_x_and_b) {
-                auto x0 = Kokkos::subview(x, 0, Kokkos::ALL());          
-                auto b0 = Kokkos::subview(b, 0, Kokkos::ALL());
-                Serial::Copy<Trans::NoTranspose>::invoke(b0, x0);
+                xt.assign_data( &x(0,0) );
+                bt.assign_data( &b(0,0) );
+                SerialCopy<Trans::NoTranspose>::invoke(bt, xt);
               }
             }
             const ordinal_type kend = _m - 1;
             for (ordinal_type k=0;k<kend;++k) {
-              auto LT = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-              auto LB = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
-
-              auto xt = Kokkos::subview(x, k,   Kokkos::ALL());
-              auto xb = Kokkos::subview(x, k+1, Kokkos::ALL());
+              LT.assign_data( &A(k,0,0) );
+              LB.assign_data( &C(k,0,0) );
+              
+              xt.assign_data( &x(k  ,0) );
+              xb.assign_data( &x(k+1,0) );
 
               if (!is_same_x_and_b) {
-                auto bb = Kokkos::subview(b, k+1, Kokkos::ALL());
-                Serial::Copy<Trans::NoTranspose>::invoke(bb, xb);
+                bb.assign_data( &b(k+1,0) );
+                SerialCopy<Trans::NoTranspose>::invoke(bb, xb);
               }
-
-              Serial::Trsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+              
+              SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
                 ::invoke(1.0, LT, xt);
-              Serial::Gemv<Trans::NoTranspose,Gemv_AlgoTagType>
+              SerialGemv<Trans::NoTranspose,Gemv_AlgoTagType>
                 ::invoke(-1.0, LB, xt, 1.0, xb);
             }
-            auto LL = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-            auto xx = Kokkos::subview(x, kend, Kokkos::ALL());
-            Serial::Trsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
-              ::invoke(1.0, LL, xx);
+            
+            LT.assign_data( &A(kend,0,0) );
+            xt.assign_data( &x(kend,0) );
+            SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+              ::invoke(1.0, LT, xt);
           }
 
           ///
           /// backward substitution
           ///
           {
+            auto &UT = B_0_all_all;
+            auto &UB = A_0_all_all;
+
             const ordinal_type kbegin = _m - 1;
             for (ordinal_type k=kbegin;k>0;--k) {
-              auto UT = Kokkos::subview(B, k-1, Kokkos::ALL(), Kokkos::ALL());
-              auto UB = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-            
-              auto xt = Kokkos::subview(x, k-1, Kokkos::ALL());
-              auto xb = Kokkos::subview(x, k,   Kokkos::ALL());
+              UT.assign_data( &B(k-1,0,0) );
+              UB.assign_data( &A(k  ,0,0) );
+              
+              xt.assign_data( &x(k-1,0) );
+              xb.assign_data( &x(k  ,0) );
 
-              Serial::Trsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+              SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
                 ::invoke(1.0, UB, xb);
-              Serial::Gemv<Trans::NoTranspose,Gemv_AlgoTagType>
+              SerialGemv<Trans::NoTranspose,Gemv_AlgoTagType>
                 ::invoke(-1.0, UT, xb, 1.0, xt);
             }
-            auto UU = Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL());
-            auto xx = Kokkos::subview(x, 0, Kokkos::ALL());
-            Serial::Trsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
-              ::invoke(1.0, UU, xx);
+            UT.assign_data( &A(0,0,0) );
+            xt.assign_data( &x(0,0) );
+            SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+              ::invoke(1.0, UT, xt);
           }
         }
       }
@@ -1083,7 +1122,7 @@ namespace KokkosBatched {
     
     // performance tests
     template<typename DeviceSpace, typename ValueType, int VectorLength>
-    int run(const Input &input, const bool test_tpl = false) { 
+    int run(const Input<DeviceSpace> &input, const bool test_tpl = false) { 
       typedef typename DeviceSpace::array_layout DeviceArrayLayout;
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
 

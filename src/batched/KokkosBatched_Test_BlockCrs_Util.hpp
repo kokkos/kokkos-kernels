@@ -856,6 +856,7 @@ namespace KokkosBatched {
     }
 
     // Command-line argument parser and holder.
+    template<typename ExecSpace>
     struct Input {
       bool quiet, check;
       ordinal_type ni, nj, nk;
@@ -870,7 +871,11 @@ namespace KokkosBatched {
         ni = nj = nk = 10;
         bs = 5;
         nrhs = 1;
-        opf = 1; ops = 1; // team is default
+        if (std::is_same<typename ExecSpace::memory_space,Kokkos::HostSpace>::value) {
+          opf = 0; ops = 0; // range policy default
+        } else {
+          opf = 1; ops = 1; // team is default
+        }
         stencil_shape = StencilShape::cross;
 
         for (ordinal_type i=1;i<argc;++i) {

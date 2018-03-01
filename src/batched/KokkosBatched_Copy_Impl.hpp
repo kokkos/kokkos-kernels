@@ -22,7 +22,7 @@ namespace KokkosBatched {
     SerialCopy<Trans::NoTranspose>::
     invoke(const AViewType &A,
            /* */ BViewType &B) {
-      return CopyInternal::
+      return SerialCopyInternal::
         invoke(A.extent(0), 
                A.extent(1), 
                A.data(), A.stride_0(), A.stride_1(),
@@ -37,7 +37,7 @@ namespace KokkosBatched {
     SerialCopy<Trans::Transpose>::
     invoke(const AViewType &A,
            /* */ BViewType &B) {
-      return CopyInternal::
+      return SerialCopyInternal::
         invoke(A.extent(1), 
                A.extent(0), 
                A.data(), A.stride_1(), A.stride_0(),
@@ -58,7 +58,7 @@ namespace KokkosBatched {
       invoke(const MemberType &member, 
              const AViewType &A,
              /* */ BViewType &B) {
-        return CopyInternal::
+        return TeamCopyInternal::
             invoke(member,
                    A.extent(0), 
                    A.extent(1), 
@@ -76,7 +76,7 @@ namespace KokkosBatched {
       invoke(const MemberType &member, 
              const AViewType &A,
              /* */ BViewType &B) {
-        return CopyInternal::
+        return TeamCopyInternal::
           invoke(member,
                  A.extent(1), 
                  A.extent(0), 
