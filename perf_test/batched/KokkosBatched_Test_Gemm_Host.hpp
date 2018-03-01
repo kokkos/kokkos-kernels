@@ -56,11 +56,10 @@ namespace KokkosBatched {
           std::string value_type_name;
           if (std::is_same<value_type,double>::value)                   value_type_name = "double";
           if (std::is_same<value_type,Kokkos::complex<double> >::value) value_type_name = "Kokkos::complex<double>";
-
-#if   defined(__AVX__) || defined(__AVX2__)
-          std::cout << "AVX or AVX2 is defined: datatype " << value_type_name <<  " a vector length " << VectorLength << "\n";
-#elif defined(__AVX512F__)
+#if   defined(__AVX512F__)
           std::cout << "AVX512 is defined: datatype " << value_type_name <<  " a vector length " << VectorLength << "\n";
+#elif defined(__AVX__) || defined(__AVX2__)
+          std::cout << "AVX or AVX2 is defined: datatype " << value_type_name <<  " a vector length " << VectorLength << "\n";
 #else
           std::cout << "SIMD (compiler vectorization) is defined: datatype " << value_type_name <<  " a vector length " << VectorLength << "\n";
 #endif

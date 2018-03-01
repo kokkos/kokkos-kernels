@@ -218,16 +218,25 @@ TEST_F( TestCategory, batched_vector_view_simd_float8 ) {
 TEST_F( TestCategory, batched_vector_view_simd_double4 ) {
   test_batched_vector_view<TestExecSpace,SIMD<double>,4>();
 }
+TEST_F( TestCategory, batched_vector_view_simd_double4 ) {
+  test_batched_vector_view<TestExecSpace,SIMD<double>,8>();
+}
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F( TestCategory, batched_vector_view_simd_scomplex4 ) {
   test_batched_vector_view<TestExecSpace,SIMD<Kokkos::complex<float> >,4>();
 }
+TEST_F( TestCategory, batched_vector_view_simd_scomplex8 ) {
+  test_batched_vector_view<TestExecSpace,SIMD<Kokkos::complex<float> >,8>();
+}
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F( TestCategory, batched_vector_view_simd_dcomplex2 ) {
   test_batched_vector_view<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
+}
+TEST_F( TestCategory, batched_vector_view_simd_dcomplex4 ) {
+  test_batched_vector_view<TestExecSpace,SIMD<Kokkos::complex<double> >,4>();
 }
 #endif
