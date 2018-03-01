@@ -5,7 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-
+#include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 
@@ -91,7 +91,7 @@ namespace KokkosBatched {
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
-      const typename Kokkos::Details::ArithTraits<ValueType>::mag_type one(1.0), minus_one(-1.0);
+      const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
 
       InnerLU<mbAlgo> lu(as0, as1);
           

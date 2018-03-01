@@ -60,7 +60,7 @@ namespace KokkosBatched {
     int
     SerialLU<Algo::LU::Unblocked>::
     invoke(const AViewType &A) {
-      return SerialLU_Internal<Algo::LU::Unblocked>::invoke(A.dimension_0(), A.dimension_1(),
+      return SerialLU_Internal<Algo::LU::Unblocked>::invoke(A.extent(0), A.extent(1),
                                                       A.data(), A.stride_0(), A.stride_1());
     }
     
@@ -70,7 +70,7 @@ namespace KokkosBatched {
     int
     SerialLU<Algo::LU::Blocked>::
     invoke(const AViewType &A) {
-      return SerialLU_Internal<Algo::LU::Blocked>::invoke(A.dimension_0(), A.dimension_1(),
+      return SerialLU_Internal<Algo::LU::Blocked>::invoke(A.extent(0), A.extent(1),
                                                     A.data(), A.stride_0(), A.stride_1());
     }
 
