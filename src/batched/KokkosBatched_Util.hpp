@@ -20,8 +20,24 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
+#include "KokkosKernels_config.h"
+
 namespace KokkosBatched {
   namespace Experimental {
+
+    // TPL macros
+#if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
+#define __KOKKOSBATCHED_INTEL_MKL__ 1
+#include "mkl_version.h"
+#if __INTEL_MKL__ >= 18
+#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
+#define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
+#endif
+#endif
+
+#if defined (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+#define __KOKKOSKERNELS_NVIDIA_CUBLAS__ 1
+#endif
 
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)

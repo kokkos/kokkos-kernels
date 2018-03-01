@@ -589,6 +589,7 @@ int main(int argc, char *argv[]) {
 #else
 
 int main(int argc, char *argv[]) {
-  std::cout << "Kokkos::Cuda is not enabled\n");
+  std::cout << "Kokkos::Cuda is not enabled\n";
+  return -1;
 }
 #endif
