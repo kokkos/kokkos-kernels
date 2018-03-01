@@ -237,7 +237,7 @@ TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
 }
 // avx 512
-TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
+TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex4 ) {
   test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,4>();
 }
 #endif

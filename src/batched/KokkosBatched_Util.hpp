@@ -138,7 +138,7 @@ namespace KokkosBatched {
       Random(const unsigned int seed = 0) { srand(seed); }
       T value() { 
         const auto val = (rand()/((T) RAND_MAX) - 0.5)*2.0;
-        return val > 0 ? val + 1.0e-7 : val - 1.0e-7;
+        return val > 0 ? val + 1.0e-3 : val - 1.0e-3;
       }
     };
 
@@ -151,8 +151,8 @@ namespace KokkosBatched {
       T value() {
         const auto rval = (rand()/((double) RAND_MAX) - 0.5)*2.0;        
         const auto ival = (rand()/((double) RAND_MAX) - 0.5)*2.0;        
-	return T(rval > 0 ? rval + 1.0e-7 : rval - 1.0e-7,
-                 ival > 0 ? ival + 1.0e-7 : ival - 1.0e-7);
+	return T(rval > 0 ? rval + 1.0e-3 : rval - 1.0e-3,
+                 ival > 0 ? ival + 1.0e-3 : ival - 1.0e-3);
       }
     };
 

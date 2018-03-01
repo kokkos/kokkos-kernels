@@ -24,14 +24,17 @@ namespace Test {
     typedef typename ats::mag_type mag_type;
 
     vector_type a, b, aref, bref;
-    const value_type one(1), two(2);
+    const value_type one(1), two(2), half(0.5);
     const mag_type eps = 1.0e3 * ats::epsilon();
 
     Random<value_type> random;
     for (int iter=0;iter<100;++iter) {
       for (int k=0;k<vector_length;++k) {
-        aref[k] = (random.value() + one)/two;
-        bref[k] = (random.value() + one)/two;
+        const auto aval = (random.value() + half);
+        const auto bval = (random.value() + half);
+        
+        aref[k] = max(min(aval, 1.0), 1.0e-7);
+        bref[k] = max(min(bval, 1.0), 1.0e-7);
       }
 
       {
@@ -59,15 +62,13 @@ namespace Test {
         CHECK(atan);
 
 #undef CHECK
-#define CHECK(op)                                                       \
+#define CHECK                                                           \
         {                                                               \
           a = pow(aref,bref);                                           \
           for (int i=0;i<vector_length;++i)                             \
             EXPECT_NEAR_KK( a[i], ats::pow(aref[i], bref[i]), eps*a[i] ); \
         }                                                               \
-        
-        CHECK(pow);
-        //CHECK(atan2);
+        CHECK;
         
 #undef CHECK
 #define CHECK(op)                                                       \
@@ -79,19 +80,17 @@ namespace Test {
         }
         
         CHECK(pow);
-        //CHECK(atan2);
         
 #undef CHECK
 #define CHECK(op)                                                       \
         {                                                               \
-          value_type alpha = random.value();                            \
+          value_type alpha = random.value() + 2.0;                      \
           a = op(alpha,bref);                                           \
           for (int i=0;i<vector_length;++i)                             \
             EXPECT_NEAR_KK( a[i], ats::op(alpha, bref[i]), eps*a[i] );  \
         }
         
         CHECK(pow);
-        //CHECK(atan2);
 #undef CHECK
       } // end test body
     } // end for
