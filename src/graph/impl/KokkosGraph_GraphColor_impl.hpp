@@ -2026,6 +2026,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
+      typedef typename std::remove_reference< decltype( _recolorListLength() ) >::type atomic_incr_type;
 
       nnz_lno_t i = _vertexList(ii);
       color_t my_color = _colors(i);
@@ -2050,7 +2051,7 @@ public:
         ) {
           _colors(i) = 0; // Uncolor vertex i
           // Atomically add vertex i to recolorList
-          const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+          const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), atomic_incr_type(1));
           _recolorList(k) = i;
           numConflicts += 1;
           break; // Once i is uncolored and marked conflict
@@ -2225,11 +2226,12 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
+      typedef typename std::remove_reference< decltype( _recolorListLength() ) >::type atomic_incr_type;
       nnz_lno_t i = _vertexList(ii);
       color_t my_color = _colors(i);
       if (my_color == 0){
         // this should only happen when one_color_set_per_iteration is set to true.
-        const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+        const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), atomic_incr_type(1));
         _recolorList(k) = i;
         numConflicts++;
       }
@@ -2257,7 +2259,7 @@ public:
             _colors(i) = 0; // Uncolor vertex i
             _color_sets(i) = 0;
             // Atomically add vertex i to recolorList
-            const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+            const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), atomic_incr_type(1));
             _recolorList(k) = i;
             numConflicts++;
             break; // Once i is uncolored and marked conflict
@@ -2966,9 +2968,10 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type ii) const {
+      typedef typename std::remove_reference< decltype( _new_index() ) >::type atomic_incr_type;
       size_type w = _edge_conflict_indices(ii);
       if(_edge_conflict_marker(w)){
-        const size_type future_index = Kokkos::atomic_fetch_add( &_new_index(), 1);
+        const size_type future_index = Kokkos::atomic_fetch_add( &_new_index(), atomic_incr_type(1));
         _new_edge_conflict_indices(future_index) = w;
       }
     }
