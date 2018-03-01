@@ -52,13 +52,9 @@ int main (int argc, char *argv[]) {
   Kokkos::initialize(argc, argv); 
 
   typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
-
   const bool detail = false;
-  std::cout << "ExecSpace::  ";
-  if (std::is_same<HostSpaceType,Kokkos::Serial>::value)
-    std::cout << "Kokkos::Serial " << std::endl;
-  else
-    HostSpaceType::print_configuration(std::cout, detail);
+
+  Kokkos::print_configuration(std::cout, detail);
 
   enum : int { VectorLength = DefaultVectorLength<Test::scalar_type,typename HostSpaceType::memory_space>::value,
                RangeTagOper = 0 };

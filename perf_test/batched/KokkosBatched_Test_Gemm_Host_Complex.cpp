@@ -10,11 +10,7 @@ template<typename AlgoTagType>
 void run(const int N) {
   typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 
-  std::cout << "ExecSpace::  "; 
-  if (std::is_same<HostSpaceType,Kokkos::Serial>::value) 
-    std::cout << "Kokkos::Serial " << std::endl;
-  else 
-    HostSpaceType::print_configuration(std::cout, false);
+  Kokkos::print_configuration(std::cout);
 
   // Test::Gemm< 4, AlgoTagType>(N);
   // Test::Gemm< 8, AlgoTagType>(N);
