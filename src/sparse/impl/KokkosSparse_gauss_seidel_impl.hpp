@@ -47,7 +47,8 @@
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include "KokkosGraph_graph_color.hpp"
+#include <KokkosGraph_graph_color.hpp>
+#include <KokkosSparse_spmv_impl.hpp>
 
 #ifndef _KOKKOSGSIMP_HPP
 #define _KOKKOSGSIMP_HPP
@@ -170,6 +171,7 @@ public:
     scalar_persistent_work_view_t _Yvector;
     nnz_lno_t _color_set_begin;
     nnz_lno_t _color_set_end;
+    nnz_lno_t _rows_per_team;
 
     scalar_persistent_work_view_t _permuted_diagonals;
 
@@ -177,24 +179,30 @@ public:
     Team_PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
         scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_,
         nnz_lno_t color_set_begin, nnz_lno_t color_set_end,
-        scalar_persistent_work_view_t permuted_diagonals_):
+        scalar_persistent_work_view_t permuted_diagonals_,
+        nnz_lno_t rows_per_team_):
           _xadj( xadj_),
           _adj( adj_),
           _adj_vals( adj_vals_),
           _Xvector( Xvector_),
           _Yvector( Yvector_),
           _color_set_begin(color_set_begin),
-          _color_set_end(color_set_end), _permuted_diagonals(permuted_diagonals_){}
+          _color_set_end(color_set_end), _permuted_diagonals(permuted_diagonals_),
+          _rows_per_team(rows_per_team_){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t & teamMember) const {
       //idx ii = _color_adj[i];
       //int ii = teamMember.league_rank()  + _shift_index;
 
-      nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank() + _color_set_begin;
+      const nnz_lno_t rows_begin = teamMember.league_rank() * _rows_per_team + _color_set_begin;
+      const nnz_lno_t rows_end = rows_begin + _rows_per_team <= _color_set_end ? rows_begin + _rows_per_team : _color_set_end ;
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,rows_begin,rows_end), [&] (const nnz_lno_t& ii) {
+
+      //nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank() + _color_set_begin;
       //check ii is out of range. if it is, just return.
-      if (ii >= _color_set_end)
-        return;
+      //if (ii >= _color_set_end)
+      //  return;
 
 
 
@@ -215,11 +223,12 @@ public:
       },
       product);
 
-      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+      Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
         nnz_scalar_t diagonalVal = _permuted_diagonals[ii];
         _Xvector[ii] = (_Yvector[ii] - product + diagonalVal * _Xvector[ii])/ diagonalVal;
       });
-     }
+     });
+    }
   };
 
 
@@ -519,24 +528,34 @@ public:
     const_scalar_nnz_view_t oldadjvals;
     row_lno_persistent_work_view_t newxadj;
     scalar_persistent_work_view_t newadjvals;
+    nnz_lno_t num_total_rows;
+    nnz_lno_t rows_per_team;
     fill_matrix_numeric(
         nnz_lno_persistent_work_view_t color_adj_,
         const_lno_row_view_t oldxadj_,
         const_scalar_nnz_view_t oldadjvals_,
         row_lno_persistent_work_view_t newxadj_,
-        scalar_persistent_work_view_t newadjvals_):
+        scalar_persistent_work_view_t newadjvals_,
+        nnz_lno_t num_total_rows_,
+        nnz_lno_t rows_per_team_):
           color_adj(color_adj_), oldxadj(oldxadj_),  oldadjvals(oldadjvals_),
-          newxadj(newxadj_), newadjvals(newadjvals_){}
+          newxadj(newxadj_), newadjvals(newadjvals_), num_total_rows(num_total_rows_),
+          rows_per_team(rows_per_team_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const nnz_lno_t &i) const{
-      nnz_lno_t index = color_adj(i);
-      size_type xadj_begin = newxadj(i);
+    void operator()(const team_member_t &team) const{
+      const nnz_lno_t rows_begin = team.league_rank() * rows_per_team;
+      const nnz_lno_t rows_end = rows_begin + rows_per_team <= num_total_rows ? rows_begin + rows_per_team : num_total_rows;
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,rows_begin,rows_end), [&] (const nnz_lno_t& i) {
+        nnz_lno_t index = color_adj(i);
+        size_type xadj_begin = newxadj(i);
 
-      size_type old_xadj_end = oldxadj[index + 1];
-      for (size_type j = oldxadj[index]; j < old_xadj_end; ++j){
-        newadjvals[xadj_begin++] = oldadjvals[j];
-      }
+        size_type old_xadj_begin = oldxadj[index];
+        size_type old_xadj_end = oldxadj[index + 1];
+        Kokkos::parallel_for (Kokkos::ThreadVectorRange(team,old_xadj_end-old_xadj_begin), [&] (const nnz_lno_t& j) {
+          newadjvals[xadj_begin + j] = oldadjvals[old_xadj_begin + j];
+        });
+      });
     }
   };
 
@@ -602,7 +621,14 @@ public:
       nnz_lno_persistent_work_view_t color_adj = gsHandler->get_color_adj();
       scalar_persistent_work_view_t permuted_adj_vals (Kokkos::ViewAllocateWithoutInitializing("newvals_"), nnz );
 
-      Kokkos::parallel_for( "KokkosSparse::GaussSeidel::fill_matrix_numeric",my_exec_space(0,num_rows),
+      int team_size = -1;
+      int vector_length = -1;
+      int64_t rows_per_thread = -1;
+
+      int64_t rows_per_team = spmv_launch_parameters<MyExecSpace>(num_rows,values.extent(0),rows_per_thread,team_size,vector_length);
+      int64_t worksets = (num_rows+rows_per_team-1)/rows_per_team;
+
+      Kokkos::parallel_for( "KokkosSparse::GaussSeidel::fill_matrix_numeric",team_policy_t(worksets,team_size,vector_length),
           fill_matrix_numeric(
               color_adj,
               xadj,
@@ -610,7 +636,9 @@ public:
               adj_vals,
               newxadj_,
               //newadj_,
-              permuted_adj_vals
+              permuted_adj_vals,
+              num_rows,
+              rows_per_team
               //,old_to_new_map
               ));
       MyExecSpace::fence();
@@ -721,9 +749,14 @@ public:
           apply_backward);
     }
     else{
+      int team_size = -1;
+      int vector_length = -1;
+      int64_t rows_per_thread = -1;
+
+      int64_t rows_per_team = spmv_launch_parameters<MyExecSpace>(num_rows,values.extent(0),rows_per_thread,team_size,vector_length);
 
       Team_PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
-          Permuted_Xvector, Permuted_Yvector,0,0, permuted_diagonals);
+          Permuted_Xvector, Permuted_Yvector,0,0, permuted_diagonals,rows_per_team);
 
       this->IterativePSGS(
           gs,
@@ -783,16 +816,29 @@ public:
         nnz_lno_t color_index_begin = h_color_xadj(i);
         nnz_lno_t color_index_end = h_color_xadj(i + 1);
 
-        int overall_work = color_index_end - color_index_begin;// /256 + 1;
+        nnz_lno_t overall_work = color_index_end - color_index_begin;// /256 + 1;
 
+        /*nnz_lno_t average_nnz = values.extent(0)/num_rows;
+        if(average_nnz == 0) average_nnz = 1;
+
+        int team_size = -1;
+        int vector_length = -1;
+        int64_t rows_per_thread = -1;
+
+        int64_t rows_per_team = spmv_launch_parameters<MyExecSpace>(overall_work,average_nnz*overall_work,rows_per_thread,team_size,vector_length);
+        int64_t worksets = (overall_work+rows_per_team-1)/rows_per_team;
+        */
 
         gs._color_set_begin = color_index_begin;
         gs._color_set_end = color_index_end;
+        gs._rows_per_team = teamSizeMax;
 
+        //printf("A TeamSize: %i RowsPerTeam: %i (%i %i %i)\n",team_size,rows_per_team,vector_length,teamSizeMax,vector_size );
         Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
             team_policy_t(overall_work / teamSizeMax + 1 , teamSizeMax, vector_size),
             gs );
-        MyExecSpace::fence();
+
+        //MyExecSpace::fence();
       }
     }
     if (apply_backward){
@@ -801,19 +847,33 @@ public:
         nnz_lno_t color_index_begin = h_color_xadj(i);
         nnz_lno_t color_index_end = h_color_xadj(i + 1);
 
-        nnz_lno_t numberOfTeams = color_index_end - color_index_begin;// /256 + 1;
+        nnz_lno_t overall_work = color_index_end - color_index_begin;
+
+        /*nnz_lno_t average_nnz = values.extent(0)/num_rows;
+        if(average_nnz == 0) average_nnz = 1;
+
+        int team_size = -1;
+        int vector_length = -1;
+        int64_t rows_per_thread = -1;
+
+        int64_t rows_per_team = spmv_launch_parameters<MyExecSpace>(overall_work,average_nnz*overall_work,rows_per_thread,team_size,vector_length);
+        int64_t worksets = (overall_work+rows_per_team-1)/rows_per_team;*/
+
         gs._color_set_begin = color_index_begin;
         gs._color_set_end = color_index_end;
+        gs._rows_per_team = teamSizeMax;
 
+        //printf("B TeamSize: %i RowsPerTeam: %i (%i %i %i)\n",team_size,rows_per_team,vector_length,teamSizeMax,vector_size );
         Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::backward",
-            team_policy_t(numberOfTeams / teamSizeMax + 1 , teamSizeMax, vector_size),
+            team_policy_t(overall_work / teamSizeMax + 1 , teamSizeMax, vector_size),
             gs );
-        MyExecSpace::fence();
+        //MyExecSpace::fence();
         if (i == 0){
           break;
         }
       }
     }
+    MyExecSpace::fence();
   }
 
   void IterativePSGS(
