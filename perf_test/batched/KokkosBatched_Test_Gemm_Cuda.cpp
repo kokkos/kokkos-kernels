@@ -656,7 +656,7 @@ template<typename AlgoTagType>
 void run(const int N, const int B) {
   typedef Kokkos::DefaultExecutionSpace ExecSpace;
 
-  Kokkos::print_configuration(std::cout, detail);
+  Kokkos::print_configuration(std::cout);
 
   if (B != 0) {
     PerfTest::Gemm<ExecSpace, AlgoTagType>(N, B);

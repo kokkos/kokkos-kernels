@@ -120,7 +120,7 @@ namespace KokkosBatched {
       }
     };
 
-
+#ifndef __CUDA_ARCH__
 #if defined(__AVX__) || defined(__AVX2__)
 #include <immintrin.h>
 
@@ -507,7 +507,7 @@ namespace KokkosBatched {
       }
     };
 #endif
-
+#endif
   }
 }
 
