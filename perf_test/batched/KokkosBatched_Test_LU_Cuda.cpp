@@ -50,7 +50,7 @@ namespace KokkosBatched {
       struct Functor {
         UnmanagedViewType<ViewType> _a;
 
-        KOKKOS_INLINE_FUNCTION
+        KOKKOS_INLINE_FUNCTION_DEFAULTED
         Functor() = default;
 
         KOKKOS_INLINE_FUNCTION
