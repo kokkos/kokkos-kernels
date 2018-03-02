@@ -31,6 +31,7 @@ namespace KokkosBatched {
       return r_val;
     }
     
+#ifndef __CUDA_ARCH__
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
@@ -61,6 +62,7 @@ namespace KokkosBatched {
     operator + (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_add_pd(a, b);
     }
+#endif
 #endif
     
     template<typename T, int l>
@@ -193,6 +195,7 @@ namespace KokkosBatched {
       return r_val;
     }
 
+#ifndef __CUDA_ARCH__
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
@@ -223,6 +226,7 @@ namespace KokkosBatched {
     operator - (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_sub_pd(a, b);
     }
+#endif
 #endif
 
     template<typename T, int l>
@@ -372,6 +376,7 @@ namespace KokkosBatched {
       return r_val;
     }
     
+#ifndef __CUDA_ARCH__
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
@@ -428,6 +433,7 @@ namespace KokkosBatched {
 #endif
     }
 #endif
+#endif
     
     template<typename T, int l>
     inline
@@ -476,6 +482,7 @@ namespace KokkosBatched {
       return a * Vector<SIMD<Kokkos::complex<T> >,l>(b);
     }
 
+#ifndef __CUDA_ARCH__
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static 
@@ -492,6 +499,7 @@ namespace KokkosBatched {
       return _mm512_mul_pd(a, _mm512_set1_pd(b));
     }
 #endif
+#endif
 
     template<typename T, int l>
     inline
@@ -501,6 +509,7 @@ namespace KokkosBatched {
       return Vector<SIMD<Kokkos::complex<T> >,l>(a) * b;
     }
 
+#ifndef __CUDA_ARCH__
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static 
@@ -516,6 +525,7 @@ namespace KokkosBatched {
     operator * (const double a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_mul_pd(_mm512_set1_pd(a), b);
     }
+#endif
 #endif
 
     template<typename T, int l>
@@ -575,6 +585,7 @@ namespace KokkosBatched {
       return r_val;
     }
 
+#ifndef __CUDA_ARCH__
 #if defined(__AVX__) || defined(__AVX2__)
     inline
     static
@@ -619,6 +630,7 @@ namespace KokkosBatched {
 #endif
     }
 #endif
+#endif
 
     template<typename T, int l>
     inline
@@ -639,6 +651,7 @@ namespace KokkosBatched {
       return a / Vector<SIMD<T>,l>(b);
     }
 
+#ifndef __CUDA_ARCH__
 #if defined(__AVX512F__)
     inline
     static 
@@ -646,6 +659,7 @@ namespace KokkosBatched {
     operator / (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const double b) {
       return _mm512_div_pd(a, _mm512_set1_pd(b));
     }
+#endif
 #endif
 
     template<typename T, int l>
