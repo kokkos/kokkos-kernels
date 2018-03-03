@@ -21,7 +21,7 @@ namespace KokkosBatched {
     typedef int ordinal_type;
     typedef int size_type;
     typedef double scalar_type;
-
+#define BLOCKCRS_MAX_BLOCKSIZE 32
 #define FLOP_MUL 1.0
 #define FLOP_ADD 1.0
     
@@ -233,7 +233,7 @@ namespace KokkosBatched {
     public:
       typedef ExeSpace exec_space;
       typedef ArrayLayout array_layout;
-      typedef CrsGraph<exec_space,array_layout> crs_graph_type;
+      typedef Test::CrsGraph<exec_space,array_layout> crs_graph_type;
 
       typedef scalar_type value_type;
       typedef Kokkos::View<scalar_type***,array_layout,exec_space> value_array_type;
@@ -300,9 +300,9 @@ namespace KokkosBatched {
       const ordinal_type blocksize = A.BlockSize();
 
       scalar_type 
-        tmp[blocksize*blocksize], 
-        diag_block[blocksize][blocksize], 
-        offdiag_block[blocksize][blocksize];
+        tmp[BLOCKCRS_MAX_BLOCKSIZE*BLOCKCRS_MAX_BLOCKSIZE], //[blocksize*blocksize], 
+        diag_block[BLOCKCRS_MAX_BLOCKSIZE][BLOCKCRS_MAX_BLOCKSIZE], //[blocksize][blocksize], 
+        offdiag_block[BLOCKCRS_MAX_BLOCKSIZE][BLOCKCRS_MAX_BLOCKSIZE]; //[blocksize][blocksize];
       
       Random<scalar_type> random;
 

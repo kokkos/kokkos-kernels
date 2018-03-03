@@ -282,12 +282,14 @@ namespace KokkosBatched {
 
         // parallel over the instances of tridiagonal matrices
         if (!fake) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           typedef FactorizeBlockTridiagMatrices<exec_space,value_type,array_layout,
 	    VectorLength,
 	    LU_AlgoTagType,
 	    Trsm_AlgoTagType,
 	    Gemm_AlgoTagType> functor_type;
-          
+#endif
+
           switch (op) {
           case 0: {
             std::cout << "KokkosBatched::RangeTag::" << Gemm_AlgoTagType::name() << "\n";
@@ -817,10 +819,13 @@ namespace KokkosBatched {
         _b = b.Values();
 
         {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           typedef SolveBlockTridiagMatrices<exec_space,value_type,array_layout,
 	    VectorLength,
 	    Trsv_AlgoTagType,
 	    Gemv_AlgoTagType> functor_type;
+#endif
+
           switch (op) {
           case 0: {
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
