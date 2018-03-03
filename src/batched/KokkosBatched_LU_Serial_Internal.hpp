@@ -57,8 +57,8 @@ namespace KokkosBatched {
 
         if (tiny != 0) {
           const auto alpha11_real = RealPart(alpha11);
-          alpha11 += minus_abs_tiny*(alpha11_real <  0);
-          alpha11 +=       abs_tiny*(alpha11_real >= 0);
+          alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
+          alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
         }
         for (int i=0;i<iend;++i) {
           // a21[i*as0] *= inv_alpha11; 
