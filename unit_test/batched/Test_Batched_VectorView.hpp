@@ -113,7 +113,6 @@ namespace Test {
     /// random data initialization
     typedef Vector<VectorTagType,VectorLength> vector_type;
     
-    typedef typename vector_type::value_type value_type;    
     //const int vector_length = vector_type::vector_length;
     const int test_view_size = 4;
     { /// rank 1 array
