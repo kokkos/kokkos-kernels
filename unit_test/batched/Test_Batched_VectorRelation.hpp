@@ -21,7 +21,6 @@ namespace Test {
     const int vector_length = vector_type::vector_length;
     
     typedef Kokkos::Details::ArithTraits<value_type> ats;
-    typedef typename ats::mag_type mag_type;
 
     vector_type a, b;
 
