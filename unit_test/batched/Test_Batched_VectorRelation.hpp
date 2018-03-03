@@ -20,8 +20,6 @@ namespace Test {
     typedef typename vector_type::value_type value_type;    
     const int vector_length = vector_type::vector_length;
     
-    typedef Kokkos::Details::ArithTraits<value_type> ats;
-
     vector_type a, b;
 
     Random<value_type> random;
