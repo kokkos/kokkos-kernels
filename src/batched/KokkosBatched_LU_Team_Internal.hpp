@@ -63,8 +63,8 @@ namespace KokkosBatched {
         if (tiny != 0) {
           if (member.team_rank() == 0) {
             const auto alpha11_real = RealPart(alpha11);
-            alpha11 += minus_abs_tiny*(alpha11_real <  0);
-            alpha11 +=       abs_tiny*(alpha11_real >= 0);
+            alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
+            alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
           }
         }
         member.team_barrier();

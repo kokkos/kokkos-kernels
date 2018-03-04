@@ -28,8 +28,8 @@ namespace KokkosBatched {
 #endif
         for (int i=0;i<m;++i) {
           const auto a_real = RealPart(A[i*as]);
-          A[i*as] +=  ValueType(minus_abs_tiny)*(a_real <  0);
-          A[i*as] +=  ValueType(      abs_tiny)*(a_real >= 0);
+          A[i*as] +=  ValueType(minus_abs_tiny)*ValueType(a_real <  0);
+          A[i*as] +=  ValueType(      abs_tiny)*ValueType(a_real >= 0);
         }
         
         return 0;
@@ -56,8 +56,8 @@ namespace KokkosBatched {
           (Kokkos::TeamThreadRange(member,m),
            [&](const int &i) {
             const auto a_real = RealPart(A[i*as]);
-            A[i*as] +=  ValueType(minus_abs_tiny)*(a_real <  0);
-            A[i*as] +=  ValueType(      abs_tiny)*(a_real >= 0);
+            A[i*as] +=  ValueType(minus_abs_tiny)*ValueType(a_real <  0);
+            A[i*as] +=  ValueType(      abs_tiny)*ValueType(a_real >= 0);
           });
 
         return 0;
