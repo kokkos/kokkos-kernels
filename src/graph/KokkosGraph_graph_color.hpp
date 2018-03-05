@@ -211,7 +211,14 @@ void d2_graph_color(
     }
 
     default:
+    {
+      color_view_type colors_out = color_view_type("Graph Colors", num_rows);
+      BaseGraphColoring gc(num_rows, row_entries.dimension_0(), row_map, row_entries, gch);
+      gc.d2_color_graph/*<lno_col_view_t_,lno_colnnz_view_t_>*/(colors_out, num_phases, num_cols, col_map, col_entries);
+      gch->set_num_phases(num_phases);
+      gch->set_vertex_colors(colors_out);
       break;
+    }
 
   }
 
