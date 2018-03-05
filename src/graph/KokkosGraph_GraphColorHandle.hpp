@@ -247,7 +247,7 @@ private:
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+      std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
     }
 #endif

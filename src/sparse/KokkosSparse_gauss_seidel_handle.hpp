@@ -163,7 +163,7 @@ private:
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->algorithm_type = GS_TEAM;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: GS_TEAM" << std::endl;
+      std::cout << "Cuda Execution Space, Default Algorithm: GS_TEAM" << std::endl;
 #endif
     }
 #endif
