@@ -440,15 +440,15 @@ namespace KokkosBatched {
       BlockTridiagMatrices (const ordinal_type ntridiags,
                             const ordinal_type nrows,
                             const ordinal_type blocksize,
-                            const value_array_type A,
-                            const value_array_type B,
-                            const value_array_type C)
+                            const value_array_type A_,
+                            const value_array_type B_,
+                            const value_array_type C_)
         : _ntridiags(ntridiags), 
           _nrows(nrows),
           _blocksize(blocksize), 
-          _A(A),
-          _B(B),
-          _C(C) {}
+          _A(A_),
+          _B(B_),
+          _C(C_) {}
 
       value_array_type A() const { return _A; }
       value_array_type B() const { return _B; }
