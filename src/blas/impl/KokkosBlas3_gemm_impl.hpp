@@ -340,7 +340,10 @@ void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const View
 #if defined(__CUDA_ARCH__) || !defined(KOKKOS_ENABLE_OPENMP)
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,blockB1/4), [&] (const int B_j) {
 #else
+  #if (KOKKOS_COMPILER_GNU < 485 )
+  #else
     #pragma omp simd
+  #endif
     for(int B_j=0; B_j<blockB1/4; B_j++) {
 #endif
       ScalarC C_ij0 = 0;
