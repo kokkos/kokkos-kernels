@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <stdexcept>
+
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
