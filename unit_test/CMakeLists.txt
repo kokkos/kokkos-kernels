@@ -85,11 +85,16 @@ IF (Kokkos_ENABLE_OpenMP)
   
   APPEND_GLOB(OPENMP_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Blas*.cpp)
 
+  IF (KOKKOS_ENABLE_DEBUG)
+    SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-openmp.gemm_double")
+  ENDIF()
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     blas_openmp
     SOURCES
       Test_Main.cpp
       ${OPENMP_BLAS_SOURCES}
+    ARGS ${DISABLE_SLOW_DGEMM_DOUBLE_TEST}
     COMM serial mpi
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
