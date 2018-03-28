@@ -849,12 +849,17 @@ private:
       nnz_lno_t vid      = _vertexList(vid_);
       color_t   my_color = _colors(vid);
 
+      // If my_color is 0 then we should bail here b/c vertex was never colored.
+      if(my_color==0) return;
+
       size_type vid_1adj     = _idx(vid);
       size_type vid_1adj_end = _idx(vid+1);
 
       for(; vid_1adj < vid_1adj_end; vid_1adj++)
       {
         nnz_lno_t vid_1idx = _adj(vid_1adj);
+
+        bool break_out = false;
 
         for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
         { 
@@ -869,9 +874,11 @@ private:
             const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), atomic_incr_type(1));
             _recolorList(k) = vid;
             numConflicts += 1;
+            break_out = true;
             break;  // Can exit if vertex gets marked as a conflict.
           }
         }
+        if(break_out) break;
       }
     }
   }; // struct functorFindConflicts_Atomic (end)
