@@ -331,7 +331,6 @@ void run_multi_mem_experiment(Parameters params)
   slow_graph_t a_slow_crsgraph, /*b_slow_crsgraph,*/ c_slow_crsgraph;
   fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
 
-
   //read a and b matrices and store them on slow or fast memory.
   if (params.a_mem_space == 1)
   {
@@ -348,7 +347,6 @@ void run_multi_mem_experiment(Parameters params)
     a_slow_crsgraph = a_slow_crsmat.graph;
     a_slow_crsgraph.num_cols = a_slow_crsmat.numCols();
   }
-
 
   if (params.a_mem_space == 1)
   {
@@ -539,8 +537,8 @@ int main (int argc, char ** argv)
   std::cout << "Sizeof(kk_lno_t) : " << sizeof(kk_lno_t) << std::endl 
             << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
-#if defined( KOKKOS_HAVE_OPENMP )
 
+#if defined( KOKKOS_HAVE_OPENMP )
   if (params.use_openmp) 
   {
     Kokkos::OpenMP::initialize( params.use_openmp );
@@ -555,6 +553,7 @@ int main (int argc, char ** argv)
     Kokkos::OpenMP::finalize();
   }
 #endif
+
 
 #if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) 
@@ -573,6 +572,7 @@ int main (int argc, char ** argv)
     Kokkos::HostSpace::execution_space::finalize();
   }
 #endif
+
 
 #if defined( KOKKOS_HAVE_SERIAL )
   if (params.use_serial) 
