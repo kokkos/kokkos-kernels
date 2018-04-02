@@ -896,9 +896,6 @@ private:
       nnz_lno_t vid      = _vertexList(vid_);
       color_t   my_color = _colors(vid);
 
-      // If my_color is 0 then we should bail here b/c vertex was never colored.
-      if(my_color==0) return;
-
       size_type vid_1adj     = _idx(vid);
       size_type vid_1adj_end = _idx(vid+1);
 
