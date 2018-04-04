@@ -597,7 +597,7 @@ struct KokkosSPGEMM
           Kokkos::ThreadVectorRange(teamMember, vector_size),
           [&] (nnz_lno_t i) {
         result_keys[i] = -1;
-#if 1 //VOLTA70
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
         result_vals[i] = 0;
 #endif
       });
@@ -619,7 +619,11 @@ struct KokkosSPGEMM
           }
         else if (result_keys[new_hash] == r){
           if (Kokkos::atomic_compare_exchange_strong(result_keys + new_hash, r, n_set_index)){
-#if 1 //VOLTA70
+	    //MD 4/4/18: one these architectures there can be divergence in the warp.
+	    //once the keys are set, some other vector lane might be doing a 
+	    //fetch_or before we set with n_set. Therefore it is necessary to do
+	    //atomic, and set it with zero as above.
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
             Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
 #else
             result_vals[new_hash] = n_set;
