@@ -594,20 +594,60 @@ struct KokkosSPGEMM
       nnz_lno_t n_set = 1;
 
       Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, vector_size),
+          [&] (nnz_lno_t i) {
+        result_keys[i] = -1;
+#if 1 //VOLTA70
+        result_vals[i] = 0;
+#endif
+      });
+
+      Kokkos::parallel_for(
           Kokkos::ThreadVectorRange(teamMember, work_to_handle),
           [&] (nnz_lno_t i) {
         const size_type adjind = i + rowBegin;
         const nnz_lno_t n = entries(adjind);
         n_set_index = n >> compression_bit_divide_shift;
         n_set = n_set << (n & compression_bit_mask);
+
+        size_type new_hash = n_set_index & (vector_size - 1);
+        nnz_lno_t r = -1;
+        while (true){
+          if (result_keys[new_hash] == n_set_index){
+            Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
+            break;
+          }
+        else if (result_keys[new_hash] == r){
+          if (Kokkos::atomic_compare_exchange_strong(result_keys + new_hash, r, n_set_index)){
+#if 1 //VOLTA70
+            Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
+#else
+            result_vals[new_hash] = n_set;
+#endif      
+            break;
+          }
+        }
+        else if (++new_hash == vector_size){
+          new_hash = 0;
+        }
+      }
+
       });
+
+      Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, vector_size),
+          [&] (nnz_lno_t i) {
+          n_set_index = result_keys[i];
+          n_set = result_vals[i];
+      });
+
 
 
 
       //it is possible that multiple threads have same values.
       //first merge them, as a result of this operation we will have the n_sets merged,
       //if a thread's value merged to some other threads we have n_set = -1.
-      hm.vector_mergeOr_MEM(teamMember, vector_size, n_set_index,n_set, result_keys, result_vals);
+      //hm.vector_mergeOr_MEM(teamMember, vector_size, n_set_index,n_set, result_keys, result_vals);
 
 
       nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;

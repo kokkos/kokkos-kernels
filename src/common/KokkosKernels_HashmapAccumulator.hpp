@@ -1540,48 +1540,6 @@ struct HashmapAccumulator{
     });
   }
 
-  template <typename team_member_t>
-  KOKKOS_INLINE_FUNCTION
-  void vector_mergeOr_MEM (
-      const team_member_t & teamMember,
-      const int vector_size,
-      //const int vector_id,
-      key_type &key,
-      value_type &value,
-      volatile key_type *result_keys,
-      volatile value_type *result_vals
-      ){
-
-
-    size_type new_hash = key % vector_size;
-
-    Kokkos::parallel_for(
-        Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid) {
-      result_keys[threadid] = -1;
-      key_type r = -1;
-      while (key!= -1 && true){
-        if (result_keys[new_hash] == key){
-          //printf("Adding: new_hash:%d, val:%d\n", new_hash, value);
-          Kokkos::atomic_fetch_or(result_vals + new_hash, value);
-
-          break;
-        }
-        else if (result_keys[new_hash] == r){
-          if (Kokkos::atomic_compare_exchange_strong(result_keys + new_hash, r, key)){
-            result_vals[new_hash] = value;
-            break;
-          }
-        }
-        else if (++new_hash == vector_size){
-          new_hash = 0;
-        }
-      }
-      value = result_vals[threadid];
-      key = result_keys[threadid];
-
-    });
-  }
 
   //function to be called from device.
   //Directly inserts without checking if the value is in the cache already.
