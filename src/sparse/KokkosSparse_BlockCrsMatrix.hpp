@@ -701,11 +701,9 @@ public:
     const ordinal_type length = row_view.length; // num blocks in block-row rowi
     const ordinal_type block_size = this->blockDim();
 
-    //ordinal_type hint = 0; // Guess for offset of current column index in row
     ordinal_type numValid = 0; // number of valid local column indices
 
     for (ordinal_type i = 0; i < ncol; ++i) {
-
       // Find offset into values for block-row rowi and colidx cols[i]
       // cols[i] is the index to match
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
@@ -723,55 +721,11 @@ public:
             }
             else {
               local_row_values[lcol] += vals[ offset_into_vals + lrow*block_size + lcol];
-              //values_[ offset_into_values + lrow*values_row_stride + lcol] += vals[ offset_into_vals + lrow*block_size + lcol];
             }
           }
         }
         ++numValid;
       }
-
-#if 0
-      // FIXME pseudo-code thought-gathering details - remove
-      for ( ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
-        ordinal_type idx = row_view.colidx_[blk_offset];
-        if ( idx == cols[i] ) {
-          //found, matched
-          ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
-          ordinal_type offset_into_values = blk_offset*block_size;
-          ordinal_type values_row_stride = block_size*length; // stride to start of next row
-
-          for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
-            auto local_row_values = row_view.local_row_in_block(blk_offset, lrow);
-            for ( ordinal_type lcol = 0; lcol < block_size; ++lcol ) {
-              local_row_values[lcol] += vals[ offset_into_vals + lrow*block_size + lcol];
-              //values_[ offset_into_values + lrow*values_row_stride + lcol] += vals[ offset_into_vals + lrow*block_size + lcol];
-            }
-          }
-        }
-      }
-
-      // FIXME Previous implementation - remove
-      // NOTE (mfh 19 Sep 2017) This assumes that row_view stores
-      // column indices contiguously.  It does, but one could imagine
-      // changing that at some point.
-      const ordinal_type offset =
-        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
-      if (offset != length) {
-        if (force_atomic) {
-          Kokkos::atomic_add (&(row_view.value(offset)), vals[i]);
-        }
-        else {
-          row_view.value(offset) += vals[i];
-        }
-        ++numValid;
-        // If the hint is out of range, findRelOffset will ignore it.
-        // Thus, while it's harmless to have a hint out of range, it
-        // may slow down searches for subsequent valid input column
-        // indices.
-        hint = offset + 1;
-      }
-#endif
-
     } // end for ncol
     return numValid;
   }
@@ -804,11 +758,9 @@ public:
     const ordinal_type length = row_view.length;
     const ordinal_type block_size = this->blockDim();
 
-    //ordinal_type hint = 0; // Guess for offset of current column index in row
     ordinal_type numValid = 0; // number of valid local column indices
 
     for (ordinal_type i = 0; i < ncol; ++i) {
-
       // Find offset into values for block-row rowi and colidx cols[i]
       // cols[i] is the index to match
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
@@ -826,34 +778,11 @@ public:
             }
             else {
               local_row_values[lcol] = vals[ offset_into_vals + lrow*block_size + lcol];
-              //values_[ offset_into_values + lrow*values_row_stride + lcol] = vals[ offset_into_vals + lrow*block_size + lcol];
             }
           }
         }
-      }
-
-#if 0
-      // NOTE (mfh 19 Sep 2017) This assumes that row_view stores
-      // column indices contiguously.  It does, but one could imagine
-      // changing that at some point.
-      const ordinal_type offset =
-        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
-      if (offset != length) {
-        if (force_atomic) {
-          Kokkos::atomic_assign (&(row_view.value(offset)), vals[i]);
-        }
-        else {
-          row_view.value(offset) = vals[i];
-        }
         ++numValid;
-        // If the hint is out of range, findRelOffset will ignore it.
-        // Thus, while it's harmless to have a hint out of range, it
-        // may slow down searches for subsequent valid input column
-        // indices.
-        hint = offset + 1;
       }
-#endif
-
     } // end for ncol
     return numValid;
   }
