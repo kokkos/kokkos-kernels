@@ -651,7 +651,6 @@ struct KokkosSPGEMM
       //it is possible that multiple threads have same values.
       //first merge them, as a result of this operation we will have the n_sets merged,
       //if a thread's value merged to some other threads we have n_set = -1.
-      //hm.vector_mergeOr_MEM(teamMember, vector_size, n_set_index,n_set, result_keys, result_vals);
 
 
       nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
