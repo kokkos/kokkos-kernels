@@ -155,7 +155,6 @@ void test_coloring_d2(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_si
    cp.destroy_spgemm_handle();
 
   int num_algorithms = 2;
-  KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::kk_get_exec_space_type<typename device::execution_space>();
 
   for (int ii = 0; ii < num_algorithms; ++ii){
 
