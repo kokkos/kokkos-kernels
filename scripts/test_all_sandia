@@ -279,7 +279,7 @@ elif [ "$MACHINE" = "apollo" ]; then
 
   SKIP_HWLOC=True
 
-  BASE_MODULE_LIST="sems-env,kokkos-env,sems-<COMPILER_NAME>/<COMPILER_VERSION>,kokkos-hwloc/1.10.1/base"
+  BASE_MODULE_LIST="sems-env,kokkos-env,kokkos-hwloc/1.10.1/base,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
   CUDA_MODULE_LIST="sems-env,kokkos-env,kokkos-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/4.8.4,kokkos-hwloc/1.10.1/base"
   CUDA8_MODULE_LIST="sems-env,kokkos-env,kokkos-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/5.3.0,kokkos-hwloc/1.10.1/base"
 
@@ -319,7 +319,7 @@ elif [ "$MACHINE" = "apollo" ]; then
   fi
 
   if [ -z "$ARCH_FLAG" ]; then
-    ARCH_FLAG="--arch=SNB,Kepler35"
+    ARCH_FLAG="--arch=SNB,Volta70"
   fi
 
   NUM_JOBS_TO_RUN_IN_PARALLEL=1
