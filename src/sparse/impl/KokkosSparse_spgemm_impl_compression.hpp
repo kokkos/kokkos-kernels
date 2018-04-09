@@ -627,7 +627,7 @@ struct KokkosSPGEMM
             break;
           }
         }
-        else if (++new_hash == vector_size){
+        else if (++new_hash == decltype(new_hash)(vector_size)){
           new_hash = 0;
         }
       }
