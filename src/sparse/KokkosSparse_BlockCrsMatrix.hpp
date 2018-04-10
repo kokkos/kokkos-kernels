@@ -89,15 +89,6 @@ private:
   value_type* values_;
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
-  /// \brief Stride between successive entries in the row.
-  ///
-  /// For block compressed sparse row (BlockCSR) storage with row-major layout,
-  /// (i.e. rows within a block are NOT contiguous)
-  /// this is always one. Nevertheless, the stride can never be greater
-  /// than the number of rows or columns in the matrix.  Thus,
-  /// \c ordinal_type is the correct type.
-  // FIXME TODO: Remove stride_ since always set to 1; maybe rename row_in_block_stride to stride...
-  const ordinal_type stride_;
   /// \brief Stride between successive rows in a block.
   ///
   /// For block compressed sparse row (BlockCSR) storage with row-major layout by full row,
@@ -110,8 +101,6 @@ public:
   ///
   /// \param values [in] Array of the row's values.
   /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each row of a block of the above arrays.
   /// \param blockDim [in] (Constant) stride between block rows
   ///   within a block-row in the above arrays.
   /// \param count [in] Number of blocks in the desired block-row.
@@ -120,42 +109,38 @@ public:
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowView (value_type* const values,
                  ordinal_type* const colidx__,
-                 const ordinal_type& stride,
                  const ordinal_type& blockDim,
                  const ordinal_type& count) :
-    values_ (values), colidx_ (colidx__), stride_ (stride), blockDim_(blockDim), length (count)
+    values_ (values), colidx_ (colidx__), blockDim_(blockDim), length (count)
   {}
 
   /// \brief Constructor with offset into \c colidx array
   ///
   /// \param values [in] Array of the row's values.
   /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each row of a block of the above arrays.
   /// \param blockDim [in] (Constant) stride between rows in
   ///   within a block in the above arrays.
   /// \param count [in] Number of blocks in the desired block-row
-  /// \param idx [in] Offset into values and colidx of the desired block-row start.
-  ///   Note: The offset into the values and colidx arrays for a block-row equals
+  /// \param start [in] Offset into values and colidx of the desired block-row start.
+  ///   Note: The offset into the values array for a block-row equals
   ///           num_blocks_prior_to_block-row*blockDim*blockDim
   ///
-  /// \tparam OffsetType The type of \c idx (see above).  Must be a
+  /// \tparam OffsetType The type of \c start (see above).  Must be a
   ///   built-in integer type.  This may differ from ordinal_type.
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
   template<class OffsetType>
   KOKKOS_INLINE_FUNCTION
-  SparseBlockRowView (const typename MatrixType::values_type& values, // original values view
-                 const typename MatrixType::index_type& colidx__, // view from the graph.entries
-                 const ordinal_type& stride, // 1
+  SparseBlockRowView (const typename MatrixType::values_type& values,
+                 const typename MatrixType::index_type& colidx__,
                  const ordinal_type& blockDim,
-                 const ordinal_type& count, //num blocks in the row
+                 const ordinal_type& count,
                  const OffsetType& start,
                  const typename std::enable_if<std::is_integral<OffsetType>::value, int>::type& = 0) :
-    values_ (&values(start*blockDim*blockDim)), colidx_ (&colidx__(start)), stride_ (stride), blockDim_(blockDim), length (count)
+    values_ (&values(start*blockDim*blockDim)), colidx_ (&colidx__(start)), blockDim_(blockDim), length (count)
   {}
 
-  /// \brief Number of entries in the row.
+  /// \brief Number of entries (i.e. blocks) in the row.
   ///
   /// This is a public const field rather than a public const method,
   /// in order to avoid possible overhead of a method call if the
@@ -169,7 +154,8 @@ public:
   const ordinal_type length;
 
 
-  // Return a pointer offset to full-row i of values_ array; user responsible for indexing into this pointer correctly
+  // Return a pointer offset to full-row i of values_ array; 
+  //   user responsible for indexing into this pointer correctly
   // Input: i must be the LOCAL row index within this block-row
   // Output: pointer to values_ array at start of full row with local index i
   KOKKOS_INLINE_FUNCTION
@@ -177,20 +163,20 @@ public:
     return values_+(i*length*blockDim_) ;
   }
 
-  // Return a pointer offset to row i of block K o values_ array; user responsible for indexing into this pointer correctly
+  // Return a pointer offset to local row i of block K of values_ array; 
+  //   user responsible for indexing into this pointer correctly
   KOKKOS_INLINE_FUNCTION
   value_type* local_row_in_block (const ordinal_type& K, const ordinal_type& i) const {
     return (values_+(K*blockDim_ + i*length*blockDim_)) ;
   }
 
-  // Return the value for a specified block K with local row,col ids (i,j)
-  // Currently, assumes the indices are sorted into blocks (and sorted within the block)
+  // Return the value at a specified block K with local row and col ids (i,j)
   KOKKOS_INLINE_FUNCTION
   value_type& local_block_value (const ordinal_type& K, const ordinal_type& i, const ordinal_type& j) const {
     return values_[K*blockDim_ + i*length*blockDim_ + j];
   }
 
-  // Return unmanaged 2D strided View wrapping block K within this block-row
+  // Return unmanaged 2D strided View wrapping local block K from this block-row
   KOKKOS_INLINE_FUNCTION
   block_values_type block(const ordinal_type& K) const {
     return block_values_type( &(values_[K*blockDim_]), Kokkos::LayoutStride(blockDim_,length*blockDim_,blockDim_,1) );
@@ -198,8 +184,8 @@ public:
 
 
   KOKKOS_INLINE_FUNCTION
-  ordinal_type findRelBlockOffset ( const ordinal_type idx_to_match, bool is_sorted = false ) {
-    ordinal_type offset = -1; // TODO: if ordinal_type is unsigned, what to set it as?
+  ordinal_type findRelBlockOffset ( const ordinal_type idx_to_match, bool is_sorted = false ) const {
+    ordinal_type offset = std::numeric_limits< ordinal_type >::max();
     for ( ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
       ordinal_type idx = colidx_[blk_offset];
       if ( idx == idx_to_match ) { offset = blk_offset; } // return relative offset
@@ -207,35 +193,12 @@ public:
     return offset;
   }
 
-#if 0
-  /// \brief Reference to the value of entry i in this row of the sparse matrix.
-  ///
-  /// "Entry i" is not necessarily the entry with column index i, nor
-  /// does i necessarily correspond to the (local) row index.
-  //
-  ///  i in [0, count*blockdim*blockdim)
-  ///  offset into values_ and colidx_ already applied for beginning of block-row
-  ///  TODO: stride- == 1 - remove
-  KOKKOS_INLINE_FUNCTION
-  value_type& value (const ordinal_type& i) const {
-    return values_[i*stride_];
-  }
-
-  /// \brief Reference to the column index of entry i in this row of the sparse matrix.
-  ///
-  /// "Entry i" is not necessarily the entry with column index i, nor
-  /// does i necessarily correspond to the (local) row index.
-  KOKKOS_INLINE_FUNCTION
-  ordinal_type& colidx (const ordinal_type& i) const {
-    return colidx_[i/blockDim_*stride_];
-  }
-#endif
 };
 
 
 /// \class SparseBlockRowViewConst
 /// \brief Const view of a row of a sparse matrix.
-/// \tparam MatrixType Sparse matrix type, such as (but not limited to) BlockCrsMatrix.
+/// \tparam MatrixType Sparse matrix type, such as BlockCrsMatrix.
 ///
 /// This class is like SparseBlockRowView, except that it provides a const
 /// view.  This class exists in order to let users get a const view of
@@ -254,14 +217,6 @@ private:
   value_type* values_;
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
-  /// \brief Stride between successive entries in the row.
-  ///
-  /// For compressed sparse row (CSR) storage, this is always one.
-  /// This might be greater than one for storage formats like ELLPACK
-  /// or Jagged Diagonal.  Nevertheless, the stride can never be
-  /// greater than the number of rows or columns in the matrix.  Thus,
-  /// \c ordinal_type is the correct type.
-  const ordinal_type stride_;
   /// \brief Stride between successive rows in a block-row
   ///
   /// For block compressed sparse row (BlockCSR) storage with row-major layout,
@@ -274,30 +229,29 @@ public:
   ///
   /// \param values [in] Array of the row's values.
   /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
+  /// \param blockDim [in] (Constant) stride between block rows
+  ///   within a block-row in the above arrays.
   /// \param count [in] Number of entries in the row.
   //
   // Assumes values and colidx__ already offset to the correct location
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowViewConst (value_type* const values,
                       ordinal_type* const colidx__,
-                      const ordinal_type& stride,
                       const ordinal_type& blockDim,
                       const ordinal_type& count) :
-    values_ (values), colidx_ (colidx__), stride_ (stride), blockDim_(blockDim), length (count)
+    values_ (values), colidx_ (colidx__), blockDim_(blockDim), length (count)
   {}
 
   /// \brief Constructor with offset into \c colidx array
   ///
   /// \param values [in] Array of the row's values.
   /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
   /// \param count [in] Number of entries in the row.
-  /// \param idx [in] Start offset into \c colidx array
+  /// \param start [in] Offset into values and colidx of the desired block-row start.
+  ///   Note: The offset into the values array for a block-row equals
+  ///           num_blocks_prior_to_block-row*blockDim*blockDim
   ///
-  /// \tparam OffsetType The type of \c idx (see above).  Must be a
+  /// \tparam OffsetType The type of \c start (see above).  Must be a
   ///   built-in integer type.  This may differ from ordinal_type.
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
@@ -305,15 +259,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowViewConst (const typename MatrixType::values_type& values,
                       const typename MatrixType::index_type& colidx__,
-                      const ordinal_type& stride,
                       const ordinal_type& blockDim,
                       const ordinal_type& count,
                       const OffsetType& start,
                       const typename std::enable_if<std::is_integral<OffsetType>::value, int>::type& = 0) :
-    values_ (&values(start*blockDim*blockDim)), colidx_ (&colidx__(start)), stride_ (stride), blockDim_(blockDim), length (count)
+    values_ (&values(start*blockDim*blockDim)), colidx_ (&colidx__(start)), blockDim_(blockDim), length (count)
   {}
 
-  /// \brief Number of entries in the row.
+  /// \brief Number of entries (i.e. blocks) in the row.
   ///
   /// This is a public const field rather than a public const method,
   /// in order to avoid possible overhead of a method call if the
@@ -326,7 +279,8 @@ public:
   const ordinal_type length;
 
 
-  // Return a pointer offset to full-row i of values_ array; user responsible for indexing into this pointer correctly
+  // Return a pointer offset to local full-row i of values_ array; 
+  //   user responsible for indexing into this pointer correctly
   // Input: i must be the LOCAL row index within this block-row
   // Output: pointer to values_ array at start of full row with local index i
   KOKKOS_INLINE_FUNCTION
@@ -334,20 +288,20 @@ public:
     return values_+(i*length*blockDim_) ;
   }
 
-  // Return a pointer offset to row i of block K o values_ array; user responsible for indexing into this pointer correctly
+  // Return a pointer offset to local row i of block K of values_ array; 
+  //   user responsible for indexing into this pointer correctly
   KOKKOS_INLINE_FUNCTION
   value_type* local_row_in_block (const ordinal_type& K, const ordinal_type& i) const {
     return (values_+(K*blockDim_ + i*length*blockDim_)) ;
   }
 
-  // Return the value for a specified block K with local row,col ids (i,j)
-  // Currently, assumes the indices are sorted into blocks (and sorted within the block)
+  // Return the value at a specified block K with local row and col ids (i,j)
   KOKKOS_INLINE_FUNCTION
   value_type& local_block_value (const ordinal_type& K, const ordinal_type& i, const ordinal_type& j) const {
     return values_[K*blockDim_ + i*length*blockDim_ + j];
   }
 
-  // Return unmanaged 2D strided View wrapping block K within this block-row
+  // Return unmanaged 2D strided View wrapping local block K from this block-row
   KOKKOS_INLINE_FUNCTION
   block_values_type block(const ordinal_type& K) const {
     return block_values_type( &(values_[K*blockDim_]), Kokkos::LayoutStride(blockDim_,length*blockDim_,blockDim_,1) );
@@ -355,9 +309,9 @@ public:
 
 
   KOKKOS_INLINE_FUNCTION
-  ordinal_type findRelBlockOffset ( const ordinal_type idx_to_match, bool is_sorted = false ) {
-    ordinal_type offset = -1; // TODO: if ordinal_type is unsigned, what to set it as?
-    for ( ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
+  ordinal_type findRelBlockOffset ( const ordinal_type &idx_to_match, bool is_sorted = false ) const {
+    typename std::remove_cv<ordinal_type>::type offset = std::numeric_limits< ordinal_type >::max();
+    for ( typename std::remove_cv<ordinal_type>::type blk_offset = 0; blk_offset < length; ++blk_offset ) {
       ordinal_type idx = colidx_[blk_offset];
       if ( idx == idx_to_match ) { offset = blk_offset; } // return relative offset
       //if ( idx == idx_to_match ) { offset = blk_offset*blockDim_; } // return offset into values_
@@ -365,31 +319,6 @@ public:
     return offset;
   }
 
-#if 0
-  /// \brief (Const) reference to the value of entry i in this row of
-  ///   the sparse matrix.
-  ///
-  /// "Entry i" is not necessarily the entry with column index i, nor
-  /// does i necessarily correspond to the (local) row index.
-  //
-  ///  i in [0, count*blockdim*blockdim)
-  ///  offset into values_ and colidx_ already applied for beginning of block-row
-  ///  TODO: stride- == 1 - remove
-  KOKKOS_INLINE_FUNCTION
-  value_type& value (const ordinal_type& i) const {
-    return values_[i*stride_];
-  }
-
-  /// \brief (Const) reference to the column index of entry i in this
-  ///   row of the sparse matrix.
-  ///
-  /// "Entry i" is not necessarily the entry with column index i, nor
-  /// does i necessarily correspond to the (local) row index.
-  KOKKOS_INLINE_FUNCTION
-  ordinal_type& colidx (const ordinal_type& i) const {
-    return colidx_[i/blockDim_*stride_];
-  }
-#endif
 };
 
 /// \class BlockCrsMatrix
@@ -613,14 +542,6 @@ public:
     }
     // nnz returns graph.entries.extent(0) i.e. ptr[ nrows + 1 ] nnz entry
     // input annz is nnz of values, not comparable with block ptr 'nnz' i.e. numBlocks
-    /*
-    if (annz != nnz ()) {
-      std::ostringstream os;
-      os << "Input argument annz = " << annz
-         << " != this->nnz () = " << nnz () << ".";
-      throw std::invalid_argument (os.str ());
-    }
-    */
     if (blockDim_ <= 0) {
       std::ostringstream os;
       os << "Input argument blockDim = " << blockDim 
@@ -682,10 +603,9 @@ public:
     numCols_ = crs_mtx.numCols() / blockDim;
     values = crs_mtx.values;
 
-    // 1. Determine size of the block rows ptr == nrows / blockDim + 1
     OrdinalType nbrows = crs_mtx.numRows()/blockDim; // actual number of block rows; add 1 for ptr length
 
-    // block_rows will accumulate the number of blocks per row - this is NOT the cum sum row_map!!
+    // block_rows will accumulate the number of blocks per row - this is NOT the row_map with cum sum!!
     std::vector<OrdinalType> block_rows( nbrows, 0 );
 
     typename crs_graph_row_map_type::HostMirror h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
@@ -693,12 +613,12 @@ public:
     typename crs_graph_entries_type::HostMirror h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
     Kokkos::deep_copy(h_crs_entries, crs_mtx.graph.entries);
 
-    // 2. Determine size of block cols indices == number of blocks, i.e. nnz for the block CRS graph
+    // determine size of block cols indices == number of blocks, i.e. nnz for the block CRS graph
     OrdinalType numBlocks = 0;
     for ( OrdinalType i = 0; i < crs_mtx.numRows(); i+=blockDim ) {
       numBlocks += ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // cum sum
       // block_rows[ i/blockDim + 1 ] = numBlocks; // cum sum
-      block_rows[ i/blockDim ] = ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // frequency count - not yet cum sum
+      block_rows[ i/blockDim ] = ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // frequency counts
     }
 
     // create_staticcrsgraph takes the frequency of blocks per row and returns the cum sum pointer row_map with nbrows+1 size, and total numBlocks in the final entry
@@ -709,9 +629,11 @@ public:
     for (OrdinalType i = 0; i < nbrows; ++i) {
       OrdinalType blks_in_row = block_rows[i];
       
-        // graph.row_map(i) returns the number of blocks until the current block-row i, alternatively the offset start into the block colidx
+      // graph.row_map(i) returns the number of blocks until the current block-row i; 
+      // alternatively the offset start into the block colidx
       OrdinalType offset_into_blkcolidx_start = graph.row_map(i);
       OrdinalType offset_into_colidx_start = offset_into_blkcolidx_start*blockDim*blockDim;
+
       for ( OrdinalType lidx = 0; lidx < blks_in_row; ++lidx ) {
         h_entries( offset_into_blkcolidx_start+lidx ) = h_crs_entries( offset_into_colidx_start + blockDim*lidx ) / blockDim;
       }
@@ -772,8 +694,8 @@ public:
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
       // colidx_ and values_ are already offset to the beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      ordinal_type offset_into_values = blk_offset*block_size;
-      if ( offset_into_values != -1 ) {
+      if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
+        ordinal_type offset_into_values = blk_offset*block_size;
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
         ordinal_type values_row_stride = block_size*length; // stride to start of next row
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
@@ -828,8 +750,8 @@ public:
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
       // colidx_ and values_ are already offset to the beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      ordinal_type offset_into_values = blk_offset*block_size;
-      if ( offset_into_values != -1 ) {
+      if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
+        ordinal_type offset_into_values = blk_offset*block_size;
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
         ordinal_type values_row_stride = block_size*length; // stride to start of next row
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
@@ -883,149 +805,76 @@ public:
     return graph.entries.extent (0);
   }
 
-  //friend struct SparseBlockRowView<BlockCrsMatrix>;
-  friend struct KokkosSparse::SparseRowView<BlockCrsMatrix>;
+  friend struct SparseBlockRowView<BlockCrsMatrix>;
+  //friend struct KokkosSparse::SparseRowView<BlockCrsMatrix>;
 
-  /// \brief Return a view of row i of the matrix.
+  /// \brief Return a SparseBlockRowView of block-row i of the matrix.
   ///
   /// If row i does not belong to the matrix, return an empty view.
   ///
   /// The returned object \c view implements the following interface:
   /// <ul>
-  /// <li> \c view.length is the number of entries in the row </li>
-  /// <li> \c view.value(k) returns a nonconst reference
-  ///      to the value of the k-th entry in the row </li>
-  /// <li> \c view.colidx(k) returns a nonconst reference to
-  ///      the column index of the k-th entry in the row </li>
+  /// <li> \c view.length is the number of entries (i.e. blocks) 
+  ///      in the block row </li>
+  /// <li> \c view.local_row_in_block_row(K, i) returns a nonconst pointer
+  ///      to the values of the ith local row in the k-th block of the block-row </li>
+  /// <li> \c view.full_row_in_block_row(i) returns a nonconst pointer
+  ///      to the values of the ith local row of the block-row </li>
+  /// <li> \c view.local_block_value(K, i, j) returns a nonconst reference
+  ///      to the value in the ith local row and jth local col 
+  ///      of the k-th block of the block-row </li>
+  /// <li> \c view.block(K) returns an unmanaged 2D strided Kokkos::View
+  ///      of the values of the k-th block of the block-row </li>
   /// </ul>
-  /// k is not a column index; it just counts from 0 to
-  /// <tt>view.length - 1</tt>.
   ///
   /// Users should not rely on the return type of this method.  They
   /// should instead assign to 'auto'.
   ///
-  /// Both row() and rowConst() used to take a "SizeType" template
-  /// parameter, which was the type to use for row offsets.  This is
-  /// unnecessary, because the BlockCrsMatrix specialization already has
-  /// the row offset type available, via the <tt>size_type</tt>
-  /// typedef.  Our sparse matrix-vector multiply implementation for
-  /// BlockCrsMatrix safely uses <tt>ordinal_type</tt> rather than
-  /// <tt>size_type</tt> to iterate over all the entries in a row of
-  /// the sparse matrix.  Since <tt>ordinal_type</tt> may be smaller
-  /// than <tt>size_type</tt>, compilers may generate more efficient
-  /// code.  The row() and rowConst() methods first compute the
-  /// difference of consecutive row offsets as <tt>size_type</tt>, and
-  /// then cast to <tt>ordinal_type</tt>.  If you want to do this
-  /// yourself, here is an example:
-  ///
-  /// \code
-  /// for (ordinal_type lclRow = 0; lclRow < A.numRows (); ++lclRow) {
-  ///   const ordinal_type numEnt =
-  ///     static_cast<ordinal_type> (A.graph.row_map(i+1) - A.graph.row_map(i));
-  ///   for (ordinal_type k = 0; k < numEnt; ++k) {
-  ///     // etc.
-  ///   }
-  /// }
-  /// \endcode
-#if 0
-  KOKKOS_INLINE_FUNCTION
-  SparseBlockRowView<BlockCrsMatrix> row (const ordinal_type i) const {
-    const size_type start = graph.row_map(i);
-    // count is guaranteed to fit in ordinal_type, as long as no row
-    // has duplicate entries.
-    const ordinal_type count = static_cast<ordinal_type> (graph.row_map(i+1) - start);
-
-    // TODO: Should this still be compatible with SparseRowView from CrsMatrix?
-    if (count == 0) {
-      return SparseRowView<BlockCrsMatrix> (NULL, NULL, 1, 0);
-    } else {
-      return SparseRowView<BlockCrsMatrix> (values, graph.entries, 1, count, start);
-    }
-  }
-#endif
-
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowView<BlockCrsMatrix> block_row (const ordinal_type i) const {
 
-    const size_type start = graph.row_map(i); // total num blocks to this point
-    // count is guaranteed to fit in ordinal_type, as long as no row has duplicate entries.
+    const size_type start = graph.row_map(i); // total num blocks prior to this block-row
     const ordinal_type count = static_cast<ordinal_type> (graph.row_map(i+1) - start); // num blocks in this row
 
     if (count == 0) {
-      return SparseBlockRowView<BlockCrsMatrix> (NULL, NULL, 1, 1, 0);
+      return SparseBlockRowView<BlockCrsMatrix> (NULL, NULL, 1, 0);
     } else {
-      return SparseBlockRowView<BlockCrsMatrix> (values, graph.entries, 1, blockDim(), count, start);
+      return SparseBlockRowView<BlockCrsMatrix> (values, graph.entries, blockDim(), count, start);
     }
   }
 
-  /// \brief Return a const view of row i of the matrix.
+  /// \brief Return a SparseBlockRowViewConst of block-row i of the matrix.
   ///
   /// If row i does not belong to the matrix, return an empty view.
   ///
   /// The returned object \c view implements the following interface:
   /// <ul>
-  /// <li> \c view.length is the number of entries in the row </li>
-  /// <li> \c view.value(k) returns a const reference to
-  ///      the value of the k-th entry in the row </li>
-  /// <li> \c view.colidx(k) returns a const reference to the
-  ///      column index of the k-th entry in the row </li>
+  /// <li> \c view.length is the number of entries (i.e. blocks) 
+  ///      in the block row </li>
+  /// <li> \c view.local_row_in_block_row(K, i) returns a nonconst pointer
+  ///      to the values of the ith local row in the k-th block of the block-row </li>
+  /// <li> \c view.full_row_in_block_row(i) returns a nonconst pointer
+  ///      to the values of the ith local row of the block-row </li>
+  /// <li> \c view.local_block_value(K, i, j) returns a nonconst reference
+  ///      to the value in the ith local row and jth local col 
+  ///      of the k-th block of the block-row </li>
+  /// <li> \c view.block(K) returns an unmanaged 2D strided Kokkos::View
+  ///      of the values of the k-th block of the block-row </li>
   /// </ul>
-  /// k is not a column index; it just counts from 0 to
-  /// <tt>view.length - 1</tt>.
   ///
   /// Users should not rely on the return type of this method.  They
   /// should instead assign to 'auto'.
   ///
-  /// Both row() and rowConst() used to take a "SizeType" template
-  /// parameter, which was the type to use for row offsets.  This is
-  /// unnecessary, because the BlockCrsMatrix specialization already has
-  /// the row offset type available, via the <tt>size_type</tt>
-  /// typedef.  Our sparse matrix-vector multiply implementation for
-  /// BlockCrsMatrix safely uses <tt>ordinal_type</tt> rather than
-  /// <tt>size_type</tt> to iterate over all the entries in a row of
-  /// the sparse matrix.  Since <tt>ordinal_type</tt> may be smaller
-  /// than <tt>size_type</tt>, compilers may generate more efficient
-  /// code.  The row() and rowConst() methods first compute the
-  /// difference of consecutive row offsets as <tt>size_type</tt>, and
-  /// then cast to <tt>ordinal_type</tt>.  If you want to do this
-  /// yourself, here is an example:
-  ///
-  /// \code
-  /// for (ordinal_type lclRow = 0; lclRow < A.numRows (); ++lclRow) {
-  ///   const ordinal_type numEnt =
-  ///     static_cast<ordinal_type> (A.graph.row_map(i+1) - A.graph.row_map(i));
-  ///   for (ordinal_type k = 0; k < numEnt; ++k) {
-  ///     // etc.
-  ///   }
-  /// }
-  /// \endcode
-#if 0
-  KOKKOS_INLINE_FUNCTION
-  SparseBlockRowViewConst<BlockCrsMatrix> rowConst (const ordinal_type i) const {
-    const size_type start = graph.row_map(i);
-
-    // count is guaranteed to fit in ordinal_type, as long as no row
-    // has duplicate entries.
-    const ordinal_type count = static_cast<ordinal_type> (graph.row_map(i+1) - start);
-
-    if (count == 0) {
-      return SparseRowViewConst<BlockCrsMatrix> (NULL, NULL, 1, 0);
-    } else {
-      return SparseRowViewConst<BlockCrsMatrix> (values, graph.entries, 1, count, start);
-    }
-  }
-#endif
-
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowViewConst<BlockCrsMatrix> block_row_Const (const ordinal_type i) const {
 
-    const size_type start = graph.row_map(i); // total num blocks to this point
+    const size_type start = graph.row_map(i); // total num blocks prior to this block-row
     const ordinal_type count = static_cast<ordinal_type> (graph.row_map(i+1) - start); // num blocks in this row
 
     if (count == 0) {
-      return SparseBlockRowViewConst<BlockCrsMatrix> (NULL, NULL, 1, 1, 0);
+      return SparseBlockRowViewConst<BlockCrsMatrix> (NULL, NULL, 1, 0);
     } else {
-      return SparseBlockRowViewConst<BlockCrsMatrix> (values, graph.entries, 1, blockDim(), count, start);
+      return SparseBlockRowViewConst<BlockCrsMatrix> (values, graph.entries, blockDim(), count, start);
     }
   }
 
