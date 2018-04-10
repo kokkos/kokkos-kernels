@@ -46,7 +46,7 @@
 ///
 /// This file provides KokkosSparse::BlockCrsMatrix.  This implements a
 /// local (no MPI) sparse matrix stored in block compressed row sparse
-/// ("Crs") format.
+/// ("BlockCrs") format.
 
 #ifndef KOKKOS_SPARSE_BLOCKCRSMATRIX_HPP_
 #define KOKKOS_SPARSE_BLOCKCRSMATRIX_HPP_
@@ -56,7 +56,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
-#include "KokkosSparse_findRelOffset.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
 namespace KokkosSparse {
@@ -116,8 +115,8 @@ public:
   /// \param blockDim [in] (Constant) stride between block rows
   ///   within a block-row in the above arrays.
   /// \param count [in] Number of blocks in the desired block-row.
-  // TODO: Assumes values and colidx__ are provided with correct offsets prior to ctor call
-  // Assumes offset already at the correct location
+  //
+  // Assumes values and colidx__ already offset to the correct location
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowView (value_type* const values,
                  ordinal_type* const colidx__,
@@ -204,7 +203,6 @@ public:
     for ( ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
       ordinal_type idx = colidx_[blk_offset];
       if ( idx == idx_to_match ) { offset = blk_offset; } // return relative offset
-      //if ( idx == idx_to_match ) { offset = blk_offset*blockDim_; } // return offset into values_
     }
     return offset;
   }
@@ -279,7 +277,8 @@ public:
   /// \param stride [in] (Constant) stride between matrix entries in
   ///   each of the above arrays.
   /// \param count [in] Number of entries in the row.
-  // TODO: Assumes values and colidx__ are provided with correct offsets prior to ctor call
+  //
+  // Assumes values and colidx__ already offset to the correct location
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowViewConst (value_type* const values,
                       ordinal_type* const colidx__,
@@ -664,6 +663,70 @@ public:
 #endif // KOKKOS_USE_CUSPARSE
   }
 
+  /// \brief Constructor that accepts a CrsMatrix and block dimension,
+  ///        assuming the provided CrsMatrix has appropriate block structure.
+  template<typename SType,
+           typename OType,
+           class DType,
+           class MTType,
+           typename IType>
+  BlockCrsMatrix (const KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType> &crs_mtx,
+                  const OrdinalType blockDim)
+  {
+    typedef typename KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType> crs_matrix_type;
+    typedef typename crs_matrix_type::StaticCrsGraphType crs_graph_type;
+    typedef typename crs_graph_type::entries_type crs_graph_entries_type;
+    typedef typename crs_graph_type::row_map_type crs_graph_row_map_type;
+
+    blockDim_ = blockDim;
+    numCols_ = crs_mtx.numCols() / blockDim;
+    values = crs_mtx.values;
+
+    // 1. Determine size of the block rows ptr == nrows / blockDim + 1
+    OrdinalType nbrows = crs_mtx.numRows()/blockDim; // actual number of block rows; add 1 for ptr length
+
+    // block_rows will accumulate the number of blocks per row - this is NOT the cum sum row_map!!
+    std::vector<OrdinalType> block_rows( nbrows, 0 );
+
+    typename crs_graph_row_map_type::HostMirror h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
+    Kokkos::deep_copy(h_crs_row_map, crs_mtx.graph.row_map);
+    typename crs_graph_entries_type::HostMirror h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
+    Kokkos::deep_copy(h_crs_entries, crs_mtx.graph.entries);
+
+    // 2. Determine size of block cols indices == number of blocks, i.e. nnz for the block CRS graph
+    OrdinalType numBlocks = 0;
+    for ( OrdinalType i = 0; i < crs_mtx.numRows(); i+=blockDim ) {
+      numBlocks += ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // cum sum
+      // block_rows[ i/blockDim + 1 ] = numBlocks; // cum sum
+      block_rows[ i/blockDim ] = ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // frequency count - not yet cum sum
+    }
+
+    // create_staticcrsgraph takes the frequency of blocks per row and returns the cum sum pointer row_map with nbrows+1 size, and total numBlocks in the final entry
+    graph = Kokkos::create_staticcrsgraph<StaticCrsGraphType> ("blockgraph", block_rows);
+    typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
+    typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
+
+    for (OrdinalType i = 0; i < nbrows; ++i) {
+      OrdinalType blks_in_row = block_rows[i];
+      
+        // graph.row_map(i) returns the number of blocks until the current block-row i, alternatively the offset start into the block colidx
+      OrdinalType offset_into_blkcolidx_start = graph.row_map(i);
+      OrdinalType offset_into_colidx_start = offset_into_blkcolidx_start*blockDim*blockDim;
+      for ( OrdinalType lidx = 0; lidx < blks_in_row; ++lidx ) {
+        h_entries( offset_into_blkcolidx_start+lidx ) = h_crs_entries( offset_into_colidx_start + blockDim*lidx ) / blockDim;
+      }
+    }
+
+    Kokkos::deep_copy (graph.entries, h_entries);
+
+#ifdef KOKKOS_USE_CUSPARSE
+    cusparse_handle (crs_mtx.cusparse_handle),
+    cusparse_descr (crs_mtx.cusparse_descr),
+#endif // KOKKOS_USE_CUSPARSE
+  }
+
+
+  /// Declaration for import - this member function is not inlined
   void
   import (const std::string &label,
           const OrdinalType nrows,
@@ -684,7 +747,7 @@ public:
   //        ncol*block_size*block_size entries
   //        assume vals block is provided in 'LayoutRight' or 'Row Major' format, that is 
   //        e.g. 2x2 block [ a b ; c d ] provided as flattened 1d array as [a b c d]
-  //        TODO: Confirm that each block is stored contiguously in vals:
+  //        Assume that each block is stored contiguously in vals:
   //        [a b; c d] [e f; g h] -> [a b c d e f g h]
   //        If so, then i in [0, ncols) for cols[] 
   //        maps to i*block_size*block_size in vals[]
@@ -731,7 +794,6 @@ public:
   }
 
 
-#if 1
   // replaceValues input:
   // rowi   is a block-row index
   // ncol   is number of blocks referenced in cols[] array
@@ -741,7 +803,7 @@ public:
   //        ncol*block_size*block_size entries
   //        assume vals block is provided in 'LayoutRight' or 'Row Major' format, that is 
   //        e.g. 2x2 block [ a b ; c d ] provided as flattened 1d array as [a b c d]
-  //        TODO: Confirm that each block is stored contiguously in vals:
+  //        Assume that each block is stored contiguously in vals:
   //        [a b; c d] [e f; g h] -> [a b c d e f g h]
   //        If so, then i in [0, ncols) for cols[] 
   //        maps to i*block_size*block_size in vals[]
@@ -754,7 +816,7 @@ public:
                  const bool is_sorted = false,
                  const bool force_atomic = false) const
   {
-    SparseBlockRowView<BlockCrsMatrix> row_view = this->row (rowi);
+    SparseBlockRowView<BlockCrsMatrix> row_view = this->block_row (rowi);
     const ordinal_type length = row_view.length;
     const ordinal_type block_size = this->blockDim();
 
@@ -786,9 +848,9 @@ public:
     } // end for ncol
     return numValid;
   }
-#endif
 
   //! Attempt to assign the input matrix to \c *this.
+  // Are the CUDA sparse handles needed to be copied here??
   template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits,typename aSizeType>
   BlockCrsMatrix&
   operator= (const BlockCrsMatrix<aScalarType, aOrdinalType, aDevice, aMemoryTraits, aSizeType>& mtx)
@@ -821,7 +883,7 @@ public:
     return graph.entries.extent (0);
   }
 
-  friend struct SparseBlockRowView<BlockCrsMatrix>;
+  //friend struct SparseBlockRowView<BlockCrsMatrix>;
   friend struct KokkosSparse::SparseRowView<BlockCrsMatrix>;
 
   /// \brief Return a view of row i of the matrix.
@@ -865,6 +927,7 @@ public:
   ///   }
   /// }
   /// \endcode
+#if 0
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowView<BlockCrsMatrix> row (const ordinal_type i) const {
     const size_type start = graph.row_map(i);
@@ -879,6 +942,7 @@ public:
       return SparseRowView<BlockCrsMatrix> (values, graph.entries, 1, count, start);
     }
   }
+#endif
 
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowView<BlockCrsMatrix> block_row (const ordinal_type i) const {
@@ -886,11 +950,6 @@ public:
     const size_type start = graph.row_map(i); // total num blocks to this point
     // count is guaranteed to fit in ordinal_type, as long as no row has duplicate entries.
     const ordinal_type count = static_cast<ordinal_type> (graph.row_map(i+1) - start); // num blocks in this row
-
-    // FIXME Added for debugging - remove 
-    const size_type start_offset = graph.row_map(i)*blockDim()*blockDim(); // total num blocks to this point * blockDim^2 for offset into colidx and values arrays
-    const ordinal_type row_strides_in_block = static_cast<ordinal_type> ( blockDim() ); // stride between rows in a block-row
-    std::cout << "br i = " << i << "  start = " << start << "  count = " << count << "  row_strides_in_block = " << row_strides_in_block << "  start_offset = " << start_offset<< std::endl;
 
     if (count == 0) {
       return SparseBlockRowView<BlockCrsMatrix> (NULL, NULL, 1, 1, 0);
@@ -940,6 +999,7 @@ public:
   ///   }
   /// }
   /// \endcode
+#if 0
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowViewConst<BlockCrsMatrix> rowConst (const ordinal_type i) const {
     const size_type start = graph.row_map(i);
@@ -954,16 +1014,13 @@ public:
       return SparseRowViewConst<BlockCrsMatrix> (values, graph.entries, 1, count, start);
     }
   }
+#endif
 
   KOKKOS_INLINE_FUNCTION
   SparseBlockRowViewConst<BlockCrsMatrix> block_row_Const (const ordinal_type i) const {
 
     const size_type start = graph.row_map(i); // total num blocks to this point
     const ordinal_type count = static_cast<ordinal_type> (graph.row_map(i+1) - start); // num blocks in this row
-
-    //const size_type start_offset = graph.row_map(i)*blockDim()*blockDim(); // total num blocks to this point * blockDim^2 for offset into colidx and values arrays
-    //const ordinal_type row_strides_in_block = static_cast<ordinal_type> ( blockDim() ); // stride between rows in a block-row
-    //std::cout << "br i = " << i << "  start = " << start << "  count = " << count << "  row_strides_in_block = " << row_strides_in_block << "  start_offset = " << start_offset<< std::endl;
 
     if (count == 0) {
       return SparseBlockRowViewConst<BlockCrsMatrix> (NULL, NULL, 1, 1, 0);
@@ -980,6 +1037,9 @@ private:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+// Assumes rows is the row_map pointer for the BlockCrsMatrix graph (i.e. cum sum of number of blocks)
+//         cols is the entries pointer for the BlockCrsMatrix graph (colidx for block-row blocks)
+//         annz is the total number of non-zeros in the CrsMatrix (blockDim*blockDim*numBlocks)
 template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
 void
 BlockCrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
@@ -1016,14 +1076,16 @@ import (const std::string &label,
   // Furthermore, why are the arrays copied twice? -- once here, to a
   // host view, and once below, in the deep copy?
   for (size_type i = 0; i < annz; ++i) {
-    if (val) {
-      h_values(i) = val[i];
-    }
+    if (val) { h_values(i) = val[i]; }
+  }
+
+  for (size_type i = 0; i < h_entries.extent(0); ++i) {
     h_entries(i) = cols[i];
   }
 
   Kokkos::deep_copy (values, h_values);
   Kokkos::deep_copy (graph.entries, h_entries);
 }
+
 }} // namespace KokkosSparse::Experimental
 #endif
