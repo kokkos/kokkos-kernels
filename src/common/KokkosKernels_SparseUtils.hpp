@@ -62,6 +62,254 @@ namespace Impl{
 
 template <typename in_row_view_t,
           typename in_nnz_view_t,
+		  typename in_val_view_t,
+		  typename out_row_view_t,
+		  typename out_nnz_view_t,
+		  typename out_val_view_t>
+void kk_create_blockcrs_formated_point_crsmatrix(
+		int block_size,
+	    size_t num_rows,
+	    size_t num_cols,
+	    in_row_view_t in_xadj,
+	    in_nnz_view_t in_adj,
+		in_val_view_t in_vals,
+
+
+	    size_t &out_num_rows,
+	    size_t &out_num_cols,
+	    out_row_view_t &out_xadj,
+	    out_nnz_view_t &out_adj,
+		out_val_view_t &out_vals
+	    ){
+
+	typedef typename in_nnz_view_t::non_const_value_type lno_t;
+	typedef typename in_row_view_t::non_const_value_type size_type;
+	typedef typename in_val_view_t::non_const_value_type scalar_t;
+
+
+    typename in_row_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
+    Kokkos::deep_copy (hr, in_xadj);
+    typename in_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
+    Kokkos::deep_copy (he, in_adj);
+    typename in_val_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
+    Kokkos::deep_copy (hv, in_vals);
+
+    out_num_rows = (num_rows / block_size) * block_size;
+    if (num_rows % block_size) out_num_rows += block_size;
+
+    out_num_cols = (num_cols / block_size) * block_size;
+    if (num_cols % block_size) out_num_cols += block_size;
+
+
+    std::vector<size_type> block_rows_xadj (out_num_rows + 1, 0);
+    std::vector<lno_t>     block_adj; //(in_adj.extent(0), 0);
+    std::vector<scalar_t>  block_vals;// (in_adj.extent(0), 0);
+
+    std::vector<scalar_t> block_columns (out_num_cols, 0);
+    std::vector<scalar_t> block_accumulators (out_num_cols, 0);
+    std::vector<bool> block_flags (out_num_cols, false);
+
+    size_type output_index = 0;
+    for (lno_t i = 0; i < lno_t(num_rows); i += block_size){
+    	//std::cout << "row:" << i << std::endl;
+    	lno_t outputrowsize = 0;
+
+    	for (lno_t block_ind = 0; block_ind < block_size; ++block_ind){
+    		lno_t row_ind = block_ind + i;
+    		//std::cout << "\nrow_ind:" << row_ind << std::endl;
+    		if (row_ind < lno_t(num_rows)){
+    			size_type adj_begin = hr(row_ind);
+    			size_type adj_end = hr(row_ind + 1);
+
+    			lno_t row_size = adj_end - adj_begin;
+
+    			for (lno_t col_ind = 0; col_ind < row_size; ++col_ind){
+
+    				lno_t colid = he(col_ind + adj_begin);
+    				//scalar_t colval = hv(col_ind);
+
+    				lno_t block_column_start = (colid / block_size) * block_size;
+
+    				for (lno_t kk = 0; kk < block_size; ++kk){
+    					lno_t col_id_to_insert = block_column_start + kk;
+        				//std::cout << colid << " " << block_column_start << " " << col_id_to_insert << " " << block_flags[col_id_to_insert] << " ## ";
+
+    					if (block_flags[col_id_to_insert] == false) {
+    						block_flags[col_id_to_insert] = true;
+    						//block_adj[output_index + outputrowsize++] = col_id_to_insert;
+    						//block_adj.push_back(col_id_to_insert);
+    						block_columns[outputrowsize++] = col_id_to_insert;
+
+    					}
+    				}
+    			}
+    		}
+    		else {
+
+				lno_t colid = row_ind;
+				//scalar_t colval = hv(col_ind);
+
+				lno_t block_column_start = (colid / block_size) * block_size;
+
+				for (lno_t kk = 0; kk < block_size; ++kk){
+					lno_t col_id_to_insert = block_column_start + kk;
+					if (block_flags[col_id_to_insert] == false) {
+						block_flags[col_id_to_insert] = true;
+						//block_adj[output_index + outputrowsize++] = col_id_to_insert;
+						//block_adj.push_back(col_id_to_insert);
+						block_columns[outputrowsize++] = col_id_to_insert;
+					}
+				}
+    		}
+    	}
+		std::sort(block_columns.begin(), block_columns.begin() + outputrowsize);
+		//std::cout << "\nrow:" << i << " outputrowsize:" << outputrowsize << std::endl;
+    	for(lno_t kk = 0; kk < outputrowsize; ++kk){
+    		block_flags[block_columns[kk]] = false;
+    		//std::cout << block_columns[kk] << " ";
+    	}
+    	//std::cout << std::endl;
+
+    	for (lno_t block_ind = 0; block_ind < block_size; ++block_ind){
+    		lno_t row_ind = block_ind + i;
+    		if (row_ind < lno_t(num_rows)){
+    			size_type adj_begin = hr(row_ind);
+    			size_type adj_end = hr(row_ind + 1);
+
+    			lno_t row_size = adj_end - adj_begin;
+
+    			for (lno_t col_ind = 0; col_ind < row_size; ++col_ind){
+    				lno_t colid = he(col_ind + adj_begin);
+    				scalar_t colval = hv(col_ind + adj_begin);
+    				block_accumulators[colid] = colval;
+    			}
+    		}
+    		else {
+    			block_accumulators[row_ind] = 1;
+    		}
+
+        	for(lno_t kk = 0; kk < outputrowsize; ++kk){
+        		lno_t outcol = block_columns[kk];
+        		block_adj.push_back(outcol );
+        		block_vals.push_back(block_accumulators[outcol]);
+        		block_accumulators[outcol] = 0;
+        	}
+        	block_rows_xadj[row_ind + 1] = block_rows_xadj[row_ind] + outputrowsize;
+    	}
+    }
+
+
+    out_xadj = out_row_view_t ("BlockedPointCRS XADJ", out_num_rows + 1);
+    out_adj = out_nnz_view_t("BlockedPointCRS ADJ", block_adj.size());
+    out_vals = out_val_view_t("BlockedPointCRS VALS", block_vals.size());
+
+
+    typename out_row_view_t::HostMirror hor = Kokkos::create_mirror_view (out_xadj);
+    typename out_nnz_view_t::HostMirror hoe = Kokkos::create_mirror_view (out_adj);
+    typename out_val_view_t::HostMirror hov = Kokkos::create_mirror_view (out_vals);
+
+    for (lno_t i = 0; i < lno_t(out_num_rows) + 1; ++i ){
+    	hor(i) = block_rows_xadj[i];
+    }
+
+    size_type ne = block_adj.size();
+    for (size_type i = 0; i < ne; ++i ){
+    	hoe(i) = block_adj[i];
+    }
+    for (size_type i = 0; i < ne; ++i ){
+    	hov(i) = block_vals[i];
+    }
+
+    Kokkos::deep_copy (out_xadj, hor);
+    Kokkos::deep_copy (out_adj, hoe);
+    Kokkos::deep_copy (out_vals, hov);
+}
+
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+		  typename in_val_view_t,
+		  typename out_row_view_t,
+		  typename out_nnz_view_t,
+		  typename out_val_view_t>
+void kk_create_blockcrs_from_blockcrs_formatted_point_crs(
+		int block_size,
+	    size_t num_rows,
+	    size_t num_cols,
+	    in_row_view_t in_xadj,
+	    in_nnz_view_t in_adj,
+		in_val_view_t in_vals,
+
+
+	    size_t &out_num_rows,
+	    size_t &out_num_cols,
+	    out_row_view_t &out_xadj,
+	    out_nnz_view_t &out_adj,
+		out_val_view_t &out_vals
+	    ){
+
+    typename in_row_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
+    Kokkos::deep_copy (hr, in_xadj);
+    typename in_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
+    Kokkos::deep_copy (he, in_adj);
+    typename in_val_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
+    Kokkos::deep_copy (hv, in_vals);
+
+
+	out_num_rows = num_rows / block_size;
+	out_num_cols = num_cols / block_size;
+
+
+    out_xadj = out_row_view_t ("BlockedCRS XADJ", out_num_rows + 1);
+    out_adj = out_nnz_view_t("BlockedCRS ADJ", in_adj.extent(0) / (block_size * block_size));
+    out_vals = out_val_view_t("BlockedCRS VALS", in_vals.extent(0));
+
+
+    typename out_row_view_t::HostMirror hor = Kokkos::create_mirror_view (out_xadj);
+    typename out_nnz_view_t::HostMirror hoe = Kokkos::create_mirror_view (out_adj);
+    typename out_val_view_t::HostMirror hov = Kokkos::create_mirror_view (out_vals);
+
+
+	typedef typename in_nnz_view_t::non_const_value_type lno_t;
+	typedef typename in_row_view_t::non_const_value_type size_type;
+	//typedef typename in_val_view_t::non_const_value_type scalar_t;
+
+    for(lno_t i = 0; i < lno_t(out_num_rows); ++i ){
+    	hor(i) = hr(i * block_size) / (block_size * block_size);
+
+    	size_type ib = hr(i * block_size);
+    	size_type ie = hr(i * block_size + 1);
+
+    	lno_t is = ie - ib;
+
+    	size_type ob = hor(i);
+    	//size_type oe = hr(i * block_size + 1) / block_size;
+    	lno_t os = (ie - ib) / block_size;
+    	lno_t write_index = 0;
+    	for (lno_t j = 0; j < is; ++j){
+    		lno_t e = he(ib + j);
+    		if (e % block_size == 0){
+    			hoe(ob + write_index++) = e / block_size;
+    		}
+    	}
+    	if (write_index != os) {
+    		std::cerr << "row:" << i << " expected size:" << os << " written size:" << write_index << std::endl;
+    		exit(1);
+    	}
+    }
+    hor(out_num_rows) = hr(out_num_rows * block_size) / (block_size * block_size);
+    Kokkos::deep_copy (out_xadj, hor);
+    Kokkos::deep_copy (out_adj, hoe);
+
+    size_type ne = in_adj.extent(0);
+    for(size_type i = 0; i < ne; ++i ){
+    	hov(i) = hv(i);
+    }
+    Kokkos::deep_copy (out_vals, hov);
+
+}
+
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
           typename in_scalar_view_t,
           typename out_row_view_t,
           typename out_nnz_view_t,
@@ -1861,6 +2109,30 @@ void kk_create_incidence_matrix_from_original_matrix(
       out_entries = outcols;*/
 #endif
   }
+
+
+
+template<typename view_type>
+struct ReduceLargerRowCount{
+
+  view_type rowmap;
+  typename view_type::const_value_type threshold;
+
+  ReduceLargerRowCount(view_type view_to_reduce_, typename view_type::const_value_type threshold_): rowmap(view_to_reduce_), threshold(threshold_){}
+
+  void operator()(const size_t &i, typename view_type::non_const_value_type &sum_reduction) const {
+	  if (rowmap(i+1) - rowmap(i) > threshold){
+		  sum_reduction += 1;
+	  }
+  }
+};
+
+template <typename view_type , typename MyExecSpace>
+void kk_reduce_numrows_larger_than_threshold(size_t num_elements, view_type view_to_reduce,
+		typename view_type::const_value_type threshold, typename view_type::non_const_value_type &sum_reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceLargerRowCount<view_type>(view_to_reduce, threshold), sum_reduction);
+}
 
 }
 }
