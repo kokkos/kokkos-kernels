@@ -109,7 +109,6 @@ void kk_create_blockcrs_formated_point_crsmatrix(
     std::vector<scalar_t> block_accumulators (out_num_cols, 0);
     std::vector<bool> block_flags (out_num_cols, false);
 
-    size_type output_index = 0;
     for (lno_t i = 0; i < lno_t(num_rows); i += block_size){
     	//std::cout << "row:" << i << std::endl;
     	lno_t outputrowsize = 0;
@@ -2119,7 +2118,7 @@ struct ReduceLargerRowCount{
   typename view_type::const_value_type threshold;
 
   ReduceLargerRowCount(view_type view_to_reduce_, typename view_type::const_value_type threshold_): rowmap(view_to_reduce_), threshold(threshold_){}
-
+  KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, typename view_type::non_const_value_type &sum_reduction) const {
 	  if (rowmap(i+1) - rowmap(i) > threshold){
 		  sum_reduction += 1;
