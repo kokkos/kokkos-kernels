@@ -139,7 +139,7 @@ void block_pcgsolve(
   bool owner_handle = false;
 
   KernelHandle_t block_kh; block_kh.create_gs_handle(); block_kh.get_gs_handle()->set_block_size(block_size);
-
+    //block_kh.set_shmem_size(8032);
   if (use_sgs){
     if (kh.get_gs_handle() == NULL){
       owner_handle = true;
@@ -353,6 +353,7 @@ void pcgsolve(
     }
 
     timer.reset();
+    //kh.set_verbose(true);
 
     gauss_seidel_numeric
       (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);

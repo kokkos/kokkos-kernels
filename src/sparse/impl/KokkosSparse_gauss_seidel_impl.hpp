@@ -187,6 +187,7 @@ public:
     int vector_size;
 	const pool_memory_space pool;
 	const nnz_lno_t num_max_vals_in_l1, num_max_vals_in_l2;
+    bool is_backward;
 
 
     Team_PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
@@ -215,7 +216,7 @@ public:
 		  suggested_team_size(suggested_team_size_),
 		  thread_shared_memory_scalar_size(((shared_memory_size / suggested_team_size / 8) * 8 ) / sizeof(nnz_scalar_t) ),
 		  vector_size(vector_size_), pool (pms), num_max_vals_in_l1(_num_max_vals_in_l1),
-		  num_max_vals_in_l2(_num_max_vals_in_l2){}
+		  num_max_vals_in_l2(_num_max_vals_in_l2), is_backward(false){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t & teamMember) const {
@@ -252,12 +253,12 @@ public:
 
       const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size + _color_set_begin;
       const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, _color_set_end);
-
+      //get the shared memory and shift it based on the thread index so that each thread has private memory.
       nnz_scalar_t *all_shared_memory = (nnz_scalar_t *) (teamMember.team_shmem().get_shmem(shared_memory_size));
 
 	  all_shared_memory += thread_shared_memory_scalar_size * teamMember.team_rank();
 
-
+	  //store the diagonal positions, because we want to update them on shared memory if we update them on global memory. 
 	  nnz_lno_t *diagonal_positions = (nnz_lno_t *)all_shared_memory;
 	  all_shared_memory =  (nnz_scalar_t *) (((nnz_lno_t *)all_shared_memory) + ((block_size / 8) + 1) * 8);
 
@@ -265,11 +266,6 @@ public:
 
 
 	  Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& ii) {
-#if 0
-	      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-	    	  for(nnz_lno_t i = 0; i < block_size; diagonal_positions[i++] = -1);
-	      });
-#endif
 
 
 		  Kokkos::parallel_for(
@@ -283,7 +279,8 @@ public:
 		  nnz_lno_t row_size = row_end - row_begin;
 
 		  nnz_lno_t l1_val_size = row_size * block_size, l2_val_size = 0;
-
+		  //if the current row size is larger than shared memory size,
+		  //than allocate l2 vector.
 		  if (row_size > num_max_vals_in_l1){
 			  volatile nnz_scalar_t * tmp = NULL;
 			  while (tmp == NULL){
@@ -293,9 +290,9 @@ public:
 			  }
 			  all_global_memory = (nnz_scalar_t *)tmp;
 			  l1_val_size = num_max_vals_in_l1 * block_size;
-			  l2_val_size = (row_size - num_max_vals_in_l1) * block_size;
+			  l2_val_size = (row_size * block_size - l1_val_size);
 		  }
-
+		  //bring values to l1 vector
 		  Kokkos::parallel_for(
 				  Kokkos::ThreadVectorRange(teamMember, l1_val_size),
 				  [&] (nnz_lno_t i) {
@@ -307,6 +304,7 @@ public:
 			  }
 			  all_shared_memory[i] = _Xvector[colIndex * block_size + i % block_size];
 		  });
+		 //bring values to l2 vector.
 		  Kokkos::parallel_for(
 				  Kokkos::ThreadVectorRange(teamMember, l2_val_size),
 				  [&] (nnz_lno_t k) {
@@ -321,38 +319,43 @@ public:
 			  all_global_memory[k] = _Xvector[colIndex * block_size + i % block_size];
 		  });
 
-		  nnz_lno_t old_row_b = row_begin;
 		  row_begin = row_begin * block_size * block_size;
-		  for (int i = 0; i < block_size; ++i ){
-
-
+		  //sequentially solve in the block. 
+		  //this respects backward and forward sweeps.
+                  for (int m = 0; m < block_size; ++m ){
+                          int i = m;
+                          if (is_backward) i = block_size - m - 1;
+                          size_type current_row_begin = row_begin + i * row_size * block_size;
+			  //first reduce l1 dot product. 
+			  //MD: TODO: if thread dot product is implemented it should be called here.
 			  nnz_scalar_t product = 0 ;
 			  Kokkos::parallel_reduce(
 					  Kokkos::ThreadVectorRange(teamMember, l1_val_size),
 					  [&] (nnz_lno_t colind, nnz_scalar_t & valueToUpdate) {
 
-				  valueToUpdate += all_shared_memory[colind] * _adj_vals(row_begin + colind);
+				  valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
 
 			  },
 			  product);
-
+			  //l2 dot product.
+			  //MD: TODO: if thread dot product is implemented, it should be called here again.
 			  nnz_scalar_t product2 = 0 ;
 			  Kokkos::parallel_reduce(
 					  Kokkos::ThreadVectorRange(teamMember, l2_val_size),
 					  [&] (nnz_lno_t colind2, nnz_scalar_t & valueToUpdate) {
 				  nnz_lno_t colind = colind2 + l1_val_size;
-				  valueToUpdate += all_global_memory[colind2] * _adj_vals(row_begin + colind);
+				  valueToUpdate += all_global_memory[colind2] * _adj_vals(current_row_begin + colind);
 			  },
 			  product2);
 
 			  product += product2;
-
+	 		//update the new vector entries.
 		      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
 		    	nnz_lno_t block_row_index = ii * block_size + i;
 		        nnz_scalar_t diagonalVal = _permuted_diagonals[block_row_index];
 		        _Xvector[block_row_index] = (_Yvector[block_row_index] - product + diagonalVal * _Xvector[block_row_index])/ diagonalVal;
 
-
+			      //we need to update the values of the vector entries if they are already brought to shared memory to sync with global memory.
 			      if (diagonal_positions[i] != -1){
 			    	  if (diagonal_positions[i] < l1_val_size)
 			    		  all_shared_memory[diagonal_positions[i]] = _Xvector[block_row_index];
@@ -360,6 +363,8 @@ public:
 			    		  all_global_memory[diagonal_positions[i] - l1_val_size] = _Xvector[block_row_index];
 			      }
 		      });
+		
+
 
 #if 0
 			  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
@@ -380,7 +385,6 @@ public:
 				  std::cout << std::endl << "block_row_index:" << ii * block_size + i <<  " _Xvector[block_row_index]:" << _Xvector[ii * block_size + i] << std::endl;
 			  }
 #endif
-			  row_begin += row_size * block_size;
 		  }
 		  if (row_size > num_max_vals_in_l1)
 		  Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
@@ -441,23 +445,25 @@ public:
 
 		  });
 
-		  nnz_lno_t old_row_b = row_begin;
 		  row_begin = row_begin * block_size * block_size;
-		  for (int i = 0; i < block_size; ++i ){
-
+                  
+		  for (int m = 0; m < block_size; ++m ){
+  			  int i = m;
+			  if (is_backward) i = block_size - m - 1;
+                          size_type current_row_begin = row_begin + i * row_size * block_size;
 
 			  nnz_scalar_t product = 0 ;
 			  Kokkos::parallel_reduce(
 					  Kokkos::ThreadVectorRange(teamMember, row_size * block_size),
 					  [&] (nnz_lno_t colind, nnz_scalar_t & valueToUpdate) {
 
-				  valueToUpdate += all_shared_memory[colind] * _adj_vals(row_begin + colind);
+				  valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
 
 #if 00
 				  size_type adjind = i / block_size + old_row_b;
 				  nnz_lno_t colIndex = _adj[adjind];
 
-				  valueToUpdate += _Xvector[colIndex * block_size + i % block_size] * _adj_vals(row_begin  + colind);
+				  valueToUpdate += _Xvector[colIndex * block_size + i % block_size] * _adj_vals(current_row_begin  + colind);
 #endif
 			  },
 			  product);
@@ -475,6 +481,7 @@ public:
 
 		      });
 
+#if !defined(__CUDA_ARCH__)
 #if 0
 			  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
 				  std::cout << "\n\n\nrow:" << ii * block_size + i;
@@ -491,10 +498,11 @@ public:
 				  std::cout << "diagonal" << _permuted_diagonals[ii * block_size + i] << std::endl;
 				  std::cout << "_Yvector" << _Yvector[ii * block_size + i] << std::endl;
 
-				  std::cout << std::endl << "block_row_index:" << ii * block_size + i <<  " _Xvector[block_row_index]:" << _Xvector[ii * block_size + i] << std::endl;
+				  std::cout << std::endl << "block_row_index:" << ii * block_size + i <<  " _Xvector[block_row_index]:" << _Xvector[ii * block_size + i] << std::endl << std::endl<< std::endl;
 			  }
 #endif
-			  row_begin += row_size * block_size;
+#endif
+			  //row_begin += row_size * block_size;
 		  }
 	  });
 
@@ -600,7 +608,6 @@ public:
       }
     }
     color_t numColors = gchandle->get_num_colors();
-
 #ifdef KOKKOSKERNELS_TIME_REVERSE
     std::cout << "COLORING_TIME:" << timer.seconds() << std::endl;
 #endif
@@ -608,10 +615,14 @@ public:
 
     typename HandleType::GraphColoringHandleType::color_view_t colors =  gchandle->get_vertex_colors();
 #if RUNSEQUENTIAL
-    numColors = 1;
+    numColors = num_rows;
     KokkosKernels::Impl::print_1Dview(colors);
     std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.dimension_0() <<  std::endl;
-    Kokkos::deep_copy(colors, 1);
+    typename HandleType::GraphColoringHandleType::color_view_t::HostMirror  h_colors = Kokkos::create_mirror_view (colors);
+    for(int i = 0; i < num_rows; ++i){
+	h_colors(i) = i + 1;
+    }
+    Kokkos::deep_copy(colors, h_colors);
 #endif
     nnz_lno_persistent_work_view_t color_xadj;
 
@@ -627,7 +638,6 @@ public:
         nnz_lno_persistent_work_view_t, MyExecSpace>
         (num_rows, numColors, colors, color_xadj, color_adj);
     MyExecSpace::fence();
-
 
 
 #ifdef KOKKOSKERNELS_TIME_REVERSE
@@ -725,7 +735,11 @@ public:
     typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
     nnz_lno_t block_size = this->handle->get_gs_handle()->get_block_size();
 
+    //MD: if block size is larger than 1;
+    //the algorithm copies the vector entries into shared memory and reuses this small shared memory for vector entries.
+    if (block_size > 1)
     {
+	//first calculate max row size.
     	size_type max_row_size = 0;
     	KokkosKernels::Impl::kk_view_reduce_max_row_size<size_type, MyExecSpace>(num_rows, permuted_xadj.data(), permuted_xadj.data() + 1, max_row_size);
     	gsHandler->set_max_nnz(max_row_size);
@@ -739,15 +753,23 @@ public:
         size_t shmem_size_to_use = this->handle->get_shmem_size();
         nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,MyExecSpace::concurrency(), brows);
 
-		size_t level_1_mem = max_row_size * block_size * sizeof(nnz_scalar_t) + ((block_size / 8 ) + 1) * 8 * sizeof(nnz_lno_t);
-		level_1_mem = suggested_team_size * level_1_mem;
-		size_t level_2_mem = 0;
-		nnz_lno_t num_values_in_l1 = max_row_size;
-		nnz_lno_t num_values_in_l2 = 0;
-		nnz_lno_t num_big_rows = 0;
+	//MD: now we calculate how much memory is needed for shared memory.
+	//we have two-level vectors: as in spgemm hashmaps.
+	//we try to fit everything into shared memory. 
+	//if they fit, we can use BlockTeam function in Team_SGS functor.
+	//on CPUs, we make L1 vector big enough so that it will always hold it.
+	//on GPUs, we have a upper bound for shared memory: handle->get_shmem_size(): this is set to 32128 bytes. 
+	//If things do not fit into shared memory, we allocate vectors in global memory and run BigBlockTeam in Team_SGS functor.
+	size_t level_1_mem = max_row_size * block_size * sizeof(nnz_scalar_t) + ((block_size / 8 ) + 1) * 8 * sizeof(nnz_lno_t);
+	level_1_mem = suggested_team_size * level_1_mem;
+	size_t level_2_mem = 0;
+	nnz_lno_t num_values_in_l1 = max_row_size;
+	nnz_lno_t num_values_in_l2 = 0;
+	nnz_lno_t num_big_rows = 0;
 
-		KokkosKernels::Impl::ExecSpaceType ex_sp = this->handle->get_handle_exec_space();
+	KokkosKernels::Impl::ExecSpaceType ex_sp = this->handle->get_handle_exec_space();
     	if (ex_sp != KokkosKernels::Impl::Exec_CUDA){
+		//again, if it is on CPUs, we make L1 as big as we need.
     		size_t l1mem = 1;
     		while(l1mem < level_1_mem){
     			l1mem *= 2;
@@ -757,41 +779,55 @@ public:
         	level_2_mem = 0;
     	}
     	else {
+		//on GPUs set the L1 size to max shmem and calculate how much we need for L2.
+		//we try to shift with 8 always because of the errors we experience with memory shifts on GPUs.
     		level_1_mem = shmem_size_to_use;
-    		num_values_in_l1 = (shmem_size_to_use / suggested_team_size - ((block_size / 8 ) + 1) * 8 * sizeof(nnz_lno_t)) / sizeof(nnz_scalar_t);
-    		num_values_in_l2 = max_row_size - num_values_in_l1;
-    		level_2_mem = num_values_in_l2  * sizeof(nnz_scalar_t);
+    		num_values_in_l1 = (shmem_size_to_use / suggested_team_size - ((block_size / 8 ) + 1) * 8 * sizeof(nnz_lno_t)) / sizeof(nnz_scalar_t) / block_size;
+                if (((block_size / 8 ) + 1) * 8 * sizeof(nnz_lno_t) > shmem_size_to_use / suggested_team_size ) throw "Shared memory size is to small for the given block size\n";
+		if (num_values_in_l1 >= max_row_size){
+		num_values_in_l2 = 0;
+		level_2_mem = 0;
+		num_big_rows = 0;
+		}
+		else {
 
-    		size_t l2mem = 1;
-    		while(l2mem < level_2_mem){
-    			l2mem *= 2;
-    		}
-    		level_2_mem  = l2mem;
-    		size_type num_large_rows = 0;
-    		KokkosKernels::Impl::kk_reduce_numrows_larger_than_threshold<row_lno_persistent_work_view_t, MyExecSpace>(brows, permuted_xadj, num_values_in_l1, num_large_rows);
-    		num_big_rows = num_large_rows;
+			num_values_in_l2 = max_row_size - num_values_in_l1;
+			level_2_mem = num_values_in_l2 * block_size  * sizeof(nnz_scalar_t);
+			//std::cout << "level_2_mem:" << level_2_mem << std::endl; 
+			size_t l2mem = 1; 
+			while(l2mem < level_2_mem){
+				l2mem *= 2;
+			}
+			level_2_mem  = l2mem;
+			//std::cout << "level_2_mem:" << level_2_mem << std::endl;
+
+			size_type num_large_rows = 0;
+			KokkosKernels::Impl::kk_reduce_numrows_larger_than_threshold<row_lno_persistent_work_view_t, MyExecSpace>(brows, permuted_xadj, num_values_in_l1, num_large_rows);
+			num_big_rows = KOKKOSKERNELS_MACRO_MIN(num_large_rows, MyExecSpace::concurrency() / suggested_vector_size);
+			//std::cout << "num_big_rows:" << num_big_rows << std::endl;
+
 #if defined( KOKKOS_ENABLE_CUDA )
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-
-    size_t free_byte ;
-    size_t total_byte ;
-    cudaMemGetInfo( &free_byte, &total_byte ) ;
-    size_t required_size = size_t (num_big_rows) * level_2_mem;
-    if (KOKKOSKERNELS_VERBOSE)
-      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-    if (required_size + num_chunks * sizeof(int) > free_byte){
-    	num_big_rows = ((((free_byte - num_chunks * sizeof(int))* 0.8) /8 ) * 8) / level_2_mem;
-    }
-    {
-      nnz_lno_t min_chunk_size = 1;
-      while (min_chunk_size * 2 <= num_big_rows) {
-        min_chunk_size *= 2;
-      }
-      num_big_rows = min_chunk_size;
-    }
-  }
+			if (ex_sp == KokkosKernels::Impl::Exec_CUDA) {
+				//check if we have enough memory for this. lower the concurrency if we do not have enugh memory.
+				size_t free_byte ;
+				size_t total_byte ;
+				cudaMemGetInfo( &free_byte, &total_byte ) ;
+				size_t required_size = size_t (num_big_rows) * level_2_mem;
+				if (required_size + num_big_rows * sizeof(int) > free_byte){
+					num_big_rows = ((((free_byte - num_big_rows * sizeof(int))* 0.8) /8 ) * 8) / level_2_mem;
+				}
+				{
+					nnz_lno_t min_chunk_size = 1;
+					while (min_chunk_size * 2 <= num_big_rows) {
+						min_chunk_size *= 2;
+					}
+					num_big_rows = min_chunk_size;
+				}
+			}
 #endif
-    	}
+		}
+
+	}
 
     	gsHandler->set_max_nnz(max_row_size);
     	gsHandler->set_level_1_mem(level_1_mem);
@@ -920,7 +956,7 @@ public:
       }
     }
 
-
+    KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t &team) const{
 
     	const nnz_lno_t i_begin = team.league_rank() * rows_per_team;
@@ -987,6 +1023,7 @@ public:
       }
     }
 
+    KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t &team) const{
 
     	const nnz_lno_t i_begin = team.league_rank() * rows_per_team;
@@ -1150,7 +1187,7 @@ public:
     typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
 
     nnz_lno_t block_size = this->handle->get_gs_handle()->get_block_size();
-    nnz_lno_t block_matrix_size = block_size  * block_size ;
+    //nnz_lno_t block_matrix_size = block_size  * block_size ;
 
 
     scalar_persistent_work_view_t Permuted_Yvector = gsHandler->get_permuted_y_vector();
@@ -1205,6 +1242,9 @@ public:
 #if 0
     std::cout << "Y:";
     KokkosKernels::Impl::print_1Dview(Permuted_Yvector);
+    std::cout << "Original Y:";
+    KokkosKernels::Impl::print_1Dview(y_rhs_input_vec);
+
     std::cout << "X:";
     KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
 
@@ -1235,11 +1275,11 @@ public:
 
     pool_memory_space m_space(num_chunks, level_2_mem / sizeof(nnz_scalar_t), 0,  KokkosKernels::Impl::ManyThread2OneChunk, false);
 
-    /*
+#if 0
     std::cout 	<< "l1_shmem_size:" << l1_shmem_size << " num_values_in_l1:" << num_values_in_l1
     			<< " level_2_mem:" << level_2_mem << " num_values_in_l2:" << num_values_in_l2
 				<< " num_chunks:" << num_chunks << std::endl;
-     */
+#endif
 
     Team_PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
     		Permuted_Xvector, Permuted_Yvector,0,0, permuted_diagonals, m_space,
@@ -1273,6 +1313,9 @@ public:
     KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
     std::cout << "Result X:";
     KokkosKernels::Impl::print_1Dview(x_lhs_output_vec);
+    std::cout << "Y:";
+    KokkosKernels::Impl::print_1Dview(Permuted_Yvector);
+
 #endif
 
   }
@@ -1375,6 +1418,12 @@ public:
         x_lhs_output_vec
         );
     MyExecSpace::fence();
+#if 0
+    std::cout << "--point After X:";
+    KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
+    std::cout << "--point Result X:";
+    KokkosKernels::Impl::print_1Dview(x_lhs_output_vec);
+#endif
 
   }
 
@@ -1390,7 +1439,6 @@ public:
     if (this->handle->get_gs_handle()->is_numeric_called() == false){
       this->initialize_numeric();
     }
-    //typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
     nnz_lno_t block_size = this->handle->get_gs_handle()->get_block_size();
     if (block_size == 1){
     	this->point_apply(
@@ -1438,7 +1486,10 @@ public:
     this->handle->get_gs_handle()->vector_team_size(max_allowed_team_size, vector_size, teamSizeMax, num_rows, nnz);
 	   */
 
+          
 	  if (apply_forward){
+                  gs.is_backward = false;
+
 		  for (color_t i = 0; i < numColors; ++i){
 			  nnz_lno_t color_index_begin = h_color_xadj(i);
 			  nnz_lno_t color_index_end = h_color_xadj(i + 1);
@@ -1451,14 +1502,16 @@ public:
 					  team_policy_t(overall_work / team_row_chunk_size + 1 , suggested_team_size, vector_size),
 					  gs );
 			  } else if (gs.num_max_vals_in_l2 == 0){
-
+				  //if (i == 0)std::cout << "block_team" << std::endl;
 			  Kokkos::parallel_for("KokkosSparse::GaussSeidel::BLOCK_Team_PSGS::forward",
 					  block_team_fill_policy_t(overall_work / team_row_chunk_size + 1 , suggested_team_size, vector_size),
 					  gs );
 			  }
 			  else {
+                      		//if (i == 0)    std::cout << "big block_team" << std::endl;
+
 				  Kokkos::parallel_for("KokkosSparse::GaussSeidel::BIGBLOCK_Team_PSGS::forward",
-				  					  block_team_fill_policy_t(overall_work / team_row_chunk_size + 1 , suggested_team_size, vector_size),
+				  					  bigblock_team_fill_policy_t(overall_work / team_row_chunk_size + 1 , suggested_team_size, vector_size),
 				  					  gs );
 			  }
 
@@ -1466,11 +1519,11 @@ public:
 		  }
 	  }
 	  if (apply_backward){
+                  gs.is_backward = true;
 		  if (numColors > 0)
 			  for (color_t i = numColors - 1;  ; --i){
 				  nnz_lno_t color_index_begin = h_color_xadj(i);
 				  nnz_lno_t color_index_end = h_color_xadj(i + 1);
-
 				  nnz_lno_t numberOfTeams = color_index_end - color_index_begin;// /256 + 1;
 				  gs._color_set_begin = color_index_begin;
 				  gs._color_set_end = color_index_end;
@@ -1480,12 +1533,16 @@ public:
 							  team_policy_t(numberOfTeams / team_row_chunk_size + 1 , suggested_team_size, vector_size),
 							  gs );
 				  }
-				  else if (gs.num_max_vals_in_l2 == 0){
+				  else if ( gs.num_max_vals_in_l2 == 0){
+					//if (i == 0) std::cout << "block_team backward" << std::endl;
+
 					  Kokkos::parallel_for("KokkosSparse::GaussSeidel::BLOCK_Team_PSGS::backward",
 							  block_team_fill_policy_t(numberOfTeams / team_row_chunk_size + 1 , suggested_team_size, vector_size),
 							  gs );
 				  }
 				  else {
+           				//if (i == 0)               std::cout << "big block_team backward" << std::endl;
+
 					  Kokkos::parallel_for("KokkosSparse::GaussSeidel::BIGBLOCK_Team_PSGS::backward",
 					  							  bigblock_team_fill_policy_t(numberOfTeams / team_row_chunk_size + 1 , suggested_team_size, vector_size),
 					  							  gs );

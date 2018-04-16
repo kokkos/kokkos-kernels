@@ -124,7 +124,6 @@ void run_point_experiment(
 
 	  KernelHandle kh;
 
-
 	  kh.create_gs_handle(/*KokkosSparse::GS_TEAM*/);
 	  Kokkos::Impl::Timer timer1;
 	  KokkosKernels::Experimental::Example::pcgsolve(
@@ -719,9 +718,11 @@ int main (int argc, char ** argv){
       delete [] ew;
 
       values_view_t kok_x_original = create_x_vector<values_view_t>(((nv /block_size) + 1) * block_size, MAXVAL);
+/*
       for (INDEX_TYPE i = nv; i < ((nv /block_size) + 1) * block_size; ++i){
     	  kok_x_original(i) = 0;
       }
+*/
       run_experiment<myExecSpace, crsMat_t>(crsmat, kok_x_original, block_size);
 
       //run_experiment<myExecSpace, crsMat_t>(crsmat, kok_x_original);

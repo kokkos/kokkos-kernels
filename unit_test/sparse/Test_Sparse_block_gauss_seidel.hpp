@@ -76,7 +76,8 @@ int run_block_gauss_seidel_1(
     bool is_symmetric_graph,
     int apply_type = 0, // 0 for symmetric, 1 for forward, 2 for backward.
     bool skip_symbolic = false,
-    bool skip_numeric = false
+    bool skip_numeric = false,
+    size_t shmem_size = 32128
     ){
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
@@ -97,6 +98,7 @@ int run_block_gauss_seidel_1(
 
   KernelHandle kh;
   kh.set_team_work_size(16);
+  kh.set_shmem_size(shmem_size);
   kh.set_dynamic_scheduling(true);
   kh.create_gs_handle(gs_algorithm);
 
@@ -253,15 +255,18 @@ void test_block_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
 
 
     bool is_symmetric_graph = true;
+    size_t shmem_size = 32128;
+    
+    for(int i = 0; i < 2; ++i)
     {
-
+      if (i == 1) shmem_size = 2008; //make the shmem small on gpus so that it will test 2 level algorithm.
       for (int apply_type = 0; apply_type < apply_count; ++apply_type){
         for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
             Kokkos::Impl::Timer timer1;
             //int res =
-            run_block_gauss_seidel_1<crsMat_t, device>(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric);
+            run_block_gauss_seidel_1<crsMat_t, device>(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, shmem_size);
             //double gs = timer1.seconds();
 
             //KokkosKernels::Impl::print_1Dview(x_vector);
