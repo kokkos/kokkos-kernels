@@ -414,14 +414,16 @@ public:
   typedef BlockCrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
   //! Type of the graph structure of the sparse matrix.
   typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, execution_space, SizeType> StaticCrsGraphType;
+  //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
+  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, execution_space, SizeType> staticcrsgraph_type;
   //! Type of column indices in the sparse matrix.
-  typedef typename StaticCrsGraphType::entries_type index_type;
+  typedef typename staticcrsgraph_type::entries_type index_type;
   //! Const version of the type of column indices in the sparse matrix.
   typedef typename index_type::const_value_type const_ordinal_type;
   //! Nonconst version of the type of column indices in the sparse matrix.
   typedef typename index_type::non_const_value_type non_const_ordinal_type;
   //! Type of the "row map" (which contains the offset for each row's data).
-  typedef typename StaticCrsGraphType::row_map_type row_map_type;
+  typedef typename staticcrsgraph_type::row_map_type row_map_type;
   //! Const version of the type of row offsets in the sparse matrix.
   typedef typename row_map_type::const_value_type const_size_type;
   //! Nonconst version of the type of row offsets in the sparse matrix.
@@ -441,7 +443,7 @@ public:
   /// Epetra before it.
   //@{
   //! The graph (sparsity structure) of the sparse matrix.
-  StaticCrsGraphType graph;
+  staticcrsgraph_type graph;
   //! The 1-D array of values of the sparse matrix.
   values_type values;
   //@}
@@ -485,7 +487,7 @@ public:
   ///
   /// Allocate the values array for subsquent fill.
   BlockCrsMatrix (const std::string& arg_label,
-                  const StaticCrsGraphType& arg_graph, 
+                  const staticcrsgraph_type& arg_graph, 
                   const OrdinalType& blockDim) :
     graph (arg_graph),
     values (arg_label, arg_graph.entries.extent(0)),
@@ -528,7 +530,7 @@ public:
                   bool pad = false)
   {
     (void) pad;
-    import (label, nrows, ncols, annz, val, rows, cols, blockdim);
+    ctor_impl (label, nrows, ncols, annz, val, rows, cols, blockdim);
   }
 
   /// \brief Constructor that accepts a row map, column indices, and
@@ -594,7 +596,7 @@ public:
   BlockCrsMatrix (const std::string& label,
                   const OrdinalType& ncols,
                   const values_type& vals,
-                  const StaticCrsGraphType& graph_,
+                  const staticcrsgraph_type& graph_,
                   const OrdinalType& blockDim) :
     graph (graph_),
     values (vals),
@@ -613,7 +615,7 @@ public:
                   const OrdinalType blockDim)
   {
     typedef typename KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType> crs_matrix_type;
-    typedef typename crs_matrix_type::StaticCrsGraphType crs_graph_type;
+    typedef typename crs_matrix_type::staticcrsgraph_type crs_graph_type;
     typedef typename crs_graph_type::entries_type crs_graph_entries_type;
     typedef typename crs_graph_type::row_map_type crs_graph_row_map_type;
 
@@ -640,7 +642,7 @@ public:
     }
 
     // create_staticcrsgraph takes the frequency of blocks per row and returns the cum sum pointer row_map with nbrows+1 size, and total numBlocks in the final entry
-    graph = Kokkos::create_staticcrsgraph<StaticCrsGraphType> ("blockgraph", block_rows);
+    graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> ("blockgraph", block_rows);
     typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
     typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
 
@@ -661,9 +663,9 @@ public:
   }
 
 
-  /// Declaration for import - this member function is not inlined
+  /// Declaration for ctor_impl - this member function is not inlined
   void
-  import (const std::string &label,
+  ctor_impl (const std::string &label,
           const OrdinalType nrows,
           const OrdinalType ncols,
           const size_type annz,
@@ -907,14 +909,14 @@ private:
 template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
 void
 BlockCrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
-import (const std::string &label,
-        const OrdinalType nrows,
-        const OrdinalType ncols,
-        const size_type annz,
-        ScalarType* val,
-        OrdinalType* rows,
-        OrdinalType* cols,
-        const OrdinalType blockDim)
+ctor_impl (const std::string &label,
+           const OrdinalType nrows,
+           const OrdinalType ncols,
+           const size_type annz,
+           ScalarType* val,
+           OrdinalType* rows,
+           OrdinalType* cols,
+           const OrdinalType blockDim)
 {
   std::string str = label;
   values = values_type (str.append (".values"), annz);
@@ -932,7 +934,7 @@ import (const std::string &label,
   }
 
   str = label;
-  graph = Kokkos::create_staticcrsgraph<StaticCrsGraphType> (str.append (".graph"), row_lengths);
+  graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> (str.append (".graph"), row_lengths);
   typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
   typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
 
