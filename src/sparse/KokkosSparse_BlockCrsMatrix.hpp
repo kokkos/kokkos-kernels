@@ -457,9 +457,8 @@ public:
 
   /// \brief Default constructor; constructs an empty sparse matrix.
   ///
-  /// FIXME (mfh 09 Aug 2013) numCols and nnz should be properties of
-  /// the graph, not the matrix.  Then BlockCrsMatrix needs methods to get
-  /// these from the graph.
+  /// mfh: numCols and nnz should be properties of the graph, not the matrix.
+  /// Then BlockCrsMatrix needs methods to get these from the graph.
   BlockCrsMatrix () :
     numCols_ (0),
     blockDim_ (0)
@@ -479,13 +478,13 @@ public:
     blockDim_ (B.blockDim ())
   {
     graph.row_block_offsets = B.graph.row_block_offsets;
-    //TODO: MD 07/2017: Changed the copy constructor of graph
+    //MD: Changed the copy constructor of graph
     //as the constructor of StaticCrsGraph does not allow copy from non const version.
   }
 
   /// \brief Construct with a graph that will be shared.
   ///
-  /// Allocate the values array for subsquent fill.
+  /// Allocate the values array for subsequent fill.
   BlockCrsMatrix (const std::string& arg_label,
                   const staticcrsgraph_type& arg_graph, 
                   const OrdinalType& blockDim) :
@@ -518,7 +517,7 @@ public:
   ///   zeros in order to improve cache alignment and / or
   ///   vectorization.
   ///
-  /// FIXME (mfh 21 Jun 2013) The \c pad argument is currently not used.
+  /// The \c pad argument is currently not used.
   BlockCrsMatrix (const std::string &label,
                   OrdinalType nrows,
                   OrdinalType ncols,
@@ -637,11 +636,11 @@ public:
     OrdinalType numBlocks = 0;
     for ( OrdinalType i = 0; i < crs_mtx.numRows(); i+=blockDim ) {
       numBlocks += ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // cum sum
-      // block_rows[ i/blockDim + 1 ] = numBlocks; // cum sum
       block_rows[ i/blockDim ] = ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // frequency counts
     }
 
-    // create_staticcrsgraph takes the frequency of blocks per row and returns the cum sum pointer row_map with nbrows+1 size, and total numBlocks in the final entry
+    // create_staticcrsgraph takes the frequency of blocks per row
+    // and returns the cum sum pointer row_map with nbrows+1 size, and total numBlocks in the final entry
     graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> ("blockgraph", block_rows);
     typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
     typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
@@ -649,8 +648,6 @@ public:
     for (OrdinalType i = 0; i < nbrows; ++i) {
       OrdinalType blks_in_row = block_rows[i];
       
-      // graph.row_map(i) returns the number of blocks until the current block-row i; 
-      // alternatively the offset start into the block colidx
       OrdinalType offset_into_blkcolidx_start = graph.row_map(i);
       OrdinalType offset_into_colidx_start = offset_into_blkcolidx_start*blockDim*blockDim;
 
@@ -705,6 +702,7 @@ public:
     ordinal_type numValid = 0; // number of valid local column indices
 
     for (ordinal_type i = 0; i < ncol; ++i) {
+
       // Find offset into values for block-row rowi and colidx cols[i]
       // cols[i] is the index to match
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
@@ -762,6 +760,7 @@ public:
     ordinal_type numValid = 0; // number of valid local column indices
 
     for (ordinal_type i = 0; i < ncol; ++i) {
+
       // Find offset into values for block-row rowi and colidx cols[i]
       // cols[i] is the index to match
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
@@ -823,7 +822,6 @@ public:
   }
 
   friend struct SparseBlockRowView<BlockCrsMatrix>;
-  //friend struct KokkosSparse::SparseRowView<BlockCrsMatrix>;
 
   /// \brief Return a SparseBlockRowView of block-row i of the matrix.
   ///
@@ -903,9 +901,10 @@ private:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-// Assumes rows is the row_map pointer for the BlockCrsMatrix graph (i.e. cum sum of number of blocks)
-//         cols is the entries pointer for the BlockCrsMatrix graph (colidx for block-row blocks)
-//         annz is the total number of non-zeros in the CrsMatrix (blockDim*blockDim*numBlocks)
+// Input assumptions:
+//   rows is pointer rep for the row_map member View of the BlockCrsMatrix graph (i.e. cum sum of number of blocks per block-row)
+//   cols is pointer rep for the entries member View of the BlockCrsMatrix graph (colidx for block-row blocks)
+//   annz is the total number of non-zeros in the CrsMatrix (equal to blockDim*blockDim*numBlocks)
 template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
 void
 BlockCrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
@@ -918,39 +917,24 @@ ctor_impl (const std::string &label,
            OrdinalType* cols,
            const OrdinalType blockDim)
 {
-  std::string str = label;
-  values = values_type (str.append (".values"), annz);
-
   numCols_ = ncols;
   blockDim_ = blockDim;
 
-  // FIXME (09 Aug 2013) CrsArray only takes std::vector for now.
-  // We'll need to fix that.
-  std::vector<int> row_lengths (nrows, 0);
+  // Wrap the raw pointers in unmanaged host Views
+  typename values_type::HostMirror unman_val( val, annz );
+  typename row_map_type::HostMirror unman_rows( rows, nrows+1);
+  typename index_type::HostMirror unman_cols( cols, ncols );
 
-  // FIXME (mfh 21 Jun 2013) This calls for a parallel_for kernel.
-  for (OrdinalType i = 0; i < nrows; ++i) {
-    row_lengths[i] = rows[i + 1] - rows[i];
-  }
+  // Create temporary Views for row_map and entries because the StaticCrsGraph ctor requires View inputs
+  values_type tmp_row_map("tmp_row_map", nrows+1);
+  values_type tmp_entries("tmp_entries", ncols);
 
-  str = label;
-  graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> (str.append (".graph"), row_lengths);
-  typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
-  typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
+  Kokkos::deep_copy( val, unman_val );
+  Kokkos::deep_copy( tmp_row_map, unman_rows );
+  Kokkos::deep_copy( tmp_entries, unman_cols );
 
-  // FIXME (mfh 21 Jun 2013) This needs to be a parallel copy.
-  // Furthermore, why are the arrays copied twice? -- once here, to a
-  // host view, and once below, in the deep copy?
-  for (size_type i = 0; i < annz; ++i) {
-    if (val) { h_values(i) = val[i]; }
-  }
-
-  for (size_type i = 0; i < h_entries.extent(0); ++i) {
-    h_entries(i) = cols[i];
-  }
-
-  Kokkos::deep_copy (values, h_values);
-  Kokkos::deep_copy (graph.entries, h_entries);
+  // Initialize graph using the temp entries and row_map Views
+  graph = staticcrsgraph_type( tmp_entries, tmp_row_map );
 }
 
 }} // namespace KokkosSparse::Experimental
