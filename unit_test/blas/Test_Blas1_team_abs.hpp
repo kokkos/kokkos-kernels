@@ -9,7 +9,7 @@ namespace Test {
   template<class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_team_abs(int N) {
 
-    typedef Kokkos::TeamPolicy<>              team_policy ;
+    typedef Kokkos::TeamPolicy<Device>        team_policy ;
     typedef typename team_policy::member_type team_member ;
 
     //Launch M teams of the maximum number of threads per team
@@ -86,7 +86,7 @@ namespace Test {
   template<class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_team_abs_mv(int N, int K) {
 
-    typedef Kokkos::TeamPolicy<>              team_policy ;
+    typedef Kokkos::TeamPolicy<Device>        team_policy ;
     typedef typename team_policy::member_type team_member ;
 
     //Launch K teams of the maximum number of threads per team
