@@ -88,6 +88,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/openmp
   OBJ_OPENMP = Test_Main.o gtest-all.o
   OBJ_OPENMP += Test_OpenMP_Blas1_abs.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_team_abs.o
   OBJ_OPENMP += Test_OpenMP_Blas1_asum.o
   OBJ_OPENMP += Test_OpenMP_Blas1_axpby.o
   OBJ_OPENMP += Test_OpenMP_Blas1_axpy.o
@@ -180,6 +181,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_abs.o
+  OBJ_CUDA += Test_Cuda_Blas1_team_abs.o
   OBJ_CUDA += Test_Cuda_Blas1_asum.o
   OBJ_CUDA += Test_Cuda_Blas1_axpby.o
   OBJ_CUDA += Test_Cuda_Blas1_axpy.o
@@ -265,6 +267,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/serial
   OBJ_SERIAL = Test_Main.o gtest-all.o
   OBJ_SERIAL += Test_Serial_Blas1_abs.o
+  OBJ_SERIAL += Test_Serial_Blas1_team_abs.o
   OBJ_SERIAL += Test_Serial_Blas1_asum.o
   OBJ_SERIAL += Test_Serial_Blas1_axpby.o
   OBJ_SERIAL += Test_Serial_Blas1_axpy.o
