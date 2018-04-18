@@ -366,7 +366,7 @@ public:
 		
 
 
-#if 0
+#if PRINTDEBUG
 			  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
 				  std::cout << "\n\n\nrow:" << ii * block_size + i;
 				  std::cout << "\nneighbors:";
@@ -413,7 +413,7 @@ public:
 
 
 	  Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& ii) {
-#if 0
+#if PRINTDEBUG
 	      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
 	    	  for(nnz_lno_t i = 0; i < block_size; diagonal_positions[i++] = -1);
 	      });
@@ -459,12 +459,6 @@ public:
 
 				  valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
 
-#if 00
-				  size_type adjind = i / block_size + old_row_b;
-				  nnz_lno_t colIndex = _adj[adjind];
-
-				  valueToUpdate += _Xvector[colIndex * block_size + i % block_size] * _adj_vals(current_row_begin  + colind);
-#endif
 			  },
 			  product);
 
@@ -482,7 +476,7 @@ public:
 		      });
 
 #if !defined(__CUDA_ARCH__)
-#if 0
+#if PRINTDEBUG
 			  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
 				  std::cout << "\n\n\nrow:" << ii * block_size + i;
 				  std::cout << "\nneighbors:";
@@ -1239,7 +1233,7 @@ public:
     scalar_persistent_work_view_t permuted_adj_vals = gsHandler->get_new_adj_val();
     scalar_persistent_work_view_t permuted_diagonals = gsHandler->get_permuted_diagonals();
 
-#if 0
+#if PRINTDEBUG
     std::cout << "Y:";
     KokkosKernels::Impl::print_1Dview(Permuted_Yvector);
     std::cout << "Original Y:";
@@ -1275,7 +1269,7 @@ public:
 
     pool_memory_space m_space(num_chunks, level_2_mem / sizeof(nnz_scalar_t), 0,  KokkosKernels::Impl::ManyThread2OneChunk, false);
 
-#if 0
+#if PRINTDEBUG
     std::cout 	<< "l1_shmem_size:" << l1_shmem_size << " num_values_in_l1:" << num_values_in_l1
     			<< " level_2_mem:" << level_2_mem << " num_values_in_l2:" << num_values_in_l2
 				<< " num_chunks:" << num_chunks << std::endl;
@@ -1308,7 +1302,7 @@ public:
         );
     MyExecSpace::fence();
 
-#if 0
+#if PRINTDEBUG
     std::cout << "After X:";
     KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
     std::cout << "Result X:";
@@ -1418,7 +1412,7 @@ public:
         x_lhs_output_vec
         );
     MyExecSpace::fence();
-#if 0
+#if PRINTDEBUG
     std::cout << "--point After X:";
     KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
     std::cout << "--point Result X:";
