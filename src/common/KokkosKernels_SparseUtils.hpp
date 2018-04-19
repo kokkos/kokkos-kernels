@@ -105,7 +105,7 @@ void kk_create_blockcrs_formated_point_crsmatrix(
     std::vector<lno_t>     block_adj; //(in_adj.extent(0), 0);
     std::vector<scalar_t>  block_vals;// (in_adj.extent(0), 0);
 
-    std::vector<scalar_t> block_columns (out_num_cols, 0);
+    std::vector<lno_t> block_columns (out_num_cols, 0);
     std::vector<scalar_t> block_accumulators (out_num_cols, 0);
     std::vector<bool> block_flags (out_num_cols, false);
 

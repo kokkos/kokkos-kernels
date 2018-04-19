@@ -366,7 +366,7 @@ public:
 		
 
 
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
 			  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
 				  std::cout << "\n\n\nrow:" << ii * block_size + i;
 				  std::cout << "\nneighbors:";
@@ -413,7 +413,7 @@ public:
 
 
 	  Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& ii) {
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
 	      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
 	    	  for(nnz_lno_t i = 0; i < block_size; diagonal_positions[i++] = -1);
 	      });
@@ -476,7 +476,7 @@ public:
 		      });
 
 #if !defined(__CUDA_ARCH__)
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
 			  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
 				  std::cout << "\n\n\nrow:" << ii * block_size + i;
 				  std::cout << "\nneighbors:";
@@ -574,7 +574,7 @@ public:
     const_lno_nnz_view_t adj = this->entries;
     size_type nnz = adj.dimension_0();
 
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     Kokkos::Impl::Timer timer;
 #endif
     {
@@ -602,13 +602,13 @@ public:
       }
     }
     color_t numColors = gchandle->get_num_colors();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "COLORING_TIME:" << timer.seconds() << std::endl;
 #endif
 
 
     typename HandleType::GraphColoringHandleType::color_view_t colors =  gchandle->get_vertex_colors();
-#if RUNSEQUENTIAL
+#if KOKKOSSPARSE_IMPL_RUNSEQUENTIAL
     numColors = num_rows;
     KokkosKernels::Impl::print_1Dview(colors);
     std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.dimension_0() <<  std::endl;
@@ -623,7 +623,7 @@ public:
     nnz_lno_persistent_work_view_t color_adj;
 
 
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     timer.reset();
 #endif
 
@@ -634,7 +634,7 @@ public:
     MyExecSpace::fence();
 
 
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -644,7 +644,7 @@ public:
     MyExecSpace::fence();
 
 
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "DEEP_COPY:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -671,7 +671,7 @@ public:
 
 
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "SORT_TIME:" << timer.seconds() << std::endl;
     timer.reset();
     //std::cout << "sort" << std::endl;
@@ -690,7 +690,7 @@ public:
     //std::cout << "create_permuted_xadj" << std::endl;
     MyExecSpace::fence();
 
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "CREATE_PERMUTED_XADJ:" << timer.seconds() << std::endl;
 
     timer.reset();
@@ -702,7 +702,7 @@ public:
         (num_rows + 1, permuted_xadj);
     MyExecSpace::fence();
 
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "INCLUSIVE_PPS:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -721,7 +721,7 @@ public:
             old_to_new_map));
     MyExecSpace::fence();
 
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "SYMBOLIC_FILL:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -778,7 +778,7 @@ public:
     		level_1_mem = shmem_size_to_use;
     		num_values_in_l1 = (shmem_size_to_use / suggested_team_size - ((block_size / 8 ) + 1) * 8 * sizeof(nnz_lno_t)) / sizeof(nnz_scalar_t) / block_size;
                 if (((block_size / 8 ) + 1) * 8 * sizeof(nnz_lno_t) > shmem_size_to_use / suggested_team_size ) throw "Shared memory size is to small for the given block size\n";
-		if (num_values_in_l1 >= max_row_size){
+		if (num_values_in_l1 >= (nnz_lno_t) (max_row_size) ){
 		num_values_in_l2 = 0;
 		level_2_mem = 0;
 		num_big_rows = 0;
@@ -797,7 +797,7 @@ public:
 
 			size_type num_large_rows = 0;
 			KokkosKernels::Impl::kk_reduce_numrows_larger_than_threshold<row_lno_persistent_work_view_t, MyExecSpace>(brows, permuted_xadj, num_values_in_l1, num_large_rows);
-			num_big_rows = KOKKOSKERNELS_MACRO_MIN(num_large_rows, MyExecSpace::concurrency() / suggested_vector_size);
+			num_big_rows = KOKKOSKERNELS_MACRO_MIN(num_large_rows, (size_type)(MyExecSpace::concurrency() / suggested_vector_size));
 			//std::cout << "num_big_rows:" << num_big_rows << std::endl;
 
 #if defined( KOKKOS_ENABLE_CUDA )
@@ -850,7 +850,7 @@ public:
 
     this->handle->get_gs_handle()->allocate_x_y_vectors(this->num_rows * block_size, this->num_cols * block_size);
     //std::cout << "all end" << std::endl;
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "ALLOC:" << timer.seconds() << std::endl;
 #endif
   }
@@ -1051,7 +1051,7 @@ public:
       this->initialize_symbolic();
     }
     //else
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     Kokkos::Impl::Timer timer;
 #endif
     {
@@ -1160,7 +1160,7 @@ public:
       this->handle->get_gs_handle()->set_call_numeric(true);
 
     }
-#ifdef KOKKOSKERNELS_TIME_REVERSE
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     std::cout << "NUMERIC:" << timer.seconds() << std::endl;
 #endif
   }
@@ -1233,7 +1233,7 @@ public:
     scalar_persistent_work_view_t permuted_adj_vals = gsHandler->get_new_adj_val();
     scalar_persistent_work_view_t permuted_diagonals = gsHandler->get_permuted_diagonals();
 
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
     std::cout << "Y:";
     KokkosKernels::Impl::print_1Dview(Permuted_Yvector);
     std::cout << "Original Y:";
@@ -1269,7 +1269,7 @@ public:
 
     pool_memory_space m_space(num_chunks, level_2_mem / sizeof(nnz_scalar_t), 0,  KokkosKernels::Impl::ManyThread2OneChunk, false);
 
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
     std::cout 	<< "l1_shmem_size:" << l1_shmem_size << " num_values_in_l1:" << num_values_in_l1
     			<< " level_2_mem:" << level_2_mem << " num_values_in_l2:" << num_values_in_l2
 				<< " num_chunks:" << num_chunks << std::endl;
@@ -1302,7 +1302,7 @@ public:
         );
     MyExecSpace::fence();
 
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
     std::cout << "After X:";
     KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
     std::cout << "Result X:";
@@ -1412,7 +1412,7 @@ public:
         x_lhs_output_vec
         );
     MyExecSpace::fence();
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
     std::cout << "--point After X:";
     KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
     std::cout << "--point Result X:";

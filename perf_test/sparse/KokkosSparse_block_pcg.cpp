@@ -153,7 +153,7 @@ void run_point_experiment(
 	      << std::endl ;
 
 
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
 	  kok_x_vector = scalar_view_t("kok_x_vector", nv);
 
 	  kh.create_gs_handle(KokkosSparse::GS_TEAM);
@@ -289,7 +289,7 @@ void run_experiment(
 		  pf_rm, pf_e, pf_v);
 
 
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
   std::cout << "nr:" << crsmat.numRows() << " nc:" << crsmat.numCols() << std::endl;
 
   KokkosKernels::Impl::print_1Dview(crsmat.graph.row_map);
@@ -318,7 +318,7 @@ void run_experiment(
 		  but_r, but_c,
 		  bf_rm, bf_e, bf_v);
 
-#if PRINTDEBUG
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
   KokkosKernels::Impl::print_1Dview(bf_rm);
   KokkosKernels::Impl::print_1Dview(bf_e);
   KokkosKernels::Impl::print_1Dview(bf_v);
@@ -386,9 +386,10 @@ int main (int argc, char ** argv){
   if (mtx_bin_file == NULL){
     std::cerr << "Provide a mtx binary file" << std::endl ;
     std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
-
     return 0;
   }
+  std::cout << "Running experiments with block size:" << block_size << std::endl;
+
 
   Kokkos::initialize(kargs);
 
