@@ -709,7 +709,6 @@ public:
       // colidx_ and values_ are already offset to the beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
       if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
-        ordinal_type offset_into_values = blk_offset*block_size;
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
         ordinal_type values_row_stride = block_size*length; // stride to start of next row
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
@@ -767,7 +766,6 @@ public:
       // colidx_ and values_ are already offset to the beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
       if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
-        ordinal_type offset_into_values = blk_offset*block_size;
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
         ordinal_type values_row_stride = block_size*length; // stride to start of next row
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
