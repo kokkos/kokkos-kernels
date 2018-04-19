@@ -745,7 +745,7 @@ public:
         int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
         int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
         size_t shmem_size_to_use = this->handle->get_shmem_size();
-        nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,MyExecSpace::concurrency(), brows);
+        //nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,MyExecSpace::concurrency(), brows);
 
 	//MD: now we calculate how much memory is needed for shared memory.
 	//we have two-level vectors: as in spgemm hashmaps.

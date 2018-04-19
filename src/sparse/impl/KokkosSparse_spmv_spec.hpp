@@ -253,7 +253,6 @@ struct SPMV < AT, AO, AD, AM, AS,
   {
     typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
 
-    typedef typename YVector::non_const_value_type coefficient_type;
     typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero ()) {

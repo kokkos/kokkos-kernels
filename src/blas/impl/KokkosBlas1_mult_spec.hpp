@@ -227,8 +227,6 @@ struct Mult<YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     }
     #endif
  
-    typedef typename YV::size_type size_type;
-
     const size_type numRows = Y.dimension_0 ();
     if (numRows < static_cast<int> (INT_MAX)) {
       V_Mult_Generic<YV, AV, XV, int> (gamma, Y, alpha, A, X);
