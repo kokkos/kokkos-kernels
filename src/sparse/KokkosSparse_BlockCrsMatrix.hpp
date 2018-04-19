@@ -696,7 +696,6 @@ public:
                  const bool force_atomic = false) const
   {
     SparseBlockRowView<BlockCrsMatrix> row_view = this->block_row (rowi);
-    const ordinal_type length = row_view.length; // num blocks in block-row rowi
     const ordinal_type block_size = this->blockDim();
 
     ordinal_type numValid = 0; // number of valid local column indices
@@ -710,7 +709,6 @@ public:
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
       if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
-        ordinal_type values_row_stride = block_size*length; // stride to start of next row
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
           auto local_row_values = row_view.local_row_in_block(blk_offset, lrow); // pointer to start of specified local row within this block
           for ( ordinal_type lcol = 0; lcol < block_size; ++lcol ) {
@@ -753,7 +751,6 @@ public:
                  const bool force_atomic = false) const
   {
     SparseBlockRowView<BlockCrsMatrix> row_view = this->block_row (rowi);
-    const ordinal_type length = row_view.length;
     const ordinal_type block_size = this->blockDim();
 
     ordinal_type numValid = 0; // number of valid local column indices
@@ -767,7 +764,6 @@ public:
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
       if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
-        ordinal_type values_row_stride = block_size*length; // stride to start of next row
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
           auto local_row_values = row_view.local_row_in_block(blk_offset, lrow); // pointer to start of specified local row within this block
           for ( ordinal_type lcol = 0; lcol < block_size; ++lcol ) {
