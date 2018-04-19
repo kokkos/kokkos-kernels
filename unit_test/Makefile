@@ -178,6 +178,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
+  KOKKOS_CXXFLAGS += --expt-relaxed-constexpr
   INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_abs.o
@@ -360,6 +361,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/threads
   OBJ_THREADS = Test_Main.o gtest-all.o
   OBJ_THREADS += Test_Threads_Blas1_abs.o
+  OBJ_THREADS += Test_Threads_Blas1_team_abs.o
   OBJ_THREADS += Test_Threads_Blas1_asum.o
   OBJ_THREADS += Test_Threads_Blas1_axpby.o
   OBJ_THREADS += Test_Threads_Blas1_axpy.o
