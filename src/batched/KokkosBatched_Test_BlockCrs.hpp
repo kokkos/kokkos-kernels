@@ -300,7 +300,6 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
-            typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
 
             int team_size = 0;
@@ -330,7 +329,6 @@ namespace KokkosBatched {
           case 2: {
             typedef Kokkos::View<ValueType***,exec_space> packed_view_type;
             typedef Kokkos::TeamPolicy<exec_space,TeamShmemTag> policy_type;
-            typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
             const int per_team_scratch 
@@ -835,7 +833,6 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
-            typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
             int team_size = 0;
@@ -862,7 +859,6 @@ namespace KokkosBatched {
           case 2: {
             typedef Kokkos::View<ValueType***,exec_space> packed_view_type;
             typedef Kokkos::TeamPolicy<exec_space,TeamShmemTag> policy_type;
-            typedef typename policy_type::member_type member_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
             const int per_team_scratch 

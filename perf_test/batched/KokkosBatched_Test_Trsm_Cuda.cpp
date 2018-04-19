@@ -523,7 +523,6 @@ namespace KokkosBatched {
           double tavg = 0, tmin = tmax;        
           {
             typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV1> policy_type;
-            typedef typename policy_type::member_type member_type;
 
             typedef Functor<test,view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
@@ -589,7 +588,6 @@ namespace KokkosBatched {
           double tavg = 0, tmin = tmax;        
           {
             typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV2> policy_type;
-            typedef typename policy_type::member_type member_type;
 
             typedef Functor<test,view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
@@ -663,7 +661,6 @@ namespace KokkosBatched {
           double tavg = 0, tmin = tmax;        
           {
             typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV3> policy_type;
-            typedef typename policy_type::member_type member_type;
 
             typedef Functor<test,view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
