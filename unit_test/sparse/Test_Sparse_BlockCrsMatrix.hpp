@@ -241,8 +241,10 @@ namespace Test{ // anonymous
             auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
             for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
+              //std::cout << "check0: " << ( entry == row_ptr[lcol] );
+              //std::cout << "check1: " << ( entry == view_blk(lrow,lcol) );
               check0 = check0 && ( entry == row_ptr[lcol] );
-              check1 = check1 && ( entry == view_blk(lcol,lcol) );
+              check1 = check1 && ( entry == view_blk(lrow,lcol) );
             } // end local col in row
           } // end local row in blk
         } // end blk
@@ -261,7 +263,7 @@ namespace Test{ // anonymous
             for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
               check2 = check2 && ( entry == row_ptr[lcol] );
-              check3 = check3 && ( entry == view_blk(lcol,lcol) );
+              check3 = check3 && ( entry == view_blk(lrow,lcol) );
             } // end local col in row
           } // end local row in blk
         } // end blk
