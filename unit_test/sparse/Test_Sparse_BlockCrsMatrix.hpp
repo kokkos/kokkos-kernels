@@ -204,8 +204,141 @@ namespace Test{ // anonymous
     return blkcrsMat_t ("blkA", numRows, numCols, nnz, val, ptr, ind, blockDim);
   }
 
+
+  template < class MatrixType, class ResultsType >
+  struct TestFunctor {
+
+  typedef typename MatrixType::value_type scalar_t;
+  typedef typename MatrixType::ordinal_type lno_t;
+
+  // Members
+  MatrixType A;
+  ResultsType d_results;
+
+  // Constructor
+  TestFunctor( MatrixType & A_, ResultsType & d_results_ ) :
+    A(A_),
+    d_results(d_results_)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const int rid ) const
+  {
+    // Test 1: Check member functions behave as expected
+    bool check0 = true;
+    bool check1 = true;
+    bool check2 = true;
+    bool check3 = true;
+    for ( lno_t i = 0; i < A.numRows(); ++i ) {
+
+      // Test SparseBlockRowView
+      {
+        auto iblockrow = A.block_row(i);
+        auto num_blocks_in_row = iblockrow.length;
+        for ( auto blk = 0; blk < num_blocks_in_row; ++blk ){
+          auto view_blk = iblockrow.block(blk);
+          for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
+            auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
+            for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
+              auto entry = iblockrow.local_block_value(blk, lrow, lcol);
+              check0 = check0 && ( entry == row_ptr[lcol] );
+              check1 = check1 && ( entry == view_blk(lcol,lcol) );
+            } // end local col in row
+          } // end local row in blk
+        } // end blk
+      }
+      d_results(0) = check0;
+      d_results(1) = check1;
+
+      // Test SparseBlockRowViewConst
+      {
+        auto iblockrow = A.block_row_Const(i);
+        auto num_blocks_in_row = iblockrow.length;
+        for ( auto blk = 0; blk < num_blocks_in_row; ++blk ){
+          auto view_blk = iblockrow.block(blk);
+          for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
+            auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
+            for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
+              auto entry = iblockrow.local_block_value(blk, lrow, lcol);
+              check2 = check2 && ( entry == row_ptr[lcol] );
+              check3 = check3 && ( entry == view_blk(lcol,lcol) );
+            } // end local col in row
+          } // end local row in blk
+        } // end blk
+      }
+      d_results(0) = check0;
+      d_results(1) = check1;
+      d_results(2) = check2;
+      d_results(3) = check3;
+    } // end for blk rows
+
+    // Test sumIntoValues
+    {
+      check0 = true;
+      check1 = true;
+      check2 = true;
+      const lno_t ncols = 1;
+      const lno_t cols[] = {3};
+      const lno_t browi = 3;
+      const scalar_t vals[] = {10, 11, 20, 22}; // represents a single block: [10 11; 20 22]
+      const scalar_t result[] = {16, 18, 14, 15};
+
+      // This block will be summed into the existing block [6 7; -6 -7]
+      // Expected result: [16 18; 14 15]
+      A.sumIntoValues( browi, cols, ncols, vals );
+      auto iblockrow = A.block_row_Const(browi);
+      auto relBlk = iblockrow.findRelBlockOffset(cols[0]);
+      auto view_blk = iblockrow.block(relBlk);
+      for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
+        auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
+        for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
+          auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
+          check0 = check0 && ( entry == row_ptr[lcol] );
+          check1 = check1 && ( entry == view_blk(lrow,lcol) );
+          check2 = check2 && ( entry == result[ lrow*A.blockDim() + lcol ] );
+        } // end local col in row
+      } // end local row in blk
+      d_results(4) = check0;
+      d_results(5) = check1;
+      d_results(6) = check2;
+    }
+
+    // Test replaceValues
+    {
+      check0 = true;
+      check1 = true;
+      check2 = true;
+      const lno_t ncols = 1;
+      const lno_t cols[] = {3};
+      const lno_t browi = 3;
+      const scalar_t valsreplace[] = {-10, -11, -20, -22}; // represents a single block: [10 11; 20 22]
+
+      // The existing block to be replaced was: [6 7; -6 -7]
+      A.replaceValues( browi, cols, ncols, valsreplace );
+
+      auto iblockrow = A.block_row_Const(browi);
+      auto relBlk = iblockrow.findRelBlockOffset(cols[0]);
+      auto view_blk = iblockrow.block(relBlk);
+      for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
+        auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
+        for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
+          auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
+          check0 = check0 && ( entry == row_ptr[lcol] );
+          check1 = check1 && ( entry == view_blk(lrow,lcol) );
+          check2 = check2 && ( entry == valsreplace[ lrow*A.blockDim() + lcol ] );
+        } // end local col in row
+      } // end local row in blk
+      d_results(7) = check0;
+      d_results(8) = check1;
+      d_results(9) = check2;
+    }
+
+  }// end operator()(i)
+  }; // end TestFunctor
+
 } // namespace (anonymous)
-// Create a CrsMatrix and BlockCrsMatrix and test member functions.  
+
+// Create a CrsMatrix and BlockCrsMatrix and test member functions.
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void
 testBlockCrsMatrix ()
@@ -218,91 +351,17 @@ testBlockCrsMatrix ()
   crs_matrix_type crsA = makeCrsMatrix_BlockStructure<crs_matrix_type> ();
   block_crs_matrix_type A = makeBlockCrsMatrix<block_crs_matrix_type> ();
 
-  // Test 1: Check member functions behave as expected
-  for ( lno_t i = 0; i < A.numRows(); ++i ) {
+  const int num_entries = 10;
+  typedef Kokkos::View< bool[num_entries], device > result_view_type;
+  result_view_type d_results("d_results");
+  auto h_results = Kokkos::create_mirror_view( d_results );
 
-    // Test SparseBlockRowView
-    {
-    auto iblockrow = A.block_row(i);
-    auto num_blocks_in_row = iblockrow.length;
-    for ( auto blk = 0; blk < num_blocks_in_row; ++blk ){
-      auto view_blk = iblockrow.block(blk);
-      for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
-        auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
-        for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
-          auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-            EXPECT_EQ( entry, row_ptr[lcol] );
-            EXPECT_EQ( entry, view_blk(lrow,lcol) );
-        } // end local col in row
-      } // end local row in blk
-    } // end blk
-    }
+  Kokkos::parallel_for( Kokkos::RangePolicy<typename device::execution_space>(0, 1), Test::TestFunctor< block_crs_matrix_type, result_view_type>( A, d_results ) );
 
-    // Test SparseBlockRowViewConst
-    {
-    auto iblockrow = A.block_row_Const(i);
-    auto num_blocks_in_row = iblockrow.length;
-    for ( auto blk = 0; blk < num_blocks_in_row; ++blk ){
-      auto view_blk = iblockrow.block(blk);
-      for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
-        auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
-        for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
-          auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-            EXPECT_EQ( entry, row_ptr[lcol] );
-            EXPECT_EQ( entry, view_blk(lrow,lcol) );
-        } // end local col in row
-      } // end local row in blk
-    } // end blk
-    }
-  } // end for blk rows
+  Kokkos::deep_copy( h_results, d_results );
 
-  // Test sumIntoValues
-  {
-    const lno_t ncols = 1;
-    const lno_t cols[] = {3};
-    const lno_t browi = 3;
-    const scalar_t vals[] = {10, 11, 20, 22}; // represents a single block: [10 11; 20 22]
-    const scalar_t result[] = {16, 18, 14, 15};
-
-    // This block will be summed into the existing block [6 7; -6 -7]
-    // Expected result: [16 18; 14 15]
-    A.sumIntoValues( browi, cols, ncols, vals );
-    auto iblockrow = A.block_row_Const(browi);
-    auto relBlk = iblockrow.findRelBlockOffset(cols[0]);
-    auto view_blk = iblockrow.block(relBlk);
-      for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
-        auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
-        for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
-          auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-            EXPECT_EQ( entry, row_ptr[lcol] );
-            EXPECT_EQ( entry, view_blk(lrow,lcol) );
-            EXPECT_EQ( entry, result[ lrow*A.blockDim() + lcol ] );
-        } // end local col in row
-      } // end local row in blk
-  }
-
-  // Test replaceValues
-  {
-    const lno_t ncols = 1;
-    const lno_t cols[] = {3};
-    const lno_t browi = 3;
-    const scalar_t valsreplace[] = {-10, -11, -20, -22}; // represents a single block: [10 11; 20 22]
-
-    // The existing block to be replaced was: [6 7; -6 -7]
-    A.replaceValues( browi, cols, ncols, valsreplace );
-
-    auto iblockrow = A.block_row_Const(browi);
-    auto relBlk = iblockrow.findRelBlockOffset(cols[0]);
-    auto view_blk = iblockrow.block(relBlk);
-      for ( auto lrow = 0; lrow < A.blockDim(); ++lrow ) {
-        auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
-        for ( auto lcol = 0; lcol < A.blockDim(); ++lcol ) {
-          auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-            EXPECT_EQ( entry, row_ptr[lcol] );
-            EXPECT_EQ( entry, view_blk(lrow,lcol) );
-            EXPECT_EQ( entry, valsreplace[ lrow*A.blockDim() + lcol ] );
-        } // end local col in row
-      } // end local row in blk
+  for ( decltype(h_results.extent(0)) i = 0; i < h_results.extent(0); ++i ) {
+    EXPECT_EQ( h_results[i], true );
   }
 
 }

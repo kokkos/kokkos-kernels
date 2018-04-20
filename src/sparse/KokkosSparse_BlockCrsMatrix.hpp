@@ -202,12 +202,12 @@ public:
 
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return std::numeric_limits::max
+  ///        If none found, return Kokkos::Details::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
   /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset ( const ordinal_type idx_to_match, bool is_sorted = false ) const {
-    ordinal_type offset = std::numeric_limits< ordinal_type >::max();
+    ordinal_type offset = Kokkos::Details::ArithTraits< ordinal_type >::max();
     for ( ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
       ordinal_type idx = colidx_[blk_offset];
       if ( idx == idx_to_match ) 
@@ -352,12 +352,12 @@ public:
 
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return std::numeric_limits::max
+  ///        If none found, return Kokkos::Details::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
   /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset ( const ordinal_type &idx_to_match, bool is_sorted = false ) const {
-    typename std::remove_cv<ordinal_type>::type offset = std::numeric_limits< ordinal_type >::max();
+    typename std::remove_cv<ordinal_type>::type offset = Kokkos::Details::ArithTraits< ordinal_type >::max();
     for ( typename std::remove_cv<ordinal_type>::type blk_offset = 0; blk_offset < length; ++blk_offset ) {
       ordinal_type idx = colidx_[blk_offset];
       if ( idx == idx_to_match ) 
@@ -707,7 +707,7 @@ public:
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
       // colidx_ and values_ are already offset to the beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
+      if ( blk_offset != Kokkos::Details::ArithTraits<ordinal_type>::max() ) {
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
           auto local_row_values = row_view.local_row_in_block(blk_offset, lrow); // pointer to start of specified local row within this block
@@ -762,7 +762,7 @@ public:
       // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi + 1] (not global offset)
       // colidx_ and values_ are already offset to the beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      if ( blk_offset != std::numeric_limits<ordinal_type>::max() ) {
+      if ( blk_offset != Kokkos::Details::ArithTraits<ordinal_type>::max() ) {
         ordinal_type offset_into_vals = i*block_size*block_size; //stride == 1 assumed between elements
         for ( ordinal_type lrow = 0; lrow < block_size; ++lrow ) {
           auto local_row_values = row_view.local_row_in_block(blk_offset, lrow); // pointer to start of specified local row within this block
