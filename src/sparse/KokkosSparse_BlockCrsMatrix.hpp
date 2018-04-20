@@ -358,8 +358,9 @@ public:
   /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset ( const ordinal_type &idx_to_match, bool is_sorted = false ) const {
-    typename std::remove_cv<ordinal_type>::type offset = Kokkos::Details::ArithTraits< ordinal_type >::max();
-    for ( typename std::remove_cv<ordinal_type>::type blk_offset = 0; blk_offset < length; ++blk_offset ) {
+    typedef typename std::remove_cv<ordinal_type>::type non_const_ordinal_type;
+    non_const_ordinal_type offset = Kokkos::Details::ArithTraits< non_const_ordinal_type >::max();
+    for ( non_const_ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
       ordinal_type idx = colidx_[blk_offset];
       if ( idx == idx_to_match ) 
       { 
