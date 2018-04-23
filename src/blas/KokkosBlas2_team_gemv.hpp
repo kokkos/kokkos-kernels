@@ -51,19 +51,19 @@ namespace Experimental {
 
 template<class TeamType, class MatrixType, class XVector,class YVector>
 void KOKKOS_INLINE_FUNCTION gemv (const TeamType& team,
-                 const char trans[],
+                 const char trans,
                  const typename MatrixType::non_const_value_type& alpha,
                  const MatrixType& A,
                  const XVector& x,
                  const typename YVector::non_const_value_type& beta,
                  const YVector& y)
 {
-  if (trans[0] == 'N' || trans[0] == 'n')
+  if (trans == 'N' || trans == 'n')
     return Impl::TeamGEMV<TeamType,MatrixType,XVector,YVector,0>::team_gemv(team,alpha,A,x,beta,y);
-  if (trans[0] == 'T' || trans[0] == 't')
+  if (trans == 'T' || trans == 't')
     return Impl::TeamGEMV<TeamType,MatrixType,XVector,YVector,1>::team_gemv(team,alpha,A,x,beta,y);
-  if (trans[0] == 'C' || trans[0] == 'c')
-    return Impl::TeamGEMV<TeamType,MatrixType,XVector,YVector,1>::team_gemv(team,alpha,A,x,beta,y);
+  if (trans == 'C' || trans == 'c')
+    return Impl::TeamGEMV<TeamType,MatrixType,XVector,YVector,2>::team_gemv(team,alpha,A,x,beta,y);
 }
 
 }

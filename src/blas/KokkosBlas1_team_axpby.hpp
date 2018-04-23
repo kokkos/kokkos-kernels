@@ -57,6 +57,12 @@ void KOKKOS_INLINE_FUNCTION axpby (const TeamType& team,
   return Impl::TeamAXPBY<TeamType,XVector,YVector>::team_axpby(team,a,x,b,y);
 }
 
+template<class TeamType, class XVector,class YVector>
+void KOKKOS_INLINE_FUNCTION axpy (const TeamType& team, const typename XVector::non_const_value_type& a, const XVector& x, const YVector& y)
+{
+  KokkosBlas::Experimental::axpby<TeamType,XVector,YVector>(team,a,x,Kokkos::Details::ArithTraits<typename YVector::non_const_value_type>::one(),y);
+}
+
 }
 }
 
