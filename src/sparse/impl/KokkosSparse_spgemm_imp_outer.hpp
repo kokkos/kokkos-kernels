@@ -41,7 +41,7 @@
 //@HEADER
  */
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #ifdef KOKKOSKERNELS_HAVE_OUTER
 #include<parallel/multiseq_selection.h>
 #include<parallel/multiway_merge.h>
@@ -54,7 +54,7 @@ namespace KokkosSparse{
 
 namespace Impl{
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #ifdef KOKKOSKERNELS_HAVE_OUTER
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,

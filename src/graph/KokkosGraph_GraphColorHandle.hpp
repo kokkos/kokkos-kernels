@@ -216,7 +216,7 @@ private:
    */
   void choose_default_algorithm()
   {
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
@@ -225,7 +225,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -234,7 +234,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -252,7 +252,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -620,6 +620,7 @@ private:
       this->eb_num_initial_colors = 1;
       break;
     default:
+      std::cout << "col_algo:" << col_algo << std::endl;
       throw std::runtime_error ("Unknown Coloring Algorithm\n");
       //break;
     }
