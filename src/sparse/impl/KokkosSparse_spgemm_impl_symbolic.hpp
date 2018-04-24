@@ -1233,11 +1233,16 @@ struct KokkosSPGEMM
 
     Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, num_compressed_elements),
         [&] (const nnz_lno_t ii, nnz_lno_t &num_nnz_in_row) {
+
       nnz_lno_t c_rows = hm.values[ii];
+      nnz_lno_t num_el = KokkosKernels::Impl::pop_count(c_rows);
+
+      /*
       nnz_lno_t num_el = 0;
       for (; c_rows; num_el++) {
         c_rows &= c_rows - 1; // clear the least significant bit set
       }
+      */
       num_nnz_in_row += num_el;
     }, num_elements);
 
