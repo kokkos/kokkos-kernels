@@ -95,21 +95,25 @@ void get_suggested_vector_team_size(
     int &suggested_team_size_,
     idx nr, idx nnz){
 
-#if defined( KOKKOS_HAVE_SERIAL )
+
+    suggested_vector_size_ =  1;
+    suggested_team_size_ = 1;
+
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ = 1;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
   if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ =  1;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
   if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ = 1;
@@ -141,7 +145,7 @@ void get_suggested_vector_team_size(
   }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
   if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
     suggested_vector_size_ = 1;
     suggested_team_size_ = 1;
@@ -1145,12 +1149,14 @@ void symmetrize_graph_symbolic_hashmap(
     int vector_size = 0;
     int max_allowed_team_size = team_policy::team_size_max(fse);
 
+
+
+
     get_suggested_vector_team_size<idx, MyExecSpace>(
         max_allowed_team_size,
         vector_size,
         teamSizeMax,
         xadj.dimension_0() - 1, nnz);
-
 
     Kokkos::parallel_for(
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),

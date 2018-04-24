@@ -508,7 +508,7 @@ std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_co
 
   //std::cout << "I:" << i << " color_begin:" << color_begin <<  " color_end:" << color_end << " percore:" << percore << std::endl;
   int num_threads = 1;
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #pragma omp parallel
   {
     num_threads = omp_get_num_threads();
@@ -587,7 +587,7 @@ std::cout << "num_colors:" << num_colors << " num_multi_colors:" << num_multi_co
       std::vector <size_type> team_ends(num_teams_in_core, 0);
       */
       int mytid = 0;
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
       mytid = omp_get_thread_num();
 #endif
       Cache L1_cache = *(t_team_caches[mytid]);
