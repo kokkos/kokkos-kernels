@@ -620,7 +620,6 @@ private:
       this->eb_num_initial_colors = 1;
       break;
     default:
-      std::cout << "col_algo:" << col_algo << std::endl;
       throw std::runtime_error ("Unknown Coloring Algorithm\n");
       //break;
     }
