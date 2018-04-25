@@ -63,6 +63,7 @@ struct team_dot_tpl_spec_avail {
 template<class TeamType, class XV, class YV, bool tpl_spec_avail = team_dot_tpl_spec_avail<XV,YV>::value>
 struct TeamDot {
   typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::dot_type dot_type;
+  typedef          Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
 
   static KOKKOS_INLINE_FUNCTION dot_type team_dot (const TeamType& team, const XV& X, const YV& Y);
 };
@@ -70,11 +71,12 @@ struct TeamDot {
 template<class TeamType, class XV, class YV>
 struct TeamDot<TeamType, XV, YV, false> {
   typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::dot_type dot_type;
+  typedef          Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
   static KOKKOS_INLINE_FUNCTION dot_type team_dot (const TeamType& team, const XV& X, const YV& Y) {
     dot_type result;
     int N = X.extent(0);
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,N), [&] (const int& i, dot_type& val) {
-      val += X(i)*Y(i);
+      val += IPT::dot(X(i),Y(i));// X(i) * Y(i)
     },result);
     return result;
   }
