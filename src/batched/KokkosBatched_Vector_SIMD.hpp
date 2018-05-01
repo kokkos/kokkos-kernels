@@ -143,7 +143,10 @@ namespace KokkosBatched {
       union data_type {
         __m256d v;
         double d[4];
-      } __attribute__((packed)); //__attribute__((aligned(32)));
+        
+        data_type() { v = _mm256_setzero_pd(); }
+        data_type(const data_type &b) { v = b.v; }
+      } __attribute__ ((aligned(32)));
 
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "AVX256"; }
