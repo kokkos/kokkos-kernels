@@ -139,14 +139,7 @@ namespace KokkosBatched {
       using mag_type = double;
 
       enum : int { vector_length = 4 };
-
-      union data_type {
-        __m256d v;
-        double d[4];
-        
-        data_type() { v = _mm256_setzero_pd(); }
-        data_type(const data_type &b) { v = b.v; }
-      } __attribute__ ((aligned(32)));
+      typedef __m256d data_type __attribute__ ((aligned(32)));
 
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "AVX256"; }
@@ -158,13 +151,14 @@ namespace KokkosBatched {
       mutable data_type _data;
 
     public:
-      KOKKOS_INLINE_FUNCTION Vector() { _data.v = _mm256_setzero_pd(); }
-      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data.v = _mm256_set1_pd(val); }
-      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.v = b._data.v; }
-      KOKKOS_INLINE_FUNCTION Vector(const __m256d &val) { _data.v = val; }
+      KOKKOS_INLINE_FUNCTION Vector() { _data = _mm256_setzero_pd(); }
+      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data = _mm256_set1_pd(val); }
+      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
+      KOKKOS_INLINE_FUNCTION Vector(const __m256d &val) { _data = val; }
 
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
+        auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -172,11 +166,12 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data.d[i] = val;
+          d[i] = val;
       }
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+        auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -184,45 +179,45 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data.d[i] = b[i];
+          d[i] = b[i];
       }
 
       KOKKOS_INLINE_FUNCTION
       type& operator=(const __m256d &val) {
-        _data.v = val;
+        _data = val;
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       operator __m256d() const {
-        return _data.v;
+        return _data;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadAligned(const value_type *p) {
-        _data.v = _mm256_load_pd(p);
+        _data = _mm256_load_pd(p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadUnaligned(const value_type *p) {
-        _data.v = _mm256_loadu_pd(p);
+        _data = _mm256_loadu_pd(p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeAligned(value_type *p) const {
-        _mm256_store_pd(p, _data.v);
+        _mm256_store_pd(p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeUnaligned(value_type *p) const {
-        _mm256_storeu_pd(p, _data.v);
+        _mm256_storeu_pd(p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type& operator[](const int i) const {
-        return _data.d[i];
+        return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
 
@@ -234,18 +229,11 @@ namespace KokkosBatched {
       using mag_type = double;
 
       static const int vector_length = 2;
-
-      union data_type {
-        __m256d v;
-        Kokkos::complex<double> d[2];
-
-        data_type() { v = _mm256_setzero_pd(); }
-        data_type(const data_type &b) { v = b.v; }
-      };
+      typedef __m256d data_type __attribute__ ((aligned(32)));
 
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "AVX256"; }
-
+      
       template<typename,int>
       friend class Vector;
 
@@ -253,11 +241,11 @@ namespace KokkosBatched {
       mutable data_type _data;
 
     public:
-      KOKKOS_INLINE_FUNCTION Vector() { _data.v = _mm256_setzero_pd(); }
-      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data.v = _mm256_broadcast_pd((const __m128d *)&val);}
-      KOKKOS_INLINE_FUNCTION Vector(const mag_type val) { const value_type a(val); _data.v = _mm256_broadcast_pd((__m128d const *)&a); }
-      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.v = b._data.v; }
-      KOKKOS_INLINE_FUNCTION Vector(const __m256d &val) { _data.v = val; }
+      KOKKOS_INLINE_FUNCTION Vector() { _data = _mm256_setzero_pd(); }
+      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data = _mm256_broadcast_pd((const __m128d *)&val);}
+      KOKKOS_INLINE_FUNCTION Vector(const mag_type val) { const value_type a(val); _data = _mm256_broadcast_pd((__m128d const *)&a); }
+      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
+      KOKKOS_INLINE_FUNCTION Vector(const __m256d &val) { _data = val; }
 
 //       template<typename ArgValueType>
 //       KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
@@ -273,6 +261,7 @@ namespace KokkosBatched {
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+        auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -280,45 +269,45 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data.d[i] = b[i];
+          d[i] = b[i];
       }
 
       KOKKOS_INLINE_FUNCTION
       type& operator=(const __m256d &val) {
-        _data.v = val;
+        _data = val;
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       operator __m256d() const {
-        return _data.v;
+        return _data;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadAligned(const value_type *p) {
-        _data.v = _mm256_load_pd((mag_type*)p);
+        _data = _mm256_load_pd((mag_type*)p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadUnaligned(const value_type *p) {
-        _data.v = _mm256_loadu_pd((mag_type*)p);
+        _data = _mm256_loadu_pd((mag_type*)p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeAligned(value_type *p) const {
-        _mm256_store_pd((mag_type*)p, _data.v);
+        _mm256_store_pd((mag_type*)p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeUnaligned(value_type *p) const {
-        _mm256_storeu_pd((mag_type*)p, _data.v);
+        _mm256_storeu_pd((mag_type*)p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type& operator[](int i) const {
-        return _data.d[i];
+        return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
 #endif
@@ -333,17 +322,7 @@ namespace KokkosBatched {
       using mag_type = double;
       
       enum : int { vector_length = 8 };
-
-      union data_type {
-        __m512d v;
-        double d[8];
-        
-        data_type() { v = _mm512_setzero_pd(); }
-        data_type(const data_type &b) { v = b.v; }
-      } __attribute__ ((aligned(64)));
-
-      KOKKOS_INLINE_FUNCTION
-      static const char* label() { return "AVX512"; }
+      typedef __m512d data_type __attribute__ ((aligned(64)));
 
       template<typename,int>
       friend class Vector;
@@ -352,13 +331,14 @@ namespace KokkosBatched {
       mutable data_type _data;
 
     public:
-      KOKKOS_INLINE_FUNCTION Vector() { _data.v = _mm512_setzero_pd(); }
-      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data.v = _mm512_set1_pd(val); }
-      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.v = b._data.v; }
-      KOKKOS_INLINE_FUNCTION Vector(const __m512d &val) { _data.v = val; }
+      KOKKOS_INLINE_FUNCTION Vector() { _data = _mm512_setzero_pd(); }
+      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data = _mm512_set1_pd(val); }
+      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
+      KOKKOS_INLINE_FUNCTION Vector(const __m512d &val) { _data = val; }
 
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
+        auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -366,11 +346,12 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data.d[i] = val;
+          d[i] = val;
       }
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+        auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -378,45 +359,45 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data.d[i] = b[i];
+          d[i] = b[i];
       }
 
       KOKKOS_INLINE_FUNCTION
       type& operator=(const __m512d &val) {
-        _data.v = val;
+        _data = val;
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       operator __m512d() const {
-        return _data.v;
+        return _data;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadAligned(const value_type *p) {
-        _data.v = _mm512_load_pd(p);
+        _data = _mm512_load_pd(p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadUnaligned(const value_type *p) {
-        _data.v = _mm512_loadu_pd(p);
+        _data = _mm512_loadu_pd(p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeAligned(value_type *p) const {
-        _mm512_store_pd(p, _data.v);
+        _mm512_store_pd(p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeUnaligned(value_type *p) const {
-        _mm512_storeu_pd(p, _data.v);
+        _mm512_storeu_pd(p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type& operator[](const int i) const {
-        return _data.d[i];
+        return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
 
@@ -428,14 +409,7 @@ namespace KokkosBatched {
       using mag_type = double;
 
       enum : int { vector_length = 4 };
-
-      union data_type {
-        __m512d v;
-        Kokkos::complex<double> d[4];
-
-        data_type() { v = _mm512_setzero_pd(); }
-        data_type(const data_type &b) { v = b.v; }
-      } __attribute__ ((aligned(64)));
+      typedef __m512d data_type __attribute__ ((aligned(64)));
 
       KOKKOS_INLINE_FUNCTION
       static const char* label() { return "AVX512"; }
@@ -447,18 +421,19 @@ namespace KokkosBatched {
       mutable data_type _data;
 
     public:
-      KOKKOS_INLINE_FUNCTION Vector() { _data.v = _mm512_setzero_pd(); }
+      KOKKOS_INLINE_FUNCTION Vector() { _data = _mm512_setzero_pd(); }
       KOKKOS_INLINE_FUNCTION Vector(const value_type val) {
-        _data.v = _mm512_mask_broadcast_f64x4(_mm512_set1_pd(val.imag()), 0x55, _mm256_set1_pd(val.real()));
+        _data = _mm512_mask_broadcast_f64x4(_mm512_set1_pd(val.imag()), 0x55, _mm256_set1_pd(val.real()));
       }
       KOKKOS_INLINE_FUNCTION Vector(const mag_type val) {
-        _data.v = _mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55, _mm256_set1_pd(val));
+        _data = _mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55, _mm256_set1_pd(val));
       }
-      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.v = b._data.v; }
-      KOKKOS_INLINE_FUNCTION Vector(const __m512d &val) { _data.v = val; }
+      KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
+      KOKKOS_INLINE_FUNCTION Vector(const __m512d &val) { _data = val; }
 
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
+        auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -466,11 +441,12 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data.d[i] = val;
+          d[i] = val;
       }
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
+        auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -478,45 +454,45 @@ namespace KokkosBatched {
 #pragma vector always
 #endif
         for (int i=0;i<vector_length;++i)
-          _data.d[i] = b[i];
+          d[i] = b[i];
       }
 
       KOKKOS_INLINE_FUNCTION
       type& operator=(const __m512d &val) {
-        _data.v = val;
+        _data = val;
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       operator __m512d() const {
-        return _data.v;
+        return _data;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadAligned(const value_type *p) {
-        _data.v = _mm512_load_pd((mag_type*)p);
+        _data = _mm512_load_pd((mag_type*)p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       type& loadUnaligned(const value_type *p) {
-        _data.v = _mm512_loadu_pd((mag_type*)p);
+        _data = _mm512_loadu_pd((mag_type*)p);
         return *this;
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeAligned(value_type *p) const {
-        _mm512_store_pd((mag_type*)p, _data.v);
+        _mm512_store_pd((mag_type*)p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       void storeUnaligned(value_type *p) const {
-        _mm512_storeu_pd((mag_type*)p, _data.v);
+        _mm512_storeu_pd((mag_type*)p, _data);
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type& operator[](const int i) const {
-        return _data.d[i];
+        return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
 #endif
