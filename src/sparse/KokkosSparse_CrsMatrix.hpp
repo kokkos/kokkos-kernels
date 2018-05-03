@@ -113,6 +113,7 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
 struct DeviceConfig {
   struct Dim3 {
     size_t x, y, z;
+    KOKKOS_INLINE_FUNCTION
     Dim3(const size_t x_, const size_t y_ = 1, const size_t z_ = 1) :
       x(x_), y(y_), z(z_) {}
   };
@@ -121,6 +122,7 @@ struct DeviceConfig {
   size_t num_blocks;
   size_t num_threads_per_block;
 
+  KOKKOS_INLINE_FUNCTION
   DeviceConfig(const size_t num_blocks_ = 0,
                const size_t threads_per_block_x_ = 0,
                const size_t threads_per_block_y_ = 0,
@@ -405,14 +407,16 @@ public:
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
   //! Type of the graph structure of the sparse matrix.
   typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, execution_space, SizeType> StaticCrsGraphType;
+  //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
+  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, execution_space, SizeType> staticcrsgraph_type;
   //! Type of column indices in the sparse matrix.
-  typedef typename StaticCrsGraphType::entries_type index_type;
+  typedef typename staticcrsgraph_type::entries_type index_type;
   //! Const version of the type of column indices in the sparse matrix.
   typedef typename index_type::const_value_type const_ordinal_type;
   //! Nonconst version of the type of column indices in the sparse matrix.
   typedef typename index_type::non_const_value_type non_const_ordinal_type;
   //! Type of the "row map" (which contains the offset for each row's data).
-  typedef typename StaticCrsGraphType::row_map_type row_map_type;
+  typedef typename staticcrsgraph_type::row_map_type row_map_type;
   //! Const version of the type of row offsets in the sparse matrix.
   typedef typename row_map_type::const_value_type const_size_type;
   //! Nonconst version of the type of row offsets in the sparse matrix.
@@ -437,7 +441,7 @@ public:
   /// Epetra before it.
   //@{
   //! The graph (sparsity structure) of the sparse matrix.
-  StaticCrsGraphType graph;
+  staticcrsgraph_type graph;
   //! The 1-D array of values of the sparse matrix.
   values_type values;
   //@}
@@ -454,6 +458,7 @@ public:
   /// FIXME (mfh 09 Aug 2013) numCols and nnz should be properties of
   /// the graph, not the matrix.  Then CrsMatrix needs methods to get
   /// these from the graph.
+  KOKKOS_INLINE_FUNCTION
   CrsMatrix () :
     numCols_ (0)
   {}
@@ -464,6 +469,7 @@ public:
            class DType,
            class MTType,
            typename IType>
+  KOKKOS_INLINE_FUNCTION
   CrsMatrix (const CrsMatrix<SType,OType,DType,MTType,IType> & B) :
     graph (B.graph.entries, B.graph.row_map),
     values (B.values),
@@ -483,7 +489,7 @@ public:
   ///
   /// Allocate the values array for subsquent fill.
   CrsMatrix (const std::string& arg_label,
-             const StaticCrsGraphType& arg_graph) :
+             const staticcrsgraph_type& arg_graph) :
     graph (arg_graph),
     values (arg_label, arg_graph.entries.dimension_0 ()),
     numCols_ (maximum_entry (arg_graph) + 1)
@@ -523,7 +529,7 @@ public:
              bool pad = false)
   {
     (void) pad;
-    import (label, nrows, ncols, annz, val, rows, cols);
+    ctor_impl (label, nrows, ncols, annz, val, rows, cols);
 
     // FIXME (mfh 09 Aug 2013) Specialize this on the Device type.
     // Only use cuSPARSE for the Cuda Device.
@@ -603,7 +609,7 @@ public:
   CrsMatrix (const std::string& label,
              const OrdinalType& ncols,
              const values_type& vals,
-             const StaticCrsGraphType& graph_) :
+             const staticcrsgraph_type& graph_) :
     graph (graph_),
     values (vals),
     numCols_ (ncols)
@@ -615,7 +621,7 @@ public:
   }
 
   void
-  import (const std::string &label,
+  ctor_impl (const std::string &label,
           const OrdinalType nrows,
           const OrdinalType ncols,
           const size_type annz,
@@ -857,13 +863,13 @@ private:
 template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
 void
 CrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
-import (const std::string &label,
-        const OrdinalType nrows,
-        const OrdinalType ncols,
-        const size_type annz,
-        ScalarType* val,
-        OrdinalType* rows,
-        OrdinalType* cols)
+ctor_impl (const std::string &label,
+           const OrdinalType nrows,
+           const OrdinalType ncols,
+           const size_type annz,
+           ScalarType* val,
+           OrdinalType* rows,
+           OrdinalType* cols)
 {
   std::string str = label;
   values = values_type (str.append (".values"), annz);
@@ -880,7 +886,7 @@ import (const std::string &label,
   }
 
   str = label;
-  graph = Kokkos::create_staticcrsgraph<StaticCrsGraphType> (str.append (".graph"), row_lengths);
+  graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> (str.append (".graph"), row_lengths);
   typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
   typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
 

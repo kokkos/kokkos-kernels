@@ -117,6 +117,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Sparse_spgemm.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spadd.o
   OBJ_OPENMP += Test_OpenMP_Sparse_gauss_seidel.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_block_gauss_seidel.o
   OBJ_OPENMP += Test_OpenMP_Sparse_CrsMatrix.o
   OBJ_OPENMP += Test_OpenMP_Sparse_findRelOffset.o
   OBJ_OPENMP += Test_OpenMP_Sparse_replaceSumIntoLonger.o
@@ -219,6 +220,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Sparse_spgemm.o
   OBJ_CUDA += Test_Cuda_Sparse_spadd.o
   OBJ_CUDA += Test_Cuda_Sparse_gauss_seidel.o
+  OBJ_CUDA += Test_Cuda_Sparse_block_gauss_seidel.o
   OBJ_CUDA += Test_Cuda_Sparse_CrsMatrix.o
  #OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o #removing findRelOffset from cuda test as the implementation is sequential.
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumIntoLonger.o
@@ -313,6 +315,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Sparse_spgemm.o
   OBJ_SERIAL += Test_Serial_Sparse_spadd.o
   OBJ_SERIAL += Test_Serial_Sparse_gauss_seidel.o
+  OBJ_SERIAL += Test_Serial_Sparse_block_gauss_seidel.o
   OBJ_SERIAL += Test_Serial_Sparse_CrsMatrix.o
   OBJ_SERIAL += Test_Serial_Sparse_findRelOffset.o
   OBJ_SERIAL += Test_Serial_Sparse_replaceSumIntoLonger.o
@@ -414,6 +417,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Sparse_spgemm.o
   OBJ_THREADS += Test_Threads_Sparse_spadd.o
   OBJ_THREADS += Test_Threads_Sparse_gauss_seidel.o
+  OBJ_THREADS += Test_Threads_Sparse_block_gauss_seidel.o
   OBJ_THREADS += Test_Threads_Sparse_findRelOffset.o
   OBJ_THREADS += Test_Threads_Sparse_replaceSumIntoLonger.o
   OBJ_THREADS += Test_Threads_Sparse_replaceSumInto.o

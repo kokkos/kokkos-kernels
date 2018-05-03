@@ -95,21 +95,25 @@ void get_suggested_vector_team_size(
     int &suggested_team_size_,
     idx nr, idx nnz){
 
-#if defined( KOKKOS_HAVE_SERIAL )
+
+    suggested_vector_size_ =  1;
+    suggested_team_size_ = 1;
+
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ = 1;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
   if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ =  1;
   }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
   if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
     suggested_vector_size_ =  1;
     suggested_team_size_ = 1;
@@ -141,7 +145,7 @@ void get_suggested_vector_team_size(
   }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
   if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
     suggested_vector_size_ = 1;
     suggested_team_size_ = 1;
@@ -855,6 +859,51 @@ void permute_vector(
 
 }
 
+
+template <typename value_array_type, typename out_value_array_type, typename idx_array_type>
+struct PermuteBlockVector{
+  typedef typename idx_array_type::value_type idx;
+  int block_size;
+  value_array_type old_vector;
+  out_value_array_type new_vector;
+  idx_array_type old_to_new_mapping;
+  idx mapping_size;
+  PermuteBlockVector(
+      int block_size_,
+      value_array_type old_vector_,
+      out_value_array_type new_vector_,
+      idx_array_type old_to_new_mapping_):
+    	  block_size(block_size_),
+        old_vector(old_vector_), new_vector(new_vector_),old_to_new_mapping(old_to_new_mapping_), mapping_size(old_to_new_mapping_.dimension_0()){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const idx &ii) const {
+
+    idx mapping = ii;
+    if (ii < mapping_size) mapping = old_to_new_mapping[ii];
+
+    for (int i = 0; i < block_size; ++i){
+    	new_vector[mapping*block_size + i] = old_vector[ii * block_size + i];
+    }
+  }
+};
+
+template <typename value_array_type, typename out_value_array_type, typename idx_array_type, typename MyExecSpace>
+void permute_block_vector(
+    typename idx_array_type::value_type num_elements,
+	int block_size,
+    idx_array_type &old_to_new_index_map,
+    value_array_type &old_vector,
+    out_value_array_type &new_vector
+    ){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+
+  Kokkos::parallel_for("KokkosKernels::Impl::PermuteVector", my_exec_space(0,num_elements),
+		  PermuteBlockVector<value_array_type, out_value_array_type, idx_array_type>(block_size, old_vector, new_vector, old_to_new_index_map));
+
+}
+
+
 template <typename value_array_type, typename MyExecSpace>
 void zero_vector(
     typename value_array_type::value_type num_elements,
@@ -1100,12 +1149,14 @@ void symmetrize_graph_symbolic_hashmap(
     int vector_size = 0;
     int max_allowed_team_size = team_policy::team_size_max(fse);
 
+
+
+
     get_suggested_vector_team_size<idx, MyExecSpace>(
         max_allowed_team_size,
         vector_size,
         teamSizeMax,
         xadj.dimension_0() - 1, nnz);
-
 
     Kokkos::parallel_for(
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
@@ -1273,6 +1324,8 @@ void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename vie
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
 }
+
+
 
 
 
