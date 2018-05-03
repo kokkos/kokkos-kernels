@@ -118,7 +118,7 @@ struct MV_Sum_Right_FunctorVector
   typename XMV::const_type m_x;
 
   MV_Sum_Right_FunctorVector (const XMV& x) :
-    value_count (x.dimension_1 ()), m_x (x)
+    value_count (x.extent(1)), m_x (x)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::MV_Sum_Right_FunctorVector: "
@@ -207,7 +207,7 @@ void
 V_Sum_Invoke (const RV& r, const XV& X)
 {
   typedef typename XV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   typedef V_Sum_Functor<RV, XV, SizeType> functor_type;
@@ -223,12 +223,12 @@ void
 MV_Sum_Invoke (const RV& r, const XMV& X)
 {
   typedef typename XMV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.
-  if (X.dimension_1 () == 1) {
+  if (X.extent(1) == 1) {
     auto r_0 = Kokkos::subview (r, 0);
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
     typedef decltype (r_0) RV0D;

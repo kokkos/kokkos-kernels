@@ -145,7 +145,7 @@ struct MV_Nrm2_Right_FunctorVector
   bool m_take_sqrt;
 
   MV_Nrm2_Right_FunctorVector (const XMV& x, const bool& take_sqrt) :
-    value_count (x.dimension_1 ()), m_x (x), m_take_sqrt(take_sqrt)
+    value_count (x.extent(1)), m_x (x), m_take_sqrt(take_sqrt)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::MV_Nrm2_Right_FunctorVector: "
@@ -251,7 +251,7 @@ void
 V_Nrm2_Invoke (const RV& r, const XV& X, const bool& take_sqrt)
 {
   typedef typename XV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   typedef V_Nrm2_Functor<RV, XV, SizeType> functor_type;
@@ -267,12 +267,12 @@ void
 MV_Nrm2_Invoke (const RV& r, const XMV& X, const bool& take_sqrt)
 {
   typedef typename XMV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.
-  if (X.dimension_1 () == 1) {
+  if (X.extent(1) == 1) {
     auto r_0 = Kokkos::subview (r, 0);
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
     typedef decltype (r_0) RV0D;

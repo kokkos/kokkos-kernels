@@ -454,7 +454,7 @@ private:
         lower_triangle_src,
         lower_triangle_dst);
 
-    size_of_edge_list = lower_triangle_src.dimension_0();
+    size_of_edge_list = lower_triangle_src.extent(0);
 
   }
 
@@ -578,7 +578,7 @@ private:
   nnz_lno_t get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
-      Kokkos::parallel_reduce("KokkosKernels::FindMax", my_exec_space(0, vertex_colors.dimension_0()),
+      Kokkos::parallel_reduce("KokkosKernels::FindMax", my_exec_space(0, vertex_colors.extent(0)),
           ReduceMaxFunctor(vertex_colors) ,num_colors);
     }
     return num_colors;

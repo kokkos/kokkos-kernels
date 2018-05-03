@@ -250,10 +250,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
     
   // Note: crsGraph.numRows() == number of vertices in the 'graph'
-  //       crsGraph.entries.dimension_0() == number of edges in the 'graph'
+  //       crsGraph.entries.extent(0) == number of edges in the 'graph'
 
   std::cout << "Num verts: " << crsGraph.numRows() << std::endl
-            << "Num edges: " << crsGraph.entries.dimension_0() << std::endl;
+            << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);

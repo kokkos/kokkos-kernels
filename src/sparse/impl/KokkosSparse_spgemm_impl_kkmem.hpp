@@ -136,7 +136,7 @@ struct KokkosSPGEMM
         rowmapC(rowmapC_),
         entriesC(entriesC_),
         valuesC(valuesC_),
-        pEntriesC(entriesC_.ptr_on_device()), pvaluesC(valuesC_.ptr_on_device()),
+        pEntriesC(entriesC_.data()), pvaluesC(valuesC_.data()),
         shared_memory_size(shared_memory_size_),
         vector_size (vector_size_),
         memory_space(mpool_),
@@ -1120,8 +1120,8 @@ void
     std::cout << "\tHASH MODE" << std::endl;
   }
   KokkosSparse::SPGEMMAlgorithm algorithm_to_run = this->spgemm_algorithm;
-  nnz_lno_t brows = row_mapB.dimension_0() - 1;
-  size_type bnnz =  valsB.dimension_0();
+  nnz_lno_t brows = row_mapB.extent(0) - 1;
+  size_type bnnz =  valsB.extent(0);
 
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
@@ -1495,8 +1495,8 @@ void
     std::cout << "\tHASH MODE" << std::endl;
   }
 
-  nnz_lno_t brows = row_mapB.dimension_0() - 1;
-  size_type bnnz =  valsB.dimension_0();
+  nnz_lno_t brows = row_mapB.extent(0) - 1;
+  size_type bnnz =  valsB.extent(0);
 
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);

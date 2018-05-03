@@ -109,7 +109,7 @@ struct KokkosSPGEMM
         entriesC(entriesC_),
         valuesC(valuesC_),
         memory_space(memory_space_),
-        pEntriesC(entriesC_.ptr_on_device()), pVals(valuesC.ptr_on_device()),
+        pEntriesC(entriesC_.data()), pVals(valuesC.data()),
         my_exec_space(my_exec_space_),
         team_work_size(team_row_chunk_size){
         }
@@ -280,8 +280,8 @@ struct KokkosSPGEMM
         valuesC(valuesC_),
         beginsC(beginsC_),
         nextsC(nextsC_),
-        pbeginsC(beginsC_.ptr_on_device()), pnextsC(nextsC_.ptr_on_device()),
-        pEntriesC(entriesC_.ptr_on_device()), pvaluesC(valuesC_.ptr_on_device()),
+        pbeginsC(beginsC_.data()), pnextsC(nextsC_.data()),
+        pEntriesC(entriesC_.data()), pvaluesC(valuesC_.data()),
         shared_memory_size(sharedMemorySize_),
 
         vector_size (suggested_vector_size),
@@ -478,8 +478,8 @@ void
     std::cout << "\tSPEED MODE" << std::endl;
   }
 
-  nnz_lno_t brows = row_mapB.dimension_0() - 1;
-  size_type bnnz =  valsB.dimension_0();
+  nnz_lno_t brows = row_mapB.extent(0) - 1;
+  size_type bnnz =  valsB.extent(0);
 
   //get suggested vector size, teamsize and row chunk size.
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
@@ -491,9 +491,9 @@ void
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     //allocate memory for begins and next to be used by the hashmap
     nnz_lno_temp_work_view_t beginsC
-    (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.dimension_0());
+    (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.extent(0));
     nnz_lno_temp_work_view_t nextsC
-    (Kokkos::ViewAllocateWithoutInitializing("C nexts"), valuesC_.dimension_0());
+    (Kokkos::ViewAllocateWithoutInitializing("C nexts"), valuesC_.extent(0));
     Kokkos::deep_copy(beginsC, -1);
 
     //create the functor.

@@ -109,7 +109,7 @@ struct KokkosSPGEMM
       int suggested_team_size_, bool KOKKOSKERNELS_VERBOSE_,
       KokkosKernels::Impl::ExecSpaceType my_exec_space_
       ):
-    numrows(row_map_.dimension_0() - 1),
+    numrows(row_map_.extent(0) - 1),
     row_map(row_map_),
     entries(entries_),
     compression_bit_mask(compression_bit_mask_),
@@ -120,10 +120,10 @@ struct KokkosSPGEMM
     set_index_nexts(set_index_nexts_),
     set_index_entries(set_index_entries_),
     set_entries(set_entries_),
-    pset_index_begins(set_index_begins_.ptr_on_device()),
-    pset_index_nexts(set_index_nexts_.ptr_on_device()),
-    pset_index_entries(set_index_entries_.ptr_on_device()),
-    pset_entries(set_entries_.ptr_on_device()),
+    pset_index_begins(set_index_begins_.data()),
+    pset_index_nexts(set_index_nexts_.data()),
+    pset_index_entries(set_index_entries_.data()),
+    pset_entries(set_entries_.data()),
     shared_memory_size(shared_mem),
     team_row_chunk_size(team_row_chunk_size_),
 
