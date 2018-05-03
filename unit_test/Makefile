@@ -187,7 +187,6 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
   endif
 endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
-  KOKKOS_CXXFLAGS += --expt-relaxed-constexpr
   INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/cuda
   OBJ_CUDA = Test_Main.o gtest-all.o
   OBJ_CUDA += Test_Cuda_Blas1_abs.o
