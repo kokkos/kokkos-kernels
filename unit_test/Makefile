@@ -48,7 +48,7 @@ INC  = -I${GTEST_PATH} -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/blas
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/sparse
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/graph
-INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/common
+INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/../test_common
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/batched
 
 
@@ -60,7 +60,7 @@ TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/blas/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/sparse/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/graph/*.hpp)
-TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/common/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/../test_common/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/batched/*.hpp)
 
 
