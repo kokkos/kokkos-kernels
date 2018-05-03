@@ -99,10 +99,10 @@ struct MV_Scal_Functor
     // parameter), so the compiler should evaluate these branches at
     // compile time.
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -110,10 +110,10 @@ struct MV_Scal_Functor
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -121,10 +121,10 @@ struct MV_Scal_Functor
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -132,10 +132,10 @@ struct MV_Scal_Functor
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -179,10 +179,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -190,10 +190,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -201,10 +201,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -212,10 +212,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -253,7 +253,7 @@ struct MV_Scal_Unroll_Functor
   void operator() (const size_type& i) const
   {
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -261,7 +261,7 @@ struct MV_Scal_Unroll_Functor
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -269,7 +269,7 @@ struct MV_Scal_Unroll_Functor
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -277,7 +277,7 @@ struct MV_Scal_Unroll_Functor
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -312,7 +312,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
   void operator() (const size_type& i) const
   {
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -320,7 +320,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -328,7 +328,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -336,7 +336,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {

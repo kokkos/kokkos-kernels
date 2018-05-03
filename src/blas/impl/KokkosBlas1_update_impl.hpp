@@ -122,10 +122,10 @@ struct MV_Update_Functor
     if (scalar_x == 0) {
       if (scalar_y == 0) {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -133,10 +133,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -146,10 +146,10 @@ struct MV_Update_Functor
       }
       else {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -157,10 +157,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -175,10 +175,10 @@ struct MV_Update_Functor
     else {
       if (scalar_y == 0) {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -186,10 +186,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -199,10 +199,10 @@ struct MV_Update_Functor
       }
       else {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -210,10 +210,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {

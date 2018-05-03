@@ -82,7 +82,7 @@ struct MV_Abs_Functor
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
     for (size_type j = 0; j < numCols; ++j) {
@@ -114,7 +114,7 @@ struct MV_AbsSelf_Functor
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
     for (size_type j = 0; j < numCols; ++j) {

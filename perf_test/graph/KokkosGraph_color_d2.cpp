@@ -538,7 +538,7 @@ int main (int argc, char ** argv)
             << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
   if (params.use_openmp) 
   {
     Kokkos::OpenMP::initialize( params.use_openmp );
@@ -574,7 +574,7 @@ int main (int argc, char ** argv)
 #endif
 
 
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (params.use_serial) 
   {
     Kokkos::Serial::initialize( params.use_openmp );

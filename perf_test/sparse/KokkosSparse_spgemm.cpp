@@ -293,7 +293,7 @@ int main (int argc, char ** argv){
     std::cout << "B is not provided. Multiplying AxA." << std::endl;
   }
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
     Kokkos::OpenMP::initialize( params.use_openmp );

@@ -288,7 +288,7 @@ int main (int argc, char ** argv){
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
 #if !defined (KOKKOS_ENABLE_CUDA)
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
 

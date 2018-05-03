@@ -473,7 +473,7 @@ struct SPMV_MV_Transpose_Functor {
         const ordinal_type ind = row.colidx(iEntry);
 
         if (doalpha != 1) {
-          #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+          #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
           #pragma unroll
           #endif
           for (ordinal_type k = 0; k < n; ++k) {
@@ -481,7 +481,7 @@ struct SPMV_MV_Transpose_Functor {
                                 static_cast<y_value_type> (alpha * val * m_x(iRow, k)));
           }
         } else {
-          #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+          #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
           #pragma unroll
           #endif
           for (ordinal_type k = 0; k < n; ++k) {
@@ -535,10 +535,10 @@ struct SPMV_MV_LayoutLeft_Functor {
   {
     y_value_type sum[UNROLL];
 
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -552,13 +552,13 @@ struct SPMV_MV_LayoutLeft_Functor {
     // assume either that rows have no duplicate entries, or that rows
     // never have enough duplicate entries to overflow ordinal_type.
 
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#ifdef KOKKOS_ENABLE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
 #endif
 #ifdef __CUDA_ARCH__
@@ -576,7 +576,7 @@ struct SPMV_MV_LayoutLeft_Functor {
         row.value(iEntry);
       const ordinal_type ind = row.colidx(iEntry);
 
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -628,10 +628,10 @@ struct SPMV_MV_LayoutLeft_Functor {
 #endif // defined(__CUDA_ARCH__) && defined(KOKKOS_ENABLE_CUDA)
     {
       if (doalpha * doalpha != 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
@@ -640,40 +640,40 @@ struct SPMV_MV_LayoutLeft_Functor {
       }
 
       if (dobeta == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = sum[k];
         }
       } else if (dobeta == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) += sum[k];
         }
       } else if (dobeta == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = -m_y(iRow, kk + k) +  sum[k];
         }
       } else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
         for (int k = 0; k < UNROLL; ++k) {
@@ -695,13 +695,13 @@ struct SPMV_MV_LayoutLeft_Functor {
     // assume either that rows have no duplicate entries, or that rows
     // never have enough duplicate entries to overflow ordinal_type.
 
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#ifdef KOKKOS_ENABLE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
 #endif
 #ifdef __CUDA_ARCH__

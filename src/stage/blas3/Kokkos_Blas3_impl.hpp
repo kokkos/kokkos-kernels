@@ -81,10 +81,10 @@ struct blas3_right_2_N_N
 size_type jj=jjblocknum*block_size;
 
 for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -100,10 +100,10 @@ for(size_type i=0;i<c.dimension_0();i++){
                                
                      for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
 AMat::const_value_type alpha_a=alpha*a(i,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
@@ -142,10 +142,10 @@ struct blas3_right_2_N_T
 size_type jj=jjblocknum*block_size;
 
 for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -162,7 +162,7 @@ for(size_type i=0;i<c.dimension_0();i++){
                                 
                         for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
 CMat::non_const_value_type temp=0;
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
 
@@ -202,10 +202,10 @@ struct blas3_right_2_T_N
 size_type jj=jjblocknum*block_size;
 
 for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -222,10 +222,10 @@ for(size_type i=0;i<c.dimension_0();i++){
 
                           for(size_type i=0;i<c.dimension_0();i++){
 AMat::const_value_type alpha_a=alpha*a(k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
@@ -264,10 +264,10 @@ struct blas3_right_2_T_T
 size_type jj=jjblocknum*block_size;
 
 for(size_type i=0;i<c.dimension_0();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -283,10 +283,10 @@ for(size_type i=0;i<c.dimension_0();i++){
                                
                      for(size_type k = kk; k<((kk+block_size)>a.dimension_0()?a.dimension_0():(kk+block_size)); k++){
  AMat::const_value_type alpha_a=alpha*a(k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
@@ -326,10 +326,10 @@ size_type jj=jjblocknum*block_size;
 
 
 	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif 
                  for(size_type i=0;i<c.dimension_0();i++){                
@@ -346,10 +346,10 @@ size_type jj=jjblocknum*block_size;
 
                                 for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
  BMat::const_value_type alpha_b=alpha*b(k,j);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                       
@@ -388,10 +388,10 @@ size_type jj=jjblocknum*block_size;
 
 
         for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                  for(size_type i=0;i<c.dimension_0();i++){
@@ -409,10 +409,10 @@ size_type jj=jjblocknum*block_size;
                                         for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
 
  BMat::const_value_type alpha_b=alpha*b(j,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -452,10 +452,10 @@ size_type jj=jjblocknum*block_size;
 
 
 	for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                        for(size_type i=0;i<c.dimension_0();i++){
@@ -472,7 +472,7 @@ size_type jj=jjblocknum*block_size;
 
                         for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
 CMat::non_const_value_type temp=0;
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
 
@@ -513,10 +513,10 @@ size_type jj=jjblocknum*block_size;
 
 
         for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                  for(size_type i=0;i<c.dimension_0();i++){
@@ -533,10 +533,10 @@ size_type jj=jjblocknum*block_size;
 
                                      for(size_type j = jj; j<((jj+block_size)>c.dimension_1()?c.dimension_1():(jj+block_size)); j++){
  BMat::const_value_type alpha_b=alpha*b(j,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -574,10 +574,10 @@ struct blas3_right_3_N_N
 
 for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
 	for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -593,10 +593,10 @@ for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
                                
                      for(size_type k = kk; k<((kk+block_size)>a.dimension_2()?a.dimension_2():(kk+block_size)); k++){
 AMat::const_value_type alpha_a=alpha*a(matnum,i,k);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
@@ -635,10 +635,10 @@ struct blas3_right_3_N_T
 for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
 
 for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -655,7 +655,7 @@ for(size_type i=0;i<c.dimension_1();i++){
 
                         for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
 CMat::non_const_value_type temp=0;
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
 
@@ -695,10 +695,10 @@ struct blas3_right_3_T_N
 for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
 
 for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -715,10 +715,10 @@ for(size_type i=0;i<c.dimension_1();i++){
 
                           for(size_type i=0;i<c.dimension_1();i++){
 AMat::const_value_type alpha_a=alpha*a(matnum,k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
@@ -757,10 +757,10 @@ struct blas3_right_3_T_T
 for(size_type jj=0;jj<c.dimension_2();jj+= block_size){
 
 for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -776,10 +776,10 @@ for(size_type i=0;i<c.dimension_1();i++){
                                
                      for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
  AMat::const_value_type alpha_a=alpha*a(k,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                                 
@@ -821,10 +821,10 @@ size_type jj=jjblocknum*block_size;
 	for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
 
                  for(size_type i=0;i<c.dimension_1();i++){            
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                     for(size_type matnum=0;matnum<c.dimension_0();matnum++){
@@ -843,10 +843,10 @@ size_type jj=jjblocknum*block_size;
                                 for(size_type k = kk; k<((kk+block_size)>a.dimension_2()?a.dimension_2():(kk+block_size)); k++){
                                       
                                         for(size_type i=0;i<c.dimension_1();i++){		        
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                     for(size_type matnum=0;matnum<c.dimension_0();matnum++){
@@ -887,10 +887,10 @@ size_type jj=jjblocknum*block_size;
         for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
 
                  for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
                     for(size_type matnum=0;matnum<c.dimension_0();matnum++){   
@@ -909,10 +909,10 @@ size_type jj=jjblocknum*block_size;
 
 
                                         for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -953,10 +953,10 @@ size_type jj=jjblocknum*block_size;
 
 	for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
                        for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -974,10 +974,10 @@ size_type jj=jjblocknum*block_size;
                         for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
 
                                 for(size_type k = kk; k<((kk+block_size)>a.dimension_1()?a.dimension_1():(kk+block_size)); k++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -1018,10 +1018,10 @@ size_type jj=jjblocknum*block_size;
 
         for(size_type j = jj; j<((jj+block_size)>c.dimension_2()?c.dimension_2():(jj+block_size)); j++){
                  for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 
@@ -1041,10 +1041,10 @@ size_type jj=jjblocknum*block_size;
 
 
                                         for(size_type i=0;i<c.dimension_1();i++){
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
 

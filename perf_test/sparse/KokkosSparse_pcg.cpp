@@ -311,7 +311,7 @@ int main (int argc, char ** argv){
 
 
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_PTHREAD )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
       INDEX_TYPE nv = 0, ne = 0;
@@ -360,7 +360,7 @@ int main (int argc, char ** argv){
 
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
     if ( cmdline[ CMD_USE_OPENMP ] ) {
       INDEX_TYPE nv = 0, ne = 0;

@@ -158,10 +158,10 @@ struct MV_Nrm1_Right_FunctorVector
   operator() (const size_type i, value_type sum) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -173,10 +173,10 @@ struct MV_Nrm1_Right_FunctorVector
   init (value_type update) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -189,10 +189,10 @@ struct MV_Nrm1_Right_FunctorVector
         const volatile value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -205,10 +205,10 @@ struct MV_Nrm1_Right_FunctorVector
         const value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {

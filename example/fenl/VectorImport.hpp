@@ -63,7 +63,7 @@ class VectorImport ;
 } // namespace Example
 } // namespace Kokkos
 
-#if ! defined( KOKKOS_HAVE_MPI )
+#if ! defined( KOKKOS_ENABLE_MPI )
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#else /* defined( KOKKOS_HAVE_MPI ) */
+#else /* defined( KOKKOS_ENABLE_MPI ) */
 
 namespace Kokkos {
 namespace Example {

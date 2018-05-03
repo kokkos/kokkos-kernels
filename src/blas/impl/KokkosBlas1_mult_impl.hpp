@@ -91,7 +91,7 @@ struct MV_MultFunctor
   {
     if (scalar_c == 0) {
       if (scalar_ab == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
@@ -100,7 +100,7 @@ struct MV_MultFunctor
       }
       else { // ab != 0, c == 0
         typename AV::const_value_type Ai = m_A(i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
@@ -109,7 +109,7 @@ struct MV_MultFunctor
       }
     } else { // c != 0
       if (scalar_ab == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {
@@ -118,7 +118,7 @@ struct MV_MultFunctor
       }
       else { // m_ab != 0, and m_c != 0
         typename AV::const_value_type Ai = m_A(i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
         for (size_type j = 0; j < m_n; ++j) {

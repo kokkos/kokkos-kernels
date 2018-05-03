@@ -117,10 +117,10 @@ struct MV_V_Dot_Functor
   {
     const size_type numVecs = value_count;
     if (reverseOrder_) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numVecs; ++k) {
@@ -128,10 +128,10 @@ struct MV_V_Dot_Functor
       }
     }
     else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numVecs; ++k) {
@@ -143,10 +143,10 @@ struct MV_V_Dot_Functor
   KOKKOS_INLINE_FUNCTION void init (value_type update) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -159,10 +159,10 @@ struct MV_V_Dot_Functor
         const volatile value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -175,10 +175,10 @@ struct MV_V_Dot_Functor
   final (const value_type dst) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -235,10 +235,10 @@ struct MV_Dot_Right_FunctorVector
   void operator() (const size_type& i, value_type sum) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -249,10 +249,10 @@ struct MV_Dot_Right_FunctorVector
   KOKKOS_INLINE_FUNCTION void init (value_type update) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -265,10 +265,10 @@ struct MV_Dot_Right_FunctorVector
         const volatile value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -281,10 +281,10 @@ struct MV_Dot_Right_FunctorVector
   final (const value_type dst) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type k = 0; k < numVecs; ++k) {
@@ -342,7 +342,7 @@ struct MV_Dot_Right_FunctorUnroll
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i, value_type sum) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -352,7 +352,7 @@ struct MV_Dot_Right_FunctorUnroll
 
   KOKKOS_INLINE_FUNCTION void init (volatile value_type update) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -364,7 +364,7 @@ struct MV_Dot_Right_FunctorUnroll
   join (volatile value_type update,
         const volatile value_type source) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
@@ -376,7 +376,7 @@ struct MV_Dot_Right_FunctorUnroll
   /*KOKKOS_INLINE_FUNCTION void
   final (const value_type dst) const
   {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
