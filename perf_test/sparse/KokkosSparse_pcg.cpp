@@ -315,26 +315,29 @@ int main (int argc, char ** argv){
       if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
         init_args.num_threads = cmdline[ CMD_USE_THREADS ];
         init_args.num_numa = cmdline[ CMD_USE_NUMA ];
-        const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ]; // How to get this to initialize() without using impl_initialize()?
+        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ]; // How to get this to initialize() without using impl_initialize()?
       }
       else {
         init_args.num_threads = cmdline[ CMD_USE_THREADS ];
       }
+    }
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     if ( cmdline[ CMD_USE_OPENMP ] ) {
       if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
         init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
         init_args.num_numa = cmdline[ CMD_USE_NUMA ];
-        const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ];
+        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ];
       }
       else {
         init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
       }
+    }
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       init_args.device_id = cmdline[ CMD_USE_CUDA_DEV ];
+    }
 #endif
 
 
