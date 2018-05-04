@@ -263,22 +263,25 @@ int main(int argc, char **argv)
   if((strcmp(argv[i],"--numa")==0)) {numa=atoi(argv[++i]); continue;}
  }
 
+ Kokkos::InitArguments args_init;
 
- KokkosCUDA(
-   Kokkos::Cuda::SelectDevice select_device(device);
-   Kokkos::Cuda::initialize( select_device );
- )
+ args_init.device_id = device;
+
+ KokkosCUDA()
 
  if(numa>1 || threads>1)
  {
-   Kokkos::Threads::initialize( numa * threads_per_numa , numa );
+   args_init.num_threads = numa*threads_per_numa;
+   args_init.num_numa = numa;
  }
 
- test_mv_dot(size,numVecs,loop);
- test_mv_add(size,numVecs,loop);
- test_mv_mulscalar(size,numVecs,loop);
+ Kokkos::initialize( args_init );
+ {
+   test_mv_dot(size,numVecs,loop);
+   test_mv_add(size,numVecs,loop);
+   test_mv_mulscalar(size,numVecs,loop);
+ }
+ Kokkos::finalize();
 
- KokkosCUDA(Kokkos::Threads::finalize();)
- execution_space::finalize(  );
 }
 

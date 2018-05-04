@@ -537,11 +537,14 @@ int main (int argc, char ** argv)
   std::cout << "Sizeof(kk_lno_t) : " << sizeof(kk_lno_t) << std::endl 
             << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
+  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  const int device_id = 0;
+  Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
+
 
 #if defined( KOKKOS_HAVE_OPENMP )
   if (params.use_openmp) 
   {
-    Kokkos::OpenMP::initialize( params.use_openmp );
     Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
@@ -550,7 +553,6 @@ int main (int argc, char ** argv)
     KokkosKernels::Experiment::run_multi_mem_experiment
         <kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
 #endif
-    Kokkos::OpenMP::finalize();
   }
 #endif
 
@@ -558,8 +560,6 @@ int main (int argc, char ** argv)
 #if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) 
   {
-    Kokkos::HostSpace::execution_space::initialize();
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
     Kokkos::Cuda::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
@@ -568,8 +568,6 @@ int main (int argc, char ** argv)
     KokkosKernels::Experiment::run_multi_mem_experiment
     <kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(params);
 #endif
-    Kokkos::Cuda::finalize();
-    Kokkos::HostSpace::execution_space::finalize();
   }
 #endif
 
@@ -577,7 +575,6 @@ int main (int argc, char ** argv)
 #if defined( KOKKOS_HAVE_SERIAL )
   if (params.use_serial) 
   {
-    Kokkos::Serial::initialize( params.use_openmp );
     Kokkos::Serial::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
@@ -586,9 +583,10 @@ int main (int argc, char ** argv)
     KokkosKernels::Experiment::run_multi_mem_experiment
     <kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(params);
 #endif
-    Kokkos::Serial::finalize();
   }
 #endif
+
+  Kokkos::finalize();
 
   return 0;
 }
