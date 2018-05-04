@@ -489,11 +489,11 @@ public:
   /// Allocate the values array for subsequent fill.
   BlockCrsMatrix (const std::string& arg_label,
                   const staticcrsgraph_type& arg_graph, 
-                  const OrdinalType& blockDim) :
+                  const OrdinalType& blockDimIn) :
     graph (arg_graph),
     values (arg_label, arg_graph.entries.extent(0)),
     numCols_ (maximum_entry (arg_graph) + 1),
-    blockDim_ (blockDim)
+    blockDim_ (blockDimIn)
   {}
 
   /// \brief Constructor that copies raw arrays of host data in
@@ -555,11 +555,11 @@ public:
                   const values_type& vals,
                   const row_map_type& rows,
                   const index_type& cols,
-                  const OrdinalType blockDim) :
+                  const OrdinalType blockDimIn) :
     graph (cols, rows),
     values (vals),
     numCols_ (ncols),
-    blockDim_ (blockDim)
+    blockDim_ (blockDimIn)
   {
 
     const ordinal_type actualNumRows = (rows.extent (0) != 0) ?
@@ -575,7 +575,7 @@ public:
     // input annz is nnz of values, not comparable with block ptr 'nnz' i.e. numBlocks
     if (blockDim_ <= 0) {
       std::ostringstream os;
-      os << "Input argument blockDim = " << blockDim 
+      os << "Input argument blockDim = " << blockDimIn 
          << " is not larger than 0.";
       throw std::invalid_argument (os.str ());
     }
@@ -598,11 +598,11 @@ public:
                   const OrdinalType& ncols,
                   const values_type& vals,
                   const staticcrsgraph_type& graph_,
-                  const OrdinalType& blockDim) :
+                  const OrdinalType& blockDimIn) :
     graph (graph_),
     values (vals),
     numCols_ (ncols),
-    blockDim_ (blockDim)
+    blockDim_ (blockDimIn)
   {}
 
   /// \brief Constructor that accepts a CrsMatrix and block dimension,
@@ -613,18 +613,18 @@ public:
            class MTType,
            typename IType>
   BlockCrsMatrix (const KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType> &crs_mtx,
-                  const OrdinalType blockDim)
+                  const OrdinalType blockDimIn)
   {
     typedef typename KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType> crs_matrix_type;
     typedef typename crs_matrix_type::staticcrsgraph_type crs_graph_type;
     typedef typename crs_graph_type::entries_type crs_graph_entries_type;
     typedef typename crs_graph_type::row_map_type crs_graph_row_map_type;
 
-    blockDim_ = blockDim;
-    numCols_ = crs_mtx.numCols() / blockDim;
+    blockDim_ = blockDimIn;
+    numCols_ = crs_mtx.numCols() / blockDim_;
     values = crs_mtx.values;
 
-    OrdinalType nbrows = crs_mtx.numRows()/blockDim; // actual number of block rows; add 1 for ptr length
+    OrdinalType nbrows = crs_mtx.numRows()/blockDim_; // actual number of block rows; add 1 for ptr length
 
     // block_rows will accumulate the number of blocks per row - this is NOT the row_map with cum sum!!
     std::vector<OrdinalType> block_rows( nbrows, 0 );
@@ -636,9 +636,9 @@ public:
 
     // determine size of block cols indices == number of blocks, i.e. nnz for the block CRS graph
     OrdinalType numBlocks = 0;
-    for ( OrdinalType i = 0; i < crs_mtx.numRows(); i+=blockDim ) {
-      numBlocks += ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // cum sum
-      block_rows[ i/blockDim ] = ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim; // frequency counts
+    for ( OrdinalType i = 0; i < crs_mtx.numRows(); i+=blockDim_ ) {
+      numBlocks += ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim_; // cum sum
+      block_rows[ i/blockDim_ ] = ( h_crs_row_map(i+1) - h_crs_row_map(i) ) / blockDim_; // frequency counts
     }
 
     // create_staticcrsgraph takes the frequency of blocks per row
@@ -651,10 +651,10 @@ public:
       OrdinalType blks_in_row = block_rows[i];
       
       OrdinalType offset_into_blkcolidx_start = graph.row_map(i);
-      OrdinalType offset_into_colidx_start = offset_into_blkcolidx_start*blockDim*blockDim;
+      OrdinalType offset_into_colidx_start = offset_into_blkcolidx_start*blockDim_*blockDim_;
 
       for ( OrdinalType lidx = 0; lidx < blks_in_row; ++lidx ) {
-        h_entries( offset_into_blkcolidx_start+lidx ) = h_crs_entries( offset_into_colidx_start + blockDim*lidx ) / blockDim;
+        h_entries( offset_into_blkcolidx_start+lidx ) = h_crs_entries( offset_into_colidx_start + blockDim_*lidx ) / blockDim_;
       }
     }
 
@@ -671,7 +671,7 @@ public:
           ScalarType* val,
           OrdinalType* rows,
           OrdinalType* cols,
-          const OrdinalType blockDim);
+          const OrdinalType blockDimIn);
 
 
   /// \brief Given an array of blocks, sum the values into corresponding 
@@ -911,10 +911,10 @@ ctor_impl (const std::string &label,
            ScalarType* val,
            OrdinalType* rows,
            OrdinalType* cols,
-           const OrdinalType blockDim)
+           const OrdinalType blockDimIn)
 {
   numCols_ = ncols;
-  blockDim_ = blockDim;
+  blockDim_ = blockDimIn;
 
   // Wrap the raw pointers in unmanaged host Views
   typename values_type::HostMirror unman_val( val, annz );
