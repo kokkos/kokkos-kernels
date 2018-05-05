@@ -414,10 +414,17 @@ public:
 
   //! Type of a host-memory mirror of the sparse matrix.
   typedef BlockCrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, execution_space, SizeType> StaticCrsGraphType;
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, size_type, memory_traits> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, execution_space, SizeType> staticcrsgraph_type;
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, size_type, memory_traits> staticcrsgraph_type;
+#else
+  //! Type of the graph structure of the sparse matrix.
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, memory_traits, size_type> StaticCrsGraphType;
+  //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
+  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, execution_space, memory_traits, size_type> staticcrsgraph_type;
+#endif
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;
   //! Const version of the type of column indices in the sparse matrix.
@@ -489,11 +496,11 @@ public:
   /// Allocate the values array for subsequent fill.
   BlockCrsMatrix (const std::string& arg_label,
                   const staticcrsgraph_type& arg_graph, 
-                  const OrdinalType& arg_blockDim) :
+                  const OrdinalType& blockDimIn) :
     graph (arg_graph),
     values (arg_label, arg_graph.entries.extent(0)),
     numCols_ (maximum_entry (arg_graph) + 1),
-    blockDim_ (arg_blockDim)
+    blockDim_ (blockDimIn)
   {}
 
   /// \brief Constructor that copies raw arrays of host data in
@@ -555,11 +562,11 @@ public:
                   const values_type& vals,
                   const row_map_type& rows,
                   const index_type& cols,
-                  const OrdinalType arg_blockDim) :
+                  const OrdinalType blockDimIn) :
     graph (cols, rows),
     values (vals),
     numCols_ (ncols),
-    blockDim_ (arg_blockDim)
+    blockDim_ (blockDimIn)
   {
 
     const ordinal_type actualNumRows = (rows.extent (0) != 0) ?
@@ -598,11 +605,11 @@ public:
                   const OrdinalType& ncols,
                   const values_type& vals,
                   const staticcrsgraph_type& graph_,
-                  const OrdinalType& arg_blockDim) :
+                  const OrdinalType& blockDimIn) :
     graph (graph_),
     values (vals),
     numCols_ (ncols),
-    blockDim_ (arg_blockDim)
+    blockDim_ (blockDimIn)
   {}
 
   /// \brief Constructor that accepts a CrsMatrix and block dimension,
@@ -613,14 +620,14 @@ public:
            class MTType,
            typename IType>
   BlockCrsMatrix (const KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType> &crs_mtx,
-                  const OrdinalType arg_blockDim)
+                  const OrdinalType blockDimIn)
   {
     typedef typename KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType> crs_matrix_type;
     typedef typename crs_matrix_type::staticcrsgraph_type crs_graph_type;
     typedef typename crs_graph_type::entries_type crs_graph_entries_type;
     typedef typename crs_graph_type::row_map_type crs_graph_row_map_type;
 
-    blockDim_ = arg_blockDim;
+    blockDim_ = blockDimIn;
     numCols_ = crs_mtx.numCols() / blockDim_;
     values = crs_mtx.values;
 
@@ -671,7 +678,7 @@ public:
           ScalarType* val,
           OrdinalType* rows,
           OrdinalType* cols,
-          const OrdinalType blockDim_);
+          const OrdinalType blockDimIn);
 
 
   /// \brief Given an array of blocks, sum the values into corresponding 
@@ -911,10 +918,10 @@ ctor_impl (const std::string &label,
            ScalarType* val,
            OrdinalType* rows,
            OrdinalType* cols,
-           const OrdinalType blockDim)
+           const OrdinalType blockDimIn)
 {
   numCols_ = ncols;
-  blockDim_ = blockDim;
+  blockDim_ = blockDimIn;
 
   // Wrap the raw pointers in unmanaged host Views
   typename values_type::HostMirror unman_val( val, annz );
