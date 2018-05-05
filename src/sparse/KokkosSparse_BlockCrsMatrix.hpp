@@ -582,7 +582,7 @@ public:
     // input annz is nnz of values, not comparable with block ptr 'nnz' i.e. numBlocks
     if (blockDim_ <= 0) {
       std::ostringstream os;
-      os << "Input argument blockDim = " << blockDimIn 
+      os << "Input argument blockDim = " << blockDim_
          << " is not larger than 0.";
       throw std::invalid_argument (os.str ());
     }
