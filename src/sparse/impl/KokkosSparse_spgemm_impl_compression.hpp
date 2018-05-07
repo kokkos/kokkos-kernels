@@ -205,15 +205,23 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
