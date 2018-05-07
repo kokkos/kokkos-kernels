@@ -307,11 +307,11 @@ int main (int argc, char ** argv){
   }
 
 
-  // Prepare for Kokkos::initialize() call
-  Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
-
-#if defined( KOKKOS_ENABLE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if ( cmdline[ CMD_USE_THREADS ] ) {
+
+      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
+
       if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
         init_args.num_threads = cmdline[ CMD_USE_THREADS ];
         init_args.num_numa = cmdline[ CMD_USE_NUMA ];
@@ -320,38 +320,15 @@ int main (int argc, char ** argv){
       else {
         init_args.num_threads = cmdline[ CMD_USE_THREADS ];
       }
-    }
-#endif
-#if defined( KOKKOS_ENABLE_OPENMP )
-    if ( cmdline[ CMD_USE_OPENMP ] ) {
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
-        init_args.num_numa = cmdline[ CMD_USE_NUMA ];
-        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ];
-      }
-      else {
-        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
-      }
-    }
-#endif
-#if defined( KOKKOS_ENABLE_CUDA )
-    if ( cmdline[ CMD_USE_CUDA ] ) {
-      init_args.device_id = cmdline[ CMD_USE_CUDA_DEV ];
-    }
-#endif
 
+      Kokkos::initialize( init_args );
+      Kokkos::print_configuration(std::cout);
 
-  Kokkos::initialize( init_args );
-
-
-#if defined( KOKKOS_HAVE_PTHREAD )
-    if ( cmdline[ CMD_USE_THREADS ] ) {
       INDEX_TYPE nv = 0, ne = 0;
       INDEX_TYPE *xadj, *adj;
       SCALAR_TYPE *ew;
 
       KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
-      Kokkos::Threads::print_configuration(std::cout);
 
       typedef Kokkos::Threads myExecSpace;
       typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
@@ -376,17 +353,32 @@ int main (int argc, char ** argv){
       delete [] ew;
 
       run_experiment<myExecSpace, crsMat_t>(crsmat);
+
+      Kokkos::finalize();
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
     if ( cmdline[ CMD_USE_OPENMP ] ) {
+
+      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
+
+      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
+        init_args.num_numa = cmdline[ CMD_USE_NUMA ];
+        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ];
+      }
+      else {
+        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
+      }
+
+      Kokkos::initialize( init_args );
+      Kokkos::print_configuration(std::cout);
+
       INDEX_TYPE nv = 0, ne = 0;
       INDEX_TYPE *xadj, *adj;
       SCALAR_TYPE *ew;
-
-      Kokkos::OpenMP::print_configuration(std::cout);
 
       KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
@@ -416,16 +408,25 @@ int main (int argc, char ** argv){
       delete [] ew;
 
       run_experiment<myExecSpace, crsMat_t>(crsmat);
+
+      Kokkos::finalize();
     }
 #endif
 
 #if defined( KOKKOS_ENABLE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
+
+      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
+
       // Use the last device:
+      init_args.device_id = cmdline[ CMD_USE_CUDA_DEV ];
+
+      Kokkos::initialize( init_args );
+      Kokkos::print_configuration(std::cout);
+
       INDEX_TYPE nv = 0, ne = 0;
       INDEX_TYPE *xadj, *adj;
       SCALAR_TYPE *ew;
-      Kokkos::Cuda::print_configuration(std::cout);
 
       KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
@@ -472,10 +473,10 @@ int main (int argc, char ** argv){
       delete [] ew;
 
       run_experiment<myExecSpace, crsMat_t>(crsmat);
+
+      Kokkos::finalize();
     }
 #endif
-
-  Kokkos::finalize();
 
   return 0;
 }

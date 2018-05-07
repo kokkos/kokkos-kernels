@@ -295,10 +295,10 @@ int main (int argc, char ** argv){
   const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
   const int device_id = params.use_cuda - 1;
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
+  Kokkos::print_configuration(std::cout);
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
   if (params.use_openmp) {
-	  Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
     <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(
@@ -315,8 +315,6 @@ int main (int argc, char ** argv){
 
 #if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) {
-    Kokkos::Cuda::print_configuration(std::cout);
-
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
     <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(

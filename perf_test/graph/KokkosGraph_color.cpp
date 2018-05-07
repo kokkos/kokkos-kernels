@@ -437,10 +437,10 @@ int main (int argc, char ** argv){
   const int device_id = 0;
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
 
+  Kokkos::print_configuration(std::cout);
 #if defined( KOKKOS_HAVE_OPENMP )
 
   if (params.use_openmp) {
-    Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(
@@ -458,7 +458,6 @@ int main (int argc, char ** argv){
 
 #if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) {
-    Kokkos::Cuda::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <size_type, idx, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
@@ -477,7 +476,6 @@ int main (int argc, char ** argv){
 
 #if defined( KOKKOS_HAVE_SERIAL )
   if (params.use_serial) {
-    Kokkos::Serial::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment
     <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(

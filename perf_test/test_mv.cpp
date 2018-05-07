@@ -56,12 +56,8 @@
 #endif
 #if DEVICE==1
 typedef Kokkos::Threads execution_space;
-#define KokkosHost(a) a
-#define KokkosCUDA(a)
 #else
 typedef Kokkos::Cuda execution_space;
-#define KokkosHost(a)
-#define KokkosCUDA(a) a
 #endif
 
 typedef double FLOAT;
@@ -266,8 +262,6 @@ int main(int argc, char **argv)
  Kokkos::InitArguments args_init;
 
  args_init.device_id = device;
-
- KokkosCUDA()
 
  if(numa>1 || threads>1)
  {
