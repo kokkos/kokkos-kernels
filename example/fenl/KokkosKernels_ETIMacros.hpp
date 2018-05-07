@@ -11,7 +11,7 @@
         typedef Kokkos::complex<double> Kokkos_complex0double0; \
         typedef long long longlong;
   #else
-    #ifdef KOKKOS_ENABLE_PTHREAD
+    #ifdef KOKKOS_ENABLE_THREADS
       #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
                         typedef Kokkos::Device<Kokkos::Threads, Kokkos::Threads::memory_space> Kokkos_Device0Kokkos_Threads_Kokkos_HostSpace0; \
         typedef Kokkos::complex<double> Kokkos_complex0double0; \

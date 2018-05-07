@@ -394,7 +394,7 @@ int main (int argc, char ** argv){
   Kokkos::initialize(kargs);
 
 
-#if defined( KOKKOS_ENABLE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
       INDEX_TYPE nv = 0, ne = 0;

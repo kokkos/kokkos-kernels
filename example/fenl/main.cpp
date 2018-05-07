@@ -364,7 +364,7 @@ int main( int argc , char ** argv )
       cmdline[ CMD_USE_FIXTURE_Z ] = 2 ;
     }
 
-#if defined( KOKKOS_ENABLE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
 
