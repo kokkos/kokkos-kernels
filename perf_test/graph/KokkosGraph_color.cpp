@@ -438,7 +438,7 @@ int main (int argc, char ** argv){
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
 
   Kokkos::print_configuration(std::cout);
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
 #ifdef KOKKOSKERNELS_MULTI_MEM
@@ -474,7 +474,7 @@ int main (int argc, char ** argv){
 
 #endif
 
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (params.use_serial) {
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_experiment

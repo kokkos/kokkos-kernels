@@ -292,7 +292,7 @@ int main (int argc, char ** argv){
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
 
 #if !defined (KOKKOS_ENABLE_CUDA)
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
 	  Kokkos::OpenMP::print_configuration(std::cout);

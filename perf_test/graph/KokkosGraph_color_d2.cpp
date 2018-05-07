@@ -542,7 +542,7 @@ int main (int argc, char ** argv)
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
 
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
   if (params.use_openmp) 
   {
     Kokkos::OpenMP::print_configuration(std::cout);
@@ -572,7 +572,7 @@ int main (int argc, char ** argv)
 #endif
 
 
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
   if (params.use_serial) 
   {
     Kokkos::Serial::print_configuration(std::cout);
