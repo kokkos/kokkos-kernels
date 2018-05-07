@@ -224,7 +224,7 @@ V_NrmInf_Invoke (const RV& r, const XV& X)
 
   typedef V_NrmInf_Functor<RV, XV, SizeType> functor_type;
   functor_type op (X);
-  Kokkos::parallel_reduce (policy, op, Kokkos::Experimental::Max<typename RV::non_const_value_type>(r()));
+  Kokkos::parallel_reduce (policy, op, Kokkos::Max<typename RV::non_const_value_type>(r()));
 }
 
 
