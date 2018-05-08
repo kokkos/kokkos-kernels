@@ -6,7 +6,7 @@
 #include <Kokkos_Complex.hpp>
 #include <KokkosBatched_Vector.hpp>
 
-#if defined(__CUDA_ARCH__) || defined(__GNUC__)
+#if defined(__CUDA_ARCH__) 
 #undef  __KOKKOSBATCHED_ENABLE_AVX__
 #else
 // compiler bug with AVX in some architectures
