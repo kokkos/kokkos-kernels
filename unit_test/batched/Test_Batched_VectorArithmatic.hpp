@@ -26,8 +26,8 @@ namespace Test {
       a[k].imag() = k*5 + 4;
     }
 
-    const auto a_real = RealPart(a);
-    const auto a_imag = ImagPart(a);
+    const auto a_real = Kokkos::Details::ArithTraits<vector_type>::real(a);
+    const auto a_imag = Kokkos::Details::ArithTraits<vector_type>::imag(a);
 
     typedef Kokkos::Details::ArithTraits<value_type> ats;
     const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
@@ -36,6 +36,7 @@ namespace Test {
       EXPECT_NEAR_KK( a[k].imag(), a_imag[k], eps);
     }
   }
+
   template<typename VectorTagType,int VectorLength>
   void impl_test_batched_vector_arithmatic() {
     /// random data initialization

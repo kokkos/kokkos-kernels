@@ -130,14 +130,14 @@ namespace KokkosBatched {
       for (int i=0;i<l;++i) { r_val[i] = val[i].real(); }
       return r_val;
     }
-    template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<T>::mag_type ImagPart(const T &val) { return 0; }
-    template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<Kokkos::complex<T> >::mag_type ImagPart(const Kokkos::complex<T> &val) { return val.imag(); }
-    template<typename T, int l> typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type
-    ImagPart(const Vector<SIMD<Kokkos::complex<T> >,l> &val) {
-      typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type r_val;
-      for (int i=0;i<l;++i) { r_val[i] = val[i].imag(); }
-      return r_val;
-    }
+    //template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<T>::mag_type ImagPart(const T &val) { return 0; }
+    //template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<Kokkos::complex<T> >::mag_type ImagPart(const Kokkos::complex<T> &val) { return val.imag(); }
+    //template<typename T, int l> typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type
+    //ImagPart(const Vector<SIMD<Kokkos::complex<T> >,l> &val) {
+    //  typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type r_val;
+    //  for (int i=0;i<l;++i) { r_val[i] = val[i].imag(); }
+    //  return r_val;
+    //}
 
   }
 }
@@ -164,6 +164,28 @@ namespace Kokkos {
       static const bool is_integer = ArithTraits<T>::is_integer;
       static const bool is_exact = ArithTraits<T>::is_exact;
       static const bool is_complex = ArithTraits<T>::is_complex;
+    };
+	
+	
+    template<typename T, int l>
+    class ArithTraits<Vector<SIMD<Kokkos::complex<T>>,l> > { 
+    public:
+      typedef typename ArithTraits<T>::val_type val_scalar_type;
+      typedef typename ArithTraits<T>::mag_type mag_scalar_type;
+
+      typedef Vector<SIMD<Kokkos::complex<val_scalar_type> >,l> val_type;
+      typedef Vector<SIMD<mag_scalar_type >,l> mag_type;
+
+	  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (val_type &val) {
+      mag_type r_val;
+      for (int i=0;i<l;++i) { r_val[i] = val[i].real(); }
+        return r_val;
+      }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (val_type &val) {
+      mag_type r_val;
+      for (int i=0;i<l;++i) { r_val[i] = val[i].imag(); }
+        return r_val;
+      }
     };
 
   }
