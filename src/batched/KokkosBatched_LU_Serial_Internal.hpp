@@ -56,7 +56,8 @@ namespace KokkosBatched {
           *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
 
         if (tiny != 0) {
-          const auto alpha11_real = RealPart(alpha11);
+          //const auto alpha11_real = RealPart(alpha11);
+		  const auto alpha11_real = Kokkos::Details::ArithTraits<ValueType>::real(alpha11);
           alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
           alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
         }

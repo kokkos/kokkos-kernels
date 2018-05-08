@@ -62,7 +62,8 @@ namespace KokkosBatched {
 
         if (tiny != 0) {
           if (member.team_rank() == 0) {
-            const auto alpha11_real = RealPart(alpha11);
+            //const auto alpha11_real = RealPart(alpha11);
+            const auto alpha11_real = Kokkos::Details::ArithTraits<ValueType>::real(alpha11);
             alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
             alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
           }
