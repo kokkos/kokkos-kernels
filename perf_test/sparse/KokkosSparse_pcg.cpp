@@ -307,7 +307,12 @@ int main (int argc, char ** argv){
   }
 
 
+
+
+
+
 #if defined( KOKKOS_ENABLE_THREADS )
+
     if ( cmdline[ CMD_USE_THREADS ] ) {
 
       Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
