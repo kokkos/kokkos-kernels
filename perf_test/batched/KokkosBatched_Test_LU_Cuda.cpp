@@ -478,7 +478,7 @@ namespace KokkosBatched {
               const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
               const int team_size = min(max(mblk*2,1), max_cuda_blocksize/VectorLength);
 
-              const policy_type policy(N, team_size, VectorLength);
+              policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 // flush
                 flush.run();
