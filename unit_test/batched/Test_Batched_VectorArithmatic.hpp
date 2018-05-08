@@ -32,8 +32,8 @@ namespace Test {
     typedef Kokkos::Details::ArithTraits<value_type> ats;
     const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
     for (int k=0;k<vector_length;++k) {
-      EXPECT_NEAR_KK( a[k].real(), a_real[k], eps);
-      EXPECT_NEAR_KK( a[k].imag(), a_imag[k], eps);
+      EXPECT_NEAR( a[k].real(), a_real[k], eps);
+      EXPECT_NEAR( a[k].imag(), a_imag[k], eps);
     }
   }
   template<typename VectorTagType,int VectorLength>
@@ -69,111 +69,111 @@ namespace Test {
         /// test : vec + vec
         c = a + b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k]+b[k], eps*c[k]);      
-      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k]+b[k]), eps*ats::abs(c[k]));      
+        
         /// test : value + vec
         c = alpha + b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], alpha+b[k], eps*c[k]);      
-      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(alpha+b[k]), eps*ats::abs(c[k]));      
+        
         /// test : vec + value
         c = b + alpha;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], b[k] + alpha, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(b[k] + alpha), eps*ats::abs(c[k]));      
 
         /// test : vec + mag
         c = a + beta;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k] + beta, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k] + beta), eps*ats::abs(c[k]));      
 
         /// test : mag + vec
         c = beta + a;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], beta + a[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(beta + a[k]), eps*ats::abs(c[k]));      
       }
       {
         /// test : vec - vec
         c = a - b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k]-b[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k]-b[k]), eps*ats::abs(c[k]));      
       
         /// test : value - vec
         c = alpha - b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], alpha-b[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(alpha-b[k]), eps*ats::abs(c[k]));      
       
         /// test : vec + value
         c = b - alpha;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], b[k]-alpha, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(b[k]-alpha), eps*ats::abs(c[k]));      
 
         /// test : vec - mag
         c = a - beta;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k] - beta, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k] - beta), eps*ats::abs(c[k]));      
 
         /// test : mag - vec
         c = beta - a;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], beta - a[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(beta - a[k]), eps*ats::abs(c[k]));      
       }
       {
         /// test : vec * vec
         c = a * b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k]*b[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k]*b[k]), eps*ats::abs(c[k]));      
       
         /// test : value * vec
         c = alpha * b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], alpha*b[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(alpha*b[k]), eps*ats::abs(c[k]));      
       
         /// test : vec + value
         c = b * alpha;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], b[k]*alpha, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(b[k]*alpha), eps*ats::abs(c[k]));      
 
         /// test : vec * mag
         c = a * beta;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k] * beta, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k] * beta), eps*ats::abs(c[k]));      
 
         /// test : mag * vec
         c = beta * a;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], beta * a[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(beta * a[k]), eps*ats::abs(c[k]));      
       }
       {
         /// test : vec / vec
         c = a / b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k]/b[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k]/b[k]), eps*ats::abs(c[k]));      
         
         /// test : value / vec
         c = alpha / b;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], alpha/b[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(alpha/b[k]), eps*ats::abs(c[k]));      
         
         /// test : vec / value
         c = b / alpha;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], b[k]/alpha, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(b[k]/alpha), eps*ats::abs(c[k]));      
         
         /// test : mag / vec
         c = beta / a;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], beta/a[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(beta/a[k]), eps*ats::abs(c[k]));      
         
         /// test : vec / value
         c = a / beta;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], a[k]/beta, eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k]/beta), eps*ats::abs(c[k]));      
       }
       {
         /// test : vec  -vec
         c = -a;
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], -a[k], eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(-a[k]), eps*ats::abs(c[k]));      
       }
 #if defined(__DO_NOT_TEST__)
       {
@@ -185,7 +185,7 @@ namespace Test {
         c +=  vector_type(tiny)*vector_type(a >= 0);
 
         for (int k=0;k<vector_length;++k) 
-          EXPECT_NEAR_KK( c[k], (a[k] < 0 ? -tiny : tiny), eps*c[k]);      
+          EXPECT_NEAR( ats::abs(c[k]), ats::abs(a[k] < 0 ? -tiny : tiny), eps*ats::abs(c[k]));      
       }
 #endif
     }    
