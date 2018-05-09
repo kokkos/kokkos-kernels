@@ -71,7 +71,7 @@ namespace KokkosBatched {
       ordinal_type _ntridiag, _m, _blocksize, _shmemlvl;
 
       UnmanagedViewType<typename block_tridiag_matrices_type::value_array_type> _TA, _TB, _TC;
-      typedef typename MagnitudeScalarType<value_type>::type magnitude_scalar_type;
+      typedef typename Kokkos::Details::ArithTraits<value_type>::mag_type magnitude_scalar_type;
 
     public:
       FactorizeBlockTridiagMatrices() {}

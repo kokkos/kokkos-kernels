@@ -16,7 +16,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const AViewType &A,
-             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0);
+             const typename Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>::mag_type tiny = 0);
     };       
 
     template<typename MemberType,
@@ -28,7 +28,7 @@ namespace KokkosBatched {
       static int
       invoke(const MemberType &member, 
              const AViewType &A,
-             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0);
+             const typename Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>::mag_type tiny = 0);
     };       
       
   }

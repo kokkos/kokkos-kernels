@@ -28,7 +28,7 @@ namespace KokkosBatched {
       invoke(const MemberType &member,
              const int m, const int n,
              ValueType *__restrict__ A, const int as0, const int as1,
-             const typename MagnitudeScalarType<ValueType>::type tiny);
+             const typename Kokkos::Details::ArithTraits<ValueType>::mag_type tiny);
     };
 
     template<>
@@ -39,7 +39,7 @@ namespace KokkosBatched {
     invoke(const MemberType &member, 
            const int m, const int n,
            ValueType *__restrict__ A, const int as0, const int as1,
-           const typename MagnitudeScalarType<ValueType>::type tiny) {
+           const typename Kokkos::Details::ArithTraits<ValueType>::mag_type tiny) {
 
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
@@ -62,7 +62,6 @@ namespace KokkosBatched {
 
         if (tiny != 0) {
           if (member.team_rank() == 0) {
-            //const auto alpha11_real = RealPart(alpha11);
             const auto alpha11_real = Kokkos::Details::ArithTraits<ValueType>::real(alpha11);
             alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
             alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
@@ -97,7 +96,7 @@ namespace KokkosBatched {
     invoke(const MemberType &member, 
            const int m, const int n,
            ValueType *__restrict__ A, const int as0, const int as1,
-           const typename MagnitudeScalarType<ValueType>::type tiny) {
+           const typename Kokkos::Details::ArithTraits<ValueType>::mag_type tiny) {
 
       enum : int {
         mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
@@ -106,7 +105,7 @@ namespace KokkosBatched {
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
-      const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
+      const typename Kokkos::Details::ArithTraits<ValueType>::mag_type one(1.0), minus_one(-1.0);
 
       InnerLU<mbAlgo> lu(as0, as1);
           
