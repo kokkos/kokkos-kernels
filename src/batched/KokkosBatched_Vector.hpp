@@ -158,7 +158,7 @@ namespace Kokkos {
       typedef Vector<SIMD<Kokkos::complex<val_scalar_type> >,l> val_type;
       typedef Vector<SIMD<mag_scalar_type >,l> mag_type;
 
-	  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
       mag_type r_val;
       for (int i=0;i<l;++i) { r_val[i] = val[i].real(); }
         return r_val;
