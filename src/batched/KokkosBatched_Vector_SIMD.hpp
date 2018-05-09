@@ -6,7 +6,7 @@
 #include <Kokkos_Complex.hpp>
 #include <KokkosBatched_Vector.hpp>
 
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) 
 #undef  __KOKKOSBATCHED_ENABLE_AVX__
 #else
 // compiler bug with AVX in some architectures
@@ -63,7 +63,7 @@ namespace KokkosBatched {
           _data[i] = 0;
       }
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
+      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -74,7 +74,7 @@ namespace KokkosBatched {
           _data[i] = val;
       }
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -122,7 +122,7 @@ namespace KokkosBatched {
       }
 
       KOKKOS_INLINE_FUNCTION
-      value_type& operator[](const int i) const {
+      value_type& operator[](const int &i) const {
         return _data[i];
       }
     };
@@ -152,12 +152,12 @@ namespace KokkosBatched {
 
     public:
       KOKKOS_INLINE_FUNCTION Vector() { _data = _mm256_setzero_pd(); }
-      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data = _mm256_set1_pd(val); }
+      KOKKOS_INLINE_FUNCTION Vector(const value_type &val) { _data = _mm256_set1_pd(val); }
       KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
       KOKKOS_INLINE_FUNCTION Vector(const __m256d &val) { _data = val; }
 
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
+      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
         auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -168,18 +168,20 @@ namespace KokkosBatched {
         for (int i=0;i<vector_length;++i)
           d[i] = val;
       }
+
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        auto d = reinterpret_cast<value_type*>(&_data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-        for (int i=0;i<vector_length;++i)
-          d[i] = b[i];
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -216,7 +218,7 @@ namespace KokkosBatched {
       }
 
       KOKKOS_INLINE_FUNCTION
-      value_type& operator[](const int i) const {
+      value_type& operator[](const int &i) const {
         return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
@@ -242,11 +244,11 @@ namespace KokkosBatched {
 
     public:
       KOKKOS_INLINE_FUNCTION Vector() { _data = _mm256_setzero_pd(); }
-      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data = _mm256_broadcast_pd((const __m128d *)&val);}
-      KOKKOS_INLINE_FUNCTION Vector(const mag_type val) { const value_type a(val); _data = _mm256_broadcast_pd((__m128d const *)&a); }
+      KOKKOS_INLINE_FUNCTION Vector(const value_type &val) { _data = _mm256_broadcast_pd((const __m128d *)&val);}
+      KOKKOS_INLINE_FUNCTION Vector(const mag_type &val) { const value_type a(val); _data = _mm256_broadcast_pd((__m128d const *)&a); }
       KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
       KOKKOS_INLINE_FUNCTION Vector(const __m256d &val) { _data = val; }
-
+      
 //       template<typename ArgValueType>
 //       KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
 // #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
@@ -259,17 +261,18 @@ namespace KokkosBatched {
 //           _data.d[i] = value_type(val);
 //       }
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        auto d = reinterpret_cast<value_type*>(&_data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-        for (int i=0;i<vector_length;++i)
-          d[i] = b[i];
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -306,7 +309,7 @@ namespace KokkosBatched {
       }
 
       KOKKOS_INLINE_FUNCTION
-      value_type& operator[](int i) const {
+      value_type& operator[](const int &i) const {
         return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
@@ -332,12 +335,12 @@ namespace KokkosBatched {
 
     public:
       KOKKOS_INLINE_FUNCTION Vector() { _data = _mm512_setzero_pd(); }
-      KOKKOS_INLINE_FUNCTION Vector(const value_type val) { _data = _mm512_set1_pd(val); }
+      KOKKOS_INLINE_FUNCTION Vector(const value_type &val) { _data = _mm512_set1_pd(val); }
       KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
       KOKKOS_INLINE_FUNCTION Vector(const __m512d &val) { _data = val; }
 
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
+      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
         auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -349,17 +352,18 @@ namespace KokkosBatched {
           d[i] = val;
       }
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        auto d = reinterpret_cast<value_type*>(&_data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-        for (int i=0;i<vector_length;++i)
-          d[i] = b[i];
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -396,7 +400,7 @@ namespace KokkosBatched {
       }
 
       KOKKOS_INLINE_FUNCTION
-      value_type& operator[](const int i) const {
+      value_type& operator[](const int &i) const {
         return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
@@ -422,17 +426,17 @@ namespace KokkosBatched {
 
     public:
       KOKKOS_INLINE_FUNCTION Vector() { _data = _mm512_setzero_pd(); }
-      KOKKOS_INLINE_FUNCTION Vector(const value_type val) {
+      KOKKOS_INLINE_FUNCTION Vector(const value_type &val) {
         _data = _mm512_mask_broadcast_f64x4(_mm512_set1_pd(val.imag()), 0x55, _mm256_set1_pd(val.real()));
       }
-      KOKKOS_INLINE_FUNCTION Vector(const mag_type val) {
+      KOKKOS_INLINE_FUNCTION Vector(const mag_type &val) {
         _data = _mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55, _mm256_set1_pd(val));
       }
       KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data = b._data; }
       KOKKOS_INLINE_FUNCTION Vector(const __m512d &val) { _data = val; }
 
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
+      KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
         auto d = reinterpret_cast<value_type*>(&_data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
@@ -444,17 +448,18 @@ namespace KokkosBatched {
           d[i] = val;
       }
       template<typename ArgValueType>
-      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> b) {
+      KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        auto d = reinterpret_cast<value_type*>(&_data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<value_type*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-        for (int i=0;i<vector_length;++i)
-          d[i] = b[i];
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -491,7 +496,7 @@ namespace KokkosBatched {
       }
 
       KOKKOS_INLINE_FUNCTION
-      value_type& operator[](const int i) const {
+      value_type& operator[](const int &i) const {
         return reinterpret_cast<value_type*>(&_data)[i];
       }
     };

@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#ifndef KOKKOSKERNELS_TEST_UTILS_HPP
+#define KOKKOSKERNELS_TEST_UTILS_HPP
 
 #include "KokkosKernels_Utils.hpp"
 namespace Test {
@@ -104,3 +106,4 @@ namespace Test {
   }
 }
 
+#endif

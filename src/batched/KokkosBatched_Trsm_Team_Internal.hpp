@@ -69,7 +69,7 @@ namespace KokkosBatched {
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
-                b1t[j*bs1] /= alpha11;
+                b1t[j*bs1] = b1t[j*bs1] / alpha11;
               });
             member.team_barrier();
           }
@@ -216,7 +216,7 @@ namespace KokkosBatched {
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
-                b1t[j*bs1] /= alpha11;
+                b1t[j*bs1] = b1t[j*bs1] / alpha11;
               });
             member.team_barrier();
           }
