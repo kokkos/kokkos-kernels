@@ -121,24 +121,6 @@ namespace KokkosBatched {
     template<int l> struct ValueScalarType<Vector<SIMD<double>,l> > { typedef double type; };
     template<int l> struct ValueScalarType<Vector<SIMD<Kokkos::complex<float> >,l> > { typedef Kokkos::complex<float> type; };
     template<int l> struct ValueScalarType<Vector<SIMD<Kokkos::complex<double> >,l> > { typedef Kokkos::complex<double> type; };
-
-    //template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<T>::mag_type RealPart(const T &val) { return val; }
-    //template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<Kokkos::complex<T> >::mag_type RealPart(const Kokkos::complex<T> &val) { return val.real(); }
-    //template<typename T, int l> typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type
-    //RealPart(const Vector<SIMD<Kokkos::complex<T> >,l> &val) {
-    //  typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type r_val;
-    //  for (int i=0;i<l;++i) { r_val[i] = val[i].real(); }
-    //  return r_val;
-    //}
-    //template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<T>::mag_type ImagPart(const T &val) { return 0; }
-    //template<typename T> KOKKOS_FORCEINLINE_FUNCTION typename Kokkos::Details::ArithTraits<Kokkos::complex<T> >::mag_type ImagPart(const Kokkos::complex<T> &val) { return val.imag(); }
-    //template<typename T, int l> typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type
-    //ImagPart(const Vector<SIMD<Kokkos::complex<T> >,l> &val) {
-    //  typename Kokkos::Details::ArithTraits<Vector<SIMD<Kokkos::complex<T> >,l> >::mag_type r_val;
-    //  for (int i=0;i<l;++i) { r_val[i] = val[i].imag(); }
-    //  return r_val;
-    //}
-
   }
 }
 
@@ -176,12 +158,12 @@ namespace Kokkos {
       typedef Vector<SIMD<Kokkos::complex<val_scalar_type> >,l> val_type;
       typedef Vector<SIMD<mag_scalar_type >,l> mag_type;
 
-	  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (val_type &val) {
+	  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
       mag_type r_val;
       for (int i=0;i<l;++i) { r_val[i] = val[i].real(); }
         return r_val;
       }
-      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (val_type &val) {
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type &val) {
       mag_type r_val;
       for (int i=0;i<l;++i) { r_val[i] = val[i].imag(); }
         return r_val;
