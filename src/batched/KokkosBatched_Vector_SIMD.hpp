@@ -172,20 +172,16 @@ namespace KokkosBatched {
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        if (std::is_same<value_type,ArgValueType>::value) {
-          _data = b._data;
-        } else {
-          auto dd = reinterpret_cast<value_type*>(&_data);
-          auto bb = reinterpret_cast<ArgValueType*>(&b._data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-          for (int i=0;i<vector_length;++i)
-            dd[i] = bb[i];
-        }
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -267,20 +263,16 @@ namespace KokkosBatched {
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        if (std::is_same<value_type,ArgValueType>::value) {
-          _data = b._data;
-        } else {
-          auto dd = reinterpret_cast<value_type*>(&_data);
-          auto bb = reinterpret_cast<ArgValueType*>(&b._data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-          for (int i=0;i<vector_length;++i)
-            dd[i] = bb[i];
-        }
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -362,20 +354,16 @@ namespace KokkosBatched {
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        if (std::is_same<value_type,ArgValueType>::value) {
-          _data = b._data;
-        } else {
-          auto dd = reinterpret_cast<value_type*>(&_data);
-          auto bb = reinterpret_cast<ArgValueType*>(&b._data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<ArgValueType*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-          for (int i=0;i<vector_length;++i)
-            dd[i] = bb[i];
-        }
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -462,20 +450,16 @@ namespace KokkosBatched {
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
         static_assert(std::is_convertible<value_type,ArgValueType>::value, "input type is not convertible");
-        if (std::is_same<value_type,ArgValueType>::value) {
-          _data = b._data; 
-        } else {
-          auto dd = reinterpret_cast<value_type*>(&_data);
-          auto bb = reinterpret_cast<value_type*>(&b._data);
+	auto dd = reinterpret_cast<value_type*>(&_data);
+	auto bb = reinterpret_cast<value_type*>(&b._data);
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-          for (int i=0;i<vector_length;++i)
-            dd[i] = bb[i];
-        }
+	for (int i=0;i<vector_length;++i)
+	  dd[i] = bb[i];
       }
 
       KOKKOS_INLINE_FUNCTION
