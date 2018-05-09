@@ -109,18 +109,6 @@ namespace KokkosBatched {
     template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<float> >,l> > { typedef float type; };
     template<int l> struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double> >,l> > { typedef double type; };
 
-    template<typename T>
-    struct ValueScalarType;
-
-    template<> struct ValueScalarType<float> { typedef float type; };
-    template<> struct ValueScalarType<double> { typedef double type; };
-    template<> struct ValueScalarType<Kokkos::complex<float> > { typedef Kokkos::complex<float> type; };
-    template<> struct ValueScalarType<Kokkos::complex<double> > { typedef Kokkos::complex<double> type; };
-
-    template<int l> struct ValueScalarType<Vector<SIMD<float>,l> > { typedef float type; };
-    template<int l> struct ValueScalarType<Vector<SIMD<double>,l> > { typedef double type; };
-    template<int l> struct ValueScalarType<Vector<SIMD<Kokkos::complex<float> >,l> > { typedef Kokkos::complex<float> type; };
-    template<int l> struct ValueScalarType<Vector<SIMD<Kokkos::complex<double> >,l> > { typedef Kokkos::complex<double> type; };
   }
 }
 

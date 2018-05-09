@@ -25,7 +25,7 @@ namespace KokkosBatched {
       static int 
       invoke(const int m, const int n,
              ValueType *__restrict__ A, const int as0, const int as1,
-             const typename Kokkos::Details::ArithTraits<ValueType>::mag_type tiny);
+             const typename MagnitudeScalarType<ValueType>::type tiny);
     };
 
     template<>
@@ -35,7 +35,7 @@ namespace KokkosBatched {
     SerialLU_Internal<Algo::LU::Unblocked>::
     invoke(const int m, const int n,
            ValueType *__restrict__ A, const int as0, const int as1,
-           const typename Kokkos::Details::ArithTraits<ValueType>::mag_type tiny) {
+           const typename MagnitudeScalarType<ValueType>::type tiny) {
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
@@ -81,11 +81,11 @@ namespace KokkosBatched {
     SerialLU_Internal<Algo::LU::Blocked>::
     invoke(const int m, const int n,
            ValueType *__restrict__ A, const int as0, const int as1,
-           const typename Kokkos::Details::ArithTraits<ValueType>::mag_type tiny) {
+           const typename MagnitudeScalarType<ValueType>::type tiny) {
       enum : int {
         mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
-      const typename Kokkos::Details::ArithTraits<ValueType>::mag_type one(1.0), minus_one(-1.0);
+      const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
 
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;

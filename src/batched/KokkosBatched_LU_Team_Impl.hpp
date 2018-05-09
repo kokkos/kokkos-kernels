@@ -24,7 +24,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const MemberType &member, const AViewType &A,
-             const typename Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>::mag_type tiny = 0) {
+             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0) {
         return TeamLU_Internal<Algo::LU::Unblocked>::invoke(member,
                                                             A.extent(0), A.extent(1),
                                                             A.data(), A.stride_0(), A.stride_1(),
@@ -38,7 +38,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const MemberType &member, const AViewType &A,
-             const typename Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>::mag_type tiny = 0) {
+             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0) {
         return TeamLU_Internal<Algo::LU::Blocked>::invoke(member,
                                                           A.extent(0), A.extent(1),
                                                           A.data(), A.stride_0(), A.stride_1(),
