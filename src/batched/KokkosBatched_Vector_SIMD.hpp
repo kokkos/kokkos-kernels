@@ -317,7 +317,7 @@ namespace KokkosBatched {
       }
 
       KOKKOS_INLINE_FUNCTION
-      value_type& operator[](int &i) const {
+      value_type& operator[](const int &i) const {
         return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
