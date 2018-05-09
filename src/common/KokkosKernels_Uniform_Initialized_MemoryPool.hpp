@@ -203,7 +203,7 @@ public:
     if (num_set_chunks > 0){
     	data_view = data_view_t(Kokkos::ViewAllocateWithoutInitializing("pool data"), overall_size);
     }
-    data = (data_view.ptr_on_device());
+    data = (data_view.data());
 
     this->set_pool_type(pool_type_);
 
@@ -251,7 +251,7 @@ public:
       if (num_set_chunks){
     	  chunk_locks = lock_view_t("locks", num_chunks);
       }
-      pchunk_locks = chunk_locks.ptr_on_device();
+      pchunk_locks = chunk_locks.data();
     }
   }
 

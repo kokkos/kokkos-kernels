@@ -68,8 +68,8 @@ namespace KokkosBatched {
           for (ordinal_type k=0,kend=aa.extent(2);k<kend;++k)
             for (ordinal_type l=0,lend=aa.extent(3);l<lend;++l) {
               const double 
-                val  = aa(i,j,k,l),
-                diff = aa(i,j,k,l) - bb(i,j,k,l);
+                val  = aa.access(i,j,k,l),
+                diff = aa.access(i,j,k,l) - bb.access(i,j,k,l);
               diff2 += diff*diff;
               norm2 += val*val;
             }

@@ -98,8 +98,8 @@ namespace Experimental{
 
 	  //Internal_alno_row_view_t_ const_a_r  = row_map;
 	  //Internal_alno_nnz_view_t_ const_a_l  = entries;
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
 
 	  using namespace KokkosSparse::Impl;
 
@@ -184,9 +184,9 @@ namespace Experimental{
 			  typename scalar_nnz_view_t_::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
 
-	  Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-	  Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-	  Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+	  Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+	  Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+	  Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
 
 	  using namespace KokkosSparse::Impl;
@@ -311,12 +311,12 @@ namespace Experimental{
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
 	  */
 
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
-          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
 
 	  using namespace KokkosSparse::Impl;
 
@@ -455,12 +455,12 @@ namespace Experimental{
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
 	  */
 
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
-          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
 
 
 
@@ -601,12 +601,12 @@ namespace Experimental{
 	  Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
 	  */
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
-          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
 
 
 	  using namespace KokkosSparse::Impl;

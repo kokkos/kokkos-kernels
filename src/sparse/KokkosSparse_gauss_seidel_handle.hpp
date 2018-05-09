@@ -303,10 +303,10 @@ private:
 
 
   void allocate_x_y_vectors(nnz_lno_t num_rows, nnz_lno_t num_cols){
-    if(permuted_y_vector.dimension_0() != size_t(num_rows)){
+    if(permuted_y_vector.extent(0) != size_t(num_rows)){
       permuted_y_vector = scalar_persistent_work_view_t("PERMUTED Y VECTOR", num_rows);
     }
-    if(permuted_x_vector.dimension_0() != size_t(num_cols)){
+    if(permuted_x_vector.extent(0) != size_t(num_cols)){
       permuted_x_vector = scalar_persistent_work_view_t("PERMUTED X VECTOR", num_cols);
     }
   }
