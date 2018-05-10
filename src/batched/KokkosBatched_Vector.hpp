@@ -138,13 +138,13 @@ namespace Kokkos {
 	
 	
     template<typename T, int l>
-    class ArithTraits<Vector<SIMD<Kokkos::complex<T>>,l> > { 
+    class ArithTraits<KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<Kokkos::complex<T>>,l> > { 
     public:
       typedef typename ArithTraits<T>::val_type val_scalar_type;
       typedef typename ArithTraits<T>::mag_type mag_scalar_type;
 
-      typedef Vector<SIMD<Kokkos::complex<val_scalar_type> >,l> val_type;
-      typedef Vector<SIMD<mag_scalar_type >,l> mag_type;
+      typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<Kokkos::complex<val_scalar_type> >,l> val_type;
+      typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<mag_scalar_type >,l> mag_type;
 
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
       mag_type r_val;
