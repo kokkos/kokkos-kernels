@@ -128,7 +128,11 @@ namespace Kokkos {
 
       typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<val_scalar_type>,l> val_type;
       typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<mag_scalar_type>,l> mag_type;
-      
+     
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
+        return val;
+      }
+ 
       static const bool is_specialized = ArithTraits<T>::is_specialized;
       static const bool is_signed = ArithTraits<T>::is_signed;
       static const bool is_integer = ArithTraits<T>::is_integer;
@@ -147,13 +151,13 @@ namespace Kokkos {
       typedef KokkosBatched::Experimental::Vector<KokkosBatched::Experimental::SIMD<mag_scalar_type >,l> mag_type;
 
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type &val) {
-      mag_type r_val;
-      for (int i=0;i<l;++i) { r_val[i] = val[i].real(); }
+        mag_type r_val;
+        for (int i=0;i<l;++i) { r_val[i] = val[i].real(); }
         return r_val;
       }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type &val) {
-      mag_type r_val;
-      for (int i=0;i<l;++i) { r_val[i] = val[i].imag(); }
+        mag_type r_val;
+        for (int i=0;i<l;++i) { r_val[i] = val[i].imag(); }
         return r_val;
       }
     };
