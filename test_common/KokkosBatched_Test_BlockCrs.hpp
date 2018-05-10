@@ -355,7 +355,7 @@ namespace KokkosBatched {
                 std::cout << "KokkosBatched::TeamShmemTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
               }
               
-              const policy_type policy(_ntridiag, team_size, VectorLength);
+              policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
             } 
             break;
@@ -881,7 +881,7 @@ namespace KokkosBatched {
                 team_size = min(max(_blocksize/2,4), max_cuda_blocksize/VectorLength/2);
               }
               
-              const policy_type policy(_ntridiag, team_size, VectorLength);
+              policy_type policy(_ntridiag, team_size, VectorLength);
               Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
             }
             break;

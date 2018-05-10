@@ -22,12 +22,15 @@ namespace KokkosBatched {
       return _mm512_add_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator + (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_add_pd(a, b);
     }
+#endif
+
 #endif
 #if defined(__AVX__) || defined(__AVX2__)
     KOKKOS_FORCEINLINE_FUNCTION
@@ -37,12 +40,15 @@ namespace KokkosBatched {
       return _mm256_add_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator + (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
       return _mm256_add_pd(a, b);
     }
+#endif
+
 #endif
 #endif
 
@@ -185,12 +191,15 @@ namespace KokkosBatched {
       return _mm512_sub_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator - (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_sub_pd(a, b);
     }
+#endif
+
 #endif
 #if defined(__AVX__) || defined(__AVX2__)
     KOKKOS_FORCEINLINE_FUNCTION
@@ -200,12 +209,15 @@ namespace KokkosBatched {
       return _mm256_sub_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator - (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
       return _mm256_sub_pd(a, b);
     }
+#endif
+
 #endif
 #endif
 
@@ -366,6 +378,7 @@ namespace KokkosBatched {
       return _mm512_mul_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
@@ -388,6 +401,8 @@ namespace KokkosBatched {
 #endif
     }
 #endif
+
+#endif
 #if defined(__AVX__) || defined(__AVX2__)
     KOKKOS_FORCEINLINE_FUNCTION
     static
@@ -396,6 +411,7 @@ namespace KokkosBatched {
       return _mm256_mul_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static Vector<SIMD<Kokkos::complex<double> >,2>
     operator * (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
@@ -412,6 +428,8 @@ namespace KokkosBatched {
                                          _mm256_set_pd( 0.0, -0.0, 0.0, -0.0)));
 #endif
     }
+#endif
+
 #endif
 #endif
 
@@ -473,19 +491,27 @@ namespace KokkosBatched {
 
 #if defined(__KOKKOSBATCHED_ENABLE_AVX__)
 #if defined(__AVX512F__)
+
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator * (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const double b) {
       return _mm512_mul_pd(a, _mm512_set1_pd(b));
     }
 #endif
+
+#endif
 #if defined(__AVX__) || defined(__AVX2__)
+
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator * (const Vector<SIMD<Kokkos::complex<double> >,2> & a, const double b) {
       return _mm256_mul_pd(a, _mm256_set1_pd(b));
     }
+#endif
+
 #endif
 #endif
 
@@ -499,19 +525,27 @@ namespace KokkosBatched {
 
 #if defined(__KOKKOSBATCHED_ENABLE_AVX__)
 #if defined(__AVX512F__)
+
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator * (const double a, const Vector<SIMD<Kokkos::complex<double> >,4> &b) {
       return _mm512_mul_pd(_mm512_set1_pd(a), b);
     }
 #endif
+
+#endif
 #if defined(__AVX__) || defined(__AVX2__)
+
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
     operator * (const double a, const Vector<SIMD<Kokkos::complex<double> >,2> & b) {
       return _mm256_mul_pd(_mm256_set1_pd(a), b);
     }
+#endif
+
 #endif
 #endif
 
@@ -573,6 +607,7 @@ namespace KokkosBatched {
       return _mm512_div_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
@@ -601,6 +636,8 @@ namespace KokkosBatched {
     }
 #endif
 
+#endif
+
 #if defined(__AVX__) || defined(__AVX2__)
     KOKKOS_FORCEINLINE_FUNCTION
     static
@@ -609,6 +646,7 @@ namespace KokkosBatched {
       return _mm256_div_pd(a, b);
     }
 
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,2)
@@ -629,6 +667,8 @@ namespace KokkosBatched {
                            _mm256_add_pd(_mm256_mul_pd(br, br), _mm256_mul_pd(bi, bi)));
 #endif
     }
+#endif
+
 #endif
 #endif
 
@@ -662,12 +702,16 @@ namespace KokkosBatched {
     /// simd, real
 #if defined(__KOKKOSBATCHED_ENABLE_AVX__)
 #if defined(__AVX512F__)
+
+#if !defined(KOKKOS_COMPILER_GNU)
     KOKKOS_FORCEINLINE_FUNCTION
     static 
     KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<double>,4)
     operator / (const Vector<SIMD<Kokkos::complex<double> >,4> &a, const double b) {
       return _mm512_div_pd(a, _mm512_set1_pd(b));
     }
+#endif
+
 #endif
 #endif
 

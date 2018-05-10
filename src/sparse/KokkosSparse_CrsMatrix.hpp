@@ -498,7 +498,7 @@ public:
   CrsMatrix (const std::string& arg_label,
              const staticcrsgraph_type& arg_graph) :
     graph (arg_graph),
-    values (arg_label, arg_graph.entries.dimension_0 ()),
+    values (arg_label, arg_graph.entries.extent(0)),
     numCols_ (maximum_entry (arg_graph) + 1)
   {}
 
@@ -578,8 +578,8 @@ public:
     values (vals),
     numCols_ (ncols)
   {
-    const ordinal_type actualNumRows = (rows.dimension_0 () != 0) ?
-      static_cast<ordinal_type> (rows.dimension_0 () - static_cast<size_type> (1)) :
+    const ordinal_type actualNumRows = (rows.extent(0) != 0) ?
+      static_cast<ordinal_type> (rows.extent(0) - static_cast<size_type> (1)) :
       static_cast<ordinal_type> (0);
     if (nrows != actualNumRows) {
       std::ostringstream os;
@@ -739,7 +739,7 @@ public:
 
   //! The number of stored entries in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type nnz () const {
-    return graph.entries.dimension_0 ();
+    return graph.entries.extent(0);
   }
 
   friend struct SparseRowView<CrsMatrix>;

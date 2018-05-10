@@ -201,15 +201,23 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
@@ -1120,7 +1128,7 @@ void KokkosSPGEMM
       spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE ||
       spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM){
     size_t s_maxNumRoughZeros = this->getMaxRoughRowNNZ_p(
-        a_row_cnt, entriesA.dimension_0(),
+        a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,
         p_rowmapB_begins, p_rowmapB_ends);
     //max row size cannot be overeall number of columns.
@@ -1132,7 +1140,7 @@ void KokkosSPGEMM
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
           Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
-        a_row_cnt, entriesA.dimension_0(),
+        a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,
         p_rowmapB_begins, p_rowmapB_ends, min_result_row_for_each_row.data());
   }
@@ -1145,7 +1153,7 @@ void KokkosSPGEMM
       p_rowmapA,
       p_entriesA,
 
-      entriesB.dimension_0(),
+      entriesB.extent(0),
       p_rowmapB_begins,
       p_rowmapB_ends,
       p_entriesB,

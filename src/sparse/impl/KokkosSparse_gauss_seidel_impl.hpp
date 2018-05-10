@@ -572,7 +572,7 @@ public:
 
     const_lno_row_view_t xadj = this->row_map;
     const_lno_nnz_view_t adj = this->entries;
-    size_type nnz = adj.dimension_0();
+    size_type nnz = adj.extent(0);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     Kokkos::Impl::Timer timer;
@@ -611,7 +611,7 @@ public:
 #if KOKKOSSPARSE_IMPL_RUNSEQUENTIAL
     numColors = num_rows;
     KokkosKernels::Impl::print_1Dview(colors);
-    std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.dimension_0() <<  std::endl;
+    std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.extent(0) <<  std::endl;
     typename HandleType::GraphColoringHandleType::color_view_t::HostMirror  h_colors = Kokkos::create_mirror_view (colors);
     for(int i = 0; i < num_rows; ++i){
 	h_colors(i) = i + 1;
@@ -739,8 +739,8 @@ public:
     	gsHandler->set_max_nnz(max_row_size);
 
 
-        nnz_lno_t brows = permuted_xadj.dimension_0() - 1;
-        size_type bnnz =  permuted_adj.dimension_0() * block_size * block_size;
+        nnz_lno_t brows = permuted_xadj.extent(0) - 1;
+        size_type bnnz =  permuted_adj.extent(0) * block_size * block_size;
 
         int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
         int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
@@ -1061,7 +1061,7 @@ public:
       const_lno_nnz_view_t adj = this->entries;
       const_scalar_nnz_view_t adj_vals = this->values;
 
-      size_type nnz = adj_vals.dimension_0();
+      size_type nnz = adj_vals.extent(0);
 
       typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
 
@@ -1251,8 +1251,8 @@ public:
 
 
 
-    nnz_lno_t brows = permuted_xadj.dimension_0() - 1;
-    size_type bnnz =  permuted_adj_vals.dimension_0();
+    nnz_lno_t brows = permuted_xadj.extent(0) - 1;
+    size_type bnnz =  permuted_adj_vals.extent(0);
 
     int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
     int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
@@ -1473,7 +1473,7 @@ public:
 	  nnz_lno_t block_size = this->handle->get_gs_handle()->get_block_size();
 
 	  /*
-    size_type nnz = this->values.dimension_0();
+    size_type nnz = this->values.extent(0);
     int suggested_vector_size = this->handle->get_suggested_vector_size(num_rows, nnz);
     int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
     nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,MyExecSpace::concurrency(), brows);

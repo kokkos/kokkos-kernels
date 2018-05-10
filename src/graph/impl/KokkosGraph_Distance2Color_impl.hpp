@@ -686,7 +686,7 @@ private:
     int max_per_line=20;
     int line_count=1;
     std::cout << label << " = [ \n\t";
-    for(size_t i=0; i<view.dimension_0(); i++)
+    for(size_t i=0; i<view.extent(0); i++)
     {
       std::cout << std::setw(5) << view(i) << " ";
       if (line_count >= max_per_line) {

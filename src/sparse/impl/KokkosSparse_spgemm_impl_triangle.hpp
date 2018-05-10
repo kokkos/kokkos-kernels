@@ -205,15 +205,23 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
@@ -1646,7 +1654,7 @@ void
   row_lno_temp_work_view_t new_row_mapB;
   nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
   nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-  size_type bnnz =  set_index_entries.dimension_0();
+  size_type bnnz =  set_index_entries.extent(0);
   this->handle->get_spgemm_handle()->get_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
 
 
@@ -1699,8 +1707,8 @@ void KokkosSPGEMM
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_symbolic_triangle_setup(){
 
-  nnz_lno_t n = this->row_mapB.dimension_0() - 1;
-  size_type nnz = this->entriesB.dimension_0();
+  nnz_lno_t n = this->row_mapB.extent(0) - 1;
+  size_type nnz = this->entriesB.extent(0);
 
   bool apply_compression = this->handle->get_spgemm_handle()->get_compression();
 
@@ -1730,8 +1738,8 @@ void KokkosSPGEMM
         compress_in_single_step);
 
     if (KOKKOSKERNELS_VERBOSE){
-      std::cout << "\tNew Size:" << set_index_entries.dimension_0() << " old:" << this->entriesB.dimension_0()
-            << " ratio:" << set_index_entries.dimension_0() / double (this->entriesB.dimension_0() )<< std::endl;
+      std::cout << "\tNew Size:" << set_index_entries.extent(0) << " old:" << this->entriesB.extent(0)
+            << " ratio:" << set_index_entries.extent(0) / double (this->entriesB.extent(0) )<< std::endl;
       std::cout << "\t\tCOMPRESS MATRIX-B overall time:" << timer1.seconds() << std::endl << std::endl;
     }
 
@@ -1749,7 +1757,7 @@ void KokkosSPGEMM
       p_rowmapB_ends = p_rowmapB_begins + 1;
     }
 
-    size_type bnnz =  set_index_entries.dimension_0();
+    size_type bnnz =  set_index_entries.extent(0);
     if (this->MyEnumExecSpace == KokkosKernels::Impl::Exec_CUDA){
       KokkosKernels::Impl::kkp_reduce_diff_view
       <size_type, MyExecSpace> (this->b_row_cnt, p_rowmapB_begins, p_rowmapB_ends, bnnz);
@@ -1806,7 +1814,7 @@ void KokkosSPGEMM
       spgemm_algorithm ==  SPGEMM_KK_TRIANGLE_IA_UNION){
 
     maxNumRoughZeros = this->getMaxRoughRowNNZ_p(
-        a_row_cnt, entriesA.dimension_0(),
+        a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,
         p_rowmapB_begins, p_rowmapB_ends);
     //max row size cannot be overeall number of columns.
@@ -1827,7 +1835,7 @@ void KokkosSPGEMM
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
           Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
-        a_row_cnt, entriesA.dimension_0(),
+        a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,
         p_rowmapB_begins, p_rowmapB_ends,
         min_result_row_for_each_row.data());
@@ -1859,7 +1867,7 @@ void KokkosSPGEMM
   row_lno_temp_work_view_t new_row_mapB;
   nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
   nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
-  size_type bnnz =  set_index_entries.dimension_0();
+  size_type bnnz =  set_index_entries.extent(0);
   this->handle->get_spgemm_handle()->get_compressed_b(bnnz, new_row_mapB, set_index_entries, set_entries);
 
 
@@ -1939,7 +1947,7 @@ void KokkosSPGEMM
   size_type const *p_rowmapB_ends = row_mapB.data()+1;
   nnz_lno_t const *p_set_index_b = this->entriesB.data();
   nnz_lno_t const *p_set_b = NULL;
-  size_type bnnz = this->entriesB.dimension_0();
+  size_type bnnz = this->entriesB.extent(0);
 
   bool apply_compression = this->handle->get_spgemm_handle()->get_compression();
   if (apply_compression){

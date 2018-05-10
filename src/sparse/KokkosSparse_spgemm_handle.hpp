@@ -521,7 +521,7 @@ private:
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
-      std::cout << "PTHREAD Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
+      std::cout << "THREADS Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
     }
 #endif
@@ -618,7 +618,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_ENABLE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       suggested_vector_size_ = this->suggested_vector_size = 1;
       suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
