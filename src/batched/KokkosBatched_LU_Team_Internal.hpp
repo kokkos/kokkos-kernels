@@ -66,10 +66,9 @@ namespace KokkosBatched {
           }
         }
 
+        member.team_barrier();
         const ValueType
           alpha11 = A[p*as0+p*as1];
-
-        member.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
             // a21[i*as0] *= inv_alpha11; 
             a21[i*as0] /= alpha11;
