@@ -53,7 +53,7 @@ SPARSEINC += -I$(KOKKOSKERNELS_SRC_PATH)/perf_test/sparse/spmv
 INC += $(SPARSEINC)
 GRAPHINC = -I$(KOKKOSKERNELS_SRC_PATH)/perf_test/graph
 INC += $(GRAPHINC)
-COMMONINC = -I$(KOKKOSKERNELS_SRC_PATH)/perf_test/common
+COMMONINC = -I$(KOKKOSKERNELS_SRC_PATH)/perf_test/../test_common
 INC += $(COMMONINC)
 
 
@@ -67,21 +67,41 @@ TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/sparse/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/sparse/spmv/*.hpp)
 GRAPH_HEADERS = $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/graph/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/graph/*.hpp)
-COMMON_HEADERS = $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/common/*.hpp)
-TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/common/*.hpp)
+COMMON_HEADERS = $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/../test_common/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/../test_common/*.hpp)
 
 #removing this for now, as those blas tests have teuchos dependency.
 #EXECUTABLES = $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/blas/*cpp) 
 
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/sparse/*cpp)
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/graph/*cpp) 
-EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/common/*cpp) 
+EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/../test_common/*cpp) 
+
+
+
+#=======================================================================
+#===================== BATCHED BLAS/LAPACK PERF ========================
+#=======================================================================
+
+BATCHEDINC = -I$(KOKKOSKERNELS_SRC_PATH)/perf_test/batched
+INC += $(BATCHEDINC)
+
+BATCHED_HEADERS = $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/batched/*.hpp)
+TEST_HEADERS += $(BATCHED_HEADERS)
+
+BATCHED_EXECUTABLES = $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/batched/*cpp)
+EXECUTABLES += $(BATCHED_EXECUTABLES)
+
+#=======================================================================
+#===================== TEST TARGETS ====================================
+#=======================================================================
 
 vpath %.cpp $(sort $(dir $(EXECUTABLES)))
 OBJS = $(notdir $(EXECUTABLES:.cpp=.o))
 TEST_TARGETS = $(notdir $(EXECUTABLES:.cpp=.exe))
-
 #TEST_TARGETS = $(patsubst %.cpp, %.exe, $(EXECUTABLES))
+
+
 #=======================================================================
 #=================== Make Rules ========================================
 #=======================================================================
@@ -93,7 +113,7 @@ clean: kokkos-clean kokkoskernels-clean
 default: $(TEST_TARGETS)
 
 build: $(TEST_TARGETS)
-	
+
 %.exe:%.o $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
 	$(LINK) $(EXTRA_PATH) $< $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o $@
 

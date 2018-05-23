@@ -216,7 +216,7 @@ private:
    */
   void choose_default_algorithm()
   {
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
@@ -225,7 +225,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -234,7 +234,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -247,12 +247,12 @@ private:
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+      std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
     }
 #endif
 
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
@@ -372,7 +372,7 @@ private:
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t & teamMember) const {
-
+      typedef typename std::remove_reference< decltype( lower_xadj_counts(0) ) >::type atomic_incr_type;
 
       nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
       if (ii >= nv) {
@@ -390,7 +390,7 @@ private:
         nnz_lno_t n = adj[adjind];
         if (ii < n && n < nv){
           size_type position =
-              Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), 1);
+              Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), atomic_incr_type(1));
           lower_srcs(position) = ii;
           lower_dsts(position) = n;
         }
@@ -454,7 +454,7 @@ private:
         lower_triangle_src,
         lower_triangle_dst);
 
-    size_of_edge_list = lower_triangle_src.dimension_0();
+    size_of_edge_list = lower_triangle_src.extent(0);
 
   }
 
@@ -499,7 +499,7 @@ private:
             teamSizeMax,
             nv, ne);
 
-        Kokkos::parallel_for(
+        Kokkos::parallel_for("KokkosGraph::CountLowerTriangleTeam",
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
             clt//, new_num_edge
         );
@@ -515,7 +515,7 @@ private:
         new_num_edge = hlower();
         nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
         nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
-        Kokkos::parallel_for(
+        Kokkos::parallel_for("KokkosGraph::FillLowerTriangleTeam",
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
             FillLowerTriangleTeam
             <row_index_view_type, nonzero_view_type,
@@ -527,7 +527,7 @@ private:
       }
       else {
         if (nv > 0) {
-          Kokkos::parallel_reduce(my_exec_space(0,nv),
+          Kokkos::parallel_reduce("KokkosGraph::CountLowerTriangleTeam",my_exec_space(0,nv),
               CountLowerTriangle<row_index_view_type, nonzero_view_type, size_type_temp_work_view_t> (nv, xadj, adj, lower_count), new_num_edge);
         }
 
@@ -538,7 +538,7 @@ private:
         nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
         nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
 
-        Kokkos::parallel_for(my_exec_space(0,nv), FillLowerTriangle
+        Kokkos::parallel_for("KokkosGraph::FillLowerTriangleTeam",my_exec_space(0,nv), FillLowerTriangle
             <row_index_view_type, nonzero_view_type,
             size_type_temp_work_view_t,nnz_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
 
@@ -578,7 +578,7 @@ private:
   nnz_lno_t get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
-      Kokkos::parallel_reduce(my_exec_space(0, vertex_colors.dimension_0()),
+      Kokkos::parallel_reduce("KokkosKernels::FindMax", my_exec_space(0, vertex_colors.extent(0)),
           ReduceMaxFunctor(vertex_colors) ,num_colors);
     }
     return num_colors;

@@ -180,30 +180,32 @@ do
       echo "                 Maxwell53      = NVIDIA Maxwell generation CC 5.3"
       echo "                 Pascal60       = NVIDIA Pascal generation CC 6.0"
       echo "                 Pascal61       = NVIDIA Pascal generation CC 6.1"
+      echo "                 Volta70        = NVIDIA Volta generation CC 7.0"
+      echo "                 Volta72        = NVIDIA Volta generation CC 7.2"
       echo ""
-      echo "--compiler=/Path/To/Compiler  Set the compiler."
-      echo "--debug,-dbg:                 Enable Debugging."
-      echo "--cxxflags=[FLAGS]            Overwrite CXXFLAGS for library build and test"
-      echo "                                build.  This will still set certain required"
-      echo "                                flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
-      echo "                                --std=c++11, etc.)."
-      echo "--ldflags=[FLAGS]             Overwrite LDFLAGS for library build and test"
-      echo "                                build. This will still set certain required"
-      echo "                                flags via KOKKOS_LDFLAGS (such as -fopenmp,"
-      echo "                                -lpthread, etc.)."
-      echo "--with-gtest=/Path/To/Gtest:  Set path to gtest.  (Used in unit and performance"
-      echo "                                tests.)"
-      echo "--with-hwloc=/Path/To/Hwloc:  Set path to hwloc library."
-      echo "--with-memkind=/Path/To/MemKind:  Set path to memkind library."
-      echo "--with-kokkos-options=[OPT]:         Additional options to Kokkos:"
-      echo "                                compiler_warnings"
-      echo "                                aggressive_vectorization = add ivdep on loops"
-      echo "                                disable_profiling = do not compile with profiling hooks"
-      echo "                                "
-      echo "--with-cuda-options=[OPT]:    Additional options to CUDA:"
-      echo "                                force_uvm, use_ldg, enable_lambda, rdc"
-      echo "--make-j=[NUM]:               DEPRECATED: call make with appropriate"
-      echo "                                -j flag"
+      echo "--compiler=/Path/To/Compiler          Set the compiler."
+      echo "--debug,-dbg:                         Enable Debugging."
+      echo "--cxxflags=[FLAGS]                    Overwrite CXXFLAGS for library build and test"
+      echo "                                        build.  This will still set certain required"
+      echo "                                        flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
+      echo "                                        --std=c++11, etc.)."
+      echo "--ldflags=[FLAGS]                     Overwrite LDFLAGS for library build and test"
+      echo "                                        build. This will still set certain required"
+      echo "                                        flags via KOKKOS_LDFLAGS (such as -fopenmp,"
+      echo "                                        -lpthread, etc.)."
+      echo "--with-gtest=/Path/To/Gtest:          Set path to gtest.  (Used in unit and performance"
+      echo "                                        tests.)"
+      echo "--with-hwloc=/Path/To/Hwloc:          Set path to hwloc library."
+      echo "--with-memkind=/Path/To/MemKind:      Set path to memkind library."
+      echo "--with-kokkos-options=[OPT]:          Additional options to Kokkos:"
+      echo "                                        compiler_warnings"
+      echo "                                        aggressive_vectorization = add ivdep on loops"
+      echo "                                        disable_profiling = do not compile with profiling hooks"
+      echo "                                        "
+      echo "--with-cuda-options=[OPT]:            Additional options to CUDA:"
+      echo "                                        force_uvm, use_ldg, enable_lambda, rdc"
+      echo "--make-j=[NUM]:                       DEPRECATED: call make with appropriate"
+      echo "                                        -j flag"
       exit 0
       ;;
     *)
@@ -412,16 +414,16 @@ echo "KOKKOS_SETTINGS=${KOKKOS_SETTINGS}" > Makefile
 
 echo "" >> Makefile
 echo "kokkos-lib:" >> Makefile
-echo -e "\t\$(MAKE) -C kokkos install-lib" >> Makefile
+echo -e "\tcd kokkos && \$(MAKE) install-lib" >> Makefile
 echo "" >> Makefile
 
 echo "" >> Makefile
 echo "kokkoskernels-lib: kokkos-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src build" >> Makefile
+echo -e "\tcd src && \$(MAKE) build" >> Makefile
 echo "" >> Makefile
 
 echo "install-lib: kokkoskernels-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src install-lib" >> Makefile
+echo -e "\tcd src && \$(MAKE) install-lib" >> Makefile
 echo "" >> Makefile
 
 echo "build-test: install-lib" >> Makefile

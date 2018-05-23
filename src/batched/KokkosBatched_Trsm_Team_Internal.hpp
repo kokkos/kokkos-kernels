@@ -47,8 +47,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       const ScalarType one(1.0), zero(0.0);
 
       if (alpha == zero)   TeamSetInternal  ::invoke(member, m, n, zero,  B, bs0, bs1);
@@ -70,18 +69,13 @@ namespace KokkosBatched {
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
-                b1t[j*bs1] /= alpha11;
+                b1t[j*bs1] = b1t[j*bs1] / alpha11;
               });
             member.team_barrier();
           }
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend*jend),[&](const int &ij) {
-#if							\
-  defined (KOKKOS_ENABLE_CUDA) &&				\
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-              const int i = ij%iend, j = ij/iend;
-#else
+              // assume layout right for batched computation
               const int i = ij/jend, j = ij%jend;
-#endif
               B2[i*bs0+j*bs1] -= a21[i*as0] * b1t[j*bs1];
             });          
         }
@@ -102,8 +96,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
@@ -198,8 +191,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       const ScalarType one(1.0), zero(0.0);
 
       // note that parallel range is different ( m*n vs m-1*n);        
@@ -219,7 +211,7 @@ namespace KokkosBatched {
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
-                b1t[j*bs1] /= alpha11;
+                b1t[j*bs1] = b1t[j*bs1] / alpha11;
               });
             member.team_barrier();
           }
@@ -252,8 +244,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsmInternal:: not valid template types");
+
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
