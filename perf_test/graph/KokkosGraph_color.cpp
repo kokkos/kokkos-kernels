@@ -221,7 +221,6 @@ void run_experiment(
 
     graph_color_symbolic(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries);
 
-
     std::cout << std::endl <<
         "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
         "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "

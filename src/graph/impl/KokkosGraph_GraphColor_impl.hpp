@@ -2493,18 +2493,16 @@ public:
     }
 
     std::cout << std::endl << "Step 1: compute the score array" << std::endl;
-    std::cout << "Score: {";
     size_type maxColors = 0;
     nnz_lno_persistent_work_view_t score = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), this->nv);
     for(nnz_lno_t node = 0; node < this->nv; ++node) {
       score(node) = this->xadj(node + 1) - this->xadj(node);
       if(maxColors < (size_type) score(node)) {maxColors = score(node);}
-      std::cout << score(node) << " - ";
     }
-    std::cout << "}" << std::endl;
+    std::cout << "Score: ";
+    print1DView(this->nv, score);
 
     std::cout << std::endl << "Step 2: compute the dependency list and the initial new frontier" << std::endl;
-    std::cout << "Dependency: {";
 
     // Create the dependency list of the graph
     nnz_lno_persistent_work_view_t dependency = nnz_lno_persistent_work_view_t("dependency", this->nv);
@@ -2528,18 +2526,14 @@ public:
         newFrontier(newFrontierSize) = node;
         ++newFrontierSize;
       }
-      std::cout << dependency(node) << " - ";
     }
-    std::cout << "}" << std::endl;
+    std::cout << "Dependency: ";
+    print1DView(this->nv, dependency);
 
-    // std::cout << "newFrontier: {";
-    // for(size_type newFrontierIdx = 0; newFrontierIdx < newFrontierSize-1; ++newFrontierIdx) {
-    //   std::cout << newFrontier(newFrontierIdx) << " - ";
-    // }
-    // std::cout << newFrontier(newFrontierSize-1) << "}" << std::endl;
-
+    std::cout << std::endl << "Step 3: loop until newFrontier is empty" << std::endl;
     while(newFrontierSize > 0) {
-      printFrontier(newFrontierSize, newFrontier);
+      std::cout << "Frontier: ";
+      print1DView(newFrontierSize, newFrontier);
       // First swap fontier with newFrontier and fontierSize with newFrontierSize
       // reset newFrontierSize
       frontierSize = newFrontierSize;
@@ -2572,13 +2566,13 @@ public:
       } // Loop over current frontier
     } // while newFrontierSize
 
-    std::cout << "actually printing the colors now!" << std::endl;
-    printFrontier(this->nv, colors);
+    std::cout << "Colors: ";
+    print1DView(this->nv, colors);
 
   } // color_graph()
 
-  void printFrontier(const size_type frontierSize, const nnz_lno_temp_work_view_t frontier) {
-    std::cout << "frontier: {";
+  void print1DView(const size_type frontierSize, const nnz_lno_temp_work_view_t frontier) {
+    std::cout << "{";
     for(size_type frontierIdx = 0; frontierIdx < frontierSize-1; ++frontierIdx) {
       std::cout << frontier(frontierIdx) << " - ";
     }
