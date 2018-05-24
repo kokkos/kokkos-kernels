@@ -796,7 +796,6 @@ protected:
                         // 0 for VB:
                         // 1: for VBCS
                         // 2: for VBBIT
-                        // 3: for VBD
 
   int _max_num_iterations;
 
@@ -834,9 +833,6 @@ public:
         break;
       case COLORING_VBCS:
         this->_use_color_set = 1;
-        break;
-      case COLORING_VBD:
-        this->_use_color_set = 3;
         break;
       default: //cannnot get in here.
         this->_use_color_set = 0;
@@ -2492,20 +2488,25 @@ public:
           << "\tchunkSize:" << this->_chunkSize << std::endl;
     }
 
-    std::cout << std::endl << "Step 1: compute the score array" << std::endl;
+    std::cout << std::endl << "Step 1: compute the score array and maxColors" << std::endl;
     size_type maxColors = 0;
-    nnz_lno_persistent_work_view_t score = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), this->nv);
-    for(nnz_lno_t node = 0; node < this->nv; ++node) {
-      score(node) = this->xadj(node + 1) - this->xadj(node);
-      if(maxColors < (size_type) score(node)) {maxColors = score(node);}
-    }
+    nnz_lno_persistent_work_view_t score
+      = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), this->nv);
+    typedef typename Kokkos::Experimental::Max<size_type, MyExecSpace> maxScoreReducerType;
+    maxScoreReducerType maxScoreReducer(maxColors);
+    functorScoreCalcution<nnz_lno_persistent_work_view_t, size_type, MyExecSpace> scoreCalcution(score, this->xadj);
+    Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", this->nv,
+                            scoreCalcution, maxScoreReducer);
     std::cout << "Score: ";
     print1DView(this->nv, score);
+    std::cout << "maxColors: " << maxColors << std::endl;
 
-    std::cout << std::endl << "Step 2: compute the dependency list and the initial new frontier" << std::endl;
+    std::cout << std::endl
+              << "Step 2: compute the dependency list and the initial new frontier" << std::endl;
 
     // Create the dependency list of the graph
-    nnz_lno_persistent_work_view_t dependency = nnz_lno_persistent_work_view_t("dependency", this->nv);
+    nnz_lno_persistent_work_view_t dependency
+      = nnz_lno_persistent_work_view_t("dependency", this->nv);
     size_type frontierSize = 0, newFrontierSize = 0;
     nnz_lno_temp_work_view_t frontier = nnz_lno_temp_work_view_t("frontier", this->nv);
     nnz_lno_temp_work_view_t newFrontier = nnz_lno_temp_work_view_t("new frontier", this->nv);
@@ -2578,6 +2579,23 @@ public:
     }
     std::cout << frontier(frontierSize - 1) << "}" << std::endl;
   } // printFrontier
+
+  template <class score_type, class max_type, class execution_space>
+  struct functorScoreCalcution {
+    typedef typename Kokkos::Experimental::Max<max_type, execution_space>::value_type valueType;
+    score_type score_;
+    const_lno_row_view_t numNeighbors_;
+
+    functorScoreCalcution(score_type score, const_lno_row_view_t numNeighbors)
+      : score_(score), numNeighbors_(numNeighbors) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const int i, valueType &update) const {
+      score_(i) = numNeighbors_(i + 1) - numNeighbors_(i);
+      update = ( (valueType) score_(i) < update ? update : (valueType) score_(i) );
+    }
+  }; // functorScoreCalcution()
+
 
 };  // class GraphColor_VBD
 
