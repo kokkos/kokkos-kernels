@@ -30,7 +30,7 @@ namespace KokkosBatched {
     invoke(const AViewType &A,
            const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
       typedef typename AViewType::value_type vector_type;
-      typedef typename vector_type::value_type value_type;
+      //typedef typename vector_type::value_type value_type;
 
       const int
         m = A.dimension(0),
@@ -39,12 +39,12 @@ namespace KokkosBatched {
 
       int r_val = 0;
       if (A.stride_0() == 1) {
-        LAPACKE_dgetrf_compact(CblasColMajor, 
+        LAPACKE_dgetrf_compact(MKL_COL_MAJOR, 
                                m, n, 
                                (double*)A.data(), A.stride_1(), 
                                (MKL_INT)vl, (MKL_INT)1);
       } else if (A.stride_1() == 1) {
-        LAPACKE_dgetrf_compact(CblasRowMajor, 
+        LAPACKE_dgetrf_compact(MKL_COL_MAJOR, 
                                m, n, 
                                (double*)A.data(), A.stride_0(), 
                                (MKL_INT)vl, (MKL_INT)1);

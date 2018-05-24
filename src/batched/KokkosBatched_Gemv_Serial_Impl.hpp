@@ -43,7 +43,7 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       typedef typename yViewType::value_type vector_type;
-      typedef typename vector_type::value_type value_type;
+      //typedef typename vector_type::value_type value_type;
 
       const int
         m = A.dimension(0),
@@ -54,7 +54,7 @@ namespace KokkosBatched {
       // no error check
       int r_val = 0;
       if (A.stride_0() == 1) {
-        cblas_dgemm_compact(CblasColMajor, CblasNoTrans, CblasNoTrans,
+        mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_NOTRANS,
                             m, n, k, 
                             alpha, 
                             (const double*)A.data(), A.stride_1(), 
@@ -63,7 +63,7 @@ namespace KokkosBatched {
                             (double*)y.data(), y.stride_0(),
                             (MKL_INT)vl, (MKL_INT)1);
       } else if (A.stride_1() == 1) {
-        cblas_dgemm_compact(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+        mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS,
                             m, n, k, 
                             alpha, 
                             (const double*)A.data(), A.stride_0(), 
@@ -143,7 +143,7 @@ namespace KokkosBatched {
            const ScalarType beta,
            const yViewType &y) {
       typedef typename yViewType::value_type vector_type;
-      typedef typename vector_type::value_type value_type;
+      //typedef typename vector_type::value_type value_type;
 
       const int
         m = A.dimension(0),
@@ -154,7 +154,7 @@ namespace KokkosBatched {
       // no error check
       int r_val = 0;
       if (A.stride_0() == 1) {
-        cblas_dgemm_compact(CblasColMajor, CblasTrans, CblasNoTrans,
+        mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_NOTRANS,
                             m, n, k, 
                             alpha, 
                             (const double*)A.data(), A.stride_1(), 
@@ -163,7 +163,7 @@ namespace KokkosBatched {
                             (double*)y.data(), y.stride_0(),
                             (MKL_INT)vl, (MKL_INT)1);
       } else if (A.stride_1() == 1) {
-        cblas_dgemm_compact(CblasRowMajor, CblasTrans, CblasNoTrans,
+        mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_NOTRANS,
                             m, n, k, 
                             alpha, 
                             (const double*)A.data(), A.stride_0(), 
@@ -174,6 +174,7 @@ namespace KokkosBatched {
       } else {
         r_val = -1;
       }
+      return r_val;
     }
 #endif
 

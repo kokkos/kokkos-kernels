@@ -32,6 +32,8 @@ namespace KokkosBatched {
 #if __INTEL_MKL__ >= 18
 #define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
 #define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
+#include "mkl.h"
+//#include "mkl_types.h"
 #endif
 #endif
 
