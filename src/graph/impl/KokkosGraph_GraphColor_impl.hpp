@@ -157,7 +157,7 @@ public:
 
 
     //create a ban color array to keep track of
-    //which colors have been taking by the neighbor vertices.
+    //which colors have been taken by the neighbor vertices.
     nnz_lno_t *banned_colors = new nnz_lno_t[this->nv];
 
 
@@ -796,12 +796,13 @@ protected:
                         // 0 for VB:
                         // 1: for VBCS
                         // 2: for VBBIT
+                        // 3: for VBD
 
   int _max_num_iterations;
 
 public:
   /**
-   * \brief GraphColor_VB constructor .
+   * \brief GraphColor_VB constructor.
    * \param nv_: number of vertices in the graph
    * \param ne_: number of edges in the graph
    * \param row_map: the xadj array of the graph. Its size is nv_ +1
@@ -834,6 +835,9 @@ public:
       case COLORING_VBCS:
         this->_use_color_set = 1;
         break;
+      case COLORING_VBD:
+        this->_use_color_set = 3;
+        break;
       default: //cannnot get in here.
         this->_use_color_set = 0;
         break;
@@ -858,7 +862,7 @@ public:
   virtual ~GraphColor_VB(){}
 
   /** \brief Function to color the vertices of the graphs. Performs a vertex-based coloring.
-   * \param colors is the output array corresponding the color of each vertex.Size is this->nv.
+   * \param colors is the output array corresponding the color of each vertex. Size is this->nv.
    *   Attn: Color array must be nonnegative numbers. If there is no initial colors,
    *   it should be all initialized with zeros. Any positive value in the given array, will make the
    *   algorithm to assume that the color is fixed for the corresponding vertex.
@@ -2377,6 +2381,211 @@ public:
     }
   };
 };  // class GraphColor_VB
+
+
+
+
+/*! \brief Class for the deterministic vertex based graph coloring algorithms.
+ */
+template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
+class GraphColor_VBD:public GraphColor <HandleType,lno_row_view_t_,lno_nnz_view_t_>{
+public:
+
+  typedef long long int ban_type;
+
+  typedef lno_row_view_t_ in_lno_row_view_t;
+  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef typename HandleType::color_view_t color_view_type;
+
+
+  typedef typename HandleType::size_type size_type;
+  typedef typename lno_row_view_t_::device_type row_lno_view_device_t;
+
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+
+  typedef typename HandleType::color_t color_t;
+  typedef typename HandleType::color_host_view_t color_host_view_t; //Host view type
+
+  typedef typename HandleType::HandleExecSpace MyExecSpace;
+  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
+  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
+
+  typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
+  typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type; //Host view type
+
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+
+  typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
+  typedef typename HandleType::size_type_persistent_work_view_t size_type_persistent_work_view_t;
+
+
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
+
+
+
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
+
+
+  typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
+
+
+protected:
+
+
+
+  bool _ticToc; //if true print info in each step
+  int _chunkSize; //the size of the minimum work unit assigned to threads. Changes the convergence on GPUs
+  char _use_color_set; //the VBD algorithm type.
+                        // 0 for VBD:
+
+public:
+  /**
+   * \brief GraphColor_VBD constructor.
+   * \param nv_: number of vertices in the graph
+   * \param ne_: number of edges in the graph
+   * \param row_map: the xadj array of the graph. Its size is nv_ +1
+   * \param entries: adjacency array of the graph. Its size is ne_
+   * \param coloring_handle: GraphColoringHandle object that holds the specification about the graph coloring,
+   *    including parameters.
+   */
+  GraphColor_VBD(
+      nnz_lno_t nv_, size_type ne_,
+      const_lno_row_view_t row_map, const_lno_nnz_view_t entries,
+      HandleType *coloring_handle):
+    GraphColor<HandleType,lno_row_view_t_,lno_nnz_view_t_>(nv_, ne_, row_map, entries, coloring_handle),
+    _ticToc(coloring_handle->get_tictoc()),
+    _chunkSize(coloring_handle->get_vb_chunk_size()),
+    _use_color_set()
+    {
+      switch (coloring_handle->get_coloring_algo_type()){
+      case COLORING_VBD:
+        this->_use_color_set = 0;
+        break;
+      default: //cannnot get in here.
+        this->_use_color_set = 0;
+        break;
+
+      }
+
+    }
+
+  /** \brief GraphColor_VBD destructor.
+    */
+  virtual ~GraphColor_VBD(){}
+
+  /** \brief Function to color the vertices of the graphs. Performs a vertex-based coloring.
+   * \param colors is the output array corresponding the color of each vertex. Size is this->nv.
+   *   Attn: Color array must be nonnegative numbers. If there is no initial colors,
+   *   it should be all initialized with zeros. Any positive value in the given array, will make the
+   *   algorithm to assume that the color is fixed for the corresponding vertex.
+   * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
+   */
+  virtual void color_graph(color_view_type colors,int &num_loops){
+
+    if (this->_ticToc) {
+      std::cout
+          << "\tVBD params:" << std::endl
+          << "\talgorithm:" << (int)this->_use_color_set << std::endl
+          << "\tticToc:" << (int) this->_ticToc << std::endl
+          << "\tchunkSize:" << this->_chunkSize << std::endl;
+    }
+
+    std::cout << std::endl << "Step 1: compute the score array" << std::endl;
+    std::cout << "Score: {";
+    size_type maxColors = 0;
+    nnz_lno_persistent_work_view_t score = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), this->nv);
+    for(nnz_lno_t node = 0; node < this->nv; ++node) {
+      score(node) = this->xadj(node + 1) - this->xadj(node);
+      if(maxColors < (size_type) score(node)) {maxColors = score(node);}
+      std::cout << score(node) << " - ";
+    }
+    std::cout << "}" << std::endl;
+
+    std::cout << std::endl << "Step 2: compute the dependency list and the initial new frontier" << std::endl;
+    std::cout << "Dependency: {";
+
+    // Create the dependency list of the graph
+    nnz_lno_persistent_work_view_t dependency = nnz_lno_persistent_work_view_t("dependency", this->nv);
+    size_type frontierSize = 0, newFrontierSize = 0;
+    nnz_lno_temp_work_view_t frontier = nnz_lno_temp_work_view_t("frontier", this->nv);
+    nnz_lno_temp_work_view_t newFrontier = nnz_lno_temp_work_view_t("new frontier", this->nv);
+    for(nnz_lno_t node = 0; node < this->nv; ++node) {
+
+      int myScore = score(node);
+      int numNeighs = this->xadj(node + 1) - this->xadj(node);
+      for(int neigh = 0; neigh < numNeighs; ++neigh) {
+        if(myScore < score(this->adj(this->xadj(node) + neigh))) {
+          dependency(node) = dependency(node) + 1;
+        }
+        if(( myScore == score(this->adj(this->xadj(node) + neigh)) ) &&
+           ( node < this->adj(this->xadj(node) + neigh) )) {
+          dependency(node) = dependency(node) + 1;
+        }
+      }
+      if(dependency(node) == 0) {
+        newFrontier(newFrontierSize) = node;
+        ++newFrontierSize;
+      }
+      std::cout << dependency(node) << " - ";
+    }
+    std::cout << "}" << std::endl;
+
+    // std::cout << "newFrontier: {";
+    // for(size_type newFrontierIdx = 0; newFrontierIdx < newFrontierSize-1; ++newFrontierIdx) {
+    //   std::cout << newFrontier(newFrontierIdx) << " - ";
+    // }
+    // std::cout << newFrontier(newFrontierSize-1) << "}" << std::endl;
+
+    while(newFrontierSize > 0) {
+      printFrontier(newFrontierSize, newFrontier);
+      // First swap fontier with newFrontier and fontierSize with newFrontierSize
+      // reset newFrontierSize
+      frontierSize = newFrontierSize;
+      newFrontierSize = 0;
+      auto tmp = frontier;
+      frontier = newFrontier;
+      newFrontier = tmp;
+
+      // Loop over nodes in the frontier
+      for(size_type frontierIdx = 0; frontierIdx < frontierSize; ++frontierIdx) {
+        size_type frontierNode = frontier(frontierIdx);
+        nnz_lno_temp_work_view_t bannedColors = nnz_lno_temp_work_view_t("banned colors", maxColors);
+
+        // Loop over neighbors, find banned colors, decrement dependency and update newFrontier
+        for(size_type neigh = this->xadj(frontierNode); neigh < this->xadj(frontierNode + 1); ++neigh) {
+          bannedColors(colors(this->adj(neigh))) = 1;
+          dependency(this->adj(neigh)) = dependency(this->adj(neigh)) - 1;
+          if(dependency(this->adj(neigh)) == 0) {
+            newFrontier(newFrontierSize) = this->adj(neigh);
+            ++newFrontierSize;
+          }
+        } // Loop over neighbors
+
+        for(size_type color = 1; color < maxColors; ++color) {
+          if(bannedColors(color) == 0) {
+            colors(frontierNode) = color;
+            break;
+          }
+        } // Loop over banned colors
+      } // Loop over current frontier
+    } // while newFrontierSize
+
+    std::cout << "actually printing the colors now!" << std::endl;
+    printFrontier(this->nv, colors);
+
+  } // color_graph()
+
+  void printFrontier(const size_type frontierSize, const nnz_lno_temp_work_view_t frontier) {
+    std::cout << "frontier: {";
+    for(size_type frontierIdx = 0; frontierIdx < frontierSize-1; ++frontierIdx) {
+      std::cout << frontier(frontierIdx) << " - ";
+    }
+    std::cout << frontier(frontierSize - 1) << "}" << std::endl;
+  } // printFrontier
+
+};  // class GraphColor_VBD
 
 
 /*! \brief Class for modular parallel graph coloring using Kokkos.
