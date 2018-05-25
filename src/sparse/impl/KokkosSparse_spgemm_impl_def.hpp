@@ -96,8 +96,8 @@ void KokkosSPGEMM
 		nnz_lno_t maxNumRoughZeros = 0;
 		size_t overall_flops = 0;
 		Kokkos::Impl::Timer timer1;
-		auto new_row_mapB_begin = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(0), b_row_cnt - 1));
-		auto new_row_mapB_end = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(1), b_row_cnt));
+		auto new_row_mapB_begin = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(0), b_row_cnt));
+		auto new_row_mapB_end = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(1), b_row_cnt + 1));
 		row_lno_persistent_work_view_t flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
 
 		//get maximum row flops.
@@ -118,8 +118,8 @@ void KokkosSPGEMM
 	}
 
     //number of rows and nnzs
-    nnz_lno_t n = this->row_mapB.dimension_0() - 1;
-    size_type nnz = this->entriesB.dimension_0();
+    nnz_lno_t n = this->row_mapB.extent(0) - 1;
+    size_type nnz = this->entriesB.extent(0);
     KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
 
     bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
@@ -170,8 +170,8 @@ void KokkosSPGEMM
     	}
     	else {
     		nnz_lno_t begin = 0;
-    		auto new_row_mapB_begin = Kokkos::subview (new_row_mapB, std::make_pair (begin, n - 1));
-    		auto new_row_mapB_end = Kokkos::subview (new_row_mapB, std::make_pair (begin + 1, n));
+    		auto new_row_mapB_begin = Kokkos::subview (new_row_mapB, std::make_pair (begin, n));
+    		auto new_row_mapB_end = Kokkos::subview (new_row_mapB, std::make_pair (begin + 1, n + 1));
 
     		//calling symbolic structure
     		this->symbolic_c(a_row_cnt, row_mapA, entriesA,
@@ -189,8 +189,8 @@ void KokkosSPGEMM
     		std::cout << "SYMBOLIC PHASE -- NO COMPRESSION: maxNumRoughZeros:" << maxNumRoughZeros << std::endl;
     	}
 
-    	auto new_row_mapB_begin = Kokkos::subview (this->row_mapB, std::make_pair (nnz_lno_t(0), n - 1));
-    	auto new_row_mapB_end = Kokkos::subview (this->row_mapB, std::make_pair (nnz_lno_t(1), n));
+    	auto new_row_mapB_begin = Kokkos::subview (this->row_mapB, std::make_pair (nnz_lno_t(0), n));
+    	auto new_row_mapB_end = Kokkos::subview (this->row_mapB, std::make_pair (nnz_lno_t(1), n + 1));
 
     	//calling symbolic structure
     	this->symbolic_c_no_compression(
