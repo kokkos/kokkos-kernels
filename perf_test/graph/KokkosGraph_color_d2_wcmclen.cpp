@@ -57,7 +57,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_MyCRSMatrix.hpp>
 #include <KokkosKernels_TestParameters.hpp>
-#include <KokkosGraph_graph_color_d2.hpp>
+#include <KokkosGraph_Distance2Color.hpp>
 
 
 using namespace KokkosGraph;
@@ -227,6 +227,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
     return 0;
 }
 
+
 namespace KokkosKernels {
 namespace Experiment {
 
@@ -259,13 +260,12 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     // Note: crsGraph.numRows() == number of vertices in the 'graph'
     //       crsGraph.entries.extent(0) == number of edges in the 'graph'
-
     std::cout << "Num verts: " << crsGraph.numRows() << std::endl << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
 
     KernelHandle kh;
-    kh.set_team_work_size(chunk_size);
+    kh.set_team_work_size(chunk_size);          // WCMCLEN - Team Policy
     kh.set_shmem_size(shmemsize);
-    kh.set_suggested_team_size(team_size);
+    kh.set_suggested_team_size(team_size);      // WCMCLEN - Team Policy
     kh.set_suggested_vector_size(vector_size);
 
     if(use_dynamic_scheduling)
@@ -291,7 +291,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         switch(algorithm)
         {
             case 1:
-                // kh.create_graph_coloring_handle(COLORING_SPGEMM);
                 kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
                 label_algorithm = "COLORING_D2_MATRIX_SQUARED";
                 break;
@@ -638,7 +637,7 @@ int main(int argc, char *argv[])
         double time = 1.0 * (end.tv_sec - begin.tv_sec) + 1.0e-6 * (end.tv_usec - begin.tv_usec);
 
         std::cout << "Time: " << time << std::endl;
-        */
+    */
 
     Kokkos::finalize();
 

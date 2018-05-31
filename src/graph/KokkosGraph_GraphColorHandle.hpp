@@ -66,7 +66,7 @@ enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
 enum ColoringType {Distance1, Distance2};
 
-template <class size_type_, class color_t_, class lno_t_, 
+template <class size_type_, class color_t_, class lno_t_,
          //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class GraphColoringHandle
@@ -173,7 +173,8 @@ private:
     overall_coloring_time(0),
     coloring_time(0),
     num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),
-    vertex_colors(), is_coloring_called_before(false), num_colors(0){
+    vertex_colors(), is_coloring_called_before(false), num_colors(0)
+  {
     this->choose_default_algorithm();
     this->set_defaults(this->coloring_algorithm_type);
   }
