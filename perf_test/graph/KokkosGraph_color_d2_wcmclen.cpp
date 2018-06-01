@@ -43,6 +43,9 @@
 
 // EXERCISE 1 Goal:
 //   Use Kokkos to parallelize the outer loop of <y,Ax> using Kokkos::parallel_reduce.
+#include <stdlib.h>
+#include <unistd.h>
+
 #include <iostream>
 
 #include <cstdio>
@@ -116,7 +119,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "      repeat <N>        Set number of test repetitions (Default: 6) " << std::endl
        << spaces << "      teamsize  <N>     Set the team size." << std::endl
        << spaces << "      vectorsize <N>    Set the vector size." << std::endl
-       << spaces << "      verbose           Enable verbose mode (print timing + extra information" << std::endl
+       << spaces << "      verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
        << spaces << "      help              Print out command line help." << std::endl
        << spaces << " " << std::endl;
 }
@@ -279,12 +282,16 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     }
 
     // accumulators for average stats
-    double total_time   = 0.0;
-    size_t total_colors = 0;
-    size_t total_phases = 0;
+    double total_time                   = 0.0;
+    double total_time_color_greedy      = 0.0;
+    double total_time_find_conflicts    = 0.0;
+    double total_time_resolve_conflicts = 0.0;
+    size_t total_colors                 = 0;
+    size_t total_phases                 = 0;
 
     std::string label_algorithm;
 
+    // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
 
@@ -313,50 +320,87 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
         std::cout << std::endl;
 
-        total_time += kh.get_graph_coloring_handle()->get_overall_coloring_time();
+        total_time   += kh.get_graph_coloring_handle()->get_overall_coloring_time();
         total_colors += kh.get_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_graph_coloring_handle()->get_num_phases();
+        total_time_color_greedy += kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
+        total_time_find_conflicts += kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
+        total_time_resolve_conflicts += kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
     }
 
-    double avg_time   = total_time / repeat;
-    double avg_colors = total_colors / (double)repeat;
-    double avg_phases = total_phases / (double)repeat;
+    double avg_time                   = total_time / repeat;
+    double avg_time_color_greedy      = total_time_color_greedy / repeat;
+    double avg_time_find_conflicts    = total_time_find_conflicts / repeat;
+    double avg_time_resolve_conflicts = total_time_resolve_conflicts / repeat;
+    double avg_colors                 = total_colors / (double)repeat;
+    double avg_phases                 = total_phases / (double)repeat;
 
     std::string a_mtx_bin_file = params.a_mtx_bin_file;
     a_mtx_bin_file             = a_mtx_bin_file.substr(a_mtx_bin_file.find_last_of("/\\") + 1);
 
+
+    int result;
+    char hostname[100];
+    char username[100];
+
+    result = gethostname(hostname, 100);
+    if(result)
+    {
+        perror("gethostname");
+    }
+
+    result = getlogin_r(username, 100);
+    if(result)
+    {
+        perror("getlogin_r");
+    }
+
+
     std::cout << "Summary:" << std::endl
-              << "  KExecSName : " << Kokkos::DefaultExecutionSpace::name() << std::endl
-              << "  Filename   : " << a_mtx_bin_file << std::endl
-              << "  Num Verts  : " << crsGraph.numRows() << std::endl
-              << "  Num Edges  : " << crsGraph.entries.dimension_0() << std::endl
-              << "  Concurrency: " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
-              << "  Algorithm  : " << label_algorithm << std::endl
-              << "  Avg Time   : " << avg_time << std::endl
-              << "  Avg colors : " << avg_colors << std::endl
-              << "  Avg Phases : " << avg_phases << std::endl
+              << "  KExecSName  : " << Kokkos::DefaultExecutionSpace::name() << std::endl
+              << "  Filename    : " << a_mtx_bin_file << std::endl
+              << "  Num Verts   : " << crsGraph.numRows() << std::endl
+              << "  Num Edges   : " << crsGraph.entries.dimension_0() << std::endl
+              << "  Concurrency : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
+              << "  Algorithm   : " << label_algorithm << std::endl
+              << "  Avg Time    : " << avg_time << std::endl
+              << "  Avg Time CG : " << avg_time_color_greedy << std::endl
+              << "  Avg Time FC : " << avg_time_find_conflicts << std::endl
+              << "  Avg Time RC : " << avg_time_resolve_conflicts << std::endl
+              << "  Avg colors  : " << avg_colors << std::endl
+              << "  Avg Phases  : " << avg_phases << std::endl
               << std::endl;
 
     std::cout << "CSVHDR"
               << "," << "Filename"
+              << "," << "Host"
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
               << "," << "Concurrency"
               << "," << "Algorithm"
-              << "," << "Avg Time"
+              << "," << "Repetitions"
+              << "," << "Total Time"
+              << "," << "Total Time CG"
+              << "," << "Total Time FC"
+              << "," << "Total Time RC"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
               << std::endl;
 
     std::cout << "CSVDATA"
               << "," << a_mtx_bin_file
+              << "," << hostname
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
               << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << "," << label_algorithm
-              << "," << avg_time
+              << "," << repeat
+              << "," << total_time
+              << "," << total_time_color_greedy
+              << "," << total_time_find_conflicts
+              << "," << total_time_resolve_conflicts
               << "," << avg_colors
               << "," << avg_phases
               << std::endl;

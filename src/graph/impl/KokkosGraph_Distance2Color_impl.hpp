@@ -66,7 +66,8 @@ namespace Impl {
 
 
 
-/*! \brief Base class for graph coloring purposes.
+/*!
+ *  \brief Base class for graph coloring purposes.
  *  Each color represents the set of the vertices that are independent,
  *  e.g. no vertex having same color shares an edge.
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
@@ -117,7 +118,7 @@ class GraphColorD2
     const_clno_nnz_view_t t_adj;       // entries, transpose of entries
     nnz_lno_t nv;                      // num vertices
 
-    typename HandleType::GraphColoringHandleType *cp;      // pointer to the graph coloring handle
+    typename HandleType::GraphColoringHandleType *gc_handle;      // pointer to the graph coloring handle
 
   private:
     int _chunkSize;      // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
@@ -146,17 +147,18 @@ class GraphColorD2
                  const_clno_nnz_view_t t_entries,
                  HandleType *handle)
         : nr(nr_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries), nv(nr_),
-          cp(handle->get_graph_coloring_handle()), _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size()),
+          gc_handle(handle->get_graph_coloring_handle()), _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size()),
           _max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations()), _conflictList(1),
           _serialConflictResolution(false), _use_color_set(0), _ticToc(handle->get_verbose())
     {
         // std::cout << ">>> WCMCLEN GraphColorD2() (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
-        //          << ">>> WCMCLEN :    coloring_algo_type = " << handle->get_coloring_algo_type() << std::endl
-        //          << ">>> WCMCLEN :    conflict_list_type = " << handle->get_conflict_list_type() << std::endl;
+        //           << ">>> WCMCLEN :    coloring_algo_type = " << handle->get_coloring_algo_type() << std::endl
+        //           << ">>> WCMCLEN :    conflict_list_type = " << handle->get_conflict_list_type() << std::endl;
     }
 
 
-    /** \brief GraphColor destructor.
+    /**
+     *  \brief GraphColor destructor.
      */
     virtual ~GraphColorD2() {}
 
@@ -168,16 +170,14 @@ class GraphColorD2
     // -----------------------------------------------------------------
     virtual void execute()
     {
-
         color_view_type colors_out("Graph Colors", this->nv);
 
         // Data:
-        // cp   = graph coloring handle
-        // nr   = num_rows  (scalar)
-        // nc   = num_cols  (scalar)
-        // xadj = row_map   (view 1 dimension - [num_verts+1] - entries index into adj )
-        // adj  = entries   (view 1 dimension - [num_edges]   - adjacency list )
-
+        // gc_handle = graph coloring handle
+        // nr        = num_rows  (scalar)
+        // nc        = num_cols  (scalar)
+        // xadj      = row_map   (view 1 dimension - [num_verts+1] - entries index into adj )
+        // adj       = entries   (view 1 dimension - [num_edges]   - adjacency list )
         if(this->_ticToc)
         {
             std::cout << "\tcolor_graph_d2 params:" << std::endl
@@ -219,7 +219,8 @@ class GraphColorD2
         nnz_lno_t numUncolored             = this->nv;
         nnz_lno_t current_vertexListLength = this->nv;
 
-        double t, total = 0.0;
+        double time;
+        double total_time = 0.0;
         Kokkos::Impl::Timer timer;
 
         int iter = 0;
@@ -232,10 +233,11 @@ class GraphColorD2
 
             if(this->_ticToc)
             {
-                t = timer.seconds();
-                total += t;
-                std::cout << "\tTime speculative greedy phase " << std::setw(-2) << iter << " : " << t << std::endl;
+                time = timer.seconds();
+                total_time += time;
+                std::cout << "\tTime speculative greedy phase " << std::setw(-2) << iter << " : " << time << std::endl;
                 timer.reset();
+                gc_handle->add_to_overall_coloring_time_phase1(time);
             }
 
             // prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out", 100);
@@ -260,10 +262,11 @@ class GraphColorD2
 
             if(_ticToc)
             {
-                t = timer.seconds();
-                total += t;
-                std::cout << "\tTime conflict detection " << std::setw(-2) << iter << "       : " << t << std::endl;
+                time = timer.seconds();
+                total_time += time;
+                std::cout << "\tTime conflict detection " << std::setw(-2) << iter << "       : " << time << std::endl;
                 timer.reset();
+                gc_handle->add_to_overall_coloring_time_phase2(time);
             }
 
             // If conflictList is used and we need to swap the work arrays
@@ -293,14 +296,15 @@ class GraphColorD2
 
         if(_ticToc)
         {
-            t = timer.seconds();
-            total += t;
-            std::cout << "\tTime serial conflict resolution : " << t << std::endl;
+            time = timer.seconds();
+            total_time += time;
+            std::cout << "\tTime serial conflict resolution : " << time << std::endl;
+            gc_handle->add_to_overall_coloring_time_phase3(time);
         }
 
         // Save out the number of phases and vertex colors
-        this->cp->set_vertex_colors(colors_out);
-        this->cp->set_num_phases((double)iter);
+        this->gc_handle->set_vertex_colors(colors_out);
+        this->gc_handle->set_num_phases((double)iter);
 
     }      // color_graph_d2 (end)
 
@@ -613,7 +617,7 @@ class GraphColorD2
 
                 // Do multiple passes if the array is too small.
                 // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
-                //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.
+                //   but in distance-2 we'd need the total_time vertices at distance-2 which we don't easily have aprioi.
                 //   This could be as big as all the vertices in the graph if diameter(G)=2...
                 // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
                 color_t offset = 0;
@@ -666,7 +670,7 @@ class GraphColorD2
                 }      // for offset...
             }          // for ichunk...
         }              // operator() (end)
-    };                 // struct functorGreedyColor (end)
+    };      // struct functorGreedyColor (end)
 
 
 

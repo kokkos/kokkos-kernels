@@ -139,7 +139,12 @@ private:
 
   //STATISTICS
   double overall_coloring_time; //the overall time that it took to color the graph. In the case of the iterative calls.
+  double overall_coloring_time_phase1;    //
+  double overall_coloring_time_phase2;    // Some detailed timer accumulators for (generic) internal phases
+  double overall_coloring_time_phase3;    //
+  double overall_coloring_time_phase4;    //
   double coloring_time; //the time that it took to color the graph
+
   int num_phases; //
 
 
@@ -171,6 +176,10 @@ private:
     vb_chunk_size(8),
     max_number_of_iterations(200), eb_num_initial_colors(1),
     overall_coloring_time(0),
+    overall_coloring_time_phase1(0),
+    overall_coloring_time_phase2(0),
+    overall_coloring_time_phase3(0),
+    overall_coloring_time_phase4(0),
     coloring_time(0),
     num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),
     vertex_colors(), is_coloring_called_before(false), num_colors(0)
@@ -643,6 +652,10 @@ private:
   int get_eb_num_initial_colors() const{return this->eb_num_initial_colors;}
 
   double get_overall_coloring_time() const { return this->overall_coloring_time;}
+  double get_overall_coloring_time_phase1() const { return this->overall_coloring_time_phase1; }
+  double get_overall_coloring_time_phase2() const { return this->overall_coloring_time_phase2; }
+  double get_overall_coloring_time_phase3() const { return this->overall_coloring_time_phase3; }
+  double get_overall_coloring_time_phase4() const { return this->overall_coloring_time_phase4; }
   double get_coloring_time() const { return this->coloring_time;}
   int get_num_phases() const { return this->num_phases;}
   color_view_t get_vertex_colors() const {return this->vertex_colors;}
@@ -659,6 +672,10 @@ private:
   void set_max_number_of_iterations(const int &max_phases){this->max_number_of_iterations = max_phases;}
   void set_eb_num_initial_colors(const int &num_initial_colors){this->eb_num_initial_colors = num_initial_colors;}
   void add_to_overall_coloring_time(const double &coloring_time_){this->overall_coloring_time += coloring_time_;}
+  void add_to_overall_coloring_time_phase1(const double &coloring_time_){this->overall_coloring_time_phase1 += coloring_time_;}
+  void add_to_overall_coloring_time_phase2(const double &coloring_time_){this->overall_coloring_time_phase2 += coloring_time_;}
+  void add_to_overall_coloring_time_phase3(const double &coloring_time_){this->overall_coloring_time_phase3 += coloring_time_;}
+  void add_to_overall_coloring_time_phase4(const double &coloring_time_){this->overall_coloring_time_phase4 += coloring_time_;}
   void set_coloring_time(const double &coloring_time_){this->coloring_time = coloring_time_;}
   void set_num_phases(const double &num_phases_){this->num_phases = num_phases_;}
   void set_vertex_colors( const color_view_t vertex_colors_){
