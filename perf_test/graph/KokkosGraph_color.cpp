@@ -184,6 +184,8 @@ void run_experiment(
     kh.set_verbose(true);
   }
 
+  std::cout << "algorithm: " << algorithm << std::endl;
+
   for (int i = 0; i < repeat; ++i){
 
     switch (algorithm){
