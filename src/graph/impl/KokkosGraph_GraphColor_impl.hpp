@@ -2497,8 +2497,7 @@ public:
     functorScoreCalcution<nnz_lno_persistent_work_view_t, size_type, MyExecSpace> scoreCalcution(score, this->xadj);
     Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", this->nv,
                             scoreCalcution, maxScoreReducer);
-    std::cout << "Score: ";
-    print1DView(this->nv, score);
+    print1DView("Score", this->nv, score);
     std::cout << "maxColors: " << maxColors << std::endl;
 
     std::cout << std::endl
@@ -2507,73 +2506,81 @@ public:
     // Create the dependency list of the graph
     nnz_lno_persistent_work_view_t dependency
       = nnz_lno_persistent_work_view_t("dependency", this->nv);
-    size_type frontierSize = 0, newFrontierSize = 0;
+    Kokkos::View<size_type, MyTempMemorySpace> frontierSize("newFrontier");
+    Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize("newFrontierSize");
     nnz_lno_temp_work_view_t frontier = nnz_lno_temp_work_view_t("frontier", this->nv);
     nnz_lno_temp_work_view_t newFrontier = nnz_lno_temp_work_view_t("new frontier", this->nv);
-    for(nnz_lno_t node = 0; node < this->nv; ++node) {
+    Kokkos::parallel_for("Deterministic Coloring: compute dependency list", this->nv,
+                         KOKKOS_LAMBDA(const int node) {
 
-      int myScore = score(node);
-      int numNeighs = this->xadj(node + 1) - this->xadj(node);
-      for(int neigh = 0; neigh < numNeighs; ++neigh) {
-        if(myScore < score(this->adj(this->xadj(node) + neigh))) {
-          dependency(node) = dependency(node) + 1;
-        }
-        if(( myScore == score(this->adj(this->xadj(node) + neigh)) ) &&
-           ( node < this->adj(this->xadj(node) + neigh) )) {
-          dependency(node) = dependency(node) + 1;
-        }
-      }
-      if(dependency(node) == 0) {
-        newFrontier(newFrontierSize) = node;
-        ++newFrontierSize;
-      }
-    }
-    std::cout << "Dependency: ";
-    print1DView(this->nv, dependency);
+                           int myScore = score(node);
+                           int numNeighs = this->xadj(node + 1) - this->xadj(node);
+                           for(int neigh = 0; neigh < numNeighs; ++neigh) {
+                             if(myScore < score(this->adj(this->xadj(node) + neigh))) {
+                               dependency(node) = dependency(node) + 1;
+                             }
+                             if(( myScore == score(this->adj(this->xadj(node) + neigh)) ) &&
+                                ( node < this->adj(this->xadj(node) + neigh) )) {
+                               dependency(node) = dependency(node) + 1;
+                             }
+                           }
+                           if(dependency(node) == 0) {
+                             const size_type newFrontierIdx
+                               = Kokkos::atomic_fetch_add(&newFrontierSize(), 1);
+                             newFrontier(newFrontierIdx) = node;
+                           }
+                         });
+    print1DView("Dependency", this->nv, dependency);
 
     std::cout << std::endl << "Step 3: loop until newFrontier is empty" << std::endl;
-    while(newFrontierSize > 0) {
-      std::cout << "Frontier: ";
-      print1DView(newFrontierSize, newFrontier);
+    while(newFrontierSize() > 0) {
       // First swap fontier with newFrontier and fontierSize with newFrontierSize
       // reset newFrontierSize
-      frontierSize = newFrontierSize;
-      newFrontierSize = 0;
+      frontierSize() = newFrontierSize();
+      newFrontierSize() = 0;
       auto tmp = frontier;
       frontier = newFrontier;
       newFrontier = tmp;
+      print1DView("Frontier", frontierSize(), frontier);
 
       // Loop over nodes in the frontier
-      for(size_type frontierIdx = 0; frontierIdx < frontierSize; ++frontierIdx) {
-        size_type frontierNode = frontier(frontierIdx);
-        nnz_lno_temp_work_view_t bannedColors = nnz_lno_temp_work_view_t("banned colors", maxColors);
+      Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", frontierSize(),
+                           KOKKOS_LAMBDA(const size_type frontierIdx) {
 
-        // Loop over neighbors, find banned colors, decrement dependency and update newFrontier
-        for(size_type neigh = this->xadj(frontierNode); neigh < this->xadj(frontierNode + 1); ++neigh) {
-          bannedColors(colors(this->adj(neigh))) = 1;
-          dependency(this->adj(neigh)) = dependency(this->adj(neigh)) - 1;
-          if(dependency(this->adj(neigh)) == 0) {
-            newFrontier(newFrontierSize) = this->adj(neigh);
-            ++newFrontierSize;
-          }
-        } // Loop over neighbors
+                             size_type frontierNode = frontier(frontierIdx);
+                             int* bannedColors = new int[maxColors];
+                             for(size_type colorIdx= 0; colorIdx < maxColors; ++colorIdx) {
+                               bannedColors[colorIdx] = 0;
+                             }
 
-        for(size_type color = 1; color < maxColors; ++color) {
-          if(bannedColors(color) == 0) {
-            colors(frontierNode) = color;
-            break;
-          }
-        } // Loop over banned colors
-      } // Loop over current frontier
+                             // Loop over neighbors, find banned colors, decrement dependency and update newFrontier
+                             for(size_type neigh = this->xadj(frontierNode); neigh < this->xadj(frontierNode + 1); ++neigh) {
+                               bannedColors[colors(this->adj(neigh))] = 1;
+                               dependency(this->adj(neigh)) = dependency(this->adj(neigh)) - 1;
+                               if(dependency(this->adj(neigh)) == 0) {
+                                 const size_type newFrontierIdx
+                                   = Kokkos::atomic_fetch_add(&newFrontierSize(), 1);
+                                 newFrontier(newFrontierIdx) = this->adj(neigh);
+                               }
+                             } // Loop over neighbors
+
+                             for(size_type color = 1; color < maxColors; ++color) {
+                               if(bannedColors[color] == 0) {
+                                 colors(frontierNode) = color;
+                                 break;
+                               }
+                             } // Loop over banned colors
+                             delete bannedColors;
+                           }); // Loop over current frontier
     } // while newFrontierSize
 
-    std::cout << "Colors: ";
-    print1DView(this->nv, colors);
+    print1DView("Colors", this->nv, colors);
 
   } // color_graph()
 
-  void print1DView(const size_type frontierSize, const nnz_lno_temp_work_view_t frontier) {
-    std::cout << "{";
+  void print1DView(const std::string label, const size_type frontierSize,
+                   const nnz_lno_temp_work_view_t frontier) {
+    std::cout << label << ": {";
     for(size_type frontierIdx = 0; frontierIdx < frontierSize-1; ++frontierIdx) {
       std::cout << frontier(frontierIdx) << " - ";
     }
