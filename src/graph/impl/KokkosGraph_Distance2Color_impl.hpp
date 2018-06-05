@@ -107,6 +107,9 @@ class GraphColorD2
 
     typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
+    typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
+    typedef typename team_policy_t::member_type team_member_t ;
+
 
   protected:
     nnz_lno_t nr;                      // num_rows  (# verts)
@@ -188,6 +191,8 @@ class GraphColorD2
                       << "\t  serialConflictResolution : " << (int)this->_serialConflictResolution << std::endl
                       << "\t  chunkSize                : " << this->_chunkSize << std::endl
                       << "\t  use_color_set            : " << (int)this->_use_color_set << std::endl
+//                      << "\t  team_size                : " << (int)gc_handle->get_suggested_team_size() << std::endl
+//                      << "\t  team_size                : " << team_policy_t::team_size_max() << std::endl
                       << "\tgraph information:" << std::endl
                       << "\t  nv                       : " << this->nv << std::endl
                       << "\t  ne                       : " << this->ne << std::endl;
@@ -226,7 +231,9 @@ class GraphColorD2
         int iter = 0;
         for(; (iter < _max_num_iterations) && (numUncolored > 0); iter++)
         {
+            // ------------------------------------------
             // Do greedy color
+            // ------------------------------------------
             this->colorGreedy(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
 
             MyExecSpace::fence();
@@ -242,7 +249,9 @@ class GraphColorD2
 
             // prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out", 100);
 
+            // ------------------------------------------
             // Find conflicts
+            // ------------------------------------------
             bool swap_work_arrays = true;      // NOTE: swap_work_arrays can go away in this example -- was only ever
                                                //       set false in the PPS code in the original D1 coloring...
 
@@ -285,7 +294,9 @@ class GraphColorD2
             }
         }      // end for iter...
 
-        // clean up in serial
+        // ------------------------------------------
+        // clean up in serial (resolveConflicts)
+        // ------------------------------------------
         if(numUncolored > 0)
         {
             this->resolveConflicts(
@@ -334,7 +345,11 @@ class GraphColorD2
 
         functorGreedyColor gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
 
-        Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
+        // This one works but no team policy
+        //Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
+
+       // Experimental
+       Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, Kokkos::AUTO) , gc);  // WCMCLEN - attempt
 
     }      // colorGreedy (end)
 
