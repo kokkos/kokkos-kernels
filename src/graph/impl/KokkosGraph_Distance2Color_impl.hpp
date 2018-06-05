@@ -349,7 +349,8 @@ class GraphColorD2
         //Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
 
        // Experimental
-       Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, Kokkos::AUTO) , gc);  // WCMCLEN - attempt
+       //Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, Kokkos::AUTO) , gc);  // WCMCLEN - attempt
+       Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, chunkSize_) , gc);  // WCMCLEN - attempt
 
     }      // colorGreedy (end)
 
@@ -607,85 +608,86 @@ class GraphColorD2
         // param: ii = vertex id
         //
         KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t vid_) const
+        void operator()(team_member_t &thread) const
         {
+            nnz_lno_t vid_ = thread.league_rank() * thread.team_size() + thread.team_rank();
+
             // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
             nnz_lno_t vid = 0;
-            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
-            {
+            //            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)                // WCMCLEN: would change to a parallel_for
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk) {
                 if(vid_ * _chunkSize + ichunk < _vertexListLength)
+                {
                     vid = _vertexList(vid_ * _chunkSize + ichunk);
-                else
-                    continue;
 
-                // Already colored this vertex.
-                if(_colors(vid) > 0)
-                {
-                    continue;
+                    // Already colored this vertex.
+                    if(_colors(vid) <= 0)
+                    {
+
+                        bool foundColor = false;      // Have we found a valid color?
+
+                        // Use forbidden array to find available color.
+                        // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
+                        bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
+
+                        // Do multiple passes if the array is too small.
+                        // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
+                        //   but in distance-2 we'd need the total_time vertices at distance-2 which we don't easily have aprioi.
+                        //   This could be as big as all the vertices in the graph if diameter(G)=2...
+                        // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
+                        color_t offset = 0;
+
+                        while(!foundColor)
+                        {
+                            // initialize
+                            for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
+                            // by convention, start at 1
+                            if(offset == 0)
+                            {
+                                forbidden[0] = true;
+                            }
+
+                            // Check neighbors, fill forbidden array.
+                            for(size_type vid_1adj = _idx(vid); vid_1adj < _idx(vid + 1); vid_1adj++)
+                            {
+                                nnz_lno_t vid_1idx = _adj(vid_1adj);
+
+                                for(size_type vid_2adj = _t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
+                                {
+                                    nnz_lno_t vid_2idx = _t_adj(vid_2adj);
+
+                                    // Skip distance-2-self-loops
+                                    if(vid_2idx == vid || vid_2idx >= nv)
+                                    {
+                                        continue;
+                                    }
+
+                                    color_t c = _colors(vid_2idx);
+
+                                    if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
+                                    {
+                                        forbidden[c - offset] = true;
+                                    }
+                                }
+                            }
+
+                            // color vertex i with smallest available color (firstFit)
+                            for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
+                            {
+                                if(!forbidden[c])
+                                {
+                                    _colors(vid) = offset + c;
+                                    foundColor   = true;
+                                    break;
+                                }
+                            }      // for c...
+                            offset += VB_D2_COLORING_FORBIDDEN_SIZE;
+                        }      // for offset...
+                    }
                 }
-
-                bool foundColor = false;      // Have we found a valid color?
-
-                // Use forbidden array to find available color.
-                // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
-
-                // Do multiple passes if the array is too small.
-                // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
-                //   but in distance-2 we'd need the total_time vertices at distance-2 which we don't easily have aprioi.
-                //   This could be as big as all the vertices in the graph if diameter(G)=2...
-                // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
-                color_t offset = 0;
-
-                while(!foundColor)
-                {
-                    // initialize
-                    for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
-                    // by convention, start at 1
-                    if(offset == 0)
-                    {
-                        forbidden[0] = true;
-                    }
-
-                    // Check neighbors, fill forbidden array.
-                    for(size_type vid_1adj = _idx(vid); vid_1adj < _idx(vid + 1); vid_1adj++)
-                    {
-                        nnz_lno_t vid_1idx = _adj(vid_1adj);
-
-                        for(size_type vid_2adj = _t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
-                        {
-                            nnz_lno_t vid_2idx = _t_adj(vid_2adj);
-
-                            // Skip distance-2-self-loops
-                            if(vid_2idx == vid || vid_2idx >= nv)
-                            {
-                                continue;
-                            }
-
-                            color_t c = _colors(vid_2idx);
-
-                            if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
-                            {
-                                forbidden[c - offset] = true;
-                            }
-                        }
-                    }
-
-                    // color vertex i with smallest available color (firstFit)
-                    for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
-                    {
-                        if(!forbidden[c])
-                        {
-                            _colors(vid) = offset + c;
-                            foundColor   = true;
-                            break;
-                        }
-                    }      // for c...
-                    offset += VB_D2_COLORING_FORBIDDEN_SIZE;
-                }      // for offset...
-            }          // for ichunk...
-        }              // operator() (end)
-    };      // struct functorGreedyColor (end)
+            });      // for ichunk...
+        }            // operator() (end)
+    };               // struct functorGreedyColor (end)
 
 
 
