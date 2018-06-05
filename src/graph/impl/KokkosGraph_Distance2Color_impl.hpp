@@ -350,7 +350,10 @@ class GraphColorD2
 
        // Experimental
        //Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, Kokkos::AUTO) , gc);  // WCMCLEN - attempt
-       Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, chunkSize_) , gc);  // WCMCLEN - attempt
+       const team_policy_t policy_inst(current_vertexListLength_ / chunkSize_ + 1, chunkSize_);
+       Kokkos::parallel_for(policy_inst, gc);  // WCMCLEN - attempt
+
+//       Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, chunkSize_) , gc);  // WCMCLEN - attempt
 
     }      // colorGreedy (end)
 
@@ -608,14 +611,15 @@ class GraphColorD2
         // param: ii = vertex id
         //
         KOKKOS_INLINE_FUNCTION
-        void operator()(team_member_t &thread) const
+        void operator()(const team_member_t &thread) const
         {
             nnz_lno_t vid_ = thread.league_rank() * thread.team_size() + thread.team_rank();
 
             // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
             nnz_lno_t vid = 0;
             //            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)                // WCMCLEN: would change to a parallel_for
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk) {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
+            {
                 if(vid_ * _chunkSize + ichunk < _vertexListLength)
                 {
                     vid = _vertexList(vid_ * _chunkSize + ichunk);
