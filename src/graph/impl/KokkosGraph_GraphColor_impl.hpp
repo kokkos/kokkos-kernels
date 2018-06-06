@@ -48,6 +48,8 @@
 #include <vector>
 #include "KokkosGraph_GraphColorHandle.hpp"
 
+#include <bitset>
+
 #ifndef _KOKKOSCOLORINGIMP_HPP
 #define _KOKKOSCOLORINGIMP_HPP
 
@@ -2459,6 +2461,9 @@ public:
       case COLORING_VBD:
         this->_use_color_set = 0;
         break;
+      case COLORING_VBDBIT:
+        this->_use_color_set = 1;
+        break;
       default: //cannnot get in here.
         this->_use_color_set = 0;
         break;
@@ -2544,37 +2549,90 @@ public:
       print1DView("Frontier", frontierSize(), frontier);
 
       // Loop over nodes in the frontier
-      Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", frontierSize(),
-                           KOKKOS_LAMBDA(const size_type frontierIdx) {
+      // First variant without bit array, easier to understand/program
+      if(this->_use_color_set == 0) {
+        Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", frontierSize(),
+                             KOKKOS_LAMBDA(const size_type frontierIdx) {
 
-                             size_type frontierNode = frontier(frontierIdx);
-                             int* bannedColors = new int[maxColors];
-                             for(size_type colorIdx= 0; colorIdx < maxColors; ++colorIdx) {
-                               bannedColors[colorIdx] = 0;
-                             }
-
-                             // Loop over neighbors, find banned colors, decrement dependency and update newFrontier
-                             for(size_type neigh = this->xadj(frontierNode); neigh < this->xadj(frontierNode + 1); ++neigh) {
-                               bannedColors[colors(this->adj(neigh))] = 1;
-                               dependency(this->adj(neigh)) = dependency(this->adj(neigh)) - 1;
-                               if(dependency(this->adj(neigh)) == 0) {
-                                 const size_type newFrontierIdx
-                                   = Kokkos::atomic_fetch_add(&newFrontierSize(), 1);
-                                 newFrontier(newFrontierIdx) = this->adj(neigh);
+                               size_type frontierNode = frontier(frontierIdx);
+                               int* bannedColors = new int[maxColors];
+                               for(size_type colorIdx= 0; colorIdx < maxColors; ++colorIdx) {
+                                 bannedColors[colorIdx] = 0;
                                }
-                             } // Loop over neighbors
 
-                             for(size_type color = 1; color < maxColors; ++color) {
-                               if(bannedColors[color] == 0) {
-                                 colors(frontierNode) = color;
-                                 break;
+                               // Loop over neighbors, find banned colors, decrement dependency and update newFrontier
+                               for(size_type neigh = this->xadj(frontierNode); neigh < this->xadj(frontierNode + 1); ++neigh) {
+                                 bannedColors[colors(this->adj(neigh))] = 1;
+                                 dependency(this->adj(neigh)) = dependency(this->adj(neigh)) - 1;
+                                 if(dependency(this->adj(neigh)) == 0) {
+                                   const size_type newFrontierIdx
+                                     = Kokkos::atomic_fetch_add(&newFrontierSize(), 1);
+                                   newFrontier(newFrontierIdx) = this->adj(neigh);
+                                 }
+                               } // Loop over neighbors
+
+                               for(size_type color = 1; color < maxColors; ++color) {
+                                 if(bannedColors[color] == 0) {
+                                   colors(frontierNode) = color;
+                                   break;
+                                 }
+                               } // Loop over banned colors
+                               delete bannedColors;
+                             }); // Loop over current frontier
+
+        // Second variant with bit array for efficiency on GPU
+        // The bit array is of size 64 so if maxColors > 64,
+        // we need to use successive color ranges of width 64
+        // to represent all the possible colors on the graph.
+      } else if(this->_use_color_set == 1) {
+        Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", frontierSize(),
+                             KOKKOS_LAMBDA(const size_type frontierIdx) {
+
+                               size_type frontierNode = frontier(frontierIdx);
+                               // Initialize bit array to all bits = 0
+                               unsigned long long bannedColors = 0;
+                               color_t myColor = 0, colorOffset = 0;
+
+                               while(myColor == 0) {
+                                 // Loop over neighbors, find banned colors in the range:
+                                 // [colorOffset + 1, colorOffset + 64]
+                                 for(size_type neigh = this->xadj(frontierNode); neigh < this->xadj(frontierNode + 1); ++neigh) {
+                                   color_t neighColor = colors(this->adj(neigh));
+                                   // Check that the color is in the current range
+                                   if(neighColor > colorOffset && neighColor < colorOffset + 65) {
+                                     // Set bannedColors' bit in location colors(this->adj(neigh)) to 1.
+                                     bannedColors |= (1ULL << (neighColor - 1));
+                                   }
+
+                                   // If (colorOffset == 0) decrement dependency and update newFrontier
+                                   if(colorOffset == 0) {
+                                     dependency(this->adj(neigh)) = dependency(this->adj(neigh)) - 1;
+                                     if(dependency(this->adj(neigh)) == 0) {
+                                       const size_type newFrontierIdx
+                                         = Kokkos::atomic_fetch_add(&newFrontierSize(), 1);
+                                       newFrontier(newFrontierIdx) = this->adj(neigh);
+                                     }
+                                   }
+                                 } // Loop over neighbors
+
+                                 if(~bannedColors == 0ULL) {
+                                   colorOffset += 64;
+                                   // Reset bannedColors to all 0 bits
+                                   bannedColors |= ~bannedColors;
+                                 } else {
+                                   color_t colorIdx = 1;
+                                   // Check if index colordIdx - 1, is set to one in bannedColors
+                                   while(bannedColors & (1ULL << (colorIdx - 1))) {++colorIdx;}
+                                   myColor = colorOffset + colorIdx;
+                                 }
                                }
-                             } // Loop over banned colors
-                             delete bannedColors;
-                           }); // Loop over current frontier
+                               colors(frontierNode) = myColor;
+                             }); // Loop over current frontier
+      }
     } // while newFrontierSize
 
     print1DView("Colors", this->nv, colors);
+    std::cout << "answer: {2 - 1 - 2 - 1 - 1 - 2 - 1 - 2 - 2 - 1 - 2 - 1 - 2 - 1 - 2 - 1 - 2 - 1}" << std::endl;
 
   } // color_graph()
 

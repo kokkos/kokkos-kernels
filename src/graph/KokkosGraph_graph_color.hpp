@@ -98,6 +98,7 @@ void graph_color_symbolic(
     break;
 
   case COLORING_VBD:
+  case COLORING_VBDBIT:
     typedef typename Impl::GraphColor_VBD <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBDGraphColoring;
     gc = new VBDGraphColoring(num_rows, entries.dimension_0(), row_map, entries, gch);
     break;
@@ -157,7 +158,6 @@ void graph_color(
     lno_nnz_view_t_ entries,
     bool is_symmetric = true)
 {
-  //std::cout << ">>> WCMCLEN graph_color (KokkosGraph_graph_color.hpp)" << std::endl;
   graph_color_symbolic(handle, num_rows, num_cols, row_map, entries, is_symmetric);
 }
 
