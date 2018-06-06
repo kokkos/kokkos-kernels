@@ -36,6 +36,11 @@ int main(int argc, char *argv[]) {
     
     std::cout << "\n Testing Algo::LU::Blocked\n";
     run<Algo::LU::Blocked>(N);
+
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+    std::cout << "\n Testing Algo::LU::CompactMKL\n";
+    run<Algo::Gemm::CompactMKL>(N);
+#endif
   }
 
   Kokkos::finalize();
