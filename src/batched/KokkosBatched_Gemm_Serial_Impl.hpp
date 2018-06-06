@@ -50,8 +50,12 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1),
-        vl = vector_type::vector_length;
+        k = A.dimension(1);
+
+      static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+      static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                    "AVX, AVX2 and AVX512 is supported");
+      const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       // no error check
       int r_val = 0;
@@ -63,7 +67,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_1(), 
                             beta,
                             (double*)C.data(), C.stride_1(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
         mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS,
                             m, n, k, 
@@ -72,7 +76,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_0(), 
                             beta,
                             (double*)C.data(), C.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
       }
@@ -155,8 +159,12 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1),
-        vl = vector_type::vector_length;
+        k = A.dimension(1);
+
+      static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+      static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
+                    "AVX, AVX2 and AVX512 is supported");
+      const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       // no error check
       int r_val = 0;
@@ -168,7 +176,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_1(), 
                             beta,
                             (double*)C.data(), C.stride_1(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
         mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_NOTRANS,
                             m, n, k, 
@@ -177,7 +185,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_0(), 
                             beta,
                             (double*)C.data(), C.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
       }
@@ -260,8 +268,12 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1),
-        vl = vector_type::vector_length;
+        k = A.dimension(1);
+
+      static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+      static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
+                    "AVX, AVX2 and AVX512 is supported");
+      const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       // no error check
       int r_val = 0;
@@ -273,7 +285,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_1(), 
                             beta,
                             (double*)C.data(), C.stride_1(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
         mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_TRANS,
                             m, n, k, 
@@ -282,7 +294,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_0(), 
                             beta,
                             (double*)C.data(), C.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
       }
@@ -365,8 +377,12 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1),
-        vl = vector_type::vector_length;
+        k = A.dimension(1);
+
+      static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+      static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
+                    "AVX, AVX2 and AVX512 is supported");
+      const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       // no error check
       int r_val = 0;
@@ -378,7 +394,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_1(), 
                             beta,
                             (double*)C.data(), C.stride_1(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
         mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_TRANS,
                             m, n, k, 
@@ -387,7 +403,7 @@ namespace KokkosBatched {
                             (const double*)B.data(), B.stride_0(), 
                             beta,
                             (double*)C.data(), C.stride_0(),
-                            (MKL_INT)vl, (MKL_INT)1);
+                            format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
       }

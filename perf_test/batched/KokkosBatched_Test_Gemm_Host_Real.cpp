@@ -46,6 +46,12 @@ int main(int argc, char *argv[]) {
       
       std::cout << "\n Testing Algo::Gemm::Blocked\n";
       run<Algo::Gemm::Blocked>(N[i]);
+
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+      std::cout << "\n Testing Algo::Gemm::CompactMKL\n";
+      run<Algo::Gemm::CompactMKL>(N[i]);
+#endif
+
     }
   }
 
