@@ -191,8 +191,6 @@ class GraphColorD2
                       << "\t  serialConflictResolution : " << (int)this->_serialConflictResolution << std::endl
                       << "\t  chunkSize                : " << this->_chunkSize << std::endl
                       << "\t  use_color_set            : " << (int)this->_use_color_set << std::endl
-//                      << "\t  team_size                : " << (int)gc_handle->get_suggested_team_size() << std::endl
-//                      << "\t  team_size                : " << team_policy_t::team_size_max() << std::endl
                       << "\tgraph information:" << std::endl
                       << "\t  nv                       : " << this->nv << std::endl
                       << "\t  ne                       : " << this->ne << std::endl;
@@ -343,17 +341,14 @@ class GraphColorD2
             chunkSize_ = 1;
         }
 
-        functorGreedyColor gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+        functorGreedyColorVB gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
 
-        // This one works but no team policy
+        // No Team Policy
         //Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
 
-       // Experimental
-       //Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, Kokkos::AUTO) , gc);  // WCMCLEN - attempt
+       // Team Policy
        const team_policy_t policy_inst(current_vertexListLength_ / chunkSize_ + 1, chunkSize_);
-       Kokkos::parallel_for(policy_inst, gc);  // WCMCLEN - attempt
-
-//       Kokkos::parallel_for(team_policy_t(current_vertexListLength_ / chunkSize_ + 1, chunkSize_) , gc);  // WCMCLEN - attempt
+       Kokkos::parallel_for(policy_inst, gc);
 
     }      // colorGreedy (end)
 
@@ -575,7 +570,7 @@ class GraphColorD2
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      */
-    struct functorGreedyColor
+    struct functorGreedyColorVB
     {
         nnz_lno_t nv;                              // num vertices
         const_lno_row_view_t _idx;                 // vertex degree list
@@ -587,15 +582,15 @@ class GraphColorD2
         nnz_lno_t _vertexListLength;               //
         nnz_lno_t _chunkSize;                      //
 
-        functorGreedyColor(nnz_lno_t nv_,
-                           const_lno_row_view_t xadj_,
-                           const_lno_nnz_view_t adj_,
-                           const_clno_row_view_t t_xadj_,
-                           const_clno_nnz_view_t t_adj_,
-                           color_view_type colors,
-                           nnz_lno_temp_work_view_t vertexList,
-                           nnz_lno_t vertexListLength,
-                           nnz_lno_t chunkSize)
+        functorGreedyColorVB(nnz_lno_t nv_,
+                             const_lno_row_view_t xadj_,
+                             const_lno_nnz_view_t adj_,
+                             const_clno_row_view_t t_xadj_,
+                             const_clno_nnz_view_t t_adj_,
+                             color_view_type colors,
+                             nnz_lno_temp_work_view_t vertexList,
+                             nnz_lno_t vertexListLength,
+                             nnz_lno_t chunkSize)
             : nv(nv_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors), _vertexList(vertexList),
               _vertexListLength(vertexListLength), _chunkSize(chunkSize)
         {
@@ -617,7 +612,7 @@ class GraphColorD2
 
             // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
             nnz_lno_t vid = 0;
-            //            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)                // WCMCLEN: would change to a parallel_for
+            //            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)             // NON-TEAM-POLICY
             Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
             {
                 if(vid_ * _chunkSize + ichunk < _vertexListLength)
@@ -733,32 +728,31 @@ class GraphColorD2
             size_type vid_1adj     = _idx(vid);
             size_type vid_1adj_end = _idx(vid + 1);
 
-            for(; vid_1adj < vid_1adj_end; vid_1adj++)
+            bool break_out = false;
+
+            for(; !break_out && vid_1adj < vid_1adj_end; vid_1adj++)
             {
                 nnz_lno_t vid_1idx = _adj(vid_1adj);
 
-                bool break_out = false;
-
-                for(size_type vid_2adj = _t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
+                for(size_type vid_2adj = _t_idx(vid_1idx); !break_out && vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
                 {
                     nnz_lno_t vid_2idx = _t_adj(vid_2adj);
 
-                    if(vid == vid_2idx || vid_2idx >= nv)
-                        continue;
-
-                    if(_colors(vid_2idx) == my_color)
+                    if(vid != vid_2idx && vid_2idx < nv)
                     {
-                        _colors(vid) = 0;      // uncolor vertex
-                        // Atomically add vertex to recolorList
-                        const nnz_lno_t k = Kokkos::atomic_fetch_add(&_recolorListLength(), atomic_incr_type(1));
-                        _recolorList(k)   = vid;
-                        numConflicts += 1;
-                        break_out = true;
-                        break;      // Can exit if vertex gets marked as a conflict.
+                        if(_colors(vid_2idx) == my_color)
+                        {
+                            _colors(vid) = 0;      // uncolor vertex
+
+                            // Atomically add vertex to recolorList
+                            const nnz_lno_t k = Kokkos::atomic_fetch_add(&_recolorListLength(), atomic_incr_type(1));
+                            _recolorList(k)   = vid;
+                            numConflicts += 1;
+                            break_out = true;
+                            // break;      // Can exit if vertex gets marked as a conflict.
+                        }
                     }
                 }
-                if(break_out)
-                    break;
             }
         }
     };      // struct functorFindConflicts_Atomic (end)

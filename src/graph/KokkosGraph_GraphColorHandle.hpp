@@ -58,8 +58,9 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_EB,
                          COLORING_SERIAL2,
                          COLORING_SPGEMM,
-                         COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring (Brian's Code)
-                         COLORING_D2                          // Distance-2 Graph Coloring (WCMCLEN)
+                         COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
+                         COLORING_D2,                         // Distance-2 Graph Coloring
+                         COLORING_D2_VB                       // Distance-2 Graph Coloring Vertex Based
                        };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
@@ -608,6 +609,7 @@ private:
     case COLORING_SPGEMM:
     case COLORING_D2_MATRIX_SQUARED:
     case COLORING_D2:
+    case COLORING_D2_VB:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;

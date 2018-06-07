@@ -111,7 +111,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << std::endl
        << spaces << "      algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
        << spaces << "                 COLORING_D2_MATRIX_SQUARED  - Distance-2 coloring using matrix-squared + Distance-1 coloring method." << std::endl
-       << spaces << "                 COLORING_D2                 - Distance-2 coloring using traversal based method." << std::endl
+       << spaces << "                 COLORING_D2_VB              - Distance-2 coloring using traversal based method." << std::endl
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
        << spaces << "      chunksize <N>     Set the chunk size." << std::endl
@@ -185,7 +185,8 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 1;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[i], "COLORING_D2"))
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB") ||
+                    0 == strcasecmp(argv[i], "COLORING_D2") )
             {
                 params.algorithm             = 2;
                 got_required_param_algorithm = true;
@@ -302,7 +303,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                 label_algorithm = "COLORING_D2_MATRIX_SQUARED";
                 break;
             case 2:
-                kh.create_graph_coloring_handle(COLORING_D2);
+                kh.create_graph_coloring_handle(COLORING_D2_VB);
                 label_algorithm = "COLORING_D2";
                 break;
             default:
