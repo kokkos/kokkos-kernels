@@ -41,6 +41,7 @@
 //@HEADER
 */
 #include <iomanip>
+#include <stdexcept>
 #include <vector>
 
 #include <KokkosSparse_spgemm.hpp>
@@ -183,6 +184,20 @@ class GraphColorD2
         // adj       = entries   (view 1 dimension - [num_edges]   - adjacency list )
         if(this->_ticToc)
         {
+            switch(this->gc_handle->get_coloring_algo_type())
+            {
+                case COLORING_D2:
+                case COLORING_D2_VB:
+                    std::cout << ">>>>>>>>>> COLORING_D2 or COLORING_D2_VB" << std::endl;
+                    break;
+                case COLORING_D2_VBTP:
+                    std::cout << ">>>>>>>>>> COLORING_D2_VBTP" << std::endl;
+                    break;
+                default:
+                    std::cout << ">>>>>>>>>> Unknown Coloring Algorithm" << std::endl;
+                    break;
+            }
+
             std::cout << "\tcolor_graph_d2 params:" << std::endl
                       << "\t  algorithm                : " << (int)this->_use_color_set << std::endl
                       << "\t  useConflictList          : " << (int)this->_conflictList << std::endl
@@ -333,7 +348,6 @@ class GraphColorD2
                      nnz_lno_temp_work_view_t current_vertexList_,
                      nnz_lno_t current_vertexListLength_)
     {
-        // std::cout << ">>> WCMCLEN colorGreedy (KokkosGraph_Distance2Color_impl.hpp) <<<" << std::endl;
         nnz_lno_t chunkSize_ = this->_chunkSize;
 
         if(current_vertexListLength_ < 100 * chunkSize_)
@@ -341,14 +355,30 @@ class GraphColorD2
             chunkSize_ = 1;
         }
 
-        functorGreedyColorVB gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+        // Pick the right coloring algorithm to use based on which algorithm we're using
+        switch(this->gc_handle->get_coloring_algo_type())
+        {
+            // Vertex Based without Team Policy
+            case COLORING_D2:
+            case COLORING_D2_VB:
+                {
+                functorGreedyColorVB gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+                Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
+                }
+                break;
 
-        // No Team Policy
-        //Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
-
-       // Team Policy
-       const team_policy_t policy_inst(current_vertexListLength_ / chunkSize_ + 1, chunkSize_);
-       Kokkos::parallel_for(policy_inst, gc);
+            // Vertex Based with Team Policy
+            case COLORING_D2_VBTP:
+                {
+                functorGreedyColorVBTP gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+                const team_policy_t policy_inst(current_vertexListLength_ / chunkSize_ + 1, chunkSize_);
+                Kokkos::parallel_for(policy_inst, gc);
+                }
+                break;
+            default:
+                throw std::invalid_argument("Unknown Distance-2 Algorithm Type");
+                break;
+            }
 
     }      // colorGreedy (end)
 
@@ -510,7 +540,7 @@ class GraphColorD2
 
 
     // ------------------------------------------------------
-    // Functors: Helpers
+    // Functions: Helpers
     // ------------------------------------------------------
 
 
@@ -567,7 +597,7 @@ class GraphColorD2
 
 
 
-    /**
+   /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      */
     struct functorGreedyColorVB
@@ -583,6 +613,134 @@ class GraphColorD2
         nnz_lno_t _chunkSize;                      //
 
         functorGreedyColorVB(nnz_lno_t nv_,
+                              const_lno_row_view_t xadj_,
+                              const_lno_nnz_view_t adj_,
+                              const_clno_row_view_t t_xadj_,
+                              const_clno_nnz_view_t t_adj_,
+                              color_view_type colors,
+                              nnz_lno_temp_work_view_t vertexList,
+                              nnz_lno_t vertexListLength,
+                              nnz_lno_t chunkSize)
+            : nv(nv_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors), _vertexList(vertexList),
+              _vertexListLength(vertexListLength), _chunkSize(chunkSize)
+        {
+        }
+
+
+        // Color vertex i with smallest available color.
+        //
+        // Each thread colors a chunk of vertices to prevent all vertices getting the same color.
+        //
+        // This version uses a bool array of size FORBIDDEN_SIZE.
+        //
+        // param: ii = vertex id
+        //
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const nnz_lno_t vid_) const
+        {
+            // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
+            nnz_lno_t vid = 0;
+            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
+            {
+                if(vid_ * _chunkSize + ichunk < _vertexListLength)
+                    vid = _vertexList(vid_ * _chunkSize + ichunk);
+                else
+                    continue;
+
+                // Already colored this vertex.
+                if(_colors(vid) > 0)
+                {
+                    continue;
+                }
+
+                bool foundColor = false;      // Have we found a valid color?
+
+                // Use forbidden array to find available color.
+                // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
+                bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
+
+                // Do multiple passes if the array is too small.
+                // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
+                //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.
+                //   This could be as big as all the vertices in the graph if diameter(G)=2...
+                // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
+                color_t offset = 0;
+
+                while(!foundColor)
+                {
+                    // initialize
+                    for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
+                    // by convention, start at 1
+                    if(offset == 0)
+                    {
+                        forbidden[0] = true;
+                    }
+
+                    // Check neighbors, fill forbidden array.
+                    for(size_type vid_1adj = _idx(vid); vid_1adj < _idx(vid + 1); vid_1adj++)
+                    {
+                        nnz_lno_t vid_1idx = _adj(vid_1adj);
+
+                        for(size_type vid_2adj = _t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
+                        {
+                            nnz_lno_t vid_2idx = _t_adj(vid_2adj);
+
+                            // Skip distance-2-self-loops
+                            if(vid_2idx == vid || vid_2idx >= nv)
+                            {
+                                continue;
+                            }
+
+                            color_t c = _colors(vid_2idx);
+
+                            if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
+                            {
+                                forbidden[c - offset] = true;
+                            }
+                        }
+                    }
+
+                    // color vertex i with smallest available color (firstFit)
+                    for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
+                    {
+                        if(!forbidden[c])
+                        {
+                            _colors(vid) = offset + c;
+                            foundColor   = true;
+                            break;
+                        }
+                    }      // for c...
+                    offset += VB_D2_COLORING_FORBIDDEN_SIZE;
+                }      // for offset...
+            }          // for ichunk...
+        }              // operator() (end)
+    };                 // struct functorGreedyColorVB (end)
+
+
+
+
+
+
+
+
+
+    /**
+     * Functor for VB algorithm speculative coloring without edge filtering.
+     * Team Policy Enabled
+     */
+    struct functorGreedyColorVBTP
+    {
+        nnz_lno_t nv;                              // num vertices
+        const_lno_row_view_t _idx;                 // vertex degree list
+        const_lno_nnz_view_t _adj;                 // vertex adjacency list
+        const_clno_row_view_t _t_idx;              // transpose vertex degree list
+        const_clno_nnz_view_t _t_adj;              // transpose vertex adjacency list
+        color_view_type _colors;                   // vertex colors
+        nnz_lno_temp_work_view_t _vertexList;      //
+        nnz_lno_t _vertexListLength;               //
+        nnz_lno_t _chunkSize;                      //
+
+        functorGreedyColorVBTP(nnz_lno_t nv_,
                              const_lno_row_view_t xadj_,
                              const_lno_nnz_view_t adj_,
                              const_clno_row_view_t t_xadj_,
@@ -686,7 +844,7 @@ class GraphColorD2
                 }
             });      // for ichunk...
         }            // operator() (end)
-    };               // struct functorGreedyColor (end)
+    };               // struct functorGreedyColorVBTP (end)
 
 
 

@@ -60,7 +60,8 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_SPGEMM,
                          COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
                          COLORING_D2,                         // Distance-2 Graph Coloring
-                         COLORING_D2_VB                       // Distance-2 Graph Coloring Vertex Based
+                         COLORING_D2_VB,                      // Distance-2 Graph Coloring Vertex Based
+                         COLORING_D2_VBTP                     // Distance-2 Graph Coloring Vertex Based w/ Team Policy
                        };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
@@ -492,11 +493,12 @@ private:
       size_type new_num_edge = 0;
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
 
-      if (
+      if ( 0
 #if defined( KOKKOS_ENABLE_CUDA )
-          Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value ||
+          || Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value
 #endif
-          0){
+         )
+      {
 
 
         int teamSizeMax = 0;
@@ -610,6 +612,7 @@ private:
     case COLORING_D2_MATRIX_SQUARED:
     case COLORING_D2:
     case COLORING_D2_VB:
+    case COLORING_D2_VBTP:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;
