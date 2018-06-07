@@ -377,7 +377,6 @@ class GraphColorD2
                 break;
             default:
                 throw std::invalid_argument("Unknown Distance-2 Algorithm Type");
-                break;
             }
 
     }      // colorGreedy (end)
