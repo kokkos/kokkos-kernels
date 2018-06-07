@@ -184,20 +184,6 @@ class GraphColorD2
         // adj       = entries   (view 1 dimension - [num_edges]   - adjacency list )
         if(this->_ticToc)
         {
-            switch(this->gc_handle->get_coloring_algo_type())
-            {
-                case COLORING_D2:
-                case COLORING_D2_VB:
-                    std::cout << ">>>>>>>>>> COLORING_D2 or COLORING_D2_VB" << std::endl;
-                    break;
-                case COLORING_D2_VBTP:
-                    std::cout << ">>>>>>>>>> COLORING_D2_VBTP" << std::endl;
-                    break;
-                default:
-                    std::cout << ">>>>>>>>>> Unknown Coloring Algorithm" << std::endl;
-                    break;
-            }
-
             std::cout << "\tcolor_graph_d2 params:" << std::endl
                       << "\t  algorithm                : " << (int)this->_use_color_set << std::endl
                       << "\t  useConflictList          : " << (int)this->_conflictList << std::endl
