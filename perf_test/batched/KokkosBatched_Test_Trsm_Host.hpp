@@ -15,7 +15,7 @@
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
 
-#undef __KOKKOSBATCHED_INTEL_MKL_BATCHED__
+//#undef __KOKKOSBATCHED_INTEL_MKL_BATCHED__
 
 namespace KokkosBatched {
   namespace Experimental {

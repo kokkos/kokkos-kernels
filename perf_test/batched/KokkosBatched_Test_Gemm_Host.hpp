@@ -20,7 +20,7 @@
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
 
-#undef __KOKKOSBATCHED_INTEL_MKL_BATCHED__
+//#undef __KOKKOSBATCHED_INTEL_MKL_BATCHED__
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -228,7 +228,7 @@ namespace KokkosBatched {
                                   (const double**)aa, lda,
                                   (const double**)bb, ldb,
                                   one,
-                                  cc, ldc,
+                                  (double**)cc, ldc,
                                   1, size_per_grp);
               } else if (std::is_same<value_type,Kokkos::complex<double> >::value) {
                 cblas_zgemm_batch(CblasRowMajor,
