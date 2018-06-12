@@ -330,6 +330,17 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
         std::cout << std::endl;
 
+        if(verbose && repeat==i+1 && crsGraph.numRows() < 1000)
+        {
+            auto colors = kh.get_graph_coloring_handle()->get_vertex_colors();
+            std::ofstream os("G.dot", std::ofstream::out);
+            kh.get_graph_coloring_handle()->graphToGraphviz(os,
+                                                            crsGraph.numRows(),
+                                                            crsGraph.row_map,
+                                                            crsGraph.entries,
+                                                            colors);
+        }
+
         total_time   += kh.get_graph_coloring_handle()->get_overall_coloring_time();
         total_colors += kh.get_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_graph_coloring_handle()->get_num_phases();
