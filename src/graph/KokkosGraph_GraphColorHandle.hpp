@@ -40,6 +40,9 @@
 // ************************************************************************
 //@HEADER
 */
+#include <fstream>
+#include <ostream>
+
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Utils.hpp>
@@ -58,15 +61,17 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_EB,
                          COLORING_SERIAL2,
                          COLORING_SPGEMM,
-                         COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring (Brian's Code)
-                         COLORING_D2                          // Distance-2 Graph Coloring (WCMCLEN)
+                         COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
+                         COLORING_D2,                         // Distance-2 Graph Coloring
+                         COLORING_D2_VB,                      // Distance-2 Graph Coloring Vertex Based
+                         COLORING_D2_VBTP                     // Distance-2 Graph Coloring Vertex Based w/ Team Policy
                        };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
 enum ColoringType {Distance1, Distance2};
 
-template <class size_type_, class color_t_, class lno_t_, 
+template <class size_type_, class color_t_, class lno_t_,
          //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class GraphColoringHandle
@@ -139,7 +144,12 @@ private:
 
   //STATISTICS
   double overall_coloring_time; //the overall time that it took to color the graph. In the case of the iterative calls.
+  double overall_coloring_time_phase1;    //
+  double overall_coloring_time_phase2;    // Some detailed timer accumulators for (generic) internal phases
+  double overall_coloring_time_phase3;    //
+  double overall_coloring_time_phase4;    //
   double coloring_time; //the time that it took to color the graph
+
   int num_phases; //
 
 
@@ -171,9 +181,14 @@ private:
     vb_chunk_size(8),
     max_number_of_iterations(200), eb_num_initial_colors(1),
     overall_coloring_time(0),
+    overall_coloring_time_phase1(0),
+    overall_coloring_time_phase2(0),
+    overall_coloring_time_phase3(0),
+    overall_coloring_time_phase4(0),
     coloring_time(0),
     num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),
-    vertex_colors(), is_coloring_called_before(false), num_colors(0){
+    vertex_colors(), is_coloring_called_before(false), num_colors(0)
+  {
     this->choose_default_algorithm();
     this->set_defaults(this->coloring_algorithm_type);
   }
@@ -481,11 +496,12 @@ private:
       size_type new_num_edge = 0;
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
 
-      if (
+      if ( 0
 #if defined( KOKKOS_ENABLE_CUDA )
-          Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value ||
+          || Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value
 #endif
-          0){
+         )
+      {
 
 
         int teamSizeMax = 0;
@@ -598,6 +614,8 @@ private:
     case COLORING_SPGEMM:
     case COLORING_D2_MATRIX_SQUARED:
     case COLORING_D2:
+    case COLORING_D2_VB:
+    case COLORING_D2_VBTP:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;
@@ -628,7 +646,6 @@ private:
 
   virtual ~GraphColoringHandle(){};
 
-
   //getters
   ColoringAlgorithm get_coloring_algo_type() const {return this->coloring_algorithm_type;}
   ConflictList get_conflict_list_type() const {return this->conflict_list_type;}
@@ -642,6 +659,10 @@ private:
   int get_eb_num_initial_colors() const{return this->eb_num_initial_colors;}
 
   double get_overall_coloring_time() const { return this->overall_coloring_time;}
+  double get_overall_coloring_time_phase1() const { return this->overall_coloring_time_phase1; }
+  double get_overall_coloring_time_phase2() const { return this->overall_coloring_time_phase2; }
+  double get_overall_coloring_time_phase3() const { return this->overall_coloring_time_phase3; }
+  double get_overall_coloring_time_phase4() const { return this->overall_coloring_time_phase4; }
   double get_coloring_time() const { return this->coloring_time;}
   int get_num_phases() const { return this->num_phases;}
   color_view_t get_vertex_colors() const {return this->vertex_colors;}
@@ -658,6 +679,10 @@ private:
   void set_max_number_of_iterations(const int &max_phases){this->max_number_of_iterations = max_phases;}
   void set_eb_num_initial_colors(const int &num_initial_colors){this->eb_num_initial_colors = num_initial_colors;}
   void add_to_overall_coloring_time(const double &coloring_time_){this->overall_coloring_time += coloring_time_;}
+  void add_to_overall_coloring_time_phase1(const double &coloring_time_){this->overall_coloring_time_phase1 += coloring_time_;}
+  void add_to_overall_coloring_time_phase2(const double &coloring_time_){this->overall_coloring_time_phase2 += coloring_time_;}
+  void add_to_overall_coloring_time_phase3(const double &coloring_time_){this->overall_coloring_time_phase3 += coloring_time_;}
+  void add_to_overall_coloring_time_phase4(const double &coloring_time_){this->overall_coloring_time_phase4 += coloring_time_;}
   void set_coloring_time(const double &coloring_time_){this->coloring_time = coloring_time_;}
   void set_num_phases(const double &num_phases_){this->num_phases = num_phases_;}
   void set_vertex_colors( const color_view_t vertex_colors_){
@@ -665,6 +690,75 @@ private:
     this->is_coloring_called_before = true;
     this->num_colors = 0;
   }
+
+
+  // Print / write out the graph in a GraphVIZ format.
+  // Color "1" will be rendered as a red circle.
+  // Color "0" (uncolored) will be a star shape.
+  // Other node colors shown as just the color value.
+  //
+  // @param os use std::cout for output to STDOUT stream, or a ofstream object
+  //           (i.e., `std::ofstream os("G.dot", std::ofstream::out);`) to write
+  //           to a file.
+  template<typename kokkos_view_t, typename index_t, typename rowmap_t, typename entries_t>
+  void graphToGraphviz(std::ostream &os,
+                       const index_t num_verts,
+                       rowmap_t &rowmap,
+                       entries_t &entries,
+                       kokkos_view_t &colors) const
+  {
+      typedef typename kokkos_view_t::HostMirror h_colors_t;
+      typedef typename rowmap_t::HostMirror h_rowmap_t;
+      typedef typename entries_t::HostMirror h_entries_t;
+
+      h_colors_t h_colors = Kokkos::create_mirror_view(colors);
+      Kokkos::deep_copy(h_colors, colors);
+
+      h_rowmap_t h_rowmap = Kokkos::create_mirror_view(rowmap);
+      Kokkos::deep_copy(h_rowmap, rowmap);
+
+      h_entries_t h_entries = Kokkos::create_mirror_view(entries);
+      Kokkos::deep_copy(h_entries, entries);
+
+
+      os << "Graph G" << std::endl
+         << "{" << std::endl
+         << "    rankdir=LR;" << std::endl
+         << "    overlap=false;" << std::endl
+         << "    splines=true;" << std::endl
+         << "    maxiter=2000;" << std::endl
+         << "    node [shape=Mrecord];" << std::endl
+         << "    edge [len=2.0];" << std::endl
+         << std::endl;
+
+      for(index_t vid = 0; vid < num_verts; vid++)
+      {
+          if(1 == h_colors(vid))
+          {
+              os << "    " << vid << " [ label=\"\", shape=circle, style=filled, color=red, fillcolor=red];" << std::endl;
+          }
+          else if(0 == h_colors(vid))
+          {
+              os << "    " << vid << " [ label=\"" << vid << "\", shape=star, style=filled, color=black];" << std::endl;
+          }
+          else
+          {
+              os << "    " << vid << " [ label=\"" << vid << "|" << h_colors(vid) << "\"];" << std::endl;
+          }
+          for(index_t iadj = h_rowmap(vid); iadj < h_rowmap(vid + 1); iadj++)
+          {
+              index_t vadj = h_entries(iadj);
+              if(vadj >= vid)
+              {
+                  os << "    " << vid << " -- " << vadj << ";" << std::endl;
+              }
+          }
+          os << std::endl;
+      }
+      os << "}" << std::endl;
+  }      // graphToGraphviz (end)
+
+
 
 
 };

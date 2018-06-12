@@ -44,6 +44,7 @@
 #define _KOKKOS_GRAPH_COLORD2_HPP
 
 #include "KokkosGraph_Distance2Color_impl.hpp"
+#include "KokkosGraph_Distance2Color_MatrixSquared_impl.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 
@@ -61,7 +62,7 @@ void graph_color_d2(KernelHandle *handle,
                     lno_row_view_t_    row_map,
                     lno_nnz_view_t_    row_entries,
                     // If graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
-                    lno_col_view_t_    col_map, 
+                    lno_col_view_t_    col_map,
                     lno_colnnz_view_t_ col_entries)
 {
   Kokkos::Impl::Timer timer;
@@ -87,15 +88,17 @@ void graph_color_d2(KernelHandle *handle,
     {
       Impl::GraphColorD2_MatrixSquared <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
-      gc.color_graph_d2_matrix_squared();
+      gc.execute();
       break;
     }
 
     case COLORING_D2:
+    case COLORING_D2_VB:
+    case COLORING_D2_VBTP:
     {
       Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
           gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
-      gc.color_graph_d2();
+      gc.execute();
       break;
     }
 
