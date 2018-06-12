@@ -357,7 +357,13 @@ class GraphColorD2
             case COLORING_D2_VBTP:
                 {
                 functorGreedyColorVBTP gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+
+                #if defined( KOKKOS_ENABLE_CUDA )
                 const team_policy_t policy_inst(current_vertexListLength_ / chunkSize_ + 1, chunkSize_);
+                #else
+                const team_policy_t policy_inst(current_vertexListLength_ / chunkSize_ + 1, Kokkos::AUTO);
+                #endif
+
                 Kokkos::parallel_for(policy_inst, gc);
                 }
                 break;
@@ -751,21 +757,17 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const team_member_t &thread) const
         {
-            nnz_lno_t vid_ = thread.league_rank() * thread.team_size() + thread.team_rank();
+            nnz_lno_t chunk_id = thread.league_rank() * thread.team_size() + thread.team_rank();
 
-            // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
-            nnz_lno_t vid = 0;
-            //            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)             // NON-TEAM-POLICY
             Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
             {
-                if(vid_ * _chunkSize + ichunk < _vertexListLength)
+                if(chunk_id * _chunkSize + ichunk < _vertexListLength)
                 {
-                    vid = _vertexList(vid_ * _chunkSize + ichunk);
+                    nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
 
                     // Already colored this vertex.
                     if(_colors(vid) <= 0)
                     {
-
                         bool foundColor = false;      // Have we found a valid color?
 
                         // Use forbidden array to find available color.
