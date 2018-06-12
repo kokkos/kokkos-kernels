@@ -564,11 +564,14 @@ class GraphColorD2
 
 
 
+  public:
+
+
+
     // ------------------------------------------------------
     // Functors: Distance-2 Graph Coloring
     // ------------------------------------------------------
 
-  public:
     /**
      * Functor to init a list sequentialy, that is list[i] = i
      */
@@ -709,12 +712,6 @@ class GraphColorD2
 
 
 
-
-
-
-
-
-
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Team Policy Enabled
@@ -763,7 +760,7 @@ class GraphColorD2
             {
                 if(chunk_id * _chunkSize + ichunk < _vertexListLength)
                 {
-                    nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
+                    const nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
 
                     // Already colored this vertex.
                     if(_colors(vid) <= 0)
@@ -772,45 +769,46 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
+                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
                         // Do multiple passes if the array is too small.
-                        // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
-                        //   but in distance-2 we'd need the total_time vertices at distance-2 which we don't easily have aprioi.
-                        //   This could be as big as all the vertices in the graph if diameter(G)=2...
                         // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
                         color_t offset = 0;
 
-                        while(!foundColor)
+                        while(!foundColor && offset < nv)
                         {
                             // initialize
                             for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
-                            // by convention, start at 1
-                            if(offset == 0)
+
+                            // If the offset is 0 then we're looking at colors 0..63, but color 0 is reserved for
+                            // UNCOLORED vertices so we should start coloring at 1.
+                            if(0 == offset)
                             {
                                 forbidden[0] = true;
                             }
 
-                            // Check neighbors, fill forbidden array.
-                            for(size_type vid_1adj = _idx(vid); vid_1adj < _idx(vid + 1); vid_1adj++)
+                            // Loop over neighbors
+                            for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
                             {
-                                nnz_lno_t vid_1idx = _adj(vid_1adj);
+                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
 
-                                for(size_type vid_2adj = _t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
+                                // Loop over distance-2 neighbors
+                                for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
                                 {
-                                    nnz_lno_t vid_2idx = _t_adj(vid_2adj);
+                                    const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
 
-                                    // Skip distance-2-self-loops
-                                    if(vid_2idx == vid || vid_2idx >= nv)
+                                    // Skip distance-2 self loops
+                                    if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        continue;
-                                    }
+                                        color_t c = _colors(vid_d2);
 
-                                    color_t c = _colors(vid_2idx);
-
-                                    if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
-                                    {
-                                        forbidden[c - offset] = true;
+                                        // If color found is inside current 'range' then mark it as used.
+                                        if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
+                                        {
+                                            forbidden[c - offset] = true;
+                                        }
                                     }
                                 }
                             }
@@ -826,11 +824,12 @@ class GraphColorD2
                                 }
                             }      // for c...
                             offset += VB_D2_COLORING_FORBIDDEN_SIZE;
-                        }      // for offset...
-                    }
-                }
-            });      // for ichunk...
-        }            // operator() (end)
+                        }      // while(!foundColor)
+                    }          // if _colors(vid) <= 0 ...
+                }              // if chunk_id*...
+            });                // for ichunk...
+        }                      // operator() (end)
+
     };               // struct functorGreedyColorVBTP (end)
 
 
@@ -867,11 +866,11 @@ class GraphColorD2
         void operator()(const nnz_lno_t vid_, nnz_lno_t &numConflicts) const
         {
             typedef typename std::remove_reference<decltype(_recolorListLength())>::type atomic_incr_type;
-            nnz_lno_t vid    = _vertexList(vid_);
+            const nnz_lno_t vid = _vertexList(vid_);
             color_t my_color = _colors(vid);
 
             size_type vid_1adj     = _idx(vid);
-            size_type vid_1adj_end = _idx(vid + 1);
+            const size_type vid_1adj_end = _idx(vid + 1);
 
             bool break_out = false;
 
@@ -881,7 +880,7 @@ class GraphColorD2
 
                 for(size_type vid_2adj = _t_idx(vid_1idx); !break_out && vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
                 {
-                    nnz_lno_t vid_2idx = _t_adj(vid_2adj);
+                    const nnz_lno_t vid_2idx = _t_adj(vid_2adj);
 
                     if(vid != vid_2idx && vid_2idx < nv)
                     {
