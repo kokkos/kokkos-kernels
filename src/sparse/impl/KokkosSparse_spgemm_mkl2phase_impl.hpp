@@ -417,48 +417,48 @@ void mkl2phase_symbolic(
 
       if (handle->mkl_convert_to_1base) { // a*, b* already converted to 1base above...
         if (Kokkos::Impl::is_same<value_type, double>::value){
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&A, SPARSE_INDEX_BASE_ONE, mklm, mkln, a_xadj, a_xadj + 1, a_adj, a_ew)){
-          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&A, SPARSE_INDEX_BASE_ONE, mklm, mkln, a_xadj, a_xadj + 1, a_adj, reinterpret_cast<double*>(a_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
+          }
         }
+        else if (Kokkos::Impl::is_same<value_type, float>::value){
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&A, SPARSE_INDEX_BASE_ONE, mklm, mkln, a_xadj, a_xadj + 1, a_adj, reinterpret_cast<float*>(a_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
+          }
         }
-  //      else if (Kokkos::Impl::is_same<value_type, float>::value){
-  //      if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&A, SPARSE_INDEX_BASE_ONE, mklm, mkln, a_xadj, a_xadj + 1, a_adj, a_ew)){
-  //        throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
-  //      }
-  //      }
     
         if (Kokkos::Impl::is_same<value_type, double>::value){
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&B, SPARSE_INDEX_BASE_ONE, n, k, b_xadj, b_xadj + 1, b_adj, b_ew)){
-          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&B, SPARSE_INDEX_BASE_ONE, n, k, b_xadj, b_xadj + 1, b_adj, reinterpret_cast<double*>(b_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
+          }
         }
+        else if (Kokkos::Impl::is_same<value_type, float>::value){
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&B, SPARSE_INDEX_BASE_ONE, n, k, b_xadj, b_xadj + 1, b_adj, reinterpret_cast<float*>(b_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
+          }
         }
-  //      else if (Kokkos::Impl::is_same<value_type, float>::value){
-  //      if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&B, SPARSE_INDEX_BASE_ONE, n, k, b_xadj, b_xadj + 1, b_adj, b_ew)){
-  //        throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
-  //      }
-  //      }
       } else {
         if (Kokkos::Impl::is_same<value_type, double>::value){
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&A, SPARSE_INDEX_BASE_ZERO, mklm, mkln, a_xadj, a_xadj + 1, a_adj, a_ew)){
-          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&A, SPARSE_INDEX_BASE_ZERO, mklm, mkln, a_xadj, a_xadj + 1, a_adj, reinterpret_cast<double*>(a_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
+          }
         }
+        else if (Kokkos::Impl::is_same<value_type, float>::value){
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&A, SPARSE_INDEX_BASE_ZERO, mklm, mkln, a_xadj, a_xadj + 1, a_adj, reinterpret_cast<float*>(a_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
+          }
         }
-  //      else if (Kokkos::Impl::is_same<value_type, float>::value){
-  //      if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&A, SPARSE_INDEX_BASE_ZERO, mklm, mkln, a_xadj, a_xadj + 1, a_adj, a_ew)){
-  //        throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
-  //      }
-  //      }
     
         if (Kokkos::Impl::is_same<value_type, double>::value){
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, b_ew)){
-          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, reinterpret_cast<double*>(b_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
+          }
         }
+        else if (Kokkos::Impl::is_same<value_type, float>::value){
+          if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, reinterpret_cast<float*>(b_ew))){
+            throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
+          }
         }
-  //      else if (Kokkos::Impl::is_same<value_type, float>::value){
-  //      if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, b_ew)){
-  //        throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
-  //      }
-  //      }
       }
   
       sparse_operation_t operation;
@@ -538,8 +538,7 @@ void mkl2phase_symbolic(
 #else
     throw std::runtime_error ("MKL IS NOT DEFINED\n");
 #endif
-  }
-}
-}
+  } // end mkl2phase_apply
+} } // namespace KokkosKernels::Impl
 
 #endif
