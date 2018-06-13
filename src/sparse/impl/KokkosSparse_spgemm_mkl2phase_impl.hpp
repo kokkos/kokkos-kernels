@@ -492,7 +492,8 @@ void mkl2phase_symbolic(
       // Copy C components back
       sparse_index_base_t c_indexing;
       MKL_INT c_rows, c_cols, *rows_start, *rows_end, *columns;
-      float *values;
+      typedef double values_type;
+      values_type *values;
 
       if (SPARSE_STATUS_SUCCESS !=
           //mkl_sparse_s_export_csr (C,
@@ -509,7 +510,7 @@ void mkl2phase_symbolic(
       idx nnz = row_mapC(m) =  rows_end[m - 1];
 
       KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type , MyExecSpace> (nnz, columns, entriesC);
-      KokkosKernels::Impl::copy_vector<float *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (nnz, values, valuesC);
+      KokkosKernels::Impl::copy_vector<values_type *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (nnz, values, valuesC);
 
 
       if (handle->mkl_convert_to_1base)
