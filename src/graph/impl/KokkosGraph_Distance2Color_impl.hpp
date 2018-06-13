@@ -807,8 +807,8 @@ class GraphColorD2
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            Kokkos::atomic_fetch_or(&forbidden[c-offset], true);
-                                            // forbidden[c - offset] = true;
+                                            //Kokkos::atomic_fetch_or(&forbidden[c-offset], true);   // WCMCLEN SCAFFOLDING - For VectorLevel Parallelism
+                                            forbidden[c - offset] = true;
                                         }
                                     }
                                 }
