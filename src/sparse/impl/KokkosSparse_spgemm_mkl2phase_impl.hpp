@@ -131,7 +131,7 @@ void mkl2phase_symbolic(
       c_xadj = handle->persistent_c_xadj.data();
     }
 
-#if __INTEL_MKL__ < 18
+#if __INTEL_MKL__ < 2018
     char trans = 'N';
     MKL_INT request = 1;
     MKL_INT sort = handle->get_mkl_sort_option();
@@ -169,7 +169,7 @@ void mkl2phase_symbolic(
     }
 #endif
 
-#if __INTEL_MKL__ >= 18
+#if __INTEL_MKL__ >= 2018
     MKL_INT mklm = m, mkln = n;
     double *mynullptr = NULL;
 
@@ -337,7 +337,7 @@ void mkl2phase_symbolic(
         b_adj = (int *)b_plus_one.data();
       }
 
-#if __INTEL_MKL__ < 18
+#if __INTEL_MKL__ < 2018
       const value_type *a_ew = valuesA.data();
       const value_type *b_ew = valuesB.data();
 
@@ -400,7 +400,7 @@ void mkl2phase_symbolic(
       }
 #endif
 
-#if __INTEL_MKL__ >= 18
+#if __INTEL_MKL__ >= 2018
       value_type *a_ew = const_cast<value_type*>(valuesA.data());
       value_type *b_ew = const_cast<value_type*>(valuesB.data());
 
