@@ -196,6 +196,16 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 3;
                 got_required_param_algorithm = true;
             }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTP2"))
+            {
+                params.algorithm             = 4;
+                got_required_param_algorithm = true;
+            }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTP3"))
+            {
+                params.algorithm             = 5;
+                got_required_param_algorithm = true;
+            }
             else
             {
                 std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
@@ -314,6 +324,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             case 3:
                 kh.create_graph_coloring_handle(COLORING_D2_VBTP);
                 label_algorithm = "COLORING_D2_VBTP";
+                break;
+            case 4:
+                kh.create_graph_coloring_handle(COLORING_D2_VBTP2);
+                label_algorithm = "COLORING_D2_VBTP2";
+                break;
+            case 5:
+                kh.create_graph_coloring_handle(COLORING_D2_VBTP3);
+                label_algorithm = "COLORING_D2_VBTP3";
                 break;
             default:
                 kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);

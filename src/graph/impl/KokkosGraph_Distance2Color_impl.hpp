@@ -367,6 +367,41 @@ class GraphColorD2
                 Kokkos::parallel_for(policy_inst, gc);
                 }
                 break;
+
+            // Vertex Based with Team Policy WCMCLEN SCAFFOLDING (EXPERIMENTAL)
+            case COLORING_D2_VBTP2:
+                {
+                std::cout << ">>> Running D2 VBTP2 Coloring" << std::endl;
+
+                functorGreedyColorVBTP2 gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
+
+                #if defined( KOKKOS_ENABLE_CUDA )
+                const team_policy_t policy_inst(current_vertexListLength_, Kokkos::AUTO);
+                #else
+                const team_policy_t policy_inst(current_vertexListLength_, Kokkos::AUTO);
+                #endif
+
+                Kokkos::parallel_for(policy_inst, gc);
+                }
+                break;
+
+            // Vertex Based with Team Policy WCMCLEN SCAFFOLDING (EXPERIMENTAL)
+            case COLORING_D2_VBTP3:
+                {
+                std::cout << ">>> Running D2 VBTP2 Coloring" << std::endl;
+
+                functorGreedyColorVBTP3 gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
+
+                #if defined( KOKKOS_ENABLE_CUDA )
+                const team_policy_t policy_inst(current_vertexListLength_, Kokkos::AUTO);
+                #else
+                const team_policy_t policy_inst(current_vertexListLength_, Kokkos::AUTO);
+                #endif
+
+                Kokkos::parallel_for(policy_inst, gc);
+                }
+                break;
+
             default:
                 throw std::invalid_argument("Unknown Distance-2 Algorithm Type");
             }
@@ -830,8 +865,279 @@ class GraphColorD2
                 }              // if chunk_id*...
             });                // for ichunk...
         }                      // operator() (end)
-
     };               // struct functorGreedyColorVBTP (end)
+
+
+
+    /**
+     * Functor for VB algorithm speculative coloring without edge filtering.
+     * Team Policy Enabled
+     *  - trying out removing the loop-over-chunks stuff
+     */
+    struct functorGreedyColorVBTP2
+    {
+        nnz_lno_t nv;                              // num vertices
+        const_lno_row_view_t _idx;                 // vertex degree list
+        const_lno_nnz_view_t _adj;                 // vertex adjacency list
+        const_clno_row_view_t _t_idx;              // transpose vertex degree list
+        const_clno_nnz_view_t _t_adj;              // transpose vertex adjacency list
+        color_view_type _colors;                   // vertex colors
+        nnz_lno_temp_work_view_t _vertexList;      //
+        nnz_lno_t _vertexListLength;               //
+//        nnz_lno_t _chunkSize;                      //
+
+        functorGreedyColorVBTP2(nnz_lno_t nv_,
+                             const_lno_row_view_t xadj_,
+                             const_lno_nnz_view_t adj_,
+                             const_clno_row_view_t t_xadj_,
+                             const_clno_nnz_view_t t_adj_,
+                             color_view_type colors,
+                             nnz_lno_temp_work_view_t vertexList,
+                             nnz_lno_t vertexListLength)
+//                             nnz_lno_t chunkSize)
+            : nv(nv_)
+            , _idx(xadj_)
+            , _adj(adj_)
+            , _t_idx(t_xadj_)
+            , _t_adj(t_adj_)
+            , _colors(colors)
+            , _vertexList(vertexList)
+            , _vertexListLength(vertexListLength)
+//              , _chunkSize(chunkSize)
+        {
+        }
+
+
+        // Color vertex i with smallest available color.
+        //
+        // Each thread colors a chunk of vertices to prevent all vertices getting the same color.
+        //
+        // This version uses a bool array of size FORBIDDEN_SIZE.
+        //
+        // param: ii = vertex id
+        //
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const team_member_t &thread) const
+        {
+//            nnz_lno_t chunk_id = thread.league_rank() * thread.team_size() + thread.team_rank();
+
+//            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
+//            {
+//                if(chunk_id * _chunkSize + ichunk < _vertexListLength)
+//                {
+//                    const nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
+                    const nnz_lno_t vid = _vertexList( thread.league_rank() * thread.team_size() + thread.team_rank() );
+
+//                    std::cout << ">>> vid = " << vid << std::endl;
+
+                    // Already colored this vertex.
+                    if(_colors(vid) <= 0)
+                    {
+                        bool foundColor = false;      // Have we found a valid color?
+
+                        // Use forbidden array to find available color.
+                        // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
+                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        //   atomics will be necessary for updating this.
+                        bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
+
+                        // Do multiple passes if the array is too small.
+                        // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
+                        color_t offset = 0;
+
+                        while(!foundColor && offset < nv)
+                        {
+                            // initialize
+                            for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
+
+                            // If the offset is 0 then we're looking at colors 0..63, but color 0 is reserved for
+                            // UNCOLORED vertices so we should start coloring at 1.
+                            if(0 == offset)
+                            {
+                                forbidden[0] = true;
+                            }
+
+                            // Loop over neighbors
+                            for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
+                            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _idx(vid+1) - _idx(vid) ), [&] (const size_type& idx)
+                            {
+                                size_type vid_d1_adj = idx + _idx(vid);
+                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+
+                                // Loop over distance-2 neighbors
+                                for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
+                                {
+                                    const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
+
+                                    // Skip distance-2 self loops
+                                    if(vid_d2 != vid && vid_d2 < nv)
+                                    {
+                                        color_t c = _colors(vid_d2);
+
+                                        // If color found is inside current 'range' then mark it as used.
+                                        if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
+                                        {
+                                            Kokkos::atomic_fetch_or(&forbidden[c-offset], true);   // WCMCLEN SCAFFOLDING - For VectorLevel Parallelism
+                                        }
+                                    }
+                                }
+                            });
+
+                            // color vertex i with smallest available color (firstFit)
+                            for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
+                            {
+                                if(!forbidden[c])
+                                {
+                                    _colors(vid) = offset + c;
+                                    foundColor   = true;
+                                    break;
+                                }
+                            }      // for c...
+                            offset += VB_D2_COLORING_FORBIDDEN_SIZE;
+                        }      // while(!foundColor)
+                    }          // if _colors(vid) <= 0 ...
+//                }              // if chunk_id*...
+//            });                // for ichunk...
+        }                      // operator() (end)
+    };               // struct functorGreedyColorVBTP2 (end)
+
+
+
+
+    /**
+     * Functor for VB algorithm speculative coloring without edge filtering.
+     * Team Policy Enabled
+     *  - trying out removing the loop-over-chunks stuff
+     */
+    struct functorGreedyColorVBTP3
+    {
+        nnz_lno_t nv;                              // num vertices
+        const_lno_row_view_t _idx;                 // vertex degree list
+        const_lno_nnz_view_t _adj;                 // vertex adjacency list
+        const_clno_row_view_t _t_idx;              // transpose vertex degree list
+        const_clno_nnz_view_t _t_adj;              // transpose vertex adjacency list
+        color_view_type _colors;                   // vertex colors
+        nnz_lno_temp_work_view_t _vertexList;      //
+        nnz_lno_t _vertexListLength;               //
+//        nnz_lno_t _chunkSize;                      //
+
+        functorGreedyColorVBTP3(nnz_lno_t nv_,
+                             const_lno_row_view_t xadj_,
+                             const_lno_nnz_view_t adj_,
+                             const_clno_row_view_t t_xadj_,
+                             const_clno_nnz_view_t t_adj_,
+                             color_view_type colors,
+                             nnz_lno_temp_work_view_t vertexList,
+                             nnz_lno_t vertexListLength)
+//                             nnz_lno_t chunkSize)
+            : nv(nv_)
+            , _idx(xadj_)
+            , _adj(adj_)
+            , _t_idx(t_xadj_)
+            , _t_adj(t_adj_)
+            , _colors(colors)
+            , _vertexList(vertexList)
+            , _vertexListLength(vertexListLength)
+//              , _chunkSize(chunkSize)
+        {
+        }
+
+
+        // Color vertex i with smallest available color.
+        //
+        // Each thread colors a chunk of vertices to prevent all vertices getting the same color.
+        //
+        // This version uses a bool array of size FORBIDDEN_SIZE.
+        //
+        // param: ii = vertex id
+        //
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const team_member_t &thread) const
+        {
+//            nnz_lno_t chunk_id = thread.league_rank() * thread.team_size() + thread.team_rank();
+
+//            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
+//            {
+//                if(chunk_id * _chunkSize + ichunk < _vertexListLength)
+//                {
+//                    const nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
+                    const nnz_lno_t vid = _vertexList( thread.league_rank() * thread.team_size() + thread.team_rank() );
+
+//                    std::cout << ">>> vid = " << vid << std::endl;
+
+                    // Already colored this vertex.
+                    if(_colors(vid) <= 0)
+                    {
+                        bool foundColor = false;      // Have we found a valid color?
+
+                        // Use forbidden array to find available color.
+                        // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
+                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        //   atomics will be necessary for updating this.
+                        bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
+
+                        // Do multiple passes if the array is too small.
+                        // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
+                        color_t offset = 0;
+
+                        while(!foundColor && offset < nv)
+                        {
+                            // initialize
+                            for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
+
+                            // If the offset is 0 then we're looking at colors 0..63, but color 0 is reserved for
+                            // UNCOLORED vertices so we should start coloring at 1.
+                            if(0 == offset)
+                            {
+                                forbidden[0] = true;
+                            }
+
+                            // Loop over neighbors
+                            for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
+                            {
+                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+
+                                // Loop over distance-2 neighbors
+                                Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _t_idx(vid_d1+1) - _t_idx(vid_d1)), [&] (const size_type& idx)
+                                {
+                                    size_type vid_d2_adj = idx + _t_idx(vid_d1);
+                                    const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
+
+                                    // Skip distance-2 self loops
+                                    if(vid_d2 != vid && vid_d2 < nv)
+                                    {
+                                        color_t c = _colors(vid_d2);
+
+                                        // If color found is inside current 'range' then mark it as used.
+                                        if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
+                                        {
+                                            Kokkos::atomic_fetch_or(&forbidden[c-offset], true);   // WCMCLEN SCAFFOLDING - For VectorLevel Parallelism
+                                        }
+                                    }
+                                });
+                            }
+
+                            // color vertex i with smallest available color (firstFit)
+                            for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
+                            {
+                                if(!forbidden[c])
+                                {
+                                    _colors(vid) = offset + c;
+                                    foundColor   = true;
+                                    break;
+                                }
+                            }      // for c...
+                            offset += VB_D2_COLORING_FORBIDDEN_SIZE;
+                        }      // while(!foundColor)
+                    }          // if _colors(vid) <= 0 ...
+//                }              // if chunk_id*...
+//            });                // for ichunk...
+        }                      // operator() (end)
+    };               // struct functorGreedyColorVBTP3 (end)
+
+
+
+
 
 
 
