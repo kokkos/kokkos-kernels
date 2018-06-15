@@ -1205,7 +1205,8 @@ class GraphColorD2
         {
             nnz_lno_t chunk_id = thread.league_rank() * thread.team_size() + thread.team_rank();
 
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk) {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
+            {
                 if(chunk_id * _chunkSize + ichunk < _vertexListLength)
                 {
                     const nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
@@ -1238,16 +1239,9 @@ class GraphColorD2
                             }
 
                             // Loop over neighbors
-                            #if 0
-                            for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
-                            {
+                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx) {
+                                size_type vid_d1_adj   = idx + _idx(vid);
                                 const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
-                            #else
-                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid+1) - _idx(vid)), [&] (const size_type &idx)
-                            {
-                                size_type vid_d1_adj = idx + _idx(vid);
-                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
-                            #endif
                                 // Loop over distance-2 neighbors
                                 for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
                                 {
@@ -1261,8 +1255,8 @@ class GraphColorD2
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            Kokkos::atomic_fetch_or(&forbidden[c-offset], true);   // WCMCLEN SCAFFOLDING - For VectorLevel
-                                            //forbidden[c - offset] = true;
+                                            // WCMCLEN SCAFFOLDING - For VectorLevel
+                                            Kokkos::atomic_fetch_or(&forbidden[c - offset], true);
                                         }
                                     }
                                 }
@@ -1334,7 +1328,8 @@ class GraphColorD2
         {
             nnz_lno_t chunk_id = thread.league_rank() * thread.team_size() + thread.team_rank();
 
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk) {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
+            {
                 if(chunk_id * _chunkSize + ichunk < _vertexListLength)
                 {
                     const nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
@@ -1367,16 +1362,9 @@ class GraphColorD2
                             }
 
                             // Loop over neighbors
-                            #if 0
-                            for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
-                            {
+                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx) {
+                                size_type vid_d1_adj   = idx + _idx(vid);
                                 const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
-                            #else
-                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid+1) - _idx(vid)), [&] (const size_type &idx)
-                            {
-                                size_type vid_d1_adj = idx + _idx(vid);
-                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
-                            #endif
                                 // Loop over distance-2 neighbors
                                 for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
                                 {
@@ -1390,8 +1378,8 @@ class GraphColorD2
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            Kokkos::atomic_fetch_or(&forbidden[c-offset], true);   // WCMCLEN SCAFFOLDING - For VectorLevel
-                                            //forbidden[c - offset] = true;
+                                            // WCMCLEN SCAFFOLDING - For VectorLevel
+                                            Kokkos::atomic_fetch_or(&forbidden[c - offset], true);
                                         }
                                     }
                                 }
