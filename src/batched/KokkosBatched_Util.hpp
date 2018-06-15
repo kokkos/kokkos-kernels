@@ -29,7 +29,7 @@ namespace KokkosBatched {
 #if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
 #define __KOKKOSBATCHED_INTEL_MKL__ 1
 #include "mkl_version.h"
-#if __INTEL_MKL__ >= 18
+#if __INTEL_MKL__ >= 2018
 #define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
 #define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
 #include "mkl.h"

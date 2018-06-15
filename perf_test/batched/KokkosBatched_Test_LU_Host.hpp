@@ -325,8 +325,9 @@ namespace KokkosBatched {
           }
         }
       }
-    }
-  }
-}
+
+    } // namespace PerfTest
+  } // namespace Experimental
+} // namespace KokkosBatched
 
 
