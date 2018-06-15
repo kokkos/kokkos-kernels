@@ -206,6 +206,16 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 5;
                 got_required_param_algorithm = true;
             }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTPVR1"))
+            {
+                params.algorithm             = 6;
+                got_required_param_algorithm = true;
+            }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTPVR2"))
+            {
+                params.algorithm             = 7;
+                got_required_param_algorithm = true;
+            }
             else
             {
                 std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
@@ -306,38 +316,47 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     size_t total_phases                 = 0;
 
     std::string label_algorithm;
+    switch(algorithm)
+    {
+        case 1:
+            kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
+            label_algorithm = "COLORING_D2_MATRIX_SQUARED";
+            break;
+        case 2:
+            kh.create_graph_coloring_handle(COLORING_D2_VB);
+            label_algorithm = "COLORING_D2_VB";
+            break;
+        case 3:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTP);
+            label_algorithm = "COLORING_D2_VBTP";
+            break;
+        case 4:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTP2);
+            label_algorithm = "COLORING_D2_VBTP2";
+            break;
+        case 5:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTP3);
+            label_algorithm = "COLORING_D2_VBTP3";
+            break;
+        case 6:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTPVR1);
+            label_algorithm = "COLORING_D2_VBTPVR1";
+            break;
+        case 7:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTPVR2);
+            label_algorithm = "COLORING_D2_VBTPVR2";
+            break;
+        default:
+            kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
+            label_algorithm = "COLORING_D2_MATRIX_SQUARED";
+            break;
+    }
+
+    std::cout << ">>> Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
 
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
-
-        switch(algorithm)
-        {
-            case 1:
-                kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
-                label_algorithm = "COLORING_D2_MATRIX_SQUARED";
-                break;
-            case 2:
-                kh.create_graph_coloring_handle(COLORING_D2_VB);
-                label_algorithm = "COLORING_D2_VB";
-                break;
-            case 3:
-                kh.create_graph_coloring_handle(COLORING_D2_VBTP);
-                label_algorithm = "COLORING_D2_VBTP";
-                break;
-            case 4:
-                kh.create_graph_coloring_handle(COLORING_D2_VBTP2);
-                label_algorithm = "COLORING_D2_VBTP2";
-                break;
-            case 5:
-                kh.create_graph_coloring_handle(COLORING_D2_VBTP3);
-                label_algorithm = "COLORING_D2_VBTP3";
-                break;
-            default:
-                kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
-                label_algorithm = "COLORING_D2_MATRIX_SQUARED";
-                break;
-        }
 
         graph_color_d2(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
