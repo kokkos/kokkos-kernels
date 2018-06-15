@@ -51,6 +51,7 @@ using namespace KokkosBatched;
 int main (int argc, char *argv[]) {
   Kokkos::initialize(argc, argv); 
 
+#if !defined(__CUDA_ARCH__)
   typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
   const bool detail = false;
 
@@ -105,6 +106,7 @@ int main (int argc, char *argv[]) {
   } 
   std::cout << " Perf Test::Vector End\n";
 
+#endif
   Kokkos::finalize();
 
   return 0;
