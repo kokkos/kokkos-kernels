@@ -308,12 +308,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     }
 
     // accumulators for average stats
-    double total_time                   = 0.0;
-    double total_time_color_greedy      = 0.0;
-    double total_time_find_conflicts    = 0.0;
-    double total_time_resolve_conflicts = 0.0;
-    size_t total_colors                 = 0;
-    size_t total_phases                 = 0;
+    size_t total_colors = 0;
+    size_t total_phases = 0;
 
     std::string label_algorithm;
     switch(algorithm)
@@ -378,13 +374,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                                                             colors);
         }
 
-        total_time   += kh.get_graph_coloring_handle()->get_overall_coloring_time();
         total_colors += kh.get_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_graph_coloring_handle()->get_num_phases();
-        total_time_color_greedy += kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
-        total_time_find_conflicts += kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
-        total_time_resolve_conflicts += kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
     }
+
+    double total_time    = kh.get_graph_coloring_handle()->get_overall_coloring_time();
+    double total_time_color_greedy  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
+    double total_time_find_conflicts  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
+    double total_time_resolve_conflicts  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
 
     double avg_time                   = total_time / repeat;
     double avg_time_color_greedy      = total_time_color_greedy / repeat;
@@ -421,6 +418,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "  Num Edges   : " << crsGraph.entries.dimension_0() << std::endl
               << "  Concurrency : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "  Algorithm   : " << label_algorithm << std::endl
+              << "  Total Time  : " << total_time << std::endl
               << "  Avg Time    : " << avg_time << std::endl
               << "  Avg Time CG : " << avg_time_color_greedy << std::endl
               << "  Avg Time FC : " << avg_time_find_conflicts << std::endl

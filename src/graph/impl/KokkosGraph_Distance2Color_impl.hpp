@@ -227,6 +227,9 @@ class GraphColorD2
         double total_time = 0.0;
         Kokkos::Impl::Timer timer;
 
+        // make sure the timer resets, just in case
+        timer.reset();
+
         int iter = 0;
         for(; (iter < _max_num_iterations) && (numUncolored > 0); iter++)
         {
