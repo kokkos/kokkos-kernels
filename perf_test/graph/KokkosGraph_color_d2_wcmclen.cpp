@@ -365,7 +365,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
         graph_color_d2(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
-        std::cout << "Time      : " << kh.get_graph_coloring_handle()->get_overall_coloring_time() << std::endl
+        std::cout << "Total Time: " << kh.get_graph_coloring_handle()->get_overall_coloring_time() << std::endl
                   << "Num colors: " << kh.get_graph_coloring_handle()->get_num_colors() << std::endl
                   << "Num Phases: " << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
         std::cout << "\t";
