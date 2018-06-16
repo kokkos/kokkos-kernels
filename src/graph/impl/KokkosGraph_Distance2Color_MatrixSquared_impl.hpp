@@ -50,7 +50,7 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include "KokkosGraph_GraphColorHandle.hpp"
-#include "KokkosGraph_graph_color.hpp"
+#include "KokkosGraph_GraphColor.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 #ifndef _KOKKOSCOLORINGD2MATRIXSQUAREDIMP_HPP

@@ -51,7 +51,7 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include "KokkosGraph_GraphColorHandle.hpp"
-#include "KokkosGraph_graph_color.hpp"
+#include "KokkosGraph_GraphColor.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 #ifndef _KOKKOSCOLORINGD2IMP_HPP
@@ -113,6 +113,7 @@ class GraphColorD2
 
 
   protected:
+    nnz_lno_t nv;                      // num vertices
     nnz_lno_t nr;                      // num_rows  (# verts)
     nnz_lno_t nc;                      // num cols
     size_type ne;                      // # edges
@@ -120,7 +121,6 @@ class GraphColorD2
     const_lno_nnz_view_t adj;          // entries, transpose of entries   (size = # edges)
     const_clno_row_view_t t_xadj;      // rowmap, transpose of rowmap
     const_clno_nnz_view_t t_adj;       // entries, transpose of entries
-    nnz_lno_t nv;                      // num vertices
 
     typename HandleType::GraphColoringHandleType *gc_handle;      // pointer to the graph coloring handle
 
@@ -142,7 +142,7 @@ class GraphColorD2
      * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
      *    including parameters.
      */
-    GraphColorD2(nnz_lno_t nr_,
+    GraphColorD2(nnz_lno_t nv_,
                  nnz_lno_t nc_,
                  size_type ne_,
                  const_lno_row_view_t row_map,
@@ -150,7 +150,7 @@ class GraphColorD2
                  const_clno_row_view_t t_row_map,
                  const_clno_nnz_view_t t_entries,
                  HandleType *handle)
-        : nr(nr_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries), nv(nr_),
+        : nv(nv_), nr(nv_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries),
           gc_handle(handle->get_graph_coloring_handle()), _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size()),
           _max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations()), _conflictList(1),
           _serialConflictResolution(false), _use_color_set(0), _ticToc(handle->get_verbose())

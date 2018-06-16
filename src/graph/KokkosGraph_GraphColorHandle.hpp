@@ -62,6 +62,7 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_SERIAL2,
                          COLORING_SPGEMM,
                          COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
+                         COLORING_D2_SERIAL,                  // Distance-2 Graph Coloring (SERIAL)
                          COLORING_D2,                         // Distance-2 Graph Coloring
                          COLORING_D2_VB,                      // Distance-2 Graph Coloring Vertex Based
                          COLORING_D2_VBTP,                    // Distance-2 Graph Coloring Vertex Based w/ Team Policy
@@ -617,6 +618,7 @@ private:
     case COLORING_SERIAL2:
     case COLORING_SPGEMM:
     case COLORING_D2_MATRIX_SQUARED:
+    case COLORING_D2_SERIAL:
     case COLORING_D2:
     case COLORING_D2_VB:
     case COLORING_D2_VBTP:
