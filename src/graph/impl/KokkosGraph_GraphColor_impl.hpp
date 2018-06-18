@@ -2491,10 +2491,8 @@ public:
           << "\tchunkSize:" << this->_chunkSize << std::endl;
     }
 
-    if (this->_ticToc) {
-      std::cout << std::endl << "Step 1: compute the score array and maxColors" << std::endl;
-    }
     nnz_lno_t numVertices = this->nv;
+
     size_type maxColors = 0;
     const_lno_row_view_t myXadj = this->xadj;
     const_lno_nnz_view_t myAdj  = this->adj;
@@ -2502,25 +2500,13 @@ public:
       = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), numVertices);
     typedef typename Kokkos::Experimental::Max<size_type, MyExecSpace> maxScoreReducerType;
     maxScoreReducerType maxScoreReducer(maxColors);
-    functorScoreCalcution<nnz_lno_persistent_work_view_t, size_type, MyExecSpace> scoreCalcution(score, myXadj);
+    functorScoreCalculation<nnz_lno_persistent_work_view_t, size_type, MyExecSpace> scoreCalculation(score, myXadj);
     Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", numVertices,
-                            scoreCalcution, maxScoreReducer);
+                            scoreCalculation, maxScoreReducer);
 
-    if (this->_ticToc) {
-      Kokkos::parallel_for("print score", 1,
-			   KOKKOS_LAMBDA(const int dummy) {
-			     printf("Score: {");
-			     for(int scoreIdx = 0; scoreIdx < numVertices - 1; ++scoreIdx) {
-			       printf("%d, ", score(scoreIdx));
-			     }
-			     printf("%d}\n", score(numVertices - 1));
-			   });
-      // print1DView("Score", this->nv, score);
-      std::cout << "maxColors: " << maxColors << std::endl;
-
-      std::cout << std::endl
-                << "Step 2: compute the dependency list and the initial new frontier" << std::endl;
-    }
+   if (this->_ticToc) {
+     std::cout << "maxColors: " << maxColors << std::endl;
+   }
 
     // Create the dependency list of the graph
     nnz_lno_persistent_work_view_t dependency
@@ -2553,54 +2539,25 @@ public:
                            }
                          });
 
-    if (this->_ticToc) {
-      std::cout << std::endl << "Step 3: loop until newFrontier is empty" << std::endl;
-    }
-
     Kokkos::deep_copy(host_newFrontierSize, newFrontierSize);
     while(host_newFrontierSize() > 0) {
       ++num_loops;
       // First swap fontier with newFrontier and fontierSize with newFrontierSize
       // reset newFrontierSize
-      {
-	auto swap_tmp = frontierSize;
-	frontierSize = newFrontierSize;
-	newFrontierSize = swap_tmp;
-	host_newFrontierSize() = 0;
-	Kokkos::deep_copy(newFrontierSize, host_newFrontierSize);
-      }
-      std::cout << "Done swapping frontier sizes!" << std::endl;
+      Kokkos::parallel_for("Swap frontier sizes", 1,
+			   KOKKOS_LAMBDA(const int dummy) {
+			     frontierSize() = newFrontierSize();
+			     newFrontierSize() = 0;
+			   });
+      Kokkos::deep_copy(host_frontierSize, frontierSize);
       {
 	auto swap_tmp = frontier;
 	frontier = newFrontier;
 	newFrontier = swap_tmp;
       }
-      std::cout << "Done swapping frontiers!" << std::endl;
-
-      if (this->_ticToc) {
-	Kokkos::parallel_for("print dependency", 1,
-			     KOKKOS_LAMBDA(const int dummy) {
-			       printf("Dependency: {");
-			       for(int vertexIdx = 0; vertexIdx < numVertices - 1; ++vertexIdx) {
-				 printf("%d, ", dependency(vertexIdx));
-			       }
-			       printf("%d}\n", dependency(numVertices - 1));
-			     });
-	Kokkos::parallel_for("print frontier", 1,
-			     KOKKOS_LAMBDA(const int dummy) {
-			       printf("Frontier: {");
-			       for(int frontierIdx = 0; frontierIdx < (int)frontierSize() - 1; ++frontierIdx) {
-				 printf("%d, ", frontier(frontierIdx));
-			       }
-			       printf("%d}\n", frontier(frontierSize() - 1));
-			     });
-        // print1DView("Dependency", numVertices, dependency);
-        // print1DView("Frontier", frontierSize(), frontier);
-      }
 
       // Loop over nodes in the frontier
       // First variant without bit array, easier to understand/program
-      Kokkos::deep_copy(host_frontierSize, frontierSize);
       if(this->_use_color_set == 0) {
         Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", host_frontierSize(),
                              KOKKOS_LAMBDA(const size_type frontierIdx) {
@@ -2693,28 +2650,16 @@ public:
       Kokkos::deep_copy(host_newFrontierSize, newFrontierSize);
     } // while newFrontierSize
 
-    if (this->_ticToc) {
-      // print1DView("Colors", numVertices, colors);
-    }
-
   } // color_graph()
 
-  // void print1DView(const std::string label, const size_type frontierSize,
-  //                  const nnz_lno_temp_work_view_t frontier) {
-  //   std::cout << label << ": {";
-  //   for(size_type frontierIdx = 0; frontierIdx < frontierSize-1; ++frontierIdx) {
-  //     std::cout << frontier(frontierIdx) << "; ";
-  //   }
-  //   std::cout << frontier(frontierSize - 1) << "}" << std::endl;
-  // } // printFrontier
 
   template <class score_type, class max_type, class execution_space>
-  struct functorScoreCalcution {
+  struct functorScoreCalculation {
     typedef typename Kokkos::Experimental::Max<max_type, execution_space>::value_type valueType;
     score_type score_;
     const_lno_row_view_t numNeighbors_;
 
-    functorScoreCalcution(score_type score, const_lno_row_view_t numNeighbors)
+    functorScoreCalculation(score_type score, const_lno_row_view_t numNeighbors)
       : score_(score), numNeighbors_(numNeighbors) {}
 
     KOKKOS_INLINE_FUNCTION
@@ -2722,7 +2667,7 @@ public:
       score_(i) = numNeighbors_(i + 1) - numNeighbors_(i);
       update = ( (valueType) score_(i) < update ? update : (valueType) score_(i) );
     }
-  }; // functorScoreCalcution()
+  }; // functorScoreCalculation()
 
 
 };  // class GraphColor_VBD
