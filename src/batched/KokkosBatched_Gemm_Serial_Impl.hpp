@@ -155,7 +155,7 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1),
+        k = A.dimension(0),
         vl = vector_type::vector_length;
 
       // no error check
@@ -201,7 +201,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_0(), B.stride_1(),
@@ -225,7 +225,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Blocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_0(), B.stride_1(),
@@ -365,7 +365,7 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1),
+        k = A.dimension(0),
         vl = vector_type::vector_length;
 
       // no error check
@@ -411,7 +411,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_1(), B.stride_0(),
@@ -435,7 +435,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Blocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_1(), B.stride_0(),
