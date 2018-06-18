@@ -79,6 +79,27 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft
 
 #endif
 
+// cuBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+// double
+#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS( SCALAR, LAYOUT, MEMSPACE ) \
+template<class ExecSpace> \
+struct dot_tpl_spec_avail< \
+Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1,1> { enum : bool { value = true }; };
+
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS( double,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS( float,                   Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
+
+#endif
+
 }
 }
 #endif
