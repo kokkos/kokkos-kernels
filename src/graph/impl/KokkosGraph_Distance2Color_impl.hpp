@@ -50,8 +50,8 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 #ifndef _KOKKOSCOLORINGD2IMP_HPP
@@ -108,8 +108,8 @@ class GraphColorD2
 
     typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-    typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
-    typedef typename team_policy_t::member_type team_member_t ;
+    typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t;
+    typedef typename team_policy_t::member_type team_member_t;
 
 
   protected:
@@ -204,7 +204,7 @@ class GraphColorD2
         nnz_lno_temp_work_view_t current_vertexList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
 
         // init conflictlist sequentially.
-        Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
+        Kokkos::parallel_for("InitList", my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
 
         // Next iteratons's conflictList
         nnz_lno_temp_work_view_t next_iteration_recolorList;
@@ -220,8 +220,8 @@ class GraphColorD2
             next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
         }
 
-        nnz_lno_t numUncolored             = this->nv;
-        nnz_lno_t current_vertexListLength = this->nv;
+        nnz_lno_t numUncolored              = this->nv;
+        nnz_lno_t current_vertexListLength  = this->nv;
         nnz_lno_t previous_vertexListLength = this->nv;
 
         double time;
@@ -307,8 +307,7 @@ class GraphColorD2
         // ------------------------------------------
         if(numUncolored > 0)
         {
-            this->resolveConflicts(
-                    this->nv, this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
+            this->resolveConflicts(this->nv, this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
         }
 
         MyExecSpace::fence();
@@ -350,96 +349,122 @@ class GraphColorD2
             chunkSize_ = 1;
         }
 
-        size_t num_chunks = current_vertexListLength_ / chunkSize_ + 1;
+        const size_t num_chunks = current_vertexListLength_ / chunkSize_ + 1;
 
         // Pick the right coloring algorithm to use based on which algorithm we're using
         switch(this->gc_handle->get_coloring_algo_type())
         {
-            // Vertex Based without Team Policy
+            // Single level parallelism on chunks
+            // 1. [P] loop over chunks of vertices
+            // 2. [S] loop over vertices in chunks
+            // 3. [S] loop over vertex neighbors
+            // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2:
             case COLORING_D2_VB:
-                {
+            {
                 functorGreedyColorVB gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
-                Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
-                }
-                break;
+                Kokkos::parallel_for("VB_LoopOverChunks", my_exec_space(0, num_chunks), gc);
+            }
+            break;
 
-            // Vertex Based with Team Policy
+            // Two level parallelism:
+            // 1. [P] loop over chunks of vertices
+            // 2. [P] loop over vertices in chunks
+            // 3. [S] loop over vertex neighbors
+            // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTP:
-                {
+            {
                 functorGreedyColorVBTP gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
 
-                #if defined( KOKKOS_ENABLE_CUDA )
+                #if defined(KOKKOS_ENABLE_CUDA)
                 const team_policy_t policy_inst(num_chunks, chunkSize_);
                 #else
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
-                }
-                break;
+                Kokkos::parallel_for("VBTP_LoopOverChunks", policy_inst, gc);
+            }
+            break;
 
-            // Vertex Based with Team Policy WCMCLEN SCAFFOLDING (EXPERIMENTAL)
+            // Two level parallelism:
+            // 1. [P] loop over chunks of vertices
+            // 2. [S] loop over vertices in chunks
+            // 3. [P] loop over vertex neighbors
+            // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTP2:
-                {
+            {
                 functorGreedyColorVBTP2 gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
 
-                #if defined( KOKKOS_ENABLE_CUDA )
+                #if defined(KOKKOS_ENABLE_CUDA)
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #else
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
-                }
-                break;
+                Kokkos::parallel_for("VBTP2_LoopOverChunks", policy_inst, gc);
+            }
+            break;
 
-            // Vertex Based with Team Policy WCMCLEN SCAFFOLDING (EXPERIMENTAL)
+            // Two level parallelism:
+            // 1. [P] loop over chunks of vertices
+            // 2. [S] loop over vertices in chunks
+            // 3. [S] loop over vertex neighbors
+            // 4. [P] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTP3:
-                {
+            {
                 functorGreedyColorVBTP3 gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
 
-                #if defined( KOKKOS_ENABLE_CUDA )
+                #if defined(KOKKOS_ENABLE_CUDA)
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #else
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
-                }
-                break;
+                Kokkos::parallel_for("VBTP3_LoopOverChunks", policy_inst, gc);
+            }
+            break;
 
+            // Three level parallelism:
+            // 1. [P] loop over chunks of vertices
+            // 2. [P] loop over vertices in chunks
+            // 3. [P] loop over vertex neighbors
+            // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTPVR1:
-                {
+            {
                 functorGreedyColorVBTPVR1 gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
 
-                #if defined( KOKKOS_ENABLE_CUDA )
-                const team_policy_t policy_inst(num_chunks, chunkSize_, 32);
-                #else
-                const team_policy_t policy_inst(num_chunks, Kokkos::AUTO, 32);
-                #endif
-
-                Kokkos::parallel_for(policy_inst, gc);
-                }
-                break;
-
-            case COLORING_D2_VBTPVR2:
-                {
-                functorGreedyColorVBTPVR2 gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
-
-                #if defined( KOKKOS_ENABLE_CUDA )
+                #if defined(KOKKOS_ENABLE_CUDA)
                 const team_policy_t policy_inst(num_chunks, chunkSize_, 32);
                 #else
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO, 1);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
-                }
-                break;
+                Kokkos::parallel_for("VBTPVR1_LoopOverChunks", policy_inst, gc);
+            }
+            break;
+
+            // Three level parallelism:
+            // 1. [P] loop over chunks of vertices
+            // 2. [P] loop over vertices in chunks
+            // 3. [S] loop over vertex neighbors
+            // 4. [P] loop over vertex neighbors of neighbors
+            case COLORING_D2_VBTPVR2:
+            {
+                functorGreedyColorVBTPVR2 gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+
+                #if defined(KOKKOS_ENABLE_CUDA)
+                const team_policy_t policy_inst(num_chunks, chunkSize_, 32);
+                #else
+                const team_policy_t policy_inst(num_chunks, Kokkos::AUTO, 1);
+                #endif
+
+                Kokkos::parallel_for("VBTPVR2_LoopOverChunks", policy_inst, gc);
+            }
+            break;
 
             default:
                 throw std::invalid_argument("Unknown Distance-2 Algorithm Type");
-            }
+        }
 
     }      // colorGreedy (end)
 
@@ -489,16 +514,8 @@ class GraphColorD2
         {
             if(0 == this->_use_color_set)
             {
-                functorFindConflicts_Atomic<adj_view_t> conf(this->nv,
-                                                             xadj_,
-                                                             adj_,
-                                                             t_xadj_,
-                                                             t_adj_,
-                                                             vertex_colors_,
-                                                             current_vertexList_,
-                                                             next_iteration_recolorList_,
-                                                             next_iteration_recolorListLength_);
-                Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
+                functorFindConflicts_Atomic<adj_view_t> conf(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, next_iteration_recolorList_, next_iteration_recolorListLength_);
+                Kokkos::parallel_reduce("FindConflicts", my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
             }
         }
         else
@@ -528,6 +545,7 @@ class GraphColorD2
                           nnz_lno_temp_work_view_t current_vertexList_,
                           size_type current_vertexListLength_)
     {
+        // NOTE: resolveConflicts is SERIAL and thus the forbidden array must be O(V) in size.
         color_t *forbidden = new color_t[_nv];
         nnz_lno_t vid      = 0;
         nnz_lno_t end      = _nv;
@@ -572,20 +590,20 @@ class GraphColorD2
                 continue;
 
             // loop over distance-1 neighbors of vid
-            for(size_type vid_1adj = h_idx(vid); vid_1adj < h_idx(vid + 1); vid_1adj++)
+            for(size_type vid_d1_adj = h_idx(vid); vid_d1_adj < h_idx(vid + 1); vid_d1_adj++)
             {
-                size_type vid_1idx = h_adj(vid_1adj);
+                size_type vid_d1 = h_adj(vid_d1_adj);
 
-                // loop over distance-1 neighbors of vid_1idx (distance-2 from vid)
-                for(size_type vid_2adj = h_t_idx(vid_1idx); vid_2adj < h_t_idx(vid_1idx + 1); vid_2adj++)
+                // loop over neighbors of vid_d1 (distance-2 from vid)
+                for(size_type vid_d2_adj = h_t_idx(vid_d1); vid_d2_adj < h_t_idx(vid_d1 + 1); vid_d2_adj++)
                 {
-                    nnz_lno_t vid_2idx = h_t_adj(vid_2adj);
+                    nnz_lno_t vid_d2 = h_t_adj(vid_d2_adj);
 
                     // skip over loops vid -- x -- vid
-                    if(vid_2idx == vid)
+                    if(vid_d2 == vid)
                         continue;
 
-                    forbidden[h_colors(vid_2idx)] = vid;
+                    forbidden[h_colors(vid_d2)] = vid;
                 }
             }
 
@@ -635,9 +653,6 @@ class GraphColorD2
 
 
   public:
-
-
-
     // ------------------------------------------------------
     // Functors: Distance-2 Graph Coloring
     // ------------------------------------------------------
@@ -661,7 +676,7 @@ class GraphColorD2
 
 
 
-   /**
+    /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Single level parallelism
      */
@@ -678,14 +693,14 @@ class GraphColorD2
         nnz_lno_t _chunkSize;                      //
 
         functorGreedyColorVB(nnz_lno_t nv_,
-                              const_lno_row_view_t xadj_,
-                              const_lno_nnz_view_t adj_,
-                              const_clno_row_view_t t_xadj_,
-                              const_clno_nnz_view_t t_adj_,
-                              color_view_type colors,
-                              nnz_lno_temp_work_view_t vertexList,
-                              nnz_lno_t vertexListLength,
-                              nnz_lno_t chunkSize)
+                             const_lno_row_view_t xadj_,
+                             const_lno_nnz_view_t adj_,
+                             const_clno_row_view_t t_xadj_,
+                             const_clno_nnz_view_t t_adj_,
+                             color_view_type colors,
+                             nnz_lno_temp_work_view_t vertexList,
+                             nnz_lno_t vertexListLength,
+                             nnz_lno_t chunkSize)
             : nv(nv_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors), _vertexList(vertexList),
               _vertexListLength(vertexListLength), _chunkSize(chunkSize)
         {
@@ -742,21 +757,21 @@ class GraphColorD2
                     }
 
                     // Check neighbors, fill forbidden array.
-                    for(size_type vid_1adj = _idx(vid); vid_1adj < _idx(vid + 1); vid_1adj++)
+                    for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
                     {
-                        nnz_lno_t vid_1idx = _adj(vid_1adj);
+                        const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
 
-                        for(size_type vid_2adj = _t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx + 1); vid_2adj++)
+                        for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
                         {
-                            nnz_lno_t vid_2idx = _t_adj(vid_2adj);
+                            const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
 
                             // Skip distance-2-self-loops
-                            if(vid_2idx == vid || vid_2idx >= nv)
+                            if(vid_d2 == vid || vid_d2 >= nv)
                             {
                                 continue;
                             }
 
-                            color_t c = _colors(vid_2idx);
+                            const color_t c = _colors(vid_d2);
 
                             if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                             {
@@ -776,7 +791,7 @@ class GraphColorD2
                         }
                     }      // for c...
                     offset += VB_D2_COLORING_FORBIDDEN_SIZE;
-                }      // for offset...
+                }      // while !foundColor
             }          // for ichunk...
         }              // operator() (end)
     };                 // struct functorGreedyColorVB (end)
@@ -800,14 +815,14 @@ class GraphColorD2
         nnz_lno_t _chunkSize;                      //
 
         functorGreedyColorVBTP(nnz_lno_t nv_,
-                             const_lno_row_view_t xadj_,
-                             const_lno_nnz_view_t adj_,
-                             const_clno_row_view_t t_xadj_,
-                             const_clno_nnz_view_t t_adj_,
-                             color_view_type colors,
-                             nnz_lno_temp_work_view_t vertexList,
-                             nnz_lno_t vertexListLength,
-                             nnz_lno_t chunkSize)
+                               const_lno_row_view_t xadj_,
+                               const_lno_nnz_view_t adj_,
+                               const_clno_row_view_t t_xadj_,
+                               const_clno_nnz_view_t t_adj_,
+                               color_view_type colors,
+                               nnz_lno_temp_work_view_t vertexList,
+                               nnz_lno_t vertexListLength,
+                               nnz_lno_t chunkSize)
             : nv(nv_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors), _vertexList(vertexList),
               _vertexListLength(vertexListLength), _chunkSize(chunkSize)
         {
@@ -840,7 +855,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -873,12 +888,11 @@ class GraphColorD2
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            //Kokkos::atomic_fetch_or(&forbidden[c-offset], true);   // WCMCLEN SCAFFOLDING - For VectorLevel Parallelism
                                             forbidden[c - offset] = true;
                                         }
                                     }
@@ -901,7 +915,7 @@ class GraphColorD2
                 }              // if chunk_id*...
             });                // for ichunk...
         }                      // operator() (end)
-    };               // struct functorGreedyColorVBTP (end)
+    };                         // struct functorGreedyColorVBTP (end)
 
 
 
@@ -923,23 +937,16 @@ class GraphColorD2
         nnz_lno_t _chunkSize;                      //
 
         functorGreedyColorVBTP2(nnz_lno_t nv_,
-                             const_lno_row_view_t xadj_,
-                             const_lno_nnz_view_t adj_,
-                             const_clno_row_view_t t_xadj_,
-                             const_clno_nnz_view_t t_adj_,
-                             color_view_type colors,
-                             nnz_lno_temp_work_view_t vertexList,
-                             nnz_lno_t vertexListLength,
-                             nnz_lno_t chunkSize)
-            : nv(nv_)
-            , _idx(xadj_)
-            , _adj(adj_)
-            , _t_idx(t_xadj_)
-            , _t_adj(t_adj_)
-            , _colors(colors)
-            , _vertexList(vertexList)
-            , _vertexListLength(vertexListLength)
-            , _chunkSize(chunkSize)
+                                const_lno_row_view_t xadj_,
+                                const_lno_nnz_view_t adj_,
+                                const_clno_row_view_t t_xadj_,
+                                const_clno_nnz_view_t t_adj_,
+                                color_view_type colors,
+                                nnz_lno_temp_work_view_t vertexList,
+                                nnz_lno_t vertexListLength,
+                                nnz_lno_t chunkSize)
+            : nv(nv_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors), _vertexList(vertexList),
+              _vertexListLength(vertexListLength), _chunkSize(chunkSize)
         {
         }
 
@@ -971,7 +978,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -992,11 +999,11 @@ class GraphColorD2
                             }
 
                             // Loop over neighbors
-                            //for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
+                            // for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
                             Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx)
                             {
-                                size_type vid_d1_adj   = idx + _idx(vid);
-                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+                                const size_type vid_d1_adj = _idx(vid) + idx;
+                                const nnz_lno_t vid_d1     = _adj(vid_d1_adj);
 
                                 // Loop over distance-2 neighbors
                                 for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
@@ -1006,17 +1013,18 @@ class GraphColorD2
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            // WCMCLEN SCAFFOLDING - For VectorLevel Parallelism
                                             Kokkos::atomic_fetch_or(&forbidden[c - offset], true);
                                         }
                                     }
                                 }
                             });
+
+                            thread.team_barrier();
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
@@ -1056,23 +1064,16 @@ class GraphColorD2
         nnz_lno_t _chunkSize;                      //
 
         functorGreedyColorVBTP3(nnz_lno_t nv_,
-                             const_lno_row_view_t xadj_,
-                             const_lno_nnz_view_t adj_,
-                             const_clno_row_view_t t_xadj_,
-                             const_clno_nnz_view_t t_adj_,
-                             color_view_type colors,
-                             nnz_lno_temp_work_view_t vertexList,
-                             nnz_lno_t vertexListLength,
-                             nnz_lno_t chunkSize)
-            : nv(nv_)
-            , _idx(xadj_)
-            , _adj(adj_)
-            , _t_idx(t_xadj_)
-            , _t_adj(t_adj_)
-            , _colors(colors)
-            , _vertexList(vertexList)
-            , _vertexListLength(vertexListLength)
-            , _chunkSize(chunkSize)
+                                const_lno_row_view_t xadj_,
+                                const_lno_nnz_view_t adj_,
+                                const_clno_row_view_t t_xadj_,
+                                const_clno_nnz_view_t t_adj_,
+                                color_view_type colors,
+                                nnz_lno_temp_work_view_t vertexList,
+                                nnz_lno_t vertexListLength,
+                                nnz_lno_t chunkSize)
+            : nv(nv_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors), _vertexList(vertexList),
+              _vertexListLength(vertexListLength), _chunkSize(chunkSize)
         {
         }
 
@@ -1104,7 +1105,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -1132,18 +1133,17 @@ class GraphColorD2
                                 // Loop over distance-2 neighbors
                                 Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _t_idx(vid_d1 + 1) - _t_idx(vid_d1)), [&](const size_type &idx)
                                 {
-                                    size_type vid_d2_adj   = idx + _t_idx(vid_d1);
-                                    const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
+                                    const size_type vid_d2_adj = _t_idx(vid_d1) + idx;
+                                    const nnz_lno_t vid_d2     = _t_adj(vid_d2_adj);
 
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            // WCMCLEN SCAFFOLDING - For VectorLevel Parallelism
                                             Kokkos::atomic_fetch_or(&forbidden[c - offset], true);
                                         }
                                     }
@@ -1173,7 +1173,7 @@ class GraphColorD2
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Team Policy Enabled on loop over chunks
-     * Vector Range Enabled on loop over neighbors of neighbors  TODO: Make it so!
+     * Vector Range Enabled on loop over neighbors of neighbors
      */
     struct functorGreedyColorVBTPVR1
     {
@@ -1228,7 +1228,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -1249,9 +1249,12 @@ class GraphColorD2
                             }
 
                             // Loop over neighbors
-                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx) {
-                                size_type vid_d1_adj   = idx + _idx(vid);
+                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx)
+                            {
+                                //size_type vid_d1_adj   = idx + _idx(vid);
+                                const size_type vid_d1_adj = _idx(vid) + idx;
                                 const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+
                                 // Loop over distance-2 neighbors
                                 for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
                                 {
@@ -1260,17 +1263,18 @@ class GraphColorD2
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            // WCMCLEN SCAFFOLDING - For VectorLevel
                                             Kokkos::atomic_fetch_or(&forbidden[c - offset], true);
                                         }
                                     }
                                 }
                             });
+
+                            thread.team_barrier();
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
@@ -1351,7 +1355,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -1371,30 +1375,32 @@ class GraphColorD2
                                 forbidden[0] = true;
                             }
 
-                           // Check neighbors, fill forbidden array.
+                            // Check neighbors, fill forbidden array.
                             for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
                             {
-                                nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
 
                                 // Loop over distance-2 neighbors
-                                Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _t_idx(vid_d1+1) - _t_idx(vid_d1)), [&](const size_type &idx) {
-                                    const size_type vid_d2_adj = idx + _t_idx(vid);
-                                    const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
+                                Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _t_idx(vid_d1 + 1) - _t_idx(vid_d1)), [&](const size_type &idx)
+                                {
+                                    //const size_type vid_d2_adj = idx + _t_idx(vid);
+                                    const size_type vid_d2_adj = _t_idx(vid_d1) + idx;
+                                    const nnz_lno_t vid_d2     = _t_adj(vid_d2_adj);
 
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                                         {
-                                            // WCMCLEN SCAFFOLDING - For VectorLevel
                                             Kokkos::atomic_fetch_or(&forbidden[c - offset], true);
                                         }
                                     }
-                                });     // for vid_d2_adj...
-                            }           // for vid_d1_adj...
+                                });      // for vid_d2_adj...
+                                thread.team_barrier();
+                            }            // for vid_d1_adj...
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
@@ -1451,9 +1457,9 @@ class GraphColorD2
         {
             typedef typename std::remove_reference<decltype(_recolorListLength())>::type atomic_incr_type;
             const nnz_lno_t vid = _vertexList(vid_);
-            color_t my_color = _colors(vid);
+            color_t my_color    = _colors(vid);
 
-            size_type vid_1adj     = _idx(vid);
+            size_type vid_1adj           = _idx(vid);
             const size_type vid_1adj_end = _idx(vid + 1);
 
             bool break_out = false;
