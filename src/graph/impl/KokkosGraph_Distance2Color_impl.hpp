@@ -222,6 +222,7 @@ class GraphColorD2
 
         nnz_lno_t numUncolored             = this->nv;
         nnz_lno_t current_vertexListLength = this->nv;
+        nnz_lno_t previous_vertexListLength = this->nv;
 
         double time;
         double total_time = 0.0;
@@ -244,7 +245,12 @@ class GraphColorD2
             {
                 time = timer.seconds();
                 total_time += time;
-                std::cout << "\tTime speculative greedy phase " << std::setw(-2) << iter << " : " << time << std::endl;
+                std::cout << "\tIteration: " << iter << std::endl
+                          << "\t  - Time speculative greedy phase : " << time << std::endl
+                          << "\t      - num 'active' vertices     : " << current_vertexListLength << "  (" << current_vertexListLength - previous_vertexListLength << ")" << std::endl;
+
+                previous_vertexListLength = current_vertexListLength;
+
                 timer.reset();
                 gc_handle->add_to_overall_coloring_time_phase1(time);
             }
@@ -275,7 +281,7 @@ class GraphColorD2
             {
                 time = timer.seconds();
                 total_time += time;
-                std::cout << "\tTime conflict detection " << std::setw(-2) << iter << "       : " << time << std::endl;
+                std::cout << "\t  - Time conflict detection " << "      : " << time << std::endl;
                 timer.reset();
                 gc_handle->add_to_overall_coloring_time_phase2(time);
             }
@@ -311,7 +317,7 @@ class GraphColorD2
         {
             time = timer.seconds();
             total_time += time;
-            std::cout << "\tTime serial conflict resolution : " << time << std::endl;
+            std::cout << "\tTime serial conflict resolution   : " << time << std::endl;
             gc_handle->add_to_overall_coloring_time_phase3(time);
         }
 
@@ -410,7 +416,7 @@ class GraphColorD2
                 #if defined( KOKKOS_ENABLE_CUDA )
                 const team_policy_t policy_inst(num_chunks, chunkSize_, 32);
                 #else
-                const team_policy_t policy_inst(num_chunks, Kokkos::AUTO, 1);
+                const team_policy_t policy_inst(num_chunks, Kokkos::AUTO, 32);
                 #endif
 
                 Kokkos::parallel_for(policy_inst, gc);
@@ -657,6 +663,7 @@ class GraphColorD2
 
    /**
      * Functor for VB algorithm speculative coloring without edge filtering.
+     * Single level parallelism
      */
     struct functorGreedyColorVB
     {
@@ -778,7 +785,7 @@ class GraphColorD2
 
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
-     * Team Policy Enabled
+     * Team Policy Enabled on loop over chunks
      */
     struct functorGreedyColorVBTP
     {
@@ -900,8 +907,8 @@ class GraphColorD2
 
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
-     * Team Policy Enabled
-     *  - trying out removing the loop-over-chunks stuff
+     * Team Policy Enabled on loop over neighbors
+     * - Serialized the loop over chunks
      */
     struct functorGreedyColorVBTP2
     {
@@ -1165,8 +1172,8 @@ class GraphColorD2
 
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
-     * Team Policy Enabled
-     * Vector Range Enabled
+     * Team Policy Enabled on loop over chunks
+     * Vector Range Enabled on loop over neighbors of neighbors  TODO: Make it so!
      */
     struct functorGreedyColorVBTPVR1
     {
@@ -1288,8 +1295,8 @@ class GraphColorD2
 
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
-     * Team Policy Enabled
-     * Vector Range Enabled
+     * Team Policy Enabled on loop-over -chunks
+     * Vector Range Enabled on loop-over-neighbors
      */
     struct functorGreedyColorVBTPVR2
     {
@@ -1364,13 +1371,14 @@ class GraphColorD2
                                 forbidden[0] = true;
                             }
 
-                            // Loop over neighbors
-                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx) {
-                                size_type vid_d1_adj   = idx + _idx(vid);
-                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+                           // Check neighbors, fill forbidden array.
+                            for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
+                            {
+                                nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+
                                 // Loop over distance-2 neighbors
-                                for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
-                                {
+                                Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _t_idx(vid_d1+1) - _t_idx(vid_d1)), [&](const size_type &idx) {
+                                    const size_type vid_d2_adj = idx + _t_idx(vid);
                                     const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
 
                                     // Skip distance-2 self loops
@@ -1385,8 +1393,8 @@ class GraphColorD2
                                             Kokkos::atomic_fetch_or(&forbidden[c - offset], true);
                                         }
                                     }
-                                }
-                            });
+                                });     // for vid_d2_adj...
+                            }           // for vid_d1_adj...
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
