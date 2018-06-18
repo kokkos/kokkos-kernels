@@ -241,8 +241,8 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasDdot(s.handle, N, X.data(), one, Y.data(), one, &R()); \
     } else { \
@@ -273,8 +273,8 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasSdot(s.handle, N, X.data(), one, Y.data(), one, &R()); \
     } else { \
@@ -305,8 +305,8 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasZdotu(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, reinterpret_cast<const cuDoubleComplex*>(Y.data()), one, reinterpret_cast<cuDoubleComplex*>(&R())); \
     } else { \
@@ -337,8 +337,8 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasCdotu(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, reinterpret_cast<const cuComplex*>(Y.data()), one, reinterpret_cast<cuComplex*>(&R())); \
     } else { \

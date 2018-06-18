@@ -229,8 +229,8 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasDnrm2(s.handle, N, X.data(), one, &R()); \
       if(!take_sqrt) R() = R()*R(); \
@@ -260,8 +260,8 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasSnrm2(s.handle, N, X.data(), one, &R()); \
       if(!take_sqrt) R() = R()*R(); \
@@ -291,8 +291,8 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasDznrm2(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, &R()); \
       if(!take_sqrt) R() = R()*R(); \
@@ -322,8 +322,8 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
-      int N = numElems; \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasScnrm2(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, &R()); \
       if(!take_sqrt) R() = R()*R(); \

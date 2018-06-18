@@ -236,13 +236,15 @@ struct Axpby< \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef Kokkos::View<double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
-    if((X.extent(0) < INT_MAX) && (beta == 1.0)) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
-      int N = X.extent(0); \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasDaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one); \
     } else \
@@ -267,13 +269,15 @@ struct Axpby< \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef Kokkos::View<float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
-    if((X.extent(0) < INT_MAX) && (beta == 1.0f)) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
-      int N = X.extent(0); \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasSaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one); \
     } else \
@@ -297,13 +301,15 @@ struct Axpby< \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
-    if((X.extent(0) < INT_MAX) && (beta == 1.0f)) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
-      int N = X.extent(0); \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasZaxpy(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(X.data()), one, reinterpret_cast<cuDoubleComplex*>(Y.data()), one); \
     } else \
@@ -327,13 +333,15 @@ struct Axpby< \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
-    if((X.extent(0) < INT_MAX) && (beta == 1.0f)) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
-      int N = X.extent(0); \
-      int one = 1; \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasCaxpy(s.handle, N, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(X.data()), one, reinterpret_cast<cuComplex*>(Y.data()), one); \
     } else \
