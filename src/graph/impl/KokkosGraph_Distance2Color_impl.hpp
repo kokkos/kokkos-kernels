@@ -204,7 +204,7 @@ class GraphColorD2
         nnz_lno_temp_work_view_t current_vertexList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
 
         // init conflictlist sequentially.
-        Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
+        Kokkos::parallel_for("InitList", my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
 
         // Next iteratons's conflictList
         nnz_lno_temp_work_view_t next_iteration_recolorList;
@@ -515,7 +515,7 @@ class GraphColorD2
             if(0 == this->_use_color_set)
             {
                 functorFindConflicts_Atomic<adj_view_t> conf(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, next_iteration_recolorList_, next_iteration_recolorListLength_);
-                Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
+                Kokkos::parallel_reduce("FindConflicts", my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
             }
         }
         else
