@@ -2598,7 +2598,7 @@ public:
                                    break;
                                  }
                                } // Loop over banned colors
-                               delete bannedColors;
+                               delete [] bannedColors;
                              }); // Loop over current frontier
 
         // Second variant with bit array for efficiency on GPU
