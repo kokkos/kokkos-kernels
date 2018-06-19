@@ -72,7 +72,7 @@ namespace Test {
     ScalarType alpha = 1.5, beta = 3.0;
 
     ViewType
-      a0("a0", N, matAdim1, matAdim2), matAfast a1("a1", N, matAdim1, matAdim2),
+      a0("a0", N, matAdim1, matAdim2), a1("a1", N, matAdim1, matAdim2),
       b0("b0", N, matBdim1, matBdim2), b1("b1", N, matBdim1, matBdim2),
       c0("c0", N, matCdim1, matCdim2), c1("c1", N, matCdim1, matCdim2);
 
