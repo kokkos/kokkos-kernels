@@ -3,9 +3,9 @@
 #=================== Settings ==========================================
 #=======================================================================
 
-KOKKOS_PATH ?= ${HOME}/Kokkos/kokkos
+KOKKOS_PATH ?= ${HOME}/Documents/kokkos
 KOKKOS_SRC_PATH ?= ${KOKKOS_PATH}
-KOKKOSKERNELS_PATH ?= ${HOME}/Kokkos/kokkos-kernels
+KOKKOSKERNELS_PATH ?= ${HOME}/Documents/kokkos-kernels
 KOKKOSKERNELS_SRC_PATH ?= ${KOKKOSKERNELS_PATH}
 GTEST_PATH ?= ${KOKKOS_SRC_PATH}/tpls/gtest
 
