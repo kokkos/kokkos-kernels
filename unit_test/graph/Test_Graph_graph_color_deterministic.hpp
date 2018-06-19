@@ -163,13 +163,17 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
     int res = run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     EXPECT_TRUE( (res == 0));
 
-    std::cout << "num_colors=" << num_colors << std::endl;
     EXPECT_TRUE( (num_colors == 2));
 
     size_type num_conflict = 0;
     typename color_view_t::HostMirror h_vector_colors = Kokkos::create_mirror_view(vector_colors);
     Kokkos::deep_copy(h_vector_colors, vector_colors);
     int exact_colors[18] = {2, 1, 2, 1, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1};
+
+    for(lno_t vertexIdx = 0; vertexIdx < numRows; ++vertexIdx) {
+      if(h_vector_colors(vertexIdx) != exact_colors[vertexIdx]) {++num_conflict;}
+    }
+
     EXPECT_TRUE( (num_conflict == 0));
   //device::execution_space::finalize();
 

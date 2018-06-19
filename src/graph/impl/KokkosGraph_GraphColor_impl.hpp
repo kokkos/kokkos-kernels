@@ -2501,7 +2501,7 @@ public:
     typedef typename Kokkos::Experimental::Max<size_type, MyExecSpace> maxScoreReducerType;
     maxScoreReducerType maxScoreReducer(maxColors);
     functorScoreCalculation<nnz_lno_persistent_work_view_t, size_type, MyExecSpace> scoreCalculation(score, myXadj);
-    Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", numVertices,
+    Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", my_exec_space(0, numVertices),
                             scoreCalculation, maxScoreReducer);
 
    if (this->_ticToc) {
@@ -2511,15 +2511,21 @@ public:
     // Create the dependency list of the graph
     nnz_lno_persistent_work_view_t dependency
       = nnz_lno_persistent_work_view_t("dependency", numVertices);
-    Kokkos::View<size_type, MyTempMemorySpace> frontierSize("newFrontier");
+    Kokkos::View<size_type, MyTempMemorySpace> frontierSize("frontierSize");
     typename Kokkos::View<size_type, MyTempMemorySpace>::HostMirror host_frontierSize =
       Kokkos::create_mirror_view(frontierSize);
     Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize("newFrontierSize");
     typename Kokkos::View<size_type, MyTempMemorySpace>::HostMirror host_newFrontierSize =
       Kokkos::create_mirror_view(newFrontierSize);
+    // nnz_lno_temp_work_view_t frontierSize("frontierSize");
+    // typename nnz_lno_temp_work_view_t::HostMirror host_frontierSize =
+    //   Kokkos::create_mirror_view(frontierSize);
+    // nnz_lno_temp_work_view_t newFrontierSize("newFrontierSize");
+    // typename nnz_lno_temp_work_view_t::HostMirror host_newFrontierSize =
+    //   Kokkos::create_mirror_view(newFrontierSize);
     nnz_lno_temp_work_view_t frontier = nnz_lno_temp_work_view_t("frontier", numVertices);
-    nnz_lno_temp_work_view_t newFrontier = nnz_lno_temp_work_view_t("new frontier", numVertices);
-    Kokkos::parallel_for("Deterministic Coloring: compute dependency list", numVertices,
+    nnz_lno_temp_work_view_t newFrontier = nnz_lno_temp_work_view_t("newFrontier", numVertices);
+    Kokkos::parallel_for("Deterministic Coloring: compute dependency list", my_exec_space(0, numVertices),
                          KOKKOS_LAMBDA(const int node) {
                            int myScore = score(node);
                            int numNeighs = myXadj(node + 1) - myXadj(node);
@@ -2544,7 +2550,7 @@ public:
       ++num_loops;
       // First swap fontier with newFrontier and fontierSize with newFrontierSize
       // reset newFrontierSize
-      Kokkos::parallel_for("Swap frontier sizes", 1,
+      Kokkos::parallel_for("Swap frontier sizes", my_exec_space(0, 1),
 			   KOKKOS_LAMBDA(const int dummy) {
 			     frontierSize() = newFrontierSize();
 			     newFrontierSize() = 0;
@@ -2559,7 +2565,7 @@ public:
       // Loop over nodes in the frontier
       // First variant without bit array, easier to understand/program
       if(this->_use_color_set == 0) {
-        Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", host_frontierSize(),
+        Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", my_exec_space(0, host_frontierSize()),
                              KOKKOS_LAMBDA(const size_type frontierIdx) {
 
                                size_type frontierNode = frontier(frontierIdx);
@@ -2600,7 +2606,7 @@ public:
         // we need to use successive color ranges of width 64
         // to represent all the possible colors on the graph.
       } else if(this->_use_color_set == 1) {
-        Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", host_frontierSize(),
+        Kokkos::parallel_for("Deterministic Coloring: color nodes in frontier", my_exec_space(0, host_frontierSize()),
                              KOKKOS_LAMBDA(const size_type frontierIdx) {
 
                                size_type frontierNode = frontier(frontierIdx);
