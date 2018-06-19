@@ -363,7 +363,7 @@ class GraphColorD2
             case COLORING_D2_VB:
             {
                 functorGreedyColorVB gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
-                Kokkos::parallel_for(my_exec_space(0, num_chunks), gc);
+                Kokkos::parallel_for("VB_LoopOverChunks", my_exec_space(0, num_chunks), gc);
             }
             break;
 
@@ -382,7 +382,7 @@ class GraphColorD2
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
+                Kokkos::parallel_for("VBTP_LoopOverChunks", policy_inst, gc);
             }
             break;
 
@@ -401,7 +401,7 @@ class GraphColorD2
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
+                Kokkos::parallel_for("VBTP2_LoopOverChunks", policy_inst, gc);
             }
             break;
 
@@ -420,7 +420,7 @@ class GraphColorD2
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
+                Kokkos::parallel_for("VBTP3_LoopOverChunks", policy_inst, gc);
             }
             break;
 
@@ -439,7 +439,7 @@ class GraphColorD2
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO, 1);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
+                Kokkos::parallel_for("VBTPVR1_LoopOverChunks", policy_inst, gc);
             }
             break;
 
@@ -458,7 +458,7 @@ class GraphColorD2
                 const team_policy_t policy_inst(num_chunks, Kokkos::AUTO, 1);
                 #endif
 
-                Kokkos::parallel_for(policy_inst, gc);
+                Kokkos::parallel_for("VBTPVR2_LoopOverChunks", policy_inst, gc);
             }
             break;
 
