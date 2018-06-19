@@ -356,7 +356,7 @@ class GraphColorD2
         {
             // Single level parallelism on chunks
             // 1. [P] loop over chunks of vertices
-            // 2. [S] loop over chunks of vertices
+            // 2. [S] loop over vertices in chunks
             // 3. [S] loop over vertex neighbors
             // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2:
@@ -369,7 +369,7 @@ class GraphColorD2
 
             // Two level parallelism:
             // 1. [P] loop over chunks of vertices
-            // 2. [P] loop over chunks of vertices
+            // 2. [P] loop over vertices in chunks
             // 3. [S] loop over vertex neighbors
             // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTP:
@@ -388,7 +388,7 @@ class GraphColorD2
 
             // Two level parallelism:
             // 1. [P] loop over chunks of vertices
-            // 2. [S] loop over chunks of vertices
+            // 2. [S] loop over vertices in chunks
             // 3. [P] loop over vertex neighbors
             // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTP2:
@@ -407,7 +407,7 @@ class GraphColorD2
 
             // Two level parallelism:
             // 1. [P] loop over chunks of vertices
-            // 2. [S] loop over chunks of vertices
+            // 2. [S] loop over vertices in chunks
             // 3. [S] loop over vertex neighbors
             // 4. [P] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTP3:
@@ -426,7 +426,7 @@ class GraphColorD2
 
             // Three level parallelism:
             // 1. [P] loop over chunks of vertices
-            // 2. [P] loop over chunks of vertices
+            // 2. [P] loop over vertices in chunks
             // 3. [P] loop over vertex neighbors
             // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTPVR1:
@@ -445,7 +445,7 @@ class GraphColorD2
 
             // Three level parallelism:
             // 1. [P] loop over chunks of vertices
-            // 2. [P] loop over chunks of vertices
+            // 2. [P] loop over vertices in chunks
             // 3. [S] loop over vertex neighbors
             // 4. [P] loop over vertex neighbors of neighbors
             case COLORING_D2_VBTPVR2:
@@ -759,11 +759,11 @@ class GraphColorD2
                     // Check neighbors, fill forbidden array.
                     for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
                     {
-                        nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+                        const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
 
                         for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
                         {
-                            nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
+                            const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
 
                             // Skip distance-2-self-loops
                             if(vid_d2 == vid || vid_d2 >= nv)
@@ -771,7 +771,7 @@ class GraphColorD2
                                 continue;
                             }
 
-                            color_t c = _colors(vid_d2);
+                            const color_t c = _colors(vid_d2);
 
                             if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
                             {
@@ -791,7 +791,7 @@ class GraphColorD2
                         }
                     }      // for c...
                     offset += VB_D2_COLORING_FORBIDDEN_SIZE;
-                }      // for offset...
+                }      // while !foundColor
             }          // for ichunk...
         }              // operator() (end)
     };                 // struct functorGreedyColorVB (end)
@@ -888,7 +888,7 @@ class GraphColorD2
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
@@ -1002,8 +1002,8 @@ class GraphColorD2
                             // for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
                             Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx)
                             {
-                                size_type vid_d1_adj   = idx + _idx(vid);
-                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+                                const size_type vid_d1_adj = _idx(vid) + idx;
+                                const nnz_lno_t vid_d1     = _adj(vid_d1_adj);
 
                                 // Loop over distance-2 neighbors
                                 for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
@@ -1013,7 +1013,7 @@ class GraphColorD2
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
@@ -1023,6 +1023,8 @@ class GraphColorD2
                                     }
                                 }
                             });
+
+                            thread.team_barrier();
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
@@ -1131,13 +1133,13 @@ class GraphColorD2
                                 // Loop over distance-2 neighbors
                                 Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _t_idx(vid_d1 + 1) - _t_idx(vid_d1)), [&](const size_type &idx)
                                 {
-                                    size_type vid_d2_adj   = idx + _t_idx(vid_d1);
-                                    const nnz_lno_t vid_d2 = _t_adj(vid_d2_adj);
+                                    const size_type vid_d2_adj = _t_idx(vid_d1) + idx;
+                                    const nnz_lno_t vid_d2     = _t_adj(vid_d2_adj);
 
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
@@ -1249,8 +1251,10 @@ class GraphColorD2
                             // Loop over neighbors
                             Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _idx(vid + 1) - _idx(vid)), [&](const size_type &idx)
                             {
-                                size_type vid_d1_adj   = idx + _idx(vid);
+                                //size_type vid_d1_adj   = idx + _idx(vid);
+                                const size_type vid_d1_adj = _idx(vid) + idx;
                                 const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+
                                 // Loop over distance-2 neighbors
                                 for(size_type vid_d2_adj = _t_idx(vid_d1); vid_d2_adj < _t_idx(vid_d1 + 1); vid_d2_adj++)
                                 {
@@ -1259,7 +1263,7 @@ class GraphColorD2
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
@@ -1269,6 +1273,8 @@ class GraphColorD2
                                     }
                                 }
                             });
+
+                            thread.team_barrier();
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
@@ -1372,18 +1378,19 @@ class GraphColorD2
                             // Check neighbors, fill forbidden array.
                             for(size_type vid_d1_adj = _idx(vid); vid_d1_adj < _idx(vid + 1); vid_d1_adj++)
                             {
-                                nnz_lno_t vid_d1 = _adj(vid_d1_adj);
+                                const nnz_lno_t vid_d1 = _adj(vid_d1_adj);
 
                                 // Loop over distance-2 neighbors
                                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, _t_idx(vid_d1 + 1) - _t_idx(vid_d1)), [&](const size_type &idx)
                                 {
-                                    const size_type vid_d2_adj = idx + _t_idx(vid);
+                                    //const size_type vid_d2_adj = idx + _t_idx(vid);
+                                    const size_type vid_d2_adj = _t_idx(vid_d1) + idx;
                                     const nnz_lno_t vid_d2     = _t_adj(vid_d2_adj);
 
                                     // Skip distance-2 self loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t c = _colors(vid_d2);
+                                        const color_t c = _colors(vid_d2);
 
                                         // If color found is inside current 'range' then mark it as used.
                                         if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
@@ -1392,6 +1399,7 @@ class GraphColorD2
                                         }
                                     }
                                 });      // for vid_d2_adj...
+                                thread.team_barrier();
                             }            // for vid_d1_adj...
 
                             // color vertex i with smallest available color (firstFit)
