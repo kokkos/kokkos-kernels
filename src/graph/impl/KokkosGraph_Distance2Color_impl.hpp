@@ -545,6 +545,7 @@ class GraphColorD2
                           nnz_lno_temp_work_view_t current_vertexList_,
                           size_type current_vertexListLength_)
     {
+        // NOTE: resolveConflicts is SERIAL and thus the forbidden array must be O(V) in size.
         color_t *forbidden = new color_t[_nv];
         nnz_lno_t vid      = 0;
         nnz_lno_t end      = _nv;
@@ -589,20 +590,20 @@ class GraphColorD2
                 continue;
 
             // loop over distance-1 neighbors of vid
-            for(size_type vid_1adj = h_idx(vid); vid_1adj < h_idx(vid + 1); vid_1adj++)
+            for(size_type vid_d1_adj = h_idx(vid); vid_d1_adj < h_idx(vid + 1); vid_d1_adj++)
             {
-                size_type vid_1idx = h_adj(vid_1adj);
+                size_type vid_d1 = h_adj(vid_d1_adj);
 
-                // loop over distance-1 neighbors of vid_1idx (distance-2 from vid)
-                for(size_type vid_2adj = h_t_idx(vid_1idx); vid_2adj < h_t_idx(vid_1idx + 1); vid_2adj++)
+                // loop over neighbors of vid_d1 (distance-2 from vid)
+                for(size_type vid_d2_adj = h_t_idx(vid_d1); vid_d2_adj < h_t_idx(vid_d1 + 1); vid_d2_adj++)
                 {
-                    nnz_lno_t vid_2idx = h_t_adj(vid_2adj);
+                    nnz_lno_t vid_d2 = h_t_adj(vid_d2_adj);
 
                     // skip over loops vid -- x -- vid
-                    if(vid_2idx == vid)
+                    if(vid_d2 == vid)
                         continue;
 
-                    forbidden[h_colors(vid_2idx)] = vid;
+                    forbidden[h_colors(vid_d2)] = vid;
                 }
             }
 
@@ -854,7 +855,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -977,7 +978,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -1102,7 +1103,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -1225,7 +1226,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
@@ -1348,7 +1349,7 @@ class GraphColorD2
 
                         // Use forbidden array to find available color.
                         // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                        // - If more levels of parallelism are addd in the loops over neighbors, then
+                        // - If more levels of parallelism are added in the loops over neighbors, then
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
