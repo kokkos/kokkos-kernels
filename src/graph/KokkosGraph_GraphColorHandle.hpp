@@ -185,7 +185,8 @@ private:
     tictoc(false),
     vb_edge_filtering(false),
     vb_chunk_size(8),
-    max_number_of_iterations(200), eb_num_initial_colors(1),
+    max_number_of_iterations(50),   // WCMCLEN SCAFFOLDING Change back to default = 200
+    eb_num_initial_colors(1),
     overall_coloring_time(0),
     overall_coloring_time_phase1(0),
     overall_coloring_time_phase2(0),
