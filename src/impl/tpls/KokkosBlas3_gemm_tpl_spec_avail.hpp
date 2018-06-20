@@ -77,6 +77,32 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutRig
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
 
 #endif
+
+// cuBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+
+#define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( SCALAR , LAYOUTA, LAYOUTB, LAYOUTC, MEMSPACE ) \
+template<class ExecSpace> \
+struct gemm_tpl_spec_avail< \
+     Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<const SCALAR**, LAYOUTB, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<SCALAR**, LAYOUTC, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+     >  { enum : bool { value = true }; };
+
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( double,                  Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( float,                   Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( double,                  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( float,                   Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+
+#endif
 }
 }
 
