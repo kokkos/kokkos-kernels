@@ -61,10 +61,6 @@ namespace KokkosGraph {
 
 namespace Impl {
 
-#define VB_D2_COLORING_FORBIDDEN_SIZE 64
-// #define VB_D2_COLORING_FORBIDDEN_SIZE 20000
-
-
 
 /*! \brief Base class for graph coloring purposes.
  *  Each color represents the set of the vertices that are independent,
@@ -118,6 +114,8 @@ class GraphColorD2_MatrixSquared
     nnz_lno_t nv;                      // num vertices
     HandleType *cp;                    // the handle.
 
+    bool verbose;
+
   public:
     /**
      * \brief GraphColor constructor.
@@ -137,7 +135,7 @@ class GraphColorD2_MatrixSquared
                                const_clno_row_view_t t_row_map,
                                const_clno_nnz_view_t t_entries,
                                HandleType *handle)
-        : nr(nr_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries), nv(nr_), cp(handle)
+        : nr(nr_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries), nv(nr_), cp(handle), verbose(handle->get_verbose())
     {
     }
 
@@ -159,6 +157,10 @@ class GraphColorD2_MatrixSquared
      */
     virtual void execute()
     {
+        double time = 0;
+        Kokkos::Impl::Timer timer;
+        timer.reset();
+
         std::string algName = "SPGEMM_KK_MEMSPEED";
         cp->create_spgemm_handle(KokkosSparse::StringToSPGEMMAlgorithm(algName));
 
@@ -179,8 +181,15 @@ class GraphColorD2_MatrixSquared
         scalar_temp_work_view_t cFakeValues("C placeholder values (meaningless)", Cnnz);
 
         // Run the numeric kernel
-        KokkosSparse::Experimental::spgemm_numeric(
-                cp, nr, nc, nr, xadj, adj, aFakeValues, false, t_xadj, t_adj, aFakeValues, false, cRowptrs, cColinds, cFakeValues);
+        KokkosSparse::Experimental::spgemm_numeric(cp, nr, nc, nr, xadj, adj, aFakeValues, false, t_xadj, t_adj, aFakeValues, false, cRowptrs, cColinds, cFakeValues);
+
+        if(this->verbose)
+        {
+            time = timer.seconds();
+            std::cout << "\tTime Phase Square Matrix : " << time << std::endl << std::endl;
+            this->cp->get_graph_coloring_handle()->add_to_overall_coloring_time_phase4(time);
+            timer.reset();
+        }
 
         // done with spgemm
         cp->destroy_spgemm_handle();
@@ -188,6 +197,14 @@ class GraphColorD2_MatrixSquared
         // Now run distance-1 graph coloring on C
         // Use LocalOrdinal for storing colors
         KokkosGraph::Experimental::graph_color(cp, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
+
+        if(this->verbose)
+        {
+            time = timer.seconds();
+            std::cout << "\tTime Phase Graph Coloring : " << time << std::endl << std::endl;
+            this->cp->get_graph_coloring_handle()->add_to_overall_coloring_time_phase5(time);
+            timer.reset();
+        }
 
         // extract the colors
         // auto coloringHandle = cp->get_graph_coloring_handle();

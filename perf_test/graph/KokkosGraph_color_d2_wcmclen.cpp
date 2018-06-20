@@ -44,6 +44,7 @@
 // EXERCISE 1 Goal:
 //   Use Kokkos to parallelize the outer loop of <y,Ax> using Kokkos::parallel_reduce.
 #include <stdlib.h>
+#include <string>
 #include <unistd.h>
 
 #include <iostream>
@@ -221,6 +222,21 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 8;
                 got_required_param_algorithm = true;
             }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT"))
+            {
+                params.algorithm             = 9;
+                got_required_param_algorithm = true;
+            }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT_EF"))
+            {
+                params.algorithm             = 10;
+                got_required_param_algorithm = true;
+            }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTP_BIT"))
+            {
+                params.algorithm             = 11;
+                got_required_param_algorithm = true;
+            }
             else
             {
                 std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
@@ -351,6 +367,18 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             kh.create_graph_coloring_handle(COLORING_D2_SERIAL);
             label_algorithm = "COLORING_D2_SERIAL";
             break;
+        case 9:
+            kh.create_graph_coloring_handle(COLORING_D2_VB_BIT);
+            label_algorithm = "COLORING_D2_VB_BIT";
+            break;
+        case 10:
+            kh.create_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
+            label_algorithm = "COLORING_D2_VB_BIT_EF";
+            break;
+        case 11:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTP_BIT);
+            label_algorithm = "COLORING_D2_VBTP_BIT";
+            break;
         default:
             kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
             label_algorithm = "COLORING_D2_MATRIX_SQUARED";
@@ -359,11 +387,17 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     std::cout << ">>> Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
 
+    // If any of the runs have an invalid result, this will be set to false.
+    bool all_results_valid = true;
+
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
 
         graph_color_d2(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+
+        total_colors += kh.get_graph_coloring_handle()->get_num_colors();
+        total_phases += kh.get_graph_coloring_handle()->get_num_phases();
 
         std::cout << "Total Time: " << kh.get_graph_coloring_handle()->get_overall_coloring_time() << std::endl
                   << "Num colors: " << kh.get_graph_coloring_handle()->get_num_colors() << std::endl
@@ -372,6 +406,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
         std::cout << std::endl;
 
+        // If verbose mode is on and there the graph has fewer than 1000 verts, dump a GraphVIZ DOT file.
         if(verbose && repeat==i+1 && crsGraph.numRows() < 1000)
         {
             auto colors = kh.get_graph_coloring_handle()->get_vertex_colors();
@@ -383,21 +418,65 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                                                             colors);
         }
 
-        total_colors += kh.get_graph_coloring_handle()->get_num_colors();
-        total_phases += kh.get_graph_coloring_handle()->get_num_phases();
-    }
+        // ------------------------------------------
+        // Verify correctness
+        // ------------------------------------------
+        bool d2_coloring_is_valid            = false;
+        bool d2_coloring_validation_flags[4] = {false};
 
-    double total_time    = kh.get_graph_coloring_handle()->get_overall_coloring_time();
-    double total_time_color_greedy  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
-    double total_time_find_conflicts  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
-    double total_time_resolve_conflicts  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
+        d2_coloring_is_valid = verifyDistance2Coloring(&kh,
+                                                       crsGraph.numRows(),
+                                                       crsGraph.numCols(),
+                                                       crsGraph.row_map,
+                                                       crsGraph.entries,
+                                                       crsGraph.row_map,
+                                                       crsGraph.entries,
+                                                       d2_coloring_validation_flags);
 
-    double avg_time                   = total_time / repeat;
-    double avg_time_color_greedy      = total_time_color_greedy / repeat;
-    double avg_time_find_conflicts    = total_time_find_conflicts / repeat;
-    double avg_time_resolve_conflicts = total_time_resolve_conflicts / repeat;
+        // Print out messages based on coloring validation check.
+        if(d2_coloring_is_valid)
+        {
+            std::cout << std::endl << ">>> Distance-2 Graph Coloring is VALID" << std::endl << std::endl;
+        }
+        else
+        {
+            all_results_valid = false;
+            std::cout << std::endl
+                      << ">>> Distance-2 Graph Coloring is NOT VALID" << std::endl
+                      << "    - Vert(s) left uncolored : " << d2_coloring_validation_flags[1] << std::endl
+                      << "    - Invalid D2 Coloring    : " << d2_coloring_validation_flags[2] << std::endl
+                      << std::endl;
+        }
+        if(d2_coloring_validation_flags[3])
+        {
+            std::cout << ">>> Distance-2 Graph Coloring may have poor quality." << std::endl
+                      << "    - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
+                      << std::endl;
+        }
+
+        // ------------------------------------------
+        // Print out the colors histogram
+        // ------------------------------------------
+        printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+
+    } // for i...
+
+
+    double total_time                   = kh.get_graph_coloring_handle()->get_overall_coloring_time();
+    double total_time_color_greedy      = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
+    double total_time_find_conflicts    = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
+    double total_time_resolve_conflicts = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
+    double total_time_matrix_squared    = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase4();
+    double total_time_matrix_squared_d1 = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase5();
+
+    double avg_time                   = total_time / (double)repeat;
+    double avg_time_color_greedy      = total_time_color_greedy / (double)repeat;
+    double avg_time_find_conflicts    = total_time_find_conflicts / (double)repeat;
+    double avg_time_resolve_conflicts = total_time_resolve_conflicts / (double)repeat;
     double avg_colors                 = total_colors / (double)repeat;
     double avg_phases                 = total_phases / (double)repeat;
+    double avg_time_matrix_squared    = total_time_matrix_squared / (double)repeat;
+    double avg_time_matrix_squared_d1 = total_time_matrix_squared_d1 / (double)repeat;
 
     std::string a_mtx_bin_file = params.a_mtx_bin_file;
     a_mtx_bin_file             = a_mtx_bin_file.substr(a_mtx_bin_file.find_last_of("/\\") + 1);
@@ -419,21 +498,32 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         perror("getlogin_r");
     }
 
+    std::string all_results_valid_str = "PASSED";
+    if(!all_results_valid)
+        all_results_valid_str = "FAILED";
 
-    std::cout << "Summary:" << std::endl
-              << "  KExecSName  : " << Kokkos::DefaultExecutionSpace::name() << std::endl
-              << "  Filename    : " << a_mtx_bin_file << std::endl
-              << "  Num Verts   : " << crsGraph.numRows() << std::endl
-              << "  Num Edges   : " << crsGraph.entries.dimension_0() << std::endl
-              << "  Concurrency : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
-              << "  Algorithm   : " << label_algorithm << std::endl
-              << "  Total Time  : " << total_time << std::endl
-              << "  Avg Time    : " << avg_time << std::endl
-              << "  Avg Time CG : " << avg_time_color_greedy << std::endl
-              << "  Avg Time FC : " << avg_time_find_conflicts << std::endl
-              << "  Avg Time RC : " << avg_time_resolve_conflicts << std::endl
-              << "  Avg colors  : " << avg_colors << std::endl
-              << "  Avg Phases  : " << avg_phases << std::endl
+    std::cout << "Summary" << std::endl
+              << "-------" << std::endl
+              << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
+              << "    Filename       : " << a_mtx_bin_file << std::endl
+              << "    Num Verts      : " << crsGraph.numRows() << std::endl
+              << "    Num Edges      : " << crsGraph.entries.dimension_0() << std::endl
+              << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
+              << "    Algorithm      : " << label_algorithm << std::endl
+              << "Overall Time/Stats" << std::endl
+              << "    Total Time     : " << total_time << std::endl
+              << "    Avg Time       : " << avg_time << std::endl
+              << "VB Distance[1|2] Stats " << std::endl
+              << "    Avg Time CG    : " << avg_time_color_greedy << std::endl
+              << "    Avg Time FC    : " << avg_time_find_conflicts << std::endl
+              << "    Avg Time RC    : " << avg_time_resolve_conflicts << std::endl
+              << "Matrix-Squared + D1 Stats" << std::endl
+              << "    Avg Time to M^2: " << avg_time_matrix_squared << std::endl
+              << "    Avg Time to D1 : " << avg_time_matrix_squared_d1 << std::endl
+              << "Coloring Stats" << std::endl
+              << "    Avg colors     : " << avg_colors << std::endl
+              << "    Avg Phases     : " << avg_phases << std::endl
+              << "    Validation     : " << all_results_valid_str << std::endl
               << std::endl;
 
     std::cout << "CSVHDR"
@@ -442,15 +532,18 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
-              << "," << "Concurrency"
               << "," << "Algorithm"
+              << "," << "Concurrency"
               << "," << "Repetitions"
               << "," << "Total Time"
+              << "," << "Total Time to M^2"
+              << "," << "Total Time D1(M^2)"
               << "," << "Total Time CG"
               << "," << "Total Time FC"
               << "," << "Total Time RC"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
+              << "," << "Validation"
               << std::endl;
 
     std::cout << "CSVDATA"
@@ -459,15 +552,18 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
-              << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << "," << label_algorithm
+              << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << "," << repeat
               << "," << total_time
+              << "," << total_time_matrix_squared
+              << "," << total_time_matrix_squared_d1
               << "," << total_time_color_greedy
               << "," << total_time_find_conflicts
               << "," << total_time_resolve_conflicts
               << "," << avg_colors
               << "," << avg_phases
+              << "," << all_results_valid_str
               << std::endl;
 
     // Kokkos::print_configuration(std::cout);

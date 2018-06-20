@@ -65,7 +65,8 @@ namespace Impl{
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
 template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
-class GraphColor {
+class GraphColor
+{
 public:
 
   typedef lno_row_view_t_ in_lno_row_view_t;
@@ -723,6 +724,8 @@ public:
 
 };
 
+
+
 /*! \brief Class for the vertex based graph coloring algorithms.
  *  They work better on CPUs and Xeon Phis, but edge-based ones are better on GPUs.
  *  Includes 3 algorithms:
@@ -767,8 +770,6 @@ public:
 
   typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
   typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
-
-
 
   typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
 
@@ -866,8 +867,6 @@ public:
    */
   virtual void color_graph(color_view_type colors,int &num_loops){
 
-//    std::cout << ">>> WCMCLEN GraphColor_VB::color_graph (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
-
     if (this->_ticToc) {
       std::cout
           << "\tVB params:" << std::endl
@@ -934,7 +933,11 @@ public:
 
 
     double t, total=0.0;
+    double total_time_greedy_phase=0.0;
+    double total_time_find_conflicts=0.0;
+    double total_time_serial_conflict_resolution=0.0;
     Kokkos::Impl::Timer timer;
+    timer.reset();
 
 
     int iter=0;
@@ -969,6 +972,7 @@ public:
       if (this->_ticToc){
         t = timer.seconds();
         total += t;
+        total_time_greedy_phase += t;
         std::cout << "\tTime speculative greedy phase " << iter << " : " << t << std::endl;
         timer.reset();
       }
@@ -999,6 +1003,7 @@ public:
       if (_ticToc){
         t = timer.seconds();
         total += t;
+        total_time_find_conflicts += t;
         std::cout << "\tTime conflict detection " << iter << " : " << t << std::endl;
         timer.reset();
       }
@@ -1047,10 +1052,15 @@ public:
     	if (_ticToc){
     		t = timer.seconds();
     		total += t;
+        total_time_serial_conflict_resolution += t;
     		std::cout << "\tTime serial conflict resolution: " << t << std::endl;
     	}
     }
     num_loops = iter;
+
+    this->cp->add_to_overall_coloring_time_phase1(total_time_greedy_phase);
+    this->cp->add_to_overall_coloring_time_phase2(total_time_find_conflicts);
+    this->cp->add_to_overall_coloring_time_phase3(total_time_serial_conflict_resolution);
   }    // color_graph (end)
 
 
@@ -1077,7 +1087,7 @@ private:
 
     //if the algorithm VBBIT
     if (this->_use_color_set == 2) {
-
+      //std::cout << ">>> functorGreedyColor_IMPLOG" << std::endl;    // WCMCLEN
       functorGreedyColor_IMPLOG gc(
           this->nv,
           xadj_, adj_,
@@ -1089,6 +1099,7 @@ private:
     }
     // VBCS algorithm
     else if (this->_use_color_set == 1){
+      //std::cout << ">>> functorGreedyColor_IMP" << std::endl;    // WCMCLEN
       functorGreedyColor_IMP gc(
           this->nv,
           xadj_, adj_,
@@ -1101,7 +1112,7 @@ private:
     //VB algorithm
     else if (this->_use_color_set == 0)
     {
-
+      //std::cout << ">>> functorGreedyColor" << std::endl;    // WCMCLEN
       functorGreedyColor  gc(
           this->nv,
           xadj_, adj_,
@@ -1131,8 +1142,6 @@ private:
       nnz_lno_temp_work_view_t current_vertexList_,
       nnz_lno_t current_vertexListLength_) {
 
-//    std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
-
     nnz_lno_t chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
 
     if (current_vertexListLength_ < 100*chunkSize_) chunkSize_ = 1;
@@ -1141,7 +1150,7 @@ private:
     if (this->_use_color_set == 2) {
 
       //If edge filtering is applied
-
+      //std::cout << ">>> functorGreedyColor_IMPLOG_EF" << std::endl;  // WCMCLEN
       functorGreedyColor_IMPLOG_EF gc(
           this->nv,
           xadj_, adj_,
@@ -1154,6 +1163,7 @@ private:
     }
     // VBCS algorithm
     else if (this->_use_color_set == 1){
+      //std::cout << ">>> functorGreedyColor_IMP_EF" << std::endl;    // WCMCLEN
       functorGreedyColor_IMP_EF gc(
           this->nv,
           xadj_, adj_,
@@ -1165,7 +1175,7 @@ private:
     //VB algorithm
     else if (this->_use_color_set == 0)
     {
-//      std::cout << ">>> WCMCLEN GraphColor_VB::colorGreedyEF --- (call the functor)" << std::endl;
+      //std::cout << ">>> functorGreedyColor_EF" << std::endl;    // WCMCLEN
       functorGreedyColor_EF  gc(
           this->nv,
           xadj_, adj_,
@@ -1718,7 +1728,6 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
-//      std::cout << ">>> WCMCLEN functorGreedyColor_EF (KokkosGraph_GraphColor_impl.hpp) <<<" << std::endl;
       nnz_lno_t i = 0;
       for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
@@ -1825,8 +1834,6 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
-//      std::cout << ">>> WCMCLEN functorGreedyColor (KokkosGraph_GraphColor_impl.hpp)" << std::endl;
-
       nnz_lno_t i = 0;
       for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
@@ -2463,8 +2470,7 @@ public:
    */
   virtual void color_graph(color_view_type kok_colors, int &num_loops ){
 
-
-//    std::cout << ">>> WCMCLEN GraphColor_EB::color_graph()" << std::endl;
+    //std::cout << ">>> GraphColor_EB::color_graph()" << std::endl;  // WCMCLEN
 
     //get EB parameters
     color_t numInitialColors = this->cp->get_eb_num_initial_colors();
@@ -2716,7 +2722,7 @@ public:
     if (tictoc){
       delete timer;
     }
-  }
+  }       // color_graph (end)
 
 
   /*! \brief Functor to initialize the colors of the vertices randomly,
