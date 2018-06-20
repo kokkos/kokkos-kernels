@@ -1,3 +1,7 @@
+#ifndef KOKKOSBLAS_CUDA_TPL_HPP_
+#define KOKKOSBLAS_CUDA_TPL_HPP_
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 #include<KokkosBlas_tpl_spec.hpp>
 
 namespace KokkosBlas {
@@ -22,3 +26,6 @@ CudaBlasSingleton & CudaBlasSingleton::singleton()
 
 }
 }
+#endif
+
+#endif
