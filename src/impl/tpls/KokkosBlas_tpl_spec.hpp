@@ -13,8 +13,6 @@ struct CudaBlasSingleton {
 
   CudaBlasSingleton();
 
-  ~CudaBlasSingleton();
-
   static CudaBlasSingleton & singleton();
 };
 
