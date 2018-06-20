@@ -65,6 +65,7 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_D2_SERIAL,                  // Distance-2 Graph Coloring (SERIAL)
                          COLORING_D2,                         // Distance-2 Graph Coloring
                          COLORING_D2_VB,                      // Distance-2 Graph Coloring Vertex Based
+                         COLORING_D2_VB_BIT,                  // Distance-2 Graph Coloring Vertex Based BIT
                          COLORING_D2_VBTP,                    // Distance-2 Graph Coloring Vertex Based w/ Team Policy
                          COLORING_D2_VBTP2,                   // Distance-2 Graph Coloring Vertex Based w/ Team Policy (WCMCLEN: Experimental variant 2)
                          COLORING_D2_VBTP3,                   // Distance-2 Graph Coloring Vertex Based w/ Team Policy (WCMCLEN: Experimental variant 3)
@@ -621,6 +622,7 @@ private:
     case COLORING_D2_SERIAL:
     case COLORING_D2:
     case COLORING_D2_VB:
+    case COLORING_D2_VB_BIT:
     case COLORING_D2_VBTP:
     case COLORING_D2_VBTP2:
     case COLORING_D2_VBTP3:

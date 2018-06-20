@@ -113,6 +113,7 @@ void graph_color_d2(KernelHandle *handle,
 
         case COLORING_D2:
         case COLORING_D2_VB:
+        case COLORING_D2_VB_BIT:
         case COLORING_D2_VBTP:
         case COLORING_D2_VBTP2:
         case COLORING_D2_VBTP3:

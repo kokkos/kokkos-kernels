@@ -221,6 +221,11 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 8;
                 got_required_param_algorithm = true;
             }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT"))
+            {
+                params.algorithm             = 9;
+                got_required_param_algorithm = true;
+            }
             else
             {
                 std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
@@ -350,6 +355,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         case 8:
             kh.create_graph_coloring_handle(COLORING_D2_SERIAL);
             label_algorithm = "COLORING_D2_SERIAL";
+            break;
+        case 9:
+            kh.create_graph_coloring_handle(COLORING_D2_VB_BIT);
+            label_algorithm = "COLORING_D2_VB_BIT";
             break;
         default:
             kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
