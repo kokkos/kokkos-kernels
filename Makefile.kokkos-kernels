@@ -386,7 +386,9 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
   endif
 endif
 
-KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS}, 1)
+  KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
+endif
 
 KOKKOSKERNELS_INTERNAL_HEADERS = $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/*.hpp)
 KOKKOSKERNELS_INTERNAL_HEADERS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_hpp/*/*eti_spec*.hpp)
