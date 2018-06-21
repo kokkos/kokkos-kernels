@@ -165,7 +165,6 @@ namespace KokkosBatched {
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
                     "AVX, AVX2 and AVX512 is supported");
       const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
->>>>>>> upstream/develop
 
       // no error check
       int r_val = 0;
@@ -384,7 +383,6 @@ namespace KokkosBatched {
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
                     "AVX, AVX2 and AVX512 is supported");
       const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
->>>>>>> upstream/develop
 
       // no error check
       int r_val = 0;
