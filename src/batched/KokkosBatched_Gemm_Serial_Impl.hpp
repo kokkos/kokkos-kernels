@@ -159,7 +159,7 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(0),
+        k = A.dimension(0);
 
       static_assert(is_vector<vector_type>::value, "value type is not vector type");      
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -377,7 +377,7 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(0),
+        k = A.dimension(0);
 
       static_assert(is_vector<vector_type>::value, "value type is not vector type");      
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
