@@ -159,7 +159,7 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1);
+        k = A.dimension(0);
 
       static_assert(is_vector<vector_type>::value, "value type is not vector type");      
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -209,7 +209,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_0(), B.stride_1(),
@@ -233,7 +233,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Blocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_0(), B.stride_1(),
@@ -377,7 +377,7 @@ namespace KokkosBatched {
       const int
         m = C.dimension(0),
         n = C.dimension(1),
-        k = A.dimension(1);
+        k = A.dimension(0);
 
       static_assert(is_vector<vector_type>::value, "value type is not vector type");      
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -427,7 +427,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Unblocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_1(), B.stride_0(),
@@ -451,7 +451,7 @@ namespace KokkosBatched {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       return SerialGemmInternal<Algo::Gemm::Blocked>::
-        invoke(C.extent(0), C.extent(1), A.extent(1),
+        invoke(C.extent(0), C.extent(1), A.extent(0),
                alpha, 
                A.data(), A.stride_1(), A.stride_0(),
                B.data(), B.stride_1(), B.stride_0(),
