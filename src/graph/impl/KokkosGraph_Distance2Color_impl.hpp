@@ -133,7 +133,6 @@ class GraphColorD2
     int _chunkSize;      // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
     int _max_num_iterations;
     char _conflictList;                  // 0: none, 1: atomic (default), 2: parallel prefix sums (0, 2 not implemented)
-    bool _serialConflictResolution;      // true if using serial conflict resolution, false otherwise (default)
     char _use_color_set;                 // The VB Algorithm Type: 0: VB,  1: VBCS,  2: VBBIT  (1, 2 not implemented).
     bool _ticToc;                        // if true print info in each step
 
@@ -158,11 +157,8 @@ class GraphColorD2
         : nv(nv_), nr(nv_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries),
           gc_handle(handle->get_graph_coloring_handle()), _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size()),
           _max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations()), _conflictList(1),
-          _serialConflictResolution(false), _use_color_set(0), _ticToc(handle->get_verbose())
+          _use_color_set(0), _ticToc(handle->get_verbose())
     {
-        // std::cout << ">>> WCMCLEN GraphColorD2() (KokkosGraph_Distance2Color_impl.hpp)" << std::endl
-        //           << ">>> WCMCLEN :    coloring_algo_type = " << handle->get_coloring_algo_type() << std::endl
-        //           << ">>> WCMCLEN :    conflict_list_type = " << handle->get_conflict_list_type() << std::endl;
     }
 
 
@@ -179,7 +175,29 @@ class GraphColorD2
     // -----------------------------------------------------------------
     virtual void execute()
     {
+        bool using_edge_filtering = false;
+
         color_view_type colors_out("Graph Colors", this->nv);
+
+        // If the selected pass is using edge filtering we should set the flag.
+        switch(this->gc_handle->get_coloring_algo_type())
+        {
+            case COLORING_D2_VB_BIT_EF:
+                using_edge_filtering = true;
+                break;
+            default:
+                break;
+        }
+
+        // Temp copy of the adj array (mutable)
+        // - This is required for edge-filtering passes to avoid
+        //   side effects since edge filtering modifies the adj array.
+        nnz_lno_temp_work_view_t adj_copy;
+        if (using_edge_filtering)
+        {
+            adj_copy = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
+            Kokkos::deep_copy(adj_copy, this->adj);
+        }
 
         // Data:
         // gc_handle = graph coloring handle
@@ -194,9 +212,9 @@ class GraphColorD2
                       << "\t  useConflictList          : " << (int)this->_conflictList << std::endl
                       << "\t  ticToc                   : " << this->_ticToc << std::endl
                       << "\t  max_num_iterations       : " << this->_max_num_iterations << std::endl
-                      << "\t  serialConflictResolution : " << (int)this->_serialConflictResolution << std::endl
                       << "\t  chunkSize                : " << this->_chunkSize << std::endl
                       << "\t  use_color_set            : " << (int)this->_use_color_set << std::endl
+                      << "\t  Edge Filtering Pass?     : " << (int)using_edge_filtering << std::endl
                       << "\tgraph information:" << std::endl
                       << "\t  nv                       : " << this->nv << std::endl
                       << "\t  ne                       : " << this->ne << std::endl;
@@ -240,7 +258,14 @@ class GraphColorD2
             // ------------------------------------------
             // Do greedy color
             // ------------------------------------------
-            this->colorGreedy(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
+            if(using_edge_filtering)
+            {
+                this->colorGreedyEF(this->xadj, adj_copy, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
+            }
+            else
+            {
+                this->colorGreedy(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
+            }
 
             MyExecSpace::fence();
 
@@ -249,21 +274,13 @@ class GraphColorD2
                 time = timer.seconds();
                 total_time += time;
                 std::cout << "\tIteration: " << iter << std::endl
-                          << "\t  - Time speculative greedy phase : " << time << std::endl
-                          << "\t      - Num Uncolored             : " << numUncolored << std::endl;
-
-                // prettyPrint1DView(current_vertexList, "current_vertexList", 50);
-                //if(current_vertexListLength > 0)
-                //{
-                //    std::cout << "color(vL[0]) = " << colors_out[current_vertexList[0]] << std::endl;
-                //}
+                          << "\t  - Time speculative greedy phase : " << time << std::endl;
+                          // << "\t      - Num Uncolored             : " << numUncolored << std::endl;
 
                 gc_handle->add_to_overall_coloring_time_phase1(time);
 
                 timer.reset();
             }
-
-            // prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out", 100);
 
             // ------------------------------------------
             // Find conflicts
@@ -311,11 +328,11 @@ class GraphColorD2
         }      // end for iter...
 
         // ------------------------------------------
-        // clean up in serial (resolveConflicts)
+        // clean up in serial (resolveConflictsSerial)
         // ------------------------------------------
         if(numUncolored > 0)
         {
-            this->resolveConflicts(this->nv, this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
+            this->resolveConflictsSerial(this->nv, this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
         }
 
         MyExecSpace::fence();
@@ -331,7 +348,8 @@ class GraphColorD2
         // ------------------------------------------
         // Verify correctness
         // ------------------------------------------
-        verifyDistance2Coloring(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out);
+        // TODO: Move validation routine outside of coloring
+        //verifyDistance2Coloring(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out);
 
         // Save out the number of phases and vertex colors
         this->gc_handle->set_vertex_colors(colors_out);
@@ -486,26 +504,11 @@ class GraphColorD2
             {
                 functorGreedyColorVB_BIT gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
                 Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, num_chunks), gc);
-                //prettyPrint1DView(vertex_colors_, "COLORS_GC_VB_BIT",500);
-            }
-            break;
-
-            // One level Perallelism, BIT Array for coloring + edge filtering
-            // 1. [P] loop over chunks of vertices
-            // 2. [S] loop over vertices in chunks
-            // 3. [S] loop over color offset blocks
-            // 4. [S] loop over vertex neighbors
-            // 5. [S] loop over vertex neighbors of neighbors
-            case COLORING_D2_VB_BIT_EF:
-            {
-                functorGreedyColorVB_BIT_EF gc(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
-                Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, num_chunks), gc);
-                //prettyPrint1DView(vertex_colors_, "COLORS_GC_VB_BIT",500);
             }
             break;
 
             default:
-                throw std::invalid_argument("Unknown Distance-2 Algorithm Type");
+                throw std::invalid_argument("Unknown Distance-2 Algorithm Type or invalid for non Edge Filtering mode.");
         }
 
     }      // colorGreedy (end)
@@ -514,10 +517,55 @@ class GraphColorD2
 
     // -----------------------------------------------------------------
     //
+    // GraphColorD2::colorGreedyEF()
+    //
+    // -----------------------------------------------------------------
+    void colorGreedyEF(const_lno_row_view_t xadj_,
+                       nnz_lno_temp_work_view_t adj_copy_,
+                       const_clno_row_view_t t_xadj_,
+                       const_clno_nnz_view_t t_adj_,
+                       color_view_type vertex_colors_,
+                       nnz_lno_temp_work_view_t current_vertexList_,
+                       nnz_lno_t current_vertexListLength_)
+    {
+        nnz_lno_t chunkSize_ = this->_chunkSize;
+
+        if(current_vertexListLength_ < 100 * chunkSize_)
+        {
+            chunkSize_ = 1;
+        }
+
+        const size_t num_chunks = current_vertexListLength_ / chunkSize_ + 1;
+
+        // Pick the right coloring algorithm to use based on which algorithm we're using
+        switch(this->gc_handle->get_coloring_algo_type())
+        {
+            // One level Perallelism, BIT Array for coloring + edge filtering
+            // 1. [P] loop over chunks of vertices
+            // 2. [S] loop over vertices in chunks
+            // 3. [S] loop over color offset blocks
+            // 4. [S] loop over vertex neighbors
+            // 5. [S] loop over vertex neighbors of neighbors
+            case COLORING_D2_VB_BIT_EF:
+            {
+                functorGreedyColorVB_BIT_EF gc(this->nv, xadj_, adj_copy_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+                Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, num_chunks), gc);
+                //prettyPrint1DView(vertex_colors_, "COLORS_GC_VB_BIT",500);
+            }
+            break;
+
+            default:
+                throw std::invalid_argument("Unknown Distance-2 Algorithm Type or algorithm does not use Edge Filtering.");
+        }
+    }   // colorGreedyEF (end)
+
+
+
+    // -----------------------------------------------------------------
+    //
     // GraphColorD2::findConflicts()
     //
     // -----------------------------------------------------------------
-    // NOTE: not using colorset algorithm in this so we don't include colorset data
     template<typename adj_view_t>
     nnz_lno_t findConflicts(bool &swap_work_arrays,
                             const_lno_row_view_t xadj_,
@@ -574,11 +622,11 @@ class GraphColorD2
 
     // -----------------------------------------------------------------
     //
-    // GraphColorD2::resolveConflicts()
+    // GraphColorD2::resolveConflictsSerial()
     //
     // -----------------------------------------------------------------
     template<typename adj_view_t>
-    void resolveConflicts(nnz_lno_t _nv,
+    void resolveConflictsSerial(nnz_lno_t _nv,
                           const_lno_row_view_t xadj_,
                           adj_view_t adj_,
                           const_clno_row_view_t t_xadj_,
@@ -587,7 +635,6 @@ class GraphColorD2
                           nnz_lno_temp_work_view_t current_vertexList_,
                           size_type current_vertexListLength_)
     {
-        // NOTE: resolveConflicts is SERIAL and thus the forbidden array must be O(V) in size.
         color_t *forbidden = new color_t[_nv];
         nnz_lno_t vid      = 0;
         nnz_lno_t end      = _nv;
@@ -657,7 +704,7 @@ class GraphColorD2
         }
         Kokkos::deep_copy(vertex_colors_, h_colors);
         delete[] forbidden;
-    }      // resolveConflicts (end)
+    }      // resolveConflictsSerial (end)
 
 
     // ------------------------------------------------------
@@ -936,129 +983,103 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t vid_) const
         {
-            // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
             nnz_lno_t vid = 0;
             for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
             {
                 if(vid_ * _chunkSize + ichunk < _vertexListLength)
+                {
                     vid = _vertexList(vid_ * _chunkSize + ichunk);
-                else
-                    continue;
 
-                // Already colored this vertex.
-                if(_colors(vid) > 0)
-                {
-                    continue;
-                }
-
-                size_type vid_adj_begin = _idx(vid);
-                size_type vid_adj_end   = _idx(vid + 1);
-
-                bool foundColor=false;
-                for(color_t offset=0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
-                {
-                    // Forbidden colors
-                    // - single long int for forbidden colors
-                    bit_64_forbidden_t forbidden = 0;
-
-                    if(0==offset) forbidden = 1;      // WCMCLEN SCAFFOLDING - this might be unnecessary in BIT mode, a histogram would show it.
-
-                    // If all available colors for this range are unavailable we can break out of the nested loops
-                    bool break_out = false;
-
-                    // Loop over distance-1 neighbors
-                    for(size_type vid_adj = vid_adj_begin; !break_out && vid_adj < vid_adj_end; ++vid_adj)
+                    // Already colored this vertex.
+                    if(_colors(vid) == 0)
                     {
-                        const nnz_lno_t vid_d1     = _adj(vid_adj);
-                        size_type vid_d1_adj_begin = _t_idx(vid_d1);
-                        size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
 
-                        for(size_type vid_d1_adj = vid_d1_adj_begin; !break_out && vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj)
+                        size_type vid_adj_begin = _idx(vid);
+                        size_type vid_adj_end   = _idx(vid + 1);
+
+                        bool foundColor = false;
+                        for(color_t offset = 0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
+                            offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                         {
-                            const nnz_lno_t vid_d2 = _t_adj(vid_d1_adj);
+                            // Forbidden colors
+                            // - single long int for forbidden colors
+                            bit_64_forbidden_t forbidden = 0;
 
-                            // Ignore Distance-2 Self Loops
-                            if(vid_d2 != vid && vid_d2 < nv)
+                            if(0 == offset)
+                                forbidden = 1;      // WCMCLEN TODO: this might be unnecessary in BIT mode, a histogram would show it.
+
+                            // If all available colors for this range are unavailable we can break out of the nested loops
+                            bool break_out = false;
+
+                            // Loop over distance-1 neighbors
+                            for(size_type vid_adj = vid_adj_begin; !break_out && vid_adj < vid_adj_end; ++vid_adj)
                             {
-                                color_t color        = _colors(vid_d2);
-                                color_t color_offset = color - offset;
+                                const nnz_lno_t vid_d1     = _adj(vid_adj);
+                                size_type vid_d1_adj_begin = _t_idx(vid_d1);
+                                size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
 
-                                // if color is within the current range, or if its color is in a previously traversed
-                                // range
-                                if(color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
+                                for(size_type vid_d1_adj = vid_d1_adj_begin; !break_out && vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj)
                                 {
-                                    #if 0
-                                    // Apply edge filtering here, since color is in current 'range'
-                                    // - Move edge to the front of the adjacency list and increment vid_d2_adj_begin
-                                    //   to remove vid_d2 from being considered again as a neighbor of vid_d1 in this
-                                    //   context.
-                                    // - WCMCLEN: One can not simply apply edge filtering here for Distance-2 coloring...
-                                    //            We cannot assure that two vertices are being accessed simultaneously. eg:
-                                    //                 v1 -> v3-> v4  &ß v2 -> v3 -> v4
-                                    //            could result in 2 threads modifying the adjacency list of v3
-                                    if(vid_d2_adj > vid_d2_adj_begin)
+                                    const nnz_lno_t vid_d2 = _t_adj(vid_d1_adj);
+
+                                    // Ignore Distance-2 Self Loops
+                                    if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        _t_adj(vid_d2_adj)       = _t_adj(vid_d2_adj_begin);
-                                        _t_adj(vid_d2_adj_begin) = vid_d2;
-                                    }
-                                    vid_d2_adj_begin++;
-                                    #endif
+                                        color_t color        = _colors(vid_d2);
+                                        color_t color_offset = color - offset;
 
-                                    // if it is in the current range, then add the color to the banned colors
-                                    if(color > offset)
-                                    {
-                                        // convert color to bit representation
-                                        bit_64_forbidden_t ban_color_bit = 1;
-                                        ban_color_bit = ban_color_bit << (color_offset - 1);
-
-                                        // add it to forbidden colors
-                                        forbidden = forbidden | ban_color_bit;
-
-                                        // if there are no available colors in this range then exit early,
-                                        // no need to traverse the rest.
-                                        if(0 == ~forbidden)
+                                        // if color is within the current range, or if its color is in a previously traversed
+                                        // range
+                                        if(color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                                         {
-                                            break_out=true;
+                                            // if it is in the current range, then add the color to the banned colors
+                                            if(color > offset)
+                                            {
+                                                // convert color to bit representation
+                                                bit_64_forbidden_t ban_color_bit = 1;
+
+                                                ban_color_bit = ban_color_bit << (color_offset - 1);
+
+                                                // add it to forbidden colors
+                                                forbidden = forbidden | ban_color_bit;
+
+                                                // if there are no available colors in this range then exit early,
+                                                // no need to traverse the rest.
+                                                if(0 == ~forbidden)
+                                                {
+                                                    break_out = true;
+                                                }
+                                            }
                                         }
-                                    }
+                                    }      // for v1_d1_adj
+                                }          // for vid_adj
+                            }
+                            forbidden = ~(forbidden);
+
+                            // check if an available color exists.
+                            if(forbidden)
+                            {
+                                // if there is an available color, choose the first color, using 2s complement.
+                                bit_64_forbidden_t new_color = forbidden & (-forbidden);
+                                color_t val                  = 1;
+
+                                // convert it back to decimal color.
+                                while((new_color & 1) == 0)
+                                {
+                                    ++val;
+                                    new_color = new_color >> 1;
                                 }
-                            }           // for v1_d1_adj
+                                _colors(vid) = val + offset;
+                                foundColor   = true;
+                                break;
+                            }
+                        }      // for !foundColor
+                    }          // if _colors(vid)==0
+                }              // if vid_ * _chunkSize ...
+            }                  // for ichunk...
+        }                      // operator() (end)
+    };                         // struct functorGreedyColorVB_BIT (end)
 
-                            #if 0
-                            // WCMCLEN SCAFFOLDING
-                            // If break_out is set to true then it means that all the possible colors for
-                            // WCMCLEN TODO: Edge Filtering could be applied here but only if:
-                            //               - All neighbors of vid_d1 have been colored already
-                            //               - Does vid_d1 also needs to be colored?
-                            #endif
-
-
-
-                        }               // for vid_adj
-                    }
-                    forbidden = ~(forbidden);
-
-                    // check if an available color exists.
-                    if(forbidden)
-                    {
-                        // if there is an available color, choose the first color, using 2s complement.
-                        bit_64_forbidden_t new_color = forbidden & (-forbidden);
-                        color_t val = 1;
-
-                        // convert it back to decimal color.
-                        while((new_color & 1) == 0)
-                        {
-                            ++val;
-                            new_color = new_color >> 1;
-                        }
-                        _colors(vid) = val + offset;
-                        foundColor = true;
-                        break;
-                    }
-                }       // for !foundColor
-            }           // for ichunk...
-        }               // operator() (end)
-    };                  // struct functorGreedyColorVB_BIT (end)
 
 
    /**
@@ -1069,7 +1090,7 @@ class GraphColorD2
     {
         nnz_lno_t nv;                              // num vertices
         const_lno_row_view_t _idx;                 // vertex degree list
-        const_lno_nnz_view_t _adj;                 // vertex adjacency list
+        nnz_lno_temp_work_view_t _adj;             // vertex adjacency list
         const_clno_row_view_t _t_idx;              // transpose vertex degree list
         const_clno_nnz_view_t _t_adj;              // transpose vertex adjacency list
         color_view_type _colors;                   // vertex colors
@@ -1079,7 +1100,7 @@ class GraphColorD2
 
         functorGreedyColorVB_BIT_EF(nnz_lno_t nv_,
                                     const_lno_row_view_t xadj_,
-                                    const_lno_nnz_view_t adj_,
+                                    nnz_lno_temp_work_view_t adj_,
                                     const_clno_row_view_t t_xadj_,
                                     const_clno_nnz_view_t t_adj_,
                                     color_view_type colors,
@@ -1103,131 +1124,119 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t vid_) const
         {
-            // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
             nnz_lno_t vid = 0;
             for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
             {
                 if(vid_ * _chunkSize + ichunk < _vertexListLength)
+                {
                     vid = _vertexList(vid_ * _chunkSize + ichunk);
-                else
-                    continue;
 
-                // Already colored this vertex.
-                if(_colors(vid) > 0)
-                {
-                    continue;
-                }
-
-                size_type vid_adj_begin = _idx(vid);
-                size_type vid_adj_end   = _idx(vid + 1);
-
-                bool foundColor=false;
-                for(color_t offset=0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
-                {
-                    // Forbidden colors
-                    // - single long int for forbidden colors
-                    bit_64_forbidden_t forbidden = 0;
-
-                    if(0==offset) forbidden = 1;      // WCMCLEN SCAFFOLDING - this might be unnecessary in BIT mode, a histogram would show it.
-
-                    // If all available colors for this range are unavailable we can break out of the nested loops
-                    bool break_out = false;
-
-                    // Loop over distance-1 neighbors
-                    for(size_type vid_adj = vid_adj_begin; !break_out && vid_adj < vid_adj_end; ++vid_adj)
+                    // Already colored this vertex.
+                    if(_colors(vid) == 0)
                     {
-                        const nnz_lno_t vid_d1     = _adj(vid_adj);
-                        size_type vid_d1_adj_begin = _t_idx(vid_d1);
-                        size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
+                        size_type vid_adj_begin = _idx(vid);
+                        size_type vid_adj_end   = _idx(vid + 1);
 
-                        for(size_type vid_d1_adj = vid_d1_adj_begin; !break_out && vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj)
+                        bool foundColor = false;
+                        for(color_t offset = 0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
+                            offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                         {
-                            const nnz_lno_t vid_d2 = _t_adj(vid_d1_adj);
+                            // Forbidden colors
+                            // - single long int for forbidden colors
+                            bit_64_forbidden_t forbidden = 0;
 
-                            // Ignore Distance-2 Self Loops
-                            if(vid_d2 != vid && vid_d2 < nv)
+                            if(0 == offset)
+                                forbidden = 1;      // WCMCLEN TODO: this might be unnecessary in BIT mode, a histogram would show it.
+
+                            // If all available colors for this range are unavailable we can break out of the nested loops
+                            bool offset_colors_full = false;
+
+                            // Loop over distance-1 neighbors
+                            for(size_type vid_adj = vid_adj_begin; !offset_colors_full && vid_adj < vid_adj_end; ++vid_adj)
                             {
-                                color_t color        = _colors(vid_d2);
-                                color_t color_offset = color - offset;
+                                const nnz_lno_t vid_d1 = _adj(vid_adj);
 
-                                // if color is within the current range, or if its color is in a previously traversed
-                                // range
-                                if(color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
+                                size_type vid_d1_adj_begin = _t_idx(vid_d1);
+                                size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
+
+                                // Store the maximum color value found in the vertices adjacent to vid_d1
+                                color_t max_color_adj_to_d1 = 0;
+
+                                for(size_type vid_d1_adj = vid_d1_adj_begin; !offset_colors_full && vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj)
                                 {
-                                    #if 0
-                                    // Apply edge filtering here, since color is in current 'range'
-                                    // - Move edge to the front of the adjacency list and increment vid_d2_adj_begin
-                                    //   to remove vid_d2 from being considered again as a neighbor of vid_d1 in this
-                                    //   context.
-                                    // - WCMCLEN: One can not simply apply edge filtering here for Distance-2 coloring...
-                                    //            We cannot assure that two vertices are being accessed simultaneously. eg:
-                                    //                 v1 -> v3-> v4  &ß v2 -> v3 -> v4
-                                    //            could result in 2 threads modifying the adjacency list of v3
-                                    if(vid_d2_adj > vid_d2_adj_begin)
+                                    const nnz_lno_t vid_d2 = _t_adj(vid_d1_adj);
+
+                                    // Ignore Distance-2 Self Loops
+                                    if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        _t_adj(vid_d2_adj)       = _t_adj(vid_d2_adj_begin);
-                                        _t_adj(vid_d2_adj_begin) = vid_d2;
-                                    }
-                                    vid_d2_adj_begin++;
-                                    #endif
+                                        color_t color        = _colors(vid_d2);
+                                        color_t color_offset = color - offset;
 
-                                    // if it is in the current range, then add the color to the banned colors
-                                    if(color > offset)
-                                    {
-                                        // convert color to bit representation
-                                        bit_64_forbidden_t ban_color_bit = 1;
-                                        ban_color_bit = ban_color_bit << (color_offset - 1);
+                                        // Update maximum color adjacent to vid_d1 found so far.
+                                        max_color_adj_to_d1 = color > max_color_adj_to_d1 ? color : max_color_adj_to_d1;
 
-                                        // add it to forbidden colors
-                                        forbidden = forbidden | ban_color_bit;
-
-                                        // if there are no available colors in this range then exit early,
-                                        // no need to traverse the rest.
-                                        if(0 == ~forbidden)
+                                        // if color is within the current range, or if its color is in a previously traversed
+                                        // range
+                                        if(color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                                         {
-                                            break_out=true;
-                                        }
-                                    }
+                                            // if it is in the current range, then add the color to the banned colors
+                                            if(color > offset)
+                                            {
+                                                // convert color to bit representation
+                                                bit_64_forbidden_t ban_color_bit = 1;
+
+                                                ban_color_bit = ban_color_bit << (color_offset - 1);
+
+                                                // add it to forbidden colors
+                                                forbidden = forbidden | ban_color_bit;
+
+                                                // if there are no available colors in this range then exit early,
+                                                // no need to traverse the rest.
+                                                if(0 == ~forbidden)
+                                                {
+                                                    offset_colors_full = true;
+                                                }
+                                            }
+                                        }      // if color && color_offset
+                                    }          // if vid_d2 != vid ...
+                                }              // for vid_d1_adj ...
+
+                                // If we know that the all neighbors of vid_d1 are colored and they
+                                // in the current range or smaller then we can filter out the edge vid -> vid_d1
+                                // from future iterations.
+                                if(offset_colors_full && max_color_adj_to_d1 <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
+                                {
+                                    _adj(vid_adj)       = _adj(vid_adj_begin);
+                                    _adj(vid_adj_begin) = vid_d1;
+                                    vid_adj_begin++;
                                 }
-                            }           // for v1_d1_adj
 
-                            #if 0
-                            // WCMCLEN SCAFFOLDING
-                            // If break_out is set to true then it means that all the possible colors for
-                            // WCMCLEN TODO: Edge Filtering could be applied here but only if:
-                            //               - All neighbors of vid_d1 have been colored already
-                            //               - Does vid_d1 also needs to be colored?
-                            #endif
+                            }      // for vid_adj
+                            forbidden = ~(forbidden);
 
+                            // check if an available color exists.
+                            if(forbidden)
+                            {
+                                // if there is an available color, choose the first color, using 2s complement.
+                                bit_64_forbidden_t new_color = forbidden & (-forbidden);
+                                color_t val                  = 1;
 
-
-                        }               // for vid_adj
-                    }
-                    forbidden = ~(forbidden);
-
-                    // check if an available color exists.
-                    if(forbidden)
-                    {
-                        // if there is an available color, choose the first color, using 2s complement.
-                        bit_64_forbidden_t new_color = forbidden & (-forbidden);
-                        color_t val = 1;
-
-                        // convert it back to decimal color.
-                        while((new_color & 1) == 0)
-                        {
-                            ++val;
-                            new_color = new_color >> 1;
-                        }
-                        _colors(vid) = val + offset;
-                        foundColor = true;
-                        break;
-                    }
-                }       // for !foundColor
-            }           // for ichunk...
-        }               // operator() (end)
-    };                  // struct functorGreedyColorVB_BIT_EF (end)
-
-
+                                // convert it back to decimal color.
+                                while((new_color & 1) == 0)
+                                {
+                                    ++val;
+                                    new_color = new_color >> 1;
+                                }
+                                _colors(vid) = val + offset;
+                                foundColor   = true;
+                                break;
+                            }
+                        }      // for !foundColor
+                    }          // if _colors(vid)==0
+                }              // if vid_ * _chunkSize ...
+            }                  // for ichunk...
+        }                      // operator() (end)
+    };                         // struct functorGreedyColorVB_BIT_EF (end)
 
 
 

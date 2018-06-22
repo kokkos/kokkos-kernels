@@ -138,6 +138,10 @@ void graph_color_d2(KernelHandle *handle,
     gch->set_coloring_time(coloring_time);
 }
 
+
+// TODO: Implement a validation routine here
+
+
 }      // end namespace Experimental
 }      // end namespace KokkosGraph
 

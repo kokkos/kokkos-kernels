@@ -401,6 +401,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                                                             colors);
         }
 
+#if 0
+        // ------------------------------------------
+        // Verify correctness
+        // ------------------------------------------
+        verifyDistance2Coloring(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out);
+#endif
+
+
         total_colors += kh.get_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_graph_coloring_handle()->get_num_phases();
     }
