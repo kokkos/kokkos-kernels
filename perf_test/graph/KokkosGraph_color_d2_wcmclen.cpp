@@ -231,6 +231,11 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 10;
                 got_required_param_algorithm = true;
             }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTP_BIT"))
+            {
+                params.algorithm             = 11;
+                got_required_param_algorithm = true;
+            }
             else
             {
                 std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
@@ -369,6 +374,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             kh.create_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
             label_algorithm = "COLORING_D2_VB_BIT_EF";
             break;
+        case 11:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTP_BIT);
+            label_algorithm = "COLORING_D2_VBTP_BIT";
+            break;
         default:
             kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
             label_algorithm = "COLORING_D2_MATRIX_SQUARED";
@@ -383,6 +392,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
         graph_color_d2(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
+        total_colors += kh.get_graph_coloring_handle()->get_num_colors();
+        total_phases += kh.get_graph_coloring_handle()->get_num_phases();
+
         std::cout << "Total Time: " << kh.get_graph_coloring_handle()->get_overall_coloring_time() << std::endl
                   << "Num colors: " << kh.get_graph_coloring_handle()->get_num_colors() << std::endl
                   << "Num Phases: " << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
@@ -390,6 +402,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
         std::cout << std::endl;
 
+        // If verbose mode is on and there the graph has fewer than 1000 verts, dump a GraphVIZ DOT file.
         if(verbose && repeat==i+1 && crsGraph.numRows() < 1000)
         {
             auto colors = kh.get_graph_coloring_handle()->get_vertex_colors();
@@ -401,22 +414,53 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                                                             colors);
         }
 
-#if 0
         // ------------------------------------------
         // Verify correctness
         // ------------------------------------------
-        verifyDistance2Coloring(this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out);
-#endif
+        bool d2_coloring_is_valid            = false;
+        bool d2_coloring_validation_flags[4] = {false};
+
+        d2_coloring_is_valid = verifyDistance2Coloring(&kh,
+                                                       crsGraph.numRows(),
+                                                       crsGraph.numCols(),
+                                                       crsGraph.row_map,
+                                                       crsGraph.entries,
+                                                       crsGraph.row_map,
+                                                       crsGraph.entries,
+                                                       d2_coloring_validation_flags);
+
+        // Print out messages based on coloring validation check.
+        if(d2_coloring_is_valid)
+        {
+            std::cout << std::endl << ">>> Distance-2 Graph Coloring is VALID" << std::endl << std::endl;
+        }
+        else
+        {
+            std::cout << std::endl
+                      << ">>> Distance-2 Graph Coloring is NOT VALID" << std::endl
+                      << "    - Vert(s) left uncolored : " << d2_coloring_validation_flags[1] << std::endl
+                      << "    - Invalid D2 Coloring    : " << d2_coloring_validation_flags[2] << std::endl
+                      << std::endl;
+        }
+        if(d2_coloring_validation_flags[3])
+        {
+            std::cout << ">>> Distance-2 Graph Coloring may have poor quality." << std::endl
+                      << "    - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
+                      << std::endl;
+        }
+
+        // ------------------------------------------
+        // Print out the colors histogram
+        // ------------------------------------------
+        printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+
+    } // for i...
 
 
-        total_colors += kh.get_graph_coloring_handle()->get_num_colors();
-        total_phases += kh.get_graph_coloring_handle()->get_num_phases();
-    }
-
-    double total_time    = kh.get_graph_coloring_handle()->get_overall_coloring_time();
-    double total_time_color_greedy  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
-    double total_time_find_conflicts  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
-    double total_time_resolve_conflicts  = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
+    double total_time                   = kh.get_graph_coloring_handle()->get_overall_coloring_time();
+    double total_time_color_greedy      = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
+    double total_time_find_conflicts    = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
+    double total_time_resolve_conflicts = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
 
     double avg_time                   = total_time / repeat;
     double avg_time_color_greedy      = total_time_color_greedy / repeat;
