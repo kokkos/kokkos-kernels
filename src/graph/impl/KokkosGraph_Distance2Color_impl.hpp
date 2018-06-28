@@ -2208,10 +2208,14 @@ class GraphColorD2
                     }
                 }
             }
-            Kokkos::atomic_fetch_or(&_flags[0], has_uncolored_vertex || has_invalid_color);
-            Kokkos::atomic_fetch_or(&_flags[1], has_uncolored_vertex);
-            Kokkos::atomic_fetch_or(&_flags[2], has_invalid_color);
-            Kokkos::atomic_fetch_or(&_flags[3], has_color_bigger_than_num_verts);
+            if(has_uncolored_vertex || has_invalid_color)
+                Kokkos::atomic_fetch_or(&_flags[0], has_uncolored_vertex || has_invalid_color);
+            if(has_uncolored_vertex)
+                Kokkos::atomic_fetch_or(&_flags[1], has_uncolored_vertex);
+            if(has_invalid_color)
+                Kokkos::atomic_fetch_or(&_flags[2], has_invalid_color);
+            if(has_color_bigger_than_num_verts)
+                Kokkos::atomic_fetch_or(&_flags[3], has_color_bigger_than_num_verts);
         }      // operator()
     };         // struct functorGreedyColorVB (end)
 
