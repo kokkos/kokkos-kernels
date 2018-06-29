@@ -209,10 +209,10 @@ class GraphColorD2
                       << "\tgraph information:" << std::endl
                       << "\t  nv                       : " << this->nv << std::endl
                       << "\t  ne                       : " << this->ne << std::endl;
-        }
 
-        // prettyPrint1DView(this->xadj, ">>> xadj ", 500);
-        // prettyPrint1DView(this->adj,  ">>>  adj ", 500);
+            // prettyPrint1DView(this->xadj, ">>> xadj ", 500);
+            // prettyPrint1DView(this->adj,  ">>>  adj ", 500);
+        }
 
         // conflictlist - store conflicts that can happen when we're coloring in parallel.
         nnz_lno_temp_work_view_t current_vertexList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
@@ -353,6 +353,7 @@ class GraphColorD2
         // ------------------------------------------
         if(_ticToc)
         {
+            //prettyPrint1DView(colors_out, ">>> colors_out ", 500);            // WCMCLEN
             //printDistance2ColorsHistogram();
         }
     }      // color_graph_d2 (end)
@@ -493,7 +494,8 @@ class GraphColorD2
                 #if defined(KOKKOS_ENABLE_CUDA)
                 const team_policy_t policy_inst(num_chunks, chunkSize_);
                 #else
-                const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
+                //const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
+                const team_policy_t policy_inst(num_chunks, chunkSize_);
                 #endif
 
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
@@ -910,84 +912,82 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t vid_) const
         {
-            // std::cout << ">>> WCMCLEN functorGreedyColor::operator()(" << vid_ << ") (KokkosGraph_Distance2Color_impl.hpp)" << std::endl;
-            nnz_lno_t vid = 0;
             for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
             {
                 if(vid_ * _chunkSize + ichunk < _vertexListLength)
-                    vid = _vertexList(vid_ * _chunkSize + ichunk);
-                else
-                    continue;
-
-                // Already colored this vertex.
-                if(_colors(vid) > 0)
                 {
-                    continue;
-                }
+                    const nnz_lno_t vid = _vertexList(vid_ * _chunkSize + ichunk);
 
-                bool foundColor = false;      // Have we found a valid color?
-
-                size_type vid_adj_begin = _idx(vid);
-                size_type vid_adj_end   = _idx(vid + 1);
-
-                // Use forbidden array to find available color.
-                // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
-                bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
-
-                // Do multiple passes if the forbidden array is too small.
-                // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
-                //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.
-                //   This could be as big as all the vertices in the graph if diameter(G)=2...
-                // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
-                for(color_t offset=0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
-                {
-                    // initialize
-                    for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
-
-                    // by convention, start at 1
-                    if(0 == offset)
+                    // Already colored this vertex.
+                    if(_colors(vid) <= 0)
                     {
-                        forbidden[0] = true;
-                    }
+                        bool foundColor = false;      // Have we found a valid color?
 
-                    // Check neighbors, fill forbidden array.
-                    for(size_type vid_adj = vid_adj_begin; vid_adj < vid_adj_end; vid_adj++)
-                    {
-                        const nnz_lno_t vid_d1 = _adj(vid_adj);
-                        size_type vid_d1_adj_begin = _t_idx(vid_d1);
-                        size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
+                        const size_type vid_adj_begin = _idx(vid);
+                        const size_type vid_adj_end   = _idx(vid + 1);
 
-                        for(size_type vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++)
+                        // Use forbidden array to find available color.
+                        // - should be small enough to fit into fast memory (use Kokkos memoryspace?)
+                        bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
+
+                        // Do multiple passes if the forbidden array is too small.
+                        // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
+                        //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.
+                        //   This could be as big as all the vertices in the graph if diameter(G)=2...
+                        // * TODO: Determine if we can cap this at something lower than nv.
+                        for(color_t offset = 0; !foundColor && offset < nv; offset += VB_D2_COLORING_FORBIDDEN_SIZE)
                         {
-                            const nnz_lno_t vid_d2 = _t_adj(vid_d1_adj);
+                            // initialize
+                            for(int i = 0; i < VB_D2_COLORING_FORBIDDEN_SIZE; i++) { forbidden[i] = false; }
 
-                            // Skip distance-2-self-loops
-                            if(vid_d2 != vid && vid_d2 < nv)
+                            // Colors start at 1.  0 is special in that it means a vertex is uncolored.
+                            // For the range 0..63 we mark forbidden[0] as true to take color 0 out of
+                            // consideration.
+                            if(0 == offset)
                             {
-                                const color_t c = _colors(vid_d2);
+                                forbidden[0] = true;
+                            }
 
-                                if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
+                            // Check neighbors, fill forbidden array.
+                            for(size_type vid_adj = vid_adj_begin; vid_adj < vid_adj_end; vid_adj++)
+                            {
+                                const nnz_lno_t vid_d1           = _adj(vid_adj);
+                                const size_type vid_d1_adj_begin = _t_idx(vid_d1);
+                                const size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
+
+                                for(size_type vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++)
                                 {
-                                    forbidden[c - offset] = true;
+                                    const nnz_lno_t vid_d2 = _t_adj(vid_d1_adj);
+
+                                    // Skip distance-2-self-loops
+                                    if(vid_d2 != vid && vid_d2 < nv)
+                                    {
+                                        const color_t c = _colors(vid_d2);
+
+                                        if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
+                                        {
+                                            forbidden[c - offset] = true;
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
 
-                    // color vertex i with smallest available color (firstFit)
-                    for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
-                    {
-                        if(!forbidden[c])
-                        {
-                            _colors(vid) = offset + c;
-                            foundColor   = true;
-                            break;
-                        }
-                    }      // for c...
-                }          // for !foundColor...
-            }              // for ichunk...
-        }                  // operator() (end)
-    };                     // struct functorGreedyColorVB (end)
+                            // color vertex i with smallest available color (firstFit)
+                            for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
+                            {
+                                if(!forbidden[c])
+                                {
+                                    _colors(vid) = offset + c;
+                                    foundColor   = true;
+                                    break;
+                                }
+                            }      // for c...
+                        }          // for !foundColor...
+                    }              // if _colors(vid) <= 0...
+                }                  // if vid_ * _chunkSize...
+            }                      // for ichunk...
+        }                          // operator() (end)
+    };                             // struct functorGreedyColorVB (end)
 
 
 
@@ -1033,18 +1033,17 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t vid_) const
         {
-            nnz_lno_t vid = 0;
             for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
             {
                 if(vid_ * _chunkSize + ichunk < _vertexListLength)
                 {
-                    vid = _vertexList(vid_ * _chunkSize + ichunk);
+                    const nnz_lno_t vid = _vertexList(vid_ * _chunkSize + ichunk);
 
                     // If vertex is not colored yet...
                     if(_colors(vid) == 0)
                     {
-                        size_type vid_adj_begin = _idx(vid);
-                        size_type vid_adj_end   = _idx(vid + 1);
+                        const size_type vid_adj_begin = _idx(vid);
+                        const size_type vid_adj_end   = _idx(vid + 1);
 
                         bool foundColor = false;
                         for(color_t offset = 0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
@@ -1059,9 +1058,9 @@ class GraphColorD2
                             // Loop over distance-1 neighbors of vid
                             for(size_type vid_adj = vid_adj_begin; !break_out && vid_adj < vid_adj_end; ++vid_adj)
                             {
-                                const nnz_lno_t vid_d1     = _adj(vid_adj);
-                                size_type vid_d1_adj_begin = _t_idx(vid_d1);
-                                size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
+                                const nnz_lno_t vid_d1           = _adj(vid_adj);
+                                const size_type vid_d1_adj_begin = _t_idx(vid_d1);
+                                const size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
 
                                 // Loop over distance-2 neighbors of vid
                                 for(size_type vid_d1_adj = vid_d1_adj_begin; !break_out && vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj)
@@ -1071,8 +1070,8 @@ class GraphColorD2
                                     // Ignore Distance-2 Self Loops
                                     if(vid_d2 != vid && vid_d2 < nv)
                                     {
-                                        color_t color        = _colors(vid_d2);
-                                        color_t color_offset = color - offset;
+                                        const color_t color        = _colors(vid_d2);
+                                        const color_t color_offset = color - offset;
 
                                         // if color is within the current range, or if its color is in a previously traversed
                                         // range
@@ -1095,19 +1094,20 @@ class GraphColorD2
                                                 {
                                                     break_out = true;
                                                 }
-                                            }
-                                        }
-                                    }      // if vid_d2...
-                                }          // for vid_d1_adj...
-                            }              // for vid_adj...
+                                            }      // if color > offset ...
+                                        }          // if color && color_offset ...
+                                    }              // if vid_d2 ...
+                                }                  // for vid_d1_adj ...
+                            }                      // for vid_adj ...
                             forbidden = ~(forbidden);
 
                             // check if an available color exists.
                             if(forbidden)
                             {
+                                color_t val = 1;
+
                                 // if there is an available color, choose the first color, using 2s complement.
                                 bit_64_forbidden_t new_color = forbidden & (-forbidden);
-                                color_t val                  = 1;
 
                                 // convert it back to decimal color.
                                 while((new_color & 1) == 0)
@@ -1470,8 +1470,7 @@ class GraphColorD2
         {
             nnz_lno_t chunk_id = thread.league_rank() * thread.team_size() + thread.team_rank();
 
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk)
-            {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, _chunkSize), [&](const nnz_lno_t ichunk) {
                 if(chunk_id * _chunkSize + ichunk < _vertexListLength)
                 {
                     const nnz_lno_t vid = _vertexList(chunk_id * _chunkSize + ichunk);
@@ -1487,13 +1486,11 @@ class GraphColorD2
                         //   atomics will be necessary for updating this.
                         bool forbidden[VB_D2_COLORING_FORBIDDEN_SIZE];      // Forbidden Colors
 
-                        // Do multiple passes if the array is too small.
-                        // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
-                        color_t offset = 0;
-
-                        while(!foundColor && offset < nv)
+                        // Do multiple passes if we fill the current range of possible colors
+                        // * TODO: Determine if we can cap this at something smaller than nv, or if it matters.
+                        for(color_t offset=0; !foundColor && offset < nv; offset += VB_D2_COLORING_FORBIDDEN_SIZE)
                         {
-                            // initialize
+                            // initialize the forbidden array to { false }
                             for(int j = 0; j < VB_D2_COLORING_FORBIDDEN_SIZE; j++) { forbidden[j] = false; }
 
                             // If the offset is 0 then we're looking at colors 0..63, but color 0 is reserved for
@@ -1523,9 +1520,9 @@ class GraphColorD2
                                         {
                                             forbidden[c - offset] = true;
                                         }
-                                    }
-                                }
-                            }
+                                    }      // if vid_d2 != vid ...
+                                }          // for vid_d2_adj ...
+                            }              // for vid_d1_adj ...
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
@@ -1536,12 +1533,11 @@ class GraphColorD2
                                     foundColor   = true;
                                     break;
                                 }
-                            }      // for c...
-                            offset += VB_D2_COLORING_FORBIDDEN_SIZE;
-                        }      // while(!foundColor)
+                            }      // for c=0 ...
+                        }      // for offset=0 ...
                     }          // if _colors(vid) <= 0 ...
-                }              // if chunk_id*...
-            });                // for ichunk...
+                }              // if chunk_id* ...
+            });                // for ichunk ...
         }                      // operator() (end)
     };                         // struct functorGreedyColorVBTP (end)
 
@@ -2081,8 +2077,8 @@ class GraphColorD2
         void operator()(const nnz_lno_t vid_, nnz_lno_t &numConflicts) const
         {
             typedef typename std::remove_reference<decltype(_recolorListLength())>::type atomic_incr_type;
-            const nnz_lno_t vid = _vertexList(vid_);
-            color_t my_color    = _colors(vid);
+            const nnz_lno_t vid    = _vertexList(vid_);
+            const color_t my_color = _colors(vid);
 
             size_type vid_d1_adj           = _idx(vid);
             const size_type vid_d1_adj_end = _idx(vid + 1);
@@ -2110,11 +2106,11 @@ class GraphColorD2
                             break_out = true;
                             // break;      // Can exit if vertex gets marked as a conflict.
                         }
-                    }
-                }
-            }
-        }
-    };      // struct functorFindConflicts_Atomic (end)
+                    }      // if vid != vid_d2 ...
+                }          // for vid_d2_adj ...
+            }              // for vid_d1_adj ...
+        }                  // operator() (end)
+    };                     // struct functorFindConflicts_Atomic (end)
 
 
 
@@ -2202,6 +2198,7 @@ class GraphColorD2
                                 {
                                     has_invalid_color = true;
                                     break_out         = true;
+                                    std::cout << ">>> Invalid color match: " << vid << ", " << vid_d2 << " both have color " << color_vid << std::endl;
                                 }
                             }
                         }
