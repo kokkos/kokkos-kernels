@@ -65,7 +65,8 @@ namespace Impl{
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
 template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
-class GraphColor {
+class GraphColor
+{
 public:
 
   typedef lno_row_view_t_ in_lno_row_view_t;
@@ -723,6 +724,8 @@ public:
 
 };
 
+
+
 /*! \brief Class for the vertex based graph coloring algorithms.
  *  They work better on CPUs and Xeon Phis, but edge-based ones are better on GPUs.
  *  Includes 3 algorithms:
@@ -767,8 +770,6 @@ public:
 
   typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
   typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
-
-
 
   typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
 
@@ -932,7 +933,11 @@ public:
 
 
     double t, total=0.0;
+    double total_time_greedy_phase=0.0;
+    double total_time_find_conflicts=0.0;
+    double total_time_serial_conflict_resolution=0.0;
     Kokkos::Impl::Timer timer;
+    timer.reset();
 
 
     int iter=0;
@@ -967,6 +972,7 @@ public:
       if (this->_ticToc){
         t = timer.seconds();
         total += t;
+        total_time_greedy_phase += t;
         std::cout << "\tTime speculative greedy phase " << iter << " : " << t << std::endl;
         timer.reset();
       }
@@ -997,6 +1003,7 @@ public:
       if (_ticToc){
         t = timer.seconds();
         total += t;
+        total_time_find_conflicts += t;
         std::cout << "\tTime conflict detection " << iter << " : " << t << std::endl;
         timer.reset();
       }
@@ -1045,10 +1052,15 @@ public:
     	if (_ticToc){
     		t = timer.seconds();
     		total += t;
+        total_time_serial_conflict_resolution += t;
     		std::cout << "\tTime serial conflict resolution: " << t << std::endl;
     	}
     }
     num_loops = iter;
+
+    this->cp->add_to_overall_coloring_time_phase1(total_time_greedy_phase);
+    this->cp->add_to_overall_coloring_time_phase2(total_time_find_conflicts);
+    this->cp->add_to_overall_coloring_time_phase3(total_time_serial_conflict_resolution);
   }    // color_graph (end)
 
 
@@ -2459,7 +2471,7 @@ public:
   virtual void color_graph(color_view_type kok_colors, int &num_loops ){
 
 
-//    std::cout << ">>> WCMCLEN GraphColor_EB::color_graph()" << std::endl;
+    std::cout << ">>> GraphColor_EB::color_graph()" << std::endl;  // WCMCLEN
 
     //get EB parameters
     color_t numInitialColors = this->cp->get_eb_num_initial_colors();
@@ -2711,7 +2723,7 @@ public:
     if (tictoc){
       delete timer;
     }
-  }
+  }       // color_graph (end)
 
 
   /*! \brief Functor to initialize the colors of the vertices randomly,
