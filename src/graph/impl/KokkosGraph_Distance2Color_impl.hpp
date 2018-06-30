@@ -69,10 +69,10 @@ namespace Impl {
 
 
 /*!
- *  \brief Base class for graph coloring purposes.
- *  Each color represents the set of the vertices that are independent,
- *  e.g. no vertex having same color shares an edge.
- *  General aim is to find the minimum number of colors, minimum number of independent sets.
+ * \brief Distance-2 Graph Coloring class
+ *
+ * This class supports direct methods for distance-2 graph coloring.
+ *
  */
 template<typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_>
 class GraphColorD2
@@ -116,8 +116,8 @@ class GraphColorD2
 
     typedef long long int bit_64_forbidden_t;
 
-
   protected:
+
     nnz_lno_t nv;                      // num vertices
     nnz_lno_t nr;                      // num_rows  (# verts)
     nnz_lno_t nc;                      // num cols
@@ -130,6 +130,7 @@ class GraphColorD2
     typename HandleType::GraphColoringHandleType *gc_handle;      // pointer to the graph coloring handle
 
   private:
+
     int _chunkSize;      // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
     int _max_num_iterations;
     char _conflictList;                  // 0: none, 1: atomic (default), 2: parallel prefix sums (0, 2 not implemented)
@@ -137,6 +138,7 @@ class GraphColorD2
     bool _ticToc;                        // if true print info in each step
 
   public:
+
     /**
      * \brief GraphColor constructor.
      * \param nv_: number of vertices in the graph
