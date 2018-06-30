@@ -1087,7 +1087,7 @@ private:
 
     //if the algorithm VBBIT
     if (this->_use_color_set == 2) {
-      std::cout << ">>> functorGreedyColor_IMPLOG" << std::endl;
+      //std::cout << ">>> functorGreedyColor_IMPLOG" << std::endl;    // WCMCLEN
       functorGreedyColor_IMPLOG gc(
           this->nv,
           xadj_, adj_,
@@ -1099,7 +1099,7 @@ private:
     }
     // VBCS algorithm
     else if (this->_use_color_set == 1){
-      std::cout << ">>> functorGreedyColor_IMP" << std::endl;
+      //std::cout << ">>> functorGreedyColor_IMP" << std::endl;    // WCMCLEN
       functorGreedyColor_IMP gc(
           this->nv,
           xadj_, adj_,
@@ -1112,7 +1112,7 @@ private:
     //VB algorithm
     else if (this->_use_color_set == 0)
     {
-      std::cout << ">>> functorGreedyColor" << std::endl;
+      //std::cout << ">>> functorGreedyColor" << std::endl;    // WCMCLEN
       functorGreedyColor  gc(
           this->nv,
           xadj_, adj_,
@@ -1150,7 +1150,7 @@ private:
     if (this->_use_color_set == 2) {
 
       //If edge filtering is applied
-      std::cout << ">>> functorGreedyColor_IMPLOG_EF" << std::endl;
+      //std::cout << ">>> functorGreedyColor_IMPLOG_EF" << std::endl;  // WCMCLEN
       functorGreedyColor_IMPLOG_EF gc(
           this->nv,
           xadj_, adj_,
@@ -1163,7 +1163,7 @@ private:
     }
     // VBCS algorithm
     else if (this->_use_color_set == 1){
-      std::cout << ">>> functorGreedyColor_IMP_EF" << std::endl;
+      //std::cout << ">>> functorGreedyColor_IMP_EF" << std::endl;    // WCMCLEN
       functorGreedyColor_IMP_EF gc(
           this->nv,
           xadj_, adj_,
@@ -1175,7 +1175,7 @@ private:
     //VB algorithm
     else if (this->_use_color_set == 0)
     {
-      std::cout << ">>> functorGreedyColor_EF" << std::endl;
+      //std::cout << ">>> functorGreedyColor_EF" << std::endl;    // WCMCLEN
       functorGreedyColor_EF  gc(
           this->nv,
           xadj_, adj_,
@@ -2470,8 +2470,7 @@ public:
    */
   virtual void color_graph(color_view_type kok_colors, int &num_loops ){
 
-
-    std::cout << ">>> GraphColor_EB::color_graph()" << std::endl;  // WCMCLEN
+    //std::cout << ">>> GraphColor_EB::color_graph()" << std::endl;  // WCMCLEN
 
     //get EB parameters
     color_t numInitialColors = this->cp->get_eb_num_initial_colors();

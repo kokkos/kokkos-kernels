@@ -469,12 +469,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     double total_time_matrix_squared    = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase4();
     double total_time_matrix_squared_d1 = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase5();
 
-    double avg_time                   = total_time / repeat;
-    double avg_time_color_greedy      = total_time_color_greedy / repeat;
-    double avg_time_find_conflicts    = total_time_find_conflicts / repeat;
-    double avg_time_resolve_conflicts = total_time_resolve_conflicts / repeat;
+    double avg_time                   = total_time / (double)repeat;
+    double avg_time_color_greedy      = total_time_color_greedy / (double)repeat;
+    double avg_time_find_conflicts    = total_time_find_conflicts / (double)repeat;
+    double avg_time_resolve_conflicts = total_time_resolve_conflicts / (double)repeat;
     double avg_colors                 = total_colors / (double)repeat;
     double avg_phases                 = total_phases / (double)repeat;
+    double avg_time_matrix_squared    = total_time_matrix_squared / (double)repeat;
+    double avg_time_matrix_squared_d1 = total_time_matrix_squared_d1 / (double)repeat;
 
     std::string a_mtx_bin_file = params.a_mtx_bin_file;
     a_mtx_bin_file             = a_mtx_bin_file.substr(a_mtx_bin_file.find_last_of("/\\") + 1);
@@ -501,6 +503,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         all_results_valid_str = "FAILED";
 
     std::cout << "Summary" << std::endl
+              << "-------" << std::endl
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
               << "    Filename       : " << a_mtx_bin_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
@@ -515,8 +518,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "    Avg Time FC    : " << avg_time_find_conflicts << std::endl
               << "    Avg Time RC    : " << avg_time_resolve_conflicts << std::endl
               << "Matrix-Squared + D1 Stats" << std::endl
-              << "    Avg Time to M^2: " << std::endl
-              << "    Avg Time to D1 : " << std::endl
+              << "    Avg Time to M^2: " << avg_time_matrix_squared << std::endl
+              << "    Avg Time to D1 : " << avg_time_matrix_squared_d1 << std::endl
               << "Coloring Stats" << std::endl
               << "    Avg colors     : " << avg_colors << std::endl
               << "    Avg Phases     : " << avg_phases << std::endl
