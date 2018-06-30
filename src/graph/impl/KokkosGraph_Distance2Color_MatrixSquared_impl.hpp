@@ -191,6 +191,7 @@ class GraphColorD2_MatrixSquared
         {
             time = timer.seconds();
             std::cout << "\tTime Phase Square Matrix : " << time << std::endl << std::endl;
+            this->cp->get_graph_coloring_handle()->add_to_overall_coloring_time_phase4(time);
             timer.reset();
         }
 
@@ -205,6 +206,7 @@ class GraphColorD2_MatrixSquared
         {
             time = timer.seconds();
             std::cout << "\tTime Phase Graph Coloring : " << time << std::endl << std::endl;
+            this->cp->get_graph_coloring_handle()->add_to_overall_coloring_time_phase5(time);
             timer.reset();
         }
 

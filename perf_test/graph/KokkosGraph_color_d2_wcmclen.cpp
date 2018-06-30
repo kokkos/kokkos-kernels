@@ -44,6 +44,7 @@
 // EXERCISE 1 Goal:
 //   Use Kokkos to parallelize the outer loop of <y,Ax> using Kokkos::parallel_reduce.
 #include <stdlib.h>
+#include <string>
 #include <unistd.h>
 
 #include <iostream>
@@ -386,6 +387,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     std::cout << ">>> Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
 
+    // If any of the runs have an invalid result, this will be set to false.
+    bool all_results_valid = true;
+
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
@@ -436,6 +440,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         }
         else
         {
+            all_results_valid = false;
             std::cout << std::endl
                       << ">>> Distance-2 Graph Coloring is NOT VALID" << std::endl
                       << "    - Vert(s) left uncolored : " << d2_coloring_validation_flags[1] << std::endl
@@ -461,6 +466,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     double total_time_color_greedy      = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
     double total_time_find_conflicts    = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase2();
     double total_time_resolve_conflicts = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase3();
+    double total_time_matrix_squared    = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase4();
+    double total_time_matrix_squared_d1 = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase5();
 
     double avg_time                   = total_time / repeat;
     double avg_time_color_greedy      = total_time_color_greedy / repeat;
@@ -489,21 +496,31 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         perror("getlogin_r");
     }
 
+    std::string all_results_valid_str = "PASSED";
+    if(!all_results_valid)
+        all_results_valid_str = "FAILED";
 
-    std::cout << "Summary:" << std::endl
-              << "  KExecSName  : " << Kokkos::DefaultExecutionSpace::name() << std::endl
-              << "  Filename    : " << a_mtx_bin_file << std::endl
-              << "  Num Verts   : " << crsGraph.numRows() << std::endl
-              << "  Num Edges   : " << crsGraph.entries.dimension_0() << std::endl
-              << "  Concurrency : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
-              << "  Algorithm   : " << label_algorithm << std::endl
-              << "  Total Time  : " << total_time << std::endl
-              << "  Avg Time    : " << avg_time << std::endl
-              << "  Avg Time CG : " << avg_time_color_greedy << std::endl
-              << "  Avg Time FC : " << avg_time_find_conflicts << std::endl
-              << "  Avg Time RC : " << avg_time_resolve_conflicts << std::endl
-              << "  Avg colors  : " << avg_colors << std::endl
-              << "  Avg Phases  : " << avg_phases << std::endl
+    std::cout << "Summary" << std::endl
+              << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
+              << "    Filename       : " << a_mtx_bin_file << std::endl
+              << "    Num Verts      : " << crsGraph.numRows() << std::endl
+              << "    Num Edges      : " << crsGraph.entries.dimension_0() << std::endl
+              << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
+              << "    Algorithm      : " << label_algorithm << std::endl
+              << "Overall Time/Stats" << std::endl
+              << "    Total Time     : " << total_time << std::endl
+              << "    Avg Time       : " << avg_time << std::endl
+              << "VB Distance[1|2] Stats " << std::endl
+              << "    Avg Time CG    : " << avg_time_color_greedy << std::endl
+              << "    Avg Time FC    : " << avg_time_find_conflicts << std::endl
+              << "    Avg Time RC    : " << avg_time_resolve_conflicts << std::endl
+              << "Matrix-Squared + D1 Stats" << std::endl
+              << "    Avg Time to M^2: " << std::endl
+              << "    Avg Time to D1 : " << std::endl
+              << "Coloring Stats" << std::endl
+              << "    Avg colors     : " << avg_colors << std::endl
+              << "    Avg Phases     : " << avg_phases << std::endl
+              << "    Validation     : " << all_results_valid_str << std::endl
               << std::endl;
 
     std::cout << "CSVHDR"
@@ -512,15 +529,18 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
-              << "," << "Concurrency"
               << "," << "Algorithm"
+              << "," << "Concurrency"
               << "," << "Repetitions"
               << "," << "Total Time"
+              << "," << "Total Time to M^2"
+              << "," << "Total Time D1(M^2)"
               << "," << "Total Time CG"
               << "," << "Total Time FC"
               << "," << "Total Time RC"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
+              << "," << "Validation"
               << std::endl;
 
     std::cout << "CSVDATA"
@@ -529,15 +549,18 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
-              << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << "," << label_algorithm
+              << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << "," << repeat
               << "," << total_time
+              << "," << total_time_matrix_squared
+              << "," << total_time_matrix_squared_d1
               << "," << total_time_color_greedy
               << "," << total_time_find_conflicts
               << "," << total_time_resolve_conflicts
               << "," << avg_colors
               << "," << avg_phases
+              << "," << all_results_valid_str
               << std::endl;
 
     // Kokkos::print_configuration(std::cout);
