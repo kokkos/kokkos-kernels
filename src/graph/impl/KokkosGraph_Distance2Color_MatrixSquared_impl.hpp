@@ -61,10 +61,6 @@ namespace KokkosGraph {
 
 namespace Impl {
 
-#define VB_D2_COLORING_FORBIDDEN_SIZE 64
-// #define VB_D2_COLORING_FORBIDDEN_SIZE 20000
-
-
 
 /*! \brief Base class for graph coloring purposes.
  *  Each color represents the set of the vertices that are independent,

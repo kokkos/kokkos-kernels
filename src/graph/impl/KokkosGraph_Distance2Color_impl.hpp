@@ -62,11 +62,8 @@ namespace KokkosGraph {
 
 namespace Impl {
 
-#define VB_D2_COLORING_FORBIDDEN_SIZE 64
+#define VB_D2_COLORING_FORBIDDEN_SIZE    64
 #define VBBIT_D2_COLORING_FORBIDDEN_SIZE 64
-// #define VB_D2_COLORING_FORBIDDEN_SIZE 20000
-
-
 
 /*!
  * \brief Distance-2 Graph Coloring class
@@ -920,7 +917,7 @@ class GraphColorD2
                 {
                     const nnz_lno_t vid = _vertexList(vid_ * _chunkSize + ichunk);
 
-                    // Already colored this vertex.
+                    // If vertex is not already colored...
                     if(_colors(vid) <= 0)
                     {
                         bool foundColor = false;      // Have we found a valid color?
@@ -971,8 +968,8 @@ class GraphColorD2
                                             forbidden[c - offset] = true;
                                         }
                                     }
-                                }
-                            }
+                                }      // for vid_d1_adj...
+                            }          // for vid_adj...
 
                             // color vertex i with smallest available color (firstFit)
                             for(int c = 0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)

@@ -54,7 +54,6 @@ namespace KokkosGraph{
 namespace Experimental{
 
 
-
 /**
  *  Distance 2 Graph Coloring
  */
