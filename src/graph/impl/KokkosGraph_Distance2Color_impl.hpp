@@ -49,6 +49,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_UnorderedMap.hpp>
 
 #include "KokkosGraph_GraphColor.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"
@@ -254,11 +255,17 @@ class GraphColorD2
                 // - This is required for edge-filtering passes to avoid
                 //   side effects since edge filtering modifies the adj array.
                 nnz_lno_temp_work_view_t adj_copy;
-
                 adj_copy = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
                 Kokkos::deep_copy(adj_copy, this->adj);
 
-                this->colorGreedyEF(this->xadj, adj_copy, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
+                non_const_clno_nnz_view_t t_adj_copy;
+                t_adj_copy = non_const_clno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("t_adj copy"), this->ne);
+                Kokkos::deep_copy(t_adj_copy, this->t_adj);
+
+                //prettyPrint1DView(t_adj_copy, "t_adj_copy", 100);
+                //prettyPrint1DView(t_adj, "t_adj", 100);
+
+                this->colorGreedyEF(this->xadj, adj_copy, this->t_xadj, t_adj_copy, colors_out, current_vertexList, current_vertexListLength);
             }
             else
             {
@@ -627,7 +634,7 @@ class GraphColorD2
     void colorGreedyEF(const_lno_row_view_t xadj_,
                        nnz_lno_temp_work_view_t adj_copy_,
                        const_clno_row_view_t t_xadj_,
-                       const_clno_nnz_view_t t_adj_,
+                       non_const_clno_nnz_view_t t_adj_copy_,
                        color_view_type vertex_colors_,
                        nnz_lno_temp_work_view_t current_vertexList_,
                        nnz_lno_t current_vertexListLength_)
@@ -652,7 +659,7 @@ class GraphColorD2
             // 5. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VB_BIT_EF:
             {
-                functorGreedyColorVB_BIT_EF gc(this->nv, xadj_, adj_copy_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
+                functorGreedyColorVB_BIT_EF gc(this->nv, xadj_, adj_copy_, t_xadj_, t_adj_copy_, vertex_colors_, current_vertexList_, current_vertexListLength_, chunkSize_);
                 Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, num_chunks), gc);
                 //prettyPrint1DView(vertex_colors_, "COLORS_GC_VB_BIT",500);
             }
@@ -1276,9 +1283,9 @@ class GraphColorD2
     {
         nnz_lno_t nv;                              // num vertices
         const_lno_row_view_t _idx;                 // vertex degree list
-        nnz_lno_temp_work_view_t _adj;             // vertex adjacency list
+        nnz_lno_temp_work_view_t _adj;             // vertex adjacency list  (mutable)
         const_clno_row_view_t _t_idx;              // transpose vertex degree list
-        const_clno_nnz_view_t _t_adj;              // transpose vertex adjacency list
+        non_const_clno_nnz_view_t _t_adj;          // transpose vertex adjacency list (mutable)
         color_view_type _colors;                   // vertex colors
         nnz_lno_temp_work_view_t _vertexList;      //
         nnz_lno_t _vertexListLength;               //
@@ -1288,7 +1295,7 @@ class GraphColorD2
                                     const_lno_row_view_t xadj_,
                                     nnz_lno_temp_work_view_t adj_,
                                     const_clno_row_view_t t_xadj_,
-                                    const_clno_nnz_view_t t_adj_,
+                                    non_const_clno_nnz_view_t t_adj_,
                                     color_view_type colors,
                                     nnz_lno_temp_work_view_t vertexList,
                                     nnz_lno_t vertexListLength,
@@ -1310,6 +1317,8 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t vid_) const
         {
+//            typedef typename Kokkos::UnorderedMap<nnz_lno_t, size_type*> unordered_map_t;
+
             nnz_lno_t vid = 0;
             for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
             {
@@ -1317,11 +1326,14 @@ class GraphColorD2
                 {
                     vid = _vertexList(vid_ * _chunkSize + ichunk);
 
-                    // If vertex is not colored yet...
+                    // If vertex is not colored yet..
                     if(_colors(vid) == 0)
                     {
                         size_type vid_adj_begin = _idx(vid);
                         size_type vid_adj_end   = _idx(vid + 1);
+//                        size_type degree_vid    = vid_adj_end - vid_adj_begin;
+
+//                        unordered_map_t map(degree_vid);
 
                         bool foundColor = false;
                         for(color_t offset = 0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
@@ -1340,6 +1352,14 @@ class GraphColorD2
 
                                 size_type vid_d1_adj_begin = _t_idx(vid_d1);
                                 size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
+                                //size_type degree_vid_d1    = vid_d1_adj_end - vid_d1_adj_begin;
+
+//                                if( !map.exists(vid_d1) )
+//                                {
+//                                    size_type color_flags[2] = {0};
+//                                    Kokkos::View<size_type*> color_flags("color_flags", 2);
+//                                      map.insert(vid_d1, &color_flags);
+//                                }
 
                                 // Store the maximum color value found in the vertices adjacent to vid_d1
                                 color_t max_color_adj_to_d1 = 0;
@@ -1362,6 +1382,18 @@ class GraphColorD2
                                         // range
                                         if(color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                                         {
+                                            // If vid_d2 is already colored and it's within the current range or a previously
+                                            // traversed range we can 'filter' it out so it won't participate
+                                            // in higher offset value visits.
+                                            // todo: can we extend this to allow other vid's on the same thread to also
+                                            // todo: filter out paths vid -> d1 -> d2 if d2 is known to be colored?
+                                            if(vid_d1_adj > vid_d1_adj_begin)
+                                            {
+                                                _t_adj(vid_d1_adj) = _t_adj(vid_d1_adj_begin);
+                                                _t_adj(vid_d1_adj_begin) = vid_d2;
+                                            }
+                                            vid_d1_adj_begin++;
+
                                             // if it is in the current range, then add the color to the banned colors
                                             if(color > offset)
                                             {
@@ -1383,19 +1415,6 @@ class GraphColorD2
                                         }      // if color && color_offset
                                     }          // if vid_d2 != vid ...
                                 }              // for vid_d1_adj ...
-
-                                // If we know that the all neighbors of vid_d1 are colored and they are
-                                // in the current range or smaller then we can filter out the edge vid -> vid_d1
-                                // from future iterations.
-                                if(offset_colors_full && max_color_adj_to_d1 <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
-                                {
-                                    if(vid_adj > vid_adj_begin)
-                                    {
-                                        _adj(vid_adj)       = _adj(vid_adj_begin);
-                                        _adj(vid_adj_begin) = vid_d1;
-                                    }
-                                    vid_adj_begin++;
-                                }
                             }      // for vid_adj
                             forbidden = ~(forbidden);
 
