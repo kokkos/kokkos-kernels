@@ -2500,7 +2500,7 @@ public:
       = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), numVertices);
     typedef typename Kokkos::Experimental::Max<size_type, MyExecSpace> maxScoreReducerType;
     maxScoreReducerType maxScoreReducer(maxColors);
-    functorScoreCalculation<nnz_lno_persistent_work_view_t, size_type, MyExecSpace> scoreCalculation(score, myXadj);
+    functorScoreCalculation<size_type, MyExecSpace> scoreCalculation(score, myXadj);
     Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", my_exec_space(0, numVertices),
                             scoreCalculation, maxScoreReducer);
 
@@ -2570,13 +2570,13 @@ public:
   } // color_graph()
 
 
-  template <class score_type, class max_type, class execution_space>
+  template <class max_type, class execution_space>
   struct functorScoreCalculation {
     typedef typename Kokkos::Experimental::Max<max_type, execution_space>::value_type valueType;
-    score_type score_;
+    nnz_lno_persistent_work_view_t score_;
     const_lno_row_view_t numNeighbors_;
 
-    functorScoreCalculation(score_type score, const_lno_row_view_t numNeighbors)
+    functorScoreCalculation(nnz_lno_persistent_work_view_t score, const_lno_row_view_t numNeighbors)
       : score_(score), numNeighbors_(numNeighbors) {}
 
     KOKKOS_INLINE_FUNCTION
@@ -2610,14 +2610,14 @@ public:
     nnz_lno_temp_work_view_t newFrontier_;
     Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize_;
 
-    functorInitialDependency(const_lno_row_view_t xadj,
-                             const_lno_nnz_view_t adj,
+    functorInitialDependency(const_lno_row_view_t rowPtr,
+                             const_lno_nnz_view_t colInd,
                              nnz_lno_persistent_work_view_t score,
                              nnz_lno_persistent_work_view_t dependency,
                              nnz_lno_temp_work_view_t newFrontier,
                              Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize)
-      : xadj_(xadj), adj_(adj), score_(score), dependency_(dependency), newFrontier_(newFrontier),
-      newFrontierSize_(newFrontierSize) {}
+      : xadj_(rowPtr), adj_(colInd), score_(score), dependency_(dependency),
+        newFrontier_(newFrontier), newFrontierSize_(newFrontierSize) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const int node) const {
@@ -2652,8 +2652,8 @@ public:
     size_type maxColors_;
     color_view_type colors_;
 
-    functorDeterministicColoring(const_lno_row_view_t xadj,
-                                 const_lno_nnz_view_t adj,
+    functorDeterministicColoring(const_lno_row_view_t rowPtr,
+                                 const_lno_nnz_view_t colInd,
                                  nnz_lno_persistent_work_view_t dependency,
                                  nnz_lno_temp_work_view_t frontier,
                                  Kokkos::View<size_type, MyTempMemorySpace> frontierSize,
@@ -2661,7 +2661,7 @@ public:
                                  Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize,
                                  size_type maxColors,
                                  color_view_type colors)
-      : xadj_(xadj), adj_(adj), dependency_(dependency), frontier_(frontier),
+      : xadj_(rowPtr), adj_(colInd), dependency_(dependency), frontier_(frontier),
       frontierSize_(frontierSize), newFrontier_(newFrontier), newFrontierSize_(newFrontierSize),
       maxColors_(maxColors), colors_(colors) {}
 
@@ -2712,8 +2712,8 @@ public:
     size_type maxColors_;
     color_view_type colors_;
 
-    functorDeterministicColoringBitArray(const_lno_row_view_t xadj,
-                                 const_lno_nnz_view_t adj,
+    functorDeterministicColoringBitArray(const_lno_row_view_t rowPtr,
+                                 const_lno_nnz_view_t colInd,
                                  nnz_lno_persistent_work_view_t dependency,
                                  nnz_lno_temp_work_view_t frontier,
                                  Kokkos::View<size_type, MyTempMemorySpace> frontierSize,
@@ -2721,7 +2721,7 @@ public:
                                  Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize,
                                  size_type maxColors,
                                  color_view_type colors)
-      : xadj_(xadj), adj_(adj), dependency_(dependency), frontier_(frontier),
+    : xadj_(rowPtr), adj_(colInd), dependency_(dependency), frontier_(frontier),
       frontierSize_(frontierSize), newFrontier_(newFrontier), newFrontierSize_(newFrontierSize),
       maxColors_(maxColors), colors_(colors) {}
 
