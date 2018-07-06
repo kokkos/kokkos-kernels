@@ -66,6 +66,8 @@ namespace Impl {
 #define VB_D2_COLORING_FORBIDDEN_SIZE    64
 #define VBBIT_D2_COLORING_FORBIDDEN_SIZE 64
 
+#define WCMCLEN_EXPERIMENTAL  0
+
 /*!
  * \brief Distance-2 Graph Coloring class
  *
@@ -193,12 +195,14 @@ class GraphColorD2
         }
 
         // EXPERIMENTAL Begin
+        #if WCMCLEN_EXPERIMENTAL
         // Compute Distance-2 Degree of the vertices.
         non_const_1d_size_type_view_t degree_d2 = non_const_1d_size_type_view_t("degree d2", this->nv);
         if(using_edge_filtering)
         {
             this->calculate_d2_degree(degree_d2);
         }
+        #endif
         // EXPERIMENTAL End
 
         // Data:
@@ -1420,9 +1424,6 @@ class GraphColorD2
                                     {
                                         color_t color        = _colors(vid_d2);
                                         color_t color_offset = color - offset;          // color_offset < 0 == color is from a previous offset.
-
-                                        if(color_offset < 0)
-                                            std::cout << "[" << std::setw(2) << vid_d2 << "]: color_offset: " << color_offset << std::endl;
 
                                         // Update maximum color adjacent to vid_d1 found so far.
                                         max_color_adj_to_d1 = color > max_color_adj_to_d1 ? color : max_color_adj_to_d1;
