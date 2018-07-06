@@ -111,6 +111,7 @@ class GraphColorD2
     typedef typename team_policy_t::member_type team_member_t;
 
     typedef Kokkos::View<bool*> non_const_1d_bool_view_t;
+    typedef Kokkos::View<size_type *> non_const_1d_size_type_view_t;
 
     typedef long long int bit_64_forbidden_t;
 
@@ -168,6 +169,8 @@ class GraphColorD2
     virtual ~GraphColorD2() {}
 
 
+
+
     // -----------------------------------------------------------------
     //
     // GraphColorD2::execute()
@@ -189,6 +192,14 @@ class GraphColorD2
                 break;
         }
 
+        // EXPERIMENTAL Begin
+        // Compute Distance-2 Degree of the vertices.
+        non_const_1d_size_type_view_t degree_d2 = non_const_1d_size_type_view_t("degree d2", this->nv);
+        if(using_edge_filtering)
+        {
+            this->calculate_d2_degree(degree_d2);
+        }
+        // EXPERIMENTAL End
 
         // Data:
         // gc_handle = graph coloring handle
@@ -450,6 +461,8 @@ class GraphColorD2
 
 
   private:
+
+
     // -----------------------------------------------------------------
     //
     // GraphColorD2::colorGreedy()
@@ -850,6 +863,39 @@ class GraphColorD2
         std::cout << "\t ]" << std::endl;
     }      // prettyPrint1DView (end)
 
+
+    // EXPERIMENTAL -- we might not need this for edge-filtering.
+    void calculate_d2_degree(non_const_1d_size_type_view_t degree_d2)
+    {
+        nnz_lno_t chunk_size = this->_chunkSize;
+        if(nv < 100 * chunk_size)
+            {
+                chunk_size = 1;
+            }
+            const size_t num_chunks = this->nv / chunk_size + 1;
+
+            functorCalculateD2Degree calculateD2Degree(this->nv, this->xadj, this->adj, this->t_xadj, this->t_adj, chunk_size, degree_d2);
+            Kokkos::parallel_for("Compute Degree D2", my_exec_space(0, num_chunks), calculateD2Degree);
+
+            if(_ticToc)
+            {
+                prettyPrint1DView(degree_d2, "Degree D2", 150);
+            }
+
+            size_type degree_d2_max = 0;
+            Kokkos::parallel_reduce("Max D2 Degree", this->nv, KOKKOS_LAMBDA(const int& i, size_type& lmax)
+            {
+                lmax = degree_d2(i) > lmax ? degree_d2(i) : lmax;
+            }, Kokkos::Max<size_type>(degree_d2_max));
+            std::cout << ">>> Max D2 Degree: " << degree_d2_max << std::endl;
+
+            size_type degree_d2_sum = 0;
+            Kokkos::parallel_reduce("Sum D2 Degree", this->nv, KOKKOS_LAMBDA(const int& i, size_type& lsum)
+            {
+                lsum += degree_d2(i);
+            }, Kokkos::Sum<size_type>(degree_d2_sum));
+            std::cout << ">>> D2 Degree Sum: " << degree_d2_sum << std::endl;
+    }
 
 
   public:
@@ -1281,7 +1327,7 @@ class GraphColorD2
      */
     struct functorGreedyColorVB_BIT_EF
     {
-        nnz_lno_t nv;                              // num vertices
+        nnz_lno_t _nv;                              // num vertices
         const_lno_row_view_t _idx;                 // vertex degree list
         nnz_lno_temp_work_view_t _adj;             // vertex adjacency list  (mutable)
         const_clno_row_view_t _t_idx;              // transpose vertex degree list
@@ -1289,19 +1335,19 @@ class GraphColorD2
         color_view_type _colors;                   // vertex colors
         nnz_lno_temp_work_view_t _vertexList;      //
         nnz_lno_t _vertexListLength;               //
-        nnz_lno_t _chunkSize;                      //
+        nnz_lno_t _chunk_size;                     //
 
-        functorGreedyColorVB_BIT_EF(nnz_lno_t nv_,
-                                    const_lno_row_view_t xadj_,
-                                    nnz_lno_temp_work_view_t adj_,
-                                    const_clno_row_view_t t_xadj_,
-                                    non_const_clno_nnz_view_t t_adj_,
+        functorGreedyColorVB_BIT_EF(nnz_lno_t nv,
+                                    const_lno_row_view_t xadj,
+                                    nnz_lno_temp_work_view_t adj,
+                                    const_clno_row_view_t t_xadj,
+                                    non_const_clno_nnz_view_t t_adj,
                                     color_view_type colors,
                                     nnz_lno_temp_work_view_t vertexList,
                                     nnz_lno_t vertexListLength,
-                                    nnz_lno_t chunkSize)
-            : nv(nv_), _idx(xadj_), _adj(adj_), _t_idx(t_xadj_), _t_adj(t_adj_), _colors(colors), _vertexList(vertexList),
-              _vertexListLength(vertexListLength), _chunkSize(chunkSize)
+                                    nnz_lno_t chunk_size)
+            : _nv(nv), _idx(xadj), _adj(adj), _t_idx(t_xadj), _t_adj(t_adj), _colors(colors), _vertexList(vertexList),
+              _vertexListLength(vertexListLength), _chunk_size(chunk_size)
         {
         }
 
@@ -1315,28 +1361,28 @@ class GraphColorD2
         // param: ii = vertex id
         //
         KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t vid_) const
+        void operator()(const nnz_lno_t chunk_idx) const
         {
-//            typedef typename Kokkos::UnorderedMap<nnz_lno_t, size_type*> unordered_map_t;
+            //typedef typename Kokkos::UnorderedMap<nnz_lno_t, size_type*> unordered_map_t;                                         // EXPERIMENTAL
 
-            nnz_lno_t vid = 0;
-            for(nnz_lno_t ichunk = 0; ichunk < _chunkSize; ichunk++)
+            for(nnz_lno_t ichunk = 0; ichunk < _chunk_size; ichunk++)
             {
-                if(vid_ * _chunkSize + ichunk < _vertexListLength)
+                const nnz_lno_t vid_idx = chunk_idx * _chunk_size + ichunk;
+
+                if(vid_idx < _vertexListLength)
                 {
-                    vid = _vertexList(vid_ * _chunkSize + ichunk);
+                    const nnz_lno_t vid = _vertexList(vid_idx);
 
                     // If vertex is not colored yet..
                     if(_colors(vid) == 0)
                     {
                         size_type vid_adj_begin = _idx(vid);
                         size_type vid_adj_end   = _idx(vid + 1);
-//                        size_type degree_vid    = vid_adj_end - vid_adj_begin;
-
-//                        unordered_map_t map(degree_vid);
+                        //size_type degree_vid    = vid_adj_end - vid_adj_begin;                                                    // EXPERIMENTAL
+                        //unordered_map_t map(degree_vid);                                                                          // EXPERIMENTAL
 
                         bool foundColor = false;
-                        for(color_t offset = 0; !foundColor && offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
+                        for(color_t offset = 0; !foundColor && offset <= (_nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                         {
                             // Forbidden colors
                             // - single long int for forbidden colors
@@ -1354,12 +1400,12 @@ class GraphColorD2
                                 size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
                                 //size_type degree_vid_d1    = vid_d1_adj_end - vid_d1_adj_begin;
 
-//                                if( !map.exists(vid_d1) )
-//                                {
-//                                    size_type color_flags[2] = {0};
-//                                    Kokkos::View<size_type*> color_flags("color_flags", 2);
-//                                      map.insert(vid_d1, &color_flags);
-//                                }
+                                //if( !map.exists(vid_d1) )                                                                         // EXPERIMENTAL
+                                //{                                                                                                 // EXPERIMENTAL
+                                //    size_type color_flags[2] = {0};                                                               // EXPERIMENTAL
+                                //    Kokkos::View<size_type*> color_flags("color_flags", 2);                                       // EXPERIMENTAL
+                                //      map.insert(vid_d1, &color_flags);                                                           // EXPERIMENTAL
+                                //}                                                                                                 // EXPERIMENTAL
 
                                 // Store the maximum color value found in the vertices adjacent to vid_d1
                                 color_t max_color_adj_to_d1 = 0;
@@ -1370,10 +1416,13 @@ class GraphColorD2
                                     const nnz_lno_t vid_d2 = _t_adj(vid_d1_adj);
 
                                     // Ignore Distance-2 Self Loops
-                                    if(vid_d2 != vid && vid_d2 < nv)
+                                    if(vid_d2 != vid && vid_d2 < _nv)
                                     {
                                         color_t color        = _colors(vid_d2);
-                                        color_t color_offset = color - offset;
+                                        color_t color_offset = color - offset;          // color_offset < 0 == color is from a previous offset.
+
+                                        if(color_offset < 0)
+                                            std::cout << "[" << std::setw(2) << vid_d2 << "]: color_offset: " << color_offset << std::endl;
 
                                         // Update maximum color adjacent to vid_d1 found so far.
                                         max_color_adj_to_d1 = color > max_color_adj_to_d1 ? color : max_color_adj_to_d1;
@@ -2233,6 +2282,61 @@ class GraphColorD2
                 Kokkos::atomic_fetch_or(&_flags[3], has_color_bigger_than_num_verts);
         }      // operator()
     };         // struct functorGreedyColorVB (end)
+
+
+    // EXPERIMENTAL Begin
+    /**
+     * functorVerifyDistance2Coloring
+     *  - Validate correctness of the distance-2 coloring
+     */
+    struct functorCalculateD2Degree
+    {
+        nnz_lno_t num_verts;                           // num vertices
+        const_lno_row_view_t _idx;                     // vertex degree list
+        const_lno_nnz_view_t _adj;                     // vertex adjacency list
+        const_clno_row_view_t _t_idx;                  // transpose vertex degree list
+        const_clno_nnz_view_t _t_adj;                  // transpose vertex adjacency list
+        nnz_lno_t _chunk_size;                         // Chunksize (threads work on |chunk_size| number of verts in batch.
+        non_const_1d_size_type_view_t _degree_d2;      // Distance-2 Degree (assumes all are initialized to 0)
+
+        functorCalculateD2Degree(nnz_lno_t num_verts,
+                                 const_lno_row_view_t xadj,
+                                 const_lno_nnz_view_t adj,
+                                 const_clno_row_view_t t_xadj,
+                                 const_clno_nnz_view_t t_adj,
+                                 nnz_lno_t chunk_size,
+                                 non_const_1d_size_type_view_t degree_d2)
+            : num_verts(num_verts), _idx(xadj), _adj(adj), _t_idx(t_xadj), _t_adj(t_adj), _chunk_size(chunk_size), _degree_d2(degree_d2)
+        {
+        }
+
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const nnz_lno_t chunk_id) const
+        {
+            // Loop over vertices in chunks
+            for(nnz_lno_t chunk_idx = 0; chunk_idx < _chunk_size; chunk_idx++)
+            {
+                nnz_lno_t vid  = chunk_id * _chunk_size + chunk_idx;
+                if(vid < num_verts)
+                {
+                    const size_type vid_d1_adj_begin = _idx(vid);
+                    const size_type vid_d1_adj_end   = _idx(vid + 1);
+
+                    // Loop over neighbors of vid (distance-1 from vid)
+                    for(size_type vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; ++vid_d1_adj)
+                    {
+                        const nnz_lno_t vid_d1           = _adj(vid_d1_adj);
+                        const size_type vid_d2_adj_begin = _t_idx(vid_d1);
+                        const size_type vid_d2_adj_end   = _t_idx(vid_d1 + 1);
+                        const size_type degree_vid_d1    = vid_d2_adj_end - vid_d2_adj_begin;
+                        _degree_d2(vid) += degree_vid_d1;
+                    }      // for vid_d1_adj ...
+                }          // if vid < nv ...
+            }              // for chunk_idx ...
+        }                  // operator() (end)
+    };                     // struct functorCalculateD2Degree (end)
+    // EXPERIMENTAL End
+
 
 
 
