@@ -248,6 +248,9 @@ elif [ "$MACHINE" = "white" ]; then
   CUDA_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,gcc/5.4.0"
   CUDA_MODULE_LIST2="<COMPILER_NAME>/<COMPILER_VERSION>,gcc/6.3.0,ibm/xl/13.1.6"
 
+  module load netlib
+  export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a"
+
   # Don't do pthread on white.
   GCC_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
 
