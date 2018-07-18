@@ -58,11 +58,11 @@ using namespace KokkosGraph::Experimental;
 
 namespace Test {
 template <typename crsMat_t, typename device>
-int run_graphcolor(
+int run_graphcolor_deter(
     crsMat_t input_mat,
     ColoringAlgorithm coloring_algorithm,
     size_t &num_colors,
-    typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type & vertex_colors){
+    typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type & vertex_colors) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type   lno_nnz_view_t;
@@ -100,7 +100,7 @@ int run_graphcolor(
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
+void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -111,75 +111,80 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
   //typedef typename lno_view_t::non_const_value_type size_type;
 
   lno_t numCols = numRows;
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
-  typename lno_view_t::non_const_type sym_xadj;
-  typename lno_nnz_view_t::non_const_type sym_adj;
+  typename lno_view_t::non_const_type xadj("xadj", numRows + 1);
+  typename lno_view_t::non_const_type::HostMirror h_xadj = Kokkos::create_mirror_view(xadj);
+  typename lno_nnz_view_t::non_const_type adj("adj", nnz);
+  typename lno_nnz_view_t::non_const_type::HostMirror h_adj = Kokkos::create_mirror_view(adj);
 
-  KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<lno_view_t, lno_nnz_view_t,  typename lno_view_t::non_const_type, typename lno_nnz_view_t::non_const_type, device>
-    (numRows, input_mat.graph.row_map, input_mat.graph.entries, sym_xadj, sym_adj);
-  size_type numentries = sym_adj.extent(0);
+  // Fill up the rowPtr array
+  h_xadj(0) = 0;
+  h_xadj(1) = 3; h_xadj(2) = 7; h_xadj(3) = 11; h_xadj(4) = 14; h_xadj(5) = 18; h_xadj(6) = 23;
+  h_xadj(7) = 29; h_xadj(8) = 33; h_xadj(9) = 37; h_xadj(10) = 42; h_xadj(11) = 47; h_xadj(12) = 51;
+  h_xadj(13) = 55; h_xadj(14) = 58; h_xadj(15) = 62; h_xadj(16) = 66; h_xadj(17) = 70; h_xadj(18) = 74;
+  Kokkos::deep_copy(xadj, h_xadj);
+
+  // Fill up the column indices array
+  h_adj(0)  =  0; h_adj(1)  =  1; h_adj(2)  =  4;
+  h_adj(3)  =  0; h_adj(4)  =  1; h_adj(5)  =  2; h_adj(6)  =  5;
+  h_adj(7)  =  1; h_adj(8)  =  2; h_adj(9)  =  3; h_adj(10) =  6;
+  h_adj(11) =  2; h_adj(12) =  3; h_adj(13) =  7;
+  h_adj(14) =  0; h_adj(15) =  4; h_adj(16) =  5; h_adj(17) =  8;
+  h_adj(18) =  1; h_adj(19) =  4; h_adj(20) =  5; h_adj(21) =  6; h_adj(22) =  9;
+  h_adj(23) =  2; h_adj(24) =  5; h_adj(25) =  6; h_adj(26) =  7; h_adj(27) = 10; h_adj(28) = 12;
+  h_adj(29) =  3; h_adj(30) =  6; h_adj(31) =  7; h_adj(32) = 17;
+  h_adj(33) =  4; h_adj(34) =  8; h_adj(35) =  9; h_adj(36) = 13;
+  h_adj(37) =  5; h_adj(38) =  8; h_adj(39) =  9; h_adj(40) = 10; h_adj(41) = 14;
+  h_adj(42) =  6; h_adj(43) =  9; h_adj(44) = 10; h_adj(45) = 11; h_adj(46) = 15;
+  h_adj(47) = 10; h_adj(48) = 11; h_adj(49) = 12; h_adj(50) = 16;
+  h_adj(51) =  6; h_adj(52) = 11; h_adj(53) = 12; h_adj(54) = 17;
+  h_adj(55) =  8; h_adj(56) = 13; h_adj(57) = 14;
+  h_adj(58) =  9; h_adj(59) = 13; h_adj(60) = 14; h_adj(61) = 15;
+  h_adj(62) = 10; h_adj(63) = 14; h_adj(64) = 15; h_adj(65) = 16;
+  h_adj(66) = 11; h_adj(67) = 15; h_adj(68) = 16; h_adj(69) = 17;
+  h_adj(70) =  7; h_adj(71) = 12; h_adj(72) = 16; h_adj(73) = 17;
+  Kokkos::deep_copy(adj, h_adj);
+  
+  size_type numentries = adj.extent(0);
   scalar_view_t newValues("vals", numentries);
 
-  graph_t static_graph (sym_adj, sym_xadj);
-  input_mat = crsMat_t("CrsMatrix", numCols, newValues, static_graph);
+  graph_t static_graph (adj, xadj);
+  crsMat_t input_mat("CrsMatrix", numCols, newValues, static_graph);
 
-  ColoringAlgorithm coloring_algorithms[] = {COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB, COLORING_VBD, COLORING_VBDBIT};
+  ColoringAlgorithm coloring_algorithms[] = {COLORING_VBD, COLORING_VBDBIT};
 
-  for (int ii = 0; ii < 8; ++ii){
+  for (int ii = 0; ii < 2; ++ii){
     ColoringAlgorithm coloring_algorithm = coloring_algorithms[ii];
     color_view_t vector_colors;
     size_t num_colors;
 
 
     Kokkos::Impl::Timer timer1;
-    crsMat_t output_mat;
-    int res = run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
-    //double coloring_time = timer1.seconds();
+    int res = run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     EXPECT_TRUE( (res == 0));
 
+    EXPECT_TRUE( (num_colors == 2));
 
-    const lno_t num_rows_1 = input_mat.numRows();
-    const lno_t num_cols_1 = input_mat.numCols();
-    lno_t num_conflict = KokkosKernels::Impl::kk_is_d1_coloring_valid
-        <lno_view_t,lno_nnz_view_t, color_view_t, typename device::execution_space>
-    (num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, vector_colors);
+    size_type num_conflict = 0;
+    typename color_view_t::HostMirror h_vector_colors = Kokkos::create_mirror_view(vector_colors);
+    Kokkos::deep_copy(h_vector_colors, vector_colors);
+    int exact_colors[18] = {2, 1, 2, 1, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1};
 
-    lno_t conf = 0;
-    {
-      //also check the correctness of the validation code :)
-      typename lno_view_t::HostMirror hrm = Kokkos::create_mirror_view (input_mat.graph.row_map);
-      typename lno_nnz_view_t::HostMirror hentries = Kokkos::create_mirror_view (input_mat.graph.entries);
-      typename color_view_t::HostMirror hcolor = Kokkos::create_mirror_view (vector_colors);
-      Kokkos::deep_copy (hrm , input_mat.graph.row_map);
-      Kokkos::deep_copy (hentries , input_mat.graph.entries);
-      Kokkos::deep_copy (hcolor , vector_colors);
-
-      for (lno_t i = 0; i < num_rows_1; ++i){
-        const size_type b = hrm(i);
-        const size_type e = hrm(i + 1);
-        for (size_type j = b; j < e; ++j){
-          lno_t d = hentries(j);
-          if (i != d){
-            if (hcolor(d) == hcolor(i)){
-              conf++;
-            }
-          }
-        }
-      }
+    for(lno_t vertexIdx = 0; vertexIdx < numRows; ++vertexIdx) {
+      if(h_vector_colors(vertexIdx) != exact_colors[vertexIdx]) {++num_conflict;}
     }
-    EXPECT_TRUE( (num_conflict == conf));
 
     EXPECT_TRUE( (num_conflict == 0));
-  }
   //device::execution_space::finalize();
+
+  }
 
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-TEST_F( TestCategory, graph ## _ ## graph_color ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 200, 10); \
-  test_coloring<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10); \
+TEST_F( TestCategory, graph ## _ ## graph_color_deterministic ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_coloring_deterministic<SCALAR,ORDINAL,OFFSET,DEVICE>(18, 74); \
+  test_coloring_deterministic<SCALAR,ORDINAL,OFFSET,DEVICE>(18, 74); \
 }
 
 #if (defined (KOKKOSKERNELS_INST_ORDINAL_INT) \

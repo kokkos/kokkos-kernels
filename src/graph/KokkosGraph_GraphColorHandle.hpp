@@ -51,11 +51,13 @@
 namespace KokkosGraph {
 
 enum ColoringAlgorithm { COLORING_DEFAULT,
-                         COLORING_SERIAL,
-                         COLORING_VB,
-                         COLORING_VBBIT,
-                         COLORING_VBCS,
-                         COLORING_EB,
+                         COLORING_SERIAL,                     // Serial Greedy Coloring
+                         COLORING_VB,                         // Vertex Based Coloring
+                         COLORING_VBBIT,                      // Vertex Based Coloring with bit array
+                         COLORING_VBCS,                       // Vertex Based Color Set
+                         COLORING_VBD,                        // Vertex Based Deterministic Coloring
+                         COLORING_VBDBIT,                     // Vertex Based Deterministic Coloring with bit array
+                         COLORING_EB,                         // Edge Based Coloring
                          COLORING_SERIAL2,
                          COLORING_SPGEMM,
                          COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring (Brian's Code)
@@ -66,7 +68,7 @@ enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
 enum ColoringType {Distance1, Distance2};
 
-template <class size_type_, class color_t_, class lno_t_, 
+template <class size_type_, class color_t_, class lno_t_,
          //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class GraphColoringHandle
@@ -113,7 +115,7 @@ private:
 
   ColoringType GraphColoringType;
   //Parameters
-  ColoringAlgorithm coloring_algorithm_type; //VB, VBBIT or EB.
+  ColoringAlgorithm coloring_algorithm_type; //VB, VBBIT, VBCS, VBD or EB.
   ConflictList conflict_list_type;  // whether to use a conflict list or not, and
                                     // if using it wheter to create it with atomic or parallel prefix sum.
 
@@ -593,6 +595,8 @@ private:
     case COLORING_VB:
     case COLORING_VBBIT:
     case COLORING_VBCS:
+    case COLORING_VBD:
+    case COLORING_VBDBIT:
     case COLORING_SERIAL:
     case COLORING_SERIAL2:
     case COLORING_SPGEMM:
