@@ -1189,7 +1189,9 @@ class GraphColorD2
      * Two level parallelism
      * - [P] Loop over chunks
      * - [P] Loop over vertices in each chunk
-     * - ...
+     * - [S] Loop over offset range(s)
+     * - [S] Loop over neighbors of vid: vid_d1
+     * - [S] Loop over neighbors of vid_d1: vid_d2
      */
     struct functorGreedyColorVBTP_BIT
     {
@@ -1367,8 +1369,6 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t chunk_idx) const
         {
-            //typedef typename Kokkos::UnorderedMap<nnz_lno_t, size_type*> unordered_map_t;                                         // EXPERIMENTAL
-
             for(nnz_lno_t ichunk = 0; ichunk < _chunk_size; ichunk++)
             {
                 const nnz_lno_t vid_idx = chunk_idx * _chunk_size + ichunk;
@@ -1383,7 +1383,6 @@ class GraphColorD2
                         size_type vid_adj_begin = _idx(vid);
                         size_type vid_adj_end   = _idx(vid + 1);
                         //size_type degree_vid    = vid_adj_end - vid_adj_begin;                                                    // EXPERIMENTAL
-                        //unordered_map_t map(degree_vid);                                                                          // EXPERIMENTAL
 
                         bool foundColor = false;
                         for(color_t offset = 0; !foundColor && offset <= (_nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
@@ -1400,16 +1399,10 @@ class GraphColorD2
                             {
                                 const nnz_lno_t vid_d1 = _adj(vid_adj);
 
-                                size_type vid_d1_adj_begin = _t_idx(vid_d1);
-                                size_type vid_d1_adj_end   = _t_idx(vid_d1 + 1);
-                                //size_type degree_vid_d1    = vid_d1_adj_end - vid_d1_adj_begin;
-
-                                //if( !map.exists(vid_d1) )                                                                         // EXPERIMENTAL
-                                //{                                                                                                 // EXPERIMENTAL
-                                //    size_type color_flags[2] = {0};                                                               // EXPERIMENTAL
-                                //    Kokkos::View<size_type*> color_flags("color_flags", 2);                                       // EXPERIMENTAL
-                                //      map.insert(vid_d1, &color_flags);                                                           // EXPERIMENTAL
-                                //}                                                                                                 // EXPERIMENTAL
+                                size_type vid_d1_adj_begin     = _t_idx(vid_d1);
+                                const size_type vid_d1_adj_end = _t_idx(vid_d1 + 1);
+                                const size_type degree_vid_d1  = vid_d1_adj_end - vid_d1_adj_begin;
+                                size_type num_vid_d2_colored_in_range = 0;
 
                                 // Store the maximum color value found in the vertices adjacent to vid_d1
                                 color_t max_color_adj_to_d1 = 0;
@@ -1423,7 +1416,7 @@ class GraphColorD2
                                     if(vid_d2 != vid && vid_d2 < _nv)
                                     {
                                         color_t color        = _colors(vid_d2);
-                                        color_t color_offset = color - offset;          // color_offset < 0 == color is from a previous offset.
+                                        color_t color_offset = color - offset;          // color_offset < 0 means color is from a previous offset.
 
                                         // Update maximum color adjacent to vid_d1 found so far.
                                         max_color_adj_to_d1 = color > max_color_adj_to_d1 ? color : max_color_adj_to_d1;
@@ -1432,17 +1425,7 @@ class GraphColorD2
                                         // range
                                         if(color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                                         {
-                                            // If vid_d2 is already colored and it's within the current range or a previously
-                                            // traversed range we can 'filter' it out so it won't participate
-                                            // in higher offset value visits.
-                                            // todo: can we extend this to allow other vid's on the same thread to also
-                                            // todo: filter out paths vid -> d1 -> d2 if d2 is known to be colored?
-                                            if(vid_d1_adj > vid_d1_adj_begin)
-                                            {
-                                                _t_adj(vid_d1_adj) = _t_adj(vid_d1_adj_begin);
-                                                _t_adj(vid_d1_adj_begin) = vid_d2;
-                                            }
-                                            vid_d1_adj_begin++;
+                                            num_vid_d2_colored_in_range++;
 
                                             // if it is in the current range, then add the color to the banned colors
                                             if(color > offset)
@@ -1465,6 +1448,19 @@ class GraphColorD2
                                         }      // if color && color_offset
                                     }          // if vid_d2 != vid ...
                                 }              // for vid_d1_adj ...
+
+                                    // Edge filtering on the neighbors of vid.  We can only do this if ALL neighbors of vid_d1
+                                    // have been visited and if they're colored in current offset range or lower.
+                                    if(degree_vid_d1 == num_vid_d2_colored_in_range)
+                                    {
+                                        if(vid_adj_begin > vid_adj)
+                                        {
+                                            _adj(vid_adj) = _adj(vid_adj_begin);
+                                            _adj(vid_adj_begin) = vid_d1;
+                                        }
+                                        vid_adj_begin++;
+                                    }
+
                             }      // for vid_adj
                             forbidden = ~(forbidden);
 

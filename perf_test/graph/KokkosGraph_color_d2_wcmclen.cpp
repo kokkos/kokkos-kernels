@@ -791,7 +791,9 @@ int main(int argc, char *argv[])
     const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
     const int device_id   = 0;
     Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
-    Kokkos::print_configuration(std::cout);
+
+    // Print out verbose information about the configuration of the run.
+    // Kokkos::print_configuration(std::cout);
 
 #if defined(KOKKOS_ENABLE_OPENMP)
     if(params.use_openmp)
