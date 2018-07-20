@@ -1443,6 +1443,8 @@ class GraphColorD2
                                                 if(0 == ~forbidden)
                                                 {
                                                     offset_colors_full = true;
+                                                    // Note: with edge-filtering, this will short-circuit the loop over all
+                                                    //       neighbors of VID and will reduce the number of filtered edges.
                                                 }
                                             }
                                         }      // if color && color_offset
