@@ -44,7 +44,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "KokkosGraph_graph_color.hpp"
+#include "KokkosGraph_GraphColor.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
@@ -144,7 +144,7 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   h_adj(66) = 11; h_adj(67) = 15; h_adj(68) = 16; h_adj(69) = 17;
   h_adj(70) =  7; h_adj(71) = 12; h_adj(72) = 16; h_adj(73) = 17;
   Kokkos::deep_copy(adj, h_adj);
-  
+
   size_type numentries = adj.extent(0);
   scalar_view_t newValues("vals", numentries);
 
