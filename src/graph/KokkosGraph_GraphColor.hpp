@@ -72,6 +72,8 @@ void graph_color_symbolic(
 
   typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
 
+  gch->set_tictoc(handle->get_verbose());
+
   color_view_type colors_out = color_view_type("Graph Colors", num_rows);
 
 
@@ -206,7 +208,7 @@ void d2_graph_color(
     case COLORING_SERIAL2:            // WCMCLEN: for now we don't need to worry about this optimization.
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-      Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> 
+      Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
           gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
       gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
       gch->set_num_phases(num_phases);

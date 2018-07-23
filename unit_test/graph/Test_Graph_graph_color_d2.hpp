@@ -44,7 +44,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "KokkosGraph_graph_color_d2.hpp"
+#include "KokkosGraph_Distance2Color.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
