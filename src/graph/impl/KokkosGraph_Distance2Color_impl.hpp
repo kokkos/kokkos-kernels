@@ -2290,7 +2290,7 @@ class GraphColorD2
      */
     struct functorCalculateD2Degree
     {
-        nnz_lno_t num_verts;                           // num vertices
+        nnz_lno_t _num_verts;                           // num vertices
         const_lno_row_view_t _idx;                     // vertex degree list
         const_lno_nnz_view_t _adj;                     // vertex adjacency list
         const_clno_row_view_t _t_idx;                  // transpose vertex degree list
@@ -2305,7 +2305,7 @@ class GraphColorD2
                                  const_clno_nnz_view_t t_adj,
                                  nnz_lno_t chunk_size,
                                  non_const_1d_size_type_view_t degree_d2)
-            : num_verts(num_verts), _idx(xadj), _adj(adj), _t_idx(t_xadj), _t_adj(t_adj), _chunk_size(chunk_size), _degree_d2(degree_d2)
+            : _num_verts(num_verts), _idx(xadj), _adj(adj), _t_idx(t_xadj), _t_adj(t_adj), _chunk_size(chunk_size), _degree_d2(degree_d2)
         {
         }
 
@@ -2316,7 +2316,7 @@ class GraphColorD2
             for(nnz_lno_t chunk_idx = 0; chunk_idx < _chunk_size; chunk_idx++)
             {
                 nnz_lno_t vid  = chunk_id * _chunk_size + chunk_idx;
-                if(vid < num_verts)
+                if(vid < _num_verts)
                 {
                     const size_type vid_d1_adj_begin = _idx(vid);
                     const size_type vid_d1_adj_end   = _idx(vid + 1);
