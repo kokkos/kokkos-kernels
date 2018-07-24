@@ -1382,7 +1382,6 @@ class GraphColorD2
                     {
                         size_type vid_adj_begin = _idx(vid);
                         size_type vid_adj_end   = _idx(vid + 1);
-                        //size_type degree_vid    = vid_adj_end - vid_adj_begin;                                                    // EXPERIMENTAL
 
                         bool foundColor = false;
                         for(color_t offset = 0; !foundColor && offset <= (_nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE); offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
@@ -1399,9 +1398,9 @@ class GraphColorD2
                             {
                                 const nnz_lno_t vid_d1 = _adj(vid_adj);
 
-                                size_type vid_d1_adj_begin     = _t_idx(vid_d1);
-                                const size_type vid_d1_adj_end = _t_idx(vid_d1 + 1);
-                                const size_type degree_vid_d1  = vid_d1_adj_end - vid_d1_adj_begin;
+                                size_type vid_d1_adj_begin            = _t_idx(vid_d1);
+                                const size_type vid_d1_adj_end        = _t_idx(vid_d1 + 1);
+                                const size_type degree_vid_d1         = vid_d1_adj_end - vid_d1_adj_begin;
                                 size_type num_vid_d2_colored_in_range = 0;
 
                                 // Store the maximum color value found in the vertices adjacent to vid_d1
@@ -1416,7 +1415,7 @@ class GraphColorD2
                                     if(vid_d2 != vid && vid_d2 < _nv)
                                     {
                                         color_t color        = _colors(vid_d2);
-                                        color_t color_offset = color - offset;          // color_offset < 0 means color is from a previous offset.
+                                        color_t color_offset = color - offset;      // color_offset < 0 means color is from a previous offset.
 
                                         // Update maximum color adjacent to vid_d1 found so far.
                                         max_color_adj_to_d1 = color > max_color_adj_to_d1 ? color : max_color_adj_to_d1;
@@ -1443,25 +1442,31 @@ class GraphColorD2
                                                 if(0 == ~forbidden)
                                                 {
                                                     offset_colors_full = true;
-                                                    // Note: with edge-filtering, this will short-circuit the loop over all
+                                                    // Note: with edge-filtering, this can short-circuit the loop over all
                                                     //       neighbors of VID and will reduce the number of filtered edges.
                                                 }
-                                            }
+                                            }  // if color > offset
                                         }      // if color && color_offset
                                     }          // if vid_d2 != vid ...
+                                    else
+                                    {
+                                        // If there's a self-loop then we should increment our 'colored in range' so we don't
+                                        // block filtering since we know there must be a (v2,v1) edge
+                                        num_vid_d2_colored_in_range++;
+                                    }
                                 }              // for vid_d1_adj ...
 
-                                    // Edge filtering on the neighbors of vid.  We can only do this if ALL neighbors of vid_d1
-                                    // have been visited and if they're colored in current offset range or lower.
-                                    if(degree_vid_d1 == num_vid_d2_colored_in_range)
+                                // Edge filtering on the neighbors of vid.  We can only do this if ALL neighbors of vid_d1
+                                // have been visited and if all were colored in current offset range or lower.
+                                if(degree_vid_d1 == num_vid_d2_colored_in_range)
+                                {
+                                    if(vid_adj_begin > vid_adj)
                                     {
-                                        if(vid_adj_begin > vid_adj)
-                                        {
-                                            _adj(vid_adj) = _adj(vid_adj_begin);
-                                            _adj(vid_adj_begin) = vid_d1;
-                                        }
-                                        vid_adj_begin++;
+                                        _adj(vid_adj)       = _adj(vid_adj_begin);
+                                        _adj(vid_adj_begin) = vid_d1;
                                     }
+                                    vid_adj_begin++;
+                                }
 
                             }      // for vid_adj
                             forbidden = ~(forbidden);
