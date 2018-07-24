@@ -517,8 +517,7 @@ class GraphColorD2
                 #if defined(KOKKOS_ENABLE_CUDA)
                 const team_policy_t policy_inst(num_chunks, chunkSize_);
                 #else
-                //const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
-                const team_policy_t policy_inst(num_chunks, chunkSize_);
+                const team_policy_t policy_inst(num_chunks, Kokkos::AUTO);
                 #endif
 
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
@@ -1438,7 +1437,8 @@ class GraphColorD2
                                                 forbidden = forbidden | ban_color_bit;
 
                                                 // if there are no available colors in this range then exit early,
-                                                // no need to traverse the rest.
+                                                // no need to traverse the rest b/c they contribute no new information
+                                                // at this offset.
                                                 if(0 == ~forbidden)
                                                 {
                                                     offset_colors_full = true;
