@@ -51,10 +51,12 @@
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas1_dot.hpp>
 #include <KokkosBlas1_axpby.hpp>
+#include <KokkosBlas1_nrm2.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <complex>
 #include "KokkosSparse_gauss_seidel.hpp"
+#include "KokkosSparse_rcm_impl.hpp"
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
@@ -81,10 +83,8 @@ int run_gauss_seidel_1(
     ){
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
-  typedef typename graph_t::entries_type   lno_nnz_view_t;
+  typedef typename graph_t::entries_type lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-
-
 
   typedef typename lno_view_t::value_type size_type;
   typedef typename lno_nnz_view_t::value_type lno_t;
@@ -248,13 +248,119 @@ void test_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_
   //device::execution_space::finalize();
 }
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
+{
+  using namespace Test;
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename graph_t::row_map_type lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef KokkosKernelsHandle
+      <size_type, lno_t, scalar_t,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+  crsMat_t A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numRows,nnz,row_size_variance, bandwidth);
+  //create a randomized RHS vector (b)
+  scalar_view_t b("b", numRows);
+  {
+    Kokkos::View<scalar_t*, Kokkos::HostSpace> bHost("b (hosts)", numRows);
+    for(lno_t i = 0; i < numRows; i++)
+    {
+      bHost(i) = (double) rand() / RAND_MAX;
+    }
+    Kokkos::deep_copy(b, bHost);
+  }
+  //create solution vector (x), zero initial guess
+  //try a bunch of powers of 2 for cluster sizes, up to about the
+  //point where there are very few clusters (8)
+  std::vector<lno_t> clusterSizes;
+  for(lno_t i = 1; i <= numRows / 8; i <<= 1)
+    clusterSizes.push_back(i);
+  const int niters = 5;
+  for(size_t test = 0; test < clusterSizes.size(); test++)
+  {
+    //starting solution is zero vector
+    scalar_view_t x("x", numRows);
+    auto clusterSize = clusterSizes[test];
+#ifdef CLUSTER_VERBOSE
+    output << "Testing cluster size = " << clusterSize << '\n';
+#endif
+    KernelHandle kh;
+    kh.create_gs_handle(clusterSize);
+    //only need to do G-S setup (symbolic/numeric) once
+    Kokkos::Impl::Timer timer;
+    KokkosSparse::Experimental::gauss_seidel_symbolic<KernelHandle, lno_view_t, lno_nnz_view_t>
+      (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, false);
+    KokkosSparse::Experimental::gauss_seidel_numeric<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t>
+      (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, false);
+#ifdef CLUSTER_VERBOSE
+    output << "Cluster size " << clusterSize << " setup time: " << timer.seconds() << " s\n";
+#endif
+    timer.reset();
+    typedef Kokkos::Details::ArithTraits<scalar_t> KAT;
+    scalar_t alpha = KAT::one();
+    scalar_t beta = -KAT::one();
+    KokkosSparse::Experimental::symmetric_gauss_seidel_apply
+      <KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
+      (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 0.6, niters);
+    scalar_view_t res("Ax-b", numRows);
+    Kokkos::deep_copy(res, b);
+    KokkosSparse::spmv<scalar_t, crsMat_t, scalar_view_t, scalar_t, scalar_view_t>
+      ("N", alpha, A, x, beta, res, KokkosSparse::RANK_ONE());
+#ifdef CLUSTER_VERBOSE
+    double norm = KokkosBlas::nrm2(res);
+    double bnorm = KokkosBlas::nrm2(b);
+    output << "Cluster size " << clusterSize << " apply time: " << timer.seconds() << " s\n";
+    output << "Cluster size " << clusterSize << " norm after " << niters << " sweeps: " << norm << '\n';
+    output << "Cluster size " << clusterSize << " proportion of residual eliminated: " << 1.0 - (norm / bnorm) << std::endl;
+#endif
+  }
+}
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
+{
+  using namespace Test;
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef KokkosKernelsHandle
+      <size_type, lno_t, scalar_t,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+  srand(245);
+  size_type nnzTotal = nnzPerRow * numRows;
+  lno_t nnzVariance = nnzPerRow / 4;
+  crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numRows, nnzTotal, nnzVariance, bandwidth);
+  typedef KokkosSparse::Impl::RCM<KernelHandle, typename graph_t::row_map_type, typename graph_t::entries_type> rcm_t;
+  typename rcm_t::const_lno_row_view_t rowmap = A.graph.row_map;
+  rcm_t rcm(numRows, A.graph.row_map, A.graph.entries);
+  lno_nnz_view_t rcmOrder = rcm.rcm();
+  //perm(i) = the node with timestamp i
+  //make sure that perm is in fact a permutation matrix (contains each row exactly once)
+  Kokkos::View<lno_t*, Kokkos::HostSpace> rcmHost("RCM row ordering", numRows);
+  Kokkos::deep_copy(rcmHost, rcmOrder);
+  std::set<lno_t> rowSet;
+  for(lno_t i = 0; i < numRows; i++)
+    rowSet.insert(rcmHost(i));
+  if((lno_t) rowSet.size() != numRows)
+  {
+    std::cerr << "Only got back " << rowSet.size() << " unique row IDs!\n";
+    return;
+  }
+  //make a new CRS graph based on permuting the rows and columns of mat
+}
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
+} \
+TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
+} \
+TEST_F( TestCategory, sparse ## _ ## cluster_sgs ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_cluster_sgs<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
 }
-
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \

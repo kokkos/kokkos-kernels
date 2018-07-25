@@ -49,6 +49,9 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
+#include "KokkosKernels_BitUtils.hpp"
+#include "KokkosKernels_SimpleUtils.hpp"
+#include "KokkosSparse_rcm_impl.hpp"
 #ifndef _KOKKOSGSIMP_HPP
 #define _KOKKOSGSIMP_HPP
 
@@ -609,6 +612,10 @@ namespace KokkosSparse{
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         Kokkos::Impl::Timer timer;
 #endif
+        auto gsHandler = this->handle->get_gs_handle();
+        typename HandleType::GraphColoringHandleType::color_view_t colors;
+        color_t numColors;
+        if(gsHandler->get_algorithm_type() != GS_CLUSTER)
         {
           if (!is_symmetric){
 
@@ -632,14 +639,34 @@ namespace KokkosSparse{
           else {
             KokkosGraph::Experimental::graph_color_symbolic <HandleType, const_lno_row_view_t, const_lno_nnz_view_t> (this->handle, num_rows, num_rows, xadj , adj);
           }
+          colors =  gchandle->get_vertex_colors();
+          numColors = gchandle->get_num_colors();
         }
-        color_t numColors = gchandle->get_num_colors();
+        else
+        {
+          typedef Kokkos::View<row_lno_t*, MyTempMemorySpace> rowmap_t;
+          typedef Kokkos::View<nnz_lno_t*, MyTempMemorySpace> colind_t;
+          typedef Kokkos::View<const row_lno_t*, MyTempMemorySpace> const_rowmap_t;
+          typedef Kokkos::View<const nnz_lno_t*, MyTempMemorySpace> const_colind_t;
+          rowmap_t tmp_xadj;
+          colind_t tmp_adj;
+          KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
+            <const_rowmap_t, const_colind_t, rowmap_t, colind_t, MyExecSpace>
+            (num_rows, xadj, adj, tmp_xadj, tmp_adj);
+          colors = initialize_symbolic_cluster<rowmap_t, colind_t>(tmp_xadj, tmp_adj, numColors);
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        std::cout << "COLORING_TIME:" << timer.seconds() << std::endl;
+        std::cout << "Final vertex labeling: " << timer.seconds() << '\n';
 #endif
 
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
+        std::cout << "Expected (max) degree of parallelism in GS apply: " << (double) num_rows / numColors << std::endl;
+#endif
+        }
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+        std::cout << "COLORING_TIME:" << timer.seconds() << std::endl;
+        timer.reset();
+#endif
 
-        typename HandleType::GraphColoringHandleType::color_view_t colors =  gchandle->get_vertex_colors();
 #if KOKKOSSPARSE_IMPL_RUNSEQUENTIAL
         numColors = num_rows;
         KokkosKernels::Impl::print_1Dview(colors);
@@ -664,7 +691,6 @@ namespace KokkosSparse{
            nnz_lno_persistent_work_view_t, MyExecSpace>
           (num_rows, numColors, colors, color_xadj, color_adj);
         MyExecSpace().fence();
-
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
@@ -758,7 +784,6 @@ namespace KokkosSparse{
         timer.reset();
 #endif
 
-        typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
         nnz_lno_t block_size = this->handle->get_gs_handle()->get_block_size();
 
         //MD: if block size is larger than 1;
@@ -885,6 +910,340 @@ namespace KokkosSparse{
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "ALLOC:" << timer.seconds() << std::endl;
 #endif
+      }
+
+      /**********************************************/
+      /* Functors for initialize_symbolic_cluster() */
+      /**********************************************/
+
+      struct OrderToPermFunctor
+      {
+        OrderToPermFunctor(nnz_lno_persistent_work_view_t& order_, nnz_lno_persistent_work_view_t& perm_)
+          : order(order_), perm(perm_)
+        {}
+        KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
+        {
+          perm[order[i]] = i;
+        }
+        nnz_lno_persistent_work_view_t order;
+        nnz_lno_persistent_work_view_t perm;
+      };
+
+      struct ClusterEntryCountingFunctor
+      {
+        typedef Kokkos::View<row_lno_t*, MyTempMemorySpace> RowmapView;
+        typedef Kokkos::View<nnz_lno_t*, MyTempMemorySpace> EntriesView;
+        typedef Kokkos::View<size_type*, MyTempMemorySpace> BitsetView;
+        ClusterEntryCountingFunctor(RowmapView& clusterRowmap_, BitsetView& denseClusterRow_, nnz_lno_persistent_work_view_t& rcmOrder_, nnz_lno_persistent_work_view_t& rcmPerm_, nnz_lno_t numClusters_, nnz_lno_t clusterSize_, row_lno_persistent_work_view_t& xadj_, nnz_lno_persistent_work_view_t& adj_, nnz_lno_t nthreads_, nnz_lno_t numRows_)
+          : clusterRowmap(clusterRowmap_), denseClusterRow(denseClusterRow_), rcmOrder(rcmOrder_), rcmPerm(rcmPerm_), numClusters(numClusters_), clusterSize(clusterSize_), xadj(xadj_), adj(adj_), nthreads(nthreads_), numRows(numRows_)
+        {}
+
+        KOKKOS_INLINE_FUNCTION void operator()(const size_type tid) const
+        {
+          const size_type bitsPerST = 8 * sizeof(size_type);
+          const size_type wordsPerRow = (numClusters + bitsPerST - 1) / bitsPerST;
+          for(nnz_lno_t i = 0; i < numClusters; i += nthreads)
+          {
+            nnz_lno_t c = tid + i;
+            if(c < numClusters)
+            {
+              //zero out all bits in dense row for this thread
+              //denseRow is a bitset that holds row c of dense cluster graph
+              size_type* denseRow = &denseClusterRow(tid * wordsPerRow);
+              for(size_type j = 0; j < wordsPerRow; j++)
+                denseRow[j] = 0;
+              nnz_lno_t clusterBegin = c * clusterSize;
+              nnz_lno_t clusterEnd = (c + 1) * clusterSize;
+              if(c == numClusters - 1)
+                clusterEnd = numRows - 1;
+              for(nnz_lno_t rcmRow = clusterBegin; rcmRow < clusterEnd; rcmRow++)
+              {
+                nnz_lno_t origRow = rcmPerm(rcmRow);
+                //map neighbors of origRow to the RCM matrix, then to clusters
+                for(size_type neiIndex = xadj(origRow); neiIndex < xadj(origRow + 1); neiIndex++)
+                {
+                  nnz_lno_t nei = adj(neiIndex);
+                  nnz_lno_t rcmNei = rcmOrder(nei);
+                  nnz_lno_t clusterNei = rcmNei / clusterSize;
+                  //record the entry in dense row
+                  //this should be fast since bitsPerST is a power of 2
+                  denseRow[clusterNei / bitsPerST] |= (size_type(1) << (clusterNei % bitsPerST));
+                }
+              }
+              //count the 1 bits in denseRow
+              size_type numEntries = 0;
+              for(size_type j = 0; j < wordsPerRow; j++)
+              {
+                //use the KokkosKernels popcount intrinsic wrapper
+                numEntries += KokkosKernels::Impl::pop_count(denseRow[j]);
+              }
+              //finally, record the entry count for this row
+              clusterRowmap(c) = numEntries;
+            }
+          }
+        }
+        RowmapView clusterRowmap;
+        BitsetView denseClusterRow;
+        nnz_lno_persistent_work_view_t rcmOrder;
+        nnz_lno_persistent_work_view_t rcmPerm;
+        nnz_lno_t numClusters;
+        nnz_lno_t clusterSize;
+        row_lno_persistent_work_view_t xadj;
+        nnz_lno_persistent_work_view_t adj;
+        nnz_lno_t nthreads;
+        nnz_lno_t numRows;
+      };
+
+      //Functor that fills in clusterEntries
+      struct ClusterEntryFunctor
+      {
+        typedef Kokkos::View<row_lno_t*, MyTempMemorySpace> RowmapView;
+        typedef Kokkos::View<nnz_lno_t*, MyTempMemorySpace> EntriesView;
+        typedef Kokkos::View<size_type*, MyTempMemorySpace> BitsetView;
+        ClusterEntryFunctor(
+            RowmapView&                     clusterRowmap_,
+            EntriesView&                    clusterEntries_,
+            BitsetView&                     denseClusterRow_,
+            row_lno_persistent_work_view_t& xadj_,
+            nnz_lno_persistent_work_view_t& adj_,
+            nnz_lno_persistent_work_view_t& rcmOrder_,
+            nnz_lno_persistent_work_view_t& rcmPerm_,
+            nnz_lno_t                       numClusters_,
+            nnz_lno_t                       clusterSize_,
+            nnz_lno_t                       numRows_,
+            nnz_lno_t                       nthreads_)
+          :
+          clusterRowmap(clusterRowmap_), clusterEntries(clusterEntries_),
+          denseClusterRow(denseClusterRow_), xadj(xadj_), adj(adj_),
+          rcmOrder(rcmOrder_), rcmPerm(rcmPerm_), numClusters(numClusters_),
+          clusterSize(clusterSize_), numRows(numRows_), nthreads(nthreads_)
+        {}
+        KOKKOS_INLINE_FUNCTION void operator()(const size_type tid) const
+        {
+          const size_type bitsPerST = 8 * sizeof(size_type);
+          const size_type wordsPerRow = (numClusters + bitsPerST - 1) / bitsPerST;
+          for(nnz_lno_t i = 0; i < numClusters; i += nthreads)
+          {
+            nnz_lno_t c = tid + i;
+            if(c < numClusters)
+            {
+              //zero out all bits in dense row for this thread
+              //denseRow is a bitset that holds row c of dense cluster graph
+              size_type* denseRow = &denseClusterRow(tid * wordsPerRow);
+              for(size_type j = 0; j < wordsPerRow; j++)
+                denseRow[j] = 0;
+              nnz_lno_t clusterBegin = c * clusterSize;
+              nnz_lno_t clusterEnd = (c + 1) * clusterSize;
+              if(c == numClusters - 1)
+                clusterEnd = numRows - 1;
+              for(nnz_lno_t rcmRow = clusterBegin; rcmRow < clusterEnd; rcmRow++)
+              {
+                nnz_lno_t origRow = rcmPerm(rcmRow);
+                //map neighbors of origRow to the RCM matrix, then to clusters
+                for(size_type neiIndex = xadj(origRow); neiIndex < xadj(origRow + 1); neiIndex++)
+                {
+                  nnz_lno_t nei = adj(neiIndex);
+                  nnz_lno_t rcmNei = rcmOrder(nei);
+                  nnz_lno_t clusterNei = rcmNei / clusterSize;
+                  //record the entry in dense row
+                  //this should be fast since bitsPerST is a power of 2
+                  denseRow[clusterNei / bitsPerST] |= (size_type(1) << (clusterNei % bitsPerST));
+                }
+              }
+              //write sparse cluster graph entries
+              size_type numEntries = 0;
+              for(size_type j = 0; j < wordsPerRow; j++)
+              {
+                for(size_type bitPos = 0; bitPos < bitsPerST; bitPos++)
+                {
+                  if(denseRow[j] & (size_type(1) << bitPos))
+                  {
+                    clusterEntries(clusterRowmap(c) + numEntries) = j * bitsPerST + bitPos;
+                    numEntries++;
+                  }
+                }
+              }
+            }
+          }
+        }
+        RowmapView clusterRowmap;
+        EntriesView clusterEntries;
+        BitsetView denseClusterRow;
+        row_lno_persistent_work_view_t xadj;
+        nnz_lno_persistent_work_view_t adj;
+        nnz_lno_persistent_work_view_t rcmOrder;
+        nnz_lno_persistent_work_view_t rcmPerm;
+        nnz_lno_t numClusters;
+        nnz_lno_t clusterSize;
+        nnz_lno_t numRows;
+        nnz_lno_t nthreads;
+      };
+
+      //Functor to swap the numbers of two colors,
+      //so that the last cluster has the last color.
+      //Except, doesn't touch the color of the last cluster,
+      //since that value is needed the entire time this is running.
+      struct ClusterColorRelabelFunctor
+      {
+        typedef typename HandleType::GraphColoringHandleType GCHandle;
+        typedef typename GCHandle::color_view_t ColorView;
+        typedef Kokkos::View<row_lno_t*, MyTempMemorySpace> RowmapView;
+        typedef Kokkos::View<nnz_lno_t*, MyTempMemorySpace> EntriesView;
+        typedef Kokkos::View<size_type*, MyTempMemorySpace> BitsetView;
+        ClusterColorRelabelFunctor(ColorView& colors_, color_t numClusterColors_, nnz_lno_t numClusters_)
+          : colors(colors_), numClusterColors(numClusterColors_), numClusters(numClusters_)
+        {}
+
+        KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
+        {
+          if(colors(i) == numClusterColors)
+            colors(i) = colors(numClusters - 1);
+          else if(colors(i) == colors(numClusters - 1))
+            colors(i) = numClusterColors;
+        }
+
+        ColorView colors;
+        color_t numClusterColors;
+        nnz_lno_t numClusters;
+      };
+
+      //Relabel the last cluster, after running ClusterColorRelabelFunctor.
+      //Call with a one-element range policy.
+      struct RelabelLastColorFunctor
+      {
+        typedef typename HandleType::GraphColoringHandleType GCHandle;
+        typedef typename GCHandle::color_view_t ColorView;
+
+        RelabelLastColorFunctor(ColorView& colors_, color_t numClusterColors_, nnz_lno_t numClusters_)
+          : colors(colors_), numClusterColors(numClusterColors_), numClusters(numClusters_)
+        {}
+
+        KOKKOS_INLINE_FUNCTION void operator()(const size_type) const
+        {
+          colors(numClusters - 1) = numClusterColors;
+        }
+        
+        ColorView colors;
+        color_t numClusterColors;
+        nnz_lno_t numClusters;
+      };
+
+      struct ClusterToVertexColoring
+      {
+        typedef typename HandleType::GraphColoringHandleType GCHandle;
+        typedef typename GCHandle::color_view_t ColorView;
+
+        ClusterToVertexColoring(ColorView& clusterColors_, ColorView& vertexColors_, nnz_lno_t numRows_, nnz_lno_t numClusters_, nnz_lno_t clusterSize_)
+          : clusterColors(clusterColors_), vertexColors(vertexColors_), numRows(numRows_), numClusters(numClusters_), clusterSize(clusterSize_)
+        {}
+
+        KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
+        {
+          size_type cluster = i / clusterSize;
+          size_type clusterOffset = i - cluster * clusterSize;
+          vertexColors(i) = ((clusterColors(cluster) - 1) * clusterSize) + clusterOffset + 1;
+        }
+
+        ColorView clusterColors;
+        ColorView vertexColors;
+        nnz_lno_t numRows;
+        nnz_lno_t numClusters;
+        nnz_lno_t clusterSize;
+      };
+
+      template<typename rowmap_t, typename colinds_t>
+      typename HandleType::GraphColoringHandleType::color_view_t initialize_symbolic_cluster(rowmap_t xadj, colinds_t adj, color_t& numColors)
+      {
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
+        Kokkos::Impl::Timer timer;
+#endif
+        typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
+        typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_t;
+        //compute the RCM ordering of the graph
+        RCM<HandleType, rowmap_t, colinds_t> rcm(num_rows, xadj, adj);
+        //rcmOrder maps (bijectively) from original rows to RCM-ordered rows.
+        //rcmOrder[i] represents where in the _order_ row i is.
+        //rcmPerm is the inverse mapping: a list of all rows _permuted_ into the RCM ordering.
+        nnz_lno_persistent_work_view_t rcmOrder = rcm.rcm();
+        nnz_lno_persistent_work_view_t rcmPerm("RCM permutation array", num_rows);
+        Kokkos::parallel_for(my_exec_space(0, num_rows), OrderToPermFunctor(rcmOrder, rcmPerm));
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
+        std::cout << "\nRCM:" << timer.seconds() << '\n';
+        timer.reset();
+#endif
+        auto clusterSize = gsHandler->get_cluster_size();
+        nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;
+        //build the cluster graph using the (implicitly permuted) RCM order of the matrix (xadj, adj)
+        //first, count the entries per row
+        const size_type bitsPerST = 8 * sizeof(size_type);
+        const size_type wordsPerRow = (numClusters + bitsPerST - 1) / bitsPerST;
+        size_type nthreads = MyExecSpace::concurrency();
+        if(nthreads > 64)
+          nthreads = 64;
+#ifdef KOKKOS_ENABLE_CUDA
+        if(std::is_same<MyExecSpace, Kokkos::Cuda>::value)
+        {
+          nthreads = 256;
+        }
+#endif
+        typedef Kokkos::View<size_type*, MyTempMemorySpace> BitsetView;
+        typedef Kokkos::View<row_lno_t*, MyTempMemorySpace> RowmapView;
+        typedef Kokkos::View<nnz_lno_t*, MyTempMemorySpace> EntriesView;
+        BitsetView denseClusterRow("Scratch for dense cluster graph rows", wordsPerRow * nthreads);
+        RowmapView clusterRowmap("Row ptrs for cluster graph", numClusters + 1);
+        //TODO: use a team policy here, and use shared memory for denseClusterRow
+        Kokkos::parallel_for(my_exec_space(0, nthreads), ClusterEntryCountingFunctor(clusterRowmap, denseClusterRow, rcmOrder, rcmPerm, numClusters, clusterSize, xadj, adj, nthreads, num_rows));
+        //Prefix sum cluster entry counts to get the rowmap
+        Kokkos::parallel_scan(my_exec_space(0, numClusters + 1), KokkosKernels::Impl::ExclusiveParallelPrefixSum<RowmapView>(clusterRowmap));
+        auto clusterNNZ = Kokkos::subview(clusterRowmap, numClusters);
+        auto h_clusterNNZ = Kokkos::create_mirror_view(clusterNNZ);
+        Kokkos::deep_copy(h_clusterNNZ, clusterNNZ );
+        //can now allocate the entries of cluster graph
+        EntriesView clusterEntries("GS cluster ", h_clusterNNZ());
+        Kokkos::parallel_for(my_exec_space(0, nthreads), ClusterEntryFunctor(clusterRowmap, clusterEntries, denseClusterRow, xadj, adj, rcmOrder, rcmPerm, numClusters, clusterSize, num_rows, nthreads));
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
+        std::cout << "Cluster graph construction: " << timer.seconds() << '\n';
+        timer.reset();
+#endif
+        //now that cluster graph is computed, color it
+        HandleType kh;
+        kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
+        KokkosGraph::Experimental::graph_color_symbolic(&kh, numClusters, numClusters, clusterRowmap, clusterEntries, false); 
+        MyExecSpace::fence();
+        //retrieve colors
+        typedef typename HandleType::GraphColoringHandleType GCHandle;
+        GCHandle* coloringHandle = kh.get_graph_coloring_handle();
+        typedef typename GCHandle::color_view_t ColorView;
+        ColorView clusterColors = coloringHandle->get_vertex_colors();
+        color_t numClusterColors = coloringHandle->get_num_colors();
+        kh.destroy_graph_coloring_handle();
+#ifdef BMK_TIME
+        std::cout << "Cluster graph coloring with " << numClusterColors << " colors: " << timer.seconds() << '\n';
+        timer.reset();
+#endif
+        //Need to map cluster colors to row colors with no gaps, so make the last cluster have the last color (numClusterColors).
+        //This is easy because any permutation of colors preserves a valid coloring. Simply swap colors c1,c2 where
+        //c1 = numClusterColors and c2 = clusterColors(numClusters - 1).
+        Kokkos::parallel_for(my_exec_space(0, numClusters - 1),
+            ClusterColorRelabelFunctor(clusterColors, numClusterColors, numClusters));
+        //finally, change the last cluster's color (not really parallel but happens on device)
+        MyExecSpace::fence();
+        Kokkos::parallel_for(my_exec_space(0, 1),
+            RelabelLastColorFunctor(clusterColors, numClusterColors, numClusters));
+        MyExecSpace::fence();
+        color_view_t vertexColors("Vertex colors (Cluster GS)", num_rows);
+        //Now, have a simple formula to label all the vertices with colors
+        Kokkos::parallel_for(my_exec_space(0, num_rows),
+            ClusterToVertexColoring(clusterColors, vertexColors, num_rows, numClusters, clusterSize));
+        //determine the largest vertex color - not necessarily the last vertex's color, since that
+        //cluster might be smaller than clusterSize.
+        KokkosKernels::Impl::view_reduce_max<color_view_t, MyExecSpace>(num_rows, vertexColors, numColors);
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
+        std::cout << "Final vertex labeling: " << timer.seconds() << '\n';
+        timer.reset();
+#endif
+        //TESTING
+        return vertexColors;
       }
 
       struct create_permuted_xadj{
