@@ -585,7 +585,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
               << "," << label_algorithm
-              << "," << Kokkos::DefaultExecutionSpace::concurrency();
+              << "," << Kokkos::DefaultExecutionSpace::concurrency()
+              << ",";
     printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
     std::cout << std::endl;
 
