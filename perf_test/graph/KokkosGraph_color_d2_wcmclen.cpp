@@ -526,7 +526,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "    Validation     : " << all_results_valid_str << std::endl
               << std::endl;
 
-    std::cout << "CSVHDR"
+    std::cout << "CSVTIMEHDR"
               << "," << "Filename"
               << "," << "Host"
               << "," << "Num Rows"
@@ -546,7 +546,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Validation"
               << std::endl;
 
-    std::cout << "CSVDATA"
+    std::cout << "CSVTIMEDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
               << "," << crsGraph.numRows()
@@ -565,6 +565,29 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << avg_phases
               << "," << all_results_valid_str
               << std::endl;
+
+    std::cout << "CSVHISTHDR"
+              << "," << "Filename"
+              << "," << "Host"
+              << "," << "Num Rows"
+              << "," << "Num Edges"
+              << "," << "Execution Space"
+              << "," << "Algorithm"
+              << "," << "Concurrency"
+              << "," << "Histogram: 1 .. N"
+              << std::endl;
+
+
+    std::cout << "CSVHISTDATA"
+              << "," << a_mtx_bin_file
+              << "," << hostname
+              << "," << crsGraph.numRows()
+              << "," << crsGraph.entries.dimension_0()
+              << "," << Kokkos::DefaultExecutionSpace::name()
+              << "," << label_algorithm
+              << "," << Kokkos::DefaultExecutionSpace::concurrency();
+    printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
+    std::cout << std::endl;
 
     // Kokkos::print_configuration(std::cout);
 }

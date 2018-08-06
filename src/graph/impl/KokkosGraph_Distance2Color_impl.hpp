@@ -446,16 +446,33 @@ class GraphColorD2
     /**
      * Print out the distance-2 coloring histogram.
      */
-    void printDistance2ColorsHistogram(void)
+    void getDistance2ColorsHistogram(nnz_lno_temp_work_view_t & histogram)
+    {
+        MyExecSpace::fence();
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t,
+            MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
+    }
+
+    void printDistance2ColorsHistogramCSV()
     {
         nnz_lno_t num_colors = this->gc_handle->get_num_colors();
-        std::cout << "num_colors: " << num_colors << std::endl;
-
         nnz_lno_temp_work_view_t histogram("histogram", num_colors + 1);
-        MyExecSpace::fence();
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t, MyExecSpace>(
-                this->nv, this->gc_handle->get_vertex_colors(), histogram);
+        this->getDistance2ColorsHistogram(histogram);
 
+        size_t i=0;
+        for(i=1; i< histogram.extent(0)-1; i++)
+        {
+            std::cout << histogram(i) << ",";
+        }
+        std::cout << histogram(i);
+
+    }
+
+    void printDistance2ColorsHistogram()
+    {
+        nnz_lno_t num_colors = this->gc_handle->get_num_colors();
+        nnz_lno_temp_work_view_t histogram("histogram", num_colors + 1);
+        this->getDistance2ColorsHistogram(histogram);
         std::cout << ">>> Histogram: " << std::endl;
         KokkosKernels::Impl::kk_print_1Dview(histogram);
         std::cout << std::endl;
