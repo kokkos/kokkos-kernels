@@ -427,6 +427,17 @@ public:
   //! The one value of T; the multiplicative identity.
   static KOKKOS_FORCEINLINE_FUNCTION T one ();
 
+  /// \brief True if this type T is capable of representing the
+  /// positive infinity as a distinct special value, as with
+  /// std::numeric_limits<T>::has_infinity.
+  static constexpr bool hasInfinity = false;
+
+  /// \brief Returns the special value "positive infinity", as
+  /// represented by the floating-point type T. Only meaningful if
+  /// KokkosArithTraits<T>::hasInfinity == true. Provides same
+  /// functionality as std::numeric_limits<T>::infinity().
+  static KOKKOS_FORCEINLINE_FUNCTION T infinity();
+
   /// \brief The minimum possible value of T.
   ///
   /// If T is a real floating-point type, then this is the minimum
@@ -670,6 +681,9 @@ public:
   static const bool is_integer = false;
   static const bool is_exact = false;
   static const bool is_complex = false;
+
+  static constexpr bool hasInfinity = true;
+  static KOKKOS_FORCEINLINE_FUNCTION float infinity() { return HUGE_VALF; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
     #ifndef __CUDA_ARCH__
@@ -1017,6 +1031,9 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
+  static constexpr bool hasInfinity = true;
+  static KOKKOS_FORCEINLINE_FUNCTION double infinity() { return HUGE_VAL; }
+
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     #ifndef __CUDA_ARCH__
     using std::isinf;
@@ -1184,6 +1201,9 @@ public:
   static const bool is_integer = false;
   static const bool is_exact = false;
   static const bool is_complex = false;
+
+  static constexpr bool hasInfinity = true;
+  static KOKKOS_FORCEINLINE_FUNCTION long double infinity() { return HUGE_VALL; }
 
   static bool isInf (const val_type& x) {
     #ifndef __CUDA_ARCH__
