@@ -369,14 +369,6 @@ class GraphColorD2
         this->gc_handle->set_vertex_colors(colors_out);
         this->gc_handle->set_num_phases((double)iter);
 
-        // ------------------------------------------
-        // Print out histogram of colors
-        // ------------------------------------------
-        if(_ticToc)
-        {
-            //prettyPrint1DView(colors_out, ">>> colors_out ", 500);            // WCMCLEN
-            //printDistance2ColorsHistogram();
-        }
     }      // color_graph_d2 (end)
 
 
@@ -444,15 +436,8 @@ class GraphColorD2
 
 
     /**
-     * Print out the distance-2 coloring histogram.
+     * Print out the histogram of colors in CSV format.
      */
-    void getDistance2ColorsHistogram(nnz_lno_temp_work_view_t & histogram)
-    {
-        MyExecSpace::fence();
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t,
-            MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
-    }
-
     void printDistance2ColorsHistogramCSV()
     {
         nnz_lno_t num_colors = this->gc_handle->get_num_colors();
@@ -468,6 +453,10 @@ class GraphColorD2
 
     }
 
+    /**
+     * Print out the histogram of colors in a more human friendly format
+     * This will not print out all the colors if there are many.
+     */
     void printDistance2ColorsHistogram()
     {
         nnz_lno_t num_colors = this->gc_handle->get_num_colors();
@@ -480,8 +469,21 @@ class GraphColorD2
 
 
 
-
   private:
+
+
+
+    /**
+     * Generate a histogram of the distance-2 colors.
+     * - histogram must be of size num_colors+1
+     */
+    void getDistance2ColorsHistogram(nnz_lno_temp_work_view_t & histogram)
+    {
+        MyExecSpace::fence();
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t,
+            MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
+    }
+
 
 
     // -----------------------------------------------------------------

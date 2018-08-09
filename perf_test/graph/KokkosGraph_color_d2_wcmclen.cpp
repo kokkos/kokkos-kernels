@@ -313,9 +313,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "Num verts: " << crsGraph.numRows() << std::endl << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
 
     KernelHandle kh;
-    kh.set_team_work_size(chunk_size);          // WCMCLEN - Team Policy
+    kh.set_team_work_size(chunk_size);
     kh.set_shmem_size(shmemsize);
-    kh.set_suggested_team_size(team_size);      // WCMCLEN - Team Policy
+    kh.set_suggested_team_size(team_size);
     kh.set_suggested_vector_size(vector_size);
 
     if(use_dynamic_scheduling)
@@ -457,7 +457,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         // ------------------------------------------
         // Print out the colors histogram
         // ------------------------------------------
-        printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+        printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
 
     } // for i...
 
