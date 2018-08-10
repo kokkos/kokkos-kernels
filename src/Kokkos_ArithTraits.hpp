@@ -858,6 +858,11 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
+  static constexpr bool hasInfinity = false;
+  static KOKKOS_FORCEINLINE_FUNCTION std::complex<RealFloatType> infinity() {
+    return std::complex<RealFloatType>();
+  }
+
   static bool isInf (const std::complex<RealFloatType>& x) {
     #ifndef __CUDA_ARCH__
     using std::isinf;
@@ -1524,6 +1529,9 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
+  static constexpr bool hasInfinity = false;
+  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return val_type(); }
+
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return ArithTraits<mag_type>::isInf (x.real ()) ||
       ArithTraits<mag_type>::isInf (x.imag ());
@@ -1726,6 +1734,9 @@ public:
   static const bool is_integer = false;
   static const bool is_exact = false;
   static const bool is_complex = true;
+
+  static constexpr bool hasInfinity = false;
+  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return val_type(); }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return ArithTraits<mag_type>::isInf (x.real ()) ||
