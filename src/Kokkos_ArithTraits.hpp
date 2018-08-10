@@ -430,11 +430,11 @@ public:
   /// \brief True if this type T is capable of representing the
   /// positive infinity as a distinct special value, as with
   /// std::numeric_limits<T>::has_infinity.
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
 
   /// \brief Returns the special value "positive infinity", as
   /// represented by the floating-point type T. Only meaningful if
-  /// KokkosArithTraits<T>::hasInfinity == true. Provides same
+  /// KokkosArithTraits<T>::has_infinity == true. Provides same
   /// functionality as std::numeric_limits<T>::infinity().
   ///
   /// \note Would have liked to mark it as constexpr but then would
@@ -686,7 +686,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = true;
+  static constexpr bool has_infinity = true;
   static KOKKOS_FORCEINLINE_FUNCTION float infinity() { return HUGE_VALF; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
@@ -858,7 +858,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION std::complex<RealFloatType> infinity() {
     return std::complex<RealFloatType>();
   }
@@ -1040,7 +1040,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = true;
+  static constexpr bool has_infinity = true;
   static KOKKOS_FORCEINLINE_FUNCTION double infinity() { return HUGE_VAL; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
@@ -1211,7 +1211,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = true;
+  static constexpr bool has_infinity = true;
   static KOKKOS_FORCEINLINE_FUNCTION long double infinity() { return HUGE_VALL; }
 
   static bool isInf (const val_type& x) {
@@ -1377,7 +1377,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = true;
+  static constexpr bool has_infinity = true;
   static KOKKOS_FORCEINLINE_FUNCTION __float128 infinity() { return 1.0q / 0.0q; }
 
   static bool isInf (const __float128 x) {
@@ -1532,7 +1532,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return val_type(); }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
@@ -1738,7 +1738,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return val_type(); }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
@@ -1948,7 +1948,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -2093,7 +2093,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -2215,7 +2215,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -2340,7 +2340,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -2479,7 +2479,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -2610,7 +2610,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -2749,7 +2749,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -2880,7 +2880,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -3006,7 +3006,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -3141,7 +3141,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
@@ -3291,7 +3291,7 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static constexpr bool hasInfinity = false;
+  static constexpr bool has_infinity = false;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return 0; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {

@@ -371,15 +371,15 @@ public:
       success = 0;
     }
 
-    if (AT::hasInfinity) {
+    if (AT::has_infinity) {
       if (! AT::isInf (AT::infinity())) {
         out << "AT::isInf (inf) != true" << endl;
         success = 0;
       }
     } else {
-       // We expect that real floating-point types had hasInfinity == true
+       // We expect that real floating-point types had has_infinity == true
        if ( ! (AT::is_integer || AT::is_complex)) {
-        out << "AT::hasInfinity != true" << endl;
+        out << "AT::has_infinity != true" << endl;
         success = 0;
        }
     }
