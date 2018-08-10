@@ -1377,6 +1377,9 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = false;
 
+  static constexpr bool hasInfinity = true;
+  static KOKKOS_FORCEINLINE_FUNCTION __float128 infinity() { return 1.0q / 0.0q; }
+
   static bool isInf (const __float128 x) {
     return isinfq (x);
   }
