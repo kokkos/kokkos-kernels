@@ -371,6 +371,19 @@ public:
       success = 0;
     }
 
+    if (AT::hasInfinity) {
+      if (! AT::isInf (AT::infinity())) {
+        out << "AT::isInf (inf) != true" << endl;
+        success = 0;
+      }
+    } else {
+       // We expect that real floating-point types had hasInfinity == true
+       if ( ! (AT::is_integer || AT::is_complex)) {
+        out << "AT::hasInfinity != true" << endl;
+        success = 0;
+       }
+    }
+
     // Run the parent class' remaining tests, if any.
     const int parentSuccess = testHostImpl (out);
     success = success && parentSuccess;
