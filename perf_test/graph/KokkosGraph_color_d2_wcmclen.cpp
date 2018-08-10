@@ -312,6 +312,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
 
+
     // Note: crsGraph.numRows() == number of vertices in the 'graph'
     //       crsGraph.entries.extent(0) == number of edges in the 'graph'
     std::cout << "Num verts: " << crsGraph.numRows() << std::endl << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
@@ -465,6 +466,19 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     } // for i...
 
+    // ------------------------------------------
+    // Compute Distance 2 Degree Stats
+    // ------------------------------------------
+    typedef typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
+    non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
+
+    size_t degree_d2_max=0;
+    size_t degree_d2_sum=0;
+    computeDistance2Degree(&kh, crsGraph.numRows(), crsGraph.numCols(),
+                           crsGraph.row_map, crsGraph.entries,
+                           crsGraph.row_map, crsGraph.entries,
+                           degree_d2_dist, degree_d2_max, degree_d2_sum);
+
 
     double total_time                   = kh.get_graph_coloring_handle()->get_overall_coloring_time();
     double total_time_color_greedy      = kh.get_graph_coloring_handle()->get_overall_coloring_time_phase1();
@@ -514,6 +528,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "    Num Edges      : " << crsGraph.entries.dimension_0() << std::endl
               << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
+              << "Graph Stats" << std::endl
+              << "    Degree D2 Max  : " << degree_d2_max << std::endl
+              << "    Degree D2 Sum  : " << degree_d2_sum << std::endl
               << "Overall Time/Stats" << std::endl
               << "    Total Time     : " << total_time << std::endl
               << "    Avg Time       : " << avg_time << std::endl
@@ -547,6 +564,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Total Time RC"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
+              << "," << "Degree D2 Max"
+              << "," << "Degree D2 Sum"
               << "," << "Validation"
               << std::endl;
 
@@ -567,6 +586,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << total_time_resolve_conflicts
               << "," << avg_colors
               << "," << avg_phases
+              << "," << degree_d2_max
+              << "," << degree_d2_sum
               << "," << all_results_valid_str
               << std::endl;
 

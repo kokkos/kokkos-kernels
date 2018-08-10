@@ -140,6 +140,49 @@ void graph_color_d2(KernelHandle *handle,
 }
 
 
+/**
+ *  Compute Distance-2 Degree Stats
+ *
+ *  Distance-2 Degree of a vertex, v, is the sum of the degree of all neighbors of v.
+ *
+ *  This function calculates the distance-2 degree of all the vertices in the graph,
+ *  the maximum distance-2 degree, and the sum of all the distance-2 degrees.
+ *
+ *  @param[in]  handle         The Kernel Handle
+ *  @param[in]  num_rows       Number of rows in the matrix (number of vertices)
+ *  @param[in]  num_cols       Number of columns in the matrix
+ *  @param[in]  row_map        Row map
+ *  @param[in]  row_entries    Row entries
+ *  @param[in]  col_map        Column map
+ *  @param[in]  col_entries    Column entries
+ *  @param[out] degree_d2_dist View to fill with distance-2 degree information.
+ *  @param[out] degree_d2_max  Maximum distance-2 degree found.
+ *  @param[out] degree_d2_sum  Sum of all distance-2 degrees.
+ *
+ *   Note: If the graph is symmetric, give the same value for col_map and row_map,
+ *         and for row_entries and col_entries.
+ *
+ *  @return Nothing
+ */
+template<class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename lno_col_view_t_, typename lno_colnnz_view_t_>
+void computeDistance2Degree(KernelHandle *handle,
+                             typename KernelHandle::nnz_lno_t num_rows,
+                             typename KernelHandle::nnz_lno_t num_cols,
+                             lno_row_view_t_ row_map,
+                             lno_nnz_view_t_ row_entries,
+                             lno_col_view_t_ col_map,
+                             lno_colnnz_view_t_ col_entries,
+                             typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t& degree_d2_dist,
+                             size_t& degree_d2_max,
+                             size_t& degree_d2_sum)
+{
+    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+
+    gc.calculate_d2_degree(degree_d2_dist, degree_d2_max, degree_d2_sum);
+}
+
+
 
 /**
  *  Validate Distance 2 Graph Coloring
@@ -169,8 +212,8 @@ bool verifyDistance2Coloring(KernelHandle *handle,
 
     typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
 
-    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_> gc(
-            num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
 
     output = gc.verifyDistance2Coloring(row_map, row_entries, col_map, col_entries, gch->get_vertex_colors(), validation_flags);
 
@@ -192,8 +235,8 @@ void printDistance2ColorsHistogram(KernelHandle *handle,
                                    lno_col_view_t_ col_map,
                                    lno_colnnz_view_t_ col_entries, bool csv=false)
 {
-    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_> gc(
-            num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
 
     if(csv)
     {

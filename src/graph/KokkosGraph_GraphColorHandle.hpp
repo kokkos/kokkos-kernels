@@ -122,6 +122,8 @@ public:
   typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 
+  typedef typename Kokkos::View<size_t *> non_const_1d_size_type_view_t;
+
 private:
 
   ColoringType GraphColoringType;
@@ -188,7 +190,7 @@ private:
     tictoc(false),
     vb_edge_filtering(false),
     vb_chunk_size(8),
-    max_number_of_iterations(50),   // WCMCLEN SCAFFOLDING Change back to default = 200
+    max_number_of_iterations(200),
     eb_num_initial_colors(1),
     overall_coloring_time(0),
     overall_coloring_time_phase1(0),
