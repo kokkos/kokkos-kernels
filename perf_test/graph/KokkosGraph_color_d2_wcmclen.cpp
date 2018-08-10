@@ -111,17 +111,21 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "      amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
        << std::endl
        << spaces << "      algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
-       << spaces << "                 COLORING_D2_MATRIX_SQUARED  - Distance-2 coloring using matrix-squared + Distance-1 coloring method." << std::endl
-       << spaces << "                 COLORING_D2_VB              - Distance-2 coloring using direct method." << std::endl
-       << spaces << "                 COLORING_D2_VBTP            - Distance-2 coloring using direct method + Team Policy." << std::endl
+       << spaces << "                 COLORING_D2_SERIAL          - Serial algorithm (must use with 'serial' mode)" << std::endl
+       << spaces << "                 COLORING_D2_MATRIX_SQUARED  - Matrix-squared + Distance-1 method." << std::endl
+       << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array." << std::endl
+       << spaces << "                 COLORING_D2_VBTP            - VB with Team Policy (type 1)" << std::endl
+       << spaces << "                 COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
+       << spaces << "                 COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
+
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
+       << spaces << "      repeat <N>        Set number of test repetitions (Default: 1) " << std::endl
+       << spaces << "      verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
        << spaces << "      chunksize <N>     Set the chunk size." << std::endl
        << spaces << "      dynamic           Use dynamic scheduling." << std::endl
-       << spaces << "      repeat <N>        Set number of test repetitions (Default: 6) " << std::endl
        << spaces << "      teamsize  <N>     Set the team size." << std::endl
        << spaces << "      vectorsize <N>    Set the vector size." << std::endl
-       << spaces << "      verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
        << spaces << "      help              Print out command line help." << std::endl
        << spaces << " " << std::endl;
 }
@@ -797,6 +801,9 @@ void run_multi_mem_experiment(Parameters params)
 int main(int argc, char *argv[])
 {
     KokkosKernels::Experiment::Parameters params;
+
+    // Override default repeats (default is 6)
+    params.repeat = 1;
 
     if(parse_inputs(params, argc, argv))
     {
