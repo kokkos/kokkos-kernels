@@ -436,6 +436,10 @@ public:
   /// represented by the floating-point type T. Only meaningful if
   /// KokkosArithTraits<T>::hasInfinity == true. Provides same
   /// functionality as std::numeric_limits<T>::infinity().
+  ///
+  /// \note Would have liked to mark it as constexpr but then would
+  /// not be able to provide the specialization for std::complex<T>
+  /// since its constructor only becomes constexpr with C++14.
   static KOKKOS_FORCEINLINE_FUNCTION T infinity();
 
   /// \brief The minimum possible value of T.
