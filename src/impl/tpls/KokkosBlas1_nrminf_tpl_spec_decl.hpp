@@ -233,7 +233,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0; return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0.0); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
@@ -266,7 +266,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0f; return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0.0f);; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
@@ -300,7 +300,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0; return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0.0); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
@@ -308,7 +308,8 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       int idx; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasIzamax(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, &idx); \
-      Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::HostSpace > R_cplx("R_cplx",1); \
+      Kokkos::complex<double> R_cplx_val {0.0, 0.0}; \
+      Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > R_cplx (&R_cplx_val); \
       Kokkos::deep_copy(R_cplx, subview(X,idx-1)); \
       R() = IPT::norm(R_cplx()); \
     } else { \
@@ -336,7 +337,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0f; return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0.0f); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
@@ -344,7 +345,8 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       int idx; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasIcamax(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, &idx); \
-      Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::HostSpace > R_cplx("R_cplx",1);; \
+      Kokkos::complex<float> R_cplx_val {0.0f, 0.0f}; \
+      Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > R_cplx (&R_cplx_val); \
       Kokkos::deep_copy(R_cplx, subview(X,idx-1)); \
       R() = IPT::norm(R_cplx()); \
     } else { \
