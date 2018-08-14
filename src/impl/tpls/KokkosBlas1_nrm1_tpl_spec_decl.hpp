@@ -228,7 +228,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-      cublasDasum(s.handle, N, X.data(), one, &R()); \
+      cublasDasum(s.handle, N, X.data(), one, R.data()); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -258,7 +258,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-      cublasSasum(s.handle, N, X.data(), one, &R()); \
+      cublasSasum(s.handle, N, X.data(), one, R.data()); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -288,7 +288,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-      cublasDzasum(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, &R()); \
+      cublasDzasum(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, R.data()); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -318,7 +318,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-      cublasScasum(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, &R()); \
+      cublasScasum(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, R.data()); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
