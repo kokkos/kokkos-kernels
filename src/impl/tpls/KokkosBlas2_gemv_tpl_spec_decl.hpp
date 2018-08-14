@@ -310,7 +310,7 @@ struct GEMV< \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -359,7 +359,7 @@ struct GEMV< \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -408,7 +408,7 @@ struct GEMV< \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -457,7 +457,7 @@ struct GEMV< \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
