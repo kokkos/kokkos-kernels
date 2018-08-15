@@ -48,10 +48,12 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <iomanip>
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <limits>
 #include <string>
 #include <sys/time.h>
@@ -312,6 +314,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
 
+    // Get Date/Time stamps of start to use later when printing out summary data.
+    auto t  =  std::time(nullptr);
+    auto tm = *std::localtime(&t);
 
     // Note: crsGraph.numRows() == number of vertices in the 'graph'
     //       crsGraph.entries.extent(0) == number of edges in the 'graph'
@@ -522,6 +527,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     std::cout << "Summary" << std::endl
               << "-------" << std::endl
+              << "    Date/Time      : " << std::put_time(&tm, "%FT%T%z") << std::endl
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
               << "    Filename       : " << a_mtx_bin_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
@@ -550,6 +556,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVTIMEHDR"
               << "," << "Filename"
               << "," << "Host"
+              << "," << "DateTime"
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
@@ -572,6 +579,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVTIMEDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
+              << "," << std::put_time(&tm, "%FT%T%z")
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
@@ -594,6 +602,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVHISTHDR"
               << "," << "Filename"
               << "," << "Host"
+              << "," << "DateTime"
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
@@ -606,6 +615,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVHISTDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
+              << "," << std::put_time(&tm, "%FT%T%z")
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
