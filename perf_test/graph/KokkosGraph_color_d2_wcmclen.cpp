@@ -478,11 +478,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
 
     size_t degree_d2_max=0;
-    size_t degree_d2_sum=0;
     computeDistance2Degree(&kh, crsGraph.numRows(), crsGraph.numCols(),
                            crsGraph.row_map, crsGraph.entries,
                            crsGraph.row_map, crsGraph.entries,
-                           degree_d2_dist, degree_d2_max, degree_d2_sum);
+                           degree_d2_dist, degree_d2_max);
 
 
     double total_time                   = kh.get_graph_coloring_handle()->get_overall_coloring_time();
@@ -536,7 +535,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "    Algorithm      : " << label_algorithm << std::endl
               << "Graph Stats" << std::endl
               << "    Degree D2 Max  : " << degree_d2_max << std::endl
-              << "    Degree D2 Sum  : " << degree_d2_sum << std::endl
               << "Overall Time/Stats" << std::endl
               << "    Total Time     : " << total_time << std::endl
               << "    Avg Time       : " << avg_time << std::endl
@@ -572,7 +570,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
               << "," << "Degree D2 Max"
-              << "," << "Degree D2 Sum"
               << "," << "Validation"
               << std::endl;
 
@@ -595,7 +592,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << avg_colors
               << "," << avg_phases
               << "," << degree_d2_max
-              << "," << degree_d2_sum
               << "," << all_results_valid_str
               << std::endl;
 

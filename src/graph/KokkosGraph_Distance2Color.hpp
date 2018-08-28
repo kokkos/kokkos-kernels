@@ -173,13 +173,12 @@ void computeDistance2Degree(KernelHandle *handle,
                              lno_col_view_t_ col_map,
                              lno_colnnz_view_t_ col_entries,
                              typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t& degree_d2_dist,
-                             size_t& degree_d2_max,
-                             size_t& degree_d2_sum)
+                             size_t& degree_d2_max)
 {
     Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
         gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
 
-    gc.calculate_d2_degree(degree_d2_dist, degree_d2_max, degree_d2_sum);
+    gc.calculate_d2_degree(degree_d2_dist, degree_d2_max);
 }
 
 
