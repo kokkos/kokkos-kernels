@@ -47,6 +47,8 @@
 #include<KokkosBlas1_dot_spec.hpp>
 #include<KokkosKernels_helpers.hpp>
 
+#include<common/KokkosKernels_Serial_Limits.hpp>
+
 namespace KokkosBlas {
 
 /// \brief Return the dot product of the two vectors x and y.
@@ -81,6 +83,35 @@ dot (const XVector& x, const YVector& y)
   }
 
 
+  typename XVector::non_const_value_type result = 0;
+
+#define KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
+  #ifdef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
+  if ( x.extent(0) < KokkosKernels::ThresholdSizes<typename XVector::size_type>::dot_serial_limit ) {
+  typedef Kokkos::View<typename XVector::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+    typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename XVector::device_type>::type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVector_Internal;
+  typedef Kokkos::View<typename YVector::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+    typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename YVector::device_type>::type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_Internal;
+
+  typedef Kokkos::View<typename XVector::non_const_value_type,
+    Kokkos::LayoutLeft,
+    typename KokkosKernels::Impl::GetSmallProblemDeviceType<Kokkos::HostSpace>::type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
+
+  RVector_Internal R = RVector_Internal(&result);
+  XVector_Internal X = x;
+  YVector_Internal Y = y;
+
+  Impl::Dot<RVector_Internal,XVector_Internal,YVector_Internal>::dot (R,X,Y);
+  Kokkos::fence();
+  }
+  else
+  #endif
+  {
   typedef Kokkos::View<typename XVector::const_value_type*,
     typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
     typename XVector::device_type,
@@ -95,13 +126,15 @@ dot (const XVector& x, const YVector& y)
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 
-  typename XVector::non_const_value_type result = 0;
   RVector_Internal R = RVector_Internal(&result);
   XVector_Internal X = x;
   YVector_Internal Y = y;
 
   Impl::Dot<RVector_Internal,XVector_Internal,YVector_Internal>::dot (R,X,Y);
   Kokkos::fence();
+  }
+#undef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
+
   return result;
 }
 

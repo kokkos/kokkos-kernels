@@ -40,46 +40,73 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSKERNELS_HELPERS_HPP_
-#define KOKKOSKERNELS_HELPERS_HPP_
+
+#ifndef KOKKOSKERNELS_SERIAL_LIMITS_HPP
+#define KOKKOSKERNELS_SERIAL_LIMITS_HPP
 
 namespace KokkosKernels {
+
+/// \brief Threshold sizes for shifting Serial vs non-Serial execution spaces 
+//         for dot, axpby, spmv routines
+
+template < typename iType >
+struct ThresholdSizes {
+
+  static_assert( std::is_integral<iType>::value, "KokkosKernels::ThresholdSizes Error: Must be templated on integral-type" );
+
+  static constexpr iType dot_serial_limit = 20000;
+  static constexpr iType spmv_serial_limit = 200;
+  static constexpr iType axpby_serial_limit = 2000;
+
+};
+
+/// \brief GetSmallProblemDeviceType: Helper routine to return proper Device type
+///        (i.e. Kokkos::Serial execution space) when running a small problem size
 namespace Impl {
-
-// Unify Layout of a View to LayoutLeft if possible.
-// Used to reduce number of code instantiations
-
-template<class ViewType>
-struct GetUnifiedLayout {
-  typedef typename std::conditional<
-        ( (ViewType::rank == 1) &&
-          (std::is_same<typename ViewType::array_layout,Kokkos::LayoutRight>::value) ) ||
-        ( (ViewType::rank == 0) )
-       ,Kokkos::LayoutLeft,typename ViewType::array_layout>::type array_layout;
+template < class T >
+struct GetSmallProblemDeviceType {
+  typedef T type;
 };
 
-template<class T, class TX, bool do_const, bool isView = Kokkos::is_view<T>::value>
-struct GetUnifiedScalarViewType {
-  typedef typename TX::non_const_value_type type;
+#ifdef KOKKOS_ENABLE_SERIAL
+template < class ExecSpace >
+struct GetSmallProblemDeviceType< Kokkos::Device< ExecSpace, Kokkos::HostSpace > >
+{
+  typedef Kokkos::Device< Kokkos::Serial, Kokkos::HostSpace > type;
 };
 
-template<class T, class TX>
-struct GetUnifiedScalarViewType<T,TX,false,true> {
-  typedef Kokkos::View<typename T::non_const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<T>::array_layout,
-                       typename T::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > type;
+template <>
+struct GetSmallProblemDeviceType< Kokkos::Serial >
+{
+  typedef Kokkos::Device< Kokkos::Serial, Kokkos::HostSpace > type;
 };
 
-template<class T, class TX>
-struct GetUnifiedScalarViewType<T,TX,true,true> {
-  typedef Kokkos::View<typename T::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<T>::array_layout,
-                       typename T::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > type;
+#ifdef KOKKOS_ENABLE_OPENMP
+template <>
+struct GetSmallProblemDeviceType< Kokkos::OpenMP >
+{
+  typedef Kokkos::Device< Kokkos::Serial, Kokkos::HostSpace > type;
 };
-
-
-}
-}
 #endif
+
+#ifdef KOKKOS_ENABLE_THREADS
+template <>
+struct GetSmallProblemDeviceType< Kokkos::Threads >
+{
+  typedef Kokkos::Device< Kokkos::Serial, Kokkos::HostSpace > type;
+};
+#endif
+
+template <>
+struct GetSmallProblemDeviceType< Kokkos::HostSpace >
+{
+  typedef Kokkos::Device< Kokkos::Serial, Kokkos::HostSpace > type;
+};
+
+#endif
+
+} // namespace Impl
+} // namespace KokkosKernels
+
+#endif
+

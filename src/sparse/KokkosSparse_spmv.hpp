@@ -113,6 +113,50 @@ spmv (const char mode[],
   }
 
 
+#define KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
+  #ifdef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
+  if ( x.extent(0) < KokkosKernels::ThresholdSizes<typename XVector::size_type>::spmv_serial_limit ) {
+  typedef KokkosSparse::CrsMatrix<
+              typename AMatrix::const_value_type,
+              typename AMatrix::const_ordinal_type,
+              typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename AMatrix::device_type>::type,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              typename AMatrix::const_size_type>          AMatrix_Internal;
+
+  typedef Kokkos::View<
+            typename XVector::const_value_type*,
+            typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+            typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename XVector::device_type>::type,
+            Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_Internal;
+
+  typedef Kokkos::View<
+            typename YVector::non_const_value_type*,
+            typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+            typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename YVector::device_type>::type,
+            Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_Internal;
+
+  AMatrix_Internal A_i = A;
+  XVector_Internal x_i = x;
+  YVector_Internal y_i = y;
+
+  return Impl::SPMV<
+              typename AMatrix_Internal::value_type,
+              typename AMatrix_Internal::ordinal_type,
+              typename AMatrix_Internal::device_type,
+              typename AMatrix_Internal::memory_traits,
+              typename AMatrix_Internal::size_type,
+              typename XVector_Internal::value_type*,
+              typename XVector_Internal::array_layout,
+              typename XVector_Internal::device_type,
+              typename XVector_Internal::memory_traits,
+              typename YVector_Internal::value_type*,
+              typename YVector_Internal::array_layout,
+              typename YVector_Internal::device_type,
+              typename YVector_Internal::memory_traits>::spmv (mode, alpha, A_i, x_i, beta, y_i);
+  }
+  else
+  #endif
+  {
   typedef KokkosSparse::CrsMatrix<
               typename AMatrix::const_value_type,
               typename AMatrix::const_ordinal_type,
@@ -150,6 +194,8 @@ spmv (const char mode[],
               typename YVector_Internal::array_layout,
               typename YVector_Internal::device_type,
               typename YVector_Internal::memory_traits>::spmv (mode, alpha, A_i, x_i, beta, y_i);
+  }
+#undef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
 }
 
 

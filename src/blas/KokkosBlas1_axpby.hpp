@@ -87,6 +87,42 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
   // Create unmanaged versions of the input Views.  XMV and YMV may be
   // rank 1 or rank 2.  AV and BV may be either rank-1 Views, or
   // scalar values.
+
+#define KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
+  #ifdef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
+  if ( X.extent(0) < KokkosKernels::ThresholdSizes<typename XMV::size_type>::axpby_serial_limit ) {
+  typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<
+    AV, XMV, true>::type AV_Internal;
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      XMV::Rank == 1,
+      typename XMV::const_value_type*,
+      typename XMV::const_value_type** >::type,
+    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
+    typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename XMV::device_type>::type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
+  typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<
+    BV, YMV, true>::type BV_Internal;
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      YMV::Rank == 1,
+      typename YMV::non_const_value_type*,
+      typename YMV::non_const_value_type** >::type,
+    typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
+    typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename YMV::device_type>::type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV_Internal;
+
+  AV_Internal  a_internal = a;
+  XMV_Internal X_internal = X;
+  BV_Internal  b_internal = b;
+  YMV_Internal Y_internal = Y;
+
+  Impl::Axpby<AV_Internal, XMV_Internal, BV_Internal,
+    YMV_Internal>::axpby (a_internal, X_internal, b_internal, Y_internal);
+  }
+  else
+  #endif
+  {
   typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<
     AV, XMV, true>::type AV_Internal;
   typedef Kokkos::View<
@@ -115,6 +151,8 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
 
   Impl::Axpby<AV_Internal, XMV_Internal, BV_Internal,
     YMV_Internal>::axpby (a_internal, X_internal, b_internal, Y_internal);
+  }
+#undef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
 }
 
 template<class AV, class XMV, class YMV>
