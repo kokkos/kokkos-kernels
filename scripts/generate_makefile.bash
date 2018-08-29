@@ -6,6 +6,7 @@ KOKKOS_DO_EXAMPLES="1"
 
 KOKKOSKERNELS_OPTIONS="eti-only"
 KOKKOSKERNELS_ENABLE_TPLS=""
+KOKKOS_CUDA_OPT="enable_lambda"
 
 while [[ $# > 0 ]]
 do
@@ -31,7 +32,8 @@ do
       ;;
     # Catch this before '--with-cuda*'
     --with-cuda-options*)
-      KOKKOS_CUDA_OPT="${key#*=}"
+      CUDA_OPTS="${key#*=}"
+      KOKKOS_CUDA_OPT="${KOKKOS_CUDA_OPT} ${CUDA_OPTS}"
       ;;
     --with-cuda*)
       KOKKOS_DEVICES="${KOKKOS_DEVICES},Cuda"
