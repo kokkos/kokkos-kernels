@@ -849,7 +849,7 @@ template<class RealFloatType>
 class ArithTraits<std::complex<RealFloatType> > {
 public:
   //! Kokkos internally replaces std::complex with Kokkos::complex.
-  typedef ::Kokkos::complex<RealFloatType> val_type;
+  typedef std::complex<RealFloatType> val_type;
   typedef RealFloatType mag_type;
 
   static const bool is_specialized = true;
