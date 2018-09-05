@@ -1533,7 +1533,9 @@ public:
   static const bool is_complex = true;
 
   static constexpr bool has_infinity = false;
-  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return val_type(); }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() {
+    return val_type (ArithTraits<mag_type>::infinity (), ArithTraits<mag_type>::infinity ());
+  }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return ArithTraits<mag_type>::isInf (x.real ()) ||
@@ -1739,7 +1741,9 @@ public:
   static const bool is_complex = true;
 
   static constexpr bool has_infinity = false;
-  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return val_type(); }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() {
+    return val_type (ArithTraits<mag_type>::infinity (), ArithTraits<mag_type>::infinity ());
+  }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     return ArithTraits<mag_type>::isInf (x.real ()) ||
