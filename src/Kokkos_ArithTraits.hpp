@@ -858,7 +858,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
-  static constexpr bool has_infinity = false;
+  static constexpr bool has_infinity = true;
   static std::complex<RealFloatType> infinity() {
     return std::complex<RealFloatType> (ArithTraits<mag_type>::infinity (), ArithTraits<mag_type>::infinity ());
   }
@@ -1532,7 +1532,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
-  static constexpr bool has_infinity = false;
+  static constexpr bool has_infinity = true;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() {
     return val_type (ArithTraits<mag_type>::infinity (), ArithTraits<mag_type>::infinity ());
   }
@@ -1740,7 +1740,7 @@ public:
   static const bool is_exact = false;
   static const bool is_complex = true;
 
-  static constexpr bool has_infinity = false;
+  static constexpr bool has_infinity = true;
   static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() {
     return val_type (ArithTraits<mag_type>::infinity (), ArithTraits<mag_type>::infinity ());
   }
