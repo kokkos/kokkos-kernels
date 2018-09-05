@@ -859,7 +859,9 @@ public:
   static const bool is_complex = true;
 
   static constexpr bool has_infinity = false;
-  static val_type infinity() { return val_type(); }
+  static std::complex<RealFloatType> infinity() {
+    return std::complex<RealFloatType> (ArithTraits<mag_type>::infinity (), ArithTraits<mag_type>::infinity ());
+  }
 
   static bool isInf (const std::complex<RealFloatType>& x) {
     #ifndef __CUDA_ARCH__
