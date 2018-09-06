@@ -526,9 +526,10 @@ namespace KokkosBatched {
 
             typedef Functor<test,view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
- 
+            typedef Kokkos::LaunchBounds<> launch_bounds_type;
+
             const int team_size =
-              Kokkos::Impl::cuda_get_opt_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
+              Kokkos::Impl::cuda_get_opt_block_size<parallel_for_type,launch_bounds_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
 
             const policy_type policy(N/team_size, team_size, VectorLength);
             for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -591,7 +592,8 @@ namespace KokkosBatched {
 
             typedef Functor<test,view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
- 
+            typedef Kokkos::LaunchBounds<> launch_bounds_type;
+
             const int
               is_blocked_algo = (std::is_same<AlgoTagType,Algo::Trsm::Blocked>::value),
               mb = Algo::Trsm::Blocked::mb<DeviceMemorySpaceType>(),
@@ -600,8 +602,8 @@ namespace KokkosBatched {
             const int
               mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
               
-            const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-            const int team_size = min(max(NumCols,(mblk-1)*mblk), max_cuda_blocksize/VectorLength);
+            const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type,launch_bounds_type>(functor_type(), VectorLength, 0, 0);
+            const int team_size = std::min(std::max(NumCols,(mblk-1)*mblk), max_cuda_blocksize/VectorLength);
 
             const policy_type policy(N, team_size, VectorLength);
             for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -664,6 +666,7 @@ namespace KokkosBatched {
 
             typedef Functor<test,view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
+            typedef Kokkos::LaunchBounds<> launch_bounds_type;
 
             const int lvl = 0, per_team_scratch 
               = ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, BlkSize);
@@ -677,8 +680,8 @@ namespace KokkosBatched {
               const int
                 mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
-              const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-              const int team_size = min(max(NumCols,(mblk-1)*mblk), max_cuda_blocksize/VectorLength);
+              const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type,launch_bounds_type>(functor_type(), VectorLength, 0, 0);
+              const int team_size = std::min(std::max(NumCols,(mblk-1)*mblk), max_cuda_blocksize/VectorLength);
 
               policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {

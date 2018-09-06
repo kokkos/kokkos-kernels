@@ -365,9 +365,10 @@ namespace KokkosBatched {
 
             typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
-              
+            typedef Kokkos::LaunchBounds<> launch_bounds_type;
+
             const int team_size = 
-              Kokkos::Impl::cuda_get_opt_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
+              Kokkos::Impl::cuda_get_opt_block_size<parallel_for_type,launch_bounds_type>(functor_type(), VectorLength, 0, 0)/VectorLength;
               
             const policy_type policy(N/team_size, team_size, VectorLength);
             for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -431,7 +432,8 @@ namespace KokkosBatched {
 
             typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
-              
+            typedef Kokkos::LaunchBounds<> launch_bounds_type;
+
             const int 
               is_blocked_algo = (std::is_same<AlgoTagType,Algo::Gemm::Blocked>::value), 
               mb = Algo::Gemm::Blocked::mb<DeviceMemorySpaceType>(),
@@ -440,8 +442,8 @@ namespace KokkosBatched {
             const int 
               mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
-            const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
-            const int team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength);
+            const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type,launch_bounds_type>(functor_type(), VectorLength, 0, 0);
+            const int team_size = std::min(std::max(mblk*mblk,4), max_cuda_blocksize/VectorLength);
 
             policy_type policy(N, team_size, VectorLength);
             for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -505,6 +507,7 @@ namespace KokkosBatched {
 
             typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
+            typedef Kokkos::LaunchBounds<> launch_bounds_type;
 
             const int lvl = 0, per_team_scratch = 2*ScratchViewType<view_type>::shmem_size(VectorLength, BlkSize, BlkSize);
             //std::cout << "per team scratch " << per_team_scratch << "\n";
@@ -517,8 +520,8 @@ namespace KokkosBatched {
               const int 
                 mblk = is_blocked_algo ? (BlkSize/mb + mp) : BlkSize;
 
-              const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, per_team_scratch, 0);
-              const int team_size = min(max(mblk*mblk,4), max_cuda_blocksize/VectorLength);
+              const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type,launch_bounds_type>(functor_type(), VectorLength, per_team_scratch, 0);
+              const int team_size = std::min(std::max(mblk*mblk,4), max_cuda_blocksize/VectorLength);
 
               policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
@@ -589,9 +592,10 @@ namespace KokkosBatched {
 
             typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
-              
+            typedef Kokkos::LaunchBounds<> launch_bounds_type;
+
             const int team_size = 
-              min(Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0)/VectorLength,BlkSize*BlkSize);
+              std::min(Kokkos::Impl::cuda_get_max_block_size<parallel_for_type,launch_bounds_type>(functor_type(), VectorLength, 0, 0)/VectorLength,BlkSize*BlkSize);
 
             const policy_type policy(N, team_size, VectorLength);
             for (int iter=iter_begin;iter<iter_end;++iter) {
