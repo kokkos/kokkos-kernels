@@ -381,7 +381,7 @@ public:
        // has_infinity == true.  Either we have an integer type or the
        // ArithTraits class has not been specialized for that type.
        if ( AT::is_integer ) {
-       // Return value of ArithTraits<T>::inifinity is only meaningfull when
+       // Return value of ArithTraits<T>::infinity is only meaningful when
        // has_infinity == true but nevertheless let's check that the return
        // value is 0 for integer types because that's how it is defined for
        // std::numeric_limits::infinity() and how we intended to implement it.
