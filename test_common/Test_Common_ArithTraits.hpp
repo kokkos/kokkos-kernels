@@ -395,6 +395,11 @@ public:
         success = 0;
        }
     }
+    if ( ! std::is_same< ScalarType, typename std::result_of<decltype(&AT::infinity)()>::type >::value )
+    {
+      std::cout << "AT::infinity() return value has wrong type" << endl;
+      success = 0;
+    }
 
     // Run the parent class' remaining tests, if any.
     const int parentSuccess = testHostImpl (out);
