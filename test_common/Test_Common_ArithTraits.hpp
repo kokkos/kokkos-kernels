@@ -395,7 +395,7 @@ public:
         success = 0;
        }
     }
-    if ( ! std::is_same< ScalarType, typename std::result_of<decltype(&AT::infinity)()>::type >::value )
+    if ( ! std::is_same< ScalarType, decltype(AT::infinity()) >::value )
     {
       std::cout << "AT::infinity() return value has wrong type" << endl;
       success = 0;
