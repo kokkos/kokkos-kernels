@@ -376,24 +376,6 @@ public:
         out << "AT::isInf (inf) != true" << endl;
         success = 0;
       }
-    } else {
-       // We expect that real floating-point and complex numbers types had
-       // has_infinity == true.  Either we have an integer type or the
-       // ArithTraits class has not been specialized for that type.
-       if ( AT::is_integer ) {
-       // Return value of ArithTraits<T>::infinity is only meaningful when
-       // has_infinity == true but nevertheless let's check that the return
-       // value is 0 for integer types because that's how it is defined for
-       // std::numeric_limits::infinity() and how we intended to implement it.
-         if (AT::infinity() != 0 ) {
-          out << "AT::is_integer && AT::infinity() != 0" << endl;
-          success = 0;
-         }
-       } else if ( AT::is_specialized ) {
-       // Check that no specialized type slipped through the net
-        out << "AT::is_specialized && ! AT::is_integer && ! AT::has_infinity" << endl;
-        success = 0;
-       }
     }
     if ( ! std::is_same< ScalarType, decltype(AT::infinity()) >::value )
     {
