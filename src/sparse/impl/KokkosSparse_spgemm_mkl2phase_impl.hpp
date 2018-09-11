@@ -169,7 +169,7 @@ void mkl2phase_symbolic(
     }
 #endif
 
-#if __INTEL_MKL__ >= 2018
+#if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ == 2
     MKL_INT mklm = m, mkln = n;
     double *mynullptr = NULL;
 
@@ -261,6 +261,10 @@ void mkl2phase_symbolic(
     if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (C)){
       throw std::runtime_error ("Error at mkl_sparse_destroy C\n");
     }
+#elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
+    throw std::runtime_error ("MKL version 18 must have update 2 - use intel/18.2.xyz compiler\n");
+#else
+    throw std::runtime_error ("MKL versions > 18 are not yet tested/supported\n");
 #endif
 
   }
@@ -400,7 +404,7 @@ void mkl2phase_symbolic(
       }
 #endif
 
-#if __INTEL_MKL__ >= 2018
+#if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ == 2
       value_type *a_ew = const_cast<value_type*>(valuesA.data());
       value_type *b_ew = const_cast<value_type*>(valuesB.data());
 
@@ -529,6 +533,10 @@ void mkl2phase_symbolic(
       if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (C)){
         throw std::runtime_error ("Error at mkl_sparse_destroy C\n");
       }
+#elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
+      throw std::runtime_error ("MKL version 18 must have update 2 - use intel/18.2.xyz compiler\n");
+#else
+      throw std::runtime_error ("MKL versions > 18 are not yet tested/supported\n");
 #endif
 
     }
