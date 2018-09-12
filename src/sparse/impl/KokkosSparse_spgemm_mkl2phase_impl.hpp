@@ -169,7 +169,7 @@ void mkl2phase_symbolic(
     }
 #endif
 
-#if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ == 2
+#if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
     MKL_INT mklm = m, mkln = n;
     double *mynullptr = NULL;
 
@@ -404,7 +404,7 @@ void mkl2phase_symbolic(
       }
 #endif
 
-#if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ == 2
+#if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
       value_type *a_ew = const_cast<value_type*>(valuesA.data());
       value_type *b_ew = const_cast<value_type*>(valuesB.data());
 
