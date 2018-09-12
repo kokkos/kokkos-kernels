@@ -261,7 +261,7 @@ ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS}, 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_CUBLAS" >> KokkosKernels_config.tmp )
 endif
 
-  tmp := $(shell echo "\#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)" >> KokkosKernels_config.tmp )
+  tmp := $(shell echo "\#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)" >> KokkosKernels_config.tmp )
   tmp := $(shell echo "\#if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)" >> KokkosKernels_config.tmp )  
   tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_BLAS" >> KokkosKernels_config.tmp )
   tmp := $(shell echo "\#endif" >> KokkosKernels_config.tmp )
