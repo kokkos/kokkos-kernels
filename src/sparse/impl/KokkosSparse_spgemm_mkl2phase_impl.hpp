@@ -262,9 +262,9 @@ void mkl2phase_symbolic(
       throw std::runtime_error ("Error at mkl_sparse_destroy C\n");
     }
 #elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
-    throw std::runtime_error ("MKL version 18 must have update 2 - use intel/18.2.xyz compiler\n");
+    throw std::runtime_error ("Intel MKL version 18 must have update 2 - use intel/18.2.xyz\n");
 #else
-    throw std::runtime_error ("MKL versions > 18 are not yet tested/supported\n");
+    throw std::runtime_error ("Intel MKL versions > 18 are not yet tested/supported\n");
 #endif
 
   }
@@ -534,9 +534,9 @@ void mkl2phase_symbolic(
         throw std::runtime_error ("Error at mkl_sparse_destroy C\n");
       }
 #elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
-      throw std::runtime_error ("MKL version 18 must have update 2 - use intel/18.2.xyz compiler\n");
+      throw std::runtime_error ("Intel MKL version 18 must have update 2 - use intel/18.2.xyz\n");
 #else
-      throw std::runtime_error ("MKL versions > 18 are not yet tested/supported\n");
+      throw std::runtime_error ("Intel MKL versions > 18 are not yet tested/supported\n");
 #endif
 
     }
