@@ -107,10 +107,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     dgemv_(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
     Kokkos::Profiling::popRegion(); \
@@ -147,10 +145,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     sgemv_(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
     Kokkos::Profiling::popRegion(); \
@@ -187,11 +183,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
-    \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     zgemv_(trans,&M,&N, \
         reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
@@ -231,11 +224,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
-    \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cgemv_(trans,&M,&N, \
         reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
@@ -306,11 +296,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
-    \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -355,11 +342,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
-    \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -404,11 +388,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
-    \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -453,11 +434,8 @@ struct GEMV< \
     const int M = static_cast<int> (A.extent(0)); \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
-    int strides[2]; \
-    \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    A.stride(strides); \
-    const int LDA = (strides[A_is_lr?0:1] == 0)? int(1): strides[A_is_lr?0:1]; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
