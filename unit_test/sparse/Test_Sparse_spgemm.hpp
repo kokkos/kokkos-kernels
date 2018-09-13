@@ -301,7 +301,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
     case SPGEMM_CUSPARSE:
       //TODO: add these test failure cases for cusparse too.
       algo = "SPGEMM_CUSPARSE";
-#ifndef KERNELS_HAVE_CUSPARSE
+#if !defined(KERNELS_HAVE_CUSPARSE) && !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       is_expected_to_fail = true;
 #endif
       break;
