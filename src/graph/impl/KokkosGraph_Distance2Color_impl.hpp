@@ -2380,10 +2380,9 @@ class GraphColorD2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t chunk_id) const
         {
-#if 1
+            #if 1
             // EXPERIMENTAL
-            // Get a unique token since we aren't using TeamPolicy here
-            // (for UniformMemoryPool that the HashmapAccumulator requires)
+            // Get a unique token since we aren't using TeamPolicy (for UniformMemoryPool, that the HashmapAccumulator requires)
             auto tid = tokens.acquire();
 
             volatile nnz_lno_t * tmp = NULL;
@@ -2405,8 +2404,8 @@ class GraphColorD2
             hash_map.max_value_size = _hash_size;
 
             nnz_lno_t pow2_hash_func = _hash_size-1;
+            #endif
 
-#endif
             for(nnz_lno_t ichunk = 0; ichunk < _chunk_size; ichunk++)
             {
                 nnz_lno_t vid = chunk_id * _chunk_size + ichunk;
@@ -2434,7 +2433,7 @@ class GraphColorD2
 
                         nnz_lno_t hash = vid_d2 & pow2_hash_func;
 
-#if 1
+                        #if 1
                         int r = hash_map.sequential_insert_into_hash_TrackHashes(hash,
                                                                                  vid_d2,
                                                                                  &used_hash_size,
@@ -2447,18 +2446,14 @@ class GraphColorD2
                         {
                             // Do something if we couldn't insert...
                         }
-#endif
+                        #endif
                     }
-
                     // EXPERIMENTAL END
-
-//                    const size_type degree_vid_d1 = vid_d2_adj_end - vid_d2_adj_begin;
-//                    _degree_d2(vid) += degree_vid_d1;
                 }      // for vid_d1_adj ...
 
                 // EXPERIMENTAL BEGIN
-#if 1
-//                std::cout << "::: " << vid << " -> " << used_hash_size << std::endl;
+                #if 1
+                //std::cout << "::: " << vid << " -> " << used_hash_size << std::endl;
                 _degree_d2(vid) = used_hash_size;
 
                 // Clear the Begins values.
@@ -2467,19 +2462,13 @@ class GraphColorD2
                     nnz_lno_t dirty_hash = globally_used_hash_indices[i];
                     hash_map.hash_begins[dirty_hash] = -1;
                 }
-#endif
+                #endif
                 // EXPERIMENTAL END
-
-
-
-            }          // for ichunk ...
-
+            }     // for ichunk ...
             _m_space.release_chunk(globally_used_hash_indices);
-        }              // operator() (end)
-    };                 // struct functorCalculateD2Degree (end)
-
-};      // end class GraphColorD2
-
+        }   // operator() (end)
+    };      // struct functorCalculateD2Degree (end)
+};          // end class GraphColorD2
 
 
 }      // namespace Impl
