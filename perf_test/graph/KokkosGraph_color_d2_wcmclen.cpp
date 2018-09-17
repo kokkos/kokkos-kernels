@@ -326,8 +326,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
 
     // Get Date/Time stamps of start to use later when printing out summary data.
-    auto t  =  std::time(nullptr);
-    auto tm = *std::localtime(&t);
+    //auto t  =  std::time(nullptr);
+    //auto tm = *std::localtime(&t);
 
     // Note: crsGraph.numRows() == number of vertices in the 'graph'
     //       crsGraph.entries.extent(0) == number of edges in the 'graph'
@@ -485,6 +485,12 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     // ------------------------------------------
     // Compute Distance 2 Degree Stats
     // ------------------------------------------
+    std::cout << "Compute Distance-2 Degree " << std::endl;
+
+    double time_d2_degree;
+    Kokkos::Impl::Timer timer;
+    timer.reset();
+
     typedef typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
     non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
 
@@ -493,6 +499,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                            crsGraph.row_map, crsGraph.entries,
                            crsGraph.row_map, crsGraph.entries,
                            degree_d2_dist, degree_d2_max);
+
+    time_d2_degree = timer.seconds();
 
 
     double total_time                   = kh.get_graph_coloring_handle()->get_overall_coloring_time();
@@ -539,7 +547,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     std::cout << "Summary" << std::endl
               << "-------" << std::endl
-              << "    Date/Time      : " << currentDateTimeStr << std::endl
+              //<< "    Date/Time      : " << currentDateTimeStr << std::endl
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
               << "    Filename       : " << a_mtx_bin_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
@@ -548,6 +556,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "    Algorithm      : " << label_algorithm << std::endl
               << "Graph Stats" << std::endl
               << "    Degree D2 Max  : " << degree_d2_max << std::endl
+              << "    Degree D2 Time : " << time_d2_degree << std::endl
               << "Overall Time/Stats" << std::endl
               << "    Total Time     : " << total_time << std::endl
               << "    Avg Time       : " << avg_time << std::endl
@@ -567,7 +576,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVTIMEHDR"
               << "," << "Filename"
               << "," << "Host"
-              << "," << "DateTime"
+              //<< "," << "DateTime"
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
@@ -580,6 +589,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Total Time CG"
               << "," << "Total Time FC"
               << "," << "Total Time RC"
+              << "," << "Time D2 Degree"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
               << "," << "Degree D2 Max"
@@ -589,7 +599,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVTIMEDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
-              << "," << currentDateTimeStr
+              //<< "," << currentDateTimeStr
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
@@ -602,6 +612,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << total_time_color_greedy
               << "," << total_time_find_conflicts
               << "," << total_time_resolve_conflicts
+              << "," << time_d2_degree
               << "," << avg_colors
               << "," << avg_phases
               << "," << degree_d2_max
@@ -611,7 +622,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVHISTHDR"
               << "," << "Filename"
               << "," << "Host"
-              << "," << "DateTime"
+              //<< "," << "DateTime"
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
@@ -620,11 +631,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Histogram: 1 .. N"
               << std::endl;
 
-
     std::cout << "CSVHISTDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
-              << "," << currentDateTimeStr
+              //<< "," << currentDateTimeStr
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
