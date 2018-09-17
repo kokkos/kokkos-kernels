@@ -288,6 +288,17 @@ namespace KokkosKernels {
 namespace Experiment {
 
 
+std::string getCurrentDateTimeStr()
+{
+    // Note: This could be replaced with `std::put_time(&tm, "%FT%T%z")` but std::put_time isn't
+    //       supported on the intel C++ compilers as of v. 17.0.x
+    time_t now = time(0);
+    char output[100];
+    std::strftime(output, sizeof(output), "%FT%T%Z", std::localtime(&now));
+    return output;
+}
+
+
 template<typename ExecSpace, typename crsGraph_t, typename crsGraph_t2, typename crsGraph_t3, typename TempMemSpace, typename PersistentMemSpace>
 void run_experiment(crsGraph_t crsGraph, Parameters params)
 {
@@ -524,9 +535,11 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     if(!all_results_valid)
         all_results_valid_str = "FAILED";
 
+    std::string currentDateTimeStr = getCurrentDateTimeStr();
+
     std::cout << "Summary" << std::endl
               << "-------" << std::endl
-              << "    Date/Time      : " << std::put_time(&tm, "%FT%T%z") << std::endl
+              << "    Date/Time      : " << currentDateTimeStr << std::endl
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
               << "    Filename       : " << a_mtx_bin_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
@@ -576,7 +589,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVTIMEDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
-              << "," << std::put_time(&tm, "%FT%T%z")
+              << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
@@ -611,7 +624,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVHISTDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
-              << "," << std::put_time(&tm, "%FT%T%z")
+              << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
@@ -820,8 +833,6 @@ void run_multi_mem_experiment(Parameters params)
 
 }      // namespace Experiment
 }      // namespace KokkosKernels
-
-
 
 
 
