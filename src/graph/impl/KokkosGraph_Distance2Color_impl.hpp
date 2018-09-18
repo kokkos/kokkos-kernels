@@ -509,12 +509,12 @@ class GraphColorD2
         nnz_lno_t v_chunk_size = this->_chunkSize;
         nnz_lno_t v_num_chunks = this->nv / v_chunk_size + 1;
 
-        nnz_lno_t max_d1_degree = 0;
-        this->calculate_max_degree(max_d1_degree);
+        // Get the maximum distance-1 degree
+        nnz_lno_t max_d1_degree = this->calculate_max_degree();
 
         // Round up hash_size to next power of two
         nnz_lno_t hash_size = 1;
-        while(hash_size < max_d1_degree) { hash_size *= 2; }
+        while(hash_size < max_d1_degree*max_d1_degree) { hash_size *= 2; }
 
         // Max Nonzeros in D2 context can be max_degree(G)^2
         nnz_lno_t max_nonzeros = max_d1_degree * max_d1_degree;
@@ -558,18 +558,18 @@ class GraphColorD2
     /**
      * Compute the maximum distance-1 degree.
      */
-    void calculate_max_degree(nnz_lno_t& max_degree)
+    nnz_lno_t calculate_max_degree() const
     {
-        nnz_lno_t tmp_max_degree = 0;
-        Kokkos::parallel_reduce("Max Degree",
+        nnz_lno_t max_degree = 0;
+        Kokkos::parallel_reduce("Max D1 Degree",
                                 this->nv,
                                 KOKKOS_LAMBDA(const nnz_lno_t& vid, nnz_lno_t& lmax)
                                 {
                                     const nnz_lno_t degree = this->xadj(vid+1) - this->xadj(vid);
                                     lmax = degree > lmax ? degree : lmax;
                                 },
-                                Kokkos::Max<nnz_lno_t>(tmp_max_degree));
-        max_degree = tmp_max_degree;
+                                Kokkos::Max<nnz_lno_t>(max_degree));
+        return max_degree;
     }
 
 
@@ -2433,7 +2433,6 @@ class GraphColorD2
 
                         nnz_lno_t hash = vid_d2 & pow2_hash_func;
 
-                        #if 1
                         int r = hash_map.sequential_insert_into_hash_TrackHashes(hash,
                                                                                  vid_d2,
                                                                                  &used_hash_size,
@@ -2446,7 +2445,6 @@ class GraphColorD2
                         {
                             // Do something if we couldn't insert...
                         }
-                        #endif
                     }
                     // EXPERIMENTAL END
                 }      // for vid_d1_adj ...
