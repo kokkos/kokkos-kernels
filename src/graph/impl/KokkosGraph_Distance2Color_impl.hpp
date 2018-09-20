@@ -501,13 +501,17 @@ class GraphColorD2
      * @param degree_d2_sum : Saves the sum of the distance-2 degrees
      *                        of all vertices.
      *
-     * // EXPERIMENTAL / SCAFFOLDING / WCMCLEN /
+     * EXPERIMENTAL / SCAFFOLDING / WCMCLEN /
      */
     void calculate_d2_degree(non_const_1d_size_type_view_t &degree_d2, size_t &degree_d2_max)
     {
         // Vertex group chunking
         nnz_lno_t v_chunk_size = this->_chunkSize;
-        nnz_lno_t v_num_chunks = this->nv / v_chunk_size + 1;
+        nnz_lno_t v_num_chunks = this->nv / v_chunk_size + 1;   // TODO: This probably needs fixing
+
+        std::cout << ">>> this->nv     = " << this->nv << std::endl;
+        std::cout << ">>> v_chunk_size = " << v_chunk_size << std::endl;
+        std::cout << ">>> v_num_chunks = " << v_num_chunks << std::endl;
 
         // Get the maximum distance-1 degree
         nnz_lno_t max_d1_degree = this->calculate_max_degree();
@@ -2393,15 +2397,24 @@ class GraphColorD2
 
             KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hash_map;
 
-            nnz_lno_t *globally_used_hash_indices = (nnz_lno_t*) tmp;
+            // What is globally_used_hash_indices?
+            nnz_lno_t *globally_used_hash_indices = (nnz_lno_t *) tmp;
             tmp += _hash_size;
+
+            // set up hash_begins
             hash_map.hash_begins = (nnz_lno_t *)(tmp);
             tmp += _hash_size;
+
+            // set up hash_nexts
             hash_map.hash_nexts  = (nnz_lno_t *)(tmp);
             tmp += _max_nonzeros;
+
+            // set up hash_keys
             hash_map.keys = (nnz_lno_t *)(tmp);
-            hash_map.hash_key_size  = _hash_size;
-            hash_map.max_value_size = _hash_size;
+
+            // Set key and value sizes
+            hash_map.hash_key_size  = _max_nonzeros;        // Max # of nonzeros that can be added into the hash table (unused?)
+            hash_map.max_value_size = _max_nonzeros;        // Max # of nonzeros that can be added into the hash table
 
             nnz_lno_t pow2_hash_func = _hash_size-1;
             #endif
