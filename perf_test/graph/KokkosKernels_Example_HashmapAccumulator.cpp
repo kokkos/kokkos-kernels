@@ -163,7 +163,7 @@ namespace Experiment {
                 // Check return code
                 if(r)
                 {
-                    // insert should return noonzero if the insert failed, but for sequential_insert_into_hash_TrackHashes
+                    // insert should return nonzero if the insert failed, but for sequential_insert_into_hash_TrackHashes
                     // the 'full' case is currently ignored, so r will always be 0.
                 }
             }
