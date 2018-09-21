@@ -68,18 +68,19 @@
 namespace KokkosKernels {
 namespace Experiment {
 
-    template<typename execution_space, typename uniform_memory_pool_t>
+    template<typename ExecutionSpace, typename uniform_memory_pool_t, typename scalar_t>
     struct functorTestHashmapAccumulator
     {
-        //typedef ExecutionSpace execution_space;
-        //typedef typename MemoryPoolType uniform_memory_pool_t;
-        typedef typename Kokkos::View<size_t*> data_view_t;
+        typedef ExecutionSpace execution_space;
+        typedef typename Kokkos::View<scalar_t*> data_view_t;
 
         const size_t _num_entries;
         const data_view_t _data;
         uniform_memory_pool_t _memory_pool;
         const size_t _hash_size;
         const size_t _max_hash_entries;
+
+        Kokkos::Experimental::UniqueToken<execution_space, Kokkos::Experimental::UniqueTokenScope::Global> tokens;
 
         functorTestHashmapAccumulator( const size_t num_entries,
                                        const data_view_t data,
@@ -95,20 +96,93 @@ namespace Experiment {
         }
 
         KOKKOS_INLINE_FUNCTION
-        void operator()(const size_t idx) const
+        void operator()(const scalar_t idx) const
         {
-            // TODO: Do something with HashmapAccumulator here.
+            typedef scalar_t hash_size_type;
+            typedef scalar_t hash_key_type;
+            typedef scalar_t hash_value_type;
+
+            // Alternative to team_policy thread id
+            auto tid = tokens.acquire();
+
+            // Acquire a chunk from the memory pool using a spin-loop.
+            volatile scalar_t* ptr_temp = nullptr;
+            while(nullptr==ptr_temp)
+            {
+                ptr_temp = (volatile scalar_t*)(_memory_pool.allocate_chunk(tid));
+            }
+            scalar_t* ptr_memory_pool_chunk = (scalar_t*)(ptr_temp);
+
+            KokkosKernels::Experimental::HashmapAccumulator<hash_size_type, hash_key_type, hash_value_type> hash_map;
+
+            // Set pointer to hash indices
+            scalar_t* hash_indices = (scalar_t*)(ptr_temp);
+            ptr_temp += _hash_size;
+
+            // Set pointer to hash begins
+            hash_map.hash_begins = (scalar_t*)(ptr_temp);
+            ptr_temp += _hash_size;
+
+            // Set pointer to hash nexts
+            hash_map.hash_nexts = (scalar_t*)(ptr_temp);
+            ptr_temp += _max_hash_entries;
+
+            // Set pointer to hash keys
+            hash_map.keys = (scalar_t*)(ptr_temp);
+            // ptr_temp += _max_hash_entries;
+
+            // Set pointer to hash values
+            //hash_map.values = (scalar_t*)(ptr_temp);
+
+            // Set up limits in Hashmap_Accumulator
+            hash_map.hash_key_size  = _max_hash_entries;
+            hash_map.max_value_size = _max_hash_entries;
+
+            // hash function is hash_size-1 (note: hash_size must be a power of 2)
+            scalar_t hash_func_pow2 = _hash_size-1;
+
+            // These are updated by Hashmap_Accumulator insert functions.
+            scalar_t used_hash_size = 0;
+            scalar_t used_hash_count = 0;
+
+            // Loop over stuff
+            for(size_t i=0; i<_num_entries; i++)
+            {
+                scalar_t key  = _data(i);
+
+                // Compute the hash index using & instead of % (modulus is slower).
+                scalar_t hash = key & hash_func_pow2;
+
+                int r = hash_map.sequential_insert_into_hash_TrackHashes(hash,
+                                                                         key,
+                                                                         &used_hash_size,
+                                                                         hash_map.max_value_size,
+                                                                         &used_hash_count,
+                                                                         hash_indices);
+
+                // Check return code
+                if(r)
+                {
+                    // insert should return noonzero if the insert failed, but for sequential_insert_into_hash_TrackHashes
+                    // the 'full' case is currently ignored, so r will always be 0.
+                }
+            }
+
+            //std::cout << "idx: " << idx << "\ttid: " << tid << "\tused_hash_size: " << used_hash_size << std::endl;
+
+            // Release the memory pool chunk back to the pool
+            _memory_pool.release_chunk(ptr_memory_pool_chunk);
         }
 
     };  // functorTestHashmapAccumulator
 
 
-    template<typename execution_space>
+    template<typename execution_space, typename scalar_t=int>
     void experiment(size_t num_entries)
     {
         //typedef ExecutionSpace execution_space;
-        typedef typename KokkosKernels::Impl::UniformMemoryPool<execution_space, size_t> uniform_memory_pool_t;
-        typedef typename Kokkos::View<size_t*> data_view_t;
+        typedef typename KokkosKernels::Impl::UniformMemoryPool<execution_space, scalar_t> uniform_memory_pool_t;
+        typedef typename Kokkos::View<scalar_t*> data_view_t;
         typedef typename data_view_t::HostMirror data_view_hostmirror_t;
 
         // Get the concurrecny
@@ -117,7 +191,7 @@ namespace Experiment {
         // Set up random number generator
         std::random_device rd;
         std::mt19937 eng(rd());
-        std::uniform_int_distribution<size_t> distr(0, num_entries);
+        std::uniform_int_distribution<scalar_t> distr(0, num_entries);
 
         // Create a view of random values
         data_view_t d_data("data", num_entries);
@@ -159,10 +233,10 @@ namespace Experiment {
         //KokkosKernels::Impl::UniformMemoryPool<Kokkos::DefaultExecutionSpace, size_t> m_space(num_chunks, mem_chunk_size, -1, pool_type);
         uniform_memory_pool_t memory_pool(num_chunks, mem_chunk_size, -1, pool_type);
 
-        functorTestHashmapAccumulator<execution_space, uniform_memory_pool_t>
+        functorTestHashmapAccumulator<execution_space, uniform_memory_pool_t, scalar_t>
         testHashmapAccumulator(num_entries, h_data, memory_pool, hash_size, max_hash_entries);
 
-        Kokkos::parallel_for("testHashmapAccumulator", execution_space(0, num_entries), testHashmapAccumulator);
+        Kokkos::parallel_for("testHashmapAccumulator", num_entries, testHashmapAccumulator);
 
     }
 
