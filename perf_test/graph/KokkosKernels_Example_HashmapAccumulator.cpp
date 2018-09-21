@@ -116,7 +116,7 @@ namespace Experiment {
             KokkosKernels::Experimental::HashmapAccumulator<hash_size_type, hash_key_type, hash_value_type> hash_map;
 
             // Set pointer to hash indices
-            scalar_t* hash_indices = (scalar_t*)(ptr_temp);
+            scalar_t* used_hash_indices = (scalar_t*)(ptr_temp);
             ptr_temp += _hash_size;
 
             // Set pointer to hash begins
@@ -142,7 +142,7 @@ namespace Experiment {
             scalar_t hash_func_pow2 = _hash_size-1;
 
             // These are updated by Hashmap_Accumulator insert functions.
-            scalar_t used_hash_size = 0;
+            scalar_t used_hash_size  = 0;
             scalar_t used_hash_count = 0;
 
             // Loop over stuff
@@ -158,7 +158,7 @@ namespace Experiment {
                                                                          &used_hash_size,
                                                                          hash_map.max_value_size,
                                                                          &used_hash_count,
-                                                                         hash_indices);
+                                                                         used_hash_indices);
 
                 // Check return code
                 if(r)
@@ -169,6 +169,14 @@ namespace Experiment {
             }
 
             //std::cout << "idx: " << idx << "\ttid: " << tid << "\tused_hash_size: " << used_hash_size << std::endl;
+
+            // Reset the Begins values to -1 before releasing the memory pool chunk.
+            // If you don't do this the next thread that grabs this memory chunk will not work properly.
+            for(scalar_t i=0; i<used_hash_count; i++)
+            {
+                scalar_t dirty_hash = used_hash_indices[i];
+                hash_map.hash_begins[dirty_hash] = -1;
+            }
 
             // Release the memory pool chunk back to the pool
             _memory_pool.release_chunk(ptr_memory_pool_chunk);
@@ -228,10 +236,10 @@ namespace Experiment {
         // Set a cap on # of chunks to 32.  In application something else should be done
         // here differently if we're OpenMP vs. GPU but for this example we can just cap
         // our number of chunks at 32.
-        size_t num_chunks  = KOKKOSKERNELS_MACRO_MIN(32, concurrency);
+        size_t mem_chunk_count  = KOKKOSKERNELS_MACRO_MIN(32, concurrency);
 
-        //KokkosKernels::Impl::UniformMemoryPool<Kokkos::DefaultExecutionSpace, size_t> m_space(num_chunks, mem_chunk_size, -1, pool_type);
-        uniform_memory_pool_t memory_pool(num_chunks, mem_chunk_size, -1, pool_type);
+        //KokkosKernels::Impl::UniformMemoryPool<Kokkos::DefaultExecutionSpace, size_t> m_space(mem_chunk_count, mem_chunk_size, -1, pool_type);
+        uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size, -1, pool_type);
 
         functorTestHashmapAccumulator<execution_space, uniform_memory_pool_t, scalar_t>
         testHashmapAccumulator(num_entries, h_data, memory_pool, hash_size, max_hash_entries);

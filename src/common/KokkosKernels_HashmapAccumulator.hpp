@@ -48,7 +48,7 @@ namespace KokkosKernels {
 namespace Experimental {
 
 /**
- * HashmapAccumulator 
+ * HashmapAccumulator
  *
  * The use of this is described in the paper:
  *   "Performance-portable sparse matrix-matrix multiplication for many-core architectures"
