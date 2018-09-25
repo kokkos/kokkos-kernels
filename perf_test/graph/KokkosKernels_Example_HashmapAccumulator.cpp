@@ -81,7 +81,8 @@ namespace Experiment {
         const size_t _hash_size;
         const size_t _max_hash_entries;
 
-        Kokkos::Experimental::UniqueToken<execution_space, Kokkos::Experimental::UniqueTokenScope::Global> tokens;
+        typedef Kokkos::Experimental::UniqueToken<execution_space, Kokkos::Experimental::UniqueTokenScope::Global> unique_token_t;
+        unique_token_t tokens;
 
         functorTestHashmapAccumulator( const size_t num_entries,
                                        const data_view_t& data,
@@ -93,7 +94,9 @@ namespace Experiment {
             , _memory_pool(memory_pool)
             , _hash_size(hash_size)
             , _max_hash_entries(max_hash_entries)
+            , tokens()
         {
+            std::cout << "UniqueToken.size: " << tokens.size() << std::endl;
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -194,7 +197,6 @@ namespace Experiment {
     template<typename execution_space, typename scalar_t=int>
     void experiment(size_t num_entries)
     {
-        //typedef ExecutionSpace execution_space;
         typedef typename KokkosKernels::Impl::UniformMemoryPool<execution_space, scalar_t> uniform_memory_pool_t;
         typedef typename Kokkos::View<scalar_t*> data_view_t;
         typedef typename data_view_t::HostMirror data_view_hostmirror_t;
@@ -295,10 +297,10 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
 // Command Line Parameters structure
 typedef struct params
 {
-    bool use_serial  = false;
-    bool use_threads = false;
-    bool use_cuda    = false;
-    bool use_openmp  = false;
+    uint32_t use_serial  = false;
+    uint32_t use_threads = false;
+    uint32_t use_cuda    = false;
+    uint32_t use_openmp  = false;
     bool verbose     = false;
 
     size_t problem_size = 20;
@@ -318,31 +320,31 @@ int parse_inputs(parameters_t &params, int argc, char **argv)
 
     for(int i = 1; i < argc; ++i)
     {
-        if(0 == strcasecmp(argv[i], "threads"))
+        if(0 == strcasecmp(argv[i], "--threads"))
         {
             params.use_threads = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "serial"))
+        else if(0 == strcasecmp(argv[i], "--serial"))
         {
             params.use_serial = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "openmp"))
+        else if(0 == strcasecmp(argv[i], "--openmp"))
         {
             params.use_openmp = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "cuda"))
+        else if(0 == strcasecmp(argv[i], "--cuda"))
         {
             params.use_cuda = 1;
         }
-        else if (0 == strcasecmp(argv[i], "repeat"))
+        else if (0 == strcasecmp(argv[i], "--repeat"))
         {
             params.repeat = atoi(argv[++i]);
         }
-        else if (0 == strcasecmp(argv[i], "problem-size"))
+        else if (0 == strcasecmp(argv[i], "--problem-size"))
         {
             params.problem_size = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "verbose"))
+        else if(0 == strcasecmp(argv[i], "--verbose") || 0 == strcasecmp(argv[i], "-V") )
         {
             params.verbose = true;
         }
@@ -357,6 +359,11 @@ int parse_inputs(parameters_t &params, int argc, char **argv)
             print_options(std::cout, argv[0]);
             return 1;
         }
+    }
+    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+    {
+        print_options(std::cout, argv[0]);
+        return 1;
     }
     return 0;
 }   // parse_inputs
@@ -380,6 +387,7 @@ int main(int argc, char *argv[])
     const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
 
     Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+    // Kokkos::initialize(argc, argv);
 
     if(params.verbose)
     {
