@@ -47,6 +47,8 @@
 #include<KokkosBlas1_axpby_spec.hpp>
 #include<KokkosKernels_helpers.hpp>
 
+#include "KokkosKernels_Serial_Limits.hpp"
+
 // axpby() accepts both scalar coefficients a and b, and vector
 // coefficients (apply one for each column of the input multivectors).
 // This traits class helps axpby() select the correct specialization

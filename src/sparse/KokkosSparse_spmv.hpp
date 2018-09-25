@@ -52,6 +52,7 @@
 #include <type_traits>
 #include "KokkosSparse_CrsMatrix.hpp"
 
+#include "KokkosKernels_Serial_Limits.hpp"
 
 namespace KokkosSparse {
 

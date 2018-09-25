@@ -47,7 +47,7 @@
 #include<KokkosBlas1_dot_spec.hpp>
 #include<KokkosKernels_helpers.hpp>
 
-#include<common/KokkosKernels_Serial_Limits.hpp>
+#include "KokkosKernels_Serial_Limits.hpp"
 
 namespace KokkosBlas {
 
