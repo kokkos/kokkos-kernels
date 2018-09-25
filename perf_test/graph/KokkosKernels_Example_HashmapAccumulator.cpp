@@ -94,8 +94,14 @@ namespace Experiment {
             , _memory_pool(memory_pool)
             , _hash_size(hash_size)
             , _max_hash_entries(max_hash_entries)
-            , tokens()
+//            , tokens()
         {
+            #if defined(KOKKOS_ENABLE_OPENMP)
+            tokens = unique_token_t();
+            #endif
+            #if defined(KOKKOS_ENABLE_CUDA)
+            tokens = unique_token_t(execution_space);
+            #endif
             std::cout << "UniqueToken.size: " << tokens.size() << std::endl;
         }
 
@@ -386,8 +392,16 @@ int main(int argc, char *argv[])
     const int device_id   = 0;
     const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
 
-    Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
-    // Kokkos::initialize(argc, argv);
+    #if defined(KOKKOS_ENABLE_OPENMP)
+    if(params.use_openmp)
+        Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+    else
+        Kokkos::initialize(argc, argv);
+    #else
+    Kokkos::initialize(argc, argv);
+    #endif
+
+
 
     if(params.verbose)
     {
@@ -395,27 +409,7 @@ int main(int argc, char *argv[])
     }
 
     // Work goes here.
-    #if defined(KOKKOS_ENABLE_OPENMP)
-    if(params.use_openmp)
-    {
-        //KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
-        KokkosKernels::Experiment::experiment<Kokkos::OpenMP>(params.problem_size);
-    }
-    #endif
-
-    #if defined(KOKKOS_ENABLE_CUDA)
-    if(params.use_cuda)
-    {
-        KokkosKernels::Experiment::experiment<Kokkos::Cuda>(params.problem_size);
-    }
-    #endif
-
-    #if defined(KOKKOS_ENABLE_SERIAL)
-    if(params.use_serial)
-    {
-        KokkosKernels::Experiment::experiment<Kokkos::Serial>(params.problem_size);
-    }
-    #endif
+    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
 
     Kokkos::finalize();
     std::cout << "Done." << std::endl;
