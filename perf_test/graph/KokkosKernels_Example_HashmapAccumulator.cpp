@@ -94,15 +94,15 @@ namespace Experiment {
             , _memory_pool(memory_pool)
             , _hash_size(hash_size)
             , _max_hash_entries(max_hash_entries)
-//            , tokens()
+            , tokens()
         {
-            #if defined(KOKKOS_ENABLE_OPENMP)
-            tokens = unique_token_t();
-            #endif
-            #if defined(KOKKOS_ENABLE_CUDA)
-            tokens = unique_token_t(execution_space);
-            #endif
-            std::cout << "UniqueToken.size: " << tokens.size() << std::endl;
+            //#if defined(KOKKOS_ENABLE_OPENMP)
+            //tokens = unique_token_t();
+            //#endif
+            //#if defined(KOKKOS_ENABLE_CUDA)
+            //tokens = unique_token_t(execution_space);
+            //#endif
+            //std::cout << "UniqueToken.size: " << tokens.size() << std::endl;
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -401,15 +401,22 @@ int main(int argc, char *argv[])
     Kokkos::initialize(argc, argv);
     #endif
 
-
-
     if(params.verbose)
     {
         Kokkos::print_configuration(std::cout);
     }
 
     // Work goes here.
-    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
+    #if defined(KOKKOS_ENABLE_OPENMP)
+    if(params.use_openmp)
+        KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
+    #endif
+    #if defined(KOKKOS_ENABLE_CUDA)
+    // Something is currently b0rked with UniqueToken for CUDA... it compiles but UniqueToken::size() gives me a 0.
+    //if(params.use_cuda)
+    //    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
+    std::cout << "This example won't work on CUDA until I can get the UniqueToken c'tor working properly." << std::endl;
+    #endif
 
     Kokkos::finalize();
     std::cout << "Done." << std::endl;
