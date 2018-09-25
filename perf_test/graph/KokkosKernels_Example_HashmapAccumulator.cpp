@@ -65,6 +65,21 @@
 
 
 
+// Command Line Parameters structure
+typedef struct params
+{
+    uint32_t use_serial  = false;
+    uint32_t use_threads = false;
+    uint32_t use_cuda    = false;
+    uint32_t use_openmp  = false;
+    bool verbose     = false;
+
+    size_t problem_size = 20;
+    size_t repeat       = 1;
+} parameters_t;
+
+
+
 namespace KokkosKernels {
 namespace Experiment {
 
@@ -96,12 +111,6 @@ namespace Experiment {
             , _max_hash_entries(max_hash_entries)
             , tokens( ExecutionSpace() )
         {
-            //#if defined(KOKKOS_ENABLE_OPENMP)
-            //tokens = unique_token_t();
-            //#endif
-            //#if defined(KOKKOS_ENABLE_CUDA)
-            //tokens = unique_token_t(execution_space);
-            //#endif
             std::cout << "UniqueToken.size: " << tokens.size() << std::endl;
         }
 
@@ -290,28 +299,16 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << std::endl
        << spaces << "Parameters:" << std::endl
        << spaces << "  Parallelism (select one of the following):" << std::endl
-       << spaces << "      serial <N>        Execute serially." << std::endl
-       << spaces << "      threads <N>       Use N posix threads." << std::endl
-       << spaces << "      openmp <N>        Use OpenMP with N threads." << std::endl
-       << spaces << "      cuda              Use CUDA" << std::endl
-       << spaces << "      help              Print out command line help." << std::endl
+       << spaces << "      --serial <N>        Execute serially." << std::endl
+       << spaces << "      --threads <N>       Use N posix threads." << std::endl
+       << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
+       << spaces << "      --cuda              Use CUDA" << std::endl
+       << spaces << "  Optional Parameters:" << std::endl
+       << spaces << "      --problem-size <N>  Problem Size (Default: 20)" << std::endl
+       << spaces << "      --verbose           Verbose output" << std::endl
+       << spaces << "      --help              Print out command line help." << std::endl
        << spaces << " " << std::endl;
 }   // print_options
-
-
-
-// Command Line Parameters structure
-typedef struct params
-{
-    uint32_t use_serial  = false;
-    uint32_t use_threads = false;
-    uint32_t use_cuda    = false;
-    uint32_t use_openmp  = false;
-    bool verbose     = false;
-
-    size_t problem_size = 20;
-    size_t repeat       = 1;
-} parameters_t;
 
 
 
@@ -392,14 +389,7 @@ int main(int argc, char *argv[])
     const int device_id   = 0;
     const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
 
-    #if defined(KOKKOS_ENABLE_OPENMP)
-    if(params.use_openmp)
-        Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
-    else
-        Kokkos::initialize(argc, argv);
-    #else
-    Kokkos::initialize(argc, argv);
-    #endif
+    Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 
     if(params.verbose)
     {
@@ -407,16 +397,7 @@ int main(int argc, char *argv[])
     }
 
     // Work goes here.
-    #if defined(KOKKOS_ENABLE_OPENMP)
-    if(params.use_openmp)
-        KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
-    #endif
-    #if defined(KOKKOS_ENABLE_CUDA)
-    //  Something is currently b0rked with UniqueToken for CUDA... it compiles but UniqueToken::size() gives me a 0.
-    if(params.use_cuda)
-        KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
-    //std::cout << "This example won't work on CUDA until I can get the UniqueToken c'tor working properly." << std::endl;
-    #endif
+    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
 
     Kokkos::finalize();
     std::cout << "Done." << std::endl;
