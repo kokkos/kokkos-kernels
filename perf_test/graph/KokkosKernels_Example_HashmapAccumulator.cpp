@@ -395,7 +395,27 @@ int main(int argc, char *argv[])
     }
 
     // Work goes here.
-    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
+    #if defined(KOKKOS_ENABLE_OPENMP)
+    if(params.use_openmp)
+    {
+        //KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
+        KokkosKernels::Experiment::experiment<Kokkos::OpenMP>(params.problem_size);
+    }
+    #endif
+
+    #if defined(KOKKOS_ENABLE_CUDA)
+    if(params.use_cuda)
+    {
+        KokkosKernels::Experiment::experiment<Kokkos::Cuda>(params.problem_size);
+    }
+    #endif
+
+    #if defined(KOKKOS_ENABLE_SERIAL)
+    if(params.use_serial)
+    {
+        KokkosKernels::Experiment::experiment<Kokkos::Serial>(params.problem_size);
+    }
+    #endif
 
     Kokkos::finalize();
     std::cout << "Done." << std::endl;
