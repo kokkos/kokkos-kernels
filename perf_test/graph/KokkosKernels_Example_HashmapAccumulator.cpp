@@ -95,6 +95,7 @@ namespace Experiment {
         uniform_memory_pool_t _memory_pool;
         const size_t _hash_size;
         const size_t _max_hash_entries;
+        const parameters_t& _params;
 
         typedef Kokkos::Experimental::UniqueToken<execution_space, Kokkos::Experimental::UniqueTokenScope::Global> unique_token_t;
         unique_token_t tokens;
@@ -103,15 +104,20 @@ namespace Experiment {
                                        const data_view_t& data,
                                        uniform_memory_pool_t memory_pool,
                                        const size_t hash_size,
-                                       const size_t max_hash_entries)
+                                       const size_t max_hash_entries,
+                                       const parameters_t& params)
             : _num_entries(num_entries)
             , _data(data)
             , _memory_pool(memory_pool)
             , _hash_size(hash_size)
             , _max_hash_entries(max_hash_entries)
+            , _params(params)
             , tokens( ExecutionSpace() )
         {
-            std::cout << "UniqueToken.size: " << tokens.size() << std::endl;
+            if(_params.verbose)
+            {
+                std::cout << "UniqueToken.size: " << tokens.size() << std::endl;
+            }
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -210,11 +216,13 @@ namespace Experiment {
 
 
     template<typename execution_space, typename scalar_t=int>
-    void experiment(size_t num_entries)
+    void experiment(const parameters_t& params)
     {
         typedef typename KokkosKernels::Impl::UniformMemoryPool<execution_space, scalar_t> uniform_memory_pool_t;
         typedef typename Kokkos::View<scalar_t*> data_view_t;
         typedef typename data_view_t::HostMirror data_view_hostmirror_t;
+
+        size_t num_entries = params.problem_size;
 
         // Set max value in the list
         size_t max_value = 100;
@@ -237,7 +245,7 @@ namespace Experiment {
         }
 
         // Print out the array of random numbers if the list size is small.
-        if(num_entries <= 50)
+        if(num_entries <= 50 || params.verbose)
         {
             std::cout << "Data: ";
             for(size_t i=0; i<num_entries; i++)
@@ -280,7 +288,7 @@ namespace Experiment {
         uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size, -1, pool_type);
 
         functorTestHashmapAccumulator<execution_space, uniform_memory_pool_t, scalar_t>
-        testHashmapAccumulator(num_entries, d_data, memory_pool, hash_size, max_hash_entries);
+        testHashmapAccumulator(num_entries, d_data, memory_pool, hash_size, max_hash_entries, params);
 
         Kokkos::parallel_for("testHashmapAccumulator", num_entries, testHashmapAccumulator);
 
@@ -397,7 +405,7 @@ int main(int argc, char *argv[])
     }
 
     // Work goes here.
-    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
+    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params);
 
     Kokkos::finalize();
     std::cout << "Done." << std::endl;
