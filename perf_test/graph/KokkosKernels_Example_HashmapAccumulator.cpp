@@ -181,7 +181,11 @@ namespace Experiment {
 
             // Release the memory pool chunk back to the pool
             _memory_pool.release_chunk(ptr_memory_pool_chunk);
-        }
+
+            // Release the UniqueToken
+            tokens.release(tid);
+
+        }   // operator()
 
     };  // functorTestHashmapAccumulator
 
