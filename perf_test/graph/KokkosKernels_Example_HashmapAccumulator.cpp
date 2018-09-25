@@ -68,6 +68,7 @@
 namespace KokkosKernels {
 namespace Experiment {
 
+
     template<typename ExecutionSpace, typename uniform_memory_pool_t, typename scalar_t>
     struct functorTestHashmapAccumulator
     {
@@ -83,7 +84,7 @@ namespace Experiment {
         Kokkos::Experimental::UniqueToken<execution_space, Kokkos::Experimental::UniqueTokenScope::Global> tokens;
 
         functorTestHashmapAccumulator( const size_t num_entries,
-                                       const data_view_t data,
+                                       const data_view_t& data,
                                        uniform_memory_pool_t memory_pool,
                                        const size_t hash_size,
                                        const size_t max_hash_entries)
@@ -168,7 +169,7 @@ namespace Experiment {
                 }
             }
 
-            //std::cout << "idx: " << idx << "\ttid: " << tid << "\tused_hash_size: " << used_hash_size << std::endl;
+            // TODO: Get the # of unique values inserted and return that out of the functor.
 
             // Reset the Begins values to -1 before releasing the memory pool chunk.
             // If you don't do this the next thread that grabs this memory chunk will not work properly.
@@ -185,6 +186,7 @@ namespace Experiment {
     };  // functorTestHashmapAccumulator
 
 
+
     template<typename execution_space, typename scalar_t=int>
     void experiment(size_t num_entries)
     {
@@ -193,13 +195,16 @@ namespace Experiment {
         typedef typename Kokkos::View<scalar_t*> data_view_t;
         typedef typename data_view_t::HostMirror data_view_hostmirror_t;
 
+        // Set max value in the list
+        size_t max_value = 100;
+
         // Get the concurrecny
         size_t concurrency = execution_space::concurrency();
 
         // Set up random number generator
         std::random_device rd;
         std::mt19937 eng(rd());
-        std::uniform_int_distribution<scalar_t> distr(0, num_entries);
+        std::uniform_int_distribution<scalar_t> distr(0, max_value);
 
         // Create a view of random values
         data_view_t d_data("data", num_entries);
@@ -208,18 +213,30 @@ namespace Experiment {
         for(size_t i=0; i<num_entries; i++)
         {
             h_data(i) = distr(eng);
-            std::cout << h_data(i) << " ";
         }
-        std::cout << std::endl;
+
+        // Print out the array of random numbers if the list size is small.
+        if(num_entries <= 50)
+        {
+            std::cout << "Data: ";
+            for(size_t i=0; i<num_entries; i++)
+            {
+                std::cout << h_data(i) << " ";
+            }
+            std::cout << std::endl;
+        }
 
         // Deep copy initialized values to device memory.
         Kokkos::deep_copy(d_data, h_data);
 
         // Set Hash Table Parameters
-        size_t max_hash_entries = num_entries;  // Max number of entries that can be inserted.
-        size_t hash_size_hint   = 12;           // How many hash keys are allowed?
+        size_t max_hash_entries = max_value;       // Max number of entries that can be inserted (values allowed are 0..99)
+        size_t hash_size_hint   = max_value/10;    // How many hash keys are allowed.  max_value/10 is arbitrary... The actual
+                                                   // hash size will be set to the next power of 2 bigger than hash_size_hint.
 
         // Set the hash_size as the next power of 2 bigger than hash_size_hint.
+        // - hash_size must be a power of two since we use & rather than % (which is slower) for
+        // computing the hash value for HashmapAccumulator.
         size_t hash_size = 1;
         while(hash_size < hash_size_hint) { hash_size *= 2; }
 
@@ -242,7 +259,7 @@ namespace Experiment {
         uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size, -1, pool_type);
 
         functorTestHashmapAccumulator<execution_space, uniform_memory_pool_t, scalar_t>
-        testHashmapAccumulator(num_entries, h_data, memory_pool, hash_size, max_hash_entries);
+        testHashmapAccumulator(num_entries, d_data, memory_pool, hash_size, max_hash_entries);
 
         Kokkos::parallel_for("testHashmapAccumulator", num_entries, testHashmapAccumulator);
 
@@ -271,7 +288,23 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
 
 
 
-int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
+// Command Line Parameters structure
+typedef struct params
+{
+    bool use_serial  = false;
+    bool use_threads = false;
+    bool use_cuda    = false;
+    bool use_openmp  = false;
+    bool verbose     = false;
+
+    size_t problem_size = 20;
+    size_t repeat       = 1;
+} parameters_t;
+
+
+
+//int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
+int parse_inputs(parameters_t &params, int argc, char **argv)
 {
     if(argc==1)
     {
@@ -297,6 +330,18 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
         {
             params.use_cuda = 1;
         }
+        else if (0 == strcasecmp(argv[i], "repeat"))
+        {
+            params.repeat = atoi(argv[++i]);
+        }
+        else if (0 == strcasecmp(argv[i], "problem-size"))
+        {
+            params.problem_size = atoi(argv[++i]);
+        }
+        else if(0 == strcasecmp(argv[i], "verbose"))
+        {
+            params.verbose = true;
+        }
         else if(0 == strcasecmp(argv[i], "help") || 0 == strcasecmp(argv[i], "-h"))
         {
             print_options(std::cout, argv[0]);
@@ -316,7 +361,8 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
 
 int main(int argc, char *argv[])
 {
-    KokkosKernels::Experiment::Parameters params;
+    //KokkosKernels::Experiment::Parameters params;
+    parameters_t params;
 
     // Override default repeats (default is 6)
     params.repeat = 1;
@@ -326,14 +372,20 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
     const int device_id   = 0;
+    const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
+
     Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 
+    if(params.verbose)
+    {
+        Kokkos::print_configuration(std::cout);
+    }
+
     // Work goes here.
-    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(20);
+    KokkosKernels::Experiment::experiment<Kokkos::DefaultExecutionSpace>(params.problem_size);
 
     Kokkos::finalize();
-    std::cout << "Done" << std::endl;
+    std::cout << "Done." << std::endl;
     return 0;
 }
