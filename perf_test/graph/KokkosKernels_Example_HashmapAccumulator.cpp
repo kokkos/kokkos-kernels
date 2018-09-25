@@ -57,6 +57,7 @@
 // Kokkos Includes
 #include <Kokkos_Core.hpp>
 #include <Kokkos_UniqueToken.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 // Kokkos Kernels Includes
 #include <KokkosKernels_HashmapAccumulator.hpp>
@@ -233,7 +234,7 @@ namespace Experiment {
         // Set up random number generator
         std::random_device rd;
         std::mt19937 eng(rd());
-        std::uniform_int_distribution<scalar_t> distr(0, max_value);
+        std::uniform_int_distribution<scalar_t> distr(1, max_value);
 
         // Create a view of random values
         data_view_t d_data("data", num_entries);
@@ -255,13 +256,15 @@ namespace Experiment {
             std::cout << std::endl;
         }
 
+        Kokkos::Impl::Timer timer;
+
         // Deep copy initialized values to device memory.
         Kokkos::deep_copy(d_data, h_data);
 
         // Set Hash Table Parameters
-        size_t max_hash_entries = max_value;       // Max number of entries that can be inserted (values allowed are 0..99)
-        size_t hash_size_hint   = max_value/10;    // How many hash keys are allowed.  max_value/10 is arbitrary... The actual
-                                                   // hash size will be set to the next power of 2 bigger than hash_size_hint.
+        size_t max_hash_entries = max_value;       // Max number of entries that can be inserted (values allowed are 1..100)
+        size_t hash_size_hint   = max_value;       // How many hash keys are allowed. The actual hash size will be set to the
+                                                   // next power of 2 bigger than hash_size_hint.
 
         // Set the hash_size as the next power of 2 bigger than hash_size_hint.
         // - hash_size must be a power of two since we use & rather than % (which is slower) for
@@ -292,6 +295,12 @@ namespace Experiment {
 
         Kokkos::parallel_for("testHashmapAccumulator", num_entries, testHashmapAccumulator);
 
+        if(params.verbose)
+        {
+            double t = timer.seconds();
+            std::cout << "Execution Time: " << std::setw(-2) << t << std::endl;
+            timer.reset();
+        }
     }
 
 }   // namespace Experiment
