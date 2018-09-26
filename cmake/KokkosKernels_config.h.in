@@ -79,8 +79,8 @@
 /* CUBLAS */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
-/* if MKL or CUBLAS is defined, BLAS is also defined */
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+/* if MKL, BLAS is also defined */
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) 
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif
