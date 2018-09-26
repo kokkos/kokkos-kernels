@@ -90,7 +90,6 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
   // rank 1 or rank 2.  AV and BV may be either rank-1 Views, or
   // scalar values.
 
-#define KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
   #ifdef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
   if ( X.extent(0) < KokkosKernels::ThresholdSizes<typename XMV::size_type>::axpby_serial_limit ) {
   typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<

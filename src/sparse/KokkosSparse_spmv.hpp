@@ -114,7 +114,6 @@ spmv (const char mode[],
   }
 
 
-#define KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
   #ifdef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
   if ( x.extent(0) < KokkosKernels::ThresholdSizes<typename XVector::size_type>::spmv_serial_limit ) {
   typedef KokkosSparse::CrsMatrix<

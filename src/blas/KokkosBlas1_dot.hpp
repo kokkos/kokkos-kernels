@@ -85,7 +85,6 @@ dot (const XVector& x, const YVector& y)
 
   typename XVector::non_const_value_type result = 0;
 
-#define KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
   #ifdef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
   if ( x.extent(0) < KokkosKernels::ThresholdSizes<typename XVector::size_type>::dot_serial_limit ) {
   typedef Kokkos::View<typename XVector::const_value_type*,
