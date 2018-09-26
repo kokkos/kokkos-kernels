@@ -99,7 +99,7 @@ dot (const XVector& x, const YVector& y)
 
   typedef Kokkos::View<typename XVector::non_const_value_type,
     Kokkos::LayoutLeft,
-    typename KokkosKernels::Impl::GetSmallProblemDeviceType<Kokkos::HostSpace>::type,
+    typename KokkosKernels::Impl::GetSmallProblemDeviceType<typename XVector::device_type>::type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 
   RVector_Internal R = RVector_Internal(&result);
