@@ -132,7 +132,6 @@ dot (const XVector& x, const YVector& y)
   Impl::Dot<RVector_Internal,XVector_Internal,YVector_Internal>::dot (R,X,Y);
   Kokkos::fence();
   }
-#undef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
 
   return result;
 }

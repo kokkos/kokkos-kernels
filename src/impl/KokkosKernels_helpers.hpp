@@ -79,7 +79,6 @@ struct GetUnifiedScalarViewType<T,TX,true,true> {
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > type;
 };
 
-
 }
 }
 #endif

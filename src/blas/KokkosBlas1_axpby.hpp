@@ -153,7 +153,6 @@ axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
   Impl::Axpby<AV_Internal, XMV_Internal, BV_Internal,
     YMV_Internal>::axpby (a_internal, X_internal, b_internal, Y_internal);
   }
-#undef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
 }
 
 template<class AV, class XMV, class YMV>

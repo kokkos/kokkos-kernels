@@ -195,7 +195,6 @@ spmv (const char mode[],
               typename YVector_Internal::device_type,
               typename YVector_Internal::memory_traits>::spmv (mode, alpha, A_i, x_i, beta, y_i);
   }
-#undef KOKKOSKERNELS_EXPERIMENTAL_ENABLE_SERIAL_LIMITS
 }
 
 
