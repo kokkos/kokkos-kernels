@@ -60,6 +60,11 @@ if [ -n $KOKKOS_UPDATE_BRANCH ]
 then
   export KOKKOS_PATH=${PWD}/kokkos
 
+  if [ -z $KOKKOS_UPDATE_BRANCH ]
+  then
+    KOKKOS_UPDATE_BRANCH=develop
+  fi
+
   #Already done:
   if [ ! -d "${KOKKOS_PATH}" ]; then
     git clone https://github.com/kokkos/kokkos ${KOKKOS_PATH}
