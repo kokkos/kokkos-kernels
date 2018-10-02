@@ -30,18 +30,19 @@ namespace KokkosBatched {
     int
     SerialInverseLU<Algo::InverseLU::CompactMKL>::
     invoke(const AViewType &A,
-           const WViewType &W,
-           const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
+           const WViewType &W) {
       typedef typename AViewType::value_type vector_type;
       //typedef typename vector_type::value_type value_type;
 
       const int
-        m = A.dimension(0),
-        n = A.dimension(1);
+        m = A.extent(0),
+        n = A.extent(1);
 
       static_assert(is_vector<vector_type>::value, "value type is not vector type");      
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
                     "AVX, AVX2 and AVX512 is supported");
+      assert(m==n);
+
       const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       int r_val = 0;
@@ -84,8 +85,7 @@ namespace KokkosBatched {
     int
     SerialInverseLU<Algo::InverseLU::Unblocked>::
     invoke(const AViewType &A, 
-           const WViewType &W,
-           const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
+           const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
         assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
@@ -107,9 +107,10 @@ namespace KokkosBatched {
             B_stride_0 = A.stride_0();
             B_stride_1 = A.stride_1();
         }
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), B_stride_0, A.extent(1), B_stride_1);
 
-        ScalarType one(1.0);
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
+
+        const ScalarType one(1.0);
         
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -140,8 +141,7 @@ namespace KokkosBatched {
     int
     SerialInverseLU<Algo::InverseLU::Blocked>::
     invoke(const AViewType &A,
-           const WViewType &W,
-           const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
+           const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
         assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
@@ -163,9 +163,10 @@ namespace KokkosBatched {
             B_stride_0 = A.stride_0();
             B_stride_1 = A.stride_1();
         }
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), B_stride_0, A.extent(1), B_stride_1);
 
-        ScalarType one(1.0);
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
+
+        const ScalarType one(1.0);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll

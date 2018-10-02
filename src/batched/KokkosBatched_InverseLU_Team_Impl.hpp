@@ -25,8 +25,7 @@ namespace KokkosBatched {
                typename WViewType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const MemberType &member, const AViewType &A, const WViewType &W,
-             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0) {
+      invoke(const MemberType &member, const AViewType &A, const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
         assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
@@ -48,9 +47,9 @@ namespace KokkosBatched {
             B_stride_0 = A.stride_0();
             B_stride_1 = A.stride_1();
         }
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), B_stride_0, A.extent(1), B_stride_1);
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
 
-        ScalarType one(1.0);
+        const ScalarType one(1.0);
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,A.extent(1)),[&](const int &i) {
             B(i,i) = one;
@@ -77,8 +76,7 @@ namespace KokkosBatched {
                typename WViewType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const MemberType &member, const AViewType &A, const WViewType &W,
-             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0) {
+      invoke(const MemberType &member, const AViewType &A, const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
         assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
@@ -100,9 +98,9 @@ namespace KokkosBatched {
             B_stride_0 = A.stride_0();
             B_stride_1 = A.stride_1();
         }
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), B_stride_0, A.extent(1), B_stride_1);
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
 
-        ScalarType one(1.0);
+        const ScalarType one(1.0);
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,A.extent(1)),[&](const int &i) {
             B(i,i) = one;
