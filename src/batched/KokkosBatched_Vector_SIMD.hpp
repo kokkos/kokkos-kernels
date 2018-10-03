@@ -315,8 +315,8 @@ namespace KokkosBatched {
         return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
-#endif
 }}
+#endif /* #if defined(__AVX__) || defined(__AVX2__) */
 
 #if defined(__AVX512F__)
 #include <immintrin.h>
@@ -505,10 +505,9 @@ namespace KokkosBatched {
         return reinterpret_cast<value_type*>(&_data)[i];
       }
     };
-#endif
-#endif
-  }
-}
+}}
+#endif /* #if defined(__AVX512F__) */
+#endif /* #if defined(__KOKKOSBATCHED_ENABLE_AVX__) */
 
 #include "KokkosBatched_Vector_SIMD_Arith.hpp"
 #include "KokkosBatched_Vector_SIMD_Logical.hpp"
