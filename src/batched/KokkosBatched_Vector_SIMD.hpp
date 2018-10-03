@@ -126,9 +126,14 @@ namespace KokkosBatched {
       }
     };
 
+}}
+
 #if defined(__KOKKOSBATCHED_ENABLE_AVX__)
 #if defined(__AVX__) || defined(__AVX2__)
 #include <immintrin.h>
+
+namespace KokkosBatched {
+  namespace Experimental {
 
     template<>
     class Vector<SIMD<double>,4> {
@@ -311,9 +316,14 @@ namespace KokkosBatched {
       }
     };
 #endif
+}}
 
 #if defined(__AVX512F__)
 #include <immintrin.h>
+
+namespace KokkosBatched {
+  namespace Experimental {
+
     template<>
     class Vector<SIMD<double>,8> {
     public:
