@@ -61,7 +61,6 @@
 
 // Kokkos Kernels Includes
 #include <KokkosKernels_HashmapAccumulator.hpp>
-#include <KokkosKernels_TestParameters.hpp>
 #include <KokkosKernels_Uniform_Initialized_MemoryPool.hpp>
 
 
