@@ -484,7 +484,7 @@ private:
 
   virtual ~SPGEMMHandle(){
 
-#ifdef KERNELS_HAVE_CUSgPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     this->destroy_cuSPARSE_Handle();
 #endif
   };
