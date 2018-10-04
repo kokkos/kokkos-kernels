@@ -34,7 +34,7 @@ export JENKINS_ARCH="Power8"
 export JENKINS_ARCH_CXX_FLAG="-mcpu=power8"
 export JENKINS_ARCH_C_FLAG="-mcpu=power8"
 export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
-export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
+export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp;m"
 
 export JENKINS_DO_TESTS=ON
 export JENKINS_DO_EXAMPLES=ON
@@ -58,6 +58,11 @@ cd ..
 if [ -n $KOKKOS_UPDATE_BRANCH ]
 then
   export KOKKOS_PATH=${PWD}/kokkos
+
+  if [ -z $KOKKOS_UPDATE_BRANCH ]
+  then
+    KOKKOS_UPDATE_BRANCH=develop
+  fi
 
   #Already done:
   if [ ! -d "${KOKKOS_PATH}" ]; then
