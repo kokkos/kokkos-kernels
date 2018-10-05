@@ -8,7 +8,6 @@
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
 
-
 namespace KokkosBatched {
   namespace Experimental {
     ///
@@ -41,35 +40,26 @@ namespace KokkosBatched {
       static_assert(is_vector<vector_type>::value, "value type is not vector type");      
       static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
                     "AVX, AVX2 and AVX512 is supported");
+      static_assert(AViewType::rank == 2, "A should have two dimensions");
+      static_assert(WViewType::rank == 1, "W should have one dimension");
+      static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
+      static_assert(!std::is_same<typename WViewType::array_layout, Kokkos::LayoutStride>::value, "W should be an contiguous 1D array");
+      assert(A.extent(0)*A.extent(1)*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
       assert(m==n);
 
       const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       int r_val = 0;
-      if (A.stride_0() == 1) {
-        //mkl_dgetrfnp_compact(MKL_COL_MAJOR, 
-        //                     m, n, 
-        //                     (double*)A.data(), A.stride_1(), 
-        //                     (MKL_INT*)&r_val, format, (MKL_INT)vector_type::vector_length);
-
-        //void mkl_dgetrfnp_compact (MKL_LAYOUT layout, MKL_INT m, MKL_INT n, double * ap, MKL_INT ldap, 
-        //                           MKL_INT * info, MKL_COMPACT_PACK format, MKL_INT nm);
-
-        //void mkl_dgetrinp_compact (MKL_LAYOUT layout, MKL_INT n, double * ap, MKL_INT ldap, double * work, 
-        //                           MKL_INT lwork, MKL_INT * info, MKL_COMPACT_PACK format, MKL_INT nm);
+      if (A.stride(0) == 1) {
         mkl_dgetrinp_compact (MKL_COL_MAJOR, n, 
-                              (double*)A.data(), A.stride_1(), 
-                              (double*)W.data(), n*n, 
+                              (double*)A.data(), A.stride(1), 
+                              (double*)W.data(), (MKL_INT)(n*n*vector_type::vector_length), 
                               (MKL_INT*)&r_val, format, (MKL_INT)vector_type::vector_length);
 
-      } else if (A.stride_1() == 1) {
-        //mkl_dgetrfnp_compact(MKL_ROW_MAJOR, 
-        //                     m, n, 
-        //                     (double*)A.data(), A.stride_0(), 
-        //                     (MKL_INT*)&r_val, format, (MKL_INT)vector_type::vector_length);
+      } else if (A.stride(1) == 1) {
         mkl_dgetrinp_compact (MKL_ROW_MAJOR, n, 
-                              (double*)A.data(), A.stride_0(), 
-                              (double*)W.data(), n*n, 
+                              (double*)A.data(), A.stride(0), 
+                              (double*)W.data(), (MKL_INT)(n*n*vector_type::vector_length), 
                               (MKL_INT*)&r_val, format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
@@ -87,29 +77,16 @@ namespace KokkosBatched {
     invoke(const AViewType &A, 
            const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
+        static_assert(WViewType::rank == 1, "W should have one dimension");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
-        assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        static_assert(!std::is_same<typename WViewType::array_layout, Kokkos::LayoutStride>::value, "W should be an contiguous 1D array");
+        assert(A.extent(0)*A.extent(1)*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        assert(A.extent(0)==A.extent(1));
 
         typedef typename AViewType::value_type ScalarType;
-
-        int B_stride_0, B_stride_1;
-        if (WViewType::rank == 1) {
-            if (std::is_same<typename WViewType::array_layout, Kokkos::LayoutRight>::value){
-                B_stride_0 = A.extent(1);
-                B_stride_1 = 1;
-            } 
-            else {
-                B_stride_0 = A.stride_0();
-                B_stride_1 = A.stride_0()*A.extent(0);
-            }
-        }
-        else { //WViewType::rank = 2
-            B_stride_0 = A.stride_0();
-            B_stride_1 = A.stride_1();
-        }
-
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
-
+               
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
+        
         const ScalarType one(1.0);
         
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -118,19 +95,19 @@ namespace KokkosBatched {
         for (int i=0;i<A.extent(1);++i) {
             B(i,i) = one;
         }
-
+        
         //First, compute L inverse by solving the system L*Linv = I for Linv
         SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Unblocked>::invoke(one, A, B);
         //Second, compute A inverse by solving the system U*Ainv = Linv for Ainv
         SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Unblocked>::invoke(one, A, B);
-
+		
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-         for (int i=0;i<A.extent(0);++i)
+        for (int i=0;i<A.extent(0);++i)
             for (int j=0;j<A.extent(1);++j)
                 A(i,j) = B(i,j);
-
+        
         return 0;
     }
     
@@ -143,29 +120,16 @@ namespace KokkosBatched {
     invoke(const AViewType &A,
            const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
+        static_assert(WViewType::rank == 1, "W should have one dimension");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
-        assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        static_assert(!std::is_same<typename WViewType::array_layout, Kokkos::LayoutStride>::value, "W should be an contiguous 1D array");
+        assert(A.extent(0)*A.extent(1)*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        assert(A.extent(0)==A.extent(1));
 
         typedef typename AViewType::value_type ScalarType;
-
-        int B_stride_0, B_stride_1;
-        if (WViewType::rank == 1) {
-            if (std::is_same<typename WViewType::array_layout, Kokkos::LayoutRight>::value){
-                B_stride_0 = A.extent(1);
-                B_stride_1 = 1;
-            } 
-            else {
-                B_stride_0 = A.stride_0();
-                B_stride_1 = A.stride_0()*A.extent(0);
-            }
-        }
-        else { //WViewType::rank = 2
-            B_stride_0 = A.stride_0();
-            B_stride_1 = A.stride_1();
-        }
-
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
-
+        
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
+        
         const ScalarType one(1.0);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -183,7 +147,7 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-         for (int i=0;i<A.extent(0);++i)
+        for (int i=0;i<A.extent(0);++i)
             for (int j=0;j<A.extent(1);++j)
                 A(i,j) = B(i,j);
 

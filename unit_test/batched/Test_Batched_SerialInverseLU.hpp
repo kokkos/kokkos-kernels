@@ -142,7 +142,7 @@ namespace Test {
     Kokkos::deep_copy(w, value_type(0.0));
 
     Functor_BatchedSerialLU<DeviceType,AViewType,AlgoTagType>(a1).run();
-
+	
     Functor_TestBatchedSerialInverseLU<DeviceType,AViewType,WViewType,AlgoTagType>(a1,w).run();
 
     value_type alpha = 1.0, beta = 0.0;   
@@ -157,10 +157,10 @@ namespace Test {
     typename AViewType::HostMirror c0_host = Kokkos::create_mirror_view(c0);
 
     Kokkos::deep_copy(c0_host, c0);
-	
+
     /// check identity matrix ; this eps is about 10^-14
     typedef typename ats::mag_type mag_type;
-    mag_type sum_diag(0), sum_all(0);
+    mag_type sum_diag(0), sum_all(0), sum_diag_ref(N*BlkSize);
     const mag_type eps = 1.0e3 * ats::epsilon();
     
     for (int k=0;k<N;++k)
@@ -169,8 +169,9 @@ namespace Test {
           sum_all  += ats::abs(c0_host(k,i,j));
           if (i==j) sum_diag += ats::abs(c0_host(k,i,j));
         }
-    //printf("sum_all = %f, sum_diag = %f\n",sum_all, sum_diag);
+    printf("sum_all = %f, sum_diag = %f, sum_diag (ref) = %f\n",sum_all, sum_diag, sum_diag_ref);
     EXPECT_NEAR_KK( sum_all - sum_diag, 0, eps);
+    EXPECT_NEAR_KK( sum_diag - sum_diag_ref, 0, eps);
   }
 }
 
@@ -181,10 +182,10 @@ int test_batched_inverselu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> AViewType;
-    typedef Kokkos::View<ValueType**, Kokkos::LayoutLeft,DeviceType> WViewType;
-	printf("LayoutLeft ...\n");
+    typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
+    printf("LayoutLeft ...\n");
     Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
-    for (int i=0;i<10;++i) {                                                                                         
+    for (int i=0;i<10;++i) {
       Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
     }
   }
@@ -195,7 +196,7 @@ int test_batched_inverselu() {
     typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
     printf("LayoutRight ...\n");
     Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
-    for (int i=0;i<10;++i) {                                                                                         
+    for (int i=0;i<10;++i) {
       Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
     }
   }

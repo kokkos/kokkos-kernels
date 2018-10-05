@@ -8,7 +8,6 @@
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Team_Impl.hpp"
 
-
 namespace KokkosBatched {
   namespace Experimental {
     ///
@@ -27,27 +26,15 @@ namespace KokkosBatched {
       static int
       invoke(const MemberType &member, const AViewType &A, const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
+        static_assert(WViewType::rank == 1, "W should have one dimension");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
-        assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        static_assert(!std::is_same<typename WViewType::array_layout, Kokkos::LayoutStride>::value, "W should be an contiguous 1D array");
+        assert(A.extent(0)*A.extent(1)*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        assert(A.extent(0)==A.extent(1));
 
         typedef typename AViewType::value_type ScalarType;
 
-        int B_stride_0, B_stride_1;
-        if (WViewType::rank == 1) {
-            if (std::is_same<typename WViewType::array_layout, Kokkos::LayoutRight>::value){
-                B_stride_0 = A.extent(1);
-                B_stride_1 = 1;
-            } 
-            else {
-                B_stride_0 = A.stride_0();
-                B_stride_1 = A.stride_0()*A.extent(0);
-            }
-        }
-        else { //WViewType::rank = 2
-            B_stride_0 = A.stride_0();
-            B_stride_1 = A.stride_1();
-        }
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
 
         const ScalarType one(1.0);
 
@@ -78,27 +65,15 @@ namespace KokkosBatched {
       static int
       invoke(const MemberType &member, const AViewType &A, const WViewType &W) {
         static_assert(AViewType::rank == 2, "A should have two dimensions");
+        static_assert(WViewType::rank == 1, "W should have one dimension");
         static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
-        assert(A.span()*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        static_assert(!std::is_same<typename WViewType::array_layout, Kokkos::LayoutStride>::value, "W should be an contiguous 1D array");
+        assert(A.extent(0)*A.extent(1)*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
+        assert(A.extent(0)==A.extent(1));
 
         typedef typename AViewType::value_type ScalarType;
 
-        int B_stride_0, B_stride_1;
-        if (WViewType::rank == 1) {
-            if (std::is_same<typename WViewType::array_layout, Kokkos::LayoutRight>::value){
-                B_stride_0 = A.extent(1);
-                B_stride_1 = 1;
-            } 
-            else {
-                B_stride_0 = A.stride_0();
-                B_stride_1 = A.stride_0()*A.extent(0);
-            }
-        }
-        else { //WViewType::rank = 2
-            B_stride_0 = A.stride_0();
-            B_stride_1 = A.stride_1();
-        }
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutStride, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), Kokkos::LayoutStride(A.extent(0), B_stride_0, A.extent(1), B_stride_1));
+        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
 
         const ScalarType one(1.0);
 

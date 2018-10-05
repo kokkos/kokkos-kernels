@@ -32,7 +32,7 @@ namespace KokkosBatched {
 #if __INTEL_MKL__ >= 2018
 #define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
 #define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
-#include "mkl_compact.h"
+#include "mkl.h"
 //#include "mkl_types.h"
 #endif
 #endif
