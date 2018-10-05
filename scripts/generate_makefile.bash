@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 KOKKOS_DEVICES=""
 
@@ -218,6 +218,12 @@ done
 
 # Remove leading ',' from KOKKOS_DEVICES.
 KOKKOS_DEVICES=$(echo $KOKKOS_DEVICES | sed 's/^,//')
+
+# If only Cuda is specified, add Serial to prevent certain linker errors.
+# See KokkosKernels Issue #257 for provenance.
+if [[ "${KOKKOS_DEVICES}" == "Cuda" ]]; then
+  KOKKOS_DEVICES="Serial,Cuda"
+fi
 
 # If KOKKOS_PATH undefined, assume parent dir of this script is the KOKKOS_PATH.
 if [ -z "$KOKKOSKERNELS_PATH" ]; then
