@@ -169,7 +169,6 @@ namespace Test {
           sum_all  += ats::abs(c0_host(k,i,j));
           if (i==j) sum_diag += ats::abs(c0_host(k,i,j));
         }
-    printf("sum_all = %f, sum_diag = %f, sum_diag (ref) = %f\n",sum_all, sum_diag, sum_diag_ref);
     EXPECT_NEAR_KK( sum_all - sum_diag, 0, eps);
     EXPECT_NEAR_KK( sum_diag - sum_diag_ref, 0, eps);
   }
@@ -183,7 +182,6 @@ int test_batched_inverselu() {
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> AViewType;
     typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
-    printf("LayoutLeft ...\n");
     Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
@@ -194,7 +192,6 @@ int test_batched_inverselu() {
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> AViewType;
     typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
-    printf("LayoutRight ...\n");
     Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
