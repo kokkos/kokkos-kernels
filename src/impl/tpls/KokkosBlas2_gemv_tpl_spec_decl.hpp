@@ -108,7 +108,8 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
+    \
     dgemv_(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -145,7 +146,8 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
+    \
     sgemv_(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -182,7 +184,8 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
+    \
     zgemv_(trans,&M,&N, \
         reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<double>*>(X.data()),&one, \
@@ -222,7 +225,8 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
+    \
     cgemv_(trans,&M,&N, \
         reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<float>*>(X.data()),&one, \
@@ -293,7 +297,7 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -339,7 +343,7 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -385,7 +389,7 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \
@@ -431,7 +435,7 @@ struct GEMV< \
     const int N = static_cast<int> (A.extent(1)); \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int LDA = A_is_lr?A.stride(0):A.stride(1);                 \
     \
     cublasOperation_t transa; \
     if ((trans[0]=='N')||(trans[0]=='n')) \

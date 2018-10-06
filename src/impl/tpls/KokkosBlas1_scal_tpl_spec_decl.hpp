@@ -47,14 +47,14 @@
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-extern "C" void dscal_( const int* N, const double* alpha,
-                        const double* x, const int* x_inc);
-extern "C" void sscal_( const int* N, const float* alpha,
-                                       const float* x, const int* x_inc);
-extern "C" void zscal_( const int* N, const std::complex<double>* alpha,
-                        const std::complex<double>* x, const int* x_inc);
-extern "C" void cscal_( const int* N, const std::complex<float>* alpha,
-                        const std::complex<float>* x, const int* x_inc);
+extern "C" double               dscal_( const int* N, const double* alpha,
+                                        const double* x, const int* x_inc);
+extern "C" float                sscal_( const int* N, const float* alpha,
+                                        const float* x, const int* x_inc);
+extern "C" std::complex<double> zscal_( const int* N, const std::complex<double>* alpha,
+                                        const std::complex<double>* x, const int* x_inc);
+extern "C" std::complex<float>  cscal_( const int* N, const std::complex<float>* alpha,
+                                        const std::complex<float>* x, const int* x_inc);
 
 namespace KokkosBlas {
 namespace Impl {
