@@ -114,6 +114,9 @@ do
     --with-offsets*)
       KOKKOSKERNELS_OFFSETS="${key#*=}"
       ;;
+    --with-layouts*)
+      KOKKOSKERNELS_LAYOUTS="${key#*=}"
+      ;;
     --with-options*)
       KOKKOSKERNELS_OPTIONS="${key#*=}"
       ;;
@@ -132,6 +135,7 @@ do
       echo "--with-scalars=[SCALARS]:             Set scalars to be instantiated."
       echo "--with-ordinals=[ORDINALS]:           Set ordinals to be instantiated."
       echo "--with-offsets=[OFFSETS]:             Set offsets to be instantiated."
+      echo "--with-layouts=[LAYOUTS]:             Set layouts to be instantiated (LayoutLeft,LayoutRight)."
       echo "--prefix=/Install/Path:               Path to install the Kokkos library."
       echo "--with-options=[OPT]:                 Set KokkosKernels Options:"
       echo "                                        eti_only: only allow ETI types to be enabled [default]"

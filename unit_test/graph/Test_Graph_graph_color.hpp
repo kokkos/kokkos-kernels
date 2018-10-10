@@ -124,9 +124,26 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
   graph_t static_graph (sym_adj, sym_xadj);
   input_mat = crsMat_t("CrsMatrix", numCols, newValues, static_graph);
 
-  ColoringAlgorithm coloring_algorithms[] = {COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB, COLORING_VBD, COLORING_VBDBIT};
+  std::vector<ColoringAlgorithm> coloring_algorithms = { COLORING_DEFAULT 
+                                                       , COLORING_SERIAL 
+                                                       , COLORING_VB 
+                                                       , COLORING_VBBIT 
+                                                       , COLORING_VBCS 
+                                                       , COLORING_EB
+                                                       };
 
-  for (int ii = 0; ii < 8; ++ii){
+  #ifdef KOKKOS_ENABLE_CUDA
+  if( !std::is_same< typename device::execution_space, Kokkos::Cuda >::value )
+  {
+    coloring_algorithms.push_back(COLORING_VBD);
+    coloring_algorithms.push_back(COLORING_VBDBIT);
+  }
+  #else
+  coloring_algorithms.push_back(COLORING_VBD);
+  coloring_algorithms.push_back(COLORING_VBDBIT);
+  #endif
+
+  for (size_t ii = 0; ii < coloring_algorithms.size(); ++ii) {
     ColoringAlgorithm coloring_algorithm = coloring_algorithms[ii];
     color_view_t vector_colors;
     size_t num_colors;
