@@ -151,15 +151,17 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   graph_t static_graph (adj, xadj);
   crsMat_t input_mat("CrsMatrix", numCols, newValues, static_graph);
 
-  std::vector<ColoringAlgorithm> coloring_algorithms = { COLORING_VBDBIT };
+  std::vector<ColoringAlgorithm> coloring_algorithms;
 
   #ifdef KOKKOS_ENABLE_CUDA
   if( !std::is_same< typename device::execution_space, Kokkos::Cuda >::value )
   {
-    coloring_algorithms.push_back(COLORING_VBD);
+     coloring_algorithms.push_back(COLORING_VBD);
+     coloring_algorithms.push_back(COLORING_VBDBIT);
   }
   #else
   coloring_algorithms.push_back(COLORING_VBD);
+  coloring_algorithms.push_back(COLORING_VBDBIT);
   #endif
 
   for (size_t ii = 0; ii < coloring_algorithms.size(); ++ii) {
@@ -184,7 +186,7 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
     }
 
     EXPECT_TRUE( (num_conflict == 0));
-  //device::execution_space::finalize();
+    //device::execution_space::finalize();
 
   }
 

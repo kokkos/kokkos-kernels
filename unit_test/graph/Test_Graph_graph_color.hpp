@@ -130,16 +130,17 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
                                                        , COLORING_VBBIT 
                                                        , COLORING_VBCS 
                                                        , COLORING_EB
-                                                       , COLORING_VBDBIT
                                                        };
 
   #ifdef KOKKOS_ENABLE_CUDA
   if( !std::is_same< typename device::execution_space, Kokkos::Cuda >::value )
   {
     coloring_algorithms.push_back(COLORING_VBD);
+    coloring_algorithms.push_back(COLORING_VBDBIT);
   }
   #else
   coloring_algorithms.push_back(COLORING_VBD);
+  coloring_algorithms.push_back(COLORING_VBDBIT);
   #endif
 
   for (size_t ii = 0; ii < coloring_algorithms.size(); ++ii) {
