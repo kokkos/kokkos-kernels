@@ -92,7 +92,7 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i=0;i<A.extent(1);++i) {
+        for (size_t i=0;i<A.extent(1);++i) {
             B(i,i) = one;
         }
         
@@ -104,8 +104,8 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i=0;i<A.extent(0);++i)
-            for (int j=0;j<A.extent(1);++j)
+        for (size_t i=0;i<A.extent(0);++i)
+            for (size_t j=0;j<A.extent(1);++j)
                 A(i,j) = B(i,j);
         
         return 0;
@@ -135,7 +135,7 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i=0;i<A.extent(1);++i) {
+        for (size_t i=0;i<A.extent(1);++i) {
             B(i,i) = one;
         }
 
@@ -147,8 +147,8 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i=0;i<A.extent(0);++i)
-            for (int j=0;j<A.extent(1);++j)
+        for (size_t i=0;i<A.extent(0);++i)
+            for (size_t j=0;j<A.extent(1);++j)
                 A(i,j) = B(i,j);
 
         return 0;
