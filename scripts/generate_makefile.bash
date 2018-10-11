@@ -364,6 +364,7 @@ mkdir -p kokkos
 mkdir -p src
 mkdir -p unit_test
 mkdir -p perf_test
+mkdir -p example
 
 KOKKOS_INSTALL_PATH=${PWD}/kokkos/install
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOS_PATH=${KOKKOS_PATH} PREFIX=${KOKKOS_INSTALL_PATH}"
@@ -414,11 +415,30 @@ echo "" >> perf_test/Makefile
 echo "clean:" >> perf_test/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/perf_test/Makefile ${KOKKOS_SETTINGS} clean" >> perf_test/Makefile
 
+
+subdir=example
+echo "# KOKKOS_SETTINGS='${KOKKOS_SETTINGS}'" > ${subdir}/Makefile
+echo "" >> ${subdir}/Makefile
+echo "build:" >> ${subdir}/Makefile
+echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/${subdir}/Makefile ${KOKKOS_SETTINGS} build" >> ${subdir}/Makefile
+echo "" >> ${subdir}/Makefile
+echo "test: build" >> ${subdir}/Makefile
+echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/${subdir}/Makefile ${KOKKOS_SETTINGS} test" >> ${subdir}/Makefile
+echo "" >> ${subdir}/Makefile
+echo "clean:" >> ${subdir}/Makefile
+echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/${subdir}/Makefile ${KOKKOS_SETTINGS} clean" >> ${subdir}/Makefile
+
+
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOSKERNELS_PATH=${KOKKOSKERNELS_TEST_INSTALL_PATH}"
 
 KOKKOS_SETTINGS="${KOKKOS_SETTINGS_NO_KOKKOS_PATH} KOKKOS_PATH=${KOKKOS_PATH} KOKKOSKERNELS_PATH=${KOKKOSKERNELS_PATH}"
 
+# Strip trailing whitespace from KOKKOS_SETTINGS
+KOKKOS_SETTINGS="${KOKKOS_SETTINGS%"${KOKKOS_SETTINGS##*[![:space:]]}"}"
+
+#
 # Generate top level directory makefile.
+#
 echo "Generating Makefiles with options " ${KOKKOS_SETTINGS}
 echo "KOKKOS_SETTINGS=${KOKKOS_SETTINGS}" > Makefile
 
@@ -427,13 +447,16 @@ echo "kokkos-lib:" >> Makefile
 echo -e "\tcd kokkos && \$(MAKE) install-lib" >> Makefile
 echo "" >> Makefile
 
-echo "" >> Makefile
 echo "kokkoskernels-lib: kokkos-lib" >> Makefile
 echo -e "\tcd src && \$(MAKE) build" >> Makefile
 echo "" >> Makefile
 
 echo "install-lib: kokkoskernels-lib" >> Makefile
 echo -e "\tcd src && \$(MAKE) install-lib" >> Makefile
+echo "" >> Makefile
+
+echo "build-example: install-lib" >> Makefile
+echo -e "\t\$(MAKE) -C example" >> Makefile
 echo "" >> Makefile
 
 echo "build-test: install-lib" >> Makefile
@@ -444,11 +467,17 @@ echo "" >> Makefile
 echo "test: build-test" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test test" >> Makefile
 #echo -e "\t\$(MAKE) -C perf_test test" >> Makefile
+#echo -e "\t\$(MAKE) -C example   test" >> Makefile
 echo "" >> Makefile
 
 echo "clean:" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test clean" >> Makefile
 echo -e "\t\$(MAKE) -C perf_test clean" >> Makefile
+echo -e "\t\$(MAKE) -C example   clean" >> Makefile
 echo -e "\tcd src; \\" >> Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS} clean" >> Makefile
+echo "" >> Makefile
+
+echo "build-all: build-test build-example" >> Makefile
+echo "" >> Makefile
 
