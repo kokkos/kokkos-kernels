@@ -83,7 +83,6 @@ int run_graphcolor_deter(
 
   kh.create_graph_coloring_handle(coloring_algorithm);
 
-
   const size_t num_rows_1 = input_mat.numRows();
   const size_t num_cols_1 = input_mat.numCols();
 
@@ -153,16 +152,8 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
 
   std::vector<ColoringAlgorithm> coloring_algorithms;
 
-  #ifdef KOKKOS_ENABLE_CUDA
-  if( !std::is_same< typename device::execution_space, Kokkos::Cuda >::value )
-  {
-     coloring_algorithms.push_back(COLORING_VBD);
-     coloring_algorithms.push_back(COLORING_VBDBIT);
-  }
-  #else
   coloring_algorithms.push_back(COLORING_VBD);
   coloring_algorithms.push_back(COLORING_VBDBIT);
-  #endif
 
   for (size_t ii = 0; ii < coloring_algorithms.size(); ++ii) {
     ColoringAlgorithm coloring_algorithm = coloring_algorithms[ii];

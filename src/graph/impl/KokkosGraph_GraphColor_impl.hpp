@@ -2494,15 +2494,12 @@ public:
     nnz_lno_t numVertices = this->nv;
 
     size_type maxColors = 0;
-    const_lno_row_view_t myXadj = this->xadj;
-    const_lno_nnz_view_t myAdj  = this->adj;
     nnz_lno_persistent_work_view_t score
-      = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), numVertices);
-    typedef typename Kokkos::Experimental::Max<size_type, MyExecSpace> maxScoreReducerType;
-    maxScoreReducerType maxScoreReducer(maxColors);
-    functorScoreCalculation<size_type, MyExecSpace> scoreCalculation(score, myXadj);
-    Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", my_exec_space(0, numVertices),
-                            scoreCalculation, maxScoreReducer);
+      = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), this->nv);
+    functorScoreCalculation<size_type, MyExecSpace> scoreCalculation(score, this->xadj);
+    
+    Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", my_exec_space(0, this->nv),
+                            scoreCalculation, Kokkos::Max<size_type>(maxColors));
 
    if (this->_ticToc) {
      std::cout << "maxColors: " << maxColors << std::endl;
@@ -2572,17 +2569,16 @@ public:
 
   template <class max_type, class execution_space>
   struct functorScoreCalculation {
-    typedef typename Kokkos::Experimental::Max<max_type, execution_space>::value_type valueType;
     nnz_lno_persistent_work_view_t score_;
     const_lno_row_view_t numNeighbors_;
 
-    functorScoreCalculation(nnz_lno_persistent_work_view_t score, const_lno_row_view_t numNeighbors)
+    functorScoreCalculation(nnz_lno_persistent_work_view_t& score, const_lno_row_view_t& numNeighbors)
       : score_(score), numNeighbors_(numNeighbors) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const int i, valueType &update) const {
+    void operator() (const int i,  size_type &update) const {
       score_(i) = numNeighbors_(i + 1) - numNeighbors_(i);
-      update = ( (valueType) score_(i) < update ? update : (valueType) score_(i) );
+      update = ( (size_type) score_(i) < update ? update : (size_type) score_(i) );
     }
   }; // functorScoreCalculation()
 
