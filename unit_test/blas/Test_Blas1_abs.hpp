@@ -50,7 +50,7 @@ namespace Test {
     Kokkos::deep_copy(h_b_x,b_x);
     Kokkos::deep_copy(h_b_y,b_y);
 
-    ScalarA expected_result = 0;
+    ScalarA expected_result(0);
     for(int i=0;i<N;i++)
     { expected_result += AT::abs(h_x(i)) * AT::abs(h_x(i)); }
 
@@ -114,6 +114,8 @@ namespace Test {
     }
 
     typename AT::mag_type eps = AT::epsilon()*1000;
+    typename AT::mag_type zero = AT::abs( AT::zero() );
+    typename AT::mag_type one = AT::abs( AT::one() );
 
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
@@ -121,9 +123,9 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA nonconst_result = r(k);
-      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
       typename AT::mag_type diff = AT::abs( nonconst_result - expected_result[k] )/divisor;
-      EXPECT_NEAR_KK( diff, AT::zero(), eps );
+      EXPECT_NEAR_KK( diff, zero, eps );
     }
 
     Kokkos::deep_copy(b_y,b_org_y);
@@ -131,9 +133,9 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA const_result = r(k);
-      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
       typename AT::mag_type diff = AT::abs( const_result - expected_result[k] )/divisor;
-      EXPECT_NEAR_KK( diff, AT::zero(), eps );
+      EXPECT_NEAR_KK( diff, zero, eps );
     }
 
     delete [] expected_result;

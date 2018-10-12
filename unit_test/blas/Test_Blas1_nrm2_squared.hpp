@@ -36,7 +36,7 @@ namespace Test {
     typename ViewTypeA::const_type c_a = a;
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    typename AT::mag_type expected_result = 0;
+    typename AT::mag_type expected_result(0);
     for(int i=0;i<N;i++)
     { expected_result += AT::abs(h_a(i))*AT::abs(h_a(i)); }
 
@@ -84,23 +84,25 @@ namespace Test {
     }
 
     typename AT::mag_type eps = AT::epsilon()*1000;
+    typename AT::mag_type zero = AT::abs( AT::zero() );
+    typename AT::mag_type one = AT::abs( AT::one() );
 
     Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::nrm2_squared(r,a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type nonconst_result = r(k);
-      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
       typename AT::mag_type diff = AT::abs(nonconst_result - expected_result[k])/divisor;
-      EXPECT_NEAR_KK( diff, AT::zero(), eps );
+      EXPECT_NEAR_KK( diff, zero, eps );
     }
 
     KokkosBlas::nrm2_squared(r,c_a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type const_result = r(k);
-      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
       typename AT::mag_type diff = AT::abs(const_result - expected_result[k])/divisor;
-      EXPECT_NEAR_KK( diff, AT::zero(), eps );
+      EXPECT_NEAR_KK( diff, zero, eps );
     }
 
     delete [] expected_result;
