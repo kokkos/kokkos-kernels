@@ -273,6 +273,7 @@ namespace KokkosBatched {
       using Gemm = Level3;
       using Trsm = Level3;
       using LU   = Level3;
+      using InverseLU   = Level3;
 
       struct Level2 {
 	struct Unblocked {};

@@ -141,6 +141,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Batched_TeamLU_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamGemv_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsv_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialInverseLU_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamInverseLU_Real.o
  # Complex
   OBJ_OPENMP += Test_OpenMP_Batched_SerialMatUtil_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm_Complex.o
@@ -154,6 +156,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Batched_TeamLU_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamGemv_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsv_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialInverseLU_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamInverseLU_Complex.o
   # Vector
   OBJ_OPENMP += Test_OpenMP_Batched_VectorArithmatic.o
   OBJ_OPENMP += Test_OpenMP_Batched_VectorMath.o
@@ -243,6 +247,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Batched_TeamLU_Real.o
   OBJ_CUDA += Test_Cuda_Batched_TeamGemv_Real.o
   OBJ_CUDA += Test_Cuda_Batched_TeamTrsv_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialInverseLU_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamInverseLU_Real.o
   # Complex
   OBJ_CUDA += Test_Cuda_Batched_SerialMatUtil_Complex.o
   OBJ_CUDA += Test_Cuda_Batched_SerialGemm_Complex.o
@@ -256,6 +262,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Batched_TeamLU_Complex.o
   OBJ_CUDA += Test_Cuda_Batched_TeamGemv_Complex.o
   OBJ_CUDA += Test_Cuda_Batched_TeamTrsv_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialInverseLU_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamInverseLU_Complex.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
@@ -340,6 +348,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Batched_TeamLU_Real.o
   OBJ_SERIAL += Test_Serial_Batched_TeamGemv_Real.o
   OBJ_SERIAL += Test_Serial_Batched_TeamTrsv_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialInverseLU_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamInverseLU_Real.o
   # Complex
   OBJ_SERIAL += Test_Serial_Batched_SerialMatUtil_Complex.o
   OBJ_SERIAL += Test_Serial_Batched_SerialGemm_Complex.o
@@ -353,6 +363,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Batched_TeamLU_Complex.o
   OBJ_SERIAL += Test_Serial_Batched_TeamGemv_Complex.o
   OBJ_SERIAL += Test_Serial_Batched_TeamTrsv_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialInverseLU_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamInverseLU_Complex.o
   # Vector
   OBJ_SERIAL += Test_Serial_Batched_VectorArithmatic.o
   OBJ_SERIAL += Test_Serial_Batched_VectorMath.o
