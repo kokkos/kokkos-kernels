@@ -11,6 +11,7 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
+    typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -22,8 +23,8 @@ namespace Test {
                 Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeB;
 
 
-    ScalarA a = 3;
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    ScalarA a(3);
+    typename AT::mag_type eps = AT::epsilon()*1000;
 
     BaseTypeA b_x("X",N);
     BaseTypeB b_y("Y",N);
@@ -43,8 +44,8 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    Kokkos::fill_random(b_x,rand_pool,ScalarA(1));
+    Kokkos::fill_random(b_y,rand_pool,ScalarB(1));
 
     Kokkos::fence();
 
@@ -55,16 +56,24 @@ namespace Test {
 
     ScalarA expected_result = 0;
     for(int i=0;i<N;i++)
-      expected_result += ScalarB(a*h_x(i)) * ScalarB(a*h_x(i));
+    { expected_result += ScalarB(a*h_x(i)) * ScalarB(a*h_x(i)); }
 
     KokkosBlas::scal(y,a,x);
-    ScalarB nonconst_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
+    {
+      ScalarB nonconst_nonconst_result = KokkosBlas::dot(y,y);
+      typename AT::mag_type divisor = expected_result == AT::zero() ? AT::one() : expected_result;
+      typename AT::mag_type diff = AT::abs( nonconst_nonconst_result - expected_result )/divisor;
+      EXPECT_NEAR_KK( diff, AT::zero(), eps );
+    }
  
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::scal(y,a,c_x);
-    ScalarB const_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
+    {
+      ScalarB const_nonconst_result = KokkosBlas::dot(y,y);
+      typename AT::mag_type divisor = expected_result == AT::zero() ? AT::one() : expected_result;
+      typename AT::mag_type diff = AT::abs( const_nonconst_result - expected_result )/divisor;
+      EXPECT_NEAR_KK( diff, AT::zero(), eps );
+    }
   }
 
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -72,6 +81,7 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
+    typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
     typedef multivector_layout_adapter<ViewTypeA> vfA_type;
     typedef multivector_layout_adapter<ViewTypeB> vfB_type;
@@ -94,8 +104,8 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    Kokkos::fill_random(b_x,rand_pool,ScalarA(1));
+    Kokkos::fill_random(b_y,rand_pool,ScalarB(1));
 
     Kokkos::fence();
 
@@ -104,7 +114,7 @@ namespace Test {
     Kokkos::deep_copy(h_b_x,b_x);
     Kokkos::deep_copy(h_b_y,b_y);
 
-    ScalarA a = 3;
+    ScalarA a(3.0);
     typename ViewTypeA::const_type c_x = x;
 
     ScalarA* expected_result = new ScalarA[K];
@@ -114,7 +124,7 @@ namespace Test {
         expected_result[j] += ScalarB(a*h_x(i,j)) * ScalarB(a*h_x(i,j));
     }
 
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    typename AT::mag_type eps = AT::epsilon()*1000;
 
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
@@ -122,7 +132,9 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA nonconst_scalar_result = r(k);
-      EXPECT_NEAR_KK( nonconst_scalar_result, expected_result[k], eps*expected_result[k]);
+      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type diff = AT::abs( nonconst_scalar_result - expected_result[k] )/divisor;
+      EXPECT_NEAR_KK( diff, AT::zero(), eps );
     }
 
     Kokkos::deep_copy(b_y,b_org_y);
@@ -130,28 +142,42 @@ namespace Test {
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
       ScalarA const_scalar_result = r(k);
-      EXPECT_NEAR_KK( const_scalar_result, expected_result[k], eps*expected_result[k]);
+      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type diff = AT::abs( const_scalar_result - expected_result[k] )/divisor;
+      EXPECT_NEAR_KK( diff, AT::zero(), eps );
     }
 
+    // Generate 'params' view with dimension == number of multivectors; each entry will be different scalar to scale y
     Kokkos::View<ScalarA*,Device> params("Params",K);
     for(int j=0; j<K; j++) {
       Kokkos::View<ScalarA,Device> param_j(params,j);
       Kokkos::deep_copy(param_j,ScalarA(3+j));
     }
 
+    // Update expected_result for next 3 vector tests
+    for(int j=0;j<K;j++) {
+      expected_result[j] = ScalarA();
+      for(int i=0;i<N;i++)
+        expected_result[j] += ScalarB((3.0+j)*h_x(i,j)) * ScalarB((3.0+j)*h_x(i,j));
+    }
+
     KokkosBlas::scal(y,params,x);
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
-      ScalarA nonconst_vector_result = r(k)/((3+k)*(3+k))*a*a;
-      EXPECT_NEAR_KK( nonconst_vector_result, expected_result[k], eps*expected_result[k]);
+      ScalarA nonconst_vector_result = r(k);
+      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type diff = AT::abs( nonconst_vector_result - expected_result[k] )/divisor;
+      EXPECT_NEAR_KK( diff, AT::zero(), eps );
     }
 
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::scal(y,params,c_x);
     KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
-      ScalarA const_vector_result = r(k)/((3+k)*(3+k))*a*a;
-      EXPECT_NEAR_KK( const_vector_result, expected_result[k], eps*expected_result[k]);
+      ScalarA const_vector_result = r(k);
+      typename AT::mag_type divisor = expected_result[k] == AT::zero() ? AT::one() : expected_result[k];
+      typename AT::mag_type diff = AT::abs( const_vector_result - expected_result[k] )/divisor;
+      EXPECT_NEAR_KK( diff, AT::zero(), eps );
     }
 
     delete [] expected_result;

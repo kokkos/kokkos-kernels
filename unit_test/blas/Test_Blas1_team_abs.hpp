@@ -50,8 +50,8 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    Kokkos::fill_random(b_x,rand_pool,ScalarA(1));
+    Kokkos::fill_random(b_y,rand_pool,ScalarB(1));
 
     Kokkos::deep_copy(b_org_y,b_y);
 
@@ -117,8 +117,8 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    Kokkos::fill_random(b_x,rand_pool,ScalarA(1));
+    Kokkos::fill_random(b_y,rand_pool,ScalarB(1));
 
     Kokkos::deep_copy(b_org_y,b_y);
 
@@ -144,9 +144,12 @@ namespace Test {
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), Kokkos::subview(x,Kokkos::ALL(),teamId));
     } );
 
-    KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
-      ScalarA nonconst_result = r(k);
+      auto yk = Kokkos::subview(y, Kokkos::ALL(), k);
+      ScalarA nonconst_result(0);
+      for ( size_t i = 0; i < yk.extent(0); ++i ) {
+        nonconst_result += yk(i)*yk(i);
+      }
       EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
@@ -158,9 +161,12 @@ namespace Test {
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), Kokkos::subview(c_x,Kokkos::ALL(),teamId));
     } );
 
-    KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
-      ScalarA const_result = r(k);
+      auto yk = Kokkos::subview(y, Kokkos::ALL(), k);
+      ScalarA const_result(0);
+      for ( size_t i = 0; i < yk.extent(0); ++i ) {
+        const_result += yk(i)*yk(i);
+      }
       EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
     }
 
