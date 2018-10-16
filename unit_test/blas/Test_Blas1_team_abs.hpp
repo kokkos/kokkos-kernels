@@ -134,7 +134,10 @@ namespace Test {
         expected_result[j] += AT::abs(h_x(i,j)) * AT::abs(h_x(i,j));
     }
 
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+//    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    typename AT::mag_type eps = AT::epsilon()*1000;
+    typename AT::mag_type zero = AT::abs( AT::zero() );
+    typename AT::mag_type one = AT::abs( AT::one() );
 
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
@@ -144,13 +147,13 @@ namespace Test {
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), Kokkos::subview(x,Kokkos::ALL(),teamId));
     } );
 
+    KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
-      auto yk = Kokkos::subview(y, Kokkos::ALL(), k);
-      ScalarA nonconst_result(0);
-      for ( size_t i = 0; i < yk.extent(0); ++i ) {
-        nonconst_result += yk(i)*yk(i);
-      }
-      EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
+      ScalarA nonconst_result = r(k);
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+      typename AT::mag_type diff = AT::abs( nonconst_result - expected_result[k] )/divisor;
+      EXPECT_NEAR_KK( diff, zero, eps );
+//      EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     Kokkos::deep_copy(b_y,b_org_y);
@@ -161,13 +164,13 @@ namespace Test {
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), Kokkos::subview(c_x,Kokkos::ALL(),teamId));
     } );
 
+    KokkosBlas::dot(r,y,y);
     for(int k=0;k<K;k++) {
-      auto yk = Kokkos::subview(y, Kokkos::ALL(), k);
-      ScalarA const_result(0);
-      for ( size_t i = 0; i < yk.extent(0); ++i ) {
-        const_result += yk(i)*yk(i);
-      }
-      EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
+      ScalarA const_result = r(k);
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+      typename AT::mag_type diff = AT::abs( const_result - expected_result[k] )/divisor;
+      EXPECT_NEAR_KK( diff, zero, eps );
+//      EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
     }
 
     delete [] expected_result;
