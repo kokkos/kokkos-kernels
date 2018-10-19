@@ -48,16 +48,16 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 extern "C" void daxpy_( const int* N, const double* alpha,
                                       const double* x, const int* x_inc,
-                                      const double* y, const int* y_inc);
+                                      double* y, const int* y_inc);
 extern "C" void saxpy_( const int* N, const float* alpha,
                                       const float* x, const int* x_inc,
-                                      const float* y, const int* y_inc);
+                                      float* y, const int* y_inc);
 extern "C" void zaxpy_( const int* N, const std::complex<double>* alpha,
                                       const std::complex<double>* x, const int* x_inc,
-                                      const std::complex<double>* y, const int* y_inc);
+                                      std::complex<double>* y, const int* y_inc);
 extern "C" void caxpy_( const int* N, const std::complex<float>* alpha,
                                       const std::complex<float>* x, const int* x_inc,
-                                      const std::complex<float>* y, const int* y_inc);
+                                      std::complex<float>* y, const int* y_inc);
 
 namespace KokkosBlas {
 namespace Impl {
