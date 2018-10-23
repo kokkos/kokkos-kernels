@@ -19,14 +19,18 @@ namespace KokkosBatched {
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const int m, // m = NumRows(A2) = numRows(u2)
-             const int n, // n = NumCols(a1t)
+      invoke(const int m,
+             const int n,
              const ValueType * tau,
              /* */ ValueType * u2,  const int u2s,
              /* */ ValueType * a1t, const int a1ts,
              /* */ ValueType * A2,  const int as0, const int as1,
              /* */ ValueType * w1t) {
         typedef ValueType value_type;
+
+        /// u2  m x 1
+        /// a1t 1 x n
+        /// A2  m x n
 
         // apply a single householder transform H from the left to a row vector a1t 
         // and a matrix A2
@@ -63,14 +67,18 @@ namespace KokkosBatched {
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const int m, // m = NumRows(a1) 
-             const int n, // n = NumRows(u2) = NumCols(A2)
+      invoke(const int m,
+             const int n,
              const ValueType * tau,
              /* */ ValueType * u2,  const int u2s,
              /* */ ValueType * a1,  const int a1s,
              /* */ ValueType * A2,  const int as0, const int as1,
              /* */ ValueType * w1) {
         typedef ValueType value_type;
+        /// u2 n x 1
+        /// a1 m x 1
+        /// A2 m x n
+
         // apply a single householder transform H from the left to a row vector a1t 
         // and a matrix A2
         const value_type inv_tau = value_type(1)/(*tau);
@@ -82,21 +90,21 @@ namespace KokkosBatched {
         // w1 = a1 + A2 u2
         // w1 /= tau
         for (int i=0;i<m;++i) { 
-          value_type tmp = a1[i*as1];
+          value_type tmp = a1[i*a1s];
           for (int j=0;j<n;++j) 
             tmp += A2[i*as0+j*as1]*u2[j*u2s];
           w1[i] = tmp*inv_tau; // \= (*tau);
         }
 
-        // a1t -= w1 (axpy)
+        // a1 -= w1 (axpy)
         for (int i=0;i<m;++i) 
           a1[i*a1s] -= w1[i];
 
         // A2 -= w1 * u2' (ger with conjugate)
         for (int j=0;j<n;++j)
-          for (int i=0;i<m;++i)
+          for (int i=0;i<m;++i) 
             A2[i*as0+j*as1] -= w1[i]*Kokkos::Details::ArithTraits<ValueType>::conj(u2[j*u2s]);
-        
+
         return 0;
       }
     };

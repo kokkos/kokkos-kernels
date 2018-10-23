@@ -369,8 +369,8 @@ namespace KokkosBatched {
         : as1(arg_as1), AL(NULL), AR(NULL) {}
 
       KOKKOS_INLINE_FUNCTION
-      void partWithAL(ValueType *A, const int mAL) {
-        AL = A; AR = AL+mAL*as1;
+      void partWithAL(ValueType *A, const int nA, const int nAL) {
+        AL = A; AR = AL+nAL*as1;
       }
 
       // A0 A1 are merged into AL
