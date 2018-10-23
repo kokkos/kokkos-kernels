@@ -1,4 +1,3 @@
-
 #=======================================================================
 #=================== Settings ==========================================
 #=======================================================================
@@ -76,6 +75,11 @@ TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/../test_common/*.
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/sparse/*cpp)
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/graph/*cpp)
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/../test_common/*cpp)
+
+# Build yaml dependent performance class unit tests
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_YAML}, 1)
+  EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/performance/*cpp)
+endif
 
 
 
