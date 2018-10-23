@@ -38,7 +38,6 @@ namespace KokkosBatched {
           const auto x2_at_i = x2[i*x2s];
           norm_x2_square += x2_at_i*x2_at_i;
         }
-        //norm_x2 = Kokkos::Details::ArithTraits<mag_type>::sqrt(norm_x2);
         
         /// if norm_x2 is zero, return with trivial values
         if (norm_x2_square == zero) {
