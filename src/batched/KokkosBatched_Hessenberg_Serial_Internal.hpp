@@ -1,5 +1,5 @@
-#ifndef __KOKKOSBATCHED_HESSENBERGREDUCTION_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_HESSENBERGREDUCTION_SERIAL_INTERNAL_HPP__
+#ifndef __KOKKOSBATCHED_HESSENBERG_SERIAL_INTERNAL_HPP__
+#define __KOKKOSBATCHED_HESSENBERG_SERIAL_INTERNAL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -16,7 +16,7 @@ namespace KokkosBatched {
     ///
     /// this impl follows the flame interface of householder transformation
     ///
-    struct SerialHessenbergReductionInternal {
+    struct SerialHessenbergInternal {
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
