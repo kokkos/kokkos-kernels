@@ -5,6 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Set_Internal.hpp"
 #include "KokkosBatched_SetIdentity_Internal.hpp"
 #include "KokkosBatched_ApplyQ_Serial_Internal.hpp"
 
@@ -16,7 +17,7 @@ namespace KokkosBatched {
     ///
     /// this impl follows the flame interface of householder transformation
     ///
-    struct SerialQR_FormQInternal {
+    struct SerialQR_FormQ_Internal {
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
@@ -36,8 +37,13 @@ namespace KokkosBatched {
         ///   A is m x k (holding H0, H1 ... H(k-1)
         ///   t is k x 1 
         ///   B is m x m
+
         // set identity
-        SerialSetIdentityInternal::invoke(m, Q, qs0, qs1);
+        if (is_Q_zero)
+          SerialSetInternal::invoke(m, value_type(1), Q, qs0+qs1);
+        else
+          SerialSetIdentityInternal::invoke(m, Q, qs0, qs1);
+
         return SerialApplyQ_LeftNoTransForwardInternal
           ::invoke(m, m, k,
                    A, as0, as1, 

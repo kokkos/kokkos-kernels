@@ -20,13 +20,17 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const ValueType   chi1,
-             const Valuetype   chi2, 
-             /* */ ValueType * gamma, 
-             /* */ ValueType * sigma,
+             const ValueType   chi2, 
+             /* */ Kokkos::pair<ValueType,ValueType> * G, 
              /* */ ValueType * chi1_new) {
         typedef ValueType value_type;        
-        const value_type zero(0);
-
+        const value_type zero(0), one(1);
+        /// compute G = [ gamma -sigma;
+        ///               sigma  gamma ];
+        /// G.first = gamma and G.second = sigma
+        /// this rotation satisfy the following
+        ///   G' [chi1; = [ alpha;
+        ///       chi2]     zero ];
         value_type cs, sn, r;
         if        (chi2 == zero) {
           r  = chi1;
@@ -51,8 +55,8 @@ namespace KokkosBatched {
 
         }
 
-        *gamma = cs;
-        *sigma = sn;
+        G->first = cs;
+        G->second = sn;
         *chi1_new = r;
 
         return 0;
