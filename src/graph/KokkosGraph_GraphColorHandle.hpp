@@ -494,12 +494,26 @@ private:
         int vector_size = 0;
 
         CountLowerTriangleTeam<row_index_view_type, nonzero_view_type, size_type_temp_work_view_t> clt (nv, xadj, adj, lower_count);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
         int max_allowed_team_size = team_policy_t::team_size_max(clt);
         KokkosKernels::Impl::get_suggested_vector_team_size<size_type, HandleExecSpace>(
             max_allowed_team_size,
             vector_size,
             teamSizeMax,
             nv, ne);
+#else
+        KokkosKernels::Impl::get_suggested_vector_size<size_type, HandleExecSpace>(
+            vector_size,
+            nv, ne);
+
+        team_policy_t tmp_policy(nv, Kokkos::AUTO, vector_size);
+        int max_allowed_team_size = tmp_policy.team_size_max( clt, Kokkos::ParallelForTag() );
+
+        KokkosKernels::Impl::get_suggested_team_size<HandleExecSpace>(
+            max_allowed_team_size,
+            vector_size,
+            teamSizeMax);
+#endif
 
         Kokkos::parallel_for("KokkosGraph::CountLowerTriangleTeam",
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
