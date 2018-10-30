@@ -76,12 +76,12 @@ namespace KokkosBatched {
           H_part3x3.partWithABR(H_part2x2, 1, 1);
           const int n_hbr = m - m_htl;
           /// -----------------------------------------------------
-          const value_type chi1 = *H_part3x3.A10;
-          const value_type chi2 = *H_part3x3.A20;
-          SerialGivensInternal::invoke(chi1, chi2,
+          value_type *chi1 = H_part3x3.A11-hs1;
+          value_type *chi2 = H_part3x3.A21-hs1;
+          SerialGivensInternal::invoke(*chi1, *chi2,
                                        &G,
-                                       H_part3x3.A10);
-          *H_part3x3.A20 = zero; // explicitly set zero
+                                       chi1);
+          *chi2 = zero;
           G.second = -G.second; // transpose G
 
           const int nn = m - m_htl;
