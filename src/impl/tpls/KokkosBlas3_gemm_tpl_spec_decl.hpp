@@ -109,18 +109,14 @@ struct GEMM< \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
     const int K = A.extent(A_t?0:1); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
       dgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
@@ -162,18 +158,14 @@ struct GEMM< \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
     const int K = A.extent(A_t?0:1); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
       sgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
@@ -215,18 +207,14 @@ struct GEMM< \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
     const int K = A.extent(A_t?0:1); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
       zgemm_(transA,transB,&M,&N,&K, \
@@ -274,18 +262,14 @@ struct GEMM< \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
     const int K = A.extent(A_t?0:1); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
       cgemm_(transA,transB,&M,&N,&K, \
@@ -364,18 +348,14 @@ struct GEMM< \
     const int M = static_cast<int> (C.extent(0)); \
     const int N = static_cast<int> (C.extent(1)); \
     const int K = static_cast<int> (A.extent(A_t?0:1)); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     cublasOperation_t transa, transb; \
     if ((transA[0]=='N')||(transA[0]=='n')) \
@@ -431,18 +411,14 @@ struct GEMM< \
     const int M = static_cast<int> (C.extent(0)); \
     const int N = static_cast<int> (C.extent(1)); \
     const int K = static_cast<int> (A.extent(A_t?0:1)); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     cublasOperation_t transa, transb; \
     if ((transA[0]=='N')||(transA[0]=='n')) \
@@ -498,18 +474,14 @@ struct GEMM< \
     const int M = static_cast<int> (C.extent(0)); \
     const int N = static_cast<int> (C.extent(1)); \
     const int K = static_cast<int> (A.extent(A_t?0:1)); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     cublasOperation_t transa, transb; \
     if ((transA[0]=='N')||(transA[0]=='n')) \
@@ -565,18 +537,14 @@ struct GEMM< \
     const int M = static_cast<int> (C.extent(0)); \
     const int N = static_cast<int> (C.extent(1)); \
     const int K = static_cast<int> (A.extent(A_t?0:1)); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
     bool C_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTC>::value; \
     \
-    A.stride(strides); \
-    const int LDA = strides[A_is_lr?0:1]; \
-    B.stride(strides); \
-    const int LDB = strides[B_is_lr?0:1]; \
-    C.stride(strides); \
-    const int LDC = strides[C_is_lr?0:1]; \
+    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
+    const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     cublasOperation_t transa, transb; \
     if ((transA[0]=='N')||(transA[0]=='n')) \
