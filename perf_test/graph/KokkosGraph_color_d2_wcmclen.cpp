@@ -116,7 +116,9 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "                 COLORING_D2_SERIAL          - Serial algorithm (must use with 'serial' mode)" << std::endl
        << spaces << "                 COLORING_D2_MATRIX_SQUARED  - Matrix-squared + Distance-1 method." << std::endl
        << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array." << std::endl
+#if 0
        << spaces << "                 COLORING_D2_VBTP            - VB with Team Policy (type 1)" << std::endl
+#endif
        << spaces << "                 COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
        << spaces << "                 COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
 
@@ -198,6 +200,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 2;
                 got_required_param_algorithm = true;
             }
+#if 0
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTP"))
             {
                 params.algorithm             = 3;
@@ -223,6 +226,12 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 7;
                 got_required_param_algorithm = true;
             }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTP_BIT"))
+            {
+                params.algorithm             = 11;
+                got_required_param_algorithm = true;
+            }
+#endif
             else if(0 == strcasecmp(argv[i], "COLORING_D2_SERIAL"))
             {
                 params.algorithm             = 8;
@@ -236,11 +245,6 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT_EF"))
             {
                 params.algorithm             = 10;
-                got_required_param_algorithm = true;
-            }
-            else if(0 == strcasecmp(argv[i], "COLORING_D2_VBTP_BIT"))
-            {
-                params.algorithm             = 11;
                 got_required_param_algorithm = true;
             }
             else
@@ -364,6 +368,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             kh.create_graph_coloring_handle(COLORING_D2_VB);
             label_algorithm = "COLORING_D2_VB";
             break;
+#if 0
         case 3:
             kh.create_graph_coloring_handle(COLORING_D2_VBTP);
             label_algorithm = "COLORING_D2_VBTP";
@@ -384,6 +389,11 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             kh.create_graph_coloring_handle(COLORING_D2_VBTPVR2);
             label_algorithm = "COLORING_D2_VBTPVR2";
             break;
+        case 11:
+            kh.create_graph_coloring_handle(COLORING_D2_VBTP_BIT);
+            label_algorithm = "COLORING_D2_VBTP_BIT";
+            break;
+#endif
         case 8:
             kh.create_graph_coloring_handle(COLORING_D2_SERIAL);
             label_algorithm = "COLORING_D2_SERIAL";
@@ -395,10 +405,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         case 10:
             kh.create_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
             label_algorithm = "COLORING_D2_VB_BIT_EF";
-            break;
-        case 11:
-            kh.create_graph_coloring_handle(COLORING_D2_VBTP_BIT);
-            label_algorithm = "COLORING_D2_VBTP_BIT";
             break;
         default:
             kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);

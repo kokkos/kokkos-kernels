@@ -477,6 +477,8 @@ class GraphColorD2
 
     }
 
+
+
     /**
      * Print out the histogram of colors in a more human friendly format
      * This will not print out all the colors if there are many.
@@ -507,7 +509,7 @@ class GraphColorD2
     {
         // Vertex group chunking
         nnz_lno_t v_chunk_size = this->_chunkSize;
-        nnz_lno_t v_num_chunks = this->nv / v_chunk_size + 1;   // TODO: This probably needs fixing
+        nnz_lno_t v_num_chunks = this->nv / v_chunk_size + 1;
 
         std::cout << ">>> this->nv     = " << this->nv << std::endl;
         std::cout << ">>> v_chunk_size = " << v_chunk_size << std::endl;
@@ -557,6 +559,7 @@ class GraphColorD2
                                 Kokkos::Max<size_t>(_degree_d2_max));
         degree_d2_max = _degree_d2_max;
     }
+
 
 
     /**
@@ -615,7 +618,9 @@ class GraphColorD2
             chunkSize_ = 1;
         }
 
+#if 0
         const size_t num_chunks = current_vertexListLength_ / chunkSize_ + 1;
+#endif
 
         // Pick the right coloring algorithm to use based on which algorithm we're using
         switch(this->gc_handle->get_coloring_algo_type())
@@ -632,7 +637,7 @@ class GraphColorD2
                 Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, this->nv), gc);
             }
             break;
-
+#if 0
             // Two level parallelism:
             // 1. [P] loop over chunks of vertices
             // 2. [P] loop over vertices in chunks
@@ -651,7 +656,8 @@ class GraphColorD2
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
             }
             break;
-
+#endif
+#if 0
             // Two level parallelism:
             // 1. [P] loop over chunks of vertices
             // 2. [S] loop over vertices in chunks
@@ -670,7 +676,8 @@ class GraphColorD2
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
             }
             break;
-
+#endif
+#if 0
             // Two level parallelism:
             // 1. [P] loop over chunks of vertices
             // 2. [S] loop over vertices in chunks
@@ -689,7 +696,8 @@ class GraphColorD2
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
             }
             break;
-
+#endif
+#if 0
             // Three level parallelism:
             // 1. [P] loop over chunks of vertices
             // 2. [P] loop over vertices in chunks
@@ -708,7 +716,8 @@ class GraphColorD2
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
             }
             break;
-
+#endif
+#if 0
             // Three level parallelism:
             // 1. [P] loop over chunks of vertices
             // 2. [P] loop over vertices in chunks
@@ -728,7 +737,7 @@ class GraphColorD2
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
             }
             break;
-
+#endif
             // One level Perallelism, BIT Array for coloring
             // 1. [P] loop over vertices
             // 2. [S] loop over color offset blocks
@@ -741,6 +750,7 @@ class GraphColorD2
             }
             break;
 
+#if 0
             // Two level Perallelism, BIT Array for coloring
             // 1. [P] loop over chunks of vertices
             // 2. [P] loop over vertices in chunks
@@ -760,6 +770,7 @@ class GraphColorD2
                 Kokkos::parallel_for("LoopOverChunks", policy_inst, gc);
             }
             break;
+#endif
 
             default:
                 throw std::invalid_argument("Unknown Distance-2 Algorithm Type or invalid for non Edge Filtering mode.");
@@ -1246,7 +1257,7 @@ class GraphColorD2
     };                 // struct functorGreedyColorVB_BIT (end)
 
 
-
+#if 0
     /**
      * Functor for VBTP_BIT algorithm coloring without edge filtering.
      * Two level parallelism
@@ -1387,7 +1398,7 @@ class GraphColorD2
             });                // parallel_for ichunk...
         }                      // operator() (end)
     };                         // struct functorGreedyColorVBTP_BIT (end)
-
+#endif
 
 
    /**
@@ -1547,7 +1558,7 @@ class GraphColorD2
     };                 // struct functorGreedyColorVB_BIT_EF (end)
 
 
-
+#if 0
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Team Policy Enabled on loop over chunks
@@ -1662,9 +1673,9 @@ class GraphColorD2
             });                // for ichunk ...
         }                      // operator() (end)
     };                         // struct functorGreedyColorVBTP (end)
+#endif
 
-
-
+#if 0
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Team Policy Enabled on loop over neighbors
@@ -1789,9 +1800,9 @@ class GraphColorD2
             }                  // for ichunk...
         }                      // operator() (end)
     };                         // struct functorGreedyColorVBTP2 (end)
+#endif
 
-
-
+#if 0
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Team Policy Enabled
@@ -1913,9 +1924,9 @@ class GraphColorD2
             }                  // for ichunk...
         }                      // operator() (end)
     };                         // struct functorGreedyColorVBTP3 (end)
+#endif
 
-
-
+#if 0
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Team Policy Enabled on loop over chunks
@@ -2039,9 +2050,9 @@ class GraphColorD2
             });                // for ichunk...
         }                      // operator() (end)
     };                         // struct functorGreedyColorVBTPVR1 (end)
+#endif
 
-
-
+#if 0
     /**
      * Functor for VB algorithm speculative coloring without edge filtering.
      * Team Policy Enabled on loop-over -chunks
@@ -2164,7 +2175,7 @@ class GraphColorD2
             });                // for ichunk...
         }                      // operator() (end)
     };                         // struct functorGreedyColorVBTPVR2 (end)
-
+#endif
 
 
     template<typename adj_view_t>
