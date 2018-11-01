@@ -51,14 +51,15 @@ namespace KokkosBatched {
              /* */ RealType * H, const int hs0, const int hs1,
              /* */ RealType * er, const int ers,
              /* */ RealType * ei, const int eis,
-             const int max_iteration = 300,
              const RealType user_tolerence = RealType(-1),
-             const bool restart = false) {
+             const bool restart = false,
+             const int user_max_iteration = -1) {
         typedef RealType real_type;
         typedef Kokkos::Details::ArithTraits<real_type> ats;
         const real_type zero(0), nan(ats::nan());
         const real_type tol = ( user_tolerence < 0 ? 
                                 1e5*ats::epsilon() : user_tolerence);
+        const int max_iteration = user_max_iteration < 0 ? 300 : user_max_iteration;
 
         int r_val = 0;
         if (restart) {
@@ -98,16 +99,18 @@ namespace KokkosBatched {
             /// find mbeg (first nonzero subdiag value)
             for (;cnt<m;++cnt) {
               const auto     val = ats::abs(*(H+cnt*hs-hs1));
-              const auto ref_val = ats::abs(*(H+cnt*hs));
-              if (val > tol*ref_val) break;
+              /// const auto ref_val = ats::abs(*(H+cnt*hs));
+              /// if (val > tol*ref_val) break;
+              if (val > tol) break;
             }
             const int mbeg = cnt-1;
             
             /// find mend (first zero subdiag value)
             for (;cnt<m;++cnt) {
               const auto     val = ats::abs(*(H+cnt*hs-hs1));
-              const auto ref_val = ats::abs(*(H+cnt*hs));
-              if (val < tol*ref_val) break;
+              /// const auto ref_val = ats::abs(*(H+cnt*hs));
+              /// if (val < tol*ref_val) break;
+              if (val < tol) break;              
             }
             const int mend = cnt;
             
@@ -122,8 +125,9 @@ namespace KokkosBatched {
                                                              shift);
                 real_type *sub2x2 = H+(mend-2)*hs;
                 const auto     val = ats::abs(sub2x2[hs0]);
-                const auto ref_val = ats::abs(sub2x2[hs]);
-                if (val < tol*ref_val) { /// this eigenvalue converges
+                /// const auto ref_val = ats::abs(sub2x2[hs]);
+                ///if (val < tol*ref_val) { /// this eigenvalue converges
+                if (val < tol) { /// this eigenvalue converges
                   er[(mend-1)*ers] = sub2x2[hs]; ei[(mend-1)*eis] = zero;
                 }
               }
@@ -139,7 +143,6 @@ namespace KokkosBatched {
                                                      sub2x2[1*hs0+0*hs1], sub2x2[1*hs0+1*hs1],
                                                      &lambda1, &lambda2,
                                                      &is_complex);
-
                 if ((mend-mbeg) == 2) {
                   /// eigenvalues are from wilkinson shift
                   er[(mbeg+0)*ers] = lambda1.real(); ei[(mbeg+0)*eis] = lambda1.imag();
@@ -150,17 +153,23 @@ namespace KokkosBatched {
                                                 H+hs*mbeg, hs0, hs1,
                                                 lambda1, lambda2,
                                                 is_complex);
-                  const auto     val1 = ats::abs(*(sub2x2+hs0));
-                  const auto     val2 = ats::abs(*(sub2x2-hs1));
-                  const auto ref_val1 = ats::abs(*(sub2x2+hs ));
-                  const auto ref_val2 = ats::abs(*(sub2x2    ));
+                  /* */ auto    &val1 = *(sub2x2+hs0);
+                  /* */ auto    &val2 = *(sub2x2-hs1);
+                  const auto abs_val1 = ats::abs(val1);
+                  const auto abs_val2 = ats::abs(val2);
+                  /// const auto ref_val1 = ats::abs(*(sub2x2+hs ));
+                  /// const auto ref_val2 = ats::abs(*(sub2x2    ));
 
-                  if (val1 < tol*ref_val1) { 
+                  /// if (abs_val1 < tol*ref_val1) { 
+                  if (abs_val1 < tol) { 
                     er[(mend-1)*ers] = sub2x2[hs]; ei[(mend-1)*eis] = zero;
-                  } else if (val2 < tol*(ref_val1+ref_val2)) {
+                    val1 = zero;
+                  ///} else if (abs_val2 < tol*(ref_val1+ref_val2)) {
+                  } else if (abs_val2 < tol) {
                     er[(mend-1)*ers] = lambda1.real(); ei[(mend-1)*eis] = lambda1.imag();
                     er[(mend-2)*ers] = lambda2.real(); ei[(mend-2)*eis] = lambda2.imag();
-                    sub2x2[hs0] = zero; // consider two eigenvalues are converged 
+                    val1 = zero;
+                    val2 = zero;
                   }
                 }
               }
@@ -174,10 +183,11 @@ namespace KokkosBatched {
           }
           /// Step 3: record missing real eigenvalues from the diagonals
           if (converge) {
-            for (int i=0;i<m;++i) 
+            for (int i=0;i<m;++i) {
               if (ats::isNan(er[i*ers])) {
                 er[i*ers] = H[i*hs]; ei[i*eis] = zero;
               }
+            }
             r_val = 0;
           } else {
             r_val = -1;
@@ -205,9 +215,9 @@ namespace KokkosBatched {
                       H, hs0, hs1, 
                       er, two_es,
                       ei, two_es,
-                      max_iteration,
                       user_tolerence,
-                      restart);
+                      restart,
+                      max_iteration);
       }
     };
 
