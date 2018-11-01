@@ -89,7 +89,7 @@ namespace KokkosBatched {
             
             // if there exist non-converged eigen values
             if (mbeg < (mend-1)) { // && mbeg < (m-1)) {
-#             if 1
+#             if 0
               {
                 /// Rayleigh quotient shift (all eigenvalues are real; testing only)
                 const value_type shift = *(H+(mend-1)*hs); 
@@ -106,7 +106,7 @@ namespace KokkosBatched {
               }
 #             endif
 
-#             if 0
+#             if 1
               {
                 /// find a complex eigen pair
                 Kokkos::complex<value_type> lambda1, lambda2;
