@@ -40,7 +40,7 @@ namespace KokkosBatched {
         SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Unblocked>::invoke(one, A, B);
         //Second, compute X by solving the system U*X = Y for X
         SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Unblocked>::invoke(one, A, B);
-        
+
         return 0;
     }
     

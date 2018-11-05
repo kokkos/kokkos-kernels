@@ -88,7 +88,7 @@ namespace KokkosBatched {
         auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
         
         const ScalarType one(1.0);
-        
+
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
