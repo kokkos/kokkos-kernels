@@ -142,7 +142,7 @@ namespace Test {
     Kokkos::deep_copy(w, value_type(0.0));
 
     Functor_BatchedSerialLU<DeviceType,AViewType,AlgoTagType>(a1).run();
-	
+
     Functor_TestBatchedSerialInverseLU<DeviceType,AViewType,WViewType,AlgoTagType>(a1,w).run();
 
     value_type alpha = 1.0, beta = 0.0;   
