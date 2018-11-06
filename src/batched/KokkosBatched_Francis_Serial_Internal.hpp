@@ -76,7 +76,7 @@ namespace KokkosBatched {
           G[0].second = -G[0].second; 
           G[1].second = -G[1].second; 
 
-          const int nn = m;
+          const int nn = 3; //m;
           SerialApplyLeftGivensInternal::invoke (G[0], nn,
                                                  H,       hs1,
                                                  H+1*hs0, hs1);
@@ -101,14 +101,14 @@ namespace KokkosBatched {
         Partition3x3<value_type> H_part3x3(hs0, hs1);
 
         // initial partition of A where ATL has a zero dimension
-        H_part2x2.partWithATL(H, m, m, 1, 1);
-        for (int m_htl=1;m_htl<(m-1);++m_htl) {
+        int m_htl = 1;
+        H_part2x2.partWithATL(H, m, m, m_htl, m_htl);
+        for (;m_htl<(m-2);++m_htl) {
           // part 2x2 into 3x3
           H_part3x3.partWithABR(H_part2x2, 1, 1);
-          const int n_hbr = m - m_htl;
           /// -----------------------------------------------------
-          const int nn = m - m_htl;
-          const int mtmp = m_htl+4, mm = mtmp < m ? mtmp : m;
+          const int nn = 3;// ntmp = m-m_htl, nn = ntmp < 3 ? ntmp : 3; // m - m_htl;
+          const int mm = 4;// mtmp = m_htl+4, mm = mtmp < m ? mtmp : m;
 
           value_type *chi1 = H_part3x3.A11-hs1;
           value_type *chi2 = chi1+hs0; 
@@ -121,23 +121,47 @@ namespace KokkosBatched {
                                                  H_part3x3.A11, hs1,
                                                  H_part3x3.A21, hs1);
           SerialApplyRightGivensInternal::invoke(G[0], mm,
-                                                 H_part3x3.A01, hs0,
-                                                 H_part3x3.A02, hs0);          
+                                                 H_part3x3.A11, hs0,
+                                                 H_part3x3.A12, hs0);          
 
-          if (nn > 2) {
-            value_type *chi3 = chi2+hs0; 
-            SerialGivensInternal::invoke(*chi1, *chi3,
-                                         &G[1],
-                                         chi1);
-            *chi3 = zero;          
-            G[1].second = -G[1].second;  // transpose
-            SerialApplyLeftGivensInternal::invoke (G[1], nn,
-                                                   H_part3x3.A11,     hs1,
-                                                   H_part3x3.A21+hs0, hs1);         
-            SerialApplyRightGivensInternal::invoke(G[1], mm,
-                                                   H_part3x3.A01,     hs0,
-                                                   H_part3x3.A02+hs1, hs0);
-          }
+          value_type *chi3 = chi2+hs0; 
+          SerialGivensInternal::invoke(*chi1, *chi3,
+                                       &G[1],
+                                       chi1);
+          *chi3 = zero;          
+          G[1].second = -G[1].second;  // transpose
+          SerialApplyLeftGivensInternal::invoke (G[1], nn,
+                                                 H_part3x3.A11,     hs1,
+                                                 H_part3x3.A21+hs0, hs1);         
+          SerialApplyRightGivensInternal::invoke(G[1], mm,
+                                                 H_part3x3.A11,     hs0,
+                                                 H_part3x3.A12+hs1, hs0);
+          /// -----------------------------------------------------
+          H_part2x2.mergeToATL(H_part3x3);
+        }
+
+
+        // last 3x3 block
+        {
+          // part 2x2 into 3x3
+          H_part3x3.partWithABR(H_part2x2, 1, 1);
+          /// -----------------------------------------------------
+          const int nn = 2; //m-m_htl;
+          const int mm = 2; //mtmp = m; // m_htl+4, mm = mtmp < m ? mtmp : m;
+
+          value_type *chi1 = H_part3x3.A11-hs1;
+          value_type *chi2 = chi1+hs0; 
+          SerialGivensInternal::invoke(*chi1, *chi2,
+                                       &G[0],
+                                       chi1);
+          *chi2 = zero;
+          G[0].second = -G[0].second; // transpose
+          SerialApplyLeftGivensInternal::invoke (G[0], nn,
+                                                 H_part3x3.A11, hs1,
+                                                 H_part3x3.A21, hs1);
+          SerialApplyRightGivensInternal::invoke(G[0], mm,
+                                                 H_part3x3.A11, hs0,
+                                                 H_part3x3.A12, hs0);
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
