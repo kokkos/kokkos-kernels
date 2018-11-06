@@ -104,30 +104,30 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << std::endl
        << spaces << "Parameters:" << std::endl
        << spaces << "  Parallelism (select one of the following):" << std::endl
-       << spaces << "      serial <N>        Execute serially." << std::endl
-       << spaces << "      threads <N>       Use N posix threads." << std::endl
-       << spaces << "      openmp <N>        Use OpenMP with N threads." << std::endl
-       << spaces << "      cuda              Use CUDA" << std::endl
+       << spaces << "      --serial <N>        Execute serially." << std::endl
+       << spaces << "      --threads <N>       Use N posix threads." << std::endl
+       << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
+       << spaces << "      --cuda              Use CUDA" << std::endl
        << std::endl
        << spaces << "  Required Parameters:" << std::endl
-       << spaces << "      amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
+       << spaces << "      --amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
        << std::endl
-       << spaces << "      algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
-       << spaces << "                 COLORING_D2_SERIAL          - Serial algorithm (must use with 'serial' mode)" << std::endl
+       << spaces << "      --algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
        << spaces << "                 COLORING_D2_MATRIX_SQUARED  - Matrix-squared + Distance-1 method." << std::endl
-       << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array." << std::endl
+       << spaces << "                 COLORING_D2_SERIAL          - Serial algorithm (must use with 'serial' mode)" << std::endl
+       << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array (Default)." << std::endl
        << spaces << "                 COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
        << spaces << "                 COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
 
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
-       << spaces << "      repeat <N>        Set number of test repetitions (Default: 1) " << std::endl
-       << spaces << "      verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
-       << spaces << "      chunksize <N>     Set the chunk size." << std::endl
-       << spaces << "      dynamic           Use dynamic scheduling." << std::endl
-       << spaces << "      teamsize  <N>     Set the team size." << std::endl
-       << spaces << "      vectorsize <N>    Set the vector size." << std::endl
-       << spaces << "      help              Print out command line help." << std::endl
+       << spaces << "      --repeat <N>        Set number of test repetitions (Default: 1) " << std::endl
+       << spaces << "      --verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
+       << spaces << "      --chunksize <N>     Set the chunk size." << std::endl
+       << spaces << "      --dynamic           Use dynamic scheduling." << std::endl
+       << spaces << "      --teamsize  <N>     Set the team size." << std::endl
+       << spaces << "      --vectorsize <N>    Set the vector size." << std::endl
+       << spaces << "      --help              Print out command line help." << std::endl
        << spaces << " " << std::endl;
 }
 
@@ -139,52 +139,53 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
 
     for(int i = 1; i < argc; ++i)
     {
-        if(0 == strcasecmp(argv[i], "threads"))
+        if(0 == strcasecmp(argv[i], "--threads"))
         {
             params.use_threads = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "serial"))
+        else if(0 == strcasecmp(argv[i], "--serial"))
         {
             params.use_serial = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "openmp"))
+        else if(0 == strcasecmp(argv[i], "--openmp"))
         {
             params.use_openmp = atoi(argv[++i]);
+            std::cout << "use_openmp = " << params.use_openmp << std::endl;
         }
-        else if(0 == strcasecmp(argv[i], "cuda"))
+        else if(0 == strcasecmp(argv[i], "--cuda"))
         {
             params.use_cuda = 1;
         }
-        else if(0 == strcasecmp(argv[i], "repeat"))
+        else if(0 == strcasecmp(argv[i], "--repeat"))
         {
             params.repeat = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "chunksize"))
+        else if(0 == strcasecmp(argv[i], "--chunksize"))
         {
             params.chunk_size = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "teamsize"))
+        else if(0 == strcasecmp(argv[i], "--teamsize"))
         {
             params.team_size = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "vectorsize"))
+        else if(0 == strcasecmp(argv[i], "--vectorsize"))
         {
             params.vector_size = atoi(argv[++i]);
         }
-        else if(0 == strcasecmp(argv[i], "amtx"))
+        else if(0 == strcasecmp(argv[i], "--amtx"))
         {
             got_required_param_amtx = true;
             params.a_mtx_bin_file   = argv[++i];
         }
-        else if(0 == strcasecmp(argv[i], "dynamic"))
+        else if(0 == strcasecmp(argv[i], "--dynamic"))
         {
             params.use_dynamic_scheduling = 1;
         }
-        else if(0 == strcasecmp(argv[i], "verbose"))
+        else if(0 == strcasecmp(argv[i], "--verbose"))
         {
             params.verbose = 1;
         }
-        else if(0 == strcasecmp(argv[i], "algorithm"))
+        else if(0 == strcasecmp(argv[i], "--algorithm"))
         {
             ++i;
             if(0 == strcasecmp(argv[i], "COLORING_D2_MATRIX_SQUARED"))
@@ -192,24 +193,24 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 1;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB") || 0 == strcasecmp(argv[i], "COLORING_D2") )
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_SERIAL"))
             {
                 params.algorithm             = 2;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[i], "COLORING_D2_SERIAL"))
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB") || 0 == strcasecmp(argv[i], "COLORING_D2") )
             {
-                params.algorithm             = 8;
+                params.algorithm             = 3;
                 got_required_param_algorithm = true;
             }
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT"))
             {
-                params.algorithm             = 9;
+                params.algorithm             = 4;
                 got_required_param_algorithm = true;
             }
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT_EF"))
             {
-                params.algorithm             = 10;
+                params.algorithm             = 5;
                 got_required_param_algorithm = true;
             }
             else
@@ -219,7 +220,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 return 1;
             }
         }
-        else if(0 == strcasecmp(argv[i], "help") || 0 == strcasecmp(argv[i], "-h"))
+        else if(0 == strcasecmp(argv[i], "--help") || 0 == strcasecmp(argv[i], "-h"))
         {
             print_options(std::cout, argv[0]);
             return 1;
@@ -330,24 +331,24 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             label_algorithm = "COLORING_D2_MATRIX_SQUARED";
             break;
         case 2:
-            kh.create_graph_coloring_handle(COLORING_D2_VB);
-            label_algorithm = "COLORING_D2_VB";
-            break;
-        case 8:
             kh.create_graph_coloring_handle(COLORING_D2_SERIAL);
             label_algorithm = "COLORING_D2_SERIAL";
             break;
-        case 9:
+        case 3:
+            kh.create_graph_coloring_handle(COLORING_D2_VB);
+            label_algorithm = "COLORING_D2_VB";
+            break;
+        case 4:
             kh.create_graph_coloring_handle(COLORING_D2_VB_BIT);
             label_algorithm = "COLORING_D2_VB_BIT";
             break;
-        case 10:
+        case 5:
             kh.create_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
             label_algorithm = "COLORING_D2_VB_BIT_EF";
             break;
         default:
-            kh.create_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
-            label_algorithm = "COLORING_D2_MATRIX_SQUARED";
+            kh.create_graph_coloring_handle(COLORING_D2_VB);
+            label_algorithm = "COLORING_D2_VB";
             break;
     }
 
