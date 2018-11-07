@@ -28,7 +28,7 @@ namespace KokkosBatched {
         typedef ValueType value_type;
         const int hs = hs0+hs1;
 
-        const value_type zero(0);
+        const value_type zero(0), minus_one(-1);
 
         /// Given a strict Hessenberg matrix H (m x m),
         /// it computes a single implicit QR step with a given shift
@@ -50,13 +50,15 @@ namespace KokkosBatched {
             h10 = H[1*hs0+0*hs1], h11 = H[1*hs0+1*hs1], 
             /* */                 h21 = H[2*hs0+1*hs1];          
           if (is_complex) {
-            s = 2*lambda1.real(); t = lambda1.real()*lambda1.real()+lambda1.imag()*lambda1.imag();
+            s = 2*lambda1.real();
+            t = lambda1.real()*lambda1.real()+lambda1.imag()*lambda1.imag();
           } else {
             const value_type val = H[(m-1)*hs];
             const auto dist_lambda1 = Kokkos::Details::ArithTraits<value_type>::abs(lambda1.real() - val);
             const auto dist_lambda2 = Kokkos::Details::ArithTraits<value_type>::abs(lambda2.real() - val);
             const value_type lambda = dist_lambda1 < dist_lambda2 ? lambda1.real() : lambda2.real();
-            s = 2*lambda; t = lambda*lambda;            
+            s = 2*lambda;
+            t = lambda*lambda;
           }
           v[0] = h00*h00+h01*h10 /* H^2 e_1 */ - s*h00 /* 2 Re(lambda) */ + t;
           v[1] = h10*h00+h11*h10 /*         */ - s*h10;
@@ -71,27 +73,15 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(v[0], v[2],
                                        &G[1],
                                        &v[0]);
-
-          // apply G' from left
-          G[0].second = -G[0].second; 
-          G[1].second = -G[1].second; 
-
-          const int nn = 3; //m;
-          SerialApplyLeftGivensInternal::invoke (G[0], nn,
-                                                 H,       hs1,
-                                                 H+1*hs0, hs1);
-          SerialApplyLeftGivensInternal::invoke (G[1], nn,
-                                                 H+0*hs0, hs1,
-                                                 H+2*hs0, hs1);
-
-          // apply (G')' from right
-          const int mm = m < 4 ? m : 4;
-          SerialApplyRightGivensInternal::invoke(G[0], mm,
-                                                 H,       hs0,
-                                                 H+1*hs1, hs0);
-          SerialApplyRightGivensInternal::invoke(G[1], mm,
-                                                 H,       hs0,
-                                                 H+2*hs1, hs0);
+          // apply G' from left and right
+          G[0].second *= minus_one;
+          G[1].second *= minus_one; 
+          if (m < 4) 
+            SerialApplyLeftRightGivensSizeSpecificInternal<3,3>
+              ::invoke (G[0], G[1], H, hs0, hs1);
+          else 
+            SerialApplyLeftRightGivensSizeSpecificInternal<4,3>
+              ::invoke (G[0], G[1], H, hs0, hs1);
         }
 
         /// 1. chase the bulge
@@ -107,61 +97,37 @@ namespace KokkosBatched {
           // part 2x2 into 3x3
           H_part3x3.partWithABR(H_part2x2, 1, 1);
           /// -----------------------------------------------------
-          const int nn = 3;// ntmp = m-m_htl, nn = ntmp < 3 ? ntmp : 3; // m - m_htl;
-          const int mm = 4;// mtmp = m_htl+4, mm = mtmp < m ? mtmp : m;
-
           value_type *chi1 = H_part3x3.A11-hs1;
           value_type *chi2 = chi1+hs0; 
+          value_type *chi3 = chi2+hs0; 
+
           SerialGivensInternal::invoke(*chi1, *chi2,
                                        &G[0],
-                                       chi1);
-          *chi2 = zero;
-          G[0].second = -G[0].second; // transpose
-          SerialApplyLeftGivensInternal::invoke (G[0], nn,
-                                                 H_part3x3.A11, hs1,
-                                                 H_part3x3.A21, hs1);
-          SerialApplyRightGivensInternal::invoke(G[0], mm,
-                                                 H_part3x3.A11, hs0,
-                                                 H_part3x3.A12, hs0);          
-
-          value_type *chi3 = chi2+hs0; 
+                                       chi1); *chi2 = zero;
           SerialGivensInternal::invoke(*chi1, *chi3,
                                        &G[1],
-                                       chi1);
-          *chi3 = zero;          
-          G[1].second = -G[1].second;  // transpose
-          SerialApplyLeftGivensInternal::invoke (G[1], nn,
-                                                 H_part3x3.A11,     hs1,
-                                                 H_part3x3.A21+hs0, hs1);         
-          SerialApplyRightGivensInternal::invoke(G[1], mm,
-                                                 H_part3x3.A11,     hs0,
-                                                 H_part3x3.A12+hs1, hs0);
+                                       chi1); *chi3 = zero;
+          G[0].second *= minus_one;
+          G[1].second *= minus_one;
+          SerialApplyLeftRightGivensSizeSpecificInternal<4,3>
+            ::invoke (G[0], G[1], H_part3x3.A11, hs0, hs1);
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
-
 
         // last 3x3 block
         {
           // part 2x2 into 3x3
           H_part3x3.partWithABR(H_part2x2, 1, 1);
           /// -----------------------------------------------------
-          const int nn = 2; //m-m_htl;
-          const int mm = 2; //mtmp = m; // m_htl+4, mm = mtmp < m ? mtmp : m;
-
           value_type *chi1 = H_part3x3.A11-hs1;
           value_type *chi2 = chi1+hs0; 
           SerialGivensInternal::invoke(*chi1, *chi2,
                                        &G[0],
-                                       chi1);
-          *chi2 = zero;
-          G[0].second = -G[0].second; // transpose
-          SerialApplyLeftGivensInternal::invoke (G[0], nn,
-                                                 H_part3x3.A11, hs1,
-                                                 H_part3x3.A21, hs1);
-          SerialApplyRightGivensInternal::invoke(G[0], mm,
-                                                 H_part3x3.A11, hs0,
-                                                 H_part3x3.A12, hs0);
+                                       chi1); *chi2 = zero;
+          G[0].second *= minus_one; 
+          SerialApplyLeftRightGivensSizeSpecificInternal<2,2>
+            ::invoke (G[0], H_part3x3.A11, hs0, hs1);
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
