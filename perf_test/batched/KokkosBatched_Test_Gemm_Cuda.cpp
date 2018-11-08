@@ -315,7 +315,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for(policy, functor_type(a,b,c));
+              Kokkos::parallel_for("GEMM: RangePolicy version", policy, functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -382,7 +382,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for(policy,functor_type(a,b,c));
+              Kokkos::parallel_for("GEMM: TeamPolicy version 1", policy,functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -455,7 +455,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for(policy, functor_type(a,b,c));
+              Kokkos::parallel_for("GEMM: TeamPolicy version 2", policy, functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -532,7 +532,7 @@ namespace KokkosBatched {
                 DeviceSpaceType::fence();
                 timer.reset();
 
-                Kokkos::parallel_for(policy, functor_type(a,b,c));
+                Kokkos::parallel_for("GEMM: TeamPolicy version 3", policy, functor_type(a,b,c));
                 
                 DeviceSpaceType::fence();
                 const double t = timer.seconds();
@@ -604,7 +604,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for(policy, functor_type(a,b,c));
+              Kokkos::parallel_for("GEMM: TeamPolicy handmade", policy, functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();

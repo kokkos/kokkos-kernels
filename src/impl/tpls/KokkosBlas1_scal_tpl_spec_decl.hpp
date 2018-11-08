@@ -48,13 +48,13 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 extern "C" void dscal_( const int* N, const double* alpha,
-                        const double* x, const int* x_inc);
+                        double* x, const int* x_inc);
 extern "C" void sscal_( const int* N, const float* alpha,
-                                       const float* x, const int* x_inc);
+                        float* x, const int* x_inc);
 extern "C" void zscal_( const int* N, const std::complex<double>* alpha,
-                        const std::complex<double>* x, const int* x_inc);
+                        std::complex<double>* x, const int* x_inc);
 extern "C" void cscal_( const int* N, const std::complex<float>* alpha,
-                        const std::complex<float>* x, const int* x_inc);
+                        std::complex<float>* x, const int* x_inc);
 
 namespace KokkosBlas {
 namespace Impl {
@@ -93,7 +93,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      dscal_(&N,&alpha,X.data(),&one); \
+      dscal_(&N,&alpha,R.data(),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -124,7 +124,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      sscal_(&N,&alpha,X.data(),&one); \
+      sscal_(&N,&alpha,R.data(),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
