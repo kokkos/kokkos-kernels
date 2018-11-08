@@ -38,7 +38,7 @@ namespace KokkosBatched {
         ///   G' [chi1 chi2]^t = [alpha 0]^T
         /// where G is stored as a pair of gamma and sigma
         Kokkos::pair<value_type,value_type> G[2];
-
+        
         /// 0. compute 1st double shift vector
         value_type v[3];
         {
@@ -74,14 +74,16 @@ namespace KokkosBatched {
                                        &G[1],
                                        &v[0]);
           // apply G' from left and right
-          G[0].second *= minus_one;
-          G[1].second *= minus_one; 
-          if (m < 4) 
-            SerialApplyLeftRightGivensSizeSpecificInternal<3,3>
-              ::invoke (G[0], G[1], H, hs0, hs1);
-          else 
-            SerialApplyLeftRightGivensSizeSpecificInternal<4,3>
-              ::invoke (G[0], G[1], H, hs0, hs1);
+          G[0].second = -G[0].second;
+          G[1].second = -G[1].second; 
+
+          const int mm = m < 4 ? m : 4, nn = m;
+          SerialApplyLeftRightGivensInternal
+            ::invoke (G[0], G[1], 
+                      mm, nn,
+                      H, H+hs0, H+2*hs0,
+                      H, H+hs1, H+2*hs1,
+                      hs0, hs1);
         }
 
         /// 1. chase the bulge
@@ -107,10 +109,23 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(*chi1, *chi3,
                                        &G[1],
                                        chi1); *chi3 = zero;
-          G[0].second *= minus_one;
-          G[1].second *= minus_one;
-          SerialApplyLeftRightGivensSizeSpecificInternal<4,3>
-            ::invoke (G[0], G[1], H_part3x3.A11, hs0, hs1);
+          G[0].second = -G[0].second;
+          G[1].second = -G[1].second;
+
+          const int nn = m-m_htl, mtmp = m_htl+4, mm = mtmp < m ? mtmp : m;
+          value_type *a1t = H_part3x3.A11;
+          value_type *a2t = a1t+hs0;
+          value_type *a3t = a2t+hs0;
+          value_type *a1  = H_part3x3.A01;
+          value_type *a2  = a1+hs1;
+          value_type *a3  = a2+hs1;
+
+          SerialApplyLeftRightGivensInternal
+            ::invoke (G[0], G[1], 
+                      mm, nn,
+                      a1t, a2t, a3t,
+                      a1,  a2,  a3,
+                      hs0, hs1);
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
@@ -125,9 +140,19 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(*chi1, *chi2,
                                        &G[0],
                                        chi1); *chi2 = zero;
-          G[0].second *= minus_one; 
-          SerialApplyLeftRightGivensSizeSpecificInternal<2,2>
-            ::invoke (G[0], H_part3x3.A11, hs0, hs1);
+          G[0].second = -G[0].second; 
+
+          const int mm = m, nn = 2;
+          value_type *a1t = H_part3x3.A11;
+          value_type *a2t = a1t+hs0;
+          value_type *a1  = H_part3x3.A01;
+          value_type *a2  = a1+hs1;
+          SerialApplyLeftRightGivensInternal
+            ::invoke (G[0], 
+                      mm, nn,
+                      a1t, a2t,
+                      a1,  a2,
+                      hs0, hs1);
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }

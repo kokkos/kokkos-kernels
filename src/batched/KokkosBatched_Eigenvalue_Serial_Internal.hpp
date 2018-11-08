@@ -98,18 +98,14 @@ namespace KokkosBatched {
             
             /// find mbeg (first nonzero subdiag value)
             for (;cnt<m;++cnt) {
-              const auto     val = ats::abs(*(H+cnt*hs-hs1));
-              /// const auto ref_val = ats::abs(*(H+cnt*hs));
-              /// if (val > tol*ref_val) break;
+              const auto val = ats::abs(*(H+cnt*hs-hs1));
               if (val > tol) break;
             }
             const int mbeg = cnt-1;
             
             /// find mend (first zero subdiag value)
             for (;cnt<m;++cnt) {
-              const auto     val = ats::abs(*(H+cnt*hs-hs1));
-              /// const auto ref_val = ats::abs(*(H+cnt*hs));
-              /// if (val < tol*ref_val) break;
+              const auto val = ats::abs(*(H+cnt*hs-hs1));
               if (val < tol) break;              
             }
             const int mend = cnt;
@@ -125,8 +121,6 @@ namespace KokkosBatched {
                                                              shift);
                 real_type *sub2x2 = H+(mend-2)*hs;
                 const auto     val = ats::abs(sub2x2[hs0]);
-                /// const auto ref_val = ats::abs(sub2x2[hs]);
-                ///if (val < tol*ref_val) { /// this eigenvalue converges
                 if (val < tol) { /// this eigenvalue converges
                   er[(mend-1)*ers] = sub2x2[hs]; ei[(mend-1)*eis] = zero;
                 }
@@ -157,17 +151,18 @@ namespace KokkosBatched {
                   /* */ auto    &val2 = *(sub2x2-hs1);
                   const auto abs_val1 = ats::abs(val1);
                   const auto abs_val2 = ats::abs(val2);
-                  /// const auto ref_val1 = ats::abs(*(sub2x2+hs ));
-                  /// const auto ref_val2 = ats::abs(*(sub2x2    ));
 
-                  /// if (abs_val1 < tol*ref_val1) { 
                   if (abs_val1 < tol) { 
                     er[(mend-1)*ers] = sub2x2[hs]; ei[(mend-1)*eis] = zero;
                     val1 = zero;
-                  ///} else if (abs_val2 < tol*(ref_val1+ref_val2)) {
                   } else if (abs_val2 < tol) {
                     er[(mend-1)*ers] = lambda1.real(); ei[(mend-1)*eis] = lambda1.imag();
                     er[(mend-2)*ers] = lambda2.real(); ei[(mend-2)*eis] = lambda2.imag();
+                    // to preserve schur form, perform temporary givens rotation
+                    // Kokkos::pair<real_type,real_type> G;
+                    // SerialGivensInternal::invoke(sub2x2[0], sub2x2[hs0],
+                    //                              &G,
+                    //                              sub2x2);                      
                     val1 = zero;
                     val2 = zero;
                   }
