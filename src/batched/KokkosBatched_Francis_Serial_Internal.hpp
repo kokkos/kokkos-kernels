@@ -28,7 +28,7 @@ namespace KokkosBatched {
         typedef ValueType value_type;
         const int hs = hs0+hs1;
 
-        const value_type zero(0), minus_one(-1);
+        const value_type zero(0);
 
         /// Given a strict Hessenberg matrix H (m x m),
         /// it computes a single implicit QR step with a given shift

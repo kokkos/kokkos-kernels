@@ -34,7 +34,7 @@ namespace KokkosBatched {
         ///   lambda2 := lambda1 * lambda2
         typedef ValueType value_type;
           
-        const value_type half(0.5), two(2);
+        const value_type half(0.5);
         const value_type p = (a+d)*half;
         const value_type q = (b*c-a*d);
         const value_type v = p*p+q;

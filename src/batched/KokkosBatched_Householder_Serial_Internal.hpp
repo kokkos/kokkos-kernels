@@ -27,7 +27,6 @@ namespace KokkosBatched {
         typedef typename Kokkos::Details::ArithTraits<ValueType>::mag_type mag_type;
         
         const mag_type zero(0);
-        const mag_type two(2);
         const mag_type half(0.5);
         const mag_type one(1);
         const mag_type minus_one(-1);
