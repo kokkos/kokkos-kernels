@@ -192,7 +192,7 @@ namespace KokkosBatched {
               b1t[j*bs1] = b1t[j*bs1] / alpha11;
           }
           
-          if (p>0){
+          if (p>0){//Note: A workaround to produce correct results for complex<double> with Intel-18.2.199
             for (int i=0;i<iend;++i)
                 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
