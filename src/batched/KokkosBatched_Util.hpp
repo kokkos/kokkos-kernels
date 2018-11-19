@@ -373,10 +373,21 @@ namespace KokkosBatched {
         AL = A; AR = AL+nAL*as1;
       }
 
+      KOKKOS_INLINE_FUNCTION
+      void partWithAR(ValueType *A, const int nA, const int nAR) {
+        AL = A; AR = AL+(nA-nAR)*as1;
+      }
+
       // A0 A1 are merged into AL
       KOKKOS_INLINE_FUNCTION
       void mergeToAL(const Partition1x3<ValueType> &part) {
         AL = part.A0; AR = part.A2;
+      }      
+
+      // A0 A1 are merged into AL
+      KOKKOS_INLINE_FUNCTION
+      void mergeToAR(const Partition1x3<ValueType> &part) {
+        AL = part.A0; AR = part.A1;
       }      
     };
 
@@ -389,6 +400,10 @@ namespace KokkosBatched {
       Partition1x3(const int arg_as1)
         : as1(arg_as1), A0(NULL), A1(NULL), A2(NULL) {}
 
+      KOKKOS_INLINE_FUNCTION
+      void partWithAL(const Partition1x2<ValueType> &part, const int mA1) {
+        A0 = part.AL; A2 = part.AR; A1 = A2 - mA1*as1;
+      }
       KOKKOS_INLINE_FUNCTION
       void partWithAR(const Partition1x2<ValueType> &part, const int mA1) {
         A0 = part.AL; A1 = part.AR; A2 = A1 + mA1*as1;

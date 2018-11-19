@@ -29,6 +29,7 @@ namespace KokkosBatched {
         
         /// Given a matrix A, it computes hessenberg decomposition of the matrix
         ///  - t is to store tau and w is for workspace
+        ///  - H = Q^H A Q and A = Q H Q^H
 
         // partitions used for loop iteration 
         Partition2x2<value_type> A_part2x2(as0, as1);
