@@ -30,12 +30,11 @@ namespace KokkosBatched {
           const auto v_at_i = v[i*vs];
           norm += ats::real(v_at_i*ats::conj(v_at_i));
         }
-        norm = ats::sqrt(norm);
-
+        norm = Kokkos::Details::ArithTraits<mag_type>::sqrt(norm);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i=0;i<m;++i)
+        for (int i=0;i<m;++i) 
           v[i*vs] /= norm;
 
         return 0;

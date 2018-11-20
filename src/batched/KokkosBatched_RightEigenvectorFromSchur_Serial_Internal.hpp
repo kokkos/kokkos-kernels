@@ -28,15 +28,20 @@ namespace KokkosBatched {
       ///       A = U^H S U
       ///   [out]V, [in]vs0, [out]vs1 
       ///     A set of right eigen vectors.
+      ///   [in]w
+      ///     contiguous workspace that can hold complex array (m)
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const int m,
              /* */ ValueType * S, const int ss0, const int ss1,
-             /* */ ValueType * V, const int vs0, const int vs1) {
+             /* */ ValueType * V, const int vs0, const int vs1,
+             /* */ ValueType * w) {
         typedef ValueType value_type;
         typedef Kokkos::Details::ArithTraits<value_type> ats;
         typedef typename ats::mag_type mag_type;
+        typedef Kokkos::complex<value_type> complex_type;
+
         const value_type zero(0), one(1);
         
         /// partitions used for loop iteration
@@ -54,35 +59,76 @@ namespace KokkosBatched {
         int m_stl = m;
         for (;m_stl>0;) {
           const value_type subdiag = ats::abs(*(S_part2x2.ABR-ss0-2*ss1));
-          if (subdiag < tol) {
-            /// part 2x2 into 3x3
-            S_part3x3.partWithATL(S_part2x2, 1, 1);
-            V_part1x3.partWithAL(V_part1x2, 1);
-            /// ---------------------------------------------------
+
+          /// part 2x2 into 3x3
+          const bool subdiag_is_zero = subdiag < tol;
+          const int mA11 = subdiag_is_zero ? 1 : 2;
+          S_part3x3.partWithATL(S_part2x2, mA11, mA11);
+          V_part1x3.partWithAL(V_part1x2, mA11);
+
+          if (subdiag_is_zero) {
             /// real eigenvalue 
             const value_type lambda = *S_part3x3.A11;
             
             /// initialize a right eigen vector
-            for (int i=0;i<(m_stl-1);++i) V_part1x3.A1[i*vs0] = -S_part3x3.A01[i*ss0];
-            V_part1x3.A1[(m_stl-1)*vs0] = one;
-            for (int i=m_stl;i<m;++i) 
-              V_part1x3.A1[i*vs0] = zero;
+            for (int i=0;i<(m_stl-1);++i) 
+              w[i] = -S_part3x3.A01[i*ss0];
+            w[m_stl-1] = one;
             
             /// perform shifted trsv
             SerialShiftedTrsvInternalUpper::invoke(m_stl-1, lambda,
                                                    S_part3x3.A00, ss0, ss1,
-                                                   V_part1x3.A1,  vs0);
+                                                   w, 1);
             
             /// normalize the vector
-            SerialNormalizeInternal::invoke(m_stl, V_part1x3.A1, vs0);
-            /// ---------------------------------------------------
-            S_part2x2.mergeToABR(S_part3x3);
-            V_part1x2.mergeToAR(V_part1x3);
-            --m_stl;
+            SerialNormalizeInternal::invoke(m_stl, w, 1);
+
+            /// copy back to V
+            for (int i=0;i<m_stl;++i) V_part1x3.A1[i*vs0] = w[i];              
+            for (int i=m_stl;i<m;++i) V_part1x3.A1[i*vs0] = zero;
           } else {
-            // complex eigen pair 
-            m_stl -= 2;
+            /// complex eigen pair  
+            const value_type 
+              alpha11 = S_part3x3.A11[0],
+              alpha12 = S_part3x3.A11[ss1],
+              alpha21 = S_part3x3.A11[ss0],
+              beta = ats::sqrt(-alpha12*alpha21);
+
+            const complex_type lambda(alpha11, beta);
+            complex_type * wc = (complex_type*)(w);
+            
+            /// initialize a right eigen vector
+            const value_type * S_A01_a = S_part3x3.A01;
+            const value_type * S_A01_b = S_part3x3.A01 + ss1;
+            for (int i=0;i<(m_stl-2);++i) 
+              wc[i] = complex_type(-S_A01_a[i*ss0]*beta, S_A01_b[i*ss0]*alpha21);
+            wc[m_stl-2] = complex_type(beta,  zero);
+            wc[m_stl-1] = complex_type(zero, -alpha21);
+            
+            /// perform shifted trsv
+            SerialShiftedTrsvInternalUpper::invoke(m_stl-2, lambda,
+                                                   S_part3x3.A00, ss0, ss1,
+                                                   wc, 1);
+            
+            /// normalize the vector
+            SerialNormalizeInternal::invoke(m_stl, wc, 1);
+
+            /// copy back to V
+            value_type * V_A1_r = V_part1x3.A1;
+            value_type * V_A1_i = V_part1x3.A1 + vs1;
+            for (int i=0;i<m_stl;++i) { 
+              V_A1_r[i*vs0] = wc[i].real();              
+              V_A1_i[i*vs0] = wc[i].imag();
+            }              
+            for (int i=m_stl;i<m;++i) { 
+              V_A1_r[i*vs0] = zero;
+              V_A1_i[i*vs0] = zero;
+            }
+            /// ---------------------------------------------------
           }
+          S_part2x2.mergeToABR(S_part3x3);
+          V_part1x2.mergeToAR(V_part1x3);
+          m_stl -= mA11;
         }
         
         /// case: m_stl = 0
