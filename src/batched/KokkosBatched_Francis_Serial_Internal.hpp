@@ -20,8 +20,8 @@ namespace KokkosBatched {
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const int m,
-             /* */ ValueType * H, const int hs0, const int hs1,
+      invoke(const int mbeg, const int mend, const int morg,
+             /* */ ValueType * HH, const int hs0, const int hs1,
              const Kokkos::complex<ValueType> lambda1, 
              const Kokkos::complex<ValueType> lambda2,
              const bool is_complex) {
@@ -29,6 +29,10 @@ namespace KokkosBatched {
         const int hs = hs0+hs1;
 
         const value_type zero(0);
+
+        /// redefine variables
+        const int m = mend-mbeg, mrst = morg-mend, mbeg_mult_hs0 = mbeg*hs0;
+        ValueType *H = HH+hs*mbeg;
 
         /// Given a strict Hessenberg matrix H (m x m),
         /// it computes a single implicit QR step with a given shift
@@ -78,11 +82,12 @@ namespace KokkosBatched {
           G[1].second = -G[1].second; 
 
           const int mm = m < 4 ? m : 4, nn = m;
+          value_type *Hs = H-mbeg_mult_hs0;
           SerialApplyLeftRightGivensInternal
             ::invoke (G[0], G[1], 
-                      mm, nn,
-                      H, H+hs0, H+2*hs0,
-                      H, H+hs1, H+2*hs1,
+                      mm+mbeg, nn+mrst,
+                      H,  H +hs0,H +2*hs0,
+                      Hs, Hs+hs1,Hs+2*hs1,
                       hs0, hs1);
         }
 
@@ -116,13 +121,13 @@ namespace KokkosBatched {
           value_type *a1t = H_part3x3.A11;
           value_type *a2t = a1t+hs0;
           value_type *a3t = a2t+hs0;
-          value_type *a1  = H_part3x3.A01;
+          value_type *a1  = H_part3x3.A01-mbeg_mult_hs0;
           value_type *a2  = a1+hs1;
           value_type *a3  = a2+hs1;
 
           SerialApplyLeftRightGivensInternal
             ::invoke (G[0], G[1], 
-                      mm, nn,
+                      mm+mbeg, nn+mrst,
                       a1t, a2t, a3t,
                       a1,  a2,  a3,
                       hs0, hs1);
@@ -145,11 +150,11 @@ namespace KokkosBatched {
           const int mm = m, nn = 2;
           value_type *a1t = H_part3x3.A11;
           value_type *a2t = a1t+hs0;
-          value_type *a1  = H_part3x3.A01;
+          value_type *a1  = H_part3x3.A01-mbeg_mult_hs0;
           value_type *a2  = a1+hs1;
           SerialApplyLeftRightGivensInternal
             ::invoke (G[0], 
-                      mm, nn,
+                      mm+mbeg, nn+mrst,
                       a1t, a2t,
                       a1,  a2,
                       hs0, hs1);

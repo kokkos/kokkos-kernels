@@ -6,6 +6,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_WilkinsonShift_Serial_Internal.hpp"
+#include "KokkosBatched_Schur2x2_Serial_Internal.hpp"
 #include "KokkosBatched_HessenbergQR_WithShift_Serial_Internal.hpp"
 #include "KokkosBatched_Francis_Serial_Internal.hpp"
 
@@ -51,14 +52,13 @@ namespace KokkosBatched {
              /* */ RealType * H, const int hs0, const int hs1,
              /* */ RealType * er, const int ers,
              /* */ RealType * ei, const int eis,
-             const RealType user_tolerence = RealType(-1),
+             /* */ RealType * w, 
+             const bool request_schur,
              const bool restart = false,
              const int user_max_iteration = -1) {
         typedef RealType real_type;
         typedef Kokkos::Details::ArithTraits<real_type> ats;
-        const real_type zero(0), nan(ats::nan());
-        const real_type tol = ( user_tolerence < 0 ? 
-                                1e5*ats::epsilon() : user_tolerence);
+        const real_type zero(0), nan(ats::nan()), tol = 1e2*ats::epsilon();
         const int max_iteration = user_max_iteration < 0 ? 300 : user_max_iteration;
 
         int r_val = 0;
@@ -70,7 +70,10 @@ namespace KokkosBatched {
           for (int i=0;i<m;++i) 
             er[i*ers] = nan; 
         }
-        
+
+        real_type *subdiags = w;
+
+        const int hs = hs0+hs1;  /// diagonal stride        
         switch (m) {
         case 0: { /* do nothing */ break; }
         case 1: { er[0] = H[0]; ei[0] = zero; break; }
@@ -78,17 +81,25 @@ namespace KokkosBatched {
           /// compute eigenvalues from the characteristic determinant equation
           bool is_complex;
           Kokkos::complex<real_type> lambda1, lambda2;
-          SerialWilkinsonShiftInternal::invoke(H[0*hs0+0*hs1], H[0*hs0+1*hs1], 
-                                               H[1*hs0+0*hs1], H[1*hs0+1*hs1],
-                                               &lambda1, &lambda2,
-                                               &is_complex);
+          if (request_schur) {
+            Kokkos::pair<real_type,real_type> G;
+            SerialSchur2x2Internal::invoke(H,     H+hs1,
+                                           H+hs0, H+hs, 
+                                           &G,
+                                           &lambda1, &lambda2,
+                                           &is_complex);
+          } else {
+            SerialWilkinsonShiftInternal::invoke(H[0],   H[hs1], 
+                                                 H[hs0], H[hs],
+                                                 &lambda1, &lambda2,
+                                                 &is_complex);
+          }
           er[0] = lambda1.real(); ei[0] = lambda1.imag();
           er[1] = lambda2.real(); ei[1] = lambda2.imag();
           break;
         }
         default: {
           /// Francis method 
-          const int hs = hs0+hs1;  /// diagonal stride
           int iter(0);             /// iteration count
           bool converge = false;   /// bool to check all eigenvalues are converged
 
@@ -109,16 +120,24 @@ namespace KokkosBatched {
               if (val < tol) break;              
             }
             const int mend = cnt;
-            
+            const int mdiff = mend - mbeg;
+            const int mend_minus_two_mult_hs0 = (mend-2)*hs0;
+
             /// Step 2: if there exist non-converged eigen values
-            if (mbeg < (mend-1)) {
+            if (1 < mdiff) {
 #             if 0 /// implicit QR with shift for testing 
               {
                 /// Rayleigh quotient shift 
                 const real_type shift = *(H+(mend-1)*hs); 
-                SerialHessenbergQR_WithShiftInternal::invoke(mend-mbeg, 
-                                                             H+hs*mbeg, hs0, hs1,
-                                                             shift);
+                if (request_schur) {
+                  SerialHessenbergQR_WithShiftInternal::invoke(mbeg, mend, m, 
+                                                               H, hs0, hs1,
+                                                               shift);
+                } else {
+                  SerialHessenbergQR_WithShiftInternal::invoke(0, mdiff, mdiff, 
+                                                               H+hs*mbeg, hs0, hs1,
+                                                               shift);
+                }
                 real_type *sub2x2 = H+(mend-2)*hs;
                 const auto     val = ats::abs(sub2x2[hs0]);
                 if (val < tol) { /// this eigenvalue converges
@@ -133,36 +152,86 @@ namespace KokkosBatched {
                 Kokkos::complex<real_type> lambda1, lambda2;
                 bool is_complex;
                 real_type *sub2x2 = H+(mend-2)*hs;
-                SerialWilkinsonShiftInternal::invoke(sub2x2[0*hs0+0*hs1], sub2x2[0*hs0+1*hs1], 
-                                                     sub2x2[1*hs0+0*hs1], sub2x2[1*hs0+1*hs1],
-                                                     &lambda1, &lambda2,
-                                                     &is_complex);
-                if ((mend-mbeg) == 2) {
+                if (2 == mdiff) {
+                  if (request_schur) {
+                    Kokkos::pair<real_type,real_type> G;
+                    SerialSchur2x2Internal::invoke(sub2x2,     sub2x2+hs1,
+                                                   sub2x2+hs0, sub2x2+hs,
+                                                   &G,
+                                                   &lambda1, &lambda2,
+                                                   &is_complex);
+                    subdiags[mend-1] = sub2x2[hs0];
+
+                    /// apply G' from left
+                    G.second = -G.second;
+                    SerialApplyLeftGivensInternal::invoke (G, m-mend,
+                                                           sub2x2    +2*hs1, hs1,
+                                                           sub2x2+hs0+2*hs1, hs1);
+
+                    /// apply (G')' from right
+                    SerialApplyRightGivensInternal::invoke(G, mend-2,
+                                                           sub2x2    -mend_minus_two_mult_hs0, hs0,
+                                                           sub2x2+hs1-mend_minus_two_mult_hs0, hs0);
+                  } else {
+                    SerialWilkinsonShiftInternal::invoke(sub2x2[0],   sub2x2[hs1], 
+                                                         sub2x2[hs0], sub2x2[hs],
+                                                         &lambda1, &lambda2,
+                                                         &is_complex);                    
+                  }
+                  sub2x2[hs0] = zero;
+
                   /// eigenvalues are from wilkinson shift
                   er[(mbeg+0)*ers] = lambda1.real(); ei[(mbeg+0)*eis] = lambda1.imag();
                   er[(mbeg+1)*ers] = lambda2.real(); ei[(mbeg+1)*eis] = lambda2.imag();
-                  sub2x2[1*hs0+0*hs1] = zero;
                 } else {
-                  SerialFrancisInternal::invoke(mend-mbeg,
-                                                H+hs*mbeg, hs0, hs1,
-                                                lambda1, lambda2,
-                                                is_complex);
+                  SerialWilkinsonShiftInternal::invoke(sub2x2[0],   sub2x2[hs1], 
+                                                       sub2x2[hs0], sub2x2[hs],
+                                                       &lambda1, &lambda2,
+                                                       &is_complex);                    
+                  
+                  if (request_schur) {
+                    SerialFrancisInternal::invoke(mbeg, mend, m, 
+                                                  H, hs0, hs1,
+                                                  lambda1, lambda2,
+                                                  is_complex);
+                  } else {
+                    SerialFrancisInternal::invoke(0, mdiff, mdiff, 
+                                                  H+hs*mbeg, hs0, hs1,
+                                                  lambda1, lambda2,
+                                                  is_complex);
+                  }
                   /* */ auto    &val1 = *(sub2x2+hs0);
                   /* */ auto    &val2 = *(sub2x2-hs1);
                   const auto abs_val1 = ats::abs(val1);
                   const auto abs_val2 = ats::abs(val2);
 
+                  /// convergence check
                   if (abs_val1 < tol) { 
                     er[(mend-1)*ers] = sub2x2[hs]; ei[(mend-1)*eis] = zero;
                     val1 = zero;
                   } else if (abs_val2 < tol) {
                     er[(mend-1)*ers] = lambda1.real(); ei[(mend-1)*eis] = lambda1.imag();
                     er[(mend-2)*ers] = lambda2.real(); ei[(mend-2)*eis] = lambda2.imag();
-                    // to preserve schur form, perform temporary givens rotation
-                    // Kokkos::pair<real_type,real_type> G;
-                    // SerialGivensInternal::invoke(sub2x2[0], sub2x2[hs0],
-                    //                              &G,
-                    //                              sub2x2);                      
+
+                    /// preserve the standard schur form
+                    Kokkos::pair<real_type,real_type> G;
+                    SerialSchur2x2Internal::invoke(sub2x2,     sub2x2+hs1,
+                                                   sub2x2+hs0, sub2x2+hs,
+                                                   &G,
+                                                   &lambda1, &lambda2,
+                                                   &is_complex);
+                    subdiags[mend-1] = val1;
+
+                    /// apply G' from left
+                    G.second = -G.second;
+                    SerialApplyLeftGivensInternal::invoke (G, m-mend,
+                                                           sub2x2    +2*hs1, hs1,
+                                                           sub2x2+hs0+2*hs1, hs1);
+
+                    // apply (G')' from right
+                    SerialApplyRightGivensInternal::invoke(G, mend-2,
+                                                           sub2x2    -mend_minus_two_mult_hs0, hs0,
+                                                           sub2x2+hs1-mend_minus_two_mult_hs0, hs0);
                     val1 = zero;
                     val2 = zero;
                   }
@@ -178,9 +247,17 @@ namespace KokkosBatched {
           }
           /// Step 3: record missing real eigenvalues from the diagonals
           if (converge) {
-            for (int i=0;i<m;++i) {
-              if (ats::isNan(er[i*ers])) {
-                er[i*ers] = H[i*hs]; ei[i*eis] = zero;
+            // record undetected eigenvalues
+            for (int i=0;i<m;++i) 
+              if (ats::isNan(er[i*ers])) { 
+                er[i*ers] = H[i*hs]; 
+                ei[i*eis] = zero;
+              }
+            // recover subdiags            
+            if (request_schur) {
+              real_type *Hs = H-hs1;
+              for (int i=1;i<m;++i) {                 
+                Hs[i*hs] = subdiags[i];
               }
             }
             r_val = 0;

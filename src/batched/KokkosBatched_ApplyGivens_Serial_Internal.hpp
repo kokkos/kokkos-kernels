@@ -23,6 +23,7 @@ namespace KokkosBatched {
              const int n, 
              /* */ ValueType * a1t, const int a1ts,
              /* */ ValueType * a2t, const int a2ts) {
+        if (n == 0) return 0; // quick return
         typedef ValueType value_type;
         /// G = [ gamma -sigma;
         ///       sigma  gamma ];
@@ -52,6 +53,7 @@ namespace KokkosBatched {
              const int m, 
              /* */ ValueType * a1, const int a1s,
              /* */ ValueType * a2, const int a2s) {
+        if (m == 0) return 0; // quick return
         typedef ValueType value_type;
         /// G = [ gamma -sigma;
         ///       sigma  gamma ];
@@ -84,6 +86,7 @@ namespace KokkosBatched {
              /* */ ValueType *__restrict__ a1, 
              /* */ ValueType *__restrict__ a2, 
              const int &as0, const int &as1) {
+        if (m == 0 && n == 0) return 0; // quick return
         typedef ValueType value_type;
 
         const value_type gamma12 = G12.first;
@@ -124,6 +127,7 @@ namespace KokkosBatched {
              /* */ ValueType *__restrict__ a2, 
              /* */ ValueType *__restrict__ a3, 
              const int &as0, const int &as1) {
+        if (m == 0 && n == 0) return 0; // quick return
         typedef ValueType value_type;
 
         const value_type gamma12 = G12.first;

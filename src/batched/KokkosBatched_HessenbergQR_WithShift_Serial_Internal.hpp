@@ -20,12 +20,18 @@ namespace KokkosBatched {
       template<typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const int m,
-             /* */ ValueType * H, const int hs0, const int hs1,
+      invoke(const int mbeg, const int mend, const int morg,
+             /* */ ValueType * HH, const int hs0, const int hs1,
              const ValueType shift) {
         typedef ValueType value_type;
+        const int hs = hs0+hs1;
+
         const value_type zero(0);
 
+        /// redefine variables
+        const int m = mend-mbeg, mbeg_mult_hs0 = mbeg*hs0;
+        ValueType *H = HH+mbeg*hs;
+        
         /// Given a strict Hessenberg matrix H (m x m),
         /// it computes a single implicit QR step with a given shift
         /// - it assumes H has zeros on subdiagonal entries (
@@ -51,15 +57,15 @@ namespace KokkosBatched {
           // apply G' from left
           G.second = -G.second; // transpose G
           const int nn = m;
-          SerialApplyLeftGivensInternal::invoke (G, nn,
+          SerialApplyLeftGivensInternal::invoke (G, nn+(morg-mend),
                                                  h11, hs1,
                                                  h21, hs1);
 
           // apply (G')' from right
           const int mm = m < 3 ? m : 3;
-          SerialApplyRightGivensInternal::invoke(G, mm,
-                                                 h11, hs0,
-                                                 h12, hs0);
+          SerialApplyRightGivensInternal::invoke(G, mm+mbeg,
+                                                 h11-mbeg_mult_hs0, hs0,
+                                                 h12-mbeg_mult_hs0, hs0);
         }
 
         /// 1. chase the bulge
@@ -85,13 +91,13 @@ namespace KokkosBatched {
           G.second = -G.second; // transpose G
 
           const int nn = m - m_htl;
-          SerialApplyLeftGivensInternal::invoke (G, nn,
+          SerialApplyLeftGivensInternal::invoke (G, nn+(morg-mend),
                                                  H_part3x3.A11, hs1,
                                                  H_part3x3.A21, hs1);
           const int mtmp = m_htl+3, mm = mtmp < m ? mtmp : m;
-          SerialApplyRightGivensInternal::invoke(G, mm,
-                                                 H_part3x3.A01, hs0,
-                                                 H_part3x3.A02, hs0);
+          SerialApplyRightGivensInternal::invoke(G, mm+mbeg,
+                                                 H_part3x3.A01-mbeg_mult_hs0, hs0,
+                                                 H_part3x3.A02-mbeg_mult_hs0, hs0);
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
