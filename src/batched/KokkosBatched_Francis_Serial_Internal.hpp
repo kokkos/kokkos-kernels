@@ -24,15 +24,27 @@ namespace KokkosBatched {
              /* */ ValueType * HH, const int hs0, const int hs1,
              const Kokkos::complex<ValueType> lambda1, 
              const Kokkos::complex<ValueType> lambda2,
-             const bool is_complex) {
+             const bool is_complex,
+             /* */ ValueType * GG, const bool request_schur) {
         typedef ValueType value_type;
-        const int hs = hs0+hs1;
+        typedef Kokkos::Details::ArithTraits<value_type> ats;
 
+        const int hs = hs0+hs1;
         const value_type zero(0);
 
         /// redefine variables
         const int m = mend-mbeg, mrst = morg-mend, mbeg_mult_hs0 = mbeg*hs0;
-        ValueType *H = HH+hs*mbeg;
+        value_type *H = HH+hs*mbeg;
+        
+        /// initialize Gs
+        value_type *Gs = NULL;
+        if (request_schur) {
+          Gs = HH+mbeg*2; 
+          for (int i=0;i<morg;++i) {
+            GG[2*i  ] = zero;
+            GG[2*i+1] = zero;
+          }
+        }
 
         /// Given a strict Hessenberg matrix H (m x m),
         /// it computes a single implicit QR step with a given shift
@@ -89,6 +101,12 @@ namespace KokkosBatched {
                       H,  H +hs0,H +2*hs0,
                       Hs, Hs+hs1,Hs+2*hs1,
                       hs0, hs1);
+
+          // record 
+          if (request_schur) {
+            Gs[0] = ats::acos(G[0].first);
+            Gs[1] = ats::acos(G[1].first);
+          }
         }
 
         /// 1. chase the bulge
@@ -131,6 +149,12 @@ namespace KokkosBatched {
                       a1t, a2t, a3t,
                       a1,  a2,  a3,
                       hs0, hs1);
+
+          // record
+          if (request_schur) {
+            Gs[2*m_htl  ] = ats::acos(G[0].first);
+            Gs[2*m_htl+1] = ats::acos(G[1].first);
+          }
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
@@ -158,11 +182,30 @@ namespace KokkosBatched {
                       a1t, a2t,
                       a1,  a2,
                       hs0, hs1);
+
+          // record
+          if (request_schur) 
+            Gs[2*m_htl] = ats::acos(G[0].first);
+
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
 
         return 0;
+      }
+
+      template<typename ValueType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static int
+      invoke(const int mbeg, const int mend, const int morg,
+             /* */ ValueType * HH, const int hs0, const int hs1,
+             const Kokkos::complex<ValueType> lambda1, 
+             const Kokkos::complex<ValueType> lambda2,
+             const bool is_complex) {
+        return invoke(mbeg, mend, morg,
+                      HH, hs0, hs1,
+                      lambda1, lambda2, is_complex,
+                      (ValueType*)NULL, false);
       }
     };
 
