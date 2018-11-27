@@ -23,8 +23,9 @@ namespace KokkosBatched {
              const int n, 
              /* */ ValueType * a1t, const int a1ts,
              /* */ ValueType * a2t, const int a2ts) {
-        if (n == 0) return 0; // quick return
         typedef ValueType value_type;
+        if (n == 0) return 0; // quick return
+        if (G.first == value_type(1) && G.second == value_type(0)) return 0;
         /// G = [ gamma -sigma;
         ///       sigma  gamma ];
         /// A := G A
@@ -53,8 +54,9 @@ namespace KokkosBatched {
              const int m, 
              /* */ ValueType * a1, const int a1s,
              /* */ ValueType * a2, const int a2s) {
-        if (m == 0) return 0; // quick return
         typedef ValueType value_type;
+        if (m == 0) return 0; // quick return
+        if (G.first == value_type(1) && G.second == value_type(0)) return 0;
         /// G = [ gamma -sigma;
         ///       sigma  gamma ];
         /// A := A G'
@@ -86,8 +88,9 @@ namespace KokkosBatched {
              /* */ ValueType *__restrict__ a1, 
              /* */ ValueType *__restrict__ a2, 
              const int &as0, const int &as1) {
-        if (m == 0 && n == 0) return 0; // quick return
         typedef ValueType value_type;
+        if (G12.first == value_type(1) && G12.second == value_type(0)) return 0;
+        if (m == 0 && n == 0) return 0; // quick return
 
         const value_type gamma12 = G12.first;
         const value_type sigma12 = G12.second;
@@ -127,8 +130,8 @@ namespace KokkosBatched {
              /* */ ValueType *__restrict__ a2, 
              /* */ ValueType *__restrict__ a3, 
              const int &as0, const int &as1) {
-        if (m == 0 && n == 0) return 0; // quick return
         typedef ValueType value_type;
+        if (m == 0 && n == 0) return 0; // quick return
 
         const value_type gamma12 = G12.first;
         const value_type sigma12 = G12.second;

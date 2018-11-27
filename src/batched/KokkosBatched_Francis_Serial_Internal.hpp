@@ -1,5 +1,5 @@
 #ifndef __KOKKOSBATCHED_FRANCIS_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_FRAMCIS_SERIAL_INTERNAL_HPP__
+#define __KOKKOSBATCHED_FRANCIS_SERIAL_INTERNAL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -25,24 +25,24 @@ namespace KokkosBatched {
              const Kokkos::complex<ValueType> lambda1, 
              const Kokkos::complex<ValueType> lambda2,
              const bool is_complex,
-             /* */ ValueType * GG, const bool request_schur) {
+             /* */ Kokkos::pair<ValueType,ValueType> * GG, const bool request_schur) {
         typedef ValueType value_type;
-        typedef Kokkos::Details::ArithTraits<value_type> ats;
-
+        
         const int hs = hs0+hs1;
-        const value_type zero(0);
+        const value_type one(1), zero(0);
+        const Kokkos::pair<value_type,value_type> identity(one,zero);
 
         /// redefine variables
         const int m = mend-mbeg, mrst = morg-mend, mbeg_mult_hs0 = mbeg*hs0;
         value_type *H = HH+hs*mbeg;
         
         /// initialize Gs
-        value_type *Gs = NULL;
+        Kokkos::pair<value_type,value_type> *Gs = NULL;
         if (request_schur) {
-          Gs = HH+mbeg*2; 
+          Gs = (Kokkos::pair<value_type,value_type> *)(GG+mbeg*2); 
           for (int i=0;i<morg;++i) {
-            GG[2*i  ] = zero;
-            GG[2*i+1] = zero;
+            GG[2*i  ] = identity;
+            GG[2*i+1] = identity;
           }
         }
 
@@ -89,6 +89,12 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(v[0], v[2],
                                        &G[1],
                                        &v[0]);
+          // record 
+          if (request_schur) {
+            Gs[0] = G[0];
+            Gs[1] = G[1];
+          }
+
           // apply G' from left and right
           G[0].second = -G[0].second;
           G[1].second = -G[1].second; 
@@ -101,12 +107,6 @@ namespace KokkosBatched {
                       H,  H +hs0,H +2*hs0,
                       Hs, Hs+hs1,Hs+2*hs1,
                       hs0, hs1);
-
-          // record 
-          if (request_schur) {
-            Gs[0] = ats::acos(G[0].first);
-            Gs[1] = ats::acos(G[1].first);
-          }
         }
 
         /// 1. chase the bulge
@@ -132,6 +132,12 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(*chi1, *chi3,
                                        &G[1],
                                        chi1); *chi3 = zero;
+          // record 
+          if (request_schur) {
+            Gs[2*m_htl  ] = G[0];
+            Gs[2*m_htl+1] = G[1];
+          }
+
           G[0].second = -G[0].second;
           G[1].second = -G[1].second;
 
@@ -149,12 +155,6 @@ namespace KokkosBatched {
                       a1t, a2t, a3t,
                       a1,  a2,  a3,
                       hs0, hs1);
-
-          // record
-          if (request_schur) {
-            Gs[2*m_htl  ] = ats::acos(G[0].first);
-            Gs[2*m_htl+1] = ats::acos(G[1].first);
-          }
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
@@ -169,6 +169,9 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(*chi1, *chi2,
                                        &G[0],
                                        chi1); *chi2 = zero;
+          Gs[2*m_htl  ] = G[0];
+          Gs[2*m_htl+1] = identity;
+
           G[0].second = -G[0].second; 
 
           const int mm = m, nn = 2;
@@ -182,10 +185,6 @@ namespace KokkosBatched {
                       a1t, a2t,
                       a1,  a2,
                       hs0, hs1);
-
-          // record
-          if (request_schur) 
-            Gs[2*m_htl] = ats::acos(G[0].first);
 
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
@@ -205,7 +204,7 @@ namespace KokkosBatched {
         return invoke(mbeg, mend, morg,
                       HH, hs0, hs1,
                       lambda1, lambda2, is_complex,
-                      (ValueType*)NULL, false);
+                      (Kokkos::pair<ValueType,ValueType>*)NULL, false);
       }
     };
 

@@ -61,7 +61,7 @@ namespace KokkosBatched {
         typedef Kokkos::Details::ArithTraits<real_type> ats;
         const real_type one(1), zero(0), tol = 1e2*ats::epsilon();
         const int max_iteration = user_max_iteration < 0 ? 300 : user_max_iteration;
-        if (wlen < m*3) 
+        if (wlen < m*5) 
           Kokkos::abort("Error: provided workspace is smaller than 3*m");
 
         int r_val = 0;
@@ -75,8 +75,6 @@ namespace KokkosBatched {
         // workspaces
         real_type *subdiags = w; 
         Kokkos::pair<real_type,real_type> *Gs = (Kokkos::pair<real_type,real_type>*)(w+m);
-        const int nG = (wlen-m)/m/2;
-        printf("nG = %d\n", nG);
         if (!restart) {
           /// initialize workspace and Gs
           for (int i=0;i<m;++i) 
@@ -130,9 +128,8 @@ namespace KokkosBatched {
             const int mend_minus_two_mult_hs0 = (mend-2)*hs0;
 
             /// Step 2: if there exist non-converged eigen values
-            //printf("mbeg %d mend %d m %d\n", mbeg, mend, m);
             if (1 < mdiff) {
-#             if 1 /// implicit QR with shift for testing 
+#             if 0 /// implicit QR with shift for testing 
               {
                 /// Rayleigh quotient shift 
                 const real_type shift = *(H+(mend-1)*hs); 
@@ -143,117 +140,106 @@ namespace KokkosBatched {
 
                 for (int i=mbeg;i<(mend-1);++i) {
                   const Kokkos::pair<real_type,real_type> G(Gs[i].first, -Gs[i].second);
-                  if (G.first == one && G.second == zero) {
-                    // do nothing
-                  } else {
-                    SerialApplyRightGivensInternal::invoke(G, m,
-                                                           Z+i*zs1,     zs0,
-                                                           Z+i*zs1+zs1, zs0);                    
-                  }
+                  SerialApplyRightGivensInternal::invoke(G, m,
+                                                         Z+i*zs1,     zs0,
+                                                         Z+i*zs1+zs1, zs0);                    
                 }
               }
 #             endif
 
-// #             if 1
-//               {
-//                 /// find a complex eigen pair
-//                 Kokkos::complex<real_type> lambda1, lambda2;
-//                 bool is_complex;
-//                 real_type *sub2x2 = H+(mend-2)*hs;
-//                 if (2 == mdiff) {
-//                   if (request_schur) {
-//                     Kokkos::pair<real_type,real_type> G;
-//                     SerialSchur2x2Internal::invoke(sub2x2,     sub2x2+hs1,
-//                                                    sub2x2+hs0, sub2x2+hs,
-//                                                    &G,
-//                                                    &lambda1, &lambda2,
-//                                                    &is_complex);
-//                     subdiags[mend-1] = sub2x2[hs0];
-//                     printf("mdiff is 2 and mend %d\n", mend);
-//                     printf(" G %e %e\n", G.first, G.second);
-//                     for (int q=0;q<m;++q) 
-//                       printf("a Gs %d, %e %e\n", q, Gs[q].first, Gs[q].second);
+#             if 1
+              {
+                /// find a complex eigen pair
+                Kokkos::complex<real_type> lambda1, lambda2;
+                bool is_complex;
+                real_type *sub2x2 = H+(mend-2)*hs;
+                if (2 == mdiff) {
+                  Kokkos::pair<real_type,real_type> G;
+                  SerialSchur2x2Internal::invoke(sub2x2,     sub2x2+hs1,
+                                                 sub2x2+hs0, sub2x2+hs,
+                                                 &G,
+                                                 &lambda1, &lambda2,
+                                                 &is_complex);
+                  subdiags[mend-1] = sub2x2[hs0];
                     
-//                     Gs[(mend-2)*2] = ats::acos(G.first);
+                  /// apply G' from left
+                  G.second = -G.second;
+                  SerialApplyLeftGivensInternal::invoke (G, m-mend,
+                                                         sub2x2    +2*hs1, hs1,
+                                                         sub2x2+hs0+2*hs1, hs1);
 
-//                     for (int q=0;q<m;++q) 
-//                       printf("b Gs %d, %e %e\n", q, Gs[q].first, Gs[q].second);
-                    
-//                     /// apply G' from left
-//                     G.second = -G.second;
-//                     SerialApplyLeftGivensInternal::invoke (G, m-mend,
-//                                                            sub2x2    +2*hs1, hs1,
-//                                                            sub2x2+hs0+2*hs1, hs1);
+                  /// apply (G')' from right
+                  SerialApplyRightGivensInternal::invoke(G, mend-2,
+                                                         sub2x2    -mend_minus_two_mult_hs0, hs0,
+                                                         sub2x2+hs1-mend_minus_two_mult_hs0, hs0);
+                  sub2x2[hs0] = zero;
 
-//                     /// apply (G')' from right
-//                     SerialApplyRightGivensInternal::invoke(G, mend-2,
-//                                                            sub2x2    -mend_minus_two_mult_hs0, hs0,
-//                                                            sub2x2+hs1-mend_minus_two_mult_hs0, hs0);
-//                   } else {
-//                     SerialWilkinsonShiftInternal::invoke(sub2x2[0],   sub2x2[hs1], 
-//                                                          sub2x2[hs0], sub2x2[hs],
-//                                                          &lambda1, &lambda2,
-//                                                          &is_complex);                    
-//                   }
-//                   sub2x2[hs0] = zero;
-
-//                   /// eigenvalues are from wilkinson shift
-//                   er[(mbeg+0)*ers] = lambda1.real(); ei[(mbeg+0)*eis] = lambda1.imag();
-//                   er[(mbeg+1)*ers] = lambda2.real(); ei[(mbeg+1)*eis] = lambda2.imag();
-//                 } else {
-//                   SerialWilkinsonShiftInternal::invoke(sub2x2[0],   sub2x2[hs1], 
-//                                                        sub2x2[hs0], sub2x2[hs],
-//                                                        &lambda1, &lambda2,
-//                                                        &is_complex);                    
+                  /// apply (G')' from right to compute Z
+                  SerialApplyRightGivensInternal::invoke(G, m,
+                                                         Z+(mend-2)*zs1,     zs0,
+                                                         Z+(mend-1)*zs1, zs0);                    
                   
-//                   SerialFrancisInternal::invoke(request_schur ? mbeg : 0, 
-//                                                 request_schur ? mend : mdiff, 
-//                                                 request_schur ? m    : mdiff, 
-//                                                 request_schur ? H    : (H+hs*mbeg),
-//                                                 hs0, hs1,
-//                                                 Gs, request_schur, 
-//                                                 lambda1, lambda2,
-//                                                 is_complex);
-//                   /* */ auto    &val1 = *(sub2x2+hs0);
-//                   /* */ auto    &val2 = *(sub2x2-hs1);
-//                   const auto abs_val1 = ats::abs(val1);
-//                   const auto abs_val2 = ats::abs(val2);
+                } else {
+                  SerialWilkinsonShiftInternal::invoke(sub2x2[0],   sub2x2[hs1], 
+                                                       sub2x2[hs0], sub2x2[hs],
+                                                       &lambda1, &lambda2,
+                                                       &is_complex);                    
+                  
+                  SerialFrancisInternal::invoke(mbeg, mend, m, 
+                                                H, hs0, hs1,
+                                                lambda1, lambda2,
+                                                is_complex,
+                                                Gs, true);
+                  /* */ auto    &val1 = *(sub2x2+hs0);
+                  /* */ auto    &val2 = *(sub2x2-hs1);
+                  const auto abs_val1 = ats::abs(val1);
+                  const auto abs_val2 = ats::abs(val2);
 
-//                   /// convergence check
-//                   if (abs_val1 < tol) { 
-//                     er[(mend-1)*ers] = sub2x2[hs]; ei[(mend-1)*eis] = zero;
-//                     val1 = zero;
-//                   } else if (abs_val2 < tol) {
-//                     printf("this should not be called\n");
-//                     er[(mend-1)*ers] = lambda1.real(); ei[(mend-1)*eis] = lambda1.imag();
-//                     er[(mend-2)*ers] = lambda2.real(); ei[(mend-2)*eis] = lambda2.imag();
-
-//                     /// preserve the standard schur form
-//                     Kokkos::pair<real_type,real_type> G;
-//                     SerialSchur2x2Internal::invoke(sub2x2,     sub2x2+hs1,
-//                                                    sub2x2+hs0, sub2x2+hs,
-//                                                    &G,
-//                                                    &lambda1, &lambda2,
-//                                                    &is_complex);
-//                     subdiags[mend-1] = val1;
-//                     SerialUpdateGivensInternal::invoke(G, Gs[mend-2]);
+                  for (int i=mbeg;i<(mend-1);++i) {
+                    const Kokkos::pair<real_type,real_type> G0(Gs[2*i  ].first, -Gs[2*i  ].second);
+                    const Kokkos::pair<real_type,real_type> G1(Gs[2*i+1].first, -Gs[2*i+1].second);
+                    SerialApplyRightGivensInternal::invoke(G0, m,
+                                                           Z+i*zs1,       zs0,
+                                                           Z+i*zs1+1*zs1, zs0);                    
+                    SerialApplyRightGivensInternal::invoke(G1, m,
+                                                           Z+i*zs1,       zs0,
+                                                           Z+i*zs1+2*zs1, zs0);                    
+                  }
+                  
+                  /// convergence check
+                  if (abs_val1 < tol) { 
+                    val1 = zero;
+                  } else if (abs_val2 < tol) {
+                    /// preserve the standard schur form
+                    Kokkos::pair<real_type,real_type> G;
+                    SerialSchur2x2Internal::invoke(sub2x2,     sub2x2+hs1,
+                                                   sub2x2+hs0, sub2x2+hs,
+                                                   &G,
+                                                   &lambda1, &lambda2,
+                                                   &is_complex);
+                    subdiags[mend-1] = val1;
                     
-//                     /// apply G' from left
-//                     G.second = -G.second;
-//                     SerialApplyLeftGivensInternal::invoke (G, m-mend,
-//                                                            sub2x2    +2*hs1, hs1,
-//                                                            sub2x2+hs0+2*hs1, hs1);
+                    /// apply G' from left
+                    G.second = -G.second;
+                    SerialApplyLeftGivensInternal::invoke (G, m-mend,
+                                                           sub2x2    +2*hs1, hs1,
+                                                           sub2x2+hs0+2*hs1, hs1);
 
-//                     // apply (G')' from right
-//                     SerialApplyRightGivensInternal::invoke(G, mend-2,
-//                                                            sub2x2    -mend_minus_two_mult_hs0, hs0,
-//                                                            sub2x2+hs1-mend_minus_two_mult_hs0, hs0);
-//                     val1 = zero;
-//                     val2 = zero;
-//                   }
-//                 }
-//               }
-// #             endif 
+                    // apply (G')' from right
+                    SerialApplyRightGivensInternal::invoke(G, mend-2,
+                                                           sub2x2    -mend_minus_two_mult_hs0, hs0,
+                                                           sub2x2+hs1-mend_minus_two_mult_hs0, hs0);
+                    val1 = zero;
+                    val2 = zero;
+
+                    // apply (G')' from right
+                    SerialApplyRightGivensInternal::invoke(G, m,
+                                                           Z+(mend-2)*zs1, zs0,
+                                                           Z+(mend-1)*zs1, zs0);                    
+                  }
+                }
+              }
+#             endif 
             } else {
               /// all eigenvalues are converged
               converge = true;
@@ -262,13 +248,11 @@ namespace KokkosBatched {
           }
           /// Step 3: record missing real eigenvalues from the diagonals
           if (converge) {
-            // // recover subdiags            
-            // if (request_schur) {
-            //   real_type *Hs = H-hs1;
-            //   for (int i=1;i<m;++i) {                 
-            //     Hs[i*hs] = subdiags[i];
-            //   }
-            // }
+            // recover subdiags            
+            real_type *Hs = H-hs1;
+            for (int i=1;i<m;++i) {                 
+              Hs[i*hs] = subdiags[i];
+            }
             r_val = 0;
           } else {
             r_val = -1;
