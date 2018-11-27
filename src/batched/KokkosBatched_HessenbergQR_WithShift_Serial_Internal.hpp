@@ -23,22 +23,23 @@ namespace KokkosBatched {
       invoke(const int mbeg, const int mend, const int morg,
              /* */ ValueType * HH, const int hs0, const int hs1,
              const ValueType shift,
-             /* */ ValueType * GG, const bool request_schur) {
+             /* */ Kokkos::pair<ValueType,ValueType> * GG, const bool request_schur) {
         typedef ValueType value_type;
         typedef Kokkos::Details::ArithTraits<value_type> ats;
 
         const int hs = hs0+hs1;
-        const value_type zero(0);
+        const value_type zero(0), one(1);
+        const Kokkos::pair<value_type,value_type> identity(one,zero);
 
         /// redefine variables
         const int m = mend-mbeg, mbeg_mult_hs0 = mbeg*hs0;
         value_type *H = HH+mbeg*hs;
 
         /// initialize Gs
-        value_type *Gs = NULL;
+        Kokkos::pair<value_type,value_type> *Gs = NULL;
         if (request_schur) {
+          for (int i=0;i<morg;++i) GG[i] = identity;
           Gs = GG+mbeg;
-          for (int i=0;i<morg;++i) GG[i] = zero;
         }
         
         /// Given a strict Hessenberg matrix H (m x m),
@@ -58,6 +59,9 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(chi1, chi2,
                                        &G,
                                        &alpha);
+          // record G
+          if (request_schur) Gs[0] = G;          
+
           value_type *h11 = H;
           value_type *h21 = H + hs0;
           value_type *h12 = H + hs1;
@@ -68,15 +72,12 @@ namespace KokkosBatched {
           SerialApplyLeftGivensInternal::invoke (G, nn+(morg-mend),
                                                  h11, hs1,
                                                  h21, hs1);
-
+          
           // apply (G')' from right
           const int mm = m < 3 ? m : 3;
           SerialApplyRightGivensInternal::invoke(G, mm+mbeg,
                                                  h11-mbeg_mult_hs0, hs0,
                                                  h12-mbeg_mult_hs0, hs0);
-
-          // record G
-          if (request_schur) Gs[0] = ats::acos(G.first);
         }
 
         /// 1. chase the bulge
@@ -98,6 +99,8 @@ namespace KokkosBatched {
           SerialGivensInternal::invoke(*chi1, *chi2,
                                        &G,
                                        chi1); *chi2 = zero;
+          // record G
+          if (request_schur) Gs[m_htl] = G;
           
           G.second = -G.second; // transpose G
 
@@ -105,13 +108,11 @@ namespace KokkosBatched {
           SerialApplyLeftGivensInternal::invoke (G, nn+(morg-mend),
                                                  H_part3x3.A11, hs1,
                                                  H_part3x3.A21, hs1);
+
           const int mtmp = m_htl+3, mm = mtmp < m ? mtmp : m;
           SerialApplyRightGivensInternal::invoke(G, mm+mbeg,
                                                  H_part3x3.A01-mbeg_mult_hs0, hs0,
                                                  H_part3x3.A02-mbeg_mult_hs0, hs0);
-
-          // record G
-          if (request_schur) Gs[m_htl] = ats::acos(G.first);
           /// -----------------------------------------------------
           H_part2x2.mergeToATL(H_part3x3);
         }
@@ -126,7 +127,7 @@ namespace KokkosBatched {
              const ValueType shift) {
         return invoke(mbeg, mend, morg, 
                       HH, hs0, hs1, shift,
-                      (ValueType*)NULL, false);
+                      (Kokkos::pair<ValueType,ValueType>*)NULL, false);
         
       }
     };
