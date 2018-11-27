@@ -26,10 +26,11 @@ namespace KokkosBatched {
     /// NT/NT
     ///
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Unblocked> {
+    template<>
+    struct TeamGemm<Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Unblocked> {
 
-      template<typename ScalarType,
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
@@ -54,9 +55,10 @@ namespace KokkosBatched {
       }
     };
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Blocked> {
-      template<typename ScalarType,
+    template<>
+    struct TeamGemm<Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Blocked> {
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
@@ -85,10 +87,11 @@ namespace KokkosBatched {
     /// T/NT
     ///
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::Transpose,Trans::NoTranspose,Algo::Gemm::Unblocked> {
+    template<>
+    struct TeamGemm<Trans::Transpose,Trans::NoTranspose,Algo::Gemm::Unblocked> {
 
-      template<typename ScalarType,
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
@@ -113,9 +116,10 @@ namespace KokkosBatched {
       }
     };
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::Transpose,Trans::NoTranspose,Algo::Gemm::Blocked> {
-      template<typename ScalarType,
+    template<>
+    struct TeamGemm<Trans::Transpose,Trans::NoTranspose,Algo::Gemm::Blocked> {
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
@@ -144,10 +148,11 @@ namespace KokkosBatched {
     /// NT/T
     ///
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::NoTranspose,Trans::Transpose,Algo::Gemm::Unblocked> {
+    template<>
+    struct TeamGemm<Trans::NoTranspose,Trans::Transpose,Algo::Gemm::Unblocked> {
 
-      template<typename ScalarType,
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
@@ -172,9 +177,10 @@ namespace KokkosBatched {
       }
     };
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::NoTranspose,Trans::Transpose,Algo::Gemm::Blocked> {
-      template<typename ScalarType,
+    template<>
+    struct TeamGemm<Trans::NoTranspose,Trans::Transpose,Algo::Gemm::Blocked> {
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
@@ -203,10 +209,11 @@ namespace KokkosBatched {
     /// T/T
     ///
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::Transpose,Trans::Transpose,Algo::Gemm::Unblocked> {
+    template<>
+    struct TeamGemm<Trans::Transpose,Trans::Transpose,Algo::Gemm::Unblocked> {
 
-      template<typename ScalarType,
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
@@ -231,9 +238,10 @@ namespace KokkosBatched {
       }
     };
     
-    template<typename MemberType>
-    struct TeamGemm<MemberType,Trans::Transpose,Trans::Transpose,Algo::Gemm::Blocked> {
-      template<typename ScalarType,
+    template<>
+    struct TeamGemm<Trans::Transpose,Trans::Transpose,Algo::Gemm::Blocked> {
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>

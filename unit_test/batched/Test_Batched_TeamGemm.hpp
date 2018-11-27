@@ -49,8 +49,7 @@ namespace Test {
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
       auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
       
-      TeamGemm<MemberType,
-        typename ParamTagType::transA,
+      TeamGemm<typename ParamTagType::transA,
         typename ParamTagType::transB,
         AlgoTagType>::
         invoke(member, _alpha, aa, bb, _beta, cc);

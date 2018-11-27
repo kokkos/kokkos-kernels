@@ -58,8 +58,7 @@ namespace Test {
       }
       member.team_barrier();
 	  
-      TeamGemm<MemberType,
-        typename ParamTagType::transA,
+      TeamGemm<typename ParamTagType::transA,
         typename ParamTagType::transB,
         AlgoTagType>::
         invoke(member, _alpha, aa, bb, _beta, cc);

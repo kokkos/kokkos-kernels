@@ -32,12 +32,12 @@ namespace KokkosBatched {
     /// Team Gemm
     ///
 
-    template<typename MemberType,
-             typename ArgTransA,
+    template<typename ArgTransA,
              typename ArgTransB,
              typename ArgAlgo>
     struct TeamGemm {
-      template<typename ScalarType,
+      template<typename MemberType,
+               typename ScalarType,
                typename AViewType,
                typename BViewType,
                typename CViewType>
