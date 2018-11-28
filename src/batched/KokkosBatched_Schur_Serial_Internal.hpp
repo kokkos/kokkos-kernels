@@ -9,7 +9,7 @@
 #include "KokkosBatched_ApplyGivens_Serial_Internal.hpp"
 #include "KokkosBatched_Schur2x2_Serial_Internal.hpp"
 #include "KokkosBatched_HessenbergQR_WithShift_Serial_Internal.hpp"
-//#include "KokkosBatched_Francis_Serial_Internal.hpp"
+#include "KokkosBatched_Francis_Serial_Internal.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -69,7 +69,8 @@ namespace KokkosBatched {
           if (m <= 2) 
             Kokkos::abort("Error: restart option cannot be used for m=1 or m=2");
         } else {
-          SerialSetIdentityInternal::invoke(m, Z, zs0, zs1);
+          /// do not touch input
+          /// SerialSetIdentityInternal::invoke(m, Z, zs0, zs1);
         }
 
         // workspaces

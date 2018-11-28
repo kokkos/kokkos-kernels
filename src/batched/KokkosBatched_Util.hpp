@@ -9,6 +9,7 @@
 #include <random>
 #include <string>
 
+#include <cassert>
 #include <limits>
 #include <cmath>
 #include <ctime>
