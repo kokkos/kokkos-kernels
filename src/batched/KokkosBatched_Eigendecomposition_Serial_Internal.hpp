@@ -90,12 +90,12 @@ namespace KokkosBatched {
                                            ww);
           
           SerialSetIdentityInternal::invoke(m, QZ, qzs0, qzs1);          
-          SerialApplyQ_LeftNoTransForwardInternal::invoke(m-1, m, m-1,
-                                                          A+as, as0, as1,
+          SerialApplyQ_LeftNoTransForwardInternal::invoke(m-1, m-1, m-1,
+                                                          A+as0, as0, as1,
                                                           t, 1,
                                                           QZ+qzs, qzs0, qzs1,
                                                           ww);
-          
+
           /// clean up H
           SerialSetLowerTriangularInternal::invoke(m, m,
                                                    2,
@@ -121,19 +121,11 @@ namespace KokkosBatched {
                                                 restart);
           } while (r_val < 0 && false); 
           // for a testing purpose, we run the Schur decomposition with a finite number of Francis iterations
-          w_now -= (5*m); wlen_now += (5*m);
-          
-          printf("QZ = \n");
-          for (int i=0;i<m;++i) {
-            for (int j=0;j<m;++j) 
-              printf(" %e ", QZ[i*qzs0+j*qzs1]);
-            printf("\n");
-          }
+          w_now -= (5*m); wlen_now += (5*m);          
         }
         
         /// Step 3: Extract iigenvalues and eigenvectors from T = V S V^-1
         /// 
-        printf("eig: 3\n");
         {
           /// extract eigenvalues 
           real_type *AA = A-as1;
@@ -177,7 +169,7 @@ namespace KokkosBatched {
             real_type *ww = w_now; w_now += 2*m; wlen_now -= 2*m;
             assert( (wlen_now >= 0) && "Eigendecomposition: Eigenvector workspace w allocation fails");
           
-            /// Right eigenvectors V stores V^-1
+            /// Right eigenvectors V 
             if (is_UR) {
               SerialRightEigenvectorFromSchurInternal
                 ::invoke(m, 
@@ -186,19 +178,12 @@ namespace KokkosBatched {
                          ww,
                          blks);
               
-              printf("Right V = \n");
-              for (int i=0;i<m;++i) {
-                for (int j=0;j<m;++j) 
-                  printf(" %e ", V[i*vs0+j*vs1]);
-                printf("\n");
-              }            
-              
-              /// V*(QZ)^H
+              /// QZ V
               SerialGemmInternal<Algo::Gemm::Unblocked>::
                 invoke(m, m, m,
                        one, 
+                       QZ, qzs0, qzs1,
                        V, vs0, vs1,
-                       QZ, qzs1, qzs0,
                        zero,
                        UR, urs0, urs1);
               int j=0;
@@ -216,13 +201,6 @@ namespace KokkosBatched {
                   j+=2;
                 }
               }
-              
-              printf("UR = V*(QZ)^H = \n");
-              for (int i=0;i<m;++i) {
-                for (int j=0;j<m;++j) 
-                  printf(" %e ", UR[i*urs0+j*urs1]);
-                printf("\n");
-              }          
             }
             
             /// Left eigenvectors V stores V
@@ -233,25 +211,19 @@ namespace KokkosBatched {
                          V, vs0, vs1,
                          ww,
                          blks);
-              
-              printf("Left V = \n");
-              for (int i=0;i<m;++i) {
-                for (int j=0;j<m;++j) 
-                  printf(" %e ", V[i*vs0+j*vs1]);
-                printf("\n");
-              }            
-              
-              /// QZ*V
+                            
+              /// V^-1 (QZ)^H 
               SerialGemmInternal<Algo::Gemm::Unblocked>::
                 invoke(m, m, m,
                        one, 
-                       QZ, qzs0, qzs1,
                        V, vs0, vs1,
+                       QZ, qzs1, qzs0,
                        zero,
                        UL, uls0, uls1);            
               
               int i=0;
               for (;i<m;) {
+                /// normalize row vectors
                 if (ats::abs(ei[i*eis]) < tol) {
                   /// a real eigenvalue
                   SerialNormalizeInternal::invoke(m, 
@@ -264,20 +236,18 @@ namespace KokkosBatched {
                                                   UL+(i+1)*uls0, uls1);
                   i+=2;
                 }
-              }
-              
-              printf("UL = QZ V = \n");
-              for (int i=0;i<m;++i) {
-                for (int j=0;j<m;++j) 
-                  printf(" %e ", UL[i*uls0+j*uls1]);
-                printf("\n");
-              }          
+              }              
             }
-            w_now -= (m*(m+3)); wlen_now += (m*(m+3));
+            w_now -= (m*m+2*m); wlen_now += (m*m+2*m);
           }
           // deallocate blks
           w_now -= m; wlen_now += m;
         }
+        /// deallocate QZ
+        w_now -= (m*m); wlen_now += (m*m);
+
+        assert( (w == w_now) && "Eigendecomposition: workspace tracking fails");
+        assert( (wlen == wlen_now) && "Eigendecomposition: workspace counting fails");
         return 0;
       }
     };
