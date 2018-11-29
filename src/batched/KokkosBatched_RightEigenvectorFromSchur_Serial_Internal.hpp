@@ -35,14 +35,15 @@ namespace KokkosBatched {
       invoke(const int m,
              /* */ ValueType * S, const int ss0, const int ss1,
              /* */ ValueType * V, const int vs0, const int vs1,
-             /* */ ValueType * w) {
+             /* */ ValueType * w,
+             const int * blks) {
         typedef ValueType value_type;
         typedef Kokkos::Details::ArithTraits<value_type> ats;
         typedef typename ats::mag_type mag_type;
         typedef Kokkos::complex<value_type> complex_type;
 
         const value_type zero(0), one(1);
-        SerialSetInternal::invoke(m, m, zero, V, vs0, vs1);
+        /// SerialSetInternal::invoke(m, m, zero, V, vs0, vs1);
 
         value_type *b = w; // consider complex case
 
@@ -60,48 +61,32 @@ namespace KokkosBatched {
         const mag_type tol = ats::epsilon();
         int m_stl = 0;
         for (;m_stl<(m-1);) {
-          const value_type subdiag = ats::abs(*(S_part2x2.ABR+ss0));
-
           /// part 2x2 into 3x3
-          const bool subdiag_is_zero = subdiag < tol;
-          const int mA11 = subdiag_is_zero ? 1 : 2;
+          const int mA11 = blks[m_stl];
+          assert( ((mA11 == 1) || (mA11 == 2)) && "RightEigenvectorFromSchur: blk is not 1x1 nor 2x2");
+
           S_part3x3.partWithABR(S_part2x2, mA11, mA11);
           V_part3x1.partWithAB(V_part2x1, mA11);
 
           const int m_stl_plus_mA11 = m_stl+mA11;
-          if (subdiag_is_zero) {
-
+          if (mA11 == 1) {
             /// real eigenvalue 
             const value_type lambda = *S_part3x3.A11;
 
             /// initialize a right hand side
             b[m_stl] = one;
-            printf("rhs = \n");
-            for (int j=0;j<(m-m_stl_plus_mA11);++j) {
+            for (int j=0;j<(m-m_stl_plus_mA11);++j) 
               b[j+m_stl_plus_mA11] = -S_part3x3.A12[j*ss1];
-              printf(" %e \n",  b[j+m_stl_plus_mA11]);
-            }
+
             /// perform shifted trsv (transposed)
             SerialShiftedTrsvInternalLower::invoke(m-m_stl_plus_mA11, lambda,
                                                    S_part3x3.A22, ss1, ss0,
-                                                   w+m_stl_plus_mA11, 1);
-
-            printf("sol = \n");
-            for (int j=0;j<(m-m_stl_plus_mA11);++j) {
-              printf(" %e \n",  b[j+m_stl_plus_mA11]);
-            }
-
+                                                   b+m_stl_plus_mA11, 1,
+                                                   blks+m_stl_plus_mA11);
+            
             /// copy back to V (row wise copy)
             for (int j=0;j<m_stl;++j) V_part3x1.A1[j*vs1] = zero;
-            for (int j=m_stl;j<m;++j) V_part3x1.A1[j*vs1] = b[j];              
-            
-            printf("V, m_stl = %d, mA11 = %d\n", m_stl, mA11);
-            for (int i=0;i<m;++i) {
-              for (int j=0;j<m;++j) 
-                printf(" %e ", V[i*vs0+j*vs1]);
-              printf("\n");
-            }
-
+            for (int j=m_stl;j<m;++j) V_part3x1.A1[j*vs1] = b[j];                          
           } else {
             /// complex eigen pair  
             const value_type 
@@ -111,20 +96,22 @@ namespace KokkosBatched {
               beta = ats::sqrt(-alpha12*alpha21);
 
             const complex_type lambda(alpha11, beta);
-            complex_type * wc = (complex_type*)(w);
+            complex_type * bc = (complex_type*)(b);
             
             /// initialize a right hand side
-            wc[m_stl  ] = complex_type(beta,  zero);
-            wc[m_stl+1] = complex_type(zero, -alpha21);
+            bc[m_stl  ] = complex_type(beta, zero);
+            bc[m_stl+1] = complex_type(zero, -alpha12);
+
             const value_type * S_A12_a = S_part3x3.A12;
             const value_type * S_A12_b = S_part3x3.A12 + ss0;
             for (int j=0;j<(m-m_stl_plus_mA11);++j)
-              wc[j+m_stl_plus_mA11] = complex_type(-S_A12_a[j*ss1]*beta, S_A12_b[j*ss1]*alpha21);
+              bc[j+m_stl_plus_mA11] = complex_type(-S_A12_a[j*ss1]*beta, S_A12_b[j*ss1]*alpha12);
             
             /// perform shifted trsv
             SerialShiftedTrsvInternalLower::invoke(m-m_stl_plus_mA11, lambda,
                                                    S_part3x3.A22, ss1, ss0,
-                                                   wc+m_stl_plus_mA11, 1);
+                                                   bc+m_stl_plus_mA11, 1,
+                                                   blks+m_stl_plus_mA11);
             
             /// copy back to V
             value_type * V_A1_r = V_part3x1.A1;
@@ -134,16 +121,9 @@ namespace KokkosBatched {
               V_A1_i[j*vs1] = zero;
             }
             for (int j=m_stl;j<m;++j) { 
-              V_A1_r[j*vs1] = wc[j].real();              
-              V_A1_i[j*vs1] = wc[j].imag();
+              V_A1_r[j*vs1] = bc[j].real();              
+              V_A1_i[j*vs1] = bc[j].imag();
             }              
-            printf("V, m_stl = %d, mA11 = %d\n", m_stl, mA11);
-            for (int i=0;i<m;++i) {
-              for (int j=0;j<m;++j) 
-                printf(" %e ", V[i*vs0+j*vs1]);
-              printf("\n");
-            }
-
             /// ---------------------------------------------------
           }
           S_part2x2.mergeToATL(S_part3x3);

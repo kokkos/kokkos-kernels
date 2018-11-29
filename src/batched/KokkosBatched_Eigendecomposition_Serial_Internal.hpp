@@ -137,6 +137,9 @@ namespace KokkosBatched {
         {
           /// extract eigenvalues 
           real_type *AA = A-as1;
+          int *blks = (int*)w_now; w_now += m; wlen_now -= m;
+          assert( (wlen_now >= 0) && "Eigendecomposition: Eigenvector workspace blks allocation fails");
+
           {
             int i=0;
             for (;i<(m-1);) {
@@ -145,6 +148,7 @@ namespace KokkosBatched {
               if (subdiag < tol) {
                 er[i*ers] = diag; 
                 ei[i*eis] = zero;
+                blks[i] = 1;
                 i+=1;
               } else {
                 const real_type offdiag = ats::abs(A[i*as+as1]);
@@ -153,12 +157,15 @@ namespace KokkosBatched {
                 er[(i+1)*ers] =  diag;
                 ei[(i  )*eis] =  sqrt_mult_suboffdiags;
                 ei[(i+1)*eis] = -sqrt_mult_suboffdiags;
+                blks[i  ] = 2;
+                blks[i+1] = 2; /// consider backward iteration
                 i+=2;
               }
             }            
             if (i<m) { /// take care the remainder
               er[i*ers] = A[i*as];
               ei[i*eis] = zero;
+              blks[i] = 1;
             }
           }
 
@@ -176,7 +183,8 @@ namespace KokkosBatched {
                 ::invoke(m, 
                          A, as0, as1,
                          V, vs0, vs1,
-                         ww);
+                         ww,
+                         blks);
               
               printf("Right V = \n");
               for (int i=0;i<m;++i) {
@@ -223,7 +231,8 @@ namespace KokkosBatched {
                 ::invoke(m, 
                          A, as0, as1,
                          V, vs0, vs1,
-                         ww);
+                         ww,
+                         blks);
               
               printf("Left V = \n");
               for (int i=0;i<m;++i) {
@@ -266,6 +275,8 @@ namespace KokkosBatched {
             }
             w_now -= (m*(m+3)); wlen_now += (m*(m+3));
           }
+          // deallocate blks
+          w_now -= m; wlen_now += m;
         }
         return 0;
       }
