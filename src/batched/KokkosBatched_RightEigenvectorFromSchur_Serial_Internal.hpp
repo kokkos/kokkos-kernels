@@ -43,6 +43,7 @@ namespace KokkosBatched {
         typedef Kokkos::complex<value_type> complex_type;
 
         const value_type zero(0), one(1);
+        const int ss(ss0+ss1);
         /// SerialSetInternal::invoke(m, m, zero, V, vs0, vs1);
 
         value_type *b = w; // consider complex case
@@ -51,42 +52,42 @@ namespace KokkosBatched {
         Partition2x2<value_type> S_part2x2(ss0, ss1);
         Partition3x3<value_type> S_part3x3(ss0, ss1);
         
-        Partition2x1<value_type> V_part2x1(vs0);
-        Partition3x1<value_type> V_part3x1(vs0);
+        Partition1x2<value_type> V_part1x2(vs1);
+        Partition1x3<value_type> V_part1x3(vs1);
         
-        /// initial partition of S where ATL has a zero dimension
-        S_part2x2.partWithATL(S, m, m, 0, 0);
-        V_part2x1.partWithAT(V, m, 0);
+        /// initial partition of S where ABR has a zero dimension
+        S_part2x2.partWithABR(S, m, m, 0, 0);
+        V_part1x2.partWithAR(V, m, 0);
 
         const mag_type tol = ats::epsilon();
-        int m_stl = 0;
-        for (;m_stl<(m-1);) {
+        int m_stl = m;
+        for (;m_stl>0;) {
           /// part 2x2 into 3x3
-          const int mA11 = blks[m_stl];
+          const int mA11 = blks[m_stl-1];
           assert( ((mA11 == 1) || (mA11 == 2)) && "RightEigenvectorFromSchur: blk is not 1x1 nor 2x2");
 
-          S_part3x3.partWithABR(S_part2x2, mA11, mA11);
-          V_part3x1.partWithAB(V_part2x1, mA11);
+          S_part3x3.partWithATL(S_part2x2, mA11, mA11);
+          V_part1x3.partWithAL(V_part1x2, mA11);
 
-          const int m_stl_plus_mA11 = m_stl+mA11;
+          const int m_stl_minus_mA11 = m_stl - mA11;
           if (mA11 == 1) {
             /// real eigenvalue 
             const value_type lambda = *S_part3x3.A11;
-
-            /// initialize a right hand side
-            b[m_stl] = one;
-            for (int j=0;j<(m-m_stl_plus_mA11);++j) 
-              b[j+m_stl_plus_mA11] = -S_part3x3.A12[j*ss1];
-
-            /// perform shifted trsv (transposed)
-            SerialShiftedTrsvInternalLower::invoke(m-m_stl_plus_mA11, lambda,
-                                                   S_part3x3.A22, ss1, ss0,
-                                                   b+m_stl_plus_mA11, 1,
-                                                   blks+m_stl_plus_mA11);
             
-            /// copy back to V (row wise copy)
-            for (int j=0;j<m_stl;++j) V_part3x1.A1[j*vs1] = zero;
-            for (int j=m_stl;j<m;++j) V_part3x1.A1[j*vs1] = b[j];                          
+            /// initialize a right eigen vector
+            for (int i=0;i<m_stl_minus_mA11;++i) 
+              b[i] = -S_part3x3.A01[i*ss0];
+            b[m_stl-1] = one;
+            
+            /// perform shifted trsv
+            SerialShiftedTrsvInternalUpper::invoke(m_stl_minus_mA11, lambda,
+                                                   S_part3x3.A00, ss0, ss1,
+                                                   w, 1,
+                                                   blks);
+            
+            /// copy back to V
+            for (int i=0;i<m_stl;++i) V_part1x3.A1[i*vs0] = w[i];              
+            for (int i=m_stl;i<m;++i) V_part1x3.A1[i*vs0] = zero;
           } else {
             /// complex eigen pair  
             const value_type 
@@ -98,46 +99,37 @@ namespace KokkosBatched {
             const complex_type lambda(alpha11, beta);
             complex_type * bc = (complex_type*)(b);
             
-            /// initialize a right hand side
-            bc[m_stl  ] = complex_type(beta, zero);
-            bc[m_stl+1] = complex_type(zero, -alpha12);
-
-            const value_type * S_A12_a = S_part3x3.A12;
-            const value_type * S_A12_b = S_part3x3.A12 + ss0;
-            for (int j=0;j<(m-m_stl_plus_mA11);++j)
-              bc[j+m_stl_plus_mA11] = complex_type(-S_A12_a[j*ss1]*beta, S_A12_b[j*ss1]*alpha12);
+            /// initialize a right eigen vector
+            const value_type * S_A01_a = S_part3x3.A01;
+            const value_type * S_A01_b = S_part3x3.A01 + ss1;
+            for (int i=0;i<m_stl_minus_mA11;++i) 
+              bc[i] = complex_type(-S_A01_a[i*ss0]*beta, S_A01_b[i*ss0]*alpha21);
+            bc[m_stl-2] = complex_type(beta,  zero);
+            bc[m_stl-1] = complex_type(zero, -alpha21);
             
             /// perform shifted trsv
-            SerialShiftedTrsvInternalLower::invoke(m-m_stl_plus_mA11, lambda,
-                                                   S_part3x3.A22, ss1, ss0,
-                                                   bc+m_stl_plus_mA11, 1,
-                                                   blks+m_stl_plus_mA11);
+            SerialShiftedTrsvInternalUpper::invoke(m_stl_minus_mA11, lambda,
+                                                   S_part3x3.A00, ss0, ss1,
+                                                   bc, 1,
+                                                   blks);
             
             /// copy back to V
-            value_type * V_A1_r = V_part3x1.A1;
-            value_type * V_A1_i = V_part3x1.A1 + vs0;
-            for (int j=0;j<m_stl;++j) { 
-              V_A1_r[j*vs1] = zero;
-              V_A1_i[j*vs1] = zero;
-            }
-            for (int j=m_stl;j<m;++j) { 
-              V_A1_r[j*vs1] = bc[j].real();              
-              V_A1_i[j*vs1] = bc[j].imag();
+            value_type * V_A1_r = V_part1x3.A1;
+            value_type * V_A1_i = V_part1x3.A1 + vs1;
+            for (int i=0;i<m_stl;++i) { 
+              V_A1_r[i*vs0] = bc[i].real();              
+              V_A1_i[i*vs0] = bc[i].imag();
             }              
+            for (int i=m_stl;i<m;++i) { 
+              V_A1_r[i*vs0] = zero;
+              V_A1_i[i*vs0] = zero;
+            }
             /// ---------------------------------------------------
           }
-          S_part2x2.mergeToATL(S_part3x3);
-          V_part2x1.mergeToAT(V_part3x1);
-          m_stl += mA11;
+          S_part2x2.mergeToABR(S_part3x3);
+          V_part1x2.mergeToAR(V_part1x3);
+          m_stl -= mA11;
         }
-        
-        /// case: m_stl = m-1
-        if (m_stl < m) {
-          value_type * VV = V+m_stl*vs0;
-          for (int j=0;j<m_stl;++j) VV[j*vs1] = zero;
-          VV[m_stl*vs1] = one;
-        }
-
         return 0;
       }
     };
