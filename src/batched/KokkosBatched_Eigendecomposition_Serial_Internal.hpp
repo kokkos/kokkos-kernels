@@ -63,6 +63,7 @@ namespace KokkosBatched {
         const Kokkos::pair<real_type,real_type> identity(one, zero);
 
         /// step 0: input checking
+        assert( (wlen >= (2*m*m+5*m)) && "Eigendecomposition: workspace size is too small");
         real_type *w_now = w;
         int wlen_now = wlen;
         assert( (wlen_now >= 0) && "Eigendecomposition: workspace size is negative");
