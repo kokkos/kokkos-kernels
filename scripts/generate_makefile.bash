@@ -357,9 +357,14 @@ else
 fi
 
 mkdir -p install
-echo "#Makefile to satisfy existens of target kokkos-clean before installing the library" > install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean before installing the library" > install/Makefile.kokkos
 echo "kokkos-clean:" >> install/Makefile.kokkos
 echo "" >> install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean and kokkoskernels-clean before installing the library" > install/Makefile.kokkos-kernels
+echo "kokkoskernels-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
+echo "kokkos-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
 mkdir -p kokkos
 mkdir -p src
 mkdir -p unit_test
