@@ -143,6 +143,9 @@ do
     --cxxflags-extra*)
       CXX_FLAGS_EXTRA="${key#*=}"
       ;;
+    --cxxstandard*)
+      CXX_STANDARD="${key#*=}"
+      ;;
     --ldflags-extra*)
       LD_FLAGS_EXTRA="${key#*=}"
       ;;
@@ -643,6 +646,8 @@ single_build_and_test() {
   local cxxflags="${cxxflags} ${CXX_FLAGS_EXTRA}"
   local ldflags="${ldflags} ${LD_FLAGS_EXTRA}"
 
+  local cxx_standard="${CXX_STANDARD}"
+
   if [[ "$KOKKOS_CUDA_OPTIONS" != "" ]]; then
     local extra_args="$extra_args $KOKKOS_CUDA_OPTIONS"
   fi
@@ -662,7 +667,7 @@ single_build_and_test() {
       run_cmd ls fake_problem >& ${desc}.configure.log || { report_and_log_test_result 1 $desc configure && return 0; }
     fi
   else
-    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --ldflags=\"$ldflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=${KOKKOSKERNELS_SCALARS} --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=${KOKKOSKERNELS_SCALARS} --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 32 build-test >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)
