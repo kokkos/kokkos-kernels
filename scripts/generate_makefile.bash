@@ -75,6 +75,9 @@ do
     --cxxflags*)
       CXXFLAGS="${key#*=}"
       ;;
+    --cxxstandard*)
+      KOKKOS_CXX_STANDARD="${key#*=}"
+      ;;
     --ldflags*)
       LDFLAGS="${key#*=}"
       ;;
@@ -193,6 +196,8 @@ do
       echo "                                        build.  This will still set certain required"
       echo "                                        flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
       echo "                                        --std=c++11, etc.)."
+      echo "--cxxstandard=[FLAGS]         Overwrite KOKKOS_CXX_STANDARD for library build and test"
+      echo "                                c++11 (default), c++14, c++17, c++1y, c++1z, c++2a"
       echo "--ldflags=[FLAGS]                     Overwrite LDFLAGS for library build and test"
       echo "                                        build. This will still set certain required"
       echo "                                        flags via KOKKOS_LDFLAGS (such as -fopenmp,"
@@ -276,6 +281,10 @@ fi
 
 if [ ${#CXXFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} CXXFLAGS=\"${CXXFLAGS}\""
+fi
+
+if [ ${#KOKKOS_CXX_STANDARD} -gt 0 ]; then
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_CXX_STANDARD=\"${KOKKOS_CXX_STANDARD}\""
 fi
 
 if [ ${#LDFLAGS} -gt 0 ]; then
