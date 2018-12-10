@@ -180,6 +180,7 @@ namespace Test {
        KokkosBlas::Experimental::update(teamMember, a, Kokkos::subview(x,Kokkos::ALL(),teamId), b, Kokkos::subview(y,Kokkos::ALL(),teamId), c, Kokkos::subview(z,Kokkos::ALL(),teamId));
     } );
     KokkosBlas::dot(r,z,z);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
       EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
@@ -192,6 +193,7 @@ namespace Test {
        KokkosBlas::Experimental::update(teamMember, a, Kokkos::subview(c_x,Kokkos::ALL(),teamId), b, Kokkos::subview(y,Kokkos::ALL(),teamId), c, Kokkos::subview(z,Kokkos::ALL(),teamId));
     } );
     KokkosBlas::dot(r,z,z);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
       EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);

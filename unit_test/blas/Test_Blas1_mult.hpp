@@ -85,6 +85,7 @@ namespace Test {
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class Device>
   void impl_test_mult_mv(int N, int K) {
 
+
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
     typedef typename ViewTypeC::value_type ScalarC;
@@ -122,6 +123,8 @@ namespace Test {
     Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
     Kokkos::fill_random(b_z,rand_pool,ScalarC(10));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(b_org_z,b_z);
 
     Kokkos::deep_copy(h_b_x,b_x);
@@ -146,6 +149,7 @@ namespace Test {
 
     KokkosBlas::mult(b,z,a,x,y);
     KokkosBlas::dot(r,z,z);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
       EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
@@ -154,6 +158,7 @@ namespace Test {
     Kokkos::deep_copy(b_z,b_org_z);
     KokkosBlas::mult(b,z,a,x,c_y);
     KokkosBlas::dot(r,z,z);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
       EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);

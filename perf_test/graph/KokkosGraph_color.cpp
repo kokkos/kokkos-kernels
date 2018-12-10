@@ -110,6 +110,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       params.use_openmp = atoi( argv[++i] );
     }
+    else if ( 0 == strcasecmp( argv[i] , "--hpx" ) ) {
+      params.use_hpx = atoi( argv[++i] );
+    }
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = 1;
     }
@@ -522,7 +525,7 @@ int main (int argc, char ** argv){
   }
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
-  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  const int num_threads = params.use_openmp ? params.use_openmp : params.use_hpx;
   const int device_id = 0;
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
   Kokkos::print_configuration(std::cout);
@@ -541,6 +544,24 @@ int main (int argc, char ** argv){
     <size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
         params
         );
+#endif
+  }
+#endif
+
+#if defined( KOKKOS_ENABLE_HPX )
+
+  if (params.use_hpx) {
+#ifdef KOKKOSKERNELS_MULTI_MEM
+    KokkosKernels::Experiment::run_multi_mem_experiment
+      <size_type, idx, Kokkos::Experimental::HPX, Kokkos::Experimental::HPX::memory_space, Kokkos::HostSpace>(
+          params
+          );
+#else
+
+    KokkosKernels::Experiment::run_multi_mem_experiment
+      <size_type, idx, Kokkos::Experimental::HPX, Kokkos::Experimental::HPX::memory_space, Kokkos::Experimental::HPX::memory_space>(
+          params
+          );
 #endif
   }
 #endif

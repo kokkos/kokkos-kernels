@@ -52,7 +52,7 @@ namespace KokkosKernels{
 
 namespace Impl{
 
-enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA};
+enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_HPX, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA};
 template <typename ExecutionSpace>
 inline ExecSpaceType kk_get_exec_space_type(){
   ExecSpaceType exec_space = Exec_SERIAL;
@@ -71,6 +71,12 @@ inline ExecSpaceType kk_get_exec_space_type(){
 #if defined( KOKKOS_ENABLE_OPENMP )
   if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
     exec_space = Exec_OMP;
+  }
+#endif
+
+#if defined(KOKKOS_ENABLE_HPX)
+  if (Kokkos::Impl::is_same<Kokkos::Experimental::HPX, ExecutionSpace>::value) {
+    exec_space = Exec_HPX;
   }
 #endif
 
@@ -98,6 +104,7 @@ inline int kk_get_suggested_vector_size(
     break;
   case Exec_SERIAL:
   case Exec_OMP:
+  case Exec_HPX:
   case Exec_PTHREADS:
   case Exec_QTHREADS:
     break;

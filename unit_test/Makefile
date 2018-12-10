@@ -184,6 +184,118 @@ test-openmp: KokkosKernels_UnitTest_OpenMP
 	./KokkosKernels_UnitTest_OpenMP
 
 #=======================================================================
+#=================== HPX BACKEND =======================================
+#=======================================================================
+
+vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/hpx
+ifeq ($(KOKKOS_INTERNAL_USE_HPX), 1)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_HPX), 1)
+    KOKKOSKERNELS_INTERNAL_TEST_HPX = 1
+  else
+    ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+      KOKKOSKERNELS_INTERNAL_TEST_HPX = 0
+    else
+      KOKKOSKERNELS_INTERNAL_TEST_HPX = 1
+    endif
+  endif
+endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_HPX), 1)
+  INC += -I${KOKKOSKERNELS_SRC_PATH}/unit_test/hpx
+  OBJ_HPX = Test_Main.o gtest-all.o
+  OBJ_HPX += Test_HPX_Blas1_abs.o
+  OBJ_HPX += Test_HPX_Blas1_team_abs.o
+  OBJ_HPX += Test_HPX_Blas1_asum.o
+  OBJ_HPX += Test_HPX_Blas1_axpby.o
+  OBJ_HPX += Test_HPX_Blas1_team_axpby.o
+  OBJ_HPX += Test_HPX_Blas1_axpy.o
+  OBJ_HPX += Test_HPX_Blas1_team_axpy.o
+  OBJ_HPX += Test_HPX_Blas1_dot.o
+  OBJ_HPX += Test_HPX_Blas1_team_dot.o  
+  OBJ_HPX += Test_HPX_Blas1_mult.o
+  OBJ_HPX += Test_HPX_Blas1_team_mult.o
+  OBJ_HPX += Test_HPX_Blas1_nrm1.o
+  OBJ_HPX += Test_HPX_Blas1_nrm2.o
+  OBJ_HPX += Test_HPX_Blas1_team_nrm2.o
+  OBJ_HPX += Test_HPX_Blas1_nrm2_squared.o
+  OBJ_HPX += Test_HPX_Blas1_nrminf.o
+  OBJ_HPX += Test_HPX_Blas1_reciprocal.o
+  OBJ_HPX += Test_HPX_Blas1_scal.o
+  OBJ_HPX += Test_HPX_Blas1_team_scal.o
+  OBJ_HPX += Test_HPX_Blas1_sum.o
+  OBJ_HPX += Test_HPX_Blas1_update.o
+  OBJ_HPX += Test_HPX_Blas1_team_update.o
+  OBJ_HPX += Test_HPX_Blas2_gemv.o
+  OBJ_HPX += Test_HPX_Blas2_team_gemv.o
+  OBJ_HPX += Test_HPX_Blas3_gemm.o
+  OBJ_HPX += Test_HPX_Sparse_spmv.o
+  OBJ_HPX += Test_HPX_Sparse_trsv.o
+  OBJ_HPX += Test_HPX_Sparse_spgemm.o
+  OBJ_HPX += Test_HPX_Sparse_spadd.o
+  OBJ_HPX += Test_HPX_Sparse_gauss_seidel.o
+  OBJ_HPX += Test_HPX_Sparse_block_gauss_seidel.o
+  OBJ_HPX += Test_HPX_Sparse_CrsMatrix.o
+  OBJ_HPX += Test_HPX_Sparse_findRelOffset.o
+  OBJ_HPX += Test_HPX_Sparse_replaceSumIntoLonger.o
+  OBJ_HPX += Test_HPX_Sparse_replaceSumInto.o
+  OBJ_HPX += Test_HPX_Graph_graph_color.o
+  OBJ_HPX += Test_HPX_Graph_graph_color_deterministic.o
+  OBJ_HPX += Test_HPX_Graph_graph_color_d2.o
+  OBJ_HPX += Test_HPX_Common_ArithTraits.o
+  OBJ_HPX += Test_HPX_Common_set_bit_count.o
+#  OBJ_HPX += Test_HPX_Common_float128.o
+ # Real 
+  OBJ_HPX += Test_HPX_Batched_SerialMatUtil_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialGemm_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialTrsm_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialLU_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialGemv_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialTrsv_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamMatUtil_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamGemm_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamTrsm_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamLU_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamGemv_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamTrsv_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialInverseLU_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamInverseLU_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialSolveLU_Real.o
+  OBJ_HPX += Test_HPX_Batched_TeamSolveLU_Real.o
+  OBJ_HPX += Test_HPX_Batched_SerialEigendecomposition_Real.o
+ # Complex
+  OBJ_HPX += Test_HPX_Batched_SerialMatUtil_Complex.o
+  OBJ_HPX += Test_HPX_Batched_SerialGemm_Complex.o
+  OBJ_HPX += Test_HPX_Batched_SerialTrsm_Complex.o
+  OBJ_HPX += Test_HPX_Batched_SerialLU_Complex.o
+  OBJ_HPX += Test_HPX_Batched_SerialGemv_Complex.o
+  OBJ_HPX += Test_HPX_Batched_SerialTrsv_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamMatUtil_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamGemm_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamTrsm_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamLU_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamGemv_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamTrsv_Complex.o
+  OBJ_HPX += Test_HPX_Batched_SerialInverseLU_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamInverseLU_Complex.o
+  OBJ_HPX += Test_HPX_Batched_SerialSolveLU_Complex.o
+  OBJ_HPX += Test_HPX_Batched_TeamSolveLU_Complex.o
+  # Vector
+  OBJ_HPX += Test_HPX_Batched_VectorArithmatic.o
+  OBJ_HPX += Test_HPX_Batched_VectorMath.o
+  OBJ_HPX += Test_HPX_Batched_VectorRelation.o
+  OBJ_HPX += Test_HPX_Batched_VectorLogical.o
+  OBJ_HPX += Test_HPX_Batched_VectorMisc.o
+  OBJ_HPX += Test_HPX_Batched_VectorView.o
+  TARGETS += KokkosKernels_UnitTest_HPX
+  TEST_TARGETS += test-hpx
+endif
+
+KokkosKernels_UnitTest_HPX: $(OBJ_HPX) $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
+	$(LINK) $(EXTRA_PATH) $(OBJ_HPX) $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosKernels_UnitTest_HPX
+
+test-hpx: KokkosKernels_UnitTest_HPX
+	./KokkosKernels_UnitTest_HPX
+
+#=======================================================================
 #=================== Cuda BACKEND ====================================
 #=======================================================================
 

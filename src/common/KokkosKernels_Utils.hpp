@@ -121,6 +121,13 @@ void get_suggested_vector_team_size(
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_HPX)
+  if (Kokkos::Impl::is_same<Kokkos::Experimental::HPX, ExecutionSpace>::value) {
+    suggested_vector_size_ = 1;
+    suggested_team_size_ = 1;
+  }
+#endif
+
 #if defined( KOKKOS_ENABLE_CUDA )
   if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
 
@@ -181,6 +188,12 @@ void get_suggested_vector_size(
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_HPX)
+  if (Kokkos::Impl::is_same<Kokkos::Experimental::HPX, ExecutionSpace>::value) {
+    suggested_vector_size_ = 1;
+  }
+#endif
+
 #if defined( KOKKOS_ENABLE_CUDA )
   if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
 
@@ -235,6 +248,12 @@ void get_suggested_team_size(
 
 #if defined( KOKKOS_ENABLE_OPENMP )
   if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+    suggested_team_size_ = 1;
+  }
+#endif
+
+#if defined(KOKKOS_ENABLE_HPX)
+  if (Kokkos::Impl::is_same<Kokkos::Experimental::HPX, ExecutionSpace>::value) {
     suggested_team_size_ = 1;
   }
 #endif

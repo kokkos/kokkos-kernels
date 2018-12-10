@@ -151,6 +151,7 @@ namespace Test {
     } );
 
     KokkosBlas::dot(r,y,y);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
       EXPECT_NEAR_KK( AT::abs(nonconst_nonconst_result), AT::abs(expected_result[k]), AT::abs(expected_result[k]*eps));
@@ -165,6 +166,7 @@ namespace Test {
     } );
 
     KokkosBlas::dot(r,y,y);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
       EXPECT_NEAR_KK( AT::abs(const_non_const_result), AT::abs(expected_result[k]), AT::abs(eps*expected_result[k]));

@@ -45,6 +45,7 @@ INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/cuda
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/serial
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/threads
 INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/openmp
+INC += -I$(KOKKOSKERNELS_SRC_PATH)/unit_test/hpx
 
 TEST_HEADERS =  $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/blas/*.hpp)

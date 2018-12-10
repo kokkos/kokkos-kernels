@@ -43,6 +43,8 @@ ASSERT_DEFINED (Kokkos_ENABLE_Cuda)
 SET(${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT ${Kokkos_ENABLE_Cuda})
 ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
 SET(${PACKAGE_NAME}_INST_EXECSPACE_OPENMP_DEFAULT ${Kokkos_ENABLE_OpenMP})
+ASSERT_DEFINED (Kokkos_ENABLE_HPX)
+SET(${PACKAGE_NAME}_INST_EXECSPACE_HPX_DEFAULT ${Kokkos_ENABLE_HPX})
 ASSERT_DEFINED (Kokkos_ENABLE_Pthread)
 SET(${PACKAGE_NAME}_INST_EXECSPACE_THREADS_DEFAULT ${Kokkos_ENABLE_Pthread})
 ASSERT_DEFINED (Kokkos_ENABLE_Serial)
@@ -81,11 +83,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 
 ENDIF()
 
-IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP})
+IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_HPX})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE
   KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
-  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is KokkosKernels_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_Serial}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
+  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is KokkosKernels_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_HPX}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
   ON
   )
 ENDIF()
@@ -99,6 +101,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
   IF(${${PACKAGE_NAME}_INST_EXECSPACE_OPENMP} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
     LIST(APPEND DEVICE_LIST "<OpenMP,HostSpace>")
+  ENDIF()
+ENDIF()
+
+
+IF(${Kokkos_ENABLE_HPX})
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_EXECSPACE_HPX
+  KOKKOSKERNELS_INST_EXECSPACE_HPX
+  "Whether to pre instantiate kernels for the execution space Kokkos::Experimental::HPX. This option is KokkosKernels_INST_EXECSPACE_HPX=${Kokkos_ENABLE_HPX} by default.  Disabling this when Kokkos_ENABLE_HPX is enabled may increase build times."
+  ${${PACKAGE_NAME}_INST_EXECSPACE_HPX_DEFAULT}
+  )
+  IF(${${PACKAGE_NAME}_INST_EXECSPACE_HPX} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
+    LIST(APPEND DEVICE_LIST "<HPX,HostSpace>")
   ENDIF()
 ENDIF()
 

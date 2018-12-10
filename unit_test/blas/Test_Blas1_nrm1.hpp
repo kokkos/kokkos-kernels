@@ -88,12 +88,14 @@ namespace Test {
     Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::nrm1(r,a);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       typename AT::mag_type nonconst_result = r(k);
       EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::nrm1(r,c_a);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       typename AT::mag_type const_result = r(k);
       EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);

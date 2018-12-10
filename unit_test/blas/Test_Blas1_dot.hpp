@@ -115,24 +115,28 @@ namespace Test {
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::dot(r,a,b);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
       EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::dot(r,c_a,c_b);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA const_const_result = r(k);
       EXPECT_NEAR_KK( const_const_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::dot(r,a,c_b);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA non_const_const_result = r(k);
       EXPECT_NEAR_KK( non_const_const_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::dot(r,c_a,b);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
       EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);

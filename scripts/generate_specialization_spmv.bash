@@ -8,7 +8,7 @@ KokkosKernelsPath=$5
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
 OffsetType="int size_t"
-ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Threads,HostSpace Serial,HostSpace"
+ExecMemSpaceList="Cuda,CudaSpace OpenMP,HostSpace Experimental::HPX,HostSpace Threads,HostSpace Serial,HostSpace"
 
 mkdir generated_specializations_hpp/${Function}
 mkdir generated_specializations_cpp/${Function}

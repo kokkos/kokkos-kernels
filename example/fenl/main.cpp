@@ -69,6 +69,7 @@ enum { CMD_USE_THREADS = 0
      , CMD_USE_CORE_PER_NUMA
      , CMD_USE_CUDA
      , CMD_USE_OPENMP
+     , CMD_USE_HPX
      , CMD_USE_CUDA_DEV
      , CMD_USE_FIXTURE_X
      , CMD_USE_FIXTURE_Y
@@ -97,6 +98,10 @@ void print_cmdline( std::ostream & s , const int cmd[] )
       << ") NUMA(" << cmd[ CMD_USE_NUMA ]
       << ") CORE_PER_NUMA(" << cmd[ CMD_USE_CORE_PER_NUMA ]
       << ")" ;
+  }
+  if ( cmd[ CMD_USE_HPX ] ) {
+    s << " HPX(" << cmd[ CMD_USE_HPX ]
+      << ")";
   }
   if ( cmd[ CMD_USE_FIXTURE_X ] ) {
     s << " Fixture(" << cmd[ CMD_USE_FIXTURE_X ]
@@ -170,6 +175,7 @@ void run( MPI_Comm comm , const int cmd[] )
   if ( 0 == comm_rank ) {
     if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
     else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
+    else if ( cmd[ CMD_USE_HPX ] ) { std::cout << "HPX , " << cmd[ CMD_USE_HPX ] ; }
     else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
 
     if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
@@ -282,6 +288,9 @@ int main( int argc , char ** argv )
       }
       else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
         cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
+      }
+      else if ( 0 == strcasecmp( argv[i] , "hpx" ) ) {
+        cmdline[ CMD_USE_HPX ] = atoi( argv[++i] );
       }
       else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
         sscanf( argv[++i] , "%dx%d" ,
@@ -400,6 +409,19 @@ int main( int argc , char ** argv )
       run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
 
       Kokkos::OpenMP::finalize();
+    }
+
+#endif
+
+#if defined(KOKKOS_ENABLE_HPX)
+
+    if ( cmdline[ CMD_USE_HPX ] ) {
+
+      Kokkos::Experimental::HPX::impl_initialize( cmdline[ CMD_USE_HPX ] );
+
+      run< Kokkos::Experimental::HPX, Kokkos::Example::BoxElemPart::ElemLinear >( comm, cmdline );
+
+      Kokkos::Experimental::HPX::impl_finalize();
     }
 
 #endif

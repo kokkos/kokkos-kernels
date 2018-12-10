@@ -167,6 +167,15 @@ namespace KokkosSparse{
       }
 #endif
 
+#if defined(KOKKOS_ENABLE_HPX)
+      if (Kokkos::Impl::is_same<Kokkos::Experimental::HPX, ExecutionSpace>::value) {
+        this->algorithm_type = GS_PERMUTED;
+#ifdef VERBOSE
+        std::cout << "HPX Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
+#endif
+      }
+#endif
+
 #if defined( KOKKOS_ENABLE_CUDA )
       if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
         this->algorithm_type = GS_TEAM;

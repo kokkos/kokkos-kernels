@@ -36,6 +36,8 @@
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE
 /* Whether to build kernels for execution space Kokkos::OpenMP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMP
+/* Whether to build kernels for execution space Kokkos::Experimental::HPX */
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_HPX
 /* Whether to build kernels for execution space Kokkos::Threads */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_THREADS
 /* Whether to build kernels for execution space Kokkos::Serial */

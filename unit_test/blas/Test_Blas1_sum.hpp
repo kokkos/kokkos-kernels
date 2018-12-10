@@ -87,12 +87,14 @@ namespace Test {
     Kokkos::View<ScalarA*,Kokkos::HostSpace> r("Sum::Result",K);
 
     KokkosBlas::sum(r,a);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA nonconst_result = r(k);
       EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
     }
 
     KokkosBlas::sum(r,c_a);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA const_result = r(k);
       EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);

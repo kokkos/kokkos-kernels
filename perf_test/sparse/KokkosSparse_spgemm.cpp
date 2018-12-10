@@ -57,7 +57,7 @@
 void print_options(){
   std::cerr << "Options\n" << std::endl;
 
-  std::cerr << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]'" << std::endl;
+  std::cerr << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | '--hpx [numThreads]' | '--cuda [cudaDeviceIndex]'" << std::endl;
 
   std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
 
@@ -78,6 +78,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       params.use_openmp = atoi( argv[++i] );
+    }
+    else if ( 0 == strcasecmp( argv[i] , "--hpx" ) ) {
+      params.use_hpx = atoi( argv[++i] );
     }
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = atoi( argv[++i] ) + 1;
@@ -291,7 +294,7 @@ int main (int argc, char ** argv){
     std::cout << "B is not provided. Multiplying AxA." << std::endl;
   }
 
-  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  const int num_threads = params.use_openmp ? params.use_openmp : params.use_hpx;
   const int device_id = params.use_cuda - 1;
 
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
@@ -311,6 +314,23 @@ int main (int argc, char ** argv){
     <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
         params
         );
+#endif
+  }
+#endif
+
+#if defined( KOKKOS_ENABLE_HPX )
+
+  if (params.use_hpx) {
+#ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
+      KokkosKernels::Experiment::run_multi_mem_spgemm
+          <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Experimental::HPX, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(
+              params
+              );
+#else 
+      KokkosKernels::Experiment::run_multi_mem_spgemm
+          <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Experimental::HPX, Kokkos::Experimental::HPX::memory_space, Kokkos::Experimental::HPX::memory_space>(
+              params
+              );
 #endif
   }
 #endif
