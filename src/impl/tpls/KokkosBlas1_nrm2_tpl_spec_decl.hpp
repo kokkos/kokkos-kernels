@@ -82,6 +82,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -92,6 +93,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -112,6 +114,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -122,6 +125,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -142,6 +146,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -152,6 +157,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -172,6 +178,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_BLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -182,6 +189,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -226,6 +234,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -237,6 +246,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -257,6 +267,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -268,6 +279,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -288,6 +300,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -299,6 +312,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -319,6 +333,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrm2[TPL_CUBLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm2_print_specialization<RV,XV>(); \
@@ -330,6 +345,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 

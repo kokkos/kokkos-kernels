@@ -88,6 +88,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_BLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -97,6 +98,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -119,6 +121,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_BLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -128,6 +131,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -150,6 +154,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_BLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -162,6 +167,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -184,6 +190,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_BLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -196,6 +203,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -242,6 +250,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -252,6 +261,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -274,6 +284,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -284,6 +295,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -306,6 +318,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -316,6 +329,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -338,6 +352,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void dot (RV& R, const XV& X, const XV& Y) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::dot[TPL_CUBLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       dot_print_specialization<RV,XV,XV>(); \
@@ -348,6 +363,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 

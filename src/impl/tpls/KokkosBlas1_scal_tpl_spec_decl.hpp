@@ -88,6 +88,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void scal (const RV& R, const double& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -97,6 +98,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -119,6 +121,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void scal (const RV& R, const float& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -128,6 +131,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -150,6 +154,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void scal (const RV& R, const Kokkos::complex<double>& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -159,6 +164,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -181,6 +187,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void scal (const RV& R, const Kokkos::complex<float>& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -190,6 +197,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -236,6 +244,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void scal (const RV& R, const double& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_CUBLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -246,6 +255,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -268,6 +278,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void scal (const RV& R, const float& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_CUBLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -278,6 +289,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -300,6 +312,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void scal (const RV& R, const Kokkos::complex<double>& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_CUBLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -310,6 +323,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -332,6 +346,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void scal (const RV& R, const Kokkos::complex<float>& alpha, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_CUBLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
@@ -342,6 +357,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 

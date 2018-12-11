@@ -90,6 +90,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_BLAS,double]"); \
     if((X.extent(0) < INT_MAX) && (beta == 1.0)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
@@ -97,6 +98,7 @@ struct Axpby< \
       daxpy_(&N,&alpha,X.data(),&one,Y.data(),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -120,6 +122,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_BLAS,float]"); \
     if((X.extent(0) < INT_MAX) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
@@ -127,6 +130,7 @@ struct Axpby< \
       saxpy_(&N,&alpha,X.data(),&one,Y.data(),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -149,6 +153,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_BLAS,complex<double>]"); \
     if((X.extent(0) < INT_MAX) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
@@ -158,6 +163,7 @@ struct Axpby< \
                 reinterpret_cast<std::complex<double>* >(Y.data()),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -180,6 +186,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_BLAS,complex<float>]"); \
     if((X.extent(0) < INT_MAX) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
@@ -189,6 +196,7 @@ struct Axpby< \
                 reinterpret_cast<std::complex<float>* >(Y.data()),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -240,6 +248,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_CUBLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
@@ -249,6 +258,7 @@ struct Axpby< \
       cublasDaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -273,6 +283,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_CUBLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
@@ -282,6 +293,7 @@ struct Axpby< \
       cublasSaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -305,6 +317,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_CUBLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
@@ -314,6 +327,7 @@ struct Axpby< \
       cublasZaxpy(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(X.data()), one, reinterpret_cast<cuDoubleComplex*>(Y.data()), one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -337,6 +351,7 @@ struct Axpby< \
 \
   static void \
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::axpby[TPL_CUBLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
       axpby_print_specialization<AV,XV,BV,YV>(); \
@@ -346,6 +361,7 @@ struct Axpby< \
       cublasCaxpy(s.handle, N, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(X.data()), one, reinterpret_cast<cuComplex*>(Y.data()), one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
