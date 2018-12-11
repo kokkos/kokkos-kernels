@@ -179,7 +179,7 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "X and Y must have the same rank.");
     static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby<rank-2>::axpby: "
                    "X and Y must have rank 2.");
-    Kokkos::Profiling::pushRegion(eti_spec_avail?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::axpby<> ETI specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XMV).name(),typeid(BV).name(),typeid(YMV).name());
@@ -248,7 +248,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
                    "X and Y must have the same rank.");
     static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby::axpby (MV): "
                    "X and Y must have rank 2.");
-    Kokkos::Profiling::pushRegion(eti_spec_avail?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -341,7 +341,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
     static_assert (YV::Rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: "
                    "X and Y must have rank 1.");
 
-    Kokkos::Profiling::pushRegion(eti_spec_avail?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::axpby<> ETI specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XV).name(),typeid(BV).name(),typeid(YV).name());

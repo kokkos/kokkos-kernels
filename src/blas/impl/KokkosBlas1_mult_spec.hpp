@@ -167,7 +167,7 @@ struct Mult<YMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "X, and Y must have the rank 2.");
     static_assert (AV::rank == 1, "KokkosBlas::Impl::Mult<rank 2>::mult: "
                    "AV must have rank 1.");
-    Kokkos::Profiling::pushRegion(eti_spec_avail?"KokkosBlas::mult[ETI]":"KokkosBlas::mult[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::mult[ETI]":"KokkosBlas::mult[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -219,7 +219,7 @@ struct Mult<YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
     static_assert ((int) XV::rank == (int) YV::rank && (int) AV::rank == 1,
                    "KokkosBlas::Impl::Mult<rank 1>::mult: "
                    "X, Y, and Z must have rank 1.");
-    Kokkos::Profiling::pushRegion(eti_spec_avail?"KokkosBlas::mult[ETI]":"KokkosBlas::mult[noETI]");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::mult[ETI]":"KokkosBlas::mult[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::mult<> ETI specialization for < %s , %s , %s >\n",typeid(YV).name(),typeid(AV).name(),typeid(XV).name());
