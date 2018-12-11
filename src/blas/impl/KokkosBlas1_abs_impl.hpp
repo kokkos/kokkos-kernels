@@ -197,9 +197,7 @@ MV_Abs_Generic (const RMV& R, const XMV& X)
   const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
-  if(std::is_same<typename RMV::array_layout,typename XMV::array_layout>::value &&
-     std::is_same<typename RMV::memory_space,typename XMV::memory_space>::value &&
-     ((void*) (R.data()) == (void*) (X.data()))) { // if R and X are the same (alias one another)
+  if((void*) (R.data()) == (void*) (X.data())) { // if R and X are the same (alias one another)
     MV_AbsSelf_Functor<RMV, SizeType> op (R);
     Kokkos::parallel_for (policy, op);
   }
@@ -227,9 +225,7 @@ V_Abs_Generic (const RV& R, const XV& X)
   const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
-  if(std::is_same<typename RV::array_layout,typename XV::array_layout>::value &&
-     std::is_same<typename RV::memory_space,typename XV::memory_space>::value &&
-     ((void*) (R.data()) == (void*) (X.data()))) { // if R and X are the same (alias one another)
+  if((void*) (R.data()) == (void*) (X.data())) { // if R and X are the same (alias one another)
     V_AbsSelf_Functor<RV, SizeType> op (R);
     Kokkos::parallel_for (policy, op);
   }
