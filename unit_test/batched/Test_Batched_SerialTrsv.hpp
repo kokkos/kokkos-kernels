@@ -61,7 +61,7 @@ namespace Test {
       std::string name = name_region + name_value_type;
       Kokkos::Profiling::pushRegion( name.c_str() );
       Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _b.extent(0));
-      Kokkos::parallel_for(policy, *this);
+      Kokkos::parallel_for(name.c_str(), policy, *this);
       Kokkos::Profiling::popRegion();
     }
   };
