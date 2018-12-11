@@ -20,9 +20,7 @@ namespace KokkosBatched {
     ///
     /// Serial Internal Impl
     /// ==================== 
-    ///
-    /// this impl follows the flame interface of householder transformation
-    ///
+
     struct SerialEigendecompositionInternal {
       /// Given a general nonsymmetric matrix A (m x m), it performs eigendecomposition 
       /// of the matrix.
@@ -79,7 +77,7 @@ namespace KokkosBatched {
         const int as = as0+as1;
 
         /// step 1: Hessenberg reduction A = Q H Q^H
-        ///         Q is stored in UL if requested.
+        ///         Q is stored in QZ
         {
           real_type *t  = w_now; w_now += m; wlen_now -= m;
           real_type *ww = w_now; w_now += m; wlen_now -= m;
@@ -108,7 +106,7 @@ namespace KokkosBatched {
         }
         
         /// step 2: Schur decomposition H = Z T Z^H
-        ///         Z is applied to UL if requested
+        ///         Z is applied to QZ
         {
           int r_val = 0;
           real_type *ww = w_now; w_now += (5*m); wlen_now -= (5*m);
