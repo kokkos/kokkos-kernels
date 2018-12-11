@@ -151,7 +151,7 @@ namespace Test {
 
     inline
     void run() {
-      typedef typename ViewType::value_type value_type;
+      typedef typename AViewType::value_type value_type;
       std::string name_region("KokkosBatched::Test::TeamInverseLU");
       std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
                                       std::is_same<value_type,double>::value ? "::Double" :
