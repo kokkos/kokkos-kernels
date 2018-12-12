@@ -217,37 +217,53 @@ int test_dot_mv() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_float");
     test_dot<float,float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, dot_mv_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_mv_float");
     test_dot_mv<float,float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_double");
     test_dot<double,double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, dot_mv_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_mv_double");
     test_dot_mv<double,double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_complex_double");
     test_dot<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, dot_mv_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_mv_complex_double");
     test_dot_mv<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, dot_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_int");
     test_dot<int,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, dot_mv_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::dot_mv_int");
     test_dot_mv<int,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
