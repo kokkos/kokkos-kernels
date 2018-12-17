@@ -30,7 +30,10 @@ namespace KokkosBatched {
     ///     1D contiguous workspace. The minimum size is (2*m*m+5*m) where m is the dimension of matrix A.
 
     struct SerialEigendecomposition {
-      template<typename RealType>
+      template<typename AViewType,
+               typename EViewType,
+               typename UViewType,
+               typename WViewType>
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const AViewType &A,
@@ -43,7 +46,8 @@ namespace KokkosBatched {
     struct TeamEigendecomposition {
       template<typename AViewType,
                typename EViewType,
-               typename UViewType>
+               typename UViewType,
+               typename WViewType>
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const MemberType &member, 
