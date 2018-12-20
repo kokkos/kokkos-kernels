@@ -407,10 +407,14 @@ RESULT_ROOT_PREFIX=TestAll
 
 if [ "$PRINT_HELP" = "True" ]; then
   echo "test_all_sandia <ARGS> <OPTIONS>:"
+  echo ""
+  echo "OPTIONS: list of flag options for non-default testing"
+  echo ""
   echo "--kokkoskernels-path=/Path/To/Kokkos: Path to the KokkosKernels root directory"
   echo "    Defaults to root repo containing this script"
   echo "--kokkos-path=/Path/To/Kokkos: Path to the Kokkos root directory"
   echo "    Defaults to KokkosKernelsPath/../kokkos"
+  echo ""
   echo "--debug: Run tests in debug. Defaults to False"
   echo "--test-script: Test this script, not Kokkos"
   echo "--skip-hwloc: Do not do hwloc tests"
@@ -418,9 +422,38 @@ if [ "$PRINT_HELP" = "True" ]; then
   echo "--spot-check: Minimal test set to issue pull request"
   echo "--dry-run: Just print what would be executed"
   echo "--build-only: Just do builds, don't run anything"
-  echo "--opt-flag=FLAG: Optimization flag (default: -O3)"
+  echo ""
   echo "--arch=ARCHITECTURE: overwrite architecture flags"
+  echo ""
+  echo "--with-kokkos-options=OPT: set KOKKOS_OPTIONS"
   echo "--with-cuda-options=OPT: set KOKKOS_CUDA_OPTIONS"
+  echo ""
+  echo "--opt-flag=FLAG: Optimization flag (default: -O3)"
+  echo "--cxxflags-extra=FLAG(S): append extra flags to cxxflags"
+  echo "--ldflags-extra=FLAG(S): append extra ldflags to ldflags"
+  echo "--cxxstandard=STD: set KOKKOS_CXX_STANDARD"
+  echo ""
+  echo "--with-scalars=SCALARS: set KOKKOSKERNELS_SCALARS"
+  echo "    Provide a comma-separated list scalar types"
+  echo "    Valid items:"
+  echo "      float, complex<float>, double, complex<double>"
+  echo "        Example: SCALARS='double,\"complex\<double\>\"'"
+  echo ""
+  echo "--with-ordinals=ORDS: set KOKKOSKERNELS_ORDINALS"
+  echo "    Provide a comma-separated list ordinal types"
+  echo "    Valid items:"
+  echo "      int, int64_t"
+  echo ""
+  echo "--with-offsets=OFFS: set KOKKOSKERNELS_OFFSETS"
+  echo "    Provide a comma-separated list offset types"
+  echo "    Valid items:"
+  echo "      int, size_t"
+  echo ""
+  echo "--with-layouts=LAYOUTS: set KOKKOSKERNELS_LAYOUTS"
+  echo "    Provide a comma-separated list layouts"
+  echo "    Valid items:"
+  echo "      LayoutLeft,LayoutRight"
+  echo ""
   echo "--build-list=BUILD,BUILD,BUILD..."
   echo "    Provide a comma-separated list of builds instead of running all builds"
   echo "    Valid items:"
@@ -444,14 +477,14 @@ if [ "$PRINT_HELP" = "True" ]; then
   echo "  Run all gcc tests"
   echo "  % test_all_sandia gcc"
   echo ""
-  echo "  Run all gcc/4.7.2 and all intel tests"
-  echo "  % test_all_sandia gcc/4.7.2 intel"
+  echo "  Run all gcc/4.8.4 and all intel tests"
+  echo "  % test_all_sandia gcc/4.8.4 intel"
   echo ""
   echo "  Run all tests in debug"
   echo "  % test_all_sandia --debug"
   echo ""
-  echo "  Run gcc/4.7.2 and only do OpenMP and OpenMP_Serial builds"
-  echo "  % test_all_sandia gcc/4.7.2 --build-list=OpenMP,OpenMP_Serial"
+  echo "  Run gcc/4.8.4 and only do OpenMP and OpenMP_Serial builds"
+  echo "  % test_all_sandia gcc/4.8.4 --build-list=OpenMP,OpenMP_Serial"
   echo ""
   echo "If you want to kill the tests, do:"
   echo "  hit ctrl-z"
@@ -671,6 +704,9 @@ single_build_and_test() {
 
   local comment="no_comment"
 
+  # Keep variable wrapped in single quotes so complex<scalar> passed correctly to generate_makefile
+  local kk_scalars=\'${KOKKOSKERNELS_SCALARS}\'
+
   if [ "$TEST_SCRIPT" = "True" ]; then
     local rand=$[ 1 + $[ RANDOM % 10 ]]
     sleep $rand
@@ -679,7 +715,7 @@ single_build_and_test() {
       run_cmd ls fake_problem >& ${desc}.configure.log || { report_and_log_test_result 1 $desc configure && return 0; }
     fi
   else
-    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=${KOKKOSKERNELS_SCALARS} --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 32 build-test >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)
