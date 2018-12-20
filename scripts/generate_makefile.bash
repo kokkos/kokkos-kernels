@@ -75,6 +75,9 @@ do
     --cxxflags*)
       CXXFLAGS="${key#*=}"
       ;;
+    --cxxstandard*)
+      KOKKOS_CXX_STANDARD="${key#*=}"
+      ;;
     --ldflags*)
       LDFLAGS="${key#*=}"
       ;;
@@ -193,6 +196,8 @@ do
       echo "                                        build.  This will still set certain required"
       echo "                                        flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
       echo "                                        --std=c++11, etc.)."
+      echo "--cxxstandard=[FLAGS]         Overwrite KOKKOS_CXX_STANDARD for library build and test"
+      echo "                                c++11 (default), c++14, c++17, c++1y, c++1z, c++2a"
       echo "--ldflags=[FLAGS]                     Overwrite LDFLAGS for library build and test"
       echo "                                        build. This will still set certain required"
       echo "                                        flags via KOKKOS_LDFLAGS (such as -fopenmp,"
@@ -278,6 +283,10 @@ if [ ${#CXXFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} CXXFLAGS=\"${CXXFLAGS}\""
 fi
 
+if [ ${#KOKKOS_CXX_STANDARD} -gt 0 ]; then
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_CXX_STANDARD=\"${KOKKOS_CXX_STANDARD}\""
+fi
+
 if [ ${#LDFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} LDFLAGS=\"${LDFLAGS}\""
 fi
@@ -357,9 +366,14 @@ else
 fi
 
 mkdir -p install
-echo "#Makefile to satisfy existens of target kokkos-clean before installing the library" > install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean before installing the library" > install/Makefile.kokkos
 echo "kokkos-clean:" >> install/Makefile.kokkos
 echo "" >> install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean and kokkoskernels-clean before installing the library" > install/Makefile.kokkos-kernels
+echo "kokkoskernels-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
+echo "kokkos-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
 mkdir -p kokkos
 mkdir -p src
 mkdir -p unit_test
