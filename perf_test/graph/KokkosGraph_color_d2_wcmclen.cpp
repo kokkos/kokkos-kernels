@@ -63,7 +63,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_MyCRSMatrix.hpp>
 #include <KokkosKernels_TestParameters.hpp>
-#include <KokkosGraph_Distance2Color.hpp>
+#include <KokkosGraph_Distance2Color.hpp>       // EXPERIMENTAL (WCMCLEN)
 
 
 using namespace KokkosGraph;
@@ -436,7 +436,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     double time_d2_degree;
     Kokkos::Impl::Timer timer;
     timer.reset();
-
+/*
     typedef typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
     non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
 
@@ -445,7 +445,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                            crsGraph.row_map, crsGraph.entries,
                            crsGraph.row_map, crsGraph.entries,
                            degree_d2_dist, degree_d2_max);
-
+*/
     time_d2_degree = timer.seconds();
 
 

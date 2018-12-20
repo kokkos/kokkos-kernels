@@ -154,16 +154,16 @@ public:
   }
 
 
-  typedef typename KokkosGraph::GraphColoringHandle
-      <const_size_type, const_nnz_lno_t, const_nnz_lno_t,
-	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> GraphColoringHandleType;
-  typedef typename KokkosSparse::GaussSeidelHandle
-      <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
-	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> GaussSeidelHandleType;
+  typedef typename KokkosGraph::
+    GraphColoringHandle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      GraphColoringHandleType;
+  typedef typename KokkosSparse::
+    GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      GaussSeidelHandleType;
 
-  typedef typename KokkosSparse::SPGEMMHandle
-      <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
-	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> SPGEMMHandleType;
+  typedef typename KokkosSparse::
+    SPGEMMHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      SPGEMMHandleType;
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> in_scalar_nnz_view_t;
 
@@ -181,12 +181,11 @@ public:
   typedef typename Kokkos::View<bool *, HandlePersistentMemorySpace> bool_persistent_view_t;
   typedef typename Kokkos::View<bool *, HandleTempMemorySpace> bool_temp_view_t;
 
-  typedef typename KokkosSparse::SPADDHandle
-         <row_lno_temp_work_view_t,
-          nnz_lno_temp_work_view_t,
-          scalar_temp_work_view_t,
-          HandleExecSpace,
-          HandleTempMemorySpace> SPADDHandleType;
+  typedef
+    typename KokkosSparse::SPADDHandle<row_lno_temp_work_view_t, nnz_lno_temp_work_view_t, scalar_temp_work_view_t, HandleExecSpace, HandleTempMemorySpace>
+      SPADDHandleType;
+
+
 
 private:
 

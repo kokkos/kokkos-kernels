@@ -49,6 +49,8 @@
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 
+#include "KokkosGraph_Distance2ColorHandle.hpp"         // todo work in progress (SCAFFOLDING)
+
 namespace KokkosGraph{
 
 namespace Experimental{

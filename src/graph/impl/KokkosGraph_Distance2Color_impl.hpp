@@ -555,7 +555,7 @@ class GraphColorD2
         size_t _degree_d2_max = 0;
         Kokkos::parallel_reduce("Max D2 Degree",
                                 this->nv,
-                                KOKKOS_LAMBDA(const size_t &i, size_t &lmax) { lmax = degree_d2(i) > lmax ? degree_d2(i) : lmax; },
+                                KOKKOS_LAMBDA(const size_t &i, size_t & lmax) { lmax = degree_d2(i) > lmax ? degree_d2(i) : lmax; },
                                 Kokkos::Max<size_t>(_degree_d2_max));
         degree_d2_max = _degree_d2_max;
     }
