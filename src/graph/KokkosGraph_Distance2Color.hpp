@@ -46,10 +46,11 @@
 #include "KokkosGraph_GraphColor_impl.hpp"
 #include "KokkosGraph_Distance2Color_impl.hpp"
 #include "KokkosGraph_Distance2Color_MatrixSquared_impl.hpp"
-#include "KokkosGraph_GraphColorHandle.hpp"
+#include "KokkosGraph_GraphColorHandle.hpp"                         // todo: remove this
+#include "KokkosGraph_Distance2GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 
-#include "KokkosGraph_Distance2ColorHandle.hpp"         // todo work in progress (SCAFFOLDING)
+
 
 namespace KokkosGraph{
 
@@ -72,7 +73,8 @@ void graph_color_d2(KernelHandle *handle,
     Kokkos::Impl::Timer timer;
 
     // Set our handle pointer to a GraphColoringHandleType.
-    typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
+//    typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
+    typename KernelHandle::Distance2GraphColoringHandleType *gch = handle->get_distance2_graph_coloring_handle();
 
     // Get the algorithm we're running from the graph coloring handle.
     ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
@@ -80,7 +82,8 @@ void graph_color_d2(KernelHandle *handle,
     // Create a view to save the colors to.
     // - Note: color_view_t is a Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t    (KokkosGraph_GraphColorHandle.hpp)
     //         a 1D array of color_t
-    typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
+//    typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
+    typedef typename KernelHandle::Distance2GraphColoringHandleType::color_view_t color_view_type;
     color_view_type colors_out("Graph Colors", num_rows);
 
     gch->set_tictoc(handle->get_verbose());
@@ -99,16 +102,16 @@ void graph_color_d2(KernelHandle *handle,
         case COLORING_D2_SERIAL:
         {
             #if defined KOKKOS_ENABLE_SERIAL
-            int num_phases = 0;
-            Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
-            gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
-            gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
+                int num_phases = 0;
+                Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
+                gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
+                gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
 
-            // Save out the number of phases and vertex colors
-            gch->set_vertex_colors(colors_out);
-            gch->set_num_phases((double)num_phases);
+                // Save out the number of phases and vertex colors
+                gch->set_vertex_colors(colors_out);
+                gch->set_num_phases((double)num_phases);
             #else
-            throw std::runtime_error("Kokkos-Kernels must be built with Serial enabled to use COLORING_D2_SERIAL");
+                throw std::runtime_error("Kokkos-Kernels must be built with Serial enabled to use COLORING_D2_SERIAL");
             #endif
             break;
         }

@@ -50,10 +50,8 @@
 #ifndef _DISTANCE2GRAPHCOLORHANDLE_HPP
 #define _DISTANCE2GRAPHCOLORHANDLE_HPP
 
-//#define VERBOSE
 namespace KokkosGraph {
 
-//enum ColoringAlgorithm
 enum GraphColoringAlgorithmDistance2
 {
     COLORING_D2_DEFAULT,             // Distance-2 Graph Coloring default algorithm
@@ -66,16 +64,8 @@ enum GraphColoringAlgorithmDistance2
 };
 
 
-enum ConflictList           // TODO Can this go away?
-{
-    COLORING_NOCONFLICT,
-    COLORING_ATOMIC,
-    COLORING_PPS
-};
-
 enum ColoringType
 {
-    Distance1,
     Distance2
 };
 
@@ -125,28 +115,13 @@ class Distance2GraphColoringHandle
 
     // Parameters
     ColoringAlgorithm coloring_algorithm_type;      // VB, VBBIT, VBCS, VBD or EB.
-    ConflictList      conflict_list_type;           // whether to use a conflict list or not, and
-                                                    // if using it wheter to create it with atomic or parallel prefix sum.
 
-    double min_reduction_for_conflictlist;
-    // if used pps is selected to create conflict list, what min percantage should be the vertex list
-    // be reduced, to create the new vertexlist. If it is reduced less than this percantage, use the
-    // previous array.
-
-    int min_elements_for_conflictlist;
-    // minimum number of elements to create a new conflict list.
-    // if current conflict list size is smaller than this number,
-    // than we do not need to create a new conflict list.
-
-    bool serial_conflict_resolution;      // perform parallel greedy coloring once, then resolve conflict serially.
     bool tictoc;                          // print time at every step
 
     bool vb_edge_filtering;               // whether to do edge filtering or not in vertex based algorithms. Swaps on the ad error.
 
     int vb_chunk_size;                   // the (minimum) size of the consecutive works that a thread will be assigned to.
     int max_number_of_iterations;        // maximum allowed number of phases that
-
-    int eb_num_initial_colors;           // the number of colors to assign at the beginning of the edge-based algorithm
 
 
     // STATISTICS
@@ -176,17 +151,12 @@ class Distance2GraphColoringHandle
      * \brief Default constructor.
      */
     Distance2GraphColoringHandle()
-        : GraphColoringType(Distance1)
+        : GraphColoringType(Distance2)
         , coloring_algorithm_type(COLORING_DEFAULT)
-        , conflict_list_type(COLORING_ATOMIC)
-        , min_reduction_for_conflictlist(0.35)
-        , min_elements_for_conflictlist(1000 /*5000*/)
-        , serial_conflict_resolution(true)
         , tictoc(false)
         , vb_edge_filtering(false)
         , vb_chunk_size(8)
         , max_number_of_iterations(200)
-        , eb_num_initial_colors(1)
         , overall_coloring_time(0)
         , overall_coloring_time_phase1(0)
         , overall_coloring_time_phase2(0)
@@ -210,7 +180,7 @@ class Distance2GraphColoringHandle
      */
     void set_coloring_type(const ColoringType &col_type) { this->GraphColoringType = col_type; }
 
-    /** \brief Gets the graph coloring type. Whether it is distance-1 or distance-2 coloring.
+    /** \brief Gets the graph coloring type.
      *  returns Coloring Type: KokkosKernels::Experimental::Graph::ColoringType which can be
      *        either KokkosKernels::Experimental::Graph::Distance1 or KokkosKernels::Experimental::Graph::Distance2
      */
@@ -238,7 +208,6 @@ class Distance2GraphColoringHandle
     }
 
 
-
     /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
      */
     void choose_default_algorithm()
@@ -246,7 +215,7 @@ class Distance2GraphColoringHandle
         #if defined(KOKKOS_ENABLE_SERIAL)
         if(Kokkos::Impl::is_same<Kokkos::Serial, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_SERIAL;
+            this->coloring_algorithm_type = COLORING_D2_SERIAL;
             #ifdef VERBOSE
             std::cout << "Serial Execution Space, Default Algorithm: COLORING_VB" << std::endl;
             #endif
@@ -256,7 +225,7 @@ class Distance2GraphColoringHandle
         #if defined(KOKKOS_ENABLE_THREADS)
         if(Kokkos::Impl::is_same<Kokkos::Threads, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_VB;
+            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
             #ifdef VERBOSE
             std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_VB" << std::endl;
             #endif
@@ -266,7 +235,7 @@ class Distance2GraphColoringHandle
         #if defined(KOKKOS_ENABLE_OPENMP)
         if(Kokkos::Impl::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_VB;
+            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
             #ifdef VERBOSE
             std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_VB" << std::endl;
             #endif
@@ -276,7 +245,7 @@ class Distance2GraphColoringHandle
         #if defined(KOKKOS_ENABLE_CUDA)
         if(Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_EB;
+            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
             #ifdef VERBOSE
             std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
             #endif
@@ -286,7 +255,7 @@ class Distance2GraphColoringHandle
         #if defined(KOKKOS_ENABLE_QTHREAD)
         if(Kokkos::Impl::is_same<Kokkos::Qthread, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_VB;
+            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
             #ifdef VERBOSE
             std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
             #endif
@@ -320,19 +289,13 @@ class Distance2GraphColoringHandle
             case COLORING_D2_VB:
             case COLORING_D2_VB_BIT:
             case COLORING_D2_VB_BIT_EF:
-                this->conflict_list_type             = COLORING_ATOMIC;
-                this->min_reduction_for_conflictlist = 0.35;
-                this->min_elements_for_conflictlist  = 1000;
-                this->serial_conflict_resolution     = false;
                 this->tictoc                         = false;
                 this->vb_edge_filtering              = false;
                 this->vb_chunk_size                  = 8;
                 this->max_number_of_iterations       = 200;
-                this->eb_num_initial_colors          = 1;
                 break;
             default:
                 throw std::runtime_error("Unknown Distance-2 Graph Coloring Algorithm\n");
-                // break;
         }
     }
 
@@ -342,48 +305,49 @@ class Distance2GraphColoringHandle
      */
     virtual ~Distance2GraphColoringHandle(){};
 
-    // getters
+    // getters and setters
     ColoringAlgorithm get_coloring_algo_type() const { return this->coloring_algorithm_type; }
-    ConflictList      get_conflict_list_type() const { return this->conflict_list_type; }
-    double            get_min_reduction_for_conflictlist() const { return this->min_reduction_for_conflictlist; }
-    int               get_min_elements_for_conflictlist() const { return this->min_elements_for_conflictlist; }
-    bool              get_serial_conflict_resolution() const { return this->serial_conflict_resolution; }
-    bool              get_tictoc() const { return this->tictoc; }
-    bool              get_vb_edge_filtering() const { return this->vb_edge_filtering; }
-    int               get_vb_chunk_size() const { return this->vb_chunk_size; }
-    int               get_max_number_of_iterations() const { return this->max_number_of_iterations; }
-    int               get_eb_num_initial_colors() const { return this->eb_num_initial_colors; }
 
-    double       get_overall_coloring_time() const { return this->overall_coloring_time; }
-    double       get_overall_coloring_time_phase1() const { return this->overall_coloring_time_phase1; }
-    double       get_overall_coloring_time_phase2() const { return this->overall_coloring_time_phase2; }
-    double       get_overall_coloring_time_phase3() const { return this->overall_coloring_time_phase3; }
-    double       get_overall_coloring_time_phase4() const { return this->overall_coloring_time_phase4; }
-    double       get_overall_coloring_time_phase5() const { return this->overall_coloring_time_phase5; }
-    double       get_coloring_time() const { return this->coloring_time; }
-    int          get_num_phases() const { return this->num_phases; }
+    double get_coloring_time()            const { return this->coloring_time; }
+    int    get_max_number_of_iterations() const { return this->max_number_of_iterations; }
+    int    get_num_phases()               const { return this->num_phases; }
+
+    double get_overall_coloring_time()        const { return this->overall_coloring_time; }
+    double get_overall_coloring_time_phase1() const { return this->overall_coloring_time_phase1; }
+    double get_overall_coloring_time_phase2() const { return this->overall_coloring_time_phase2; }
+    double get_overall_coloring_time_phase3() const { return this->overall_coloring_time_phase3; }
+    double get_overall_coloring_time_phase4() const { return this->overall_coloring_time_phase4; }
+    double get_overall_coloring_time_phase5() const { return this->overall_coloring_time_phase5; }
+
+    bool get_tictoc() const { return this->tictoc; }
+
+    int  get_vb_chunk_size() const { return this->vb_chunk_size; }
+
+    bool get_vb_edge_filtering() const { return this->vb_edge_filtering; }
+
     color_view_t get_vertex_colors() const { return this->vertex_colors; }
-    bool         is_coloring_called() const { return this->is_coloring_called_before; }
+
+    bool is_coloring_called() const { return this->is_coloring_called_before; }
 
     // setters
     void set_coloring_algo_type(const ColoringAlgorithm &col_algo) { this->coloring_algorithm_type = col_algo; }
-    void set_conflict_list_type(const ConflictList &cl) { this->conflict_list_type = cl; }
-    void set_min_reduction_for_conflictlist(const double &min_reduction) { this->min_reduction_for_conflictlist = min_reduction; }
-    void set_min_elements_for_conflictlist(const int &min_elements) { this->min_elements_for_conflictlist = min_elements; }
-    void set_serial_conflict_resolution(const bool &use_serial_conflist_resolution) { this->serial_conflict_resolution = use_serial_conflist_resolution; }
-    void set_tictoc(const bool use_tictoc) { this->tictoc = use_tictoc; }
-    void set_vb_edge_filtering(const bool &use_vb_edge_filtering) { this->vb_edge_filtering = use_vb_edge_filtering; }
-    void set_vb_chunk_size(const int &chunksize) { this->vb_chunk_size = chunksize; }
+
+    void set_coloring_time(const double &coloring_time_)     { this->coloring_time = coloring_time_; }
     void set_max_number_of_iterations(const int &max_phases) { this->max_number_of_iterations = max_phases; }
-    void set_eb_num_initial_colors(const int &num_initial_colors) { this->eb_num_initial_colors = num_initial_colors; }
-    void add_to_overall_coloring_time(const double &coloring_time_) { this->overall_coloring_time += coloring_time_; }
+    void set_num_phases(const double &num_phases_)           { this->num_phases = num_phases_; }
+
+    void add_to_overall_coloring_time(const double &coloring_time_)        { this->overall_coloring_time += coloring_time_; }
     void add_to_overall_coloring_time_phase1(const double &coloring_time_) { this->overall_coloring_time_phase1 += coloring_time_; }
     void add_to_overall_coloring_time_phase2(const double &coloring_time_) { this->overall_coloring_time_phase2 += coloring_time_; }
     void add_to_overall_coloring_time_phase3(const double &coloring_time_) { this->overall_coloring_time_phase3 += coloring_time_; }
     void add_to_overall_coloring_time_phase4(const double &coloring_time_) { this->overall_coloring_time_phase4 += coloring_time_; }
     void add_to_overall_coloring_time_phase5(const double &coloring_time_) { this->overall_coloring_time_phase5 += coloring_time_; }
-    void set_coloring_time(const double &coloring_time_) { this->coloring_time = coloring_time_; }
-    void set_num_phases(const double &num_phases_) { this->num_phases = num_phases_; }
+
+    void set_tictoc(const bool use_tictoc) { this->tictoc = use_tictoc; }
+
+    void set_vb_chunk_size(const int &chunksize) { this->vb_chunk_size = chunksize; }
+
+    void set_vb_edge_filtering(const bool &use_vb_edge_filtering) { this->vb_edge_filtering = use_vb_edge_filtering; }
 
     void set_vertex_colors(const color_view_t vertex_colors_)
     {
@@ -391,7 +355,6 @@ class Distance2GraphColoringHandle
         this->is_coloring_called_before = true;
         this->num_colors                = 0;
     }
-
 
     // Print / write out the graph in a GraphVIZ format.
     // Color "1" will be rendered as a red circle.

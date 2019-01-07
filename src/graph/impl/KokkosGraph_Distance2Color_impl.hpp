@@ -55,10 +55,9 @@
 
 #include <impl/Kokkos_Timer.hpp>
 
-//#include <Kokkos_UnorderedMap.hpp>
-
 #include "KokkosGraph_GraphColor.hpp"
-#include "KokkosGraph_GraphColorHandle.hpp"
+#include "KokkosGraph_GraphColorHandle.hpp"         // todo: remove this
+#include "KokkosGraph_Distance2GraphColorHandle.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 #ifndef _KOKKOSCOLORINGD2IMP_HPP
@@ -72,7 +71,6 @@ namespace Impl {
 #define VB_D2_COLORING_FORBIDDEN_SIZE    64
 #define VBBIT_D2_COLORING_FORBIDDEN_SIZE 64
 
-#define WCMCLEN_EXPERIMENTAL  0
 
 
 /*!
@@ -88,19 +86,19 @@ class GraphColorD2
     typedef lno_row_view_t_ in_lno_row_view_t;
     typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
-    typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_type;
-    typedef typename HandleType::GraphColoringHandleType::color_t color_t;
+    typedef typename HandleType::Distance2GraphColoringHandleType::color_view_t color_view_type;
+    typedef typename HandleType::Distance2GraphColoringHandleType::color_t color_t;
 
-    typedef typename HandleType::GraphColoringHandleType::size_type size_type;
-    typedef typename HandleType::GraphColoringHandleType::nnz_lno_t nnz_lno_t;
+    typedef typename HandleType::Distance2GraphColoringHandleType::size_type size_type;
+    typedef typename HandleType::Distance2GraphColoringHandleType::nnz_lno_t nnz_lno_t;
 
     typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t;                             // host view type
     typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t;                             // host view type
-    typedef typename HandleType::GraphColoringHandleType::color_host_view_t color_host_view_t;      // host view type
+    typedef typename HandleType::Distance2GraphColoringHandleType::color_host_view_t color_host_view_t;      // host view type
 
-    typedef typename HandleType::GraphColoringHandleType::HandleExecSpace MyExecSpace;
-    typedef typename HandleType::GraphColoringHandleType::HandleTempMemorySpace MyTempMemorySpace;
-    typedef typename HandleType::GraphColoringHandleType::const_size_type const_size_type;
+    typedef typename HandleType::Distance2GraphColoringHandleType::HandleExecSpace MyExecSpace;
+    typedef typename HandleType::Distance2GraphColoringHandleType::HandleTempMemorySpace MyTempMemorySpace;
+    typedef typename HandleType::Distance2GraphColoringHandleType::const_size_type const_size_type;
 
     typedef typename lno_row_view_t_::device_type row_lno_view_device_t;
     typedef typename lno_row_view_t_::const_type const_lno_row_view_t;
@@ -111,7 +109,7 @@ class GraphColorD2
     typedef typename clno_nnz_view_t_::const_type const_clno_nnz_view_t;
     typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
 
-    typedef typename HandleType::GraphColoringHandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+    typedef typename HandleType::Distance2GraphColoringHandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
     typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
 
     typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
@@ -120,8 +118,8 @@ class GraphColorD2
     typedef typename team_policy_t::member_type team_member_t;
 
     typedef Kokkos::View<bool*> non_const_1d_bool_view_t;
-    //typedef Kokkos::View<size_type *> non_const_1d_size_type_view_t;
-    typedef typename HandleType::GraphColoringHandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
+
+    typedef typename HandleType::Distance2GraphColoringHandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
 
     // For HashmapAccumulator
     typedef typename KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace, nnz_lno_t> pool_memory_space_t;                     // EXPERIMENTAL
@@ -139,22 +137,16 @@ class GraphColorD2
     const_clno_row_view_t t_xadj;      // rowmap, transpose of rowmap
     const_clno_nnz_view_t t_adj;       // entries, transpose of entries
 
-    typename HandleType::GraphColoringHandleType *gc_handle;      // pointer to the graph coloring handle
+    typename HandleType::Distance2GraphColoringHandleType *gc_handle;      // pointer to the graph coloring handle
+
 
   private:
 
     int _chunkSize;      // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
     int _max_num_iterations;
-    char _conflictList;                  // 0: none, 1: atomic (default), 2: parallel prefix sums (0, 2 not implemented)
     char _use_color_set;                 // The VB Algorithm Type: 0: VB,  1: VBCS,  2: VBBIT  (1, 2 not implemented).
     bool _ticToc;                        // if true print info in each step
 
-#if 0
-    bool      _degree_d2_is_set;
-    non_const_1d_size_type_view_t _degree_d2;
-    size_type _degree_d2_max;
-    size_type _degree_d2_sum;
-#endif
 
   public:
 
@@ -179,7 +171,6 @@ class GraphColorD2
           ,gc_handle(handle->get_graph_coloring_handle()), _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size())
           ,_max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations()), _conflictList(1)
           ,_use_color_set(0), _ticToc(handle->get_verbose())
-//          ,_degree_d2_is_set(false), _degree_d2(NULL), _degree_d2_max(0), _degree_d2_sum(0)
     {
     }
 
@@ -223,7 +214,6 @@ class GraphColorD2
         {
             std::cout << "\tcolor_graph_d2 params:" << std::endl
                       << "\t  algorithm                : " << (int)this->_use_color_set << std::endl
-                      << "\t  useConflictList          : " << (int)this->_conflictList << std::endl
                       << "\t  ticToc                   : " << this->_ticToc << std::endl
                       << "\t  max_num_iterations       : " << this->_max_num_iterations << std::endl
                       << "\t  chunkSize                : " << this->_chunkSize << std::endl
@@ -264,13 +254,9 @@ class GraphColorD2
         // Size the next iteration conflictList
         single_dim_index_view_type next_iteration_recolorListLength;
 
-        // if we're using a conflictList
-        if(this->_conflictList > 0)
-        {
-            // Vertices to recolor.  Will swap with vertexList
-            next_iteration_recolorList       = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
-            next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
-        }
+        // Vertices to recolor.  Will swap with vertexList
+        next_iteration_recolorList       = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
+        next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
 
         nnz_lno_t numUncolored              = this->nv;
         nnz_lno_t current_vertexListLength  = this->nv;
@@ -355,8 +341,8 @@ class GraphColorD2
                 timer.reset();
             }
 
-            // If conflictList is used and we need to swap the work arrays
-            if(this->_conflictList && swap_work_arrays)
+            // Swap the work arrays (for conflictlist)
+            if(swap_work_arrays)
             {
                 // Swap Work Arrays
                 if(iter + 1 < this->_max_num_iterations)
@@ -592,7 +578,7 @@ class GraphColorD2
     void getDistance2ColorsHistogram(nnz_lno_temp_work_view_t & histogram)
     {
         MyExecSpace::fence();
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t,
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::Distance2GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t,
             MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
     }
 
@@ -711,40 +697,12 @@ class GraphColorD2
         swap_work_arrays              = true;
         nnz_lno_t output_numUncolored = 0;
 
-        // conflictList mode:
-        if(0 == this->_conflictList)
+        if(0 == this->_use_color_set)
         {
-            // Throw an error -- not implemented (yet)
-            std::ostringstream os;
-            os << "GraphColorD2::findConflicts() not implemented for conflictList == 0";
-            Kokkos::Impl::throw_runtime_exception(os.str());
+            functorFindConflicts_Atomic<adj_view_t> conf(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, next_iteration_recolorList_, next_iteration_recolorListLength_);
+            Kokkos::parallel_reduce("FindConflicts", my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
         }
 
-        // conflictList mode: Parallel Prefix Sums (PPS)
-        else if(2 == this->_conflictList)
-        {
-            // Throw an error -- not implemented (yet)
-            std::ostringstream os;
-            os << "GraphColorD2::findConflicts() not implemented for conflictList == 2";
-            Kokkos::Impl::throw_runtime_exception(os.str());
-        }
-
-        // conflictList mode: ATOMIC
-        else if(1 == this->_conflictList)
-        {
-            if(0 == this->_use_color_set)
-            {
-                functorFindConflicts_Atomic<adj_view_t> conf(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, next_iteration_recolorList_, next_iteration_recolorListLength_);
-                Kokkos::parallel_reduce("FindConflicts", my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
-            }
-        }
-        else
-        {
-            // Throw an error becaue we should not be here...
-            std::ostringstream os;
-            os << "GraphColorD2::findConflicts() - unknown conflictList Flag value: " << this->_conflictList << " ";
-            Kokkos::Impl::throw_runtime_exception(os.str());
-        }
         return output_numUncolored;
     }      // findConflicts (end)
 
@@ -771,12 +729,9 @@ class GraphColorD2
 
         typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
 
-        if(this->_conflictList)
-        {
-            end            = current_vertexListLength_;
-            h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
-            Kokkos::deep_copy(h_recolor_list, current_vertexList_);
-        }
+        end            = current_vertexListLength_;
+        h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
+        Kokkos::deep_copy(h_recolor_list, current_vertexList_);
 
         color_host_view_t h_colors = Kokkos::create_mirror_view(vertex_colors_);
 
@@ -796,14 +751,7 @@ class GraphColorD2
 
         for(nnz_lno_t k = 0; k < end; k++)
         {
-            if(this->_conflictList)
-            {
-                vid = h_recolor_list(k);
-            }
-            else
-            {
-                vid = k;      // check for uncolored vertices
-            }
+            vid = h_recolor_list(k);
 
             if(h_colors(vid) > 0)
                 continue;

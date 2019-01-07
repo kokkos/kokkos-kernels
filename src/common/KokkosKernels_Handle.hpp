@@ -42,6 +42,7 @@
 */
 #include <KokkosKernels_ExecSpaceUtils.hpp>
 #include "KokkosGraph_GraphColorHandle.hpp"
+#include "KokkosGraph_Distance2GraphColorHandle.hpp"
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
 #include "KokkosSparse_spadd_handle.hpp"
@@ -54,7 +55,8 @@ namespace Experimental{
 
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
-class KokkosKernelsHandle{
+class KokkosKernelsHandle
+{
 public:
 
   typedef typename ExecutionSpace::execution_space HandleExecSpace;
@@ -75,88 +77,91 @@ public:
   typedef const nnz_scalar_t const_nnz_scalar_t;
 
   template <  typename right_size_type_, typename right_lno_t_, typename right_scalar_t_,
-  	  	  	  typename right_ExecutionSpace, typename right_TemporaryMemorySpace, typename right_PersistentMemorySpace>
+              typename right_ExecutionSpace, typename right_TemporaryMemorySpace, typename right_PersistentMemorySpace>
   //KokkosKernelsHandle<const_size_type,const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> &operator=
   KokkosKernelsHandle
-  	  (KokkosKernelsHandle<right_size_type_, right_lno_t_, right_scalar_t_,
-	  	  	  right_ExecutionSpace, right_TemporaryMemorySpace, right_PersistentMemorySpace> & right_side_handle){
+      (KokkosKernelsHandle<right_size_type_, right_lno_t_, right_scalar_t_,
+            right_ExecutionSpace, right_TemporaryMemorySpace, right_PersistentMemorySpace> & right_side_handle){
 
-	  static_assert (std::is_same<size_type_,  const_size_type>::value,
-			  "Kernel handle left hand side should have const size type in assignment");
-	  static_assert (std::is_same<lno_t_,  const_nnz_lno_t>::value,
-			  "Kernel handle left hand side should have const lno type in assignment");
-	  static_assert (std::is_same<scalar_t_,  const_nnz_scalar_t>::value,
-			  "Kernel handle left hand side should have const scalar type in assignment");
+    static_assert (std::is_same<size_type_,  const_size_type>::value,
+        "Kernel handle left hand side should have const size type in assignment");
+    static_assert (std::is_same<lno_t_,  const_nnz_lno_t>::value,
+        "Kernel handle left hand side should have const lno type in assignment");
+    static_assert (std::is_same<scalar_t_,  const_nnz_scalar_t>::value,
+        "Kernel handle left hand side should have const scalar type in assignment");
 
-	  static_assert (std::is_same<ExecutionSpace,  HandleExecSpace>::value,
-			  "Kernel handle left hand side should have execution space in assignment");
-	  static_assert (std::is_same<TemporaryMemorySpace,  HandleTempMemorySpace>::value,
-			  "Kernel handle left hand side should have temp memory space in assignment");
-	  static_assert (std::is_same<PersistentMemorySpace,  HandlePersistentMemorySpace>::value,
-			  "Kernel handle left hand side should have persistent memory space in assignment");
+    static_assert (std::is_same<ExecutionSpace,  HandleExecSpace>::value,
+        "Kernel handle left hand side should have execution space in assignment");
+    static_assert (std::is_same<TemporaryMemorySpace,  HandleTempMemorySpace>::value,
+        "Kernel handle left hand side should have temp memory space in assignment");
+    static_assert (std::is_same<PersistentMemorySpace,  HandlePersistentMemorySpace>::value,
+        "Kernel handle left hand side should have persistent memory space in assignment");
 
-	  typedef typename  std::remove_const<right_size_type_>::type  nonconst_right_size_type;
-	  typedef const nonconst_right_size_type const_right_size_type;
+    typedef typename  std::remove_const<right_size_type_>::type  nonconst_right_size_type;
+    typedef const nonconst_right_size_type const_right_size_type;
 
-	  typedef typename  std::remove_const<right_lno_t_>::type  nonconst_right_lno_t;
-	  typedef const nonconst_right_lno_t const_right_lno_t;
+    typedef typename  std::remove_const<right_lno_t_>::type  nonconst_right_lno_t;
+    typedef const nonconst_right_lno_t const_right_lno_t;
 
-	  typedef typename  std::remove_const<right_scalar_t_>::type  nonconst_right_scalar_t;
-	  typedef const nonconst_right_scalar_t const_right_scalar_t;
-
-
+    typedef typename  std::remove_const<right_scalar_t_>::type  nonconst_right_scalar_t;
+    typedef const nonconst_right_scalar_t const_right_scalar_t;
 
 
-	  static_assert (std::is_same<size_type_,  const_right_size_type>::value,
-			  "Kernel handle left and right sides should have same size type in assignment");
-	  static_assert (std::is_same<lno_t_,  const_right_lno_t>::value,
-			  "Kernel handle left and right sides should have same lno type in assignment");
-	  static_assert (std::is_same<scalar_t_,  const_right_scalar_t>::value,
-			  "Kernel handle left and right sides should have same scalar type in assignment");
+    static_assert (std::is_same<size_type_,  const_right_size_type>::value,
+        "Kernel handle left and right sides should have same size type in assignment");
+    static_assert (std::is_same<lno_t_,  const_right_lno_t>::value,
+        "Kernel handle left and right sides should have same lno type in assignment");
+    static_assert (std::is_same<scalar_t_,  const_right_scalar_t>::value,
+        "Kernel handle left and right sides should have same scalar type in assignment");
 
 
-
-	  static_assert (std::is_same<typename ExecutionSpace::execution_space,  typename right_ExecutionSpace::execution_space>::value,
-			  "Kernel handle left and right sides should have same execution_space in assignment");
-	  /*
-	  static_assert (std::is_same<typename TemporaryMemorySpace::execution_space, typename right_TemporaryMemorySpace::execution_space>::value,
-			  "Kernel handle left and right sides should have same TemporaryMemorySpace in assignment");
-	  static_assert (std::is_same<typename PersistentMemorySpace::execution_space, typename right_PersistentMemorySpace::execution_space>::value,
-			  "Kernel handle left and right sides should have same PersistentMemorySpace in assignment");
+    static_assert (std::is_same<typename ExecutionSpace::execution_space,  typename right_ExecutionSpace::execution_space>::value,
+        "Kernel handle left and right sides should have same execution_space in assignment");
+    /*
+    static_assert (std::is_same<typename TemporaryMemorySpace::execution_space, typename right_TemporaryMemorySpace::execution_space>::value,
+        "Kernel handle left and right sides should have same TemporaryMemorySpace in assignment");
+    static_assert (std::is_same<typename PersistentMemorySpace::execution_space, typename right_PersistentMemorySpace::execution_space>::value,
+        "Kernel handle left and right sides should have same PersistentMemorySpace in assignment");
       */
-	  static_assert (std::is_same<typename ExecutionSpace::memory_space, typename right_ExecutionSpace::memory_space>::value,
-			  "Kernel handle left and right sides should have same ExecutionSpace in assignment");
-	  static_assert (std::is_same<typename TemporaryMemorySpace::memory_space, typename right_TemporaryMemorySpace::memory_space>::value,
-			  "Kernel handle left and right sides should have same TemporaryMemorySpace in assignment");
-	  static_assert (std::is_same<typename PersistentMemorySpace::memory_space, typename right_PersistentMemorySpace::memory_space>::value,
-			  "Kernel handle left and right sides should have same PersistentMemorySpace in assignment");
+    static_assert (std::is_same<typename ExecutionSpace::memory_space, typename right_ExecutionSpace::memory_space>::value,
+        "Kernel handle left and right sides should have same ExecutionSpace in assignment");
+    static_assert (std::is_same<typename TemporaryMemorySpace::memory_space, typename right_TemporaryMemorySpace::memory_space>::value,
+        "Kernel handle left and right sides should have same TemporaryMemorySpace in assignment");
+    static_assert (std::is_same<typename PersistentMemorySpace::memory_space, typename right_PersistentMemorySpace::memory_space>::value,
+        "Kernel handle left and right sides should have same PersistentMemorySpace in assignment");
 
 
-	  this->gcHandle = right_side_handle.get_graph_coloring_handle();
-	  this->gsHandle = right_side_handle.get_gs_handle();
-	  this->spgemmHandle = right_side_handle.get_spgemm_handle();
+    this->gcHandle    = right_side_handle.get_graph_coloring_handle();
+    this->gcHandle_d2 = right_side_handle.get_distance2_graph_coloring_handle();
+
+    this->gsHandle = right_side_handle.get_gs_handle();
+    this->spgemmHandle = right_side_handle.get_spgemm_handle();
 
 
-	  this->team_work_size = right_side_handle.get_set_team_work_size();
-	  this->shared_memory_size = right_side_handle.get_shmem_size();
-	  this->suggested_team_size = right_side_handle.get_set_suggested_team_size();
+    this->team_work_size = right_side_handle.get_set_team_work_size();
+    this->shared_memory_size = right_side_handle.get_shmem_size();
+    this->suggested_team_size = right_side_handle.get_set_suggested_team_size();
 
-	  this->my_exec_space = right_side_handle.get_handle_exec_space();
-	  this->use_dynamic_scheduling = right_side_handle.is_dynamic_scheduling();
-	  this->KKVERBOSE = right_side_handle.get_verbose();
-	  this->vector_size = right_side_handle.get_set_suggested_vector_size();
+    this->my_exec_space = right_side_handle.get_handle_exec_space();
+    this->use_dynamic_scheduling = right_side_handle.is_dynamic_scheduling();
+    this->KKVERBOSE = right_side_handle.get_verbose();
+    this->vector_size = right_side_handle.get_set_suggested_vector_size();
 
-	  is_owner_of_the_gc_handle = false;
-	  is_owner_of_the_gs_handle = false;
-	  is_owner_of_the_spgemm_handle = false;
-	  is_owner_of_the_spadd_handle = false;
-	  //return *this;
+    is_owner_of_the_gc_handle = false;
+    is_owner_of_the_d2_gc_handle = false;
+    is_owner_of_the_gs_handle = false;
+    is_owner_of_the_spgemm_handle = false;
+    is_owner_of_the_spadd_handle = false;
+    //return *this;
   }
 
 
   typedef typename KokkosGraph::
     GraphColoringHandle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GraphColoringHandleType;
+  typedef typename KokkosGraph::
+    Distance2GraphColoringHandle<const_size_Type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePErsistentMemorySpace>
+      Distance2GraphColoringHandleType;
   typedef typename KokkosSparse::
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GaussSeidelHandleType;
@@ -186,7 +191,6 @@ public:
       SPADDHandleType;
 
 
-
 private:
 
   GraphColoringHandleType *gcHandle;
@@ -204,6 +208,7 @@ private:
   int vector_size;
 
   bool is_owner_of_the_gc_handle;
+  bool is_owner_of_The_d2_gc_handle;
   bool is_owner_of_the_gs_handle;
   bool is_owner_of_the_spgemm_handle;
   bool is_owner_of_the_spadd_handle;
@@ -211,20 +216,30 @@ private:
 
 public:
 
-
-
-  KokkosKernelsHandle():
-      gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),spaddHandle(NULL),
-      team_work_size (-1), shared_memory_size(16128),
-      suggested_team_size(-1),
-      my_exec_space(KokkosKernels::Impl::kk_get_exec_space_type<HandleExecSpace>()),
-      use_dynamic_scheduling(true), KKVERBOSE(false),vector_size(-1),
-	  is_owner_of_the_gc_handle(true), is_owner_of_the_gs_handle(true), is_owner_of_the_spgemm_handle(true),
-    is_owner_of_the_spadd_handle(true) {}
+  KokkosKernelsHandle()
+    : gcHandle(NULL)
+    , gcHandle_d2(NULL)
+    , gsHandle(NULL)
+    , spgemmHandle(NULL)
+    , spaddHandle(NULL)
+    , team_work_size(-1)
+    , shared_memory_size(16128)
+    , suggested_team_size(-1)
+    , my_exec_space(KokkosKernels::Impl::kk_get_exec_space_type<HandleExecSpace>())
+    , use_dynamic_scheduling(true)
+    , KKVERBOSE(false)
+    , vector_size(-1)
+    , is_owner_of_the_gc_handle(true)
+    , is_owner_of_the_d2_gc_handle(true)
+    , is_owner_of_the_gs_handle(true)
+    , is_owner_of_the_spgemm_handle(true)
+    , is_owner_of_the_spadd_handle(true)
+  { }
 
   ~KokkosKernelsHandle(){
     this->destroy_gs_handle();
     this->destroy_graph_coloring_handle();
+    this->destroy_distance2_graph_coloring_handle();
     this->destroy_spgemm_handle();
     this->destroy_spadd_handle();
   }
@@ -270,7 +285,7 @@ public:
    * \param overall_work_size: The overall work size.
    */
   int get_team_work_size(const int team_size, const int concurrency, const nnz_lno_t overall_work_size){
-    if (this->team_work_size != -1){
+    if (this->team_work_size != -1) {
       return this->team_work_size;
     }
     else {
@@ -280,7 +295,6 @@ public:
       else {
         return 16;
       }
-
     }
   }
 
@@ -371,17 +385,15 @@ public:
 
 
 
-
+  // SPGEM
   SPGEMMHandleType *get_spgemm_handle(){
     return this->spgemmHandle;
   }
-
   void create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm spgemm_algo = KokkosSparse::SPGEMM_DEFAULT){
     this->destroy_spgemm_handle();
     this->is_owner_of_the_spgemm_handle = true;
     this->spgemmHandle = new SPGEMMHandleType(spgemm_algo);
   }
-
   void destroy_spgemm_handle(){
     if (is_owner_of_the_spgemm_handle && this->spgemmHandle != NULL){
       delete this->spgemmHandle;
@@ -389,6 +401,9 @@ public:
     }
   }
 
+
+
+  // Distance-1 Graph Coloring
   GraphColoringHandleType *get_graph_coloring_handle(){
     return this->gcHandle;
   }
@@ -406,6 +421,31 @@ public:
       this->gcHandle = NULL;
     }
   }
+
+
+
+  // Distance-2 Graph Coloring
+  Distance2GraphColoringHandleType *get_distance2_graph_coloring_handle()
+  {
+    return this->gcHandle_d2;
+  }
+  void create_distance2_graph_coloring_handle(KokkosGraph::GraphColoringAlgorithmDistance2 coloring_type = KokkosGraph::COLORING_D2_DEFAULT)
+  {
+    this->destroy_distance2_graph_coloring_handle();
+    this->is_owner_of_The_d2_gc_handle = true;
+    this->gcHandle_d2 = new Distance2GraphColoringHandle();
+    this->gcHandle_d2->set_algorithm(coloring_type, true);
+    this->gcHandle_d2->set_tictoc(KKVERBOSE);
+  }
+  void destroy_distance2_graph_coloring_handle()
+  {
+    if(is_owner_of_the_d2_gc_handle && this->gcHandle_d2 != NULL)
+    {
+      delete this->gcHandle_d2;
+      this->gcHandle_d2 = NULL;
+    }
+  }
+
 
 
   GaussSeidelHandleType *get_gs_handle(){
@@ -428,16 +468,15 @@ public:
   }
 
 
+
   SPADDHandleType *get_spadd_handle(){
     return this->spaddHandle;
   }
-
   void create_spadd_handle(bool input_sorted) {
     this->destroy_spadd_handle();
     this->is_owner_of_the_spadd_handle = true;
     this->spaddHandle = new SPADDHandleType(input_sorted);
   }
-
   void destroy_spadd_handle(){
     if (is_owner_of_the_spadd_handle && this->spaddHandle != NULL)
     {
@@ -446,7 +485,8 @@ public:
     }
   }
 
-};
+
+};    // end class KokkosKernelsHandle
 
 }
 }
