@@ -40,6 +40,9 @@
 // ************************************************************************
 //@HEADER
 */
+#ifndef _KOKKOSCOLORINGD2IMP_HPP
+#define _KOKKOSCOLORINGD2IMP_HPP
+
 #include <iomanip>
 #include <stdexcept>
 #include <vector>
@@ -59,9 +62,6 @@
 #include "KokkosGraph_GraphColorHandle.hpp"         // todo: remove this
 #include "KokkosGraph_Distance2GraphColorHandle.hpp"
 #include "KokkosKernels_Handle.hpp"
-
-#ifndef _KOKKOSCOLORINGD2IMP_HPP
-#define _KOKKOSCOLORINGD2IMP_HPP
 
 
 namespace KokkosGraph {
@@ -142,10 +142,10 @@ class GraphColorD2
 
   private:
 
-    int _chunkSize;      // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
+    int _chunkSize;             // the size of the minimum work unit assigned to threads.  Changes the convergence on GPUs
     int _max_num_iterations;
-    char _use_color_set;                 // The VB Algorithm Type: 0: VB,  1: VBCS,  2: VBBIT  (1, 2 not implemented).
-    bool _ticToc;                        // if true print info in each step
+    char _use_color_set;        // The VB Algorithm Type: 0: VB,  1: VBCS,  2: VBBIT  (1, 2 not implemented).
+    bool _ticToc;               // if true print info in each step
 
 
   public:
@@ -159,18 +159,27 @@ class GraphColorD2
      * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
      *    including parameters.
      */
-    GraphColorD2(nnz_lno_t nv_,
-                 nnz_lno_t nc_,
-                 size_type ne_,
-                 const_lno_row_view_t row_map,
-                 const_lno_nnz_view_t entries,
+    GraphColorD2(nnz_lno_t             nv_,
+                 nnz_lno_t             nc_,
+                 size_type             ne_,
+                 const_lno_row_view_t  row_map,
+                 const_lno_nnz_view_t  entries,
                  const_clno_row_view_t t_row_map,
                  const_clno_nnz_view_t t_entries,
-                 HandleType *handle)
-        : nv(nv_), nr(nv_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries)
-          ,gc_handle(handle->get_graph_coloring_handle()), _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size())
-          ,_max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations()), _conflictList(1)
-          ,_use_color_set(0), _ticToc(handle->get_verbose())
+                 HandleType*           handle)
+        : nv(nv_)
+        , nr(nv_)
+        , nc(nc_)
+        , ne(ne_)
+        , xadj(row_map)
+        , adj(entries)
+        , t_xadj(t_row_map)
+        , t_adj(t_entries)
+        , gc_handle(handle->get_graph_coloring_handle())
+        , _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size())
+        , _max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations())
+        , _use_color_set(0)
+        , _ticToc(handle->get_verbose())
     {
     }
 

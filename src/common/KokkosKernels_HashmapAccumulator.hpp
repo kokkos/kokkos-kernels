@@ -740,3 +740,4 @@ struct HashmapAccumulator
 
 }   // namespace Experimental
 }   // namespace KokkosKernels
+

@@ -510,14 +510,16 @@ void
     typename HandleType::GraphColoringHandleType::color_view_t vertex_color_view;
 
     if (this->handle->get_spgemm_handle()->coloring_input_file == ""){
-      handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
       //for now only sequential one exists.
       //find distance-2 graph coloring
-      KokkosGraph::Experimental::d2_graph_color
-    <HandleType,
-    c_row_view_t, c_nnz_view_t,
-    row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
-      (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
+      handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
+      KokkosGraph::Experimental::d2_graph_color <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
+        (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
+
+      // WCMCLEN: SCAFFOLDING
+//      handle->get_distance2_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_D2_SERIAL);
+//      KokkosGraph::Experimental::graph_color_d2 <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
+//        (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
 
       original_num_colors = handle->get_graph_coloring_handle()->get_num_colors();
 

@@ -52,11 +52,13 @@
 
 namespace KokkosGraph {
 
+
+
 enum GraphColoringAlgorithmDistance2
 {
     COLORING_D2_DEFAULT,             // Distance-2 Graph Coloring default algorithm
-    COLORING_D2_MATRIX_SQUARED,      // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
     COLORING_D2_SERIAL,              // Distance-2 Graph Coloring (SERIAL)
+    COLORING_D2_MATRIX_SQUARED,      // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
     COLORING_D2,                     // Distance-2 Graph Coloring
     COLORING_D2_VB,                  // Distance-2 Graph Coloring Vertex Based
     COLORING_D2_VB_BIT,              // Distance-2 Graph Coloring Vertex Based BIT
@@ -64,10 +66,6 @@ enum GraphColoringAlgorithmDistance2
 };
 
 
-enum ColoringType
-{
-    Distance2
-};
 
 template<class size_type_, class color_t_, class lno_t_, class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class Distance2GraphColoringHandle
@@ -111,10 +109,9 @@ class Distance2GraphColoringHandle
     typedef typename Kokkos::View<size_t *> non_const_1d_size_type_view_t;
 
   private:
-    ColoringType GraphColoringType;
 
     // Parameters
-    ColoringAlgorithm coloring_algorithm_type;      // VB, VBBIT, VBCS, VBD or EB.
+    GraphColoringAlgorithmDistance2 coloring_algorithm_type;      // VB, VBBIT, VBCS, VBD or EB.
 
     bool tictoc;                          // print time at every step
 
@@ -151,8 +148,7 @@ class Distance2GraphColoringHandle
      * \brief Default constructor.
      */
     Distance2GraphColoringHandle()
-        : GraphColoringType(Distance2)
-        , coloring_algorithm_type(COLORING_DEFAULT)
+        : coloring_algorithm_type(COLORING_D2_DEFAULT)
         , tictoc(false)
         , vb_edge_filtering(false)
         , vb_chunk_size(8)
@@ -174,26 +170,14 @@ class Distance2GraphColoringHandle
         this->set_defaults(this->coloring_algorithm_type);
     }
 
-    /** \brief Sets the graph coloring type. Whether it is distance-1 or distance-2 coloring.
-     *  \param col_type: Coloring Type: KokkosKernels::Experimental::Graph::ColoringType which can be
-     *        either KokkosKernels::Experimental::Graph::Distance1 or KokkosKernels::Experimental::Graph::Distance2
-     */
-    void set_coloring_type(const ColoringType &col_type) { this->GraphColoringType = col_type; }
-
-    /** \brief Gets the graph coloring type.
-     *  returns Coloring Type: KokkosKernels::Experimental::Graph::ColoringType which can be
-     *        either KokkosKernels::Experimental::Graph::Distance1 or KokkosKernels::Experimental::Graph::Distance2
-     */
-    ColoringType get_coloring_type() { return this->GraphColoringType; }
-
 
     /** \brief Changes the graph coloring algorithm.
      *  \param col_algo: Coloring algorithm: one of COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB
      *  \param set_default_parameters: whether or not to reset the default parameters for the given algorithm.
      */
-    void set_algorithm(const ColoringAlgorithm &col_algo, bool set_default_parameters = true)
+    void set_algorithm(const GraphColoringAlgorithmDistance2 &col_algo, bool set_default_parameters = true)
     {
-        if(col_algo == COLORING_DEFAULT)
+        if(col_algo == COLORING_D2_DEFAULT)
         {
             this->choose_default_algorithm();
         }
@@ -279,7 +263,7 @@ class Distance2GraphColoringHandle
 
     /** \brief Sets Default Parameter settings for the given algorithm.
      */
-    void set_defaults(const ColoringAlgorithm &col_algo)
+    void set_defaults(const GraphColoringAlgorithmDistance2 &col_algo)
     {
         switch(col_algo)
         {
@@ -306,7 +290,7 @@ class Distance2GraphColoringHandle
     virtual ~Distance2GraphColoringHandle(){};
 
     // getters and setters
-    ColoringAlgorithm get_coloring_algo_type() const { return this->coloring_algorithm_type; }
+    GraphColoringAlgorithmDistance2 get_coloring_algo_type() const { return this->coloring_algorithm_type; }
 
     double get_coloring_time()            const { return this->coloring_time; }
     int    get_max_number_of_iterations() const { return this->max_number_of_iterations; }
@@ -330,7 +314,7 @@ class Distance2GraphColoringHandle
     bool is_coloring_called() const { return this->is_coloring_called_before; }
 
     // setters
-    void set_coloring_algo_type(const ColoringAlgorithm &col_algo) { this->coloring_algorithm_type = col_algo; }
+    void set_coloring_algo_type(const GraphColoringAlgorithmDistance2 &col_algo) { this->coloring_algorithm_type = col_algo; }
 
     void set_coloring_time(const double &coloring_time_)     { this->coloring_time = coloring_time_; }
     void set_max_number_of_iterations(const int &max_phases) { this->max_number_of_iterations = max_phases; }

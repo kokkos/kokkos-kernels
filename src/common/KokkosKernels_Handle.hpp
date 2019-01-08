@@ -160,7 +160,7 @@ public:
     GraphColoringHandle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GraphColoringHandleType;
   typedef typename KokkosGraph::
-    Distance2GraphColoringHandle<const_size_Type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePErsistentMemorySpace>
+    Distance2GraphColoringHandle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       Distance2GraphColoringHandleType;
   typedef typename KokkosSparse::
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
@@ -194,6 +194,7 @@ public:
 private:
 
   GraphColoringHandleType *gcHandle;
+  Distance2GraphColoringHandleType *gcHandle_d2;
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
   SPADDHandleType *spaddHandle;
@@ -208,7 +209,7 @@ private:
   int vector_size;
 
   bool is_owner_of_the_gc_handle;
-  bool is_owner_of_The_d2_gc_handle;
+  bool is_owner_of_the_d2_gc_handle;
   bool is_owner_of_the_gs_handle;
   bool is_owner_of_the_spgemm_handle;
   bool is_owner_of_the_spadd_handle;
@@ -432,8 +433,8 @@ public:
   void create_distance2_graph_coloring_handle(KokkosGraph::GraphColoringAlgorithmDistance2 coloring_type = KokkosGraph::COLORING_D2_DEFAULT)
   {
     this->destroy_distance2_graph_coloring_handle();
-    this->is_owner_of_The_d2_gc_handle = true;
-    this->gcHandle_d2 = new Distance2GraphColoringHandle();
+    this->is_owner_of_the_d2_gc_handle = true;
+    this->gcHandle_d2 = new Distance2GraphColoringHandleType();
     this->gcHandle_d2->set_algorithm(coloring_type, true);
     this->gcHandle_d2->set_tictoc(KKVERBOSE);
   }

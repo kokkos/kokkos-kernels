@@ -86,11 +86,11 @@ void graph_color_symbolic(
     gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
     break;
 
-  case COLORING_SERIAL2:
-    gc = new Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>(
-        num_rows, entries.extent(0),
-        row_map, entries, gch);
-    break;
+//  case COLORING_SERIAL2:
+//    gc = new Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>(
+//        num_rows, entries.extent(0),
+//        row_map, entries, gch);
+//    break;
 
   case COLORING_VB:
   case COLORING_VBBIT:
@@ -109,27 +109,6 @@ void graph_color_symbolic(
     typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
     gc = new EBGraphColoring(num_rows, entries.extent(0),row_map, entries, gch);
     break;
-
-  case COLORING_SPGEMM:
-  case COLORING_D2_MATRIX_SQUARED:
-    //std::cout << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_graph_color.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
-
-    if (handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA) {
-        typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoringSPGEMM;
-        gc = new EBGraphColoringSPGEMM(num_rows, entries.extent(0),row_map, entries, gch);
-    } else {
-        typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoringSPGEMM;
-        gc = new VBGraphColoringSPGEMM(num_rows, entries.extent(0), row_map, entries, gch);
-    }
-    break;
-
-//  case COLORING_D2_WCMCLEN:
-//    {
-//      std::ostringstream os;
-//      os << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_graph_color.hpp) COLORING_D2_WCMCLEN not implemented";
-//      Kokkos::Impl::throw_runtime_exception(os.str());
-//    }
-//    break;
 
   case COLORING_DEFAULT:
     break;
@@ -164,8 +143,7 @@ void graph_color(
 }
 
 
-
-// initial distance 2 graph coloring -- serial only (work in progress) - wcmclen
+// Distance 2 graph coloring -- serial only -- should be replaced by the Distance2GraphColoring
 template <class KernelHandle,
           typename lno_row_view_t_, typename lno_nnz_view_t_,
           typename lno_col_view_t_, typename lno_colnnz_view_t_>
@@ -205,7 +183,7 @@ void d2_graph_color(
       break;
     }
 
-    case COLORING_SERIAL2:            // WCMCLEN: for now we don't need to worry about this optimization.
+    case COLORING_SERIAL2:
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
       Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
@@ -225,13 +203,14 @@ void d2_graph_color(
       gch->set_vertex_colors(colors_out);
       break;
     }
-
   }
 
   double coloring_time = timer.seconds();
   gch->add_to_overall_coloring_time(coloring_time);
   gch->set_coloring_time(coloring_time);
 }
+
+
 
 }  // end namespace Experimental
 }  // end namespace KokkosGraph

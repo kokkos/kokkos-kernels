@@ -52,9 +52,9 @@
 
 
 
-namespace KokkosGraph{
+namespace KokkosGraph {
 
-namespace Experimental{
+namespace Experimental {
 
 
 /**
@@ -73,11 +73,11 @@ void graph_color_d2(KernelHandle *handle,
     Kokkos::Impl::Timer timer;
 
     // Set our handle pointer to a GraphColoringHandleType.
-//    typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
+    typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
     typename KernelHandle::Distance2GraphColoringHandleType *gch = handle->get_distance2_graph_coloring_handle();
 
     // Get the algorithm we're running from the graph coloring handle.
-    ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
+    GraphColoringAlgorithmDistance2 algorithm = gch->get_coloring_algo_type();
 
     // Create a view to save the colors to.
     // - Note: color_view_t is a Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t    (KokkosGraph_GraphColorHandle.hpp)
@@ -90,7 +90,6 @@ void graph_color_d2(KernelHandle *handle,
 
     switch(algorithm)
     {
-        case COLORING_SPGEMM:
         case COLORING_D2_MATRIX_SQUARED:
         {
             Impl::GraphColorD2_MatrixSquared<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
@@ -104,7 +103,7 @@ void graph_color_d2(KernelHandle *handle,
             #if defined KOKKOS_ENABLE_SERIAL
                 int num_phases = 0;
                 Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
-                gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
+                gc(num_rows, row_entries.extent(0), row_map, row_entries, gch_d1);
                 gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
 
                 // Save out the number of phases and vertex colors
