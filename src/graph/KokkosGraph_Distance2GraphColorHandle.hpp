@@ -248,6 +248,32 @@ class Distance2GraphColoringHandle
     }
 
 
+    struct ReduceMaxFunctor
+    {
+        color_view_t colors;
+        ReduceMaxFunctor(color_view_t cat) : colors(cat) {}
+
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const nnz_lno_t& i, color_t& color_max) const
+        {
+            if(color_max < colors(i))
+                color_max = colors(i);
+        }
+
+        // max -plus semiring equivalent of "plus"
+        KOKKOS_INLINE_FUNCTION
+        void join(volatile color_t& dst, const volatile color_t& src) const
+        {
+            if(dst < src)
+            {
+                dst = src;
+            }
+        }
+
+        KOKKOS_INLINE_FUNCTION
+        void init(color_t& dst) const { dst = 0; }
+    };
+
 
     nnz_lno_t get_num_colors()
     {

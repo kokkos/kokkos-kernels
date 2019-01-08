@@ -606,7 +606,6 @@ private:
   };
 
 
-
   nnz_lno_t get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
