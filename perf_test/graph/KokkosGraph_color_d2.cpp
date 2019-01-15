@@ -67,28 +67,29 @@
 
 
 using namespace KokkosGraph;
+
 #ifdef KOKKOSKERNELS_INST_DOUBLE
-typedef double kk_scalar_t;
+    typedef double kk_scalar_t;
 #else
-#ifdef KOKKOSKERNELS_INST_FLOAT
-typedef float kk_scalar_t;
-#endif
+    #ifdef KOKKOSKERNELS_INST_FLOAT
+        typedef float kk_scalar_t;
+    #endif
 #endif
 
 #ifdef KOKKOSKERNELS_INST_OFFSET_INT
-typedef int kk_size_type;
+    typedef int kk_size_type;
 #else
-#ifdef KOKKOSKERNELS_INST_OFFSET_SIZE_T
-typedef size_t kk_size_type;
-#endif
+    #ifdef KOKKOSKERNELS_INST_OFFSET_SIZE_T
+        typedef size_t kk_size_type;
+    #endif
 #endif
 
 #ifdef KOKKOSKERNELS_INST_ORDINAL_INT
-typedef int kk_lno_t;
+    typedef int kk_lno_t;
 #else
-#ifdef KOKKOSKERNELS_INST_ORDINAL_INT64_T
-typedef int64_t kk_lno_t;
-#endif
+    #ifdef KOKKOSKERNELS_INST_ORDINAL_INT64_T
+        typedef int64_t kk_lno_t;
+    #endif
 #endif
 
 
@@ -326,6 +327,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::string label_algorithm;
     switch(algorithm)
     {
+#if 0	    // WCMCLEN SCAFFOLDING
         case 1:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
             label_algorithm = "COLORING_D2_MATRIX_SQUARED";
@@ -342,6 +344,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT);
             label_algorithm = "COLORING_D2_VB_BIT";
             break;
+#endif
         case 5:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
             label_algorithm = "COLORING_D2_VB_BIT_EF";
@@ -360,7 +363,13 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
-        graph_color_d2(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+        graph_color_d2(&kh,
+                       crsGraph.numRows(),
+                       crsGraph.numCols(),
+                       crsGraph.row_map,
+                       crsGraph.entries,
+                       crsGraph.row_map,
+                       crsGraph.entries);
 
         total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();
@@ -378,15 +387,16 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             auto colors = kh.get_distance2_graph_coloring_handle()->get_vertex_colors();
             std::ofstream os("G.dot", std::ofstream::out);
             kh.get_distance2_graph_coloring_handle()->graphToGraphviz(os,
-                                                            crsGraph.numRows(),
-                                                            crsGraph.row_map,
-                                                            crsGraph.entries,
-                                                            colors);
+                                                                      crsGraph.numRows(),
+                                                                      crsGraph.row_map,
+                                                                      crsGraph.entries,
+                                                                      colors);
         }
 
         // ------------------------------------------
         // Verify correctness
         // ------------------------------------------
+#if 0
         bool d2_coloring_is_valid            = false;
         bool d2_coloring_validation_flags[4] = {false};
 
@@ -419,11 +429,14 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                       << "    - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
                       << std::endl;
         }
+#endif
 
         // ------------------------------------------
         // Print out the colors histogram
         // ------------------------------------------
+#if 0
         printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
+#endif
 
     } // for i...
 
@@ -434,7 +447,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     Kokkos::Impl::Timer timer;
 
-/*
+#if 0
     double time_d2_degree;
     timer.reset();
 
@@ -447,7 +460,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                            crsGraph.row_map, crsGraph.entries,
                            degree_d2_dist, degree_d2_max);
     time_d2_degree = timer.seconds();
-*/
+#endif
 
     double total_time                   = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time();
     double total_time_color_greedy      = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase1();

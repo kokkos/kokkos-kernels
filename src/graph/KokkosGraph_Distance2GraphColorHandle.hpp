@@ -113,6 +113,7 @@ class Distance2GraphColoringHandle
     // Parameters
     GraphColoringAlgorithmDistance2 coloring_algorithm_type;      // VB, VBBIT, VBCS, VBD or EB.
 
+    bool verbose;                         // verbosity flag
     bool tictoc;                          // print time at every step
 
     bool vb_edge_filtering;               // whether to do edge filtering or not in vertex based algorithms. Swaps on the ad error.
@@ -149,6 +150,7 @@ class Distance2GraphColoringHandle
      */
     Distance2GraphColoringHandle()
         : coloring_algorithm_type(COLORING_D2_DEFAULT)
+        , verbose(false)
         , tictoc(false)
         , vb_edge_filtering(false)
         , vb_chunk_size(8)
@@ -318,6 +320,7 @@ class Distance2GraphColoringHandle
     // getters and setters
     GraphColoringAlgorithmDistance2 get_coloring_algo_type() const { return this->coloring_algorithm_type; }
 
+    bool   get_verbose()                  const { return this->verbose; }
     double get_coloring_time()            const { return this->coloring_time; }
     int    get_max_number_of_iterations() const { return this->max_number_of_iterations; }
     int    get_num_phases()               const { return this->num_phases; }
@@ -342,6 +345,7 @@ class Distance2GraphColoringHandle
     // setters
     void set_coloring_algo_type(const GraphColoringAlgorithmDistance2 &col_algo) { this->coloring_algorithm_type = col_algo; }
 
+    void set_verbose(const bool verbose_)                    { this->verbose = verbose_; }
     void set_coloring_time(const double &coloring_time_)     { this->coloring_time = coloring_time_; }
     void set_max_number_of_iterations(const int &max_phases) { this->max_number_of_iterations = max_phases; }
     void set_num_phases(const double &num_phases_)           { this->num_phases = num_phases_; }
@@ -366,6 +370,7 @@ class Distance2GraphColoringHandle
         this->num_colors                = 0;
     }
 
+
     // Print / write out the graph in a GraphVIZ format.
     // Color "1" will be rendered as a red circle.
     // Color "0" (uncolored) will be a star shape.
@@ -374,22 +379,29 @@ class Distance2GraphColoringHandle
     // @param os use std::cout for output to STDOUT stream, or a ofstream object
     //           (i.e., `std::ofstream os("G.dot", std::ofstream::out);`) to write
     //           to a file.
-    template<typename kokkos_view_t, typename index_t, typename rowmap_t, typename entries_t>
-    void graphToGraphviz(std::ostream &os, const index_t num_verts, rowmap_t &rowmap, entries_t &entries, kokkos_view_t &colors) const
+    template<typename kokkos_view_type, typename rowmap_type, typename entries_type>
+    void graphToGraphviz(std::ostream&     os,
+                         const size_t      num_verts,
+                         rowmap_type&      rowmap,
+                         entries_type&     entries,
+                         kokkos_view_type& colors) const
     {
-        typedef typename kokkos_view_t::HostMirror h_colors_t;
-        typedef typename rowmap_t::HostMirror      h_rowmap_t;
-        typedef typename entries_t::HostMirror     h_entries_t;
+        // typedef typename kokkos_view_t::HostMirror h_colors_t;       // SCAFFOLDING
+        // typedef typename rowmap_t::HostMirror      h_rowmap_t;       // SCAFFOLDING
+        // typedef typename entries_t::HostMirror     h_entries_t;      // SCAFFOLDING
 
-        h_colors_t h_colors = Kokkos::create_mirror_view(colors);
+        using h_colors_type  = typename kokkos_view_type::HostMirror;
+        using h_rowmap_type  = typename rowmap_type::HostMirror;
+        using h_entries_type = typename entries_type::HostMirror;
+
+        h_colors_type h_colors = Kokkos::create_mirror_view(colors);
         Kokkos::deep_copy(h_colors, colors);
 
-        h_rowmap_t h_rowmap = Kokkos::create_mirror_view(rowmap);
+        h_rowmap_type h_rowmap = Kokkos::create_mirror_view(rowmap);
         Kokkos::deep_copy(h_rowmap, rowmap);
 
-        h_entries_t h_entries = Kokkos::create_mirror_view(entries);
+        h_entries_type h_entries = Kokkos::create_mirror_view(entries);
         Kokkos::deep_copy(h_entries, entries);
-
 
         os << "Graph G" << std::endl
            << "{" << std::endl
@@ -401,7 +413,7 @@ class Distance2GraphColoringHandle
            << "    edge [len=2.0];" << std::endl
            << std::endl;
 
-        for(index_t vid = 0; vid < num_verts; vid++)
+        for(size_t vid = 0; vid < num_verts; vid++)
         {
             if(1 == h_colors(vid))
             {
@@ -415,9 +427,9 @@ class Distance2GraphColoringHandle
             {
                 os << "    " << vid << " [ label=\"" << vid << "|" << h_colors(vid) << "\"];" << std::endl;
             }
-            for(index_t iadj = h_rowmap(vid); iadj < h_rowmap(vid + 1); iadj++)
+            for(size_t iadj = h_rowmap(vid); iadj < h_rowmap(vid + 1); iadj++)
             {
-                index_t vadj = h_entries(iadj);
+                size_t vadj = h_entries(iadj);
                 if(vadj >= vid)
                 {
                     os << "    " << vid << " -- " << vadj << ";" << std::endl;

@@ -82,23 +82,26 @@ namespace Impl {
 template<typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_>
 class GraphColorD2
 {
+    // TODO: after fixing the handle type, set this static assert to do the check.
+    // static_assert( std::is_same< HandleType, Distance2GraphColoringHandleType>::value, “HandleType is not the correct type for this graph”);
+
   public:
     typedef lno_row_view_t_ in_lno_row_view_t;
     typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
-    typedef typename HandleType::Distance2GraphColoringHandleType::color_view_t color_view_type;
-    typedef typename HandleType::Distance2GraphColoringHandleType::color_t color_t;
+    typedef typename HandleType::color_view_t color_view_type;
+    typedef typename HandleType::color_t color_t;
 
-    typedef typename HandleType::Distance2GraphColoringHandleType::size_type size_type;
-    typedef typename HandleType::Distance2GraphColoringHandleType::nnz_lno_t nnz_lno_t;
+    typedef typename HandleType::size_type size_type;
+    typedef typename HandleType::nnz_lno_t nnz_lno_t;
 
     typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t;                             // host view type
     typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t;                             // host view type
-    typedef typename HandleType::Distance2GraphColoringHandleType::color_host_view_t color_host_view_t;      // host view type
+    typedef typename HandleType::color_host_view_t color_host_view_t;      // host view type
 
-    typedef typename HandleType::Distance2GraphColoringHandleType::HandleExecSpace MyExecSpace;
-    typedef typename HandleType::Distance2GraphColoringHandleType::HandleTempMemorySpace MyTempMemorySpace;
-    typedef typename HandleType::Distance2GraphColoringHandleType::const_size_type const_size_type;
+    typedef typename HandleType::HandleExecSpace MyExecSpace;
+    typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
+    typedef typename HandleType::const_size_type const_size_type;
 
     typedef typename lno_row_view_t_::device_type row_lno_view_device_t;
     typedef typename lno_row_view_t_::const_type const_lno_row_view_t;
@@ -109,7 +112,7 @@ class GraphColorD2
     typedef typename clno_nnz_view_t_::const_type const_clno_nnz_view_t;
     typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
 
-    typedef typename HandleType::Distance2GraphColoringHandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+    typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
     typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
 
     typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
@@ -119,7 +122,7 @@ class GraphColorD2
 
     typedef Kokkos::View<bool*> non_const_1d_bool_view_t;
 
-    typedef typename HandleType::Distance2GraphColoringHandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
+    typedef typename HandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
 
     // For HashmapAccumulator
     typedef typename KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace, nnz_lno_t> pool_memory_space_t;                     // EXPERIMENTAL
@@ -137,7 +140,7 @@ class GraphColorD2
     const_clno_row_view_t t_xadj;      // rowmap, transpose of rowmap
     const_clno_nnz_view_t t_adj;       // entries, transpose of entries
 
-    typename HandleType::Distance2GraphColoringHandleType *gc_handle;      // pointer to the graph coloring handle
+    HandleType * gc_handle;            // pointer to the graph coloring handle
 
 
   private:
@@ -175,9 +178,9 @@ class GraphColorD2
         , adj(entries)
         , t_xadj(t_row_map)
         , t_adj(t_entries)
-        , gc_handle(handle->get_graph_coloring_handle())
-        , _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size())
-        , _max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations())
+        , gc_handle(handle)
+        , _chunkSize(handle->get_vb_chunk_size())
+        , _max_num_iterations(handle->get_max_number_of_iterations())
         , _use_color_set(0)
         , _ticToc(handle->get_verbose())
     {
@@ -587,7 +590,7 @@ class GraphColorD2
     void getDistance2ColorsHistogram(nnz_lno_temp_work_view_t & histogram)
     {
         MyExecSpace::fence();
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::Distance2GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t,
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_t, nnz_lno_temp_work_view_t,
             MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
     }
 

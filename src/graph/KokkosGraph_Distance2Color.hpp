@@ -43,10 +43,10 @@
 #ifndef _KOKKOS_GRAPH_COLORD2_HPP
 #define _KOKKOS_GRAPH_COLORD2_HPP
 
-#include "KokkosGraph_GraphColor_impl.hpp"
+#include "KokkosGraph_GraphColor_impl.hpp"                  // TODO: can I remove the D2 SERIAL entirely from this?
 #include "KokkosGraph_Distance2Color_impl.hpp"
 #include "KokkosGraph_Distance2Color_MatrixSquared_impl.hpp"
-#include "KokkosGraph_GraphColorHandle.hpp"                         // todo: remove this
+#include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosGraph_Distance2GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 
@@ -74,10 +74,10 @@ void graph_color_d2(KernelHandle *handle,
 
     // Set our handle pointer to a GraphColoringHandleType.
     typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
-    typename KernelHandle::Distance2GraphColoringHandleType *gch = handle->get_distance2_graph_coloring_handle();
+    typename KernelHandle::Distance2GraphColoringHandleType *gch_d2 = handle->get_distance2_graph_coloring_handle();
 
     // Get the algorithm we're running from the graph coloring handle.
-    GraphColoringAlgorithmDistance2 algorithm = gch->get_coloring_algo_type();
+    GraphColoringAlgorithmDistance2 algorithm = gch_d2->get_coloring_algo_type();
 
     // Create a view to save the colors to.
     // - Note: color_view_t is a Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t    (KokkosGraph_GraphColorHandle.hpp)
@@ -86,7 +86,7 @@ void graph_color_d2(KernelHandle *handle,
     typedef typename KernelHandle::Distance2GraphColoringHandleType::color_view_t color_view_type;
     color_view_type colors_out("Graph Colors", num_rows);
 
-    gch->set_tictoc(handle->get_verbose());
+    gch_d2->set_tictoc(handle->get_verbose());
 
     switch(algorithm)
     {
@@ -97,7 +97,7 @@ void graph_color_d2(KernelHandle *handle,
             gc.execute();
             break;
         }
-
+#if 1               // WCMCLEN SCAFFOLDING (the original d2 coloring in serial is in the GraphColor handle :/  )
         case COLORING_D2_SERIAL:
         {
             #if defined KOKKOS_ENABLE_SERIAL
@@ -109,21 +109,26 @@ void graph_color_d2(KernelHandle *handle,
                 gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
 
                 // Save out the number of phases and vertex colors
-                gch->set_vertex_colors(colors_out);
-                gch->set_num_phases((double)num_phases);
+                gch_d1->set_vertex_colors(colors_out);
+                gch_d1->set_num_phases((double)num_phases);
             #else
                 throw std::runtime_error("Kokkos-Kernels must be built with Serial enabled to use COLORING_D2_SERIAL");
             #endif
             break;
         }
+#endif
+
 
         case COLORING_D2:
         case COLORING_D2_VB:
         case COLORING_D2_VB_BIT:
         case COLORING_D2_VB_BIT_EF:
         {
-            Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-                gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+
+            // static_assert( std::is_same< HandleType, KokkosGraph::Distance2GraphColoringHandleType>::value, “HandleType is not the correct type for this graph”);
+
+            Impl::GraphColorD2<typename KernelHandle::Distance2GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+                gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
             gc.execute();
             break;
         }
@@ -135,8 +140,8 @@ void graph_color_d2(KernelHandle *handle,
     }
 
     double coloring_time = timer.seconds();
-    gch->add_to_overall_coloring_time(coloring_time);
-    gch->set_coloring_time(coloring_time);
+    gch_d2->add_to_overall_coloring_time(coloring_time);
+    gch_d2->set_coloring_time(coloring_time);
 }
 
 
@@ -166,17 +171,19 @@ void graph_color_d2(KernelHandle *handle,
  */
 template<class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename lno_col_view_t_, typename lno_colnnz_view_t_>
 void computeDistance2Degree(KernelHandle *handle,
-                             typename KernelHandle::nnz_lno_t num_rows,
-                             typename KernelHandle::nnz_lno_t num_cols,
-                             lno_row_view_t_ row_map,
-                             lno_nnz_view_t_ row_entries,
-                             lno_col_view_t_ col_map,
-                             lno_colnnz_view_t_ col_entries,
-                             typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t& degree_d2_dist,
-                             size_t& degree_d2_max)
+                            typename KernelHandle::nnz_lno_t num_rows,
+                            typename KernelHandle::nnz_lno_t num_cols,
+                            lno_row_view_t_ row_map,
+                            lno_nnz_view_t_ row_entries,
+                            lno_col_view_t_ col_map,
+                            lno_colnnz_view_t_ col_entries,
+                            typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t& degree_d2_dist,
+                            size_t& degree_d2_max)
 {
-    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+    typename KernelHandle::Distance2GraphColoringHandleType *gch_d2 = handle->get_distance2_graph_coloring_handle();
+
+    Impl::GraphColorD2<typename KernelHandle::Distance2GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
 
     gc.calculate_d2_degree(degree_d2_dist, degree_d2_max);
 }
@@ -209,12 +216,12 @@ bool verifyDistance2Coloring(KernelHandle *handle,
 {
     bool output = true;
 
-    typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
+    typename KernelHandle::Distance2GraphColoringHandleType *gch_d2 = handle->get_distance2_graph_coloring_handle();
 
-    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+    Impl::GraphColorD2<typename KernelHandle::Distance2GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
 
-    output = gc.verifyDistance2Coloring(row_map, row_entries, col_map, col_entries, gch->get_vertex_colors(), validation_flags);
+    output = gc.verifyDistance2Coloring(row_map, row_entries, col_map, col_entries, gch_d2->get_vertex_colors(), validation_flags);
 
     return output;
 }
@@ -234,8 +241,10 @@ void printDistance2ColorsHistogram(KernelHandle *handle,
                                    lno_col_view_t_ col_map,
                                    lno_colnnz_view_t_ col_entries, bool csv=false)
 {
-    Impl::GraphColorD2<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+    typename KernelHandle::Distance2GraphColoringHandleType *gch_d2 = handle->get_distance2_graph_coloring_handle();
+
+    Impl::GraphColorD2<typename KernelHandle::Distance2GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
 
     if(csv)
     {

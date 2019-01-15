@@ -437,6 +437,7 @@ public:
     this->gcHandle_d2 = new Distance2GraphColoringHandleType();
     this->gcHandle_d2->set_algorithm(coloring_type, true);
     this->gcHandle_d2->set_tictoc(KKVERBOSE);
+    this->gcHandle_d2->set_verbose(KKVERBOSE);
   }
   void destroy_distance2_graph_coloring_handle()
   {
