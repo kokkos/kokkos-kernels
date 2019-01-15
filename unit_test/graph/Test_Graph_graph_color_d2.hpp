@@ -67,23 +67,17 @@ run_graphcolor_d2(crsMat_t                                                      
                   size_t&                                                              num_colors,
                   typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type& vertex_colors)
 {
-    typedef typename crsMat_t::StaticCrsGraphType          graph_t;
-    typedef typename graph_t::row_map_type                 lno_view_t;
-    typedef typename graph_t::entries_type                 lno_nnz_view_t;
-    typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-    typedef typename lno_view_t::value_type     size_type;
-    typedef typename lno_nnz_view_t::value_type lno_t;
-    typedef typename scalar_view_t::value_type  scalar_t;
+    using graph_t = typename crsMat_t::StaticCrsGraphType;
+    using lno_view_t = typename graph_t::row_map_type;
+    using lno_nnz_view_t = typename graph_t::entries_type;
+    using scalar_view_t = typename crsMat_t::values_type::non_const_type;
 
+    using size_type = typename lno_view_t::value_type;
+    using lno_t = typename lno_nnz_view_t::value_type;
+    using scalar_t = typename scalar_view_t::value_type;
 
-    typedef KokkosKernelsHandle<size_type,
-                                lno_t,
-                                scalar_t,
-                                typename device::execution_space,
-                                typename device::memory_space,
-                                typename device::memory_space>
-      KernelHandle;
+    using KernelHandle = KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space, typename device::memory_space, typename device::memory_space>;
 
     KernelHandle kh;
     kh.set_team_work_size(16);
@@ -121,12 +115,11 @@ test_coloring_d2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 {
     using namespace Test;
 
-    typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-    typedef typename crsMat_t::StaticCrsGraphType                                      graph_t;
-    typedef typename graph_t::row_map_type                                             lno_view_t;
-    typedef typename graph_t::entries_type                                             lno_nnz_view_t;
-    typedef typename crsMat_t::values_type::non_const_type                             scalar_view_t;
-//    typedef typename graph_t::entries_type::non_const_type                             color_view_t;
+    using crsMat_t = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+    using graph_t  = typename crsMat_t::StaticCrsGraphType;
+    using lno_view_t = typename graph_t::row_map_type;
+    using lno_nnz_view_t = typename graph_t::entries_type;
+    using scalar_view_t = typename crsMat_t::values_type::non_const_type;
 
     lno_t    numCols = numRows;
     crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);

@@ -288,11 +288,15 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     // char spgemm_step = params.spgemm_step;
     int vector_size = params.vector_size;
 
-    typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
-    typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
+    using lno_view_t = typename crsGraph_t3::row_map_type::non_const_type;
+    using lno_nnz_view_t = typename crsGraph_t3::entries_type::non_const_type;
+    // typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
+    // typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
 
-    typedef typename lno_view_t::non_const_value_type size_type;
-    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+    using size_type = typename lno_view_t::non_const_value_type;
+    using lno_t     = typename lno_nnz_view_t::non_const_value_type;
+    // typedef typename lno_view_t::non_const_value_type size_type;
+    // typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
 
@@ -327,7 +331,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::string label_algorithm;
     switch(algorithm)
     {
-#if 0	    // WCMCLEN SCAFFOLDING
         case 1:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
             label_algorithm = "COLORING_D2_MATRIX_SQUARED";
@@ -344,7 +347,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT);
             label_algorithm = "COLORING_D2_VB_BIT";
             break;
-#endif
         case 5:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
             label_algorithm = "COLORING_D2_VB_BIT_EF";
@@ -396,7 +398,6 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         // ------------------------------------------
         // Verify correctness
         // ------------------------------------------
-#if 0
         bool d2_coloring_is_valid            = false;
         bool d2_coloring_validation_flags[4] = {false};
 
@@ -429,14 +430,11 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                       << "    - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
                       << std::endl;
         }
-#endif
 
         // ------------------------------------------
         // Print out the colors histogram
         // ------------------------------------------
-#if 0
         printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
-#endif
 
     } // for i...
 
@@ -447,7 +445,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     Kokkos::Impl::Timer timer;
 
-#if 0
+    #if 0
     double time_d2_degree;
     timer.reset();
 
@@ -460,7 +458,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
                            crsGraph.row_map, crsGraph.entries,
                            degree_d2_dist, degree_d2_max);
     time_d2_degree = timer.seconds();
-#endif
+    #endif
 
     double total_time                   = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time();
     double total_time_color_greedy      = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase1();
@@ -513,9 +511,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "    Num Edges      : " << crsGraph.entries.dimension_0() << std::endl
               << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
-//              << "Graph Stats" << std::endl
-//              << "    Degree D2 Max  : " << degree_d2_max << std::endl
-//              << "    Degree D2 Time : " << time_d2_degree << std::endl
+    //              << "Graph Stats" << std::endl
+    //              << "    Degree D2 Max  : " << degree_d2_max << std::endl
+    //              << "    Degree D2 Time : " << time_d2_degree << std::endl
               << "Overall Time/Stats" << std::endl
               << "    Total Time     : " << total_time << std::endl
               << "    Avg Time       : " << avg_time << std::endl
@@ -548,10 +546,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Total Time CG"
               << "," << "Total Time FC"
               << "," << "Total Time RC"
-//              << "," << "Time D2 Degree"
+    //              << "," << "Time D2 Degree"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
-//              << "," << "Degree D2 Max"
+    //              << "," << "Degree D2 Max"
               << "," << "Validation"
               << std::endl;
 
@@ -571,10 +569,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << total_time_color_greedy
               << "," << total_time_find_conflicts
               << "," << total_time_resolve_conflicts
-//              << "," << time_d2_degree
+    //              << "," << time_d2_degree
               << "," << avg_colors
               << "," << avg_phases
-//              << "," << degree_d2_max
+    //              << "," << degree_d2_max
               << "," << all_results_valid_str
               << std::endl;
 
