@@ -82,8 +82,7 @@ namespace Impl {
 template<typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_>
 class GraphColorD2
 {
-    // TODO: after fixing the handle type, set this static assert to do the check.
-    // static_assert( std::is_same< HandleType, Distance2GraphColoringHandleType>::value, “HandleType is not the correct type for this graph”);
+    // static_assert( std::is_same< HandleType, KokkosGraph::Distance2GraphColoringHandle>::value, "Incorrect HandleType for this class.");
 
   public:
     typedef lno_row_view_t_ in_lno_row_view_t;
@@ -95,8 +94,8 @@ class GraphColorD2
     typedef typename HandleType::size_type size_type;
     typedef typename HandleType::nnz_lno_t nnz_lno_t;
 
-    typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t;                             // host view type
-    typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t;                             // host view type
+    typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t;    // host view type
+    typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t;    // host view type
     typedef typename HandleType::color_host_view_t color_host_view_t;      // host view type
 
     typedef typename HandleType::HandleExecSpace MyExecSpace;
@@ -149,6 +148,7 @@ class GraphColorD2
     int _max_num_iterations;
     char _use_color_set;        // The VB Algorithm Type: 0: VB,  1: VBCS,  2: VBBIT  (1, 2 not implemented).
     bool _ticToc;               // if true print info in each step
+    bool _verbose;              // if true, print verbose information
 
 
   public:
@@ -183,6 +183,7 @@ class GraphColorD2
         , _max_num_iterations(handle->get_max_number_of_iterations())
         , _use_color_set(0)
         , _ticToc(handle->get_verbose())
+        , _verbose(handle->get_verbose())
     {
     }
 
@@ -202,18 +203,15 @@ class GraphColorD2
     // -----------------------------------------------------------------
     virtual void execute()
     {
-        bool using_edge_filtering = false;
+        std::cout << ">>> GraphColorD2::execute()" << std::endl;
 
         color_view_type colors_out("Graph Colors", this->nv);
 
         // If the selected pass is using edge filtering we should set the flag.
-        switch(this->gc_handle->get_coloring_algo_type())
+        bool using_edge_filtering = false;
+        if(COLORING_D2_VB_BIT_EF == this->gc_handle->get_coloring_algo_type())
         {
-            case COLORING_D2_VB_BIT_EF:
-                using_edge_filtering = true;
-                break;
-            default:
-                break;
+            using_edge_filtering = true;
         }
 
         // Data:
@@ -234,12 +232,16 @@ class GraphColorD2
                       << "\tgraph information:" << std::endl
                       << "\t  nv                       : " << this->nv << std::endl
                       << "\t  ne                       : " << this->ne << std::endl;
-
-            // prettyPrint1DView(this->xadj, ">>> xadj ", 500);
-            // prettyPrint1DView(this->adj,  ">>>  adj ", 500);
+            /*
+            // For extra verbosity if debugging...
+            prettyPrint1DView(this->xadj,   ">>> xadj   ", 500);
+            prettyPrint1DView(this->adj,    ">>>  adj   ", 500);
+            prettyPrint1DView(this->t_xadj, ">>> t_xadj ", 500);
+            prettyPrint1DView(this->t_adj,  ">>> t_adj  ", 500);
+            */
         }
 
-        #if 0
+        #if 0           // WCMCLEN (EXPERIMENTAL) Distance-2 Degree calculation
         // Compute Distance-2 Degree of the vertices.
         //  -- Keeping this around in case we need to use it later on as an example.
         size_t degree_d2_max=0;
@@ -298,6 +300,7 @@ class GraphColorD2
                 t_adj_copy = non_const_clno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("t_adj copy"), this->ne);
                 Kokkos::deep_copy(t_adj_copy, this->t_adj);
 
+                // Debugging
                 //prettyPrint1DView(t_adj_copy, "t_adj_copy", 100);
                 //prettyPrint1DView(t_adj, "t_adj", 100);
 
@@ -501,7 +504,7 @@ class GraphColorD2
      * @param degree_d2_sum : Saves the sum of the distance-2 degrees
      *                        of all vertices.
      *
-     * EXPERIMENTAL / SCAFFOLDING / WCMCLEN /
+     * @note This is EXPERIMENTAL
      */
     void calculate_d2_degree(non_const_1d_size_type_view_t &degree_d2, size_t &degree_d2_max)
     {
@@ -529,22 +532,24 @@ class GraphColorD2
         mem_chunk_size += max_nonzeros;                // For hash nexts
         mem_chunk_size += max_nonzeros;                // For hash keys
         // nnz_lno_t mem_chunk_size += max_nonzeros;   // For hash_values
-/*
+
+        /*
         std::cout << "num_verts      = " << this->nv << std::endl;
         std::cout << "v_chunk_size   = " << v_chunk_size << std::endl;
         std::cout << "v_num_chunks   = " << v_num_chunks << std::endl;
         std::cout << "max_d1_degree  = " << max_d1_degree << std::endl;
         std::cout << "mem_chunk_size = " << mem_chunk_size << std::endl;
         std::cout << "hash_size      = " << hash_size << std::endl;
-*/
+        */
+
         // HashmapAccumulator requires a memory Pool
         KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
         pool_memory_space_t m_space(v_num_chunks, mem_chunk_size, -1, my_pool_type);
 
-/*
+        /*
         std::cout << std::endl << "Memory Pool:" << std::endl;
         m_space.print_memory_pool(true);
-*/
+        */
 
         functorCalculateD2Degree calculateD2Degree(this->nv, this->xadj, this->adj, this->t_xadj, this->t_adj, v_chunk_size, degree_d2, m_space, hash_size, max_nonzeros);
         Kokkos::parallel_for("Compute Degree D2", my_exec_space(0, v_num_chunks), calculateD2Degree);

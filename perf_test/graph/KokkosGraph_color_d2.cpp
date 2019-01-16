@@ -290,13 +290,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     using lno_view_t = typename crsGraph_t3::row_map_type::non_const_type;
     using lno_nnz_view_t = typename crsGraph_t3::entries_type::non_const_type;
-    // typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
-    // typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
 
     using size_type = typename lno_view_t::non_const_value_type;
     using lno_t     = typename lno_nnz_view_t::non_const_value_type;
-    // typedef typename lno_view_t::non_const_value_type size_type;
-    // typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
 
@@ -306,7 +302,8 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     // Note: crsGraph.numRows() == number of vertices in the 'graph'
     //       crsGraph.entries.extent(0) == number of edges in the 'graph'
-    std::cout << "Num verts: " << crsGraph.numRows() << std::endl << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
+    std::cout << "Num verts: " << crsGraph.numRows()         << std::endl
+              << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
 
     KernelHandle kh;
     kh.set_team_work_size(chunk_size);

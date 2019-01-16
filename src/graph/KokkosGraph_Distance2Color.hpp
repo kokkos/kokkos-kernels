@@ -73,7 +73,6 @@ void graph_color_d2(KernelHandle *handle,
     Kokkos::Impl::Timer timer;
 
     // Set our handle pointer to a GraphColoringHandleType.
-    typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
     typename KernelHandle::Distance2GraphColoringHandleType *gch_d2 = handle->get_distance2_graph_coloring_handle();
 
     // Get the algorithm we're running from the graph coloring handle.
@@ -82,29 +81,30 @@ void graph_color_d2(KernelHandle *handle,
     // Create a view to save the colors to.
     // - Note: color_view_t is a Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t    (KokkosGraph_GraphColorHandle.hpp)
     //         a 1D array of color_t
-//    typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
-    typedef typename KernelHandle::Distance2GraphColoringHandleType::color_view_t color_view_type;
-    color_view_type colors_out("Graph Colors", num_rows);
 
-    gch_d2->set_tictoc(handle->get_verbose());
+    using color_view_type = typename KernelHandle::Distance2GraphColoringHandleType::color_view_t;
+
+    color_view_type colors_out("Graph Colors", num_rows);
 
     switch(algorithm)
     {
         case COLORING_D2_MATRIX_SQUARED:
         {
             Impl::GraphColorD2_MatrixSquared<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-            gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+                gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
             gc.execute();
             break;
         }
-#if 1               // WCMCLEN SCAFFOLDING (the original d2 coloring in serial is in the GraphColor handle :/  )
+        #if 1               // WCMCLEN SCAFFOLDING (the original d2 coloring in serial is in the GraphColor handle :/  )
         case COLORING_D2_SERIAL:
         {
             #if defined KOKKOS_ENABLE_SERIAL
                 int num_phases = 0;
 
+                typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
+
                 Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
-                gc(num_rows, row_entries.extent(0), row_map, row_entries, gch_d1);
+                    gc(num_rows, row_entries.extent(0), row_map, row_entries, gch_d1);
 
                 gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
 
@@ -116,17 +116,13 @@ void graph_color_d2(KernelHandle *handle,
             #endif
             break;
         }
-#endif
-
+        #endif
 
         case COLORING_D2:
         case COLORING_D2_VB:
         case COLORING_D2_VB_BIT:
         case COLORING_D2_VB_BIT_EF:
         {
-
-            // static_assert( std::is_same< HandleType, KokkosGraph::Distance2GraphColoringHandleType>::value, “HandleType is not the correct type for this graph”);
-
             Impl::GraphColorD2<typename KernelHandle::Distance2GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
                 gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
             gc.execute();
