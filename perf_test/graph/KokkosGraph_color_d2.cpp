@@ -376,6 +376,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         std::cout << "Total Time: " << kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time() << std::endl
                   << "Num colors: " << kh.get_distance2_graph_coloring_handle()->get_num_colors() << std::endl
                   << "Num Phases: " << kh.get_distance2_graph_coloring_handle()->get_num_phases() << std::endl;
+
         std::cout << "\t";
         KokkosKernels::Impl::print_1Dview(kh.get_distance2_graph_coloring_handle()->get_vertex_colors());
         std::cout << std::endl;

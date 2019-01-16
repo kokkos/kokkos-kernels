@@ -79,11 +79,7 @@ void graph_color_d2(KernelHandle *handle,
     GraphColoringAlgorithmDistance2 algorithm = gch_d2->get_coloring_algo_type();
 
     // Create a view to save the colors to.
-    // - Note: color_view_t is a Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t    (KokkosGraph_GraphColorHandle.hpp)
-    //         a 1D array of color_t
-
     using color_view_type = typename KernelHandle::Distance2GraphColoringHandleType::color_view_t;
-
     color_view_type colors_out("Graph Colors", num_rows);
 
     switch(algorithm)
@@ -92,9 +88,16 @@ void graph_color_d2(KernelHandle *handle,
         {
             Impl::GraphColorD2_MatrixSquared<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
                 gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+
             gc.execute();
-            break;
+
+            // WCMCLEN (SCAFFOLDING) - Segfault for Matrix^2 based D2 Coloring is probably because it uses distance-1 graph coloring
+            //                         so there's no 'd2' coloring handle. Can we dump the colors and information from the run
+            //                         into the D2 coloring handle?
+
         }
+        break;
+
         #if 1               // WCMCLEN SCAFFOLDING (the original d2 coloring in serial is in the GraphColor handle :/  )
         case COLORING_D2_SERIAL:
         {
@@ -109,13 +112,14 @@ void graph_color_d2(KernelHandle *handle,
                 gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
 
                 // Save out the number of phases and vertex colors
-                gch_d1->set_vertex_colors(colors_out);
-                gch_d1->set_num_phases((double)num_phases);
+                gch_d2->set_vertex_colors(colors_out);
+                gch_d2->set_num_phases((double)num_phases);
+
             #else
                 throw std::runtime_error("Kokkos-Kernels must be built with Serial enabled to use COLORING_D2_SERIAL");
             #endif
-            break;
         }
+        break;
         #endif
 
         case COLORING_D2:
@@ -125,14 +129,18 @@ void graph_color_d2(KernelHandle *handle,
         {
             Impl::GraphColorD2<typename KernelHandle::Distance2GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
                 gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
+
             gc.execute();
+
+            double coloring_time = timer.seconds();
+            gch_d2->add_to_overall_coloring_time(coloring_time);
+            gch_d2->set_coloring_time(coloring_time);
+
             break;
         }
 
         default:
-        {
             break;
-        }
     }
 
     double coloring_time = timer.seconds();

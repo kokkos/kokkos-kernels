@@ -66,7 +66,6 @@ public:
   //typedef Kokkos::Device<TemporaryMemorySpace::execution_space,TemporaryMemorySpace::memory_space> HandleTempMemorySpace;
   //typedef Kokkos::Device<PersistentMemorySpace::execution_space,PersistentMemorySpace::memory_space> HandlePersistentMemorySpace;
 
-
   typedef typename std::remove_const<size_type_>::type  size_type;
   typedef const size_type const_size_type;
 
@@ -137,7 +136,6 @@ public:
     this->gsHandle = right_side_handle.get_gs_handle();
     this->spgemmHandle = right_side_handle.get_spgemm_handle();
 
-
     this->team_work_size = right_side_handle.get_set_team_work_size();
     this->shared_memory_size = right_side_handle.get_shmem_size();
     this->suggested_team_size = right_side_handle.get_set_suggested_team_size();
@@ -159,9 +157,11 @@ public:
   typedef typename KokkosGraph::
     GraphColoringHandle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GraphColoringHandleType;
+
   typedef typename KokkosGraph::
     Distance2GraphColoringHandle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       Distance2GraphColoringHandleType;
+
   typedef typename KokkosSparse::
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GaussSeidelHandleType;
@@ -195,6 +195,7 @@ private:
 
   GraphColoringHandleType *gcHandle;
   Distance2GraphColoringHandleType *gcHandle_d2;
+
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
   SPADDHandleType *spaddHandle;
@@ -213,7 +214,6 @@ private:
   bool is_owner_of_the_gs_handle;
   bool is_owner_of_the_spgemm_handle;
   bool is_owner_of_the_spadd_handle;
-
 
 public:
 
@@ -406,6 +406,10 @@ public:
 
   // Distance-1 Graph Coloring
   GraphColoringHandleType *get_graph_coloring_handle(){
+    if(!this->is_owner_of_the_gc_handle)
+    {
+      throw std::runtime_error("Graph coloring handle has not been created.");
+    }
     return this->gcHandle;
   }
   void create_graph_coloring_handle(KokkosGraph::ColoringAlgorithm coloring_type = KokkosGraph::COLORING_DEFAULT){
@@ -414,7 +418,6 @@ public:
     this->gcHandle = new GraphColoringHandleType();
     this->gcHandle->set_algorithm(coloring_type, true);
     this->gcHandle->set_tictoc(KKVERBOSE);
-
   }
   void destroy_graph_coloring_handle(){
     if (is_owner_of_the_gc_handle &&  this->gcHandle != NULL){
@@ -428,6 +431,10 @@ public:
   // Distance-2 Graph Coloring
   Distance2GraphColoringHandleType *get_distance2_graph_coloring_handle()
   {
+    if(!this->is_owner_of_the_d2_gc_handle)
+    {
+      throw std::runtime_error("D2 graph coloring handle has not been created.");
+    }
     return this->gcHandle_d2;
   }
   void create_distance2_graph_coloring_handle(KokkosGraph::GraphColoringAlgorithmDistance2 coloring_type = KokkosGraph::COLORING_D2_DEFAULT)

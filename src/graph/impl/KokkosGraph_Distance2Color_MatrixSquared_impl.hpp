@@ -67,52 +67,56 @@ namespace Impl {
  *  e.g. no vertex having same color shares an edge.
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
-template<typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_>
+template<typename HandleType,
+         typename lno_row_view_t_,
+         typename lno_nnz_view_t_,
+         typename clno_row_view_t_,
+         typename clno_nnz_view_t_>
 class GraphColorD2_MatrixSquared
 {
   public:
     typedef lno_row_view_t_ in_lno_row_view_t;
     typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
-    typedef typename HandleType::GraphColoringHandleType::color_t color_t;
-    typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_type;
+    typedef typename HandleType::Distance2GraphColoringHandleType::color_t      color_t;
+    typedef typename HandleType::Distance2GraphColoringHandleType::color_view_t color_view_type;
 
     typedef typename HandleType::size_type size_type;
     typedef typename HandleType::nnz_lno_t nnz_lno_t;
 
-    typedef typename HandleType::HandleExecSpace MyExecSpace;
+    typedef typename HandleType::HandleExecSpace       MyExecSpace;
     typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
-    typedef typename HandleType::const_size_type const_size_type;
+    typedef typename HandleType::const_size_type       const_size_type;
 
-    typedef typename lno_row_view_t_::device_type row_lno_view_device_t;
-    typedef typename lno_row_view_t_::const_type const_lno_row_view_t;
-    typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
+    typedef typename lno_row_view_t_::device_type    row_lno_view_device_t;
+    typedef typename lno_row_view_t_::const_type     const_lno_row_view_t;
+    typedef typename lno_nnz_view_t_::const_type     const_lno_nnz_view_t;
     typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
 
-    typedef typename clno_row_view_t_::const_type const_clno_row_view_t;
-    typedef typename clno_nnz_view_t_::const_type const_clno_nnz_view_t;
+    typedef typename clno_row_view_t_::const_type     const_clno_row_view_t;
+    typedef typename clno_nnz_view_t_::const_type     const_clno_nnz_view_t;
     typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
 
-    typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
-    typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
+    typedef typename HandleType::size_type_temp_work_view_t     size_type_temp_work_view_t;
+    typedef typename HandleType::scalar_temp_work_view_t        scalar_temp_work_view_t;
     typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
 
-    typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+    typedef typename HandleType::nnz_lno_temp_work_view_t           nnz_lno_temp_work_view_t;
     typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
 
     typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
 
   protected:
-    nnz_lno_t nr;                      // num_rows  (# verts)
-    nnz_lno_t nc;                      // num cols
-    size_type ne;                      // # edges
-    const_lno_row_view_t xadj;         // rowmap, transpose of rowmap
-    const_lno_nnz_view_t adj;          // entries, transpose of entries   (size = # edges)
+    nnz_lno_t             nr;          // num_rows  (# verts)
+    nnz_lno_t             nc;          // num cols
+    size_type             ne;          // # edges
+    const_lno_row_view_t  xadj;        // rowmap, transpose of rowmap
+    const_lno_nnz_view_t  adj;         // entries, transpose of entries   (size = # edges)
     const_clno_row_view_t t_xadj;      // rowmap, transpose of rowmap
     const_clno_nnz_view_t t_adj;       // entries, transpose of entries
-    nnz_lno_t nv;                      // num vertices
-    HandleType *cp;                    // the handle.
+    nnz_lno_t             nv;          // num vertices
+    HandleType*           handle;          // the handle.
 
     bool verbose;
 
@@ -127,15 +131,24 @@ class GraphColorD2_MatrixSquared
      * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
      *    including parameters.
      */
-    GraphColorD2_MatrixSquared(nnz_lno_t nr_,
-                               nnz_lno_t nc_,
-                               size_type ne_,
-                               const_lno_row_view_t row_map,
-                               const_lno_nnz_view_t entries,
+    GraphColorD2_MatrixSquared(nnz_lno_t             nr_,
+                               nnz_lno_t             nc_,
+                               size_type             ne_,
+                               const_lno_row_view_t  row_map,
+                               const_lno_nnz_view_t  entries,
                                const_clno_row_view_t t_row_map,
                                const_clno_nnz_view_t t_entries,
-                               HandleType *handle)
-        : nr(nr_), nc(nc_), ne(ne_), xadj(row_map), adj(entries), t_xadj(t_row_map), t_adj(t_entries), nv(nr_), cp(handle), verbose(handle->get_verbose())
+                               HandleType*           handle)
+        : nr(nr_)
+        , nc(nc_)
+        , ne(ne_)
+        , xadj(row_map)
+        , adj(entries)
+        , t_xadj(t_row_map)
+        , t_adj(t_entries)
+        , nv(nr_)
+        , handle(handle)
+        , verbose(handle->get_verbose())
     {
     }
 
@@ -157,20 +170,20 @@ class GraphColorD2_MatrixSquared
      */
     virtual void execute()
     {
-        double time = 0;
+        double              time = 0;
         Kokkos::Impl::Timer timer;
         timer.reset();
 
         std::string algName = "SPGEMM_KK_MEMSPEED";
-        cp->create_spgemm_handle(KokkosSparse::StringToSPGEMMAlgorithm(algName));
+        handle->create_spgemm_handle(KokkosSparse::StringToSPGEMMAlgorithm(algName));
 
         size_type_temp_work_view_t cRowptrs("cRowptrs", nr + 1);
 
         // Call symbolic multiplication of graph with itself (no transposes, and A and B are the same)
-        KokkosSparse::Experimental::spgemm_symbolic(cp, nr, nc, nr, xadj, adj, false, t_xadj, t_adj, false, cRowptrs);
+        KokkosSparse::Experimental::spgemm_symbolic(handle, nr, nc, nr, xadj, adj, false, t_xadj, t_adj, false, cRowptrs);
 
         // Get num nz in C
-        auto Cnnz = cp->get_spgemm_handle()->get_c_nnz();
+        auto Cnnz = handle->get_spgemm_handle()->get_c_nnz();
 
         // Must create placeholder value views for A and C (values are meaningless)
         // Said above that the scalar view type is the same as the colinds view type
@@ -178,40 +191,45 @@ class GraphColorD2_MatrixSquared
 
         // Allocate C entries array, and placeholder values
         nnz_lno_persistent_work_view_t cColinds("C colinds", Cnnz);
-        scalar_temp_work_view_t cFakeValues("C placeholder values (meaningless)", Cnnz);
+        scalar_temp_work_view_t        cFakeValues("C placeholder values (meaningless)", Cnnz);
 
         // Run the numeric kernel
-        KokkosSparse::Experimental::spgemm_numeric(cp, nr, nc, nr, xadj, adj, aFakeValues, false, t_xadj, t_adj, aFakeValues, false, cRowptrs, cColinds, cFakeValues);
+        KokkosSparse::Experimental::spgemm_numeric(
+          handle, nr, nc, nr, xadj, adj, aFakeValues, false, t_xadj, t_adj, aFakeValues, false, cRowptrs, cColinds, cFakeValues);
 
         if(this->verbose)
         {
             time = timer.seconds();
             std::cout << "\tTime Phase Square Matrix : " << time << std::endl << std::endl;
-            this->cp->get_graph_coloring_handle()->add_to_overall_coloring_time_phase4(time);
+            this->handle->get_distance2_graph_coloring_handle()->add_to_overall_coloring_time_phase4(time);
             timer.reset();
         }
 
         // done with spgemm
-        cp->destroy_spgemm_handle();
+        handle->destroy_spgemm_handle();
 
-        // Now run distance-1 graph coloring on C
-        // Use LocalOrdinal for storing colors
-        KokkosGraph::Experimental::graph_color(cp, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
+        // Now run distance-1 graph coloring on C, use LocalOrdinal for storing colors
+        handle->create_graph_coloring_handle();
+        KokkosGraph::Experimental::graph_color(handle, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
 
         if(this->verbose)
         {
             time = timer.seconds();
             std::cout << "\tTime Phase Graph Coloring : " << time << std::endl << std::endl;
-            this->cp->get_graph_coloring_handle()->add_to_overall_coloring_time_phase5(time);
+            this->handle->get_distance2_graph_coloring_handle()->add_to_overall_coloring_time_phase5(time);
             timer.reset();
         }
 
         // extract the colors
-        // auto coloringHandle = cp->get_graph_coloring_handle();
+        // auto coloringHandle = handle->get_graph_coloring_handle();
         // color_view_type colorsDevice = coloringHandle->get_vertex_colors();
 
+        // std::cout << "Num phases: " << handle->get_graph_coloring_handle()->get_num_phases() << std::endl;
+        this->handle->get_distance2_graph_coloring_handle()->set_num_phases(this->handle->get_graph_coloring_handle()->get_num_phases());
+        this->handle->get_distance2_graph_coloring_handle()->set_vertex_colors(this->handle->get_graph_coloring_handle()->get_vertex_colors());
+
         // clean up coloring handle
-        // cp->destroy_graph_coloring_handle();
+        handle->destroy_graph_coloring_handle();
     }
 
 };      // GraphColorD2_MatrixSquared (end)
