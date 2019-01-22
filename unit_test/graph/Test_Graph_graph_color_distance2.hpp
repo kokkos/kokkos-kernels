@@ -93,13 +93,8 @@ run_graphcolor_d2(crsMat_type                                                   
     const size_t num_rows_1 = input_mat.numRows();
     const size_t num_cols_1 = input_mat.numCols();
 
-    graph_color_distance2<KernelHandle, lno_view_type, lno_nnz_view_type>(&kh,
-                                                                          num_rows_1,
-                                                                          num_cols_1,
-                                                                          input_mat.graph.row_map,
-                                                                          input_mat.graph.entries,
-                                                                          input_mat.graph.row_map,
-                                                                          input_mat.graph.entries);
+    graph_compute_distance2_color<KernelHandle, lno_view_type, lno_nnz_view_type>
+        (&kh, num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, input_mat.graph.row_map, input_mat.graph.entries);
 
     num_colors    = kh.get_distance2_graph_coloring_handle()->get_num_colors();
     vertex_colors = kh.get_distance2_graph_coloring_handle()->get_vertex_colors();

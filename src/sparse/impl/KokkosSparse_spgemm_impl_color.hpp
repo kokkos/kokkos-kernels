@@ -518,7 +518,7 @@ void
 
       // WCMCLEN: SCAFFOLDING / EXPERIMENTAL
       // handle->get_distance2_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_D2_SERIAL);
-      // KokkosGraph::Experimental::graph_color_distance2 <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
+      // KokkosGraph::Experimental::graph_compute_distance2_color <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
       //   (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
 
       original_num_colors = handle->get_graph_coloring_handle()->get_num_colors();

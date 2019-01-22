@@ -97,11 +97,11 @@ class GraphColorDistance2Handle
     typedef typename Kokkos::View<size_type *, HandleTempMemorySpace>       size_type_temp_work_view_t;
     typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
 
-    typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t;      // Host view type
+    typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t;          // Host view type
 
     typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace>       nnz_lno_temp_work_view_t;
     typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-    typedef typename nnz_lno_persistent_work_view_t::HostMirror             nnz_lno_persistent_work_host_view_t;      // Host view type
+    typedef typename nnz_lno_persistent_work_view_t::HostMirror             nnz_lno_persistent_work_host_view_t;  // Host view type
 
     typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t;
     typedef typename team_policy_t::member_type team_member_t;
@@ -111,12 +111,12 @@ class GraphColorDistance2Handle
   private:
 
     // Parameters
-    GraphColoringAlgorithmDistance2 coloring_algorithm_type;      // VB, VBBIT, VBCS, VBD or EB.
+    GraphColoringAlgorithmDistance2 coloring_algorithm_type;      // Which algorithm type to use.
 
     bool verbose;                         // verbosity flag
     bool tictoc;                          // print time at every step
 
-    bool vb_edge_filtering;               // whether to do edge filtering or not in vertex based algorithms. Swaps on the ad error.
+    bool vb_edge_filtering;               // whether to do edge filtering or not in vertex based algorithms.
 
     int vb_chunk_size;                   // the (minimum) size of the consecutive works that a thread will be assigned to.
     int max_number_of_iterations;        // maximum allowed number of phases that
@@ -173,9 +173,17 @@ class GraphColorDistance2Handle
     }
 
 
-    /** \brief Changes the graph coloring algorithm.
-     *  \param col_algo: Coloring algorithm: one of COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB
-     *  \param set_default_parameters: whether or not to reset the default parameters for the given algorithm.
+    /** Changes the graph coloring algorithm.
+     *  @param[in] col_algo               Coloring algorithm, one of:
+     *                                    - COLORING_D2_DEFAULT
+     *                                    - COLORING_D2_SERIAL
+     *                                    - COLORING_D2_MATRIX_SQUARED
+     *                                    - COLORING_D2_VB
+     *                                    - COLORING_D2_VB_BIT
+     *                                    - COLORING_D2_VB_BIT_EF
+     *
+     *  @param[in] set_default_parameters Whether or not to reset the default parameters for the given algorithm.
+     *  @return None
      */
     void set_algorithm(const GraphColoringAlgorithmDistance2 &col_algo, bool set_default_parameters = true)
     {
@@ -194,7 +202,13 @@ class GraphColorDistance2Handle
     }
 
 
-    /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
+    /**
+     * Chooses best algorithm based on the execution space.
+     *
+     * This chooses the best algorithm based on the execution space:
+     * - COLORING_D2_SERIAL if the execution space is SERIAL
+     * - COLORING_D2_VB_BIT otherwise
+     *
      */
     void choose_default_algorithm()
     {
@@ -250,33 +264,6 @@ class GraphColorDistance2Handle
     }
 
 
-    struct ReduceMaxFunctor
-    {
-        color_view_t colors;
-        ReduceMaxFunctor(color_view_t cat) : colors(cat) {}
-
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t& i, color_t& color_max) const
-        {
-            if(color_max < colors(i))
-                color_max = colors(i);
-        }
-
-        // max -plus semiring equivalent of "plus"
-        KOKKOS_INLINE_FUNCTION
-        void join(volatile color_t& dst, const volatile color_t& src) const
-        {
-            if(dst < src)
-            {
-                dst = src;
-            }
-        }
-
-        KOKKOS_INLINE_FUNCTION
-        void init(color_t& dst) const { dst = 0; }
-    };
-
-
     nnz_lno_t get_num_colors()
     {
         if(num_colors == 0)
@@ -286,7 +273,6 @@ class GraphColorDistance2Handle
         }
         return num_colors;
     }
-
 
 
     /** \brief Sets Default Parameter settings for the given algorithm.
@@ -371,20 +357,21 @@ class GraphColorDistance2Handle
     }
 
 
-    // Print / write out the graph in a GraphVIZ format.
-    // Color "1" will be rendered as a red circle.
-    // Color "0" (uncolored) will be a star shape.
-    // Other node colors shown as just the color value.
-    //
-    // @param os use std::cout for output to STDOUT stream, or a ofstream object
-    //           (i.e., `std::ofstream os("G.dot", std::ofstream::out);`) to write
-    //           to a file.
+    /** Print / write out the graph in a GraphVIZ format.
+     * Color "1" will be rendered as a red circle.
+     * Color "0" (uncolored) will be a star shape.
+     * Other node colors shown as just the color value.
+     *
+     * @param[in] os use std::cout for output to STDOUT stream, or a ofstream object
+     *            (i.e., `std::ofstream os("G.dot", std::ofstream::out);`) to write
+     *            to a file.
+     */
     template<typename kokkos_view_type, typename rowmap_type, typename entries_type>
-    void graphToGraphviz(std::ostream&     os,
-                         const size_t      num_verts,
-                         rowmap_type&      rowmap,
-                         entries_type&     entries,
-                         kokkos_view_type& colors) const
+    void dump_graphviz(std::ostream&     os,
+                       const size_t      num_verts,
+                       rowmap_type&      rowmap,
+                       entries_type&     entries,
+                       kokkos_view_type& colors) const
     {
         using h_colors_type  = typename kokkos_view_type::HostMirror;
         using h_rowmap_type  = typename rowmap_type::HostMirror;
@@ -434,8 +421,43 @@ class GraphColorDistance2Handle
             os << std::endl;
         }
         os << "}" << std::endl;
-    }      // graphToGraphviz (end)
-};
+    }      // dump_graphviz (end)
+
+
+  private:
+
+
+    // -----------------------------------------
+    //  Helpers & Functors
+    // -----------------------------------------
+    struct ReduceMaxFunctor
+    {
+        color_view_t colors;
+        ReduceMaxFunctor(color_view_t cat) : colors(cat) {}
+
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const nnz_lno_t& i, color_t& color_max) const
+        {
+            if(color_max < colors(i))
+                color_max = colors(i);
+        }
+
+        // max -plus semiring equivalent of "plus"
+        KOKKOS_INLINE_FUNCTION
+        void join(volatile color_t& dst, const volatile color_t& src) const
+        {
+            if(dst < src)
+            {
+                dst = src;
+            }
+        }
+
+        KOKKOS_INLINE_FUNCTION
+        void init(color_t& dst) const { dst = 0; }
+    };
+
+
+};  // class GraphColorDistance2Handle (end)
 
 }      // namespace KokkosGraph
 

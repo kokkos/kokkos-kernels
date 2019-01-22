@@ -168,7 +168,7 @@ class GraphColorDistance2MatrixSquared
      *   algorithm to assume that the color is fixed for the corresponding vertex.
      * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
      */
-    virtual void execute()
+    virtual void compute_distance2_color()
     {
         double              time = 0;
         Kokkos::Impl::Timer timer;

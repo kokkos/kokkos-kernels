@@ -201,7 +201,11 @@ class GraphColorDistance2
     // GraphColorDistance2::execute()
     //
     // -----------------------------------------------------------------
-    virtual void execute()
+
+    /**
+     * \brief Computes the distance-2 graph coloring.
+     */
+    virtual void compute_distance2_color()
     {
         color_view_type colors_out("Graph Colors", this->nv);
 
@@ -245,7 +249,7 @@ class GraphColorDistance2
         size_t degree_d2_max=0;
         size_t degree_d2_sum=0;
         non_const_1d_size_type_view_t degree_d2 = non_const_1d_size_type_view_t("degree d2", this->nv);
-        this->calculate_d2_degree(degree_d2, degree_d2_max, degree_d2_sum);
+        this->compute_distance2_degree(degree_d2, degree_d2_max, degree_d2_sum);
         if(true || _ticToc )
         {
             prettyPrint1DView(degree_d2, "Degree D2", 150);
@@ -407,22 +411,22 @@ class GraphColorDistance2
     /**
      *  Validate Distance 2 Graph Coloring
      *
-     *  @param validation_flags is an array of 3 booleans.
-     *         validation_flags[0] : True IF the distance-2 coloring is invalid.
-     *         validation_flags[1] : True IF the coloring is bad because vertices are left uncolored.
-     *         validation_flags[2] : True IF the coloring is bad because at least one pair of vertices
-     *                               at distance=2 from each other has the same color.
-     *         validation_flags[3] : True IF a vertex has a color that is greater than number of vertices in the graph.
-     *                               This may not be an INVALID coloring, but can indicate poor quality in coloring.
+     *  @param[in] validation_flags Is an array of 3 booleans to capture if the graph coloring is invalid, and if so what is invalid.
+     *                              validation_flags[0] : True IF the distance-2 coloring is invalid.
+     *                              validation_flags[1] : True IF the coloring is bad because vertices are left uncolored.
+     *                              validation_flags[2] : True IF the coloring is bad because at least one pair of vertices
+     *                                                    at distance=2 from each other has the same color.
+     *                              validation_flags[3] : True IF a vertex has a color that is greater than number of vertices in the graph.
+     *                                                    This may not be an INVALID coloring, but can indicate poor quality in coloring.
      *
      *  @return boolean that is TRUE if the Distance-2 coloring is valid. False if otherwise.
      */
-    bool verifyDistance2Coloring(const_lno_row_view_t xadj_,
-                                 const_lno_nnz_view_t adj_,
-                                 const_clno_row_view_t t_xadj_,
-                                 const_clno_nnz_view_t t_adj_,
-                                 color_view_type vertex_colors_,
-                                 bool validation_flags[])
+    bool verify_coloring(const_lno_row_view_t xadj_,
+                         const_lno_nnz_view_t adj_,
+                         const_clno_row_view_t t_xadj_,
+                         const_clno_nnz_view_t t_adj_,
+                         color_view_type vertex_colors_,
+                         bool validation_flags[])
     {
         bool output = true;
 
@@ -462,18 +466,35 @@ class GraphColorDistance2
         output = !h_flags[0];
 
         return output;
-    }      // verifyDistance2Coloring (end)
+    }      // verify_coloring (end)
+
+
+
+    /**
+     * Generate a histogram of the distance-2 colors
+     *
+     * @param[out] histogram A Kokkos::View that will contain the histogram.
+     *                       Must be of size num_colors+1
+     *
+     * @return None
+     */
+    void compute_color_histogram(nnz_lno_temp_work_view_t & histogram)
+    {
+        MyExecSpace::fence();
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_t, nnz_lno_temp_work_view_t,
+            MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
+    }
 
 
 
     /**
      * Print out the histogram of colors in CSV format.
      */
-    void printDistance2ColorsHistogramCSV()
+    void print_color_histogram_csv()
     {
         nnz_lno_t num_colors = this->gc_handle->get_num_colors();
         nnz_lno_temp_work_view_t histogram("histogram", num_colors + 1);
-        this->getDistance2ColorsHistogram(histogram);
+        this->compute_color_histogram(histogram);
 
         size_t i=0;
         for(i=1; i< histogram.extent(0)-1; i++)
@@ -490,11 +511,11 @@ class GraphColorDistance2
      * Print out the histogram of colors in a more human friendly format
      * This will not print out all the colors if there are many.
      */
-    void printDistance2ColorsHistogram()
+    void print_color_histogram()
     {
         nnz_lno_t num_colors = this->gc_handle->get_num_colors();
         nnz_lno_temp_work_view_t histogram("histogram", num_colors + 1);
-        this->getDistance2ColorsHistogram(histogram);
+        this->compute_color_histogram(histogram);
         std::cout << ">>> Histogram: " << std::endl;
         KokkosKernels::Impl::kk_print_1Dview(histogram);
         std::cout << std::endl;
@@ -505,14 +526,13 @@ class GraphColorDistance2
     /**
      * Calculate the distance-2 degree of all the vertices in the graph.
      *
-     * @param degree_d2     : A mutable view of size |V|
-     * @param degree_d2_max : Saves the max distance-2 degree value in.
-     * @param degree_d2_sum : Saves the sum of the distance-2 degrees
-     *                        of all vertices.
+     * @param[out] degree_d2     A mutable view of size |V|
+     * @param[out] degree_d2_max Saves the max distance-2 degree value in.
      *
      * @note This is EXPERIMENTAL
+     * @todo Uses HashMapAccumulator and still needs a lot of tweaking to make performant.
      */
-    void calculate_d2_degree(non_const_1d_size_type_view_t &degree_d2, size_t &degree_d2_max)
+    void compute_distance2_degree(non_const_1d_size_type_view_t &degree_d2, size_t &degree_d2_max)
     {
         // Vertex group chunking
         nnz_lno_t v_chunk_size = this->_chunkSize;
@@ -523,7 +543,7 @@ class GraphColorDistance2
         std::cout << ">>> v_num_chunks = " << v_num_chunks << std::endl;
 
         // Get the maximum distance-1 degree
-        nnz_lno_t max_d1_degree = this->calculate_max_degree();
+        nnz_lno_t max_d1_degree = this->compute_max_distance1_degree();
 
         // Round up hash_size to next power of two
         nnz_lno_t hash_size = 1;
@@ -571,39 +591,7 @@ class GraphColorDistance2
 
 
 
-    /**
-     * Compute the maximum distance-1 degree.
-     */
-    nnz_lno_t calculate_max_degree() const
-    {
-        nnz_lno_t max_degree = 0;
-        Kokkos::parallel_reduce("Max D1 Degree",
-                                this->nv,
-                                KOKKOS_LAMBDA(const nnz_lno_t& vid, nnz_lno_t& lmax)
-                                {
-                                    const nnz_lno_t degree = this->xadj(vid+1) - this->xadj(vid);
-                                    lmax = degree > lmax ? degree : lmax;
-                                },
-                                Kokkos::Max<nnz_lno_t>(max_degree));
-        return max_degree;
-    }
-
-
-
   private:
-
-
-
-    /**
-     * Generate a histogram of the distance-2 colors.
-     * - histogram must be of size num_colors+1
-     */
-    void getDistance2ColorsHistogram(nnz_lno_temp_work_view_t & histogram)
-    {
-        MyExecSpace::fence();
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_t, nnz_lno_temp_work_view_t,
-            MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
-    }
 
 
 
@@ -808,9 +796,32 @@ class GraphColorDistance2
     }      // resolveConflictsSerial (end)
 
 
+
     // ------------------------------------------------------
     // Functions: Helpers
     // ------------------------------------------------------
+
+
+
+    /**
+     * Compute the maximum distance-1 degree.
+     *
+     * @return Maximum distance1 degree in the graph
+     */
+    nnz_lno_t compute_max_distance1_degree() const
+    {
+        nnz_lno_t max_degree = 0;
+        Kokkos::parallel_reduce("Max D1 Degree",
+                                this->nv,
+                                KOKKOS_LAMBDA(const nnz_lno_t& vid, nnz_lno_t& lmax)
+                                {
+                                    const nnz_lno_t degree = this->xadj(vid+1) - this->xadj(vid);
+                                    lmax = degree > lmax ? degree : lmax;
+                                },
+                                Kokkos::Max<nnz_lno_t>(max_degree));
+        return max_degree;
+    }
+
 
 
     // pretty-print a 1D View with label
@@ -842,7 +853,6 @@ class GraphColorDistance2
 
 
 
-  public:
     // ------------------------------------------------------
     // Functors: Distance-2 Graph Coloring
     // ------------------------------------------------------

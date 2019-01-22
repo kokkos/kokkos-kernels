@@ -362,13 +362,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
-        graph_color_distance2(&kh,
-                              crsGraph.numRows(),
-                              crsGraph.numCols(),
-                              crsGraph.row_map,
-                              crsGraph.entries,
-                              crsGraph.row_map,
-                              crsGraph.entries);
+        graph_compute_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
         total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();
@@ -382,15 +376,11 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         std::cout << std::endl;
 
         // If verbose mode is on and there the graph has fewer than 1000 verts, dump a GraphVIZ DOT file.
-        if(verbose && repeat==i+1 && crsGraph.numRows() < 1000)
+        if(verbose && repeat==i+1 && crsGraph.numRows() < 1500)
         {
             auto colors = kh.get_distance2_graph_coloring_handle()->get_vertex_colors();
             std::ofstream os("G.dot", std::ofstream::out);
-            kh.get_distance2_graph_coloring_handle()->graphToGraphviz(os,
-                                                                      crsGraph.numRows(),
-                                                                      crsGraph.row_map,
-                                                                      crsGraph.entries,
-                                                                      colors);
+            kh.get_distance2_graph_coloring_handle()->dump_graphviz(os, crsGraph.numRows(), crsGraph.row_map, crsGraph.entries, colors);
         }
 
         // ------------------------------------------
@@ -399,14 +389,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         bool d2_coloring_is_valid            = false;
         bool d2_coloring_validation_flags[4] = {false};
 
-        d2_coloring_is_valid = verifyDistance2Coloring(&kh,
-                                                       crsGraph.numRows(),
-                                                       crsGraph.numCols(),
-                                                       crsGraph.row_map,
-                                                       crsGraph.entries,
-                                                       crsGraph.row_map,
-                                                       crsGraph.entries,
-                                                       d2_coloring_validation_flags);
+        d2_coloring_is_valid = graph_verify_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, d2_coloring_validation_flags);
 
         // Print out messages based on coloring validation check.
         if(d2_coloring_is_valid)
@@ -432,7 +415,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         // ------------------------------------------
         // Print out the colors histogram
         // ------------------------------------------
-        printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
+        graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
 
     } // for i...
 
@@ -451,10 +434,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
 
     size_t degree_d2_max=0;
-    computeDistance2Degree(&kh, crsGraph.numRows(), crsGraph.numCols(),
-                           crsGraph.row_map, crsGraph.entries,
-                           crsGraph.row_map, crsGraph.entries,
-                           degree_d2_dist, degree_d2_max);
+    graph_compute_distance2_degree(&kh, crsGraph.numRows(), crsGraph.numCols(),
+                                   crsGraph.row_map, crsGraph.entries,
+                                   crsGraph.row_map, crsGraph.entries,
+                                   degree_d2_dist, degree_d2_max);
     time_d2_degree = timer.seconds();
     #endif
 
@@ -596,7 +579,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << label_algorithm
               << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << ",";
-    printDistance2ColorsHistogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
+    graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
     std::cout << std::endl;
 
     // Kokkos::print_configuration(std::cout);
