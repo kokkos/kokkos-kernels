@@ -47,8 +47,8 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 
-#ifndef _DISTANCE2GRAPHCOLORHANDLE_HPP
-#define _DISTANCE2GRAPHCOLORHANDLE_HPP
+#ifndef _GRAPHCOLORDISTANCE2HANDLE_HPP
+#define _GRAPHCOLORDISTANCE2HANDLE_HPP
 
 namespace KokkosGraph {
 
@@ -68,7 +68,7 @@ enum GraphColoringAlgorithmDistance2
 
 
 template<class size_type_, class color_t_, class lno_t_, class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
-class Distance2GraphColoringHandle
+class GraphColorDistance2Handle
 {
 
   public:
@@ -148,7 +148,7 @@ class Distance2GraphColoringHandle
     /**
      * \brief Default constructor.
      */
-    Distance2GraphColoringHandle()
+    GraphColorDistance2Handle()
         : coloring_algorithm_type(COLORING_D2_DEFAULT)
         , verbose(false)
         , tictoc(false)
@@ -315,7 +315,7 @@ class Distance2GraphColoringHandle
     /**
      * \brief Destructor
      */
-    virtual ~Distance2GraphColoringHandle(){};
+    virtual ~GraphColorDistance2Handle(){};
 
     // getters and setters
     GraphColoringAlgorithmDistance2 get_coloring_algo_type() const { return this->coloring_algorithm_type; }

@@ -60,7 +60,7 @@
 
 #include "KokkosGraph_GraphColor.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"         // todo: remove this
-#include "KokkosGraph_Distance2GraphColorHandle.hpp"
+#include "KokkosGraph_GraphColorDistance2Handle.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 
@@ -80,9 +80,9 @@ namespace Impl {
  *
  */
 template<typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_>
-class GraphColorD2
+class GraphColorDistance2
 {
-    // static_assert( std::is_same< HandleType, KokkosGraph::Distance2GraphColoringHandle>::value, "Incorrect HandleType for this class.");
+    // static_assert( std::is_same< HandleType, KokkosGraph::GraphColorDistance2Handle>::value, "Incorrect HandleType for this class.");
 
   public:
     typedef lno_row_view_t_ in_lno_row_view_t;
@@ -154,7 +154,7 @@ class GraphColorD2
   public:
 
     /**
-     * \brief GraphColor constructor.
+     * \brief GraphColorDistance2 constructor.
      * \param nv_: number of vertices in the graph
      * \param ne_: number of edges in the graph
      * \param row_map: the xadj array of the graph. Its size is nv_ +1
@@ -162,14 +162,14 @@ class GraphColorD2
      * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
      *    including parameters.
      */
-    GraphColorD2(nnz_lno_t             nv_,
-                 nnz_lno_t             nc_,
-                 size_type             ne_,
-                 const_lno_row_view_t  row_map,
-                 const_lno_nnz_view_t  entries,
-                 const_clno_row_view_t t_row_map,
-                 const_clno_nnz_view_t t_entries,
-                 HandleType*           handle)
+    GraphColorDistance2(nnz_lno_t             nv_,
+                        nnz_lno_t             nc_,
+                        size_type             ne_,
+                        const_lno_row_view_t  row_map,
+                        const_lno_nnz_view_t  entries,
+                        const_clno_row_view_t t_row_map,
+                        const_clno_nnz_view_t t_entries,
+                        HandleType*           handle)
         : nv(nv_)
         , nr(nv_)
         , nc(nc_)
@@ -191,20 +191,18 @@ class GraphColorD2
     /**
      *  \brief GraphColor destructor.
      */
-    virtual ~GraphColorD2() {}
+    virtual ~GraphColorDistance2() {}
 
 
 
 
     // -----------------------------------------------------------------
     //
-    // GraphColorD2::execute()
+    // GraphColorDistance2::execute()
     //
     // -----------------------------------------------------------------
     virtual void execute()
     {
-        std::cout << ">>> GraphColorD2::execute()" << std::endl;
-
         color_view_type colors_out("Graph Colors", this->nv);
 
         // If the selected pass is using edge filtering we should set the flag.
@@ -273,6 +271,7 @@ class GraphColorD2
         next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
 
         nnz_lno_t numUncolored              = this->nv;
+        nnz_lno_t numUncoloredPreviousIter  = this->nv + 1;
         nnz_lno_t current_vertexListLength  = this->nv;
 
         double time;
@@ -283,6 +282,9 @@ class GraphColorD2
         for(; (iter < _max_num_iterations) && (numUncolored > 0); iter++)
         {
             timer.reset();
+
+            // Save the # of uncolored from the previous iteration
+            numUncoloredPreviousIter = numUncolored;
 
             // ------------------------------------------
             // Do greedy color
@@ -370,7 +372,11 @@ class GraphColorD2
                     next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
                 }
             }
-        }      // end for iter...
+
+            // Bail out if we didn't make any progress since we're probably stuck and it's better to just clean up in serial.
+            if(numUncolored == numUncoloredPreviousIter) break;
+
+        }      // end for iterations && numUncolored > 0...
 
         // ------------------------------------------
         // clean up in serial (resolveConflictsSerial)
@@ -603,7 +609,7 @@ class GraphColorD2
 
     // -----------------------------------------------------------------
     //
-    // GraphColorD2::colorGreedy()
+    // GraphColorDistance2::colorGreedy()
     //
     // -----------------------------------------------------------------
     void colorGreedy(const_lno_row_view_t xadj_,
@@ -659,7 +665,7 @@ class GraphColorD2
 
     // -----------------------------------------------------------------
     //
-    // GraphColorD2::colorGreedyEF()
+    // GraphColorDistance2::colorGreedyEF()
     //
     // -----------------------------------------------------------------
     void colorGreedyEF(const_lno_row_view_t xadj_,
@@ -696,7 +702,7 @@ class GraphColorD2
 
     // -----------------------------------------------------------------
     //
-    // GraphColorD2::findConflicts()
+    // GraphColorDistance2::findConflicts()
     //
     // -----------------------------------------------------------------
     template<typename adj_view_t>
@@ -727,7 +733,7 @@ class GraphColorD2
 
     // -----------------------------------------------------------------
     //
-    // GraphColorD2::resolveConflictsSerial()
+    // GraphColorDistance2::resolveConflictsSerial()
     //
     // -----------------------------------------------------------------
     template<typename adj_view_t>
@@ -1567,7 +1573,9 @@ class GraphColorD2
             _m_space.release_chunk(globally_used_hash_indices);
         }   // operator() (end)
     };      // struct functorCalculateD2Degree (end)
-};          // end class GraphColorD2
+
+
+};          // end class GraphColorDistance2
 
 
 }      // namespace Impl

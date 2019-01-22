@@ -362,13 +362,13 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
-        graph_color_d2(&kh,
-                       crsGraph.numRows(),
-                       crsGraph.numCols(),
-                       crsGraph.row_map,
-                       crsGraph.entries,
-                       crsGraph.row_map,
-                       crsGraph.entries);
+        graph_color_distance2(&kh,
+                              crsGraph.numRows(),
+                              crsGraph.numCols(),
+                              crsGraph.row_map,
+                              crsGraph.entries,
+                              crsGraph.row_map,
+                              crsGraph.entries);
 
         total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();

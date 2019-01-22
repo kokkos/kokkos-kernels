@@ -72,14 +72,14 @@ template<typename HandleType,
          typename lno_nnz_view_t_,
          typename clno_row_view_t_,
          typename clno_nnz_view_t_>
-class GraphColorD2_MatrixSquared
+class GraphColorDistance2MatrixSquared
 {
   public:
     typedef lno_row_view_t_ in_lno_row_view_t;
     typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
-    typedef typename HandleType::Distance2GraphColoringHandleType::color_t      color_t;
-    typedef typename HandleType::Distance2GraphColoringHandleType::color_view_t color_view_type;
+    typedef typename HandleType::GraphColorDistance2HandleType::color_t      color_t;
+    typedef typename HandleType::GraphColorDistance2HandleType::color_view_t color_view_type;
 
     typedef typename HandleType::size_type size_type;
     typedef typename HandleType::nnz_lno_t nnz_lno_t;
@@ -131,7 +131,7 @@ class GraphColorD2_MatrixSquared
      * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
      *    including parameters.
      */
-    GraphColorD2_MatrixSquared(nnz_lno_t             nr_,
+    GraphColorDistance2MatrixSquared(nnz_lno_t             nr_,
                                nnz_lno_t             nc_,
                                size_type             ne_,
                                const_lno_row_view_t  row_map,
@@ -155,7 +155,7 @@ class GraphColorD2_MatrixSquared
 
     /** \brief GraphColor destructor.
      */
-    virtual ~GraphColorD2_MatrixSquared() {}
+    virtual ~GraphColorDistance2MatrixSquared() {}
 
 
     /**
@@ -232,7 +232,7 @@ class GraphColorD2_MatrixSquared
         handle->destroy_graph_coloring_handle();
     }
 
-};      // GraphColorD2_MatrixSquared (end)
+};      // GraphColorDistance2MatrixSquared (end)
 
 
 

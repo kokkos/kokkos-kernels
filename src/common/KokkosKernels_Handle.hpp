@@ -42,7 +42,7 @@
 */
 #include <KokkosKernels_ExecSpaceUtils.hpp>
 #include "KokkosGraph_GraphColorHandle.hpp"
-#include "KokkosGraph_Distance2GraphColorHandle.hpp"
+#include "KokkosGraph_GraphColorDistance2Handle.hpp"
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
 #include "KokkosSparse_spadd_handle.hpp"
@@ -159,8 +159,8 @@ public:
       GraphColoringHandleType;
 
   typedef typename KokkosGraph::
-    Distance2GraphColoringHandle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
-      Distance2GraphColoringHandleType;
+    GraphColorDistance2Handle<const_size_type, const_nnz_lno_t, const_nnz_lno_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      GraphColorDistance2HandleType;
 
   typedef typename KokkosSparse::
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
@@ -194,7 +194,7 @@ public:
 private:
 
   GraphColoringHandleType *gcHandle;
-  Distance2GraphColoringHandleType *gcHandle_d2;
+  GraphColorDistance2HandleType *gcHandle_d2;
 
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
@@ -429,7 +429,7 @@ public:
 
 
   // Distance-2 Graph Coloring
-  Distance2GraphColoringHandleType *get_distance2_graph_coloring_handle()
+  GraphColorDistance2HandleType *get_distance2_graph_coloring_handle()
   {
     if(!this->is_owner_of_the_d2_gc_handle)
     {
@@ -441,7 +441,7 @@ public:
   {
     this->destroy_distance2_graph_coloring_handle();
     this->is_owner_of_the_d2_gc_handle = true;
-    this->gcHandle_d2 = new Distance2GraphColoringHandleType();
+    this->gcHandle_d2 = new GraphColorDistance2HandleType();
     this->gcHandle_d2->set_algorithm(coloring_type, true);
     this->gcHandle_d2->set_tictoc(KKVERBOSE);
     this->gcHandle_d2->set_verbose(KKVERBOSE);
