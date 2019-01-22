@@ -386,10 +386,6 @@ class Distance2GraphColoringHandle
                          entries_type&     entries,
                          kokkos_view_type& colors) const
     {
-        // typedef typename kokkos_view_t::HostMirror h_colors_t;       // SCAFFOLDING
-        // typedef typename rowmap_t::HostMirror      h_rowmap_t;       // SCAFFOLDING
-        // typedef typename entries_t::HostMirror     h_entries_t;      // SCAFFOLDING
-
         using h_colors_type  = typename kokkos_view_type::HostMirror;
         using h_rowmap_type  = typename rowmap_type::HostMirror;
         using h_entries_type = typename entries_type::HostMirror;
@@ -427,7 +423,7 @@ class Distance2GraphColoringHandle
             {
                 os << "    " << vid << " [ label=\"" << vid << "|" << h_colors(vid) << "\"];" << std::endl;
             }
-            for(size_t iadj = h_rowmap(vid); iadj < h_rowmap(vid + 1); iadj++)
+            for(size_t iadj = h_rowmap(vid); iadj < (size_t)h_rowmap(vid + 1); iadj++)
             {
                 size_t vadj = h_entries(iadj);
                 if(vadj >= vid)
