@@ -72,10 +72,15 @@ class GraphColorDistance2Handle
 {
 
   public:
-    typedef ExecutionSpace        HandleExecSpace;
-    typedef TemporaryMemorySpace  HandleTempMemorySpace;
-    typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
+    using HandleExecSpace = ExecutionSpace;
+    //typedef ExecutionSpace        HandleExecSpace;
+
+    using HandleTempMemorySpace = TemporaryMemorySpace;
+    //typedef TemporaryMemorySpace  HandleTempMemorySpace;
+
+    using HandlePersistentMemorySpace = PersistentMemorySpace;
+    //typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
     typedef typename std::remove_const<size_type_>::type size_type;
     typedef const size_type                              const_size_type;
@@ -146,7 +151,7 @@ class GraphColorDistance2Handle
 
 
     /**
-     * \brief Default constructor.
+     * Default constructor
      */
     GraphColorDistance2Handle()
         : coloring_algorithm_type(COLORING_D2_DEFAULT)
@@ -173,16 +178,20 @@ class GraphColorDistance2Handle
     }
 
 
-    /** Changes the graph coloring algorithm.
-     *  @param[in] col_algo               Coloring algorithm, one of:
-     *                                    - COLORING_D2_DEFAULT
-     *                                    - COLORING_D2_SERIAL
-     *                                    - COLORING_D2_MATRIX_SQUARED
-     *                                    - COLORING_D2_VB
-     *                                    - COLORING_D2_VB_BIT
-     *                                    - COLORING_D2_VB_BIT_EF
+    /**
+     * Changes the graph coloring algorithm.
+     *
+     * @param[in] col_algo Coloring algorithm, one of:
+     *                     - COLORING_D2_DEFAULT
+     *                     - COLORING_D2_SERIAL
+     *                     - COLORING_D2_MATRIX_SQUARED
+     *                     - COLORING_D2_VB
+     *                     - COLORING_D2_VB_BIT
+     *                     - COLORING_D2_VB_BIT_EF
      *
      *  @param[in] set_default_parameters Whether or not to reset the default parameters for the given algorithm.
+     *                                    Default = true.
+     *
      *  @return None
      */
     void set_algorithm(const GraphColoringAlgorithmDistance2 &col_algo, bool set_default_parameters = true)
@@ -357,10 +366,14 @@ class GraphColorDistance2Handle
     }
 
 
-    /** Print / write out the graph in a GraphVIZ format.
-     * Color "1" will be rendered as a red circle.
-     * Color "0" (uncolored) will be a star shape.
-     * Other node colors shown as just the color value.
+    /**
+     * Print / write out the graph in a GraphVIZ format.
+     *
+     * - Nodes colored with 1-5 will be filled in with some colors.
+     * - Nodes colored > 5 will be unfilled (i.e., white background).
+     * - Nodes colored with 0 (i.e., uncolored) will be filled in with red
+     *   and will have a dashed border line. Uncolored nodes indicate a failed
+     *   coloring.
      *
      * @param[in] os use std::cout for output to STDOUT stream, or a ofstream object
      *            (i.e., `std::ofstream os("G.dot", std::ofstream::out);`) to write
@@ -398,18 +411,50 @@ class GraphColorDistance2Handle
 
         for(size_t vid = 0; vid < num_verts; vid++)
         {
+            // Set color scheme for colors 1-5
+            std::string fillcolor = "";
+            std::string penwidth  = "";
+            std::string color     = "";
+            std::string style     = "";
+            std::string fontcolor = "";
             if(1 == h_colors(vid))
             {
-                os << "    " << vid << " [ label=\"\", shape=circle, style=filled, color=red, fillcolor=red];" << std::endl;
+                fillcolor = ", fillcolor=\"#CC4C51\"";
+                style     = ", style=\"filled\"";
+            }
+            else if(2 == h_colors(vid))
+            {
+                fillcolor = ", fillcolor=\"#CEBA5A\"";
+                style     = ", style=\"filled\"";
+            }
+            else if(3 == h_colors(vid))
+            {
+                fillcolor = ", fillcolor=\"#838FA4\"";
+                style     = ", style=\"filled\"";
+            }
+            else if(4 == h_colors(vid))
+            {
+                fillcolor = ", fillcolor=\"#C3AD86\"";
+                style     = ", style=\"filled\"";
+            }
+            else if(5 == h_colors(vid))
+            {
+                fillcolor = ", fillcolor=\"#935C44\"";
+                style     = ", style=\"filled\"";
             }
             else if(0 == h_colors(vid))
             {
-                os << "    " << vid << " [ label=\"" << vid << "\", shape=star, style=filled, color=black];" << std::endl;
+                style     = ", style=\"filled,dashed\"";
+                fillcolor = ", fillcolor=\"red\"";
+                fontcolor = ", fontcolor=\"black\"";
+                color     = ", color=\"black\"";
+                penwidth  = ", penwidth=\"2.0\"";
             }
-            else
-            {
-                os << "    " << vid << " [ label=\"" << vid << "|" << h_colors(vid) << "\"];" << std::endl;
-            }
+
+            os << "    " << vid << " [ label=\"" << vid << "|" << h_colors(vid) << "\"" << style << fontcolor << color
+               << fillcolor << penwidth << "];" << std::endl;
+
+            // Add the node's edges
             for(size_t iadj = h_rowmap(vid); iadj < (size_t)h_rowmap(vid + 1); iadj++)
             {
                 size_t vadj = h_entries(iadj);
@@ -430,11 +475,11 @@ class GraphColorDistance2Handle
     // -----------------------------------------
     //  Helpers
     // -----------------------------------------
-    
+
     // -----------------------------------------
     //  Functors
     // -----------------------------------------
-    
+
   public:
 
     struct ReduceMaxFunctor
