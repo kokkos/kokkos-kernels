@@ -521,7 +521,7 @@ class GraphColorDistance2
         nnz_lno_t num_colors = this->gc_handle->get_num_colors();
         nnz_lno_temp_work_view_t histogram("histogram", num_colors + 1);
         this->compute_color_histogram(histogram);
-        std::cout << ">>> Histogram: " << std::endl;
+        std::cout << "Distance-2 Color Histogram: " << std::endl;
         KokkosKernels::Impl::kk_print_1Dview(histogram);
         std::cout << std::endl;
     }
@@ -534,7 +534,7 @@ class GraphColorDistance2
      * @param[out] degree_d2     A mutable view of size |V|
      * @param[out] degree_d2_max Saves the max distance-2 degree value in.
      *
-     * @note This is EXPERIMENTAL
+     * @note This is EXPERIMENTAL development code.
      * @todo Uses HashMapAccumulator and still needs a lot of tweaking to make performant.
      */
     void compute_distance2_degree(non_const_1d_size_type_view_t &degree_d2, size_t &degree_d2_max)

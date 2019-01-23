@@ -63,7 +63,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_MyCRSMatrix.hpp>
 #include <KokkosKernels_TestParameters.hpp>
-#include <KokkosGraph_Distance2Color.hpp>       // EXPERIMENTAL (WCMCLEN)
+#include <KokkosGraph_Distance2Color.hpp>
 
 
 using namespace KokkosGraph;
@@ -91,6 +91,10 @@ using namespace KokkosGraph;
         typedef int64_t kk_lno_t;
     #endif
 #endif
+
+// Toggle EXPERIMENTAL code for calculating
+// a tight bound on distance-2 degree.
+#define USE_EXPERIMENTAL_MAXD2DEGREE 0
 
 
 using namespace KokkosGraph;
@@ -354,7 +358,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             break;
     }
 
-    std::cout << ">>> Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
+    std::cout << std::endl << "Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
 
     // If any of the runs have an invalid result, this will be set to false.
     bool all_results_valid = true;
@@ -387,28 +391,28 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         // Verify correctness
         // ------------------------------------------
         bool d2_coloring_is_valid            = false;
-        bool d2_coloring_validation_flags[4] = {false};
+        bool d2_coloring_validation_flags[4] = { false };
 
         d2_coloring_is_valid = graph_verify_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, d2_coloring_validation_flags);
 
         // Print out messages based on coloring validation check.
         if(d2_coloring_is_valid)
         {
-            std::cout << std::endl << ">>> Distance-2 Graph Coloring is VALID" << std::endl << std::endl;
+            std::cout << std::endl << "Distance-2 Graph Coloring is VALID" << std::endl << std::endl;
         }
         else
         {
             all_results_valid = false;
             std::cout << std::endl
-                      << ">>> Distance-2 Graph Coloring is NOT VALID" << std::endl
-                      << "    - Vert(s) left uncolored : " << d2_coloring_validation_flags[1] << std::endl
-                      << "    - Invalid D2 Coloring    : " << d2_coloring_validation_flags[2] << std::endl
+                      << "Distance-2 Graph Coloring is NOT VALID" << std::endl
+                      << "  - Vert(s) left uncolored : " << d2_coloring_validation_flags[1] << std::endl
+                      << "  - Invalid D2 Coloring    : " << d2_coloring_validation_flags[2] << std::endl
                       << std::endl;
         }
         if(d2_coloring_validation_flags[3])
         {
-            std::cout << ">>> Distance-2 Graph Coloring may have poor quality." << std::endl
-                      << "    - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
+            std::cout << "Distance-2 Graph Coloring may have poor quality." << std::endl
+                      << "  - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
                       << std::endl;
         }
 
@@ -426,7 +430,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     Kokkos::Impl::Timer timer;
 
-    #if 0
+    #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
     double time_d2_degree;
     timer.reset();
 
@@ -485,16 +489,18 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
     std::cout << "Summary" << std::endl
               << "-------" << std::endl
-              //<< "    Date/Time      : " << currentDateTimeStr << std::endl
+              << "    Date/Time      : " << currentDateTimeStr << std::endl
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
               << "    Filename       : " << a_mtx_bin_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
               << "    Num Edges      : " << crsGraph.entries.dimension_0() << std::endl
               << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
-    //              << "Graph Stats" << std::endl
-    //              << "    Degree D2 Max  : " << degree_d2_max << std::endl
-    //              << "    Degree D2 Time : " << time_d2_degree << std::endl
+              #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
+              << "Graph Stats" << std::endl
+              << "    Degree D2 Max  : " << degree_d2_max << std::endl
+              << "    Degree D2 Time : " << time_d2_degree << std::endl
+              #endif
               << "Overall Time/Stats" << std::endl
               << "    Total Time     : " << total_time << std::endl
               << "    Avg Time       : " << avg_time << std::endl
@@ -514,7 +520,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVTIMEHDR"
               << "," << "Filename"
               << "," << "Host"
-              //<< "," << "DateTime"
+              << "," << "DateTime"
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
@@ -527,17 +533,19 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << "Total Time CG"
               << "," << "Total Time FC"
               << "," << "Total Time RC"
-    //              << "," << "Time D2 Degree"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
-    //              << "," << "Degree D2 Max"
+              #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
+              << "," << "Time D2 Degree"
+              << "," << "Degree D2 Max"
+              #endif
               << "," << "Validation"
               << std::endl;
 
     std::cout << "CSVTIMEDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
-              //<< "," << currentDateTimeStr
+              << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
@@ -550,17 +558,20 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << total_time_color_greedy
               << "," << total_time_find_conflicts
               << "," << total_time_resolve_conflicts
-    //              << "," << time_d2_degree
+
               << "," << avg_colors
               << "," << avg_phases
-    //              << "," << degree_d2_max
+              #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
+              << "," << time_d2_degree
+              << "," << degree_d2_max
+              #endif
               << "," << all_results_valid_str
               << std::endl;
 
     std::cout << "CSVHISTHDR"
               << "," << "Filename"
               << "," << "Host"
-              //<< "," << "DateTime"
+              << "," << "DateTime"
               << "," << "Num Rows"
               << "," << "Num Edges"
               << "," << "Execution Space"
@@ -572,7 +583,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     std::cout << "CSVHISTDATA"
               << "," << a_mtx_bin_file
               << "," << hostname
-              //<< "," << currentDateTimeStr
+              << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
               << "," << crsGraph.entries.dimension_0()
               << "," << Kokkos::DefaultExecutionSpace::name()
@@ -589,21 +600,19 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 template<typename size_type, typename lno_t, typename exec_space, typename hbm_mem_space, typename sbm_mem_space>
 void run_multi_mem_experiment(Parameters params)
 {
+    using myExecSpace     = exec_space;
+    using myFastDevice    = Kokkos::Device<exec_space, hbm_mem_space>;
+    using mySlowExecSpace = Kokkos::Device<exec_space, sbm_mem_space>;
+    using fast_crstmat_t  = typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type>;
+    using fast_graph_t    = typename fast_crstmat_t::StaticCrsGraphType;
 
-    typedef exec_space myExecSpace;
-    typedef Kokkos::Device<exec_space, hbm_mem_space> myFastDevice;
-    typedef Kokkos::Device<exec_space, sbm_mem_space> mySlowExecSpace;
-
-    typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type> fast_crstmat_t;
-    typedef typename fast_crstmat_t::StaticCrsGraphType fast_graph_t;
     // typedef typename fast_graph_t::row_map_type::non_const_type fast_row_map_view_t;
     // typedef typename fast_graph_t::entries_type::non_const_type fast_cols_view_t;
-
     // typedef typename fast_graph_t::row_map_type::const_type const_fast_row_map_view_t;
     // typedef typename fast_graph_t::entries_type::const_type const_fast_cols_view_t;
 
-    typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, mySlowExecSpace, void, size_type> slow_crstmat_t;
-    typedef typename slow_crstmat_t::StaticCrsGraphType slow_graph_t;
+    using slow_crstmat_t = typename MyKokkosSparse::CrsMatrix<double, lno_t, mySlowExecSpace, void, size_type>;
+    using slow_graph_t   = typename slow_crstmat_t::StaticCrsGraphType;
 
     // typedef typename slow_graph_t::row_map_type::non_const_type slow_row_map_view_t;
     // typedef typename slow_graph_t::entries_type::non_const_type slow_cols_view_t;
@@ -846,22 +855,6 @@ int main(int argc, char *argv[])
 #endif
     }
 #endif
-
-    /*
-        // Timer products.
-        struct timeval begin, end;
-
-        gettimeofday(&begin, NULL);
-
-        std::cout << "Do stuff here!" << std::endl;
-
-        gettimeofday(&end, NULL);
-
-        // Calculate time.
-        double time = 1.0 * (end.tv_sec - begin.tv_sec) + 1.0e-6 * (end.tv_usec - begin.tv_usec);
-
-        std::cout << "Time: " << time << std::endl;
-    */
 
     Kokkos::finalize();
 
