@@ -324,8 +324,8 @@ class GraphColorDistance2
                 time = timer.seconds();
                 total_time += time;
                 std::cout << "\tIteration: " << iter << std::endl
-                          << "\t  - Time speculative greedy phase : " << time << std::endl;
-                std::cout << "\t  - Num Uncolored                 : " << numUncolored << std::endl;
+                          << "\t  - Time speculative greedy phase : " << time << std::endl
+                          << "\t  - Num Uncolored (greedy-color)  : " << numUncolored << std::endl;
 
                 gc_handle->add_to_overall_coloring_time_phase1(time);
 
@@ -357,7 +357,7 @@ class GraphColorDistance2
                 time = timer.seconds();
                 total_time += time;
                 std::cout << "\t  - Time conflict detection       : " << time << std::endl;
-                std::cout << "\t  - Num Uncolored                 : " << numUncolored << std::endl;
+                std::cout << "\t  - Num Uncolored (conflicts)     : " << numUncolored << std::endl;
                 gc_handle->add_to_overall_coloring_time_phase2(time);
                 timer.reset();
             }
@@ -480,9 +480,10 @@ class GraphColorDistance2
      */
     void compute_color_histogram(nnz_lno_temp_work_view_t & histogram)
     {
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_t, nnz_lno_temp_work_view_t, MyExecSpace>
+            (this->nv, this->gc_handle->get_vertex_colors(), histogram);
+
         MyExecSpace::fence();
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_t, nnz_lno_temp_work_view_t,
-            MyExecSpace>(this->nv, this->gc_handle->get_vertex_colors(), histogram);
     }
 
 
@@ -493,15 +494,20 @@ class GraphColorDistance2
     void print_color_histogram_csv()
     {
         nnz_lno_t num_colors = this->gc_handle->get_num_colors();
+
         nnz_lno_temp_work_view_t histogram("histogram", num_colors + 1);
+
         this->compute_color_histogram(histogram);
 
+        nnz_lno_temp_work_view_t::HostMirror h_histogram = Kokkos::create_mirror_view(histogram);
+        Kokkos::deep_copy(h_histogram, histogram);
+
         size_t i=0;
-        for(i=1; i< histogram.extent(0)-1; i++)
+        for(i=1; i< h_histogram.extent(0)-1; i++)
         {
-            std::cout << histogram(i) << ",";
+            std::cout << h_histogram(i) << ",";
         }
-        std::cout << histogram(i);
+        std::cout << h_histogram(i);
 
     }
 
@@ -801,6 +807,8 @@ class GraphColorDistance2
     // Functions: Helpers
     // ------------------------------------------------------
 
+
+  public:
 
 
     /**
@@ -1418,7 +1426,6 @@ class GraphColorDistance2
                                 {
                                     has_invalid_color = true;
                                     break_out         = true;
-                                    std::cout << ">>> Invalid color match: " << vid << ", " << vid_d2 << " both have color " << color_vid << std::endl;
                                 }
                             }
                         }

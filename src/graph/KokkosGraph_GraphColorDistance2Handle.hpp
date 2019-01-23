@@ -428,8 +428,15 @@ class GraphColorDistance2Handle
 
 
     // -----------------------------------------
-    //  Helpers & Functors
+    //  Helpers
     // -----------------------------------------
+    
+    // -----------------------------------------
+    //  Functors
+    // -----------------------------------------
+    
+  public:
+
     struct ReduceMaxFunctor
     {
         color_view_t colors;
