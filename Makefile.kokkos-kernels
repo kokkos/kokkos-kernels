@@ -97,7 +97,7 @@ tmp := $(shell echo "\#if !defined(F77_BLAS_MANGLE)" >> KokkosKernels_config.tmp
 tmp := $(shell echo "\#define F77_BLAS_MANGLE(name,NAME) $(KOKKOSKERNELS_FORTRAN_GLOBAL)" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "\#endif" >> KokkosKernels_config.tmp )
 
-KOKKOSKERNELS_INTERNAL_TPL_BLAS_RETURN_COMPLEX ?= 0
+KOKKOSKERNELS_INTERNAL_TPL_BLAS_RETURN_COMPLEX := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-return-complex" | wc -l))
 ifeq ($(KOKKOSKERNELS_INTERNAL_TPL_BLAS_RETURN_COMPLEX), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX" >> KokkosKernels_config.tmp )
 endif
