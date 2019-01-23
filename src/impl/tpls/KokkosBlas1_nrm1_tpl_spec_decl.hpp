@@ -46,11 +46,7 @@
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-
-extern "C" double dasum_ ( const int* N, const double* x, const int* x_inc);
-extern "C" float  sasum_ ( const int* N, const float* x, const int* x_inc);
-extern "C" double dzasum_( const int* N, const std::complex<double>* x, const int* x_inc);
-extern "C" float  dcasum_( const int* N, const std::complex<float>* x, const int* x_inc);
+#include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -88,7 +84,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dasum_(&N,X.data(),&one); \
+      R() = HostBlas<double>::asum(N,X.data(),one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -119,7 +115,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = sasum_(&N,X.data(),&one); \
+      R() = HostBlas<float>::asum(N,X.data(),one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -149,8 +145,8 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
-      int one = 1; \
-      R() = dzasum_(&N,reinterpret_cast<const std::complex<double>*>(X.data()),&one); \
+      int one = 1;                                                      \
+      R() = HostBlas<std::complex<double> >::asum(N,reinterpret_cast<const std::complex<double>*>(X.data()),one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -181,7 +177,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dcasum_(&N,reinterpret_cast<const std::complex<float>*>(X.data()),&one); \
+      R() = HostBlas<std::complex<float> >::asum(N,reinterpret_cast<const std::complex<float>*>(X.data()),one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
