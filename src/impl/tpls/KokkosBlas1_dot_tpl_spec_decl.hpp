@@ -51,9 +51,9 @@ extern "C" double ddot_ ( const int* N, const double* x, const int* x_inc,
                           const double* y, const int* y_inc);
 extern "C" float  sdot_ ( const int* N, const float* x, const int* x_inc,
                           const float* y, const int* y_inc);
-extern "C" void   zdotu_( std::complex<double> *res, const int* N, const std::complex<double>* x, const int* x_inc,
+extern "C" void   zdotc_( std::complex<double> *res, const int* N, const std::complex<double>* x, const int* x_inc,
                           const std::complex<double>* y, const int* y_inc);
-extern "C" void   cdotu_( std::complex<float> *res, const int* N, const std::complex<float>* x, const int* x_inc,
+extern "C" void   cdotc_( std::complex<float> *res, const int* N, const std::complex<float>* x, const int* x_inc,
                           const std::complex<float>* y, const int* y_inc);
 
 namespace KokkosBlas {
@@ -160,7 +160,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      zdotu_(reinterpret_cast<std::complex<double>* >(R.data()),        \
+      zdotc_(reinterpret_cast<std::complex<double>* >(R.data()),        \
              &N,                                                        \
              reinterpret_cast<const std::complex<double>* >(X.data()),&one, \
              reinterpret_cast<const std::complex<double>* >(Y.data()),&one); \
@@ -196,7 +196,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      cdotu_(reinterpret_cast<std::complex<float>* >(R.data()), \
+      cdotc_(reinterpret_cast<std::complex<float>* >(R.data()), \
              &N,                                                        \
              reinterpret_cast<const std::complex<float>* >(X.data()),&one, \
              reinterpret_cast<const std::complex<float>* >(Y.data()),&one); \
@@ -325,7 +325,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-      cublasZdotu(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, reinterpret_cast<const cuDoubleComplex*>(Y.data()), one, reinterpret_cast<cuDoubleComplex*>(&R())); \
+      cublasZdotc(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, reinterpret_cast<const cuDoubleComplex*>(Y.data()), one, reinterpret_cast<cuDoubleComplex*>(&R())); \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
@@ -359,7 +359,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-      cublasCdotu(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, reinterpret_cast<const cuComplex*>(Y.data()), one, reinterpret_cast<cuComplex*>(&R())); \
+      cublasCdotc(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, reinterpret_cast<const cuComplex*>(Y.data()), one, reinterpret_cast<cuComplex*>(&R())); \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
