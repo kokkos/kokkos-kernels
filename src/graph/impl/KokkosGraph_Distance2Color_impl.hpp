@@ -499,7 +499,7 @@ class GraphColorDistance2
 
         this->compute_color_histogram(histogram);
 
-        nnz_lno_temp_work_view_t::HostMirror h_histogram = Kokkos::create_mirror_view(histogram);
+        auto h_histogram = Kokkos::create_mirror_view(histogram);
         Kokkos::deep_copy(h_histogram, histogram);
 
         size_t i=0;
@@ -508,7 +508,6 @@ class GraphColorDistance2
             std::cout << h_histogram(i) << ",";
         }
         std::cout << h_histogram(i);
-
     }
 
 
@@ -750,13 +749,13 @@ class GraphColorDistance2
         h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
         Kokkos::deep_copy(h_recolor_list, current_vertexList_);
 
-        color_host_view_t h_colors = Kokkos::create_mirror_view(vertex_colors_);
+        auto h_colors = Kokkos::create_mirror_view(vertex_colors_);
 
-        typename const_lno_row_view_t::HostMirror h_idx = Kokkos::create_mirror_view(xadj_);
-        typename adj_view_t::HostMirror h_adj           = Kokkos::create_mirror_view(adj_);
+        auto h_idx = Kokkos::create_mirror_view(xadj_);
+        auto h_adj = Kokkos::create_mirror_view(adj_);
 
-        typename const_clno_row_view_t::HostMirror h_t_idx = Kokkos::create_mirror_view(t_xadj_);
-        typename const_clno_nnz_view_t::HostMirror h_t_adj = Kokkos::create_mirror_view(t_adj_);
+        auto h_t_idx = Kokkos::create_mirror_view(t_xadj_);
+        auto h_t_adj = Kokkos::create_mirror_view(t_adj_);
 
         Kokkos::deep_copy(h_colors, vertex_colors_);
 
