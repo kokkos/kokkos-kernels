@@ -94,7 +94,7 @@ void graph_compute_distance2_color(KernelHandle *handle,
     GraphColoringAlgorithmDistance2 algorithm = gch_d2->get_coloring_algo_type();
 
     // Create a view to save the colors to.
-    using color_view_type = typename KernelHandle::GraphColorDistance2HandleType::color_view_t;
+    using color_view_type = typename KernelHandle::GraphColorDistance2HandleType::color_view_type;
     color_view_type colors_out("Graph Colors", num_rows);
 
     switch(algorithm)

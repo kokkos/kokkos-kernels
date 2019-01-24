@@ -75,48 +75,40 @@ template<typename HandleType,
 class GraphColorDistance2MatrixSquared
 {
   public:
-    typedef lno_row_view_t_ in_lno_row_view_t;
-    typedef lno_nnz_view_t_ in_lno_nnz_view_t;
-
-    typedef typename HandleType::GraphColorDistance2HandleType::color_t      color_t;
-    typedef typename HandleType::GraphColorDistance2HandleType::color_view_t color_view_type;
-
-    typedef typename HandleType::size_type size_type;
-    typedef typename HandleType::nnz_lno_t nnz_lno_t;
-
-    typedef typename HandleType::HandleExecSpace       MyExecSpace;
-    typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
-    typedef typename HandleType::const_size_type       const_size_type;
-
-    typedef typename lno_row_view_t_::device_type    row_lno_view_device_t;
-    typedef typename lno_row_view_t_::const_type     const_lno_row_view_t;
-    typedef typename lno_nnz_view_t_::const_type     const_lno_nnz_view_t;
-    typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
-
-    typedef typename clno_row_view_t_::const_type     const_clno_row_view_t;
-    typedef typename clno_nnz_view_t_::const_type     const_clno_nnz_view_t;
-    typedef typename clno_nnz_view_t_::non_const_type non_const_clno_nnz_view_t;
-
-    typedef typename HandleType::size_type_temp_work_view_t     size_type_temp_work_view_t;
-    typedef typename HandleType::scalar_temp_work_view_t        scalar_temp_work_view_t;
-    typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
-
-    typedef typename HandleType::nnz_lno_temp_work_view_t           nnz_lno_temp_work_view_t;
-    typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
-
-    typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+    using in_lno_row_view_type              = lno_row_view_t_;
+    using in_lno_nnz_view_type              = lno_nnz_view_t_;
+    using color_type                        = typename HandleType::GraphColorDistance2HandleType::color_type;
+    using color_view_type                   = typename HandleType::GraphColorDistance2HandleType::color_view_type;
+    using size_type                         = typename HandleType::size_type;
+    using const_size_type                   = typename HandleType::const_size_type;
+    using nnz_lno_type                      = typename HandleType::nnz_lno_t;
+    using MyExecSpace                       = typename HandleType::HandleExecSpace;
+    using MyTempMemorySpace                 = typename HandleType::HandleTempMemorySpace;
+    using row_lno_view_device_type          = typename lno_row_view_t_::device_type;
+    using const_lno_row_view_type           = typename lno_row_view_t_::const_type;
+    using const_lno_nnz_view_type           = typename lno_nnz_view_t_::const_type;
+    using non_const_lno_nnz_view_type       = typename lno_nnz_view_t_::non_const_type;
+    using const_clno_row_view_type          = typename clno_row_view_t_::const_type;
+    using const_clno_nnz_view_type          = typename clno_nnz_view_t_::const_type;
+    using non_const_clno_nnz_view_type      = typename clno_nnz_view_t_::non_const_type;
+    using size_type_temp_work_view_type     = typename HandleType::size_type_temp_work_view_t;
+    using scalar_temp_work_view_type        = typename HandleType::scalar_temp_work_view_t;
+    using nnz_lno_persistent_work_view_type = typename HandleType::nnz_lno_persistent_work_view_t;
+    using nnz_lno_temp_work_view_type       = typename HandleType::nnz_lno_temp_work_view_t;
+    using single_dim_index_view_type        = typename Kokkos::View<nnz_lno_type, row_lno_view_device_type>;
+    using my_exec_space                     = Kokkos::RangePolicy<MyExecSpace>;
 
 
   protected:
-    nnz_lno_t             nr;          // num_rows  (# verts)
-    nnz_lno_t             nc;          // num cols
-    size_type             ne;          // # edges
-    const_lno_row_view_t  xadj;        // rowmap, transpose of rowmap
-    const_lno_nnz_view_t  adj;         // entries, transpose of entries   (size = # edges)
-    const_clno_row_view_t t_xadj;      // rowmap, transpose of rowmap
-    const_clno_nnz_view_t t_adj;       // entries, transpose of entries
-    nnz_lno_t             nv;          // num vertices
-    HandleType*           handle;          // the handle.
+    nnz_lno_type             nr;          // num_rows  (# verts)
+    nnz_lno_type             nc;          // num cols
+    size_type                ne;          // # edges
+    const_lno_row_view_type  xadj;        // rowmap, transpose of rowmap
+    const_lno_nnz_view_type  adj;         // entries, transpose of entries   (size = # edges)
+    const_clno_row_view_type t_xadj;      // rowmap, transpose of rowmap
+    const_clno_nnz_view_type t_adj;       // entries, transpose of entries
+    nnz_lno_type             nv;          // num vertices
+    HandleType*              handle;      // the handle.
 
     bool verbose;
 
@@ -131,14 +123,14 @@ class GraphColorDistance2MatrixSquared
      * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
      *    including parameters.
      */
-    GraphColorDistance2MatrixSquared(nnz_lno_t             nr_,
-                               nnz_lno_t             nc_,
-                               size_type             ne_,
-                               const_lno_row_view_t  row_map,
-                               const_lno_nnz_view_t  entries,
-                               const_clno_row_view_t t_row_map,
-                               const_clno_nnz_view_t t_entries,
-                               HandleType*           handle)
+    GraphColorDistance2MatrixSquared(nnz_lno_type             nr_,
+                                     nnz_lno_type             nc_,
+                                     size_type                ne_,
+                                     const_lno_row_view_type  row_map,
+                                     const_lno_nnz_view_type  entries,
+                                     const_clno_row_view_type t_row_map,
+                                     const_clno_nnz_view_type t_entries,
+                                     HandleType*              handle)
         : nr(nr_)
         , nc(nc_)
         , ne(ne_)
@@ -177,7 +169,7 @@ class GraphColorDistance2MatrixSquared
         std::string algName = "SPGEMM_KK_MEMSPEED";
         handle->create_spgemm_handle(KokkosSparse::StringToSPGEMMAlgorithm(algName));
 
-        size_type_temp_work_view_t cRowptrs("cRowptrs", nr + 1);
+        size_type_temp_work_view_type cRowptrs("cRowptrs", nr + 1);
 
         // Call symbolic multiplication of graph with itself (no transposes, and A and B are the same)
         KokkosSparse::Experimental::spgemm_symbolic(handle, nr, nc, nr, xadj, adj, false, t_xadj, t_adj, false, cRowptrs);
@@ -187,11 +179,11 @@ class GraphColorDistance2MatrixSquared
 
         // Must create placeholder value views for A and C (values are meaningless)
         // Said above that the scalar view type is the same as the colinds view type
-        scalar_temp_work_view_t aFakeValues("A/B placeholder values (meaningless)", adj.size());
+        scalar_temp_work_view_type aFakeValues("A/B placeholder values (meaningless)", adj.size());
 
         // Allocate C entries array, and placeholder values
-        nnz_lno_persistent_work_view_t cColinds("C colinds", Cnnz);
-        scalar_temp_work_view_t        cFakeValues("C placeholder values (meaningless)", Cnnz);
+        nnz_lno_persistent_work_view_type cColinds("C colinds", Cnnz);
+        scalar_temp_work_view_type        cFakeValues("C placeholder values (meaningless)", Cnnz);
 
         // Run the numeric kernel
         KokkosSparse::Experimental::spgemm_numeric(
@@ -210,7 +202,8 @@ class GraphColorDistance2MatrixSquared
 
         // Now run distance-1 graph coloring on C, use LocalOrdinal for storing colors
         handle->create_graph_coloring_handle();
-        KokkosGraph::Experimental::graph_color(handle, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
+        KokkosGraph::Experimental::graph_color(
+          handle, nr, nr, /*(const_rowptrs_view)*/ cRowptrs, /*(const_colinds_view)*/ cColinds);
 
         if(this->verbose)
         {
@@ -225,8 +218,10 @@ class GraphColorDistance2MatrixSquared
         // color_view_type colorsDevice = coloringHandle->get_vertex_colors();
 
         // std::cout << "Num phases: " << handle->get_graph_coloring_handle()->get_num_phases() << std::endl;
-        this->handle->get_distance2_graph_coloring_handle()->set_num_phases(this->handle->get_graph_coloring_handle()->get_num_phases());
-        this->handle->get_distance2_graph_coloring_handle()->set_vertex_colors(this->handle->get_graph_coloring_handle()->get_vertex_colors());
+        this->handle->get_distance2_graph_coloring_handle()->set_num_phases(
+          this->handle->get_graph_coloring_handle()->get_num_phases());
+        this->handle->get_distance2_graph_coloring_handle()->set_vertex_colors(
+          this->handle->get_graph_coloring_handle()->get_vertex_colors());
 
         // clean up coloring handle
         handle->destroy_graph_coloring_handle();

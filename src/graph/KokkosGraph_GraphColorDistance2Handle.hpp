@@ -67,68 +67,55 @@ enum GraphColoringAlgorithmDistance2
 
 
 
-template<class size_type_, class color_t_, class lno_t_, class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
+template<class size_type_,
+         class color_t_,
+         class lno_t_,
+         class ExecutionSpace,
+         class TemporaryMemorySpace,
+         class PersistentMemorySpace>
 class GraphColorDistance2Handle
 {
 
   public:
-
-    using HandleExecSpace = ExecutionSpace;
-    //typedef ExecutionSpace        HandleExecSpace;
-
-    using HandleTempMemorySpace = TemporaryMemorySpace;
-    //typedef TemporaryMemorySpace  HandleTempMemorySpace;
-
-    using HandlePersistentMemorySpace = PersistentMemorySpace;
-    //typedef PersistentMemorySpace HandlePersistentMemorySpace;
-
-    typedef typename std::remove_const<size_type_>::type size_type;
-    typedef const size_type                              const_size_type;
-
-    typedef typename std::remove_const<lno_t_>::type nnz_lno_t;
-    typedef const nnz_lno_t                          const_nnz_lno_t;
-
-    typedef typename std::remove_const<color_t_>::type color_t;
-    typedef const color_t                              const_color_t;
-
-    typedef typename Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t;
-
-    typedef typename color_view_t::array_layout  color_view_array_layout;
-    typedef typename color_view_t::device_type   color_view_device_t;
-    typedef typename color_view_t::memory_traits color_view_memory_traits;
-    typedef typename color_view_t::HostMirror    color_host_view_t;      // Host view type
-
-
-    typedef typename Kokkos::View<size_type *, HandleTempMemorySpace>       size_type_temp_work_view_t;
-    typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
-
-    typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t;          // Host view type
-
-    typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace>       nnz_lno_temp_work_view_t;
-    typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-    typedef typename nnz_lno_persistent_work_view_t::HostMirror             nnz_lno_persistent_work_host_view_t;  // Host view type
-
-    typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t;
-    typedef typename team_policy_t::member_type team_member_t;
-
-    typedef typename Kokkos::View<size_t *> non_const_1d_size_type_view_t;
+    using HandleExecSpace                          = ExecutionSpace;
+    using HandleTempMemorySpace                    = TemporaryMemorySpace;
+    using HandlePersistentMemorySpace              = PersistentMemorySpace;
+    using size_type                                = typename std::remove_const<size_type_>::type;
+    using const_size_type                          = const size_type;
+    using nnz_lno_type                             = typename std::remove_const<lno_t_>::type;
+    using const_nnz_lno_type                       = const nnz_lno_type;
+    using color_type                               = typename std::remove_const<color_t_>::type;
+    using const_color_type                         = const color_type;
+    using color_view_type                          = typename Kokkos::View<color_type*, HandlePersistentMemorySpace>;
+    using color_view_array_layout                  = typename color_view_type::array_layout;
+    using color_view_device_type                   = typename color_view_type::device_type;
+    using color_view_memory_traits                 = typename color_view_type::memory_traits;
+    using color_host_view_type                     = typename color_view_type::HostMirror;
+    using size_type_temp_work_view_type            = typename Kokkos::View<size_type*, HandleTempMemorySpace>;
+    using size_type_persistent_work_view_type      = typename Kokkos::View<size_type*, HandlePersistentMemorySpace>;
+    using size_type_persistent_work_host_view_type = typename size_type_persistent_work_view_type::HostMirror;
+    using nnz_lno_temp_work_view_type              = typename Kokkos::View<nnz_lno_type*, HandleTempMemorySpace>;
+    using nnz_lno_persistent_work_view_type        = typename Kokkos::View<nnz_lno_type*, HandlePersistentMemorySpace>;
+    using nnz_lno_persistent_work_host_view_type   = typename nnz_lno_persistent_work_view_type::HostMirror;
+    using team_policy_type                         = Kokkos::TeamPolicy<HandleExecSpace>;
+    using team_member_type                         = typename team_policy_type::member_type;
+    using non_const_1d_size_type_view_type         = typename Kokkos::View<size_t*>;
 
   private:
-
     // Parameters
     GraphColoringAlgorithmDistance2 coloring_algorithm_type;      // Which algorithm type to use.
 
-    bool verbose;                         // verbosity flag
-    bool tictoc;                          // print time at every step
+    bool verbose;      // verbosity flag
+    bool tictoc;       // print time at every step
 
-    bool vb_edge_filtering;               // whether to do edge filtering or not in vertex based algorithms.
+    bool vb_edge_filtering;      // whether to do edge filtering or not in vertex based algorithms.
 
-    int vb_chunk_size;                   // the (minimum) size of the consecutive works that a thread will be assigned to.
-    int max_number_of_iterations;        // maximum allowed number of phases that
+    int vb_chunk_size;                 // the (minimum) size of the consecutive works that a thread will be assigned to.
+    int max_number_of_iterations;      // maximum allowed number of phases that
 
 
     // STATISTICS
-    double overall_coloring_time;             // the overall time that it took to color the graph. In the case of the iterative calls.
+    double overall_coloring_time;             // The overall time taken to color the graph. In the case of the iterative calls.
     double overall_coloring_time_phase1;      //
     double overall_coloring_time_phase2;      //
     double overall_coloring_time_phase3;      // Some timer accumulators for internal phases.
@@ -136,20 +123,18 @@ class GraphColorDistance2Handle
     double overall_coloring_time_phase5;      //
     double coloring_time;                     // the time that it took to color the graph
 
-    int num_phases;                           // Number of phases used by the coloring algorithm
+    int num_phases;      // Number of phases used by the coloring algorithm
 
 
-    size_type                      size_of_edge_list;       // todo not used?
+    size_type size_of_edge_list;      // todo not used?
 
-    color_view_t vertex_colors;
-    bool         is_coloring_called_before;
-    nnz_lno_t    num_colors;
+    color_view_type vertex_colors;
+    bool            is_coloring_called_before;
+    nnz_lno_type    num_colors;
 
 
 
   public:
-
-
     /**
      * Default constructor
      */
@@ -194,7 +179,7 @@ class GraphColorDistance2Handle
      *
      *  @return None
      */
-    void set_algorithm(const GraphColoringAlgorithmDistance2 &col_algo, bool set_default_parameters = true)
+    void set_algorithm(const GraphColoringAlgorithmDistance2& col_algo, bool set_default_parameters = true)
     {
         if(col_algo == COLORING_D2_DEFAULT)
         {
@@ -221,64 +206,65 @@ class GraphColorDistance2Handle
      */
     void choose_default_algorithm()
     {
-        #if defined(KOKKOS_ENABLE_SERIAL)
+#if defined(KOKKOS_ENABLE_SERIAL)
         if(Kokkos::Impl::is_same<Kokkos::Serial, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_SERIAL;
-            #ifdef VERBOSE
+#ifdef VERBOSE
             std::cout << "Serial Execution Space, Default Algorithm: COLORING_VB" << std::endl;
-            #endif
+#endif
         }
-        #endif
+#endif
 
-        #if defined(KOKKOS_ENABLE_THREADS)
+#if defined(KOKKOS_ENABLE_THREADS)
         if(Kokkos::Impl::is_same<Kokkos::Threads, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
-            #ifdef VERBOSE
+#ifdef VERBOSE
             std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_VB" << std::endl;
-            #endif
+#endif
         }
-        #endif
+#endif
 
-        #if defined(KOKKOS_ENABLE_OPENMP)
+#if defined(KOKKOS_ENABLE_OPENMP)
         if(Kokkos::Impl::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
-            #ifdef VERBOSE
+#ifdef VERBOSE
             std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_VB" << std::endl;
-            #endif
+#endif
         }
-        #endif
+#endif
 
-        #if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
         if(Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
-            #ifdef VERBOSE
+#ifdef VERBOSE
             std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
-            #endif
+#endif
         }
-        #endif
+#endif
 
-        #if defined(KOKKOS_ENABLE_QTHREAD)
+#if defined(KOKKOS_ENABLE_QTHREAD)
         if(Kokkos::Impl::is_same<Kokkos::Qthread, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_VB_BIT;
-            #ifdef VERBOSE
+#ifdef VERBOSE
             std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
-            #endif
+#endif
         }
-        #endif
+#endif
     }
 
 
-    nnz_lno_t get_num_colors()
+    nnz_lno_type get_num_colors()
     {
         if(num_colors == 0)
         {
             typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
-            Kokkos::parallel_reduce("KokkosKernels::FindMax", my_exec_space(0, vertex_colors.extent(0)), ReduceMaxFunctor(vertex_colors), num_colors);
+            Kokkos::parallel_reduce(
+              "KokkosKernels::FindMax", my_exec_space(0, vertex_colors.extent(0)), ReduceMaxFunctor(vertex_colors), num_colors);
         }
         return num_colors;
     }
@@ -286,7 +272,7 @@ class GraphColorDistance2Handle
 
     /** \brief Sets Default Parameter settings for the given algorithm.
      */
-    void set_defaults(const GraphColoringAlgorithmDistance2 &col_algo)
+    void set_defaults(const GraphColoringAlgorithmDistance2& col_algo)
     {
         switch(col_algo)
         {
@@ -296,10 +282,10 @@ class GraphColorDistance2Handle
             case COLORING_D2_VB:
             case COLORING_D2_VB_BIT:
             case COLORING_D2_VB_BIT_EF:
-                this->tictoc                         = false;
-                this->vb_edge_filtering              = false;
-                this->vb_chunk_size                  = 8;
-                this->max_number_of_iterations       = 200;
+                this->tictoc                   = false;
+                this->vb_edge_filtering        = false;
+                this->vb_chunk_size            = 8;
+                this->max_number_of_iterations = 200;
                 break;
             default:
                 throw std::runtime_error("Unknown Distance-2 Graph Coloring Algorithm\n");
@@ -310,17 +296,17 @@ class GraphColorDistance2Handle
     /**
      * \brief Destructor
      */
-    virtual ~GraphColorDistance2Handle(){};
+    virtual ~GraphColorDistance2Handle() {};
 
     // getters and setters
     GraphColoringAlgorithmDistance2 get_coloring_algo_type() const { return this->coloring_algorithm_type; }
 
-    bool   get_verbose()                  const { return this->verbose; }
-    double get_coloring_time()            const { return this->coloring_time; }
+    bool   get_verbose() const { return this->verbose; }
+    double get_coloring_time() const { return this->coloring_time; }
     int    get_max_number_of_iterations() const { return this->max_number_of_iterations; }
-    int    get_num_phases()               const { return this->num_phases; }
+    int    get_num_phases() const { return this->num_phases; }
 
-    double get_overall_coloring_time()        const { return this->overall_coloring_time; }
+    double get_overall_coloring_time() const { return this->overall_coloring_time; }
     double get_overall_coloring_time_phase1() const { return this->overall_coloring_time_phase1; }
     double get_overall_coloring_time_phase2() const { return this->overall_coloring_time_phase2; }
     double get_overall_coloring_time_phase3() const { return this->overall_coloring_time_phase3; }
@@ -329,36 +315,51 @@ class GraphColorDistance2Handle
 
     bool get_tictoc() const { return this->tictoc; }
 
-    int  get_vb_chunk_size() const { return this->vb_chunk_size; }
+    int get_vb_chunk_size() const { return this->vb_chunk_size; }
 
     bool get_vb_edge_filtering() const { return this->vb_edge_filtering; }
 
-    color_view_t get_vertex_colors() const { return this->vertex_colors; }
+    color_view_type get_vertex_colors() const { return this->vertex_colors; }
 
     bool is_coloring_called() const { return this->is_coloring_called_before; }
 
     // setters
-    void set_coloring_algo_type(const GraphColoringAlgorithmDistance2 &col_algo) { this->coloring_algorithm_type = col_algo; }
+    void set_coloring_algo_type(const GraphColoringAlgorithmDistance2& col_algo) { this->coloring_algorithm_type = col_algo; }
 
-    void set_verbose(const bool verbose_)                    { this->verbose = verbose_; }
-    void set_coloring_time(const double &coloring_time_)     { this->coloring_time = coloring_time_; }
-    void set_max_number_of_iterations(const int &max_phases) { this->max_number_of_iterations = max_phases; }
-    void set_num_phases(const double &num_phases_)           { this->num_phases = num_phases_; }
+    void set_verbose(const bool verbose_) { this->verbose = verbose_; }
+    void set_coloring_time(const double& coloring_time_) { this->coloring_time = coloring_time_; }
+    void set_max_number_of_iterations(const int& max_phases) { this->max_number_of_iterations = max_phases; }
+    void set_num_phases(const double& num_phases_) { this->num_phases = num_phases_; }
 
-    void add_to_overall_coloring_time(const double &coloring_time_)        { this->overall_coloring_time += coloring_time_; }
-    void add_to_overall_coloring_time_phase1(const double &coloring_time_) { this->overall_coloring_time_phase1 += coloring_time_; }
-    void add_to_overall_coloring_time_phase2(const double &coloring_time_) { this->overall_coloring_time_phase2 += coloring_time_; }
-    void add_to_overall_coloring_time_phase3(const double &coloring_time_) { this->overall_coloring_time_phase3 += coloring_time_; }
-    void add_to_overall_coloring_time_phase4(const double &coloring_time_) { this->overall_coloring_time_phase4 += coloring_time_; }
-    void add_to_overall_coloring_time_phase5(const double &coloring_time_) { this->overall_coloring_time_phase5 += coloring_time_; }
+    void add_to_overall_coloring_time(const double& coloring_time_) { this->overall_coloring_time += coloring_time_; }
+    void add_to_overall_coloring_time_phase1(const double& coloring_time_)
+    {
+        this->overall_coloring_time_phase1 += coloring_time_;
+    }
+    void add_to_overall_coloring_time_phase2(const double& coloring_time_)
+    {
+        this->overall_coloring_time_phase2 += coloring_time_;
+    }
+    void add_to_overall_coloring_time_phase3(const double& coloring_time_)
+    {
+        this->overall_coloring_time_phase3 += coloring_time_;
+    }
+    void add_to_overall_coloring_time_phase4(const double& coloring_time_)
+    {
+        this->overall_coloring_time_phase4 += coloring_time_;
+    }
+    void add_to_overall_coloring_time_phase5(const double& coloring_time_)
+    {
+        this->overall_coloring_time_phase5 += coloring_time_;
+    }
 
     void set_tictoc(const bool use_tictoc) { this->tictoc = use_tictoc; }
 
-    void set_vb_chunk_size(const int &chunksize) { this->vb_chunk_size = chunksize; }
+    void set_vb_chunk_size(const int& chunksize) { this->vb_chunk_size = chunksize; }
 
-    void set_vb_edge_filtering(const bool &use_vb_edge_filtering) { this->vb_edge_filtering = use_vb_edge_filtering; }
+    void set_vb_edge_filtering(const bool& use_vb_edge_filtering) { this->vb_edge_filtering = use_vb_edge_filtering; }
 
-    void set_vertex_colors(const color_view_t vertex_colors_)
+    void set_vertex_colors(const color_view_type vertex_colors_)
     {
         this->vertex_colors             = vertex_colors_;
         this->is_coloring_called_before = true;
@@ -470,8 +471,6 @@ class GraphColorDistance2Handle
 
 
   private:
-
-
     // -----------------------------------------
     //  Helpers
     // -----------------------------------------
@@ -481,14 +480,13 @@ class GraphColorDistance2Handle
     // -----------------------------------------
 
   public:
-
     struct ReduceMaxFunctor
     {
-        color_view_t colors;
-        ReduceMaxFunctor(color_view_t cat) : colors(cat) {}
+        color_view_type colors;
+        ReduceMaxFunctor(color_view_type cat) : colors(cat) {}
 
         KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t& i, color_t& color_max) const
+        void operator()(const nnz_lno_type& i, color_type& color_max) const
         {
             if(color_max < colors(i))
                 color_max = colors(i);
@@ -496,7 +494,7 @@ class GraphColorDistance2Handle
 
         // max -plus semiring equivalent of "plus"
         KOKKOS_INLINE_FUNCTION
-        void join(volatile color_t& dst, const volatile color_t& src) const
+        void join(volatile color_type& dst, const volatile color_type& src) const
         {
             if(dst < src)
             {
@@ -505,11 +503,11 @@ class GraphColorDistance2Handle
         }
 
         KOKKOS_INLINE_FUNCTION
-        void init(color_t& dst) const { dst = 0; }
+        void init(color_type& dst) const { dst = 0; }
     };
 
 
-};  // class GraphColorDistance2Handle (end)
+};      // class GraphColorDistance2Handle (end)
 
 }      // namespace KokkosGraph
 

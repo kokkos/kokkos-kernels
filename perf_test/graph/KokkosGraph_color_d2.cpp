@@ -379,7 +379,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         KokkosKernels::Impl::print_1Dview(kh.get_distance2_graph_coloring_handle()->get_vertex_colors());
         std::cout << std::endl;
 
-        // If verbose mode is on and there the graph has fewer than 1000 verts, dump a GraphVIZ DOT file.
+        // If verbose mode is on and there the graph has fewer than 1500 verts, dump a GraphVIZ DOT file.
         if(verbose && repeat==i+1 && crsGraph.numRows() < 1500)
         {
             auto colors = kh.get_distance2_graph_coloring_handle()->get_vertex_colors();
