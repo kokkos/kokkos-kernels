@@ -362,7 +362,7 @@ spmv(const char mode[],
     void
     spmv_struct (const char mode[],
                  const int stencil_type,
-                 const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
+                 const Kokkos::View<int*, Kokkos::HostSpace>& structure,
                  const AlphaType& alpha,
                  const AMatrix& A,
                  const XVector& x,
@@ -453,11 +453,84 @@ spmv(const char mode[],
                                                                 alpha, A_i, x_i, beta, y_i);
     }
 
+
+    template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector ,
+             class XLayout = typename XVector::array_layout>
+    struct SPMV2D1D_STRUCT{
+      static bool spmv2d1d_struct (const char mode[],
+                                   const int stencil_type,
+                                   const Kokkos::View<int*, Kokkos::HostSpace>& structure,
+                                   const AlphaType& alpha,
+                                   const AMatrix& A,
+                                   const XVector& x,
+                                   const BetaType& beta,
+                                   const YVector& y);
+    };
+
+
+    template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+    struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutStride>{
+      static bool spmv2d1d_struct (const char mode[],
+                                   const int stencil_type,
+                                   const Kokkos::View<int*, Kokkos::HostSpace>& structure,
+                                   const AlphaType& alpha,
+                                   const AMatrix& A,
+                                   const XVector& x,
+                                   const BetaType& beta,
+                                   const YVector& y){
+#if defined (KOKKOSKERNELS_INST_LAYOUTSTRIDE) || !defined(KOKKOSKERNELS_ETI_ONLY)
+        spmv_struct (mode, stencil_type, structure, alpha, A, x, beta, y, RANK_ONE());
+        return true;
+#else
+        return false;
+#endif
+      }
+    };
+
+    template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+    struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutLeft>{
+      static bool spmv2d1d_struct (const char mode[],
+                                   const int stencil_type,
+                                   const Kokkos::View<int*, Kokkos::HostSpace>& structure,
+                                   const AlphaType& alpha,
+                                   const AMatrix& A,
+                                   const XVector& x,
+                                   const BetaType& beta,
+                                   const YVector& y){
+#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
+        spmv_struct (mode, stencil_type, structure, alpha, A, x, beta, y, RANK_ONE());
+        return true;
+#else
+        return false;
+#endif
+      }
+    };
+
+
+    template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+    struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRight>{
+      static bool spmv2d1d_struct (const char mode[],
+                                   const int stencil_type,
+                                   const Kokkos::View<int*, Kokkos::HostSpace>& structure,
+                                   const AlphaType& alpha,
+                                   const AMatrix& A,
+                                   const XVector& x,
+                                   const BetaType& beta,
+                                   const YVector& y){
+#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
+        spmv_struct (mode, stencil_type, structure, alpha, A, x, beta, y, RANK_ONE());
+        return true;
+#else
+        return false;
+#endif
+      }
+    };
+
     template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
     void
     spmv_struct (const char mode[],
                  const int stencil_type,
-                 const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
+                 const Kokkos::View<int*, Kokkos::HostSpace>& structure,
                  const AlphaType& alpha,
                  const AMatrix& A,
                  const XVector& x,
@@ -465,9 +538,104 @@ spmv(const char mode[],
                  const YVector& y,
                  const RANK_TWO)
     {
-      std::ostringstream os;
-      os << "KokkosBlas::spmv_struct: Rank2 spmv_struct is not implemented yet!" << std::endl;
-      Kokkos::Impl::throw_runtime_exception (os.str ());
+      // Make sure that both x and y have the same rank.
+      static_assert (XVector::rank == YVector::rank,
+                     "KokkosBlas::spmv: Vector ranks do not match.");
+      // Make sure that y is non-const.
+      static_assert (std::is_same<typename YVector::value_type,
+                     typename YVector::non_const_value_type>::value,
+                     "KokkosBlas::spmv: Output Vector must be non-const.");
+
+      // Check compatibility of dimensions at run time.
+      if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
+        if ((x.extent(1) != y.extent(1)) ||
+            (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (x.extent(0))) ||
+            (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (y.extent(0)))) {
+          std::ostringstream os;
+          os << "KokkosBlas::spmv: Dimensions do not match: "
+             << ", A: " << A.numRows () << " x " << A.numCols()
+             << ", x: " << x.extent(0) << " x " << x.extent(1)
+             << ", y: " << y.extent(0) << " x " << y.extent(1);
+          Kokkos::Impl::throw_runtime_exception (os.str ());
+        }
+      } else {
+        if ((x.extent(1) != y.extent(1)) ||
+            (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (y.extent(0))) ||
+            (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (x.extent(0)))) {
+          std::ostringstream os;
+          os << "KokkosBlas::spmv: Dimensions do not match (transpose): "
+             << ", A: " << A.numRows () << " x " << A.numCols()
+             << ", x: " << x.extent(0) << " x " << x.extent(1)
+             << ", y: " << y.extent(0) << " x " << y.extent(1);
+          Kokkos::Impl::throw_runtime_exception (os.str ());
+        }
+      }
+
+      typedef KokkosSparse::CrsMatrix<
+        typename AMatrix::const_value_type,
+                                            typename AMatrix::const_ordinal_type,
+                                            typename AMatrix::device_type,
+                                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                                            typename AMatrix::const_size_type>              AMatrix_Internal;
+
+      AMatrix_Internal A_i = A;
+
+      // Call single-vector version if appropriate
+      if (x.extent(1) == 1) {
+        typedef Kokkos::View<typename XVector::const_value_type*,
+                             typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout, Kokkos::LayoutLeft>::value,
+                                                         Kokkos::LayoutLeft, Kokkos::LayoutStride>::type,
+                             typename XVector::device_type,
+                             Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_SubInternal;
+        typedef Kokkos::View<typename YVector::non_const_value_type*,
+                             typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout,Kokkos::LayoutLeft>::value,
+                                                         Kokkos::LayoutLeft,Kokkos::LayoutStride>::type,
+                             typename YVector::device_type,
+                             Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_SubInternal;
+
+        XVector_SubInternal x_i = Kokkos::subview (x, Kokkos::ALL (), 0);
+        YVector_SubInternal y_i = Kokkos::subview (y, Kokkos::ALL (), 0);
+
+
+
+        //spmv_struct (mode, alpha, A, x_i, beta, y_i);
+        if (SPMV2D1D_STRUCT  <AlphaType, AMatrix_Internal, XVector_SubInternal,
+            BetaType, YVector_SubInternal, typename XVector_SubInternal::array_layout>::spmv2d1d_struct(mode, stencil_type, structure, alpha, A, x_i, beta, y_i)) {
+          return;
+        }
+      }
+
+      // Call true rank 2 vector implementation
+      {
+        typedef Kokkos::View<
+          typename XVector::const_value_type**,
+          typename XVector::array_layout,
+          typename XVector::device_type,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_Internal;
+
+        typedef Kokkos::View<
+          typename YVector::non_const_value_type**,
+          typename YVector::array_layout,
+          typename YVector::device_type,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_Internal;
+
+        XVector_Internal x_i = x;
+        YVector_Internal y_i = y;
+
+        return Impl::SPMV_MV<typename AMatrix_Internal::value_type,
+                             typename AMatrix_Internal::ordinal_type,
+                             typename AMatrix_Internal::device_type,
+                             typename AMatrix_Internal::memory_traits,
+                             typename AMatrix_Internal::size_type,
+                             typename XVector_Internal::value_type**,
+                             typename XVector_Internal::array_layout,
+                             typename XVector_Internal::device_type,
+                             typename XVector_Internal::memory_traits,
+                             typename YVector_Internal::value_type**,
+                             typename YVector_Internal::array_layout,
+                             typename YVector_Internal::device_type,
+                             typename YVector_Internal::memory_traits>::spmv_mv (mode, alpha, A_i, x_i, beta, y_i);
+      }
     }
 
     /// \brief Public interface to structured local sparse matrix-vector multiply.
@@ -480,9 +648,7 @@ spmv(const char mode[],
     ///
     /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
     ///   for conjugate transpose.
-    /// \param structure [in] structure of the matrix, this 2D view store the following
-    ///   structure(i,:) = {# node in i dimension, low flag, high flag}
-    ///   low and high flags indicate whether the stencil is modified on the edge of the mesh
+    /// \param structure [in] this 1D view stores the # rows in each dimension (i,j,k)
     /// \param alpha [in] Scalar multiplier for the matrix A.
     /// \param A [in] The sparse matrix; KokkosSparse::CrsMatrix instance.
     /// \param x [in] Either a single vector (rank-1 Kokkos::View) or
@@ -493,23 +659,20 @@ spmv(const char mode[],
     ///   of columns as x.
     template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
     void
-    spmv_struct(const char mode[],
-                const int stencil_type,
-                const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
-                const AlphaType& alpha,
-                const AMatrix& A,
-                const XVector& x,
-                const BetaType& beta,
-                const YVector& y) {
+    spmv_struct (const char mode[],
+                 const int stencil_type,
+                 const Kokkos::View<int*, Kokkos::HostSpace>& structure,
+                 const AlphaType& alpha,
+                 const AMatrix& A,
+                 const XVector& x,
+                 const BetaType& beta,
+                 const YVector& y) {
       typedef typename Kokkos::Impl::if_c<XVector::rank == 2, RANK_TWO, RANK_ONE>::type RANK_SPECIALISE;
       spmv_struct (mode, stencil_type, structure, alpha, A, x, beta, y, RANK_SPECIALISE ());
     }
 
-  }
-
-
-
-}
+  } // namespace Experimental
+} // namespace KokkosSparse
 
 #endif
 

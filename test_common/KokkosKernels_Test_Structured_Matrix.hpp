@@ -65,9 +65,9 @@ namespace Test {
     struct exteriorTag{};
 
     // Internal variables and temporaries
+    const ordinal_type numNodes;
     const int leftBC, rightBC;
     const ordinal_type interiorStencilLength, cornerStencilLength;
-    const ordinal_type numNodes;
     ordinal_type numInterior;
     size_type    numEntries;
 
@@ -81,11 +81,12 @@ namespace Test {
 			   const row_map_view_t rowmap_, const cols_view_t columns_,
 			   const scalar_view_t values_) :
       numNodes(numNodes_), leftBC(leftBC_), rightBC(rightBC_),
-      rowmap(rowmap_), columns(columns_), values(values_),
-      interiorStencilLength(3), cornerStencilLength(2) {
-      
+      interiorStencilLength(3), cornerStencilLength(2),
+      rowmap(rowmap_), columns(columns_), values(values_) {
+
       numInterior = numNodes - leftBC - rightBC;
       numEntries  = numInterior*interiorStencilLength + (leftBC + rightBC)*cornerStencilLength;
+
     }
 
     void compute() {
@@ -142,7 +143,7 @@ namespace Test {
 
 	values(numEntries - 2) = -1.0;
 	values(numEntries - 1) =  1.0;
-      } 
+      }
     }
   };
 
@@ -211,8 +212,14 @@ namespace Test {
 
     // Internal variables and temporaries
     const int stencil_type;
-    const int leftBC, rightBC, bottomBC, topBC;
     const ordinal_type nx, ny;
+    const int leftBC, rightBC, bottomBC, topBC;
+
+    // Matrix views
+    row_map_view_t rowmap;
+    cols_view_t    columns;
+    scalar_view_t  values;
+
     ordinal_type interiorStencilLength, edgeStencilLength, cornerStencilLength;
     ordinal_type numInterior;
     ordinal_type numXEdge;
@@ -221,11 +228,6 @@ namespace Test {
     ordinal_type numEntriesPerGridRow;
     ordinal_type numEntriesBottomRow;
     size_type    numEntries;
-
-    // Matrix views
-    row_map_view_t rowmap;
-    cols_view_t    columns;
-    scalar_view_t  values;
 
     fill_2D_matrix_functor(const int stencil_type_, const ordinal_type nx_,
 			   const ordinal_type ny_,
@@ -837,8 +839,13 @@ namespace Test {
 
     // Internal variables and temporaries
     const int stencil_type;
-    const int leftBC, rightBC, frontBC, backBC, bottomBC, topBC;
     const ordinal_type nx, ny, nz;
+    const int leftBC, rightBC, frontBC, backBC, bottomBC, topBC;
+
+    // Matrix views
+    row_map_view_t rowmap;
+    cols_view_t    columns;
+    scalar_view_t  values;
 
     size_type    numEntries;
     ordinal_type numInterior;
@@ -858,11 +865,6 @@ namespace Test {
     ordinal_type numEntriesPerGridRow;
     ordinal_type numEntriesFrontRow;
     ordinal_type numEntriesBottomFrontRow;
-
-    // Matrix views
-    row_map_view_t rowmap;
-    cols_view_t    columns;
-    scalar_view_t  values;
 
     fill_3D_matrix_functor(const int stencil_type_, const ordinal_type nx_,
 			   const ordinal_type ny_, const ordinal_type nz_,
@@ -887,7 +889,7 @@ namespace Test {
 	edgeStencilLength = 12;
 	cornerStencilLength = 8;
       }
-      
+
       numInterior = (nx - leftBC - rightBC)*(ny - frontBC - backBC)*(nz - bottomBC - topBC);
       numXFace = (ny - frontBC - backBC)*(nz - bottomBC - topBC);
       numYFace = (nx - leftBC - rightBC)*(nz - bottomBC - topBC);
@@ -896,6 +898,10 @@ namespace Test {
       numYEdge = ny - frontBC - backBC;
       numZEdge = nz - bottomBC - topBC;
 
+      numEntries = numInterior*interiorStencilLength
+        + 2*(numXFace + numYFace + numZFace)*faceStencilLength
+        + 4*(numXEdge + numYEdge + numZEdge)*edgeStencilLength
+        + (bottomBC + topBC)*(frontBC + backBC)*(leftBC + rightBC)*cornerStencilLength;
       numEntriesPerGridPlane = (nx - leftBC - rightBC)*(ny - frontBC - backBC)*interiorStencilLength
 	+ (backBC + frontBC)*(nx - leftBC - rightBC)*faceStencilLength
 	+ (leftBC + rightBC)*(ny - frontBC - backBC)*faceStencilLength
@@ -1388,7 +1394,7 @@ namespace Test {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
-	values(rowOffset - 3) = -4.0;
+	values(rowOffset - 3) =  4.0;
 	values(rowOffset - 2) = -1.0;
 	values(rowOffset - 1) = -1.0;
       }
@@ -1638,7 +1644,7 @@ namespace Test {
 	    // Fill values
 	    values(rowOffset - 4) = -1.0;
 	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) =  4.0;
+	    values(rowOffset - 2) =  3.0;
 	    values(rowOffset - 1) = -1.0;
 	  }
 	}
@@ -1661,7 +1667,7 @@ namespace Test {
 
 	    // Fill values
 	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) =  4.0;
+	    values(rowOffset - 3) =  3.0;
 	    values(rowOffset - 2) = -1.0;
 	    values(rowOffset - 1) = -1.0;
 	  }
@@ -1681,7 +1687,7 @@ namespace Test {
 	    // Fill values
 	    values(rowOffset - 4) = -1.0;
 	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) =  4.0;
+	    values(rowOffset - 2) =  3.0;
 	    values(rowOffset - 1) = -1.0;
 	  }
 	}
@@ -1703,7 +1709,7 @@ namespace Test {
 	    // Fill values
 	    values(rowOffset - 4) = -1.0;
 	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) =  4.0;
+	    values(rowOffset - 2) =  3.0;
 	    values(rowOffset - 1) = -1.0;
 	  }
 
@@ -1722,7 +1728,7 @@ namespace Test {
 	    values(rowOffset - 4) = -1.0;
 	    values(rowOffset - 3) = -1.0;
 	    values(rowOffset - 2) = -1.0;
-	    values(rowOffset - 1) =  4.0;
+	    values(rowOffset - 1) =  3.0;
 	  }
 	}
       }

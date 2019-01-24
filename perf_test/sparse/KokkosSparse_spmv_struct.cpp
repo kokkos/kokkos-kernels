@@ -148,10 +148,14 @@ int main(int argc, char **argv)
 
     int leftBC = 1, rightBC = 1, frontBC = 1, backBC = 1, bottomBC = 1, topBC = 1;
 
+    Kokkos::View<int*, Kokkos::HostSpace> structure("Spmv Structure", numDimensions);
     Kokkos::View<int*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", numDimensions);
     if(numDimensions == 1) {
+      structure(0) = nx;
       mat_structure(0, 0) = nx;
     } else if(numDimensions == 2) {
+      structure(0) = nx;
+      structure(1) = ny;
       mat_structure(0, 0) = nx;
       mat_structure(1, 0) = ny;
       if(leftBC   == 1) { mat_structure(0, 1) = 1; }
@@ -159,6 +163,9 @@ int main(int argc, char **argv)
       if(bottomBC == 1) { mat_structure(1, 1) = 1; }
       if(topBC    == 1) { mat_structure(1, 2) = 1; }
     } else if(numDimensions == 3) {
+      structure(0) = nx;
+      structure(1) = ny;
+      structure(2) = nz;
       mat_structure(0, 0) = nx;
       mat_structure(1, 0) = ny;
       mat_structure(2, 0) = nz;
@@ -240,10 +247,7 @@ int main(int argc, char **argv)
       double ave_time = 0.0;
       for(int i=0;i<loop;i++) {
 	Kokkos::Timer timer;
-	KokkosSparse::Experimental::spmv_struct("N", stencil_type, mat_structure, 1.0, A, x1, 1.0, y1);
-	// KokkosSparse::Impl::SPMV_Struct_Functor<matrix_type, typename matrix_type::values_type, typename matrix_type::values_type, 1, false>
-	  // func(mat_structure, stencil_type, 1.0, A, x1, 1.0, y1, ts);
-	// func.compute(ws, ts, vl);
+	KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0, A, x1, 1.0, y1);
 	Kokkos::fence();
 	double time = timer.seconds();
 	ave_time += time;
@@ -275,10 +279,6 @@ int main(int argc, char **argv)
       for(int i=0;i<loop;i++) {
 	Kokkos::Timer timer;
 	KokkosSparse::spmv("N", 1.0, A, x1, 1.0, y1);
-	// KokkosSparse::Impl::SPMV_Functor<matrix_type, typename matrix_type::values_type, typename matrix_type::values_type, 1, false>
-	//   func (1.0, A, x1, 1.0, y1, 32);
-	// Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace, Kokkos::Schedule<Kokkos::Static> > policy(31250,32,8);
-	// Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>", policy, func);
 	Kokkos::fence();
 	double time = timer.seconds();
 	ave_time += time;

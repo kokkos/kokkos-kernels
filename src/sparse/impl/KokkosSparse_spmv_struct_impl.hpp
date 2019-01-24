@@ -166,7 +166,7 @@ struct SPMV_Struct_Functor {
   ordinal_type numInterior, numExterior;
   const int64_t rows_per_team;
 
-  SPMV_Struct_Functor (const Kokkos::View<int*[3], Kokkos::HostSpace>structure_,
+  SPMV_Struct_Functor (const Kokkos::View<int*, Kokkos::HostSpace>structure_,
 		       const int stencil_type_,
                        const value_type alpha_,
                        const AMatrix m_A_,
@@ -174,9 +174,9 @@ struct SPMV_Struct_Functor {
                        const value_type beta_,
                        const YVector m_y_,
                        const int64_t rows_per_team_) :
-    stencil_type(stencil_type_),
     alpha (alpha_), m_A (m_A_), m_x (m_x_),
     beta (beta_), m_y (m_y_),
+    stencil_type(stencil_type_),
     rows_per_team (rows_per_team_)
   {
     static_assert (static_cast<int> (XVector::rank) == 1,
@@ -186,14 +186,14 @@ struct SPMV_Struct_Functor {
 
     numDimensions = structure_.extent(0);
     if(numDimensions == 1) {
-      ni = static_cast<ordinal_type>(structure_(0, 0));
+      ni = static_cast<ordinal_type>(structure_(0));
     } else if(numDimensions == 2) {
-      ni = static_cast<ordinal_type>(structure_(0, 0));
-      nj = static_cast<ordinal_type>(structure_(1, 0));
+      ni = static_cast<ordinal_type>(structure_(0));
+      nj = static_cast<ordinal_type>(structure_(1));
     } else if(numDimensions == 3) {
-      ni = static_cast<ordinal_type>(structure_(0, 0));
-      nj = static_cast<ordinal_type>(structure_(1, 0));
-      nk = static_cast<ordinal_type>(structure_(2, 0));
+      ni = static_cast<ordinal_type>(structure_(0));
+      nj = static_cast<ordinal_type>(structure_(1));
+      nk = static_cast<ordinal_type>(structure_(2));
     }
   }
 
@@ -662,7 +662,7 @@ template<class AMatrix,
          bool conjugate>
 static void
 spmv_struct_beta_no_transpose (const int stencil_type,
-                               const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
+                               const Kokkos::View<int*, Kokkos::HostSpace>& structure,
                                typename YVector::const_value_type& alpha,
                                const AMatrix& A,
                                const XVector& x,
@@ -682,17 +682,17 @@ spmv_struct_beta_no_transpose (const int stencil_type,
   int64_t numInteriorPts = 0;
 
   if(structure.extent(0) == 1) {
-    numInteriorPts = structure(0,0) - 2;
+    numInteriorPts = structure(0) - 2;
     vector_length = 1;
   } else if(structure.extent(0) == 2) {
-    numInteriorPts = (structure(1,0) - 2)*(structure(0,0) - 2);
+    numInteriorPts = (structure(1) - 2)*(structure(0) - 2);
     if(stencil_type == 1) {
       vector_length = 2;
     } else if(stencil_type == 2) {
       vector_length = 4;
     }
   } else if(structure.extent(0) == 3) {
-    numInteriorPts = (structure(2,0) - 2)*(structure(1,0) - 2)*(structure(0,0) - 2);
+    numInteriorPts = (structure(2) - 2)*(structure(1) - 2)*(structure(0) - 2);
     if(stencil_type == 1) {
       vector_length = 2;
     } else if(stencil_type == 2) {
@@ -728,7 +728,7 @@ template<class AMatrix,
          bool conjugate>
 static void
 spmv_struct_beta_transpose (const int stencil_type,
-                            const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
+                            const Kokkos::View<int*, Kokkos::HostSpace>& structure,
                             typename YVector::const_value_type& alpha,
                             const AMatrix& A,
                             const XVector& x,
@@ -779,7 +779,7 @@ template<class AMatrix,
 static void
 spmv_struct_beta (const char mode[],
                   const int stencil_type,
-                  const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
+                  const Kokkos::View<int*, Kokkos::HostSpace>& structure,
                   typename YVector::const_value_type& alpha,
                   const AMatrix& A,
                   const XVector& x,

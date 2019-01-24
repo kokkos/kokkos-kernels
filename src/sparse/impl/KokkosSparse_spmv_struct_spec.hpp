@@ -129,7 +129,7 @@ struct SPMV_STRUCT{
 
   static void spmv_struct (const char mode[],
                            const int stencil_type,
-                           const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
+                           const Kokkos::View<int*, Kokkos::HostSpace>& structure,
                            const coefficient_type& alpha,
                            const AMatrix& A,
                            const XVector& x,
@@ -194,7 +194,7 @@ struct SPMV_STRUCT < AT, AO, AD, AM, AS,
   static void
   spmv_struct (const char mode[],
                const int stencil_type,
-               const Kokkos::View<int*[3], Kokkos::HostSpace>& structure,
+               const Kokkos::View<int*, Kokkos::HostSpace>& structure,
                const coefficient_type& alpha,
                const AMatrix& A,
                const XVector& x,
