@@ -324,6 +324,15 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 ENDIF()
 
 # ==================================================================
+# Fortran Complex BLAS
+# ==================================================================
+
+IF (KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS)
+  INCLUDE(CheckHostBlasReturnComplex.cmake)
+  CHECK_HOST_BLAS_RETURN_COMPLEX(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
+ENDIF()
+
+# ==================================================================
 # CMake Summary
 # ==================================================================
 
