@@ -76,6 +76,7 @@ tmp := $(shell echo "\#define KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.t
 #With Makefile build, we rely on users' input
 
 # default mangling scheme with a single under score
+KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
 KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle__" | wc -l))
 ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES), 1)
   KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#__
