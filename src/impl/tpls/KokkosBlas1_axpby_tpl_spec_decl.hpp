@@ -185,8 +185,8 @@ struct Axpby< \
       const std::complex<float> alpha_val = alpha;                  \
       HostBlas<std::complex<float> >::axpy                           \
         (N,alpha_val,      \
-         reinterpret_cast<const std::complex<double>*>(X.data()),one,  \
-         reinterpret_cast<std::complex<double>* >(Y.data()),one);       \
+         reinterpret_cast<const std::complex<float>*>(X.data()),one,  \
+         reinterpret_cast<std::complex<float>*>(Y.data()),one);       \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
     Kokkos::Profiling::popRegion(); \

@@ -577,19 +577,19 @@ namespace KokkosBlas {
     int
     HostBlas<std::complex<float> >::iamax(int n, 
                                              const std::complex<float> *x, int x_inc) {
-      F77_FUNC_ICAMAX(&n, x, &x_inc);
+      return F77_FUNC_ICAMAX(&n, x, &x_inc);
     }
     template<>
     float
     HostBlas<std::complex<float> >::nrm2(int n, 
                                             const std::complex<float> *x, int x_inc) {
-      F77_FUNC_SCNRM2(&n, x, &x_inc);
+      return F77_FUNC_SCNRM2(&n, x, &x_inc);
     }
     template<>
     float
     HostBlas<std::complex<float> >::asum(int n, 
                                             const std::complex<float> *x, int x_inc) {
-      F77_FUNC_SCASUM(&n, x, &x_inc);
+      return F77_FUNC_SCASUM(&n, x, &x_inc);
     }
     template<>
     std::complex<float>
@@ -703,19 +703,19 @@ namespace KokkosBlas {
     int
     HostBlas<std::complex<double> >::iamax(int n, 
                                               const std::complex<double> *x, int x_inc) {
-      F77_FUNC_IZAMAX(&n, x, &x_inc);
+      return F77_FUNC_IZAMAX(&n, x, &x_inc);
     }
     template<>
     double
     HostBlas<std::complex<double> >::nrm2(int n, 
                                             const std::complex<double> *x, int x_inc) {
-      F77_FUNC_DZNRM2(&n, x, &x_inc);
+      return F77_FUNC_DZNRM2(&n, x, &x_inc);
     }
     template<>
     double
     HostBlas<std::complex<double> >::asum(int n, 
                                             const std::complex<double> *x, int x_inc) {
-      F77_FUNC_DZASUM(&n, x, &x_inc);
+      return F77_FUNC_DZASUM(&n, x, &x_inc);
     }
     template<>
     std::complex<double>
