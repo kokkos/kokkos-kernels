@@ -130,7 +130,7 @@ class GraphColorDistance2MatrixSquared
                                      const_lno_nnz_view_type  entries,
                                      const_clno_row_view_type t_row_map,
                                      const_clno_nnz_view_type t_entries,
-                                     HandleType*              handle)
+                                     HandleType*              handle_)
         : nr(nr_)
         , nc(nc_)
         , ne(ne_)
@@ -139,8 +139,8 @@ class GraphColorDistance2MatrixSquared
         , t_xadj(t_row_map)
         , t_adj(t_entries)
         , nv(nr_)
-        , handle(handle)
-        , verbose(handle->get_verbose())
+        , handle(handle_)
+        , verbose(handle_->get_verbose())
     {
     }
 
