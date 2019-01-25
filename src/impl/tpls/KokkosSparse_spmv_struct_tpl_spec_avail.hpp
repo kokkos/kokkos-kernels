@@ -54,6 +54,14 @@ struct spmv_struct_tpl_spec_avail {
   enum : bool { value = false };
 };
 
+// Specialization struct which defines whether a specialization exists
+template<class AT, class AO, class AD, class AM, class AS,
+         class XT, class XL, class XD, class XM,
+         class YT, class YL, class YD, class YM>
+struct spmv_mv_struct_tpl_spec_avail {
+  enum : bool { value = false };
+};
+
 }
 }
 
