@@ -16,6 +16,11 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_spmv_struct.cpp
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  sparse_spmv_mv
+  SOURCES KokkosSparse_spmv_mv.cpp
+  )
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/spmv)
 
 TRIBITS_ADD_EXECUTABLE(

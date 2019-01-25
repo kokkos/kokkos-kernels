@@ -907,7 +907,7 @@ struct SPMV_MV_STRUCT_Transpose_Functor {
            bool conjugate>
   struct SPMV_MV_STRUCT_LayoutLeft_Functor {
     typedef typename AMatrix::execution_space            execution_space;
-    typedef typename AMatrix::non_const_ordinal_type               ordinal_type;
+    typedef typename AMatrix::non_const_ordinal_type     ordinal_type;
     typedef typename AMatrix::non_const_value_type       A_value_type;
     typedef typename YVector::non_const_value_type       y_value_type;
     typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
@@ -971,9 +971,9 @@ struct SPMV_MV_STRUCT_Transpose_Functor {
            iEntry < row.length;
            iEntry += static_cast<ordinal_type> (blockDim.x))
 #else
-        for (ordinal_type iEntry = 0;
-             iEntry < row.length;
-             iEntry ++)
+      for (ordinal_type iEntry = 0;
+           iEntry < row.length;
+           iEntry ++)
 #endif
           {
             const A_value_type val = conjugate ?
