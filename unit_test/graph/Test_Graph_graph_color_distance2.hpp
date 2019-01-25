@@ -196,7 +196,7 @@ test_coloring_d2(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type r
     cp.destroy_spgemm_handle();
 
     GraphColoringAlgorithmDistance2 coloring_algorithms[] = {
-      COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT};
+      COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF};
 
     int num_algorithms = 5;
 

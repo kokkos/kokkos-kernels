@@ -112,7 +112,7 @@ void graph_compute_distance2_color(KernelHandle *handle,
         {
             // todo: The original Serial D2 coloring code is in GraphColorHandle. This should get moved to the
             //       distance-2 coloring handle but that might break backwards compatibility.
-            #if defined KOKKOS_ENABLE_SERIAL
+//            #if defined KOKKOS_ENABLE_SERIAL
                 int num_phases = 0;
 
                 typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
@@ -126,9 +126,9 @@ void graph_compute_distance2_color(KernelHandle *handle,
                 gch_d2->set_vertex_colors(colors_out);
                 gch_d2->set_num_phases((double)num_phases);
 
-            #else
-                throw std::runtime_error("Kokkos-Kernels must be built with Serial enabled to use COLORING_D2_SERIAL");
-            #endif
+//            #else
+//                throw std::runtime_error("Kokkos-Kernels must be built with Serial enabled to use COLORING_D2_SERIAL");
+//            #endif
         }
         break;
 
