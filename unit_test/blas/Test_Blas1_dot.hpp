@@ -1,6 +1,7 @@
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
+#include<Kokkos_ArithTraits.hpp>
 #include<KokkosBlas1_dot.hpp>
 #include<KokkosKernels_TestUtils.hpp>
 
@@ -10,6 +11,7 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
+    typedef Kokkos::ArithTraits<ScalarA> ats;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -45,7 +47,7 @@ namespace Test {
 
     ScalarA expected_result = 0;
     for(int i=0;i<N;i++)
-      expected_result += h_a(i)*h_b(i);
+      expected_result += ats::conj(h_a(i))*h_b(i);
 
     ScalarA nonconst_nonconst_result = KokkosBlas::dot(a,b);
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
@@ -68,6 +70,7 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
+    typedef Kokkos::ArithTraits<ScalarA> ats;
 
     typedef multivector_layout_adapter<ViewTypeA> vfA_type;
     typedef multivector_layout_adapter<ViewTypeB> vfB_type;
@@ -104,7 +107,7 @@ namespace Test {
     for(int j=0;j<K;j++) {
       expected_result[j] = ScalarA();
       for(int i=0;i<N;i++)
-        expected_result[j] += h_a(i,j)*h_b(i,j);
+        expected_result[j] += ats::conj(h_a(i,j))*h_b(i,j);
     }
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;

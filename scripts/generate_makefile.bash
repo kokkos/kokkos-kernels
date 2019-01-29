@@ -4,7 +4,7 @@ KOKKOS_DEVICES=""
 
 KOKKOS_DO_EXAMPLES="1"
 
-KOKKOSKERNELS_OPTIONS="eti-only"
+KOKKOSKERNELS_OPTIONS="eti-only,blas-mangle_"
 KOKKOSKERNELS_ENABLE_TPLS=""
 
 while [[ $# > 0 ]]
@@ -141,7 +141,12 @@ do
       echo "--with-layouts=[LAYOUTS]:             Set layouts to be instantiated (LayoutLeft,LayoutRight)."
       echo "--prefix=/Install/Path:               Path to install the Kokkos library."
       echo "--with-options=[OPT]:                 Set KokkosKernels Options:"
-      echo "                                        eti_only: only allow ETI types to be enabled [default]"
+      echo "                                        eti-only: only allow ETI types to be enabled [default]"
+      echo "                                        manual overriding for fortran blas mangling:"
+      echo "                                          blas-mangle, blas-mangle_[default], blas-mangle__"
+      echo "                                        manual overriding for blas complex interface"
+      echo "                                          blas-return-complex: e.g., ret = zdotc(&N, a, &inc_a, b, &inc_b)"
+      echo "                                          otherwise, the interface would search zdotc(&ret, &N, a, &inc_a, b, &inc_b)"
       echo "--with-tpls=[OPT]:                    Set KokkosKernels TPLs:"
       echo "                                        mkl,blas,cublas,cusparse"
       echo ""

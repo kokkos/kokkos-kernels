@@ -46,15 +46,7 @@
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-
-extern "C" void dscal_( const int* N, const double* alpha,
-                        double* x, const int* x_inc);
-extern "C" void sscal_( const int* N, const float* alpha,
-                        float* x, const int* x_inc);
-extern "C" void zscal_( const int* N, const std::complex<double>* alpha,
-                        std::complex<double>* x, const int* x_inc);
-extern "C" void cscal_( const int* N, const std::complex<float>* alpha,
-                        std::complex<float>* x, const int* x_inc);
+#include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -94,7 +86,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      dscal_(&N,&alpha,R.data(),&one); \
+      HostBlas<double>::scal(N,alpha,R.data(),one);     \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -127,7 +119,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      sscal_(&N,&alpha,R.data(),&one); \
+      HostBlas<float>::scal(N,alpha,R.data(),one);     \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -160,7 +152,10 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      zscal_(&N,reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<std::complex<double>*>(R.data()),&one); \
+      const std::complex<double> alpha_val = alpha;     \
+      HostBlas<std::complex<double> >::scal\
+        (N,alpha_val,              \
+         reinterpret_cast<std::complex<double>*>(R.data()), one);       \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -193,7 +188,10 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      cscal_(&N,reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<std::complex<float>*>(R.data()),&one); \
+      const std::complex<float> alpha_val = alpha;     \
+      HostBlas<std::complex<float> >::scal\
+        (N,alpha_val,               \
+         reinterpret_cast<std::complex<float>*>(R.data()), one);        \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \

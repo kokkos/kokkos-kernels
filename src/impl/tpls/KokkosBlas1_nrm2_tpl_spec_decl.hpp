@@ -46,11 +46,7 @@
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-
-extern "C" double dnrm2_ ( const int* N, const double* x, const int* x_inc);
-extern "C" float  snrm2_ ( const int* N, const float* x, const int* x_inc);
-extern "C" double dznrm2_( const int* N, const std::complex<double>* x, const int* x_inc);
-extern "C" float  scnrm2_( const int* N, const std::complex<float>* x, const int* x_inc);
+#include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -88,7 +84,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dnrm2_(&N,X.data(),&one); \
+      R() = HostBlas<double>::nrm2(N,X.data(),one); \
       if(!take_sqrt) R() = R()*R(); \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
@@ -120,7 +116,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = snrm2_(&N,X.data(),&one); \
+      R() = HostBlas<float>::nrm2(N,X.data(),one); \
       if(!take_sqrt) R() = R()*R(); \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
@@ -152,7 +148,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dznrm2_(&N,reinterpret_cast<const std::complex<double>*>(X.data()),&one); \
+      R() = HostBlas<std::complex<double> >::nrm2(N,reinterpret_cast<const std::complex<double>*>(X.data()),one);       \
       if(!take_sqrt) R() = R()*R(); \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
@@ -184,7 +180,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = scnrm2_(&N,reinterpret_cast<const std::complex<float>*>(X.data()),&one); \
+      R() = HostBlas<std::complex<float> >::nrm2(N,reinterpret_cast<const std::complex<float>*>(X.data()),one);       \
       if(!take_sqrt) R() = R()*R(); \
     } else { \
       Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
