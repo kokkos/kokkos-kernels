@@ -528,6 +528,46 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
@@ -1084,6 +1124,46 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
  KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
@@ -1648,6 +1728,46 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
@@ -2204,6 +2324,46 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
  KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
@@ -2768,6 +2928,46 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
@@ -3324,6 +3524,46 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
  KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
@@ -3888,6 +4128,46 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
@@ -4444,6 +4724,46 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
  KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, int, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE) \
+ && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
+ && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+ KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
