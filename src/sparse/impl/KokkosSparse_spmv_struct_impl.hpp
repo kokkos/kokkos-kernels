@@ -140,7 +140,7 @@ struct SPMV_Struct_Functor {
   typedef typename team_policy::member_type                  team_member;
   typedef Kokkos::Details::ArithTraits<value_type>           ATV;
   typedef Kokkos::View<ordinal_type*, scratch_space,
-		       Kokkos::MemoryTraits<Kokkos::Unmanaged>> shared_ordinal_1d;
+		       Kokkos::MemoryTraits<Kokkos::Unmanaged> > shared_ordinal_1d;
 
   // Tags to perform SPMV on interior and boundaries
   struct interior3ptTag{};    // 1D FD and FE discretization
@@ -203,7 +203,7 @@ struct SPMV_Struct_Functor {
       // Treat interior points using structured algorithm
       numInterior = ni - 2;
       if(numInterior > 0) {
-	  size_t shared_size = shared_ordinal_1d::shmem_size(3);
+        size_t shared_size = shared_ordinal_1d::shmem_size(3);
         Kokkos::TeamPolicy<interior3ptTag,
                            execution_space,
                            Kokkos::Schedule<Kokkos::Static> > policy(1,1);

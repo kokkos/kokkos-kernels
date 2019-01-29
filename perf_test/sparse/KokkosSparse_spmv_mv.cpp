@@ -116,12 +116,12 @@ template<class AMatrix,
          int dobeta,
          bool conjugate>
 struct SPMV_MV2_Functor {
-  typedef typename AMatrix::execution_space            execution_space;
-  typedef typename AMatrix::non_const_ordinal_type     ordinal_type;
-  typedef typename AMatrix::non_const_value_type       value_type;
-  typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
-  typedef typename team_policy::member_type            team_member;
-  typedef Kokkos::Details::ArithTraits<value_type>     ATV;
+  typedef typename AMatrix::execution_space              execution_space;
+  typedef typename AMatrix::non_const_ordinal_type       ordinal_type;
+  typedef typename AMatrix::non_const_value_type         value_type;
+  typedef typename Kokkos::TeamPolicy<execution_space>   team_policy;
+  typedef typename team_policy::member_type              team_member;
+  typedef Kokkos::Details::ArithTraits<value_type>       ATV;
 
   const value_type alpha;
   AMatrix  m_A;
@@ -130,15 +130,15 @@ struct SPMV_MV2_Functor {
   YVector m_y;
 
   const ordinal_type rows_per_team;
-  const int numVecs;
+  const ordinal_type  numVecs;
 
   SPMV_MV2_Functor (const value_type alpha_,
                     const AMatrix m_A_,
                     const XVector m_x_,
                     const value_type beta_,
                     const YVector m_y_,
-                    const int rows_per_team_,
-                    const int numVecs_) :
+                    const ordinal_type rows_per_team_,
+                    const ordinal_type numVecs_) :
      alpha (alpha_), m_A (m_A_), m_x (m_x_),
      beta (beta_), m_y (m_y_),
      rows_per_team (rows_per_team_),
@@ -153,37 +153,49 @@ struct SPMV_MV2_Functor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const team_member& dev) const
   {
-    typedef typename YVector::non_const_value_type y_value_type;
-
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rows_per_team), [&] (const ordinal_type& loop) {
+        value_type x_extractor[8] = {0.0};
+        value_type y_accumulator[8] = {0.0};
+        const ordinal_type iRow = static_cast<ordinal_type>(dev.league_rank()) * rows_per_team + loop;
+        if (iRow >= m_A.numRows ()) {
+          return;
+        }
+        const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
+        const ordinal_type row_length = static_cast<ordinal_type> (row.length);
 
-      const ordinal_type iRow = static_cast<ordinal_type> ( dev.league_rank() ) * rows_per_team + loop;
-      if (iRow >= m_A.numRows ()) {
-        return;
-      }
-      const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
-      const ordinal_type row_length = static_cast<ordinal_type> (row.length);
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+                             [&] (const ordinal_type& vecIdx) {
+                               y_accumulator[vecIdx] = m_y(iRow, vecIdx);
+                             });
+        if(dobeta != 0) {
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+                               [&] (const ordinal_type& vecIdx) {
+                                 y_accumulator[vecIdx] *= beta;
+                               });
+        }
 
-      for(int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
-        y_value_type sum = 0;
-        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev,row_length), [&] (const ordinal_type& iEntry, y_value_type& lsum) {
-            const value_type val = conjugate ?
-              ATV::conj (row.value(iEntry)) :
-              row.value(iEntry);
-            lsum += val * m_x(row.colidx(iEntry), vecIdx);
-          },sum);
+        for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
+          const value_type val = alpha*(conjugate ? ATV::conj(row.value(entryIdx)) : row.value(entryIdx));
+          const ordinal_type colIdx = row.colidx(entryIdx);
 
-        Kokkos::single(Kokkos::PerThread(dev), [&] () {
-            sum *= alpha;
-            if (dobeta == 0) {
-              m_y(iRow, vecIdx) = sum ;
-            } else {
-              m_y(iRow, vecIdx) = beta * m_y(iRow, vecIdx) + sum;
-            }
-          });
-      } // loop over numVecs
+          // Pack data from x multivector
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+                               [&] (const ordinal_type& vecIdx) {
+                                 x_extractor[vecIdx] = m_x(colIdx, vecIdx);
+                               });
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+                               [&] (const ordinal_type& vecIdx) {
+                                 y_accumulator[vecIdx] += val * x_extractor[vecIdx];
+                               });
+        }
 
-    });
+        // Unpack results into y multivector
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+                             [&] (const ordinal_type& vecIdx) {
+                               m_y(iRow, vecIdx) =  y_accumulator[vecIdx];
+                             });
+
+      });
   }
 };
 
@@ -247,7 +259,8 @@ void matvec(AType& A, XType x, YType y,
             int team_size,
             int vector_length,
             int schedule) {
-  typedef typename AType::execution_space execution_space;
+  typedef typename AType::execution_space                execution_space;
+
   rows_per_thread = -1;
   team_size = -1;
   vector_length = -1;
