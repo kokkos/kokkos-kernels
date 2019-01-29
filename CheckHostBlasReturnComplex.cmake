@@ -28,7 +28,7 @@ int main() {
   f[1] =  TWO;
   std::complex<double> ret
    = F77_BLAS_MANGLE(zdotc,ZDOTC)(&NUM, f, &INC, f, &INC);
-  return (ret.real() == double(5.0) ? 1 : 0);
+  return (ret.real() == double(5.0) ? 0 : 1);
 }
   "
   )
