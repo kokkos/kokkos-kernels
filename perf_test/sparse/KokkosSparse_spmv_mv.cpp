@@ -163,12 +163,12 @@ struct SPMV_MV2_Functor {
         const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
         const ordinal_type row_length = static_cast<ordinal_type> (row.length);
 
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                              [&] (const ordinal_type& vecIdx) {
                                y_accumulator[vecIdx] = m_y(iRow, vecIdx);
                              });
         if(dobeta != 0) {
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                                [&] (const ordinal_type& vecIdx) {
                                  y_accumulator[vecIdx] *= beta;
                                });
@@ -179,18 +179,18 @@ struct SPMV_MV2_Functor {
           const ordinal_type colIdx = row.colidx(entryIdx);
 
           // Pack data from x multivector
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                                [&] (const ordinal_type& vecIdx) {
                                  x_extractor[vecIdx] = m_x(colIdx, vecIdx);
                                });
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                                [&] (const ordinal_type& vecIdx) {
                                  y_accumulator[vecIdx] += val * x_extractor[vecIdx];
                                });
         }
 
         // Unpack results into y multivector
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, numVecs),
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                              [&] (const ordinal_type& vecIdx) {
                                m_y(iRow, vecIdx) =  y_accumulator[vecIdx];
                              });
@@ -202,6 +202,7 @@ struct SPMV_MV2_Functor {
 template<class execution_space>
 int64_t spmv_launch_parameters(int64_t numRows,
                                int64_t nnz,
+                               int numVecs,
                                int64_t rows_per_thread,
                                int& team_size,
                                int& vector_length) {
@@ -212,8 +213,20 @@ int64_t spmv_launch_parameters(int64_t numRows,
 
   if(vector_length < 1) {
     vector_length = 1;
-    while(vector_length<32 && vector_length*6 < nnz_per_row)
-      vector_length*=2;
+    #ifdef KOKKOS_ENABLE_CUDA
+    if(std::is_same<Kokkos::Cuda, execution_space>::value)
+      {
+        while(vector_length < 32 && vector_length*6 < nnz_per_row) {
+          vector_length *= 2;
+        }
+      }
+    else
+    #endif
+      {
+        while(vector_length < numVecs && vector_length < 4) {
+          vector_length *= 2;
+        }
+      }
   }
 
   // Determine rows per thread
@@ -260,18 +273,22 @@ void matvec(AType& A, XType x, YType y,
             int vector_length,
             int schedule) {
   typedef typename AType::execution_space                execution_space;
+  const int numVecs = x.extent(1);
 
   rows_per_thread = -1;
   team_size = -1;
   vector_length = -1;
 
-  int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
+  int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(), A.nnz(), numVecs,
+                                                                  rows_per_thread,
+                                                                  team_size,
+                                                                  vector_length);
   int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
-  // std::cout << "worksets=" << worksets
-  //           << ", rows_per_team=" << rows_per_team
-  //           << ", team_size=" << team_size
-  //           << ", vector_length=" << vector_length << std::endl;
+  std::cout << "matvec launch paramters: worksets=" << worksets
+            << ", rows_per_team=" << rows_per_team
+            << ", team_size=" << team_size
+            << ", vector_length=" << vector_length << std::endl;
 
   SPMV_MV2_Functor<AType,XType,YType,1,false> func (1.0, A, x, 1.0, y, rows_per_team, x.extent(1));
 
