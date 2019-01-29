@@ -283,12 +283,12 @@ void matvec(AType& A, XType x, YType y,
                                                                   rows_per_thread,
                                                                   team_size,
                                                                   vector_length);
-  int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
+  int64_t worksets = (y.extent(0) + rows_per_team-1) / rows_per_team;
 
-  std::cout << "matvec launch paramters: worksets=" << worksets
-            << ", rows_per_team=" << rows_per_team
-            << ", team_size=" << team_size
-            << ", vector_length=" << vector_length << std::endl;
+  // std::cout << "matvec launch paramters: worksets=" << worksets
+  //           << ", rows_per_team=" << rows_per_team
+  //           << ", team_size=" << team_size
+  //           << ", vector_length=" << vector_length << std::endl;
 
   SPMV_MV2_Functor<AType,XType,YType,1,false> func (1.0, A, x, 1.0, y, rows_per_team, x.extent(1));
 
