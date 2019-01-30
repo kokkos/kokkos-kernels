@@ -246,59 +246,8 @@ test_coloring_d2(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type r
         crsMat_type         output_mat;
         int res = run_graphcolor_d2<crsMat_type, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
 
-        // double coloring_time = timer1.seconds();
         EXPECT_TRUE((res == 0));
-
-        #if 0  // no need to check distance-1 coloring for validity.
-        const lno_type num_rows_1 = input_mat.numRows();
-        const lno_type num_cols_1 = input_mat.numCols();
-
-        lno_type num_conflict = KokkosKernels::Impl::
-          kk_is_d1_coloring_valid<lno_view_type, lno_nnz_view_type, color_view_type, typename device::execution_space>(
-            num_rows_1, num_cols_1, cRowptrs, cColinds, vector_colors);
-
-        lno_type conf = 0;
-        {
-            // also check the correctness of the validation code :)
-            typename lno_view_type::HostMirror     hrm      = Kokkos::create_mirror_view(cRowptrs);
-            typename lno_nnz_view_type::HostMirror hentries = Kokkos::create_mirror_view(cColinds);
-            typename color_view_type::HostMirror   hcolor   = Kokkos::create_mirror_view(vector_colors);
-            Kokkos::deep_copy(hrm, cRowptrs);
-            Kokkos::deep_copy(hentries, cColinds);
-            Kokkos::deep_copy(hcolor, vector_colors);
-
-            for(lno_type i = 0; i < num_rows_1; ++i)
-            {
-                const size_type b = hrm(i);
-                const size_type e = hrm(i + 1);
-                for(size_type j = b; j < e; ++j)
-                {
-                    lno_type d = hentries(j);
-                    if(i != d)
-                    {
-                        if(hcolor(d) == hcolor(i))
-                        {
-                            conf++;
-                        }
-                    }
-                }
-            }
-        }
-
-        EXPECT_TRUE((num_conflict == conf));
-
-        EXPECT_TRUE((num_conflict == 0));
-        #endif
-
-        /*
-            ::testing::internal::CaptureStdout();
-            std::cout << "num_colors:" << num_colors << " num_conflict:" << num_conflict << " conf:" << conf << std::endl;
-            std::string capturedStdout = ::testing::internal::GetCapturedStdout().c_str();
-            EXPECT_STREQ("something", capturedStdout.c_str());
-        */
     }
-
-    // device::execution_space::finalize();
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                           \
