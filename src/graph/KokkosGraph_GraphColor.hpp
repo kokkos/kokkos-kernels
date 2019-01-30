@@ -86,12 +86,6 @@ void graph_color_symbolic(
     gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
     break;
 
-//  case COLORING_SERIAL2:
-//    gc = new Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>(
-//        num_rows, entries.extent(0),
-//        row_map, entries, gch);
-//    break;
-
   case COLORING_VB:
   case COLORING_VBBIT:
   case COLORING_VBCS:
@@ -164,10 +158,7 @@ void d2_graph_color(
 
   typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
 
-  //color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-
-  typedef typename Impl::GraphColor <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
-  //BaseGraphColoring *gc = NULL;
+  typedef typename Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>BaseGraphColoring;
 
   int num_phases = 0;
 

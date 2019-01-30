@@ -59,6 +59,7 @@ enum GraphColoringAlgorithmDistance2
     COLORING_D2_DEFAULT,             // Distance-2 Graph Coloring default algorithm
     COLORING_D2_SERIAL,              // Distance-2 Graph Coloring (SERIAL)
     COLORING_D2_MATRIX_SQUARED,      // Distance-2 Graph Coloring using Matrix Squared + D1 Coloring
+    COLORING_D2_SPGEMM,              // - Same as COLORING_D2_MATRIX_SQUARED
     COLORING_D2,                     // Distance-2 Graph Coloring
     COLORING_D2_VB,                  // Distance-2 Graph Coloring Vertex Based
     COLORING_D2_VB_BIT,              // Distance-2 Graph Coloring Vertex Based BIT
@@ -125,9 +126,6 @@ class GraphColorDistance2Handle
 
     int num_phases;      // Number of phases used by the coloring algorithm
 
-
-    size_type size_of_edge_list;      // todo not used?
-
     color_view_type vertex_colors;
     bool            is_coloring_called_before;
     nnz_lno_type    num_colors;
@@ -153,7 +151,6 @@ class GraphColorDistance2Handle
         , overall_coloring_time_phase5(0)
         , coloring_time(0)
         , num_phases(0)
-        , size_of_edge_list(0)
         , vertex_colors()
         , is_coloring_called_before(false)
         , num_colors(0)
@@ -324,6 +321,8 @@ class GraphColorDistance2Handle
     bool is_coloring_called() const { return this->is_coloring_called_before; }
 
     // setters
+    void set_coloring_called() { this->is_coloring_called_before = true; }
+
     void set_coloring_algo_type(const GraphColoringAlgorithmDistance2& col_algo) { this->coloring_algorithm_type = col_algo; }
 
     void set_verbose(const bool verbose_) { this->verbose = verbose_; }

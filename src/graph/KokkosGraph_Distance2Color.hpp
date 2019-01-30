@@ -100,6 +100,7 @@ void graph_compute_distance2_color(KernelHandle *handle,
     switch(algorithm)
     {
         case COLORING_D2_MATRIX_SQUARED:
+        case COLORING_D2_SPGEMM:
         {
             Impl::GraphColorDistance2MatrixSquared<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
                 gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
@@ -112,23 +113,18 @@ void graph_compute_distance2_color(KernelHandle *handle,
         {
             // todo: The original Serial D2 coloring code is in GraphColorHandle. This should get moved to the
             //       distance-2 coloring handle but that might break backwards compatibility.
-//            #if defined KOKKOS_ENABLE_SERIAL
-                int num_phases = 0;
+            int num_phases = 0;
 
-                typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
+            typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
 
-                Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
-                    gc(num_rows, row_entries.extent(0), row_map, row_entries, gch_d1);
+            Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
+                gc(num_rows, row_entries.extent(0), row_map, row_entries, gch_d1);
 
-                gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
+            gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
 
-                // Save out the number of phases and vertex colors
-                gch_d2->set_vertex_colors(colors_out);
-                gch_d2->set_num_phases((double)num_phases);
-
-//            #else
-//                throw std::runtime_error("Kokkos-Kernels must be built with Serial enabled to use COLORING_D2_SERIAL");
-//            #endif
+            // Save out the number of phases and vertex colors
+            gch_d2->set_vertex_colors(colors_out);
+            gch_d2->set_num_phases((double)num_phases);
         }
         break;
 
@@ -162,10 +158,11 @@ void graph_compute_distance2_color(KernelHandle *handle,
 /**
  * Compute Distance-2 Degree Stats
  *
- * Distance-2 Degree of a vertex, v, is the sum of the degree of all neighbors of v.
+ * Distance-2 Degree of a vertex, v, is the sum of the unique paths from u to v
+ * where v is 2 hops from u. (i.e., paths like: `u -> * -> v`)
  *
  * This function calculates the distance-2 degree of all the vertices in the graph,
- * the maximum distance-2 degree, and the sum of all the distance-2 degrees.
+ * the maximum distance-2 degree.
  *
  * If the graph is symmetric, give the same value for col_map and row_map,
  * and for row_entries and col_entries.
@@ -179,9 +176,10 @@ void graph_compute_distance2_color(KernelHandle *handle,
  * @param[in]  col_entries    Column entries
  * @param[out] degree_d2_dist View to fill with distance-2 degree information.
  * @param[out] degree_d2_max  Maximum distance-2 degree found.
- * @param[out] degree_d2_sum  Sum of all distance-2 degrees.
  *
  * @return Nothing
+ *
+ * Note: This is currently EXPERIMENTAL.
  */
 template<class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename lno_col_view_t_, typename lno_colnnz_view_t_>
 void graph_compute_distance2_degree(KernelHandle *handle,

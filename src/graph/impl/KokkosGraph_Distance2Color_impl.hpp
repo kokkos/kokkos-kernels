@@ -234,7 +234,7 @@ class GraphColorDistance2
             */
         }
 
-#if 0      // WCMCLEN (EXPERIMENTAL) Distance-2 Degree calculation
+        #if 0      // WCMCLEN (EXPERIMENTAL) Distance-2 Degree calculation
         // Compute Distance-2 Degree of the vertices.
         //  -- Keeping this around in case we need to use it later on as an example.
         size_t degree_d2_max=0;
@@ -247,7 +247,7 @@ class GraphColorDistance2
             std::cout << ">>> Max D2 Degree: " << degree_d2_max << std::endl;
             std::cout << ">>> D2 Degree Sum: " << degree_d2_sum<< std::endl;
         }
-#endif
+        #endif
 
         // conflictlist - store conflicts that can happen when we're coloring in parallel.
         nnz_lno_temp_work_view_t current_vertexList =
@@ -593,6 +593,9 @@ class GraphColorDistance2
           KOKKOS_LAMBDA(const size_t& i, size_t & lmax) { lmax = degree_d2(i) > lmax ? degree_d2(i) : lmax; },
           Kokkos::Max<size_t>(_degree_d2_max));
         degree_d2_max = _degree_d2_max;
+
+        // Tell the handle that coloring has been called.
+        this->gc_handle->set_coloring_called();
     }
 
 
@@ -1509,7 +1512,7 @@ class GraphColorDistance2
         nnz_lno_type                     _chunk_size;
         non_const_1d_size_type_view_type _degree_d2;      // Distance-2 Degree (assumes all are initialized to 0)
 
-        // EXPERIMENTAL BEGIN
+        // EXPERIMENTAL BEGIN (for HashMapAccumulator)
         pool_memory_space_t _m_space;
         const nnz_lno_type  _hash_size;
         const nnz_lno_type  _max_nonzeros;
@@ -1544,7 +1547,7 @@ class GraphColorDistance2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_type chunk_id) const
         {
-#if 1
+            #if 1
             // EXPERIMENTAL
             // Get a unique token since we aren't using TeamPolicy (for UniformMemoryPool, that the HashmapAccumulator requires)
             auto tid = tokens.acquire();
@@ -1574,7 +1577,7 @@ class GraphColorDistance2
             hash_map.max_value_size = _max_nonzeros;      // Max # of nonzeros that can be added into the hash table
 
             nnz_lno_type pow2_hash_func = _hash_size - 1;
-#endif
+            #endif
 
             for(nnz_lno_type ichunk = 0; ichunk < _chunk_size; ichunk++)
             {
@@ -1620,8 +1623,9 @@ class GraphColorDistance2
                     // EXPERIMENTAL END
                 }      // for vid_d1_adj ...
 
-// EXPERIMENTAL BEGIN
-#if 1
+                // EXPERIMENTAL BEGIN
+                #if 1
+
                 // std::cout << "::: " << vid << " -> " << used_hash_size << std::endl;
                 _degree_d2(vid) = used_hash_size;
 
@@ -1631,8 +1635,9 @@ class GraphColorDistance2
                     nnz_lno_type dirty_hash            = globally_used_hash_indices[ i ];
                     hash_map.hash_begins[ dirty_hash ] = -1;
                 }
-#endif
+                #endif
                 // EXPERIMENTAL END
+
             }      // for ichunk ...
             _m_space.release_chunk(globally_used_hash_indices);
         }      // operator() (end)

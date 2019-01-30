@@ -93,13 +93,48 @@ run_graphcolor_d2(crsMat_type                                                   
     const size_t num_rows_1 = input_mat.numRows();
     const size_t num_cols_1 = input_mat.numCols();
 
+    // Compute the Distance-2 graph coloring.
     graph_compute_distance2_color<KernelHandle, lno_view_type, lno_nnz_view_type>
         (&kh, num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, input_mat.graph.row_map, input_mat.graph.entries);
 
     num_colors    = kh.get_distance2_graph_coloring_handle()->get_num_colors();
     vertex_colors = kh.get_distance2_graph_coloring_handle()->get_vertex_colors();
+
+    // Verify the Distance-2 graph coloring is valid.
+    bool d2_coloring_is_valid = false;
+    bool d2_coloring_validation_flags[4] = { false };
+
+    d2_coloring_is_valid = graph_verify_distance2_color(&kh, num_rows_1, num_cols_1,
+                                                        input_mat.graph.row_map,input_mat.graph.entries,
+                                                        input_mat.graph.row_map, input_mat.graph.entries,
+                                                        d2_coloring_validation_flags);
+
+
+
+    // Print out messages based on coloring validation check.
+    if(d2_coloring_is_valid)
+    {
+        std::cout << std::endl << "Distance-2 Graph Coloring is VALID" << std::endl << std::endl;
+    }
+    else
+    {
+        std::cout << std::endl
+                  << "Distance-2 Graph Coloring is NOT VALID" << std::endl
+                  << "  - Vert(s) left uncolored : " << d2_coloring_validation_flags[1] << std::endl
+                  << "  - Invalid D2 Coloring    : " << d2_coloring_validation_flags[2] << std::endl
+                  << std::endl;
+    }
+    if(d2_coloring_validation_flags[3])
+    {
+        std::cout << "Distance-2 Graph Coloring may have poor quality." << std::endl
+                  << "  - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
+                  << std::endl;
+    }
+
     kh.destroy_distance2_graph_coloring_handle();
-    return 0;
+
+    // return 0 if the coloring is valid, 1 otherwise.
+    return d2_coloring_is_valid ? 0 : 1;
 }
 
 }      // namespace Test
@@ -198,7 +233,7 @@ test_coloring_d2(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type r
     GraphColoringAlgorithmDistance2 coloring_algorithms[] = {
       COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF};
 
-    int num_algorithms = 5;
+    int num_algorithms = 6;
 
     for(int ii = 0; ii < num_algorithms; ++ii)
     {
@@ -210,9 +245,11 @@ test_coloring_d2(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type r
         Kokkos::Impl::Timer timer1;
         crsMat_type         output_mat;
         int res = run_graphcolor_d2<crsMat_type, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
+
         // double coloring_time = timer1.seconds();
         EXPECT_TRUE((res == 0));
 
+        #if 0  // no need to check distance-1 coloring for validity.
         const lno_type num_rows_1 = input_mat.numRows();
         const lno_type num_cols_1 = input_mat.numCols();
 
@@ -251,6 +288,8 @@ test_coloring_d2(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type r
         EXPECT_TRUE((num_conflict == conf));
 
         EXPECT_TRUE((num_conflict == 0));
+        #endif
+
         /*
             ::testing::internal::CaptureStdout();
             std::cout << "num_colors:" << num_colors << " num_conflict:" << num_conflict << " conf:" << conf << std::endl;
