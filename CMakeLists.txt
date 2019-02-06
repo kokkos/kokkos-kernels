@@ -298,6 +298,10 @@ IF (TPL_ENABLE_MKL)
 ENDIF()
 
 IF(${Kokkos_ENABLE_Cuda})
+  IF (NOT KOKKOSKERNELS_ENABLE_TPL_BLAS)
+    SET(KOKKOSKERNELS_ENABLE_TPL_BLAS ON)
+    LIST(APPEND TPL_LIST "BLAS")
+  ENDIF()
   # CUBLAS is ON by default when CUDA is enabled
   SET(KOKKOSKERNELS_ENABLE_TPL_CUBLAS ON)
   # Tribit provides TPL mechanism for CUSPARSE; thus, use it
@@ -317,6 +321,15 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
 ENDIF()
 IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
   LIST(APPEND TPL_LIST "CUBLAS")
+ENDIF()
+
+# ==================================================================
+# Fortran Complex BLAS
+# ==================================================================
+
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
+  INCLUDE(CheckHostBlasReturnComplex.cmake)
+  CHECK_HOST_BLAS_RETURN_COMPLEX(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
 ENDIF()
 
 # ==================================================================
