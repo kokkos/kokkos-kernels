@@ -44,13 +44,8 @@
 #ifndef KOKKOSBLAS1_SCAL_TPL_SPEC_DECL_HPP_
 #define KOKKOSBLAS1_SCAL_TPL_SPEC_DECL_HPP_
 
-// Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#include "KokkosBlas_Host_tpl.hpp"
-
 namespace KokkosBlas {
 namespace Impl {
-
 
 namespace {
   template<class RV, class AV, class XV>
@@ -60,6 +55,14 @@ namespace {
       #endif
   }
 }
+}
+}
+
+namespace KokkosBlas {
+namespace Impl {
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#include "KokkosBlas_Host_tpl.hpp"
 
 #define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
