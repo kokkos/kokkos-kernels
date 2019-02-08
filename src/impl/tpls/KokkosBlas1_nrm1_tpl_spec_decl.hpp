@@ -60,12 +60,12 @@ namespace {
 }
 }
 
-namespace KokkosBlas {
-namespace Impl {
-
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 #include "KokkosBlas_Host_tpl.hpp"
+
+namespace KokkosBlas {
+namespace Impl {
 
 #define KOKKOSBLAS1_DNRM1_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
