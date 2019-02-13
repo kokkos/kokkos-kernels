@@ -4,6 +4,7 @@
 
 /// \author Vinh Dang (vqdang@sandia.gov)
 
+#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
