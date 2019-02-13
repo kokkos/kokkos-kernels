@@ -38,14 +38,14 @@ namespace KokkosBatched {
       
       /// static assert A,er,ei,UL,UR,W has the same value_type
       /// static assert all views have the same memory space
-      return SerialEigendecompositionInternal
+      return m ? SerialEigendecompositionInternal
         ::invoke(A.extent(0),
                  A.data(), A.stride(0), A.stride(1),
                  er.data(), er.stride(0),
                  ei.data(), ei.stride(0),
                  UL.data(), UL.stride(0), UL.stride(1),
                  UR.data(), UR.stride(0), UR.stride(1),
-                 W.data(), W.extent(0));
+                 W.data(), W.extent(0)) : 0;
     }
 
   }/// end namespace Experimental
