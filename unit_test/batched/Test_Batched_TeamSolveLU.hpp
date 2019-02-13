@@ -11,7 +11,7 @@
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Team_Impl.hpp"
 #include "KokkosBatched_SolveLU_Decl.hpp"
-#include "KokkosBatched_SolveLU_Team_Impl.hpp"
+//#include "KokkosBatched_SolveLU_Team_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -143,7 +143,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
 
-      TeamSolveLU<MemberType,AlgoTagType,TransType>::invoke(member, aa, bb);
+      TeamSolveLU<MemberType,TransType,AlgoTagType>::invoke(member, aa, bb);
     }
 
     inline

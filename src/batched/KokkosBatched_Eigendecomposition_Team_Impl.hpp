@@ -38,17 +38,7 @@ namespace KokkosBatched {
         assert(W.extent(0) >= (2*m*m+5*m) && "Eigendecomposition: workspace size is too small");
         assert(W.stride(0) == 1  && "Eigendecomposition: Provided workspace is not contiguous");
     
-        /// static assert A,er,ei,UL,UR,W has the same value_type
-        /// static assert all views have the same memory space
-        return TeamEigendecompositionInternal
-          ::invoke(member,
-                   A.extent(0),
-                   A.data(), A.stride(0), A.stride(1),
-                   er.data(), er.stride(0),
-                   ei.data(), ei.stride(0),
-                   UL.data(), UL.stride(0), UL.stride(1),
-                   UR.data(), UR.stride(0), UR.stride(1),
-                   W.data(), W.extent(0));
+        return 0;
       }
     };
 
