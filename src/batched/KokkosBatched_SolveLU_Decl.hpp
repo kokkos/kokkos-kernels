@@ -77,7 +77,7 @@ namespace KokkosBatched {
     struct SolveLU {
       // no piv version
       template<typename AViewType,
-               typename BViewTypee>
+               typename BViewType>
       KOKKOS_FORCEINLINE_FUNCTION
       static int
       invoke(const MemberType &member, 
