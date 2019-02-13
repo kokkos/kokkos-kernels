@@ -58,7 +58,7 @@ namespace KokkosBatched {
         typedef Kokkos::Details::ArithTraits<real_type> ats;
 
         const real_type one(1), zero(0), tol = 1e2*ats::epsilon();
-        const Kokkos::pair<real_type,real_type> identity(one, zero);
+        //const Kokkos::pair<real_type,real_type> identity(one, zero);
 
         /// step 0: input checking
         assert( (wlen >= (2*m*m+5*m)) && "Eigendecomposition: workspace size is too small");

@@ -59,7 +59,7 @@ namespace KokkosBatched {
              const int user_max_iteration = -1) {
         typedef RealType real_type;
         typedef Kokkos::Details::ArithTraits<real_type> ats;
-        const real_type one(1), zero(0), tol = 1e2*ats::epsilon();
+        const real_type /* one(1), */zero(0), tol = 1e2*ats::epsilon();
         const int max_iteration = user_max_iteration < 0 ? 300 : user_max_iteration;
         if (wlen < m*5) 
           Kokkos::abort("Error: provided workspace is smaller than 3*m");

@@ -43,7 +43,7 @@ namespace KokkosBatched {
         typedef Kokkos::complex<value_type> complex_type;
 
         const value_type zero(0), one(1);
-        const int ss(ss0+ss1);
+        //const int ss(ss0+ss1);
         /// SerialSetInternal::invoke(m, m, zero, V, vs0, vs1);
 
         value_type *b = w; // consider complex case
