@@ -67,9 +67,9 @@ namespace Test {
            typename ValueType,
            typename LayoutType>
   void impl_test_batched_eigendecomposition(const int N, const int m) {
-
-    typedef Kokkos::View<ValueType***,LayoutType,DeviceType> ViewRank3Type;
-    typedef Kokkos::View<ValueType**,LayoutType,DeviceType> ViewRank2Type;
+    typedef ValueType value_type;
+    typedef Kokkos::View<value_type***,LayoutType,DeviceType> ViewRank3Type;
+    typedef Kokkos::View<value_type**,LayoutType,DeviceType> ViewRank2Type;
 
     /// input
     ViewRank3Type A("A", N, m, m);

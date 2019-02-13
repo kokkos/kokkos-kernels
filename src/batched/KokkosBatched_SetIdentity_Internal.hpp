@@ -35,12 +35,13 @@ namespace KokkosBatched {
     ///
     /// Team Internal Impl
     /// ==================
-    template<typename MemberType>
     struct TeamSetIdentityInternal {
-      template<typename ValueType>
+      template<typename MemberType, 
+               typename ValueType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(MemberType const int m, 
+      invoke(const MemberType &member,
+             const int m, 
              /* */ ValueType *__restrict__ A, const int as0, const int as1) {
         const ValueType one(1), zero(0);
         Kokkos::parallel_for
