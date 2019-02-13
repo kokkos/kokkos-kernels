@@ -22,9 +22,11 @@ namespace KokkosBatched {
       static int
       invoke(const AViewType &A,
              const WViewType &W) {
-        SerialCopy<Trans::NoTranspose>::invoke(A, W);
-        SerialSetIdentity::invoke(A);
-        SerialSolveLU<Trans::NoTranspose,ArgAlgo>::invoke(W, A);        
+        int r_val[3] = {};
+        r_val[0] = SerialCopy<Trans::NoTranspose>::invoke(A, W);
+        r_val[1] = SerialSetIdentity::invoke(A);
+        r_val[2] = SerialSolveLU<Trans::NoTranspose,ArgAlgo>::invoke(W, A);        
+        return r_val[0]+r_val[1]+r_val[2];
       }
     };       
 
@@ -38,9 +40,11 @@ namespace KokkosBatched {
       invoke(const MemberType &member, 
              const AViewType &A,
              const WViewType &W) {
-        TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, A, W);
-        TeamSetIdentity<MemberType>::invoke(member, A);
-        TeamSolveLU<MemberType,Trans::NoTranspose,ArgAlgo>::invoke(member, W, A);        
+        int r_val[3] = {};
+        r_val[0] = TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, A, W);
+        r_val[1] = TeamSetIdentity<MemberType>::invoke(member, A);
+        r_val[2] = TeamSolveLU<MemberType,Trans::NoTranspose,ArgAlgo>::invoke(member, W, A);        
+        return r_val[0]+r_val[1]+r_val[2];
       }
     };       
       
