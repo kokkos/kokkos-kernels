@@ -9,6 +9,7 @@
 #include "KokkosBatched_Copy_Impl.hpp"
 #include "KokkosBatched_SetIdentity_Decl.hpp"
 #include "KokkosBatched_SetIdentity_Impl.hpp"
+#include "KokkosBatched_SolveLU_Decl.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -23,7 +24,7 @@ namespace KokkosBatched {
              const WViewType &W) {
         SerialCopy<Trans::NoTranspose>::invoke(A, W);
         SerialSetIdentity::invoke(A);
-        SerialSolveLU<Trans::NoTranspose,ArgAlgo>::invoke(A,B);        
+        SerialSolveLU<Trans::NoTranspose,ArgAlgo>::invoke(W, A);        
       }
     };       
 
@@ -37,9 +38,9 @@ namespace KokkosBatched {
       invoke(const MemberType &member, 
              const AViewType &A,
              const WViewType &W) {
-        TeamCopy<MemberType,Trans::NoTranspose>::invoke(A, W);
-        TeamSetIdentity<MemberType>::invoke(A);
-        TeamSolveLU<MemberType,Trans::NoTranspose,ArgAlgo>::invoke(A,B);        
+        TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, A, W);
+        TeamSetIdentity<MemberType>::invoke(member, A);
+        TeamSolveLU<MemberType,Trans::NoTranspose,ArgAlgo>::invoke(member, W, A);        
       }
     };       
       

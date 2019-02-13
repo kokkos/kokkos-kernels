@@ -23,19 +23,21 @@ namespace KokkosBatched {
       static int
       invoke(const AViewType &A,
              const BViewType &B) {
+        int r_val_1(0), r_val_2(0);
         const typename AViewType::non_const_value_type one(1.0);
         if (std::is_same<ArgTrans,Trans::NoTranspose>::value) {
           //First, compute Y (= U*X) by solving the system L*Y = B for Y
-          SerialTrsm<Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,ArgAlgo>::invoke(one, A, B);
+          r_val_1 = SerialTrsm<Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,ArgAlgo>::invoke(one, A, B);
           //Second, compute X by solving the system U*X = Y for X
-          SerialTrsm<Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(one, A, B);
+          r_val_2 = SerialTrsm<Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(one, A, B);
         } else if (std::is_same<ArgTrans,Trans::Transpose>::value || 
                    std::is_same<ArgTrans,Trans::ConjTranspose>::value) {
           //First, compute Y (= L'*X) by solving the system U'*Y = B for Y
-          SerialTrsm<Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(one, A, B); 
+          r_val_1 = SerialTrsm<Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(one, A, B); 
           //Second, compute X by solving the system L'*X = Y for X
-          SerialTrsm<Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,AlgoAlgo>::invoke(one, A, B);
+          r_val_2 = SerialTrsm<Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,ArgAlgo>::invoke(one, A, B);
         }
+        return r_val_1 + r_val_2;
       }
     };       
 
@@ -51,19 +53,21 @@ namespace KokkosBatched {
       invoke(const MemberType &member, 
              const AViewType &A,
              const BViewType &B) {
+        int r_val_1(0), r_val_2(0);
         const typename AViewType::non_const_value_type one(1.0);
         if (std::is_same<ArgTrans,Trans::NoTranspose>::value) {
           //First, compute Y (= U*X) by solving the system L*Y = B for Y
-          TeamTrsm<MemberType,Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,ArgAlgo>::invoke(member, one, A, B);
+          r_val_1 = TeamTrsm<MemberType,Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,ArgAlgo>::invoke(member, one, A, B);
           //Second, compute X by solving the system U*X = Y for X
-          TeamTrsm<MemberType,Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(member, one, A, B);
+          r_val_2 = TeamTrsm<MemberType,Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(member, one, A, B);
         } else if (std::is_same<ArgTrans,Trans::Transpose>::value || 
                    std::is_same<ArgTrans,Trans::ConjTranspose>::value) {
           //First, compute Y (= L'*X) by solving the system U'*Y = B for Y
-          TeamTrsm<MemberType,Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(member, one, A, B); 
+          r_val_1 = TeamTrsm<MemberType,Side::Left,Uplo::Upper,ArgTrans,Diag::NonUnit,ArgAlgo>::invoke(member, one, A, B); 
           //Second, compute X by solving the system L'*X = Y for X
-          TeamTrsm<MemberType,Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,AlgoAlgo>::invoke(member, one, A, B);
+          r_val_2 = TeamTrsm<MemberType,Side::Left,Uplo::Lower,ArgTrans,Diag::Unit,ArgAlgo>::invoke(member, one, A, B);
         }
+        return r_val_1 + r_val_2;
       }
     };       
       
@@ -87,7 +91,7 @@ namespace KokkosBatched {
         if (std::is_same<ArgMode,Mode::Serial>::value) {
           r_val = SerialSolveLU<ArgTrans,ArgAlgo>::invoke(A, B);
         } else if (std::is_same<ArgMode,Mode::Team>::value) {
-          r_val = TeamLU<MemberType,ArgTrans,ArgAlgo>::invoke(member, A, B);
+          r_val = TeamSolveLU<MemberType,ArgTrans,ArgAlgo>::invoke(member, A, B);
         } 
         return r_val;
       }
