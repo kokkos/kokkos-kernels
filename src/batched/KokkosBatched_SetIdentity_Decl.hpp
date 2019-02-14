@@ -1,5 +1,5 @@
-#ifndef __KOKKOSBATCHED_SET_DECL_HPP__
-#define __KOKKOSBATCHED_SET_DECL_HPP__
+#ifndef __KOKKOSBATCHED_SET_IDENTITY_DECL_HPP__
+#define __KOKKOSBATCHED_SET_IDENTITY_DECL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -11,16 +11,14 @@
 namespace KokkosBatched {
   namespace Experimental {
     ///
-    /// Serial Set
+    /// Serial SetIdentity
     ///
 
-    struct SerialSet {
-      template<typename ScalarType,
-               typename AViewType>
+    struct SerialSetIdentity {
+      template<typename AViewType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const ScalarType alpha,
-             const AViewType &A);
+      invoke(const AViewType &A);
     };
 
     ///
@@ -28,13 +26,11 @@ namespace KokkosBatched {
     ///
 
     template<typename MemberType>
-    struct TeamSet {
-      template<typename ScalarType,
-               typename AViewType>
+    struct TeamSetIdentity {
+      template<typename AViewType>
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const MemberType &member,
-             const ScalarType alpha,
              const AViewType &A);
     };
 
