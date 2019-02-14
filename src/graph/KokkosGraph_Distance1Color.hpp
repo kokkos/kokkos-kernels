@@ -137,17 +137,19 @@ void graph_color(
 }
 
 
-// Distance 2 graph coloring -- serial only -- should be replaced by the Distance2GraphColoring
+// Distance 2 graph coloring -- serial only --
+// todo: move this over to the Distance2 handle
 template <class KernelHandle,
           typename lno_row_view_t_, typename lno_nnz_view_t_,
           typename lno_col_view_t_, typename lno_colnnz_view_t_>
-void d2_graph_color(
+void graph_compute_distance2_color_serial(
     KernelHandle *handle,
     typename KernelHandle::nnz_lno_t num_rows,
     typename KernelHandle::nnz_lno_t num_cols,
     lno_row_view_t_ row_map,
     lno_nnz_view_t_ row_entries,
-    lno_col_view_t_ col_map,        //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
+    //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
+    lno_col_view_t_ col_map,
     lno_colnnz_view_t_ col_entries)
 {
 
@@ -158,12 +160,13 @@ void d2_graph_color(
 
   typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
 
-  typedef typename Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>BaseGraphColoring;
+  // typedef typename Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>BaseGraphColoring;
 
   int num_phases = 0;
 
   switch (algorithm)
   {
+    #if 0   // SERIAL shouldn't be in the d2 coloring function since you can get it from graph_color()
     case COLORING_SERIAL:
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
@@ -173,9 +176,10 @@ void d2_graph_color(
       gch->set_vertex_colors(colors_out);
       break;
     }
+    #endif
 
-    // TODO: SCAFFOLDING: Remove SERIAL Distance-2 Graph Coloring from this interface
-    // 
+    // todo: Remove SERIAL Distance-2 Graph Coloring from this interface
+    //
     case COLORING_SERIAL2:
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
@@ -190,8 +194,9 @@ void d2_graph_color(
     default:
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
-      BaseGraphColoring gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
-      gc.d2_color_graph/*<lno_col_view_t_,lno_colnnz_view_t_>*/(colors_out, num_phases, num_cols, col_map, col_entries);
+      Impl::GraphColor2<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
+          gc(num_rows, row_entries.extent(0), row_map, row_entries, gch);
+      gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
       gch->set_num_phases(num_phases);
       gch->set_vertex_colors(colors_out);
       break;
@@ -203,6 +208,22 @@ void d2_graph_color(
   gch->set_coloring_time(coloring_time);
 }
 
+
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE)
+template <class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename lno_col_view_t_, typename lno_colnnz_view_t_>
+void d2_graph_color(KernelHandle *handle,
+                    typename KernelHandle::nnz_lno_t num_rows,
+                    typename KernelHandle::nnz_lno_t num_cols,
+                    lno_row_view_t_ row_map,
+                    lno_nnz_view_t_ row_entries,
+                    //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.
+                    lno_col_view_t_ col_map,
+                    lno_colnnz_view_t_ col_entries)
+{
+    graph_compute_distance2_color_serial(handle, num_rows, num_cols, row_map, row_entries, col_map, col_entries);
+    std::cout << "Deprecation warning: d2_graph_color() will be replaced with graph_compute_distance2_color_serial()" << std::endl;
+}
+#endif
 
 
 }  // end namespace Experimental

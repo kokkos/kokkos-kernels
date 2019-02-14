@@ -501,32 +501,29 @@ void
 
 
   {
-
     timer1.reset();
 
-
-  this->handle->create_graph_coloring_handle();
+    this->handle->create_graph_coloring_handle();
 
     typename HandleType::GraphColoringHandleType::color_view_t vertex_color_view;
 
-    if (this->handle->get_spgemm_handle()->coloring_input_file == ""){
-      //for now only sequential one exists.
-      //find distance-2 graph coloring
-      handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
-      KokkosGraph::Experimental::d2_graph_color <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
-        (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
+    if (this->handle->get_spgemm_handle()->coloring_input_file == "")
+    {
+        //for now only sequential one exists.
+        //find distance-2 graph coloring
 
-      // WCMCLEN: EXPERIMENTAL - We should switch this to use the distance-2 graph coloring handle at 
-      //                         some point, but it might not be 'simple' since this is being used in 
-      //                         the SPGEMM code.
-      // handle->get_distance2_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_D2_SERIAL);
-      // KokkosGraph::Experimental::graph_compute_distance2_color <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
-      //   (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
+        handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
 
-      original_num_colors = handle->get_graph_coloring_handle()->get_num_colors();
+        KokkosGraph::Experimental::graph_compute_distance2_color_serial 
+            <HandleType, c_row_view_t, c_nnz_view_t, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
+            (this->handle, a_row_cnt, b_col_cnt, rowmapC, entryIndicesC_, transpose_col_xadj, transpose_col_adj);
 
-        if (KOKKOSKERNELS_VERBOSE){
-        std::cout << "\t\tNum colors:" << handle->get_graph_coloring_handle()->get_num_colors() <<  " coloring time:" << timer1.seconds()  << std::endl;
+        original_num_colors = handle->get_graph_coloring_handle()->get_num_colors();
+
+        if (KOKKOSKERNELS_VERBOSE)
+        {
+          std::cout << "\t\tNum colors:" << handle->get_graph_coloring_handle()->get_num_colors() 
+                    <<  " coloring time:" << timer1.seconds()  << std::endl;
         }
         vertex_color_view = handle->get_graph_coloring_handle()->get_vertex_colors();
 
@@ -534,19 +531,18 @@ void
           KokkosKernels::Impl::kk_write_1Dview_to_file(vertex_color_view, this->handle->get_spgemm_handle()->coloring_output_file.c_str());
         }
     }
-    else {
+    else 
+    {
         vertex_color_view = typename HandleType::GraphColoringHandleType::color_view_t("vertex colors from file", a_row_cnt);
-      KokkosKernels::Impl::kk_read_1Dview_from_file(vertex_color_view, this->handle->get_spgemm_handle()->coloring_input_file.c_str());
-      KokkosKernels::Impl::view_reduce_max<typename HandleType::GraphColoringHandleType::color_view_t, MyExecSpace>
+        KokkosKernels::Impl::kk_read_1Dview_from_file(vertex_color_view, this->handle->get_spgemm_handle()->coloring_input_file.c_str());
+        KokkosKernels::Impl::view_reduce_max<typename HandleType::GraphColoringHandleType::color_view_t, MyExecSpace>
               (a_row_cnt, vertex_color_view, original_num_colors);
         MyExecSpace::fence();
 
         //KokkosKernels::Impl::kk_print_1Dview(vertex_color_view);
-
     }
-  num_multi_color_steps =  original_num_colors;
-  num_colors_in_one_step = 1;
-
+    num_multi_color_steps =  original_num_colors;
+    num_colors_in_one_step = 1;
 
 
     vertex_colors_to_store = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("persistent_color_view"), a_row_cnt);

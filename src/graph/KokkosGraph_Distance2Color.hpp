@@ -155,7 +155,6 @@ void graph_compute_distance2_color(KernelHandle *handle,
 }
 
 
-
 }      // end namespace Experimental
 }      // end namespace KokkosGraph
 

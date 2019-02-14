@@ -588,18 +588,18 @@ namespace KokkosSparse{
 
 
 
-      void initialize_symbolic(){
+      void initialize_symbolic()
+      {
         typename HandleType::GraphColoringHandleType *gchandle = this->handle->get_graph_coloring_handle();
 
 
-        if (gchandle == NULL){
-
-          this->handle->create_graph_coloring_handle();
-          //this->handle->create_gs_handle();
-          this->handle->get_gs_handle()->set_owner_of_coloring();
-          gchandle = this->handle->get_graph_coloring_handle();
+        if (gchandle == NULL)
+        {
+            this->handle->create_graph_coloring_handle();
+            //this->handle->create_gs_handle();
+            this->handle->get_gs_handle()->set_owner_of_coloring();
+            gchandle = this->handle->get_graph_coloring_handle();
         }
-
 
 
         const_lno_row_view_t xadj = this->row_map;

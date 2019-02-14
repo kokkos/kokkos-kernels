@@ -62,7 +62,6 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_VBDBIT,                     // Vertex Based Deterministic Coloring with bit array
                          COLORING_EB,                         // Edge Based Coloring
                          COLORING_SERIAL2,                    // Serial Distance-2 Graph Coloring (kept here for backwards compatibility for SPGEMM and other use cases)
-                         //COLORING_SPGEMM,                     // SCAFFOLDING - WCMCLEN (this should be removed)
                        };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
