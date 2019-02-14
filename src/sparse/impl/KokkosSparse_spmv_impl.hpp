@@ -305,11 +305,6 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
   int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
-  // std::cout << "worksets=" << worksets
-  //           << ", rows_per_team=" << rows_per_team
-  //           << ", team_size=" << team_size
-  //           << ", vector_length=" << vector_length << std::endl;
-
   SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
 
   if(A.nnz()>10000000) {
@@ -539,8 +534,7 @@ struct SPMV_MV_LayoutLeft_Functor {
                               const ordinal_type rows_per_thread_) :
     alpha (alpha_),
     m_A (m_A_), m_x (m_x_), beta (beta_), m_y (m_y_), n (m_x_.extent(1)),
-    rows_per_thread (rows_per_thread_)
-  {}
+    rows_per_thread (rows_per_thread_) { }
 
   template<int UNROLL>
   KOKKOS_INLINE_FUNCTION void

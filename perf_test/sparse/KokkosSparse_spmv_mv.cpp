@@ -154,7 +154,6 @@ struct SPMV_MV2_Functor {
   void operator() (const team_member& dev) const
   {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rows_per_team), [&] (const ordinal_type& loop) {
-        value_type x_extractor[8] = {0.0};
         value_type y_accumulator[8] = {0.0};
         const ordinal_type iRow = static_cast<ordinal_type>(dev.league_rank()) * rows_per_team + loop;
         if (iRow >= m_A.numRows ()) {
@@ -163,14 +162,13 @@ struct SPMV_MV2_Functor {
         const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
         const ordinal_type row_length = static_cast<ordinal_type> (row.length);
 
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
-                             [&] (const ordinal_type& vecIdx) {
-                               y_accumulator[vecIdx] = m_y(iRow, vecIdx);
-                             });
         if(dobeta != 0) {
+	  #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+	  #pragma unroll
+	  #endif
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                                [&] (const ordinal_type& vecIdx) {
-                                 y_accumulator[vecIdx] *= beta;
+                                 y_accumulator[vecIdx] = beta*m_y(iRow, vecIdx);
                                });
         }
 
@@ -178,18 +176,19 @@ struct SPMV_MV2_Functor {
           const value_type val = alpha*(conjugate ? ATV::conj(row.value(entryIdx)) : row.value(entryIdx));
           const ordinal_type colIdx = row.colidx(entryIdx);
 
-          // Pack data from x multivector
+	  #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+	  #pragma unroll
+	  #endif
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                                [&] (const ordinal_type& vecIdx) {
-                                 x_extractor[vecIdx] = m_x(colIdx, vecIdx);
-                               });
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
-                               [&] (const ordinal_type& vecIdx) {
-                                 y_accumulator[vecIdx] += val * x_extractor[vecIdx];
+                                 y_accumulator[vecIdx] += val * m_x(colIdx, vecIdx);
                                });
         }
 
         // Unpack results into y multivector
+	#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+	#pragma unroll
+	#endif
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
                              [&] (const ordinal_type& vecIdx) {
                                m_y(iRow, vecIdx) =  y_accumulator[vecIdx];
@@ -198,6 +197,180 @@ struct SPMV_MV2_Functor {
       });
   }
 };
+
+template<class AMatrix,
+         class XVector,
+         class YVector,
+         int dobeta,
+         bool conjugate>
+struct SPMV_MV3_Functor {
+  typedef typename AMatrix::execution_space              execution_space;
+  typedef typename AMatrix::non_const_ordinal_type       ordinal_type;
+  typedef typename AMatrix::non_const_value_type         value_type;
+  typedef typename Kokkos::TeamPolicy<execution_space>   team_policy;
+  typedef typename team_policy::member_type              team_member;
+  typedef Kokkos::Details::ArithTraits<value_type>       ATV;
+
+  const value_type alpha;
+  AMatrix  m_A;
+  XVector m_x;
+  const value_type beta;
+  YVector m_y;
+
+  const ordinal_type rows_per_team;
+  const ordinal_type  numVecs;
+
+  SPMV_MV3_Functor (const value_type alpha_,
+                    const AMatrix m_A_,
+                    const XVector m_x_,
+                    const value_type beta_,
+                    const YVector m_y_,
+                    const ordinal_type rows_per_team_,
+                    const ordinal_type numVecs_) :
+     alpha (alpha_), m_A (m_A_), m_x (m_x_),
+     beta (beta_), m_y (m_y_),
+     rows_per_team (rows_per_team_),
+     numVecs (numVecs_)
+  {
+    static_assert (static_cast<int> (XVector::rank) == 2,
+                   "XVector must be a rank 2 View.");
+    static_assert (static_cast<int> (YVector::rank) == 2,
+                   "YVector must be a rank 2 View.");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const team_member& dev) const
+  {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rows_per_team), [&] (const ordinal_type& loop) {
+        const ordinal_type iRow = static_cast<ordinal_type>(dev.league_rank()) * rows_per_team + loop;
+        if (iRow >= m_A.numRows ()) {
+          return;
+        }
+        const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
+        const ordinal_type row_length = static_cast<ordinal_type> (row.length);
+
+        if(dobeta != 0) {
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
+                               [&] (const ordinal_type& vecIdx) {
+                                 m_y(iRow, vecIdx) = beta*m_y(iRow, vecIdx);
+                               });
+        }
+
+        for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
+          const value_type val = alpha*(conjugate ? ATV::conj(row.value(entryIdx)) : row.value(entryIdx));
+          const ordinal_type colIdx = row.colidx(entryIdx);
+
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, 8),
+                               [&] (const ordinal_type& vecIdx) {
+                                 m_y(iRow, vecIdx) += val * m_x(colIdx, vecIdx);
+                               });
+        }
+
+      });
+  }
+};
+
+template<class AMatrix,
+         class XVector,
+         class YVector,
+         int dobeta,
+         bool conjugate>
+struct SPMV_MV4_Functor {
+  typedef typename AMatrix::execution_space              execution_space;
+  typedef typename AMatrix::non_const_ordinal_type       ordinal_type;
+  typedef typename AMatrix::non_const_value_type         value_type;
+  typedef typename Kokkos::TeamPolicy<execution_space>   team_policy;
+  typedef typename team_policy::member_type              team_member;
+  typedef Kokkos::Details::ArithTraits<value_type>       ATV;
+
+  const value_type alpha;
+  AMatrix  m_A;
+  XVector m_x;
+  const value_type beta;
+  YVector m_y;
+
+  const ordinal_type rows_per_team;
+  const ordinal_type  numVecs;
+
+  struct value4 {
+
+    value_type x0, x1, x2, x3;
+
+    KOKKOS_INLINE_FUNCTION
+    void operator += (const value4 input) {
+      x0 += input.x0;
+      x1 += input.x1;
+      x2 += input.x2;
+      x3 += input.x3;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator += (volatile const value4 input) volatile {
+      x0 += input.x0;
+      x1 += input.x1;
+      x2 += input.x2;
+      x3 += input.x3;
+    }
+
+  };
+
+  SPMV_MV4_Functor (const value_type alpha_,
+                    const AMatrix m_A_,
+                    const XVector m_x_,
+                    const value_type beta_,
+                    const YVector m_y_,
+                    const ordinal_type rows_per_team_,
+                    const ordinal_type numVecs_) :
+     alpha (alpha_), m_A (m_A_), m_x (m_x_),
+     beta (beta_), m_y (m_y_),
+     rows_per_team (rows_per_team_),
+     numVecs (numVecs_)
+  {
+    static_assert (static_cast<int> (XVector::rank) == 2,
+                   "XVector must be a rank 2 View.");
+    static_assert (static_cast<int> (YVector::rank) == 2,
+                   "YVector must be a rank 2 View.");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const team_member& dev) const
+  {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rows_per_team), [&] (const ordinal_type& loop) {
+        const ordinal_type iRow = static_cast<ordinal_type>(dev.league_rank()) * rows_per_team + loop;
+        if (iRow >= m_A.numRows ()) {
+          return;
+        }
+        const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
+        const ordinal_type row_length = static_cast<ordinal_type> (row.length);
+
+	for(ordinal_type vecOffset = 0; vecOffset < static_cast<ordinal_type>(m_x.extent(1)); vecOffset += 4) {
+	  value4 sum = {0.0, 0.0, 0.0, 0.0};
+	  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, row_length),
+				  [&] (const ordinal_type& entryIdx, value4& lsum) {
+
+				    // Extract data from current row
+				    const value_type val = alpha*(conjugate ? ATV::conj(row.value(entryIdx)) : row.value(entryIdx));
+				    const ordinal_type colIdx = row.colidx(entryIdx);
+
+				    // Perform dot product accros lhs columns
+				    lsum.x0 += m_x(colIdx, 0)*val;
+				    lsum.x1 += m_x(colIdx, 1)*val;
+				    lsum.x2 += m_x(colIdx, 2)*val;
+				    lsum.x3 += m_x(colIdx, 3)*val;
+				  }, sum);
+
+	Kokkos::single(Kokkos::PerThread(dev), [&] () {
+	    m_y(iRow, vecOffset + 0) = beta*m_y(iRow, vecOffset + 0) + sum.x0;
+	    m_y(iRow, vecOffset + 0) = beta*m_y(iRow, vecOffset + 1) + sum.x1;
+	    m_y(iRow, vecOffset + 0) = beta*m_y(iRow, vecOffset + 2) + sum.x2;
+	    m_y(iRow, vecOffset + 0) = beta*m_y(iRow, vecOffset + 3) + sum.x3;
+	  });
+	} // Loop over numVecs
+      }); // TeamThreadRange
+  }
+};
+
+
 
 template<class execution_space>
 int64_t spmv_launch_parameters(int64_t numRows,
@@ -271,7 +444,8 @@ void matvec(AType& A, XType x, YType y,
             int rows_per_thread,
             int team_size,
             int vector_length,
-            int schedule) {
+            int schedule,
+	    int kernel) {
   typedef typename AType::execution_space                execution_space;
   const int numVecs = x.extent(1);
 
@@ -285,28 +459,24 @@ void matvec(AType& A, XType x, YType y,
                                                                   vector_length);
   int64_t worksets = (y.extent(0) + rows_per_team-1) / rows_per_team;
 
-  // std::cout << "matvec launch paramters: worksets=" << worksets
-  //           << ", rows_per_team=" << rows_per_team
-  //           << ", team_size=" << team_size
-  //           << ", vector_length=" << vector_length << std::endl;
 
-  SPMV_MV2_Functor<AType,XType,YType,1,false> func (1.0, A, x, 1.0, y, rows_per_team, x.extent(1));
+    SPMV_MV4_Functor<AType,XType,YType,1,false> func (1.0, A, x, 1.0, y, rows_per_team, x.extent(1));
+    if(A.nnz()>10000000) {
+      Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
+      if(team_size<0)
+	policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
+      else
+	policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
+      Kokkos::parallel_for("KokkosSparse::spmv_mv4<NoTranspose,Dynamic>",policy,func);
+    } else {
+      Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
+      if(team_size<0)
+	policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
+      else
+	policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
+      Kokkos::parallel_for("KokkosSparse::spmv_mv4<NoTranspose,Static>",policy,func);
+    }
 
-  if(A.nnz()>10000000) {
-    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
-    if(team_size<0)
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
-    else
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>",policy,func);
-  } else {
-    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
-    if(team_size<0)
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
-    else
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",policy,func);
-  }
 }
 
 template<typename Scalar>
@@ -314,16 +484,20 @@ int test_spmv_mv(int numRows, int numCols, int nnz, int numVecs, int test, const
                  const bool binaryfile, int rows_per_thread, int team_size, int vector_length,
                  int idx_offset, int schedule, int loop) {
   typedef KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int> matrix_type;
-  typedef typename matrix_type::non_const_value_type value_type;
-  typedef typename matrix_type::device_type          device_type;
-  typedef typename matrix_type::memory_traits        memory_traits;
-  typedef typename Kokkos::View<value_type**, Kokkos::LayoutLeft, device_type, memory_traits> multivector_type;
+  typedef typename matrix_type::execution_space        execution_space;
+  typedef typename matrix_type::non_const_value_type   value_type;
+  typedef typename matrix_type::non_const_ordinal_type ordinal_type;
+  typedef typename matrix_type::device_type            device_type;
+  typedef typename matrix_type::memory_traits          memory_traits;
+  typedef typename Kokkos::View<value_type**, Kokkos::LayoutLeft,  device_type, memory_traits> multivector_type;
+  typedef typename Kokkos::View<value_type**, Kokkos::LayoutRight, device_type, memory_traits> right_multivector_type;
   typedef typename multivector_type::HostMirror h_multivector_type;
 
   Scalar* val = NULL;
   int* row = NULL;
   int* col = NULL;
 
+  printf("Generating random CrsMatrix\n");
   srand(17312837);
   if(filename==NULL) {
     nnz = SparseMatrix_generate<Scalar,int>(numRows,numCols,nnz,nnz/numRows*0.2,numRows*0.01,val,row,col);
@@ -337,24 +511,28 @@ int test_spmv_mv(int numRows, int numCols, int nnz, int numVecs, int test, const
 
   matrix_type A("CRS::A", numRows, numCols, nnz, val, row, col, false);
 
-  multivector_type x("X", numCols, numVecs);
-  multivector_type y("Y", numRows, numVecs);
-  h_multivector_type h_x = Kokkos::create_mirror_view(x);
-  h_multivector_type h_y = Kokkos::create_mirror_view(y);
-  h_multivector_type h_y_compare = Kokkos::create_mirror(y);
+  multivector_type x1("X1", numCols, numVecs);
+  multivector_type y1("Y1", numRows, numVecs);
+  h_multivector_type h_x = Kokkos::create_mirror_view(x1);
+  h_multivector_type h_y = Kokkos::create_mirror_view(y1);
+  h_multivector_type h_y_compare = Kokkos::create_mirror(y1);
 
   typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
   typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
 
+  Kokkos::fence();
+  printf("Loading values in left and right hand side multivectors\n");
   for(int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
     for(int i = 0; i < numCols; i++) {
-      h_x(i, vecIdx) = (Scalar) (1.0*(rand()%40)-20.);
+      h_x(i, vecIdx) = (value_type) (1.0*(rand()%40)-20.);
     }
     for(int i = 0; i < numRows; i++) {
-      h_y(i, vecIdx) = (Scalar) (1.0*(rand()%40)-20.);
+      h_y(i, vecIdx) = (value_type) (1.0*(rand()%40)-20.);
     }
   }
 
+  Kokkos::fence();
+  printf("Computing serial spmv for error check\n");
   // Error Check Gold Values
   for(int i = 0; i < numRows; i++) {
     int start = h_graph.row_map(i);
@@ -372,20 +550,23 @@ int test_spmv_mv(int numRows, int numCols, int nnz, int numVecs, int test, const
     }
   }
 
-  multivector_type x1("X1", numCols, numVecs);
-  multivector_type y1("Y1", numRows, numVecs);
-
-  Kokkos::deep_copy(x,h_x);
-  Kokkos::deep_copy(y,h_y);
+  Kokkos::fence();
+  printf("Copy data to device\n");
+  Kokkos::deep_copy(x1, h_x);
+  Kokkos::deep_copy(y1, h_y);
   Kokkos::deep_copy(A.graph.entries,h_graph.entries);
   Kokkos::deep_copy(A.values,h_values);
-  Kokkos::deep_copy(x1,h_x);
 
-  //int nnz_per_row = A.nnz()/A.numRows();
-  matvec(A, x1, y1, -1, -1, -1, -1);
+  Kokkos::fence();
+  printf("Perform initial matvec\n");
+  matvec(A, x1, y1, rows_per_thread, team_size, vector_length, -1, 3);
 
+  Kokkos::fence();
+  printf("Copy results of matvec to host before correctness check\n");
   // Error Check
   Kokkos::deep_copy(h_y, y1);
+  Kokkos::fence();
+  printf("Check correctness against serial spmv results\n");  
   Scalar error = 0.0;
   Scalar sum = 0.0;
   for(int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
@@ -402,6 +583,8 @@ int test_spmv_mv(int numRows, int numCols, int nnz, int numVecs, int test, const
   total_error += error;
   total_sum += sum;
 
+  Kokkos::fence();
+  printf("Test performance of reference spmv_mv implementation\n");
   // Benchmark ref impl
   double min_ref_time = 1.0e32;
   double max_ref_time = 0.0;
@@ -416,13 +599,15 @@ int test_spmv_mv(int numRows, int numCols, int nnz, int numVecs, int test, const
     if(time < min_ref_time) min_ref_time = time;
   }
 
+  Kokkos::fence();
+  printf("Test performance of new spmv_mv implementation\n");
   // Benchmark new impl
   double min_new_time = 1.0e32;
   double max_new_time = 0.0;
   double ave_new_time = 0.0;
   for(int i = 0; i < loop; i++) {
     Kokkos::Timer timer;
-    matvec(A, x1, y1, -1, -1, -1, -1);
+    matvec(A, x1, y1, rows_per_thread, team_size, vector_length, -1, 3);
     Kokkos::fence();
     double time = timer.seconds();
     ave_new_time += time;
@@ -528,7 +713,6 @@ int main(int argc, char **argv)
 #endif
     continue;
   }
-  //if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-f")==0)) {filename = argv[++i]; continue;}
   if((strcmp(argv[i],"-fb")==0)) {filename = argv[++i]; binaryfile = true; continue;}
   if((strcmp(argv[i],"-rpt")==0)) {rows_per_thread=atoi(argv[++i]); continue;}
@@ -564,7 +748,10 @@ int main(int argc, char **argv)
 
  Kokkos::initialize(argc,argv);
 
- int total_errors = test_spmv_mv<double>(size,size,size*10,numVecs,test,filename,binaryfile,rows_per_thread,team_size,vector_length,idx_offset,schedule,loop);
+ int total_errors = test_spmv_mv<double>(size, size, size*10, numVecs,
+					 test, filename, binaryfile,
+					 rows_per_thread, team_size, vector_length,
+					 idx_offset, schedule, loop);
 
  if(total_errors == 0)
    printf("Kokkos::MultiVector Test: Passed\n");
