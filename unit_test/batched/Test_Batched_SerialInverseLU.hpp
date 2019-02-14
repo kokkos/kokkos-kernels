@@ -11,7 +11,7 @@
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Serial_Impl.hpp"
 #include "KokkosBatched_InverseLU_Decl.hpp"
-#include "KokkosBatched_InverseLU_Serial_Impl.hpp"
+//#include "KokkosBatched_InverseLU_Serial_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
