@@ -61,8 +61,8 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_VBD,                        // Vertex Based Deterministic Coloring
                          COLORING_VBDBIT,                     // Vertex Based Deterministic Coloring with bit array
                          COLORING_EB,                         // Edge Based Coloring
-                         COLORING_SERIAL2,
-                         COLORING_SPGEMM,
+                         COLORING_SERIAL2,                    // Serial Distance-2 Graph Coloring (kept here for backwards compatibility for SPGEMM and other use cases)
+                         //COLORING_SPGEMM,                     // SCAFFOLDING - WCMCLEN (this should be removed)
                        };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
@@ -498,7 +498,7 @@ private:
       size_type new_num_edge = 0;
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
 
-      if ( 0
+      if ( false
 #if defined( KOKKOS_ENABLE_CUDA )
           || Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value
 #endif

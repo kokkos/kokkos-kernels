@@ -960,7 +960,6 @@ class GraphColorDistance2
                 // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
                 //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.
                 //   This could be as big as all the vertices in the graph if diameter(G)=2...
-                // * TODO: Determine if we can cap this at something lower than nv.
                 for(color_type offset = 0; !foundColor && offset < nv; offset += VB_D2_COLORING_FORBIDDEN_SIZE)
                 {
                     // initialize
@@ -1547,8 +1546,7 @@ class GraphColorDistance2
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_type chunk_id) const
         {
-            #if 1
-            // EXPERIMENTAL
+            // BEGIN EXPERIMENTAL
             // Get a unique token since we aren't using TeamPolicy (for UniformMemoryPool, that the HashmapAccumulator requires)
             auto tid = tokens.acquire();
 
@@ -1577,7 +1575,7 @@ class GraphColorDistance2
             hash_map.max_value_size = _max_nonzeros;      // Max # of nonzeros that can be added into the hash table
 
             nnz_lno_type pow2_hash_func = _hash_size - 1;
-            #endif
+            // END EXPERIMENTAL
 
             for(nnz_lno_type ichunk = 0; ichunk < _chunk_size; ichunk++)
             {
@@ -1624,8 +1622,6 @@ class GraphColorDistance2
                 }      // for vid_d1_adj ...
 
                 // EXPERIMENTAL BEGIN
-                #if 1
-
                 // std::cout << "::: " << vid << " -> " << used_hash_size << std::endl;
                 _degree_d2(vid) = used_hash_size;
 
@@ -1635,7 +1631,6 @@ class GraphColorDistance2
                     nnz_lno_type dirty_hash            = globally_used_hash_indices[ i ];
                     hash_map.hash_begins[ dirty_hash ] = -1;
                 }
-                #endif
                 // EXPERIMENTAL END
 
             }      // for ichunk ...
