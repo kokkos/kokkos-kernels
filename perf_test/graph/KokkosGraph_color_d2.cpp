@@ -598,33 +598,17 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 
 
 template<typename size_type, typename lno_t, typename exec_space, typename hbm_mem_space, typename sbm_mem_space>
-void run_multi_mem_experiment(Parameters params)
+void experiment_driver(Parameters params)
 {
     using myExecSpace     = exec_space;
     using myFastDevice    = Kokkos::Device<exec_space, hbm_mem_space>;
-    using mySlowExecSpace = Kokkos::Device<exec_space, sbm_mem_space>;
     using fast_crstmat_t  = typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type>;
     using fast_graph_t    = typename fast_crstmat_t::StaticCrsGraphType;
 
-    // typedef typename fast_graph_t::row_map_type::non_const_type fast_row_map_view_t;
-    // typedef typename fast_graph_t::entries_type::non_const_type fast_cols_view_t;
-    // typedef typename fast_graph_t::row_map_type::const_type const_fast_row_map_view_t;
-    // typedef typename fast_graph_t::entries_type::const_type const_fast_cols_view_t;
-
-    using slow_crstmat_t = typename MyKokkosSparse::CrsMatrix<double, lno_t, mySlowExecSpace, void, size_type>;
-    using slow_graph_t   = typename slow_crstmat_t::StaticCrsGraphType;
-
-    // typedef typename slow_graph_t::row_map_type::non_const_type slow_row_map_view_t;
-    // typedef typename slow_graph_t::entries_type::non_const_type slow_cols_view_t;
-    // typedef typename slow_graph_t::row_map_type::const_type     const_slow_row_map_view_t;
-    // typedef typename slow_graph_t::entries_type::const_type     const_slow_cols_view_t;
-
     char *a_mat_file = params.a_mtx_bin_file;
 
-    slow_graph_t a_slow_crsgraph, /*b_slow_crsgraph,*/ c_slow_crsgraph;
     fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
 
-    // read a and b matrices and store them on slow or fast memory.
     if(params.a_mem_space == 1)
     {
         fast_crstmat_t a_fast_crsmat;
@@ -632,158 +616,19 @@ void run_multi_mem_experiment(Parameters params)
         a_fast_crsgraph          = a_fast_crsmat.graph;
         a_fast_crsgraph.num_cols = a_fast_crsmat.numCols();
     }
-    else
-    {
-        slow_crstmat_t a_slow_crsmat;
-        a_slow_crsmat            = KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
-        a_slow_crsgraph          = a_slow_crsmat.graph;
-        a_slow_crsgraph.num_cols = a_slow_crsmat.numCols();
-    }
 
-    if(params.a_mem_space == 1)
+    if(params.a_mem_space == 1 && params.b_mem_space==1 && params.c_mem_space==1 && params.work_mem_space==1)
     {
-        if(params.b_mem_space == 1)
-        {
-            if(params.c_mem_space == 1)
-            {
-                if(params.work_mem_space == 1)
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, fast_graph_t, fast_graph_t, hbm_mem_space, hbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-                else
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, fast_graph_t, fast_graph_t, sbm_mem_space, sbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-            }
-            else
-            {
-                // C is in slow memory.
-                if(params.work_mem_space == 1)
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, fast_graph_t, slow_graph_t, hbm_mem_space, hbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-                else
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, fast_graph_t, slow_graph_t, sbm_mem_space, sbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-            }
-        }
-        else
-        {
-            // B is in slow memory
-            if(params.c_mem_space == 1)
-            {
-                if(params.work_mem_space == 1)
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, slow_graph_t, fast_graph_t, hbm_mem_space, hbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-                else
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, slow_graph_t, fast_graph_t, sbm_mem_space, sbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-            }
-            else
-            {
-                // C is in slow memory.
-                if(params.work_mem_space == 1)
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, slow_graph_t, slow_graph_t, hbm_mem_space, hbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-                else
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, slow_graph_t, slow_graph_t, sbm_mem_space, sbm_mem_space>(a_fast_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-            }
-        }
+        KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, fast_graph_t, fast_graph_t, hbm_mem_space, hbm_mem_space>
+                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
     }
     else
     {
-        // A is in slow memory
-        if(params.b_mem_space == 1)
-        {
-            if(params.c_mem_space == 1)
-            {
-                if(params.work_mem_space == 1)
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, fast_graph_t, fast_graph_t, hbm_mem_space, hbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-                else
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, fast_graph_t, fast_graph_t, sbm_mem_space, sbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-            }
-            else
-            {
-                // C is in slow memory.
-                if(params.work_mem_space == 1)
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, fast_graph_t, slow_graph_t, hbm_mem_space, hbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-                else
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, fast_graph_t, slow_graph_t, sbm_mem_space, sbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_fast_crsgraph,*/ params);
-                }
-            }
-        }
-        else
-        {
-            // B is in slow memory
-            if(params.c_mem_space == 1)
-            {
-                if(params.work_mem_space == 1)
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, slow_graph_t, fast_graph_t, hbm_mem_space, hbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-                else
-                {
-                    /* c_fast_crsgraph = */
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, slow_graph_t, fast_graph_t, sbm_mem_space, sbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-            }
-            else
-            {
-                // C is in slow memory.
-                if(params.work_mem_space == 1)
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, slow_graph_t, slow_graph_t, hbm_mem_space, hbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-                else
-                {
-                    /*c_slow_crsgraph =*/
-                    KokkosKernels::Experiment::run_experiment<myExecSpace, slow_graph_t, slow_graph_t, slow_graph_t, sbm_mem_space, sbm_mem_space>(a_slow_crsgraph,
-                                                                                                                                                   /*b_slow_crsgraph,*/ params);
-                }
-            }
-        }
+        std::cout << ">>> unhandled memspace configuration flags:"      << std::endl
+                  << ">>>   a_mem_space    = " << params.a_mem_space    << std::endl
+                  << ">>>   b_mem_space    = " << params.a_mem_space    << std::endl
+                  << ">>>   c_mem_space    = " << params.a_mem_space    << std::endl
+                  << ">>>   work_mem_space = " << params.work_mem_space << std::endl;
     }
 }
 
@@ -821,40 +666,42 @@ int main(int argc, char *argv[])
     // Print out verbose information about the configuration of the run.
     // Kokkos::print_configuration(std::cout);
 
-#if defined(KOKKOS_ENABLE_OPENMP)
+    #if defined(KOKKOS_MULTI_MEM)
+    const bool use_multi_mem = true;
+    // todo: Throw an error or print a message if KOKKOS_MULTI_MEM is enabled for this test?  (WCMCLEN--SCAFFOLDING)
+    #else
+    const bool use_multi_mem = false;
+    #endif
+
+    #if defined(KOKKOS_ENABLE_OPENMP)
     if(params.use_openmp)
     {
-#ifdef KOKKOSKERNELS_MULTI_MEM
-        KokkosKernels::Experiment::run_multi_mem_experiment<kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::HostSpace>(params);
-#else
-        KokkosKernels::Experiment::run_multi_mem_experiment<kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
-#endif
+        if(!use_multi_mem)
+        {
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
+        }
     }
-#endif
+    #endif
 
-
-#if defined(KOKKOS_ENABLE_CUDA)
+    #if defined(KOKKOS_ENABLE_CUDA)
     if(params.use_cuda)
     {
-#ifdef KOKKOSKERNELS_MULTI_MEM
-        KokkosKernels::Experiment::run_multi_mem_experiment<kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(params);
-#else
-        KokkosKernels::Experiment::run_multi_mem_experiment<kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(params);
-#endif
+        if(!use_multi_mem)
+        {
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(params);
+        }
     }
-#endif
+    #endif
 
-
-#if defined(KOKKOS_ENABLE_SERIAL)
+    #if defined(KOKKOS_ENABLE_SERIAL)
     if(params.use_serial)
     {
-#ifdef KOKKOSKERNELS_MULTI_MEM
-        KokkosKernels::Experiment::run_multi_mem_experiment<kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(params);
-#else
-        KokkosKernels::Experiment::run_multi_mem_experiment<kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(params);
-#endif
+        if(!use_multi_mem)
+        {
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(params);
+        }
     }
-#endif
+    #endif
 
     Kokkos::finalize();
 

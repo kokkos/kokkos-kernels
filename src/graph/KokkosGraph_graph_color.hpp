@@ -50,3 +50,6 @@
  */
 #include "KokkosGraph_GraphColor.hpp"
 
+// TODO: SCAFFOLDING (Add a deprecation warning that this will go away in version 3.0)
+
+

@@ -174,6 +174,8 @@ void d2_graph_color(
       break;
     }
 
+    // TODO: SCAFFOLDING: Remove SERIAL Distance-2 Graph Coloring from this interface
+    // 
     case COLORING_SERIAL2:
     {
       color_view_type colors_out = color_view_type("Graph Colors", num_rows);
