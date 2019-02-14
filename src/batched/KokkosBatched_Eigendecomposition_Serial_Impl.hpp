@@ -26,15 +26,15 @@ namespace KokkosBatched {
            const WViewType &W) {
       /// view checking
       const int m = A.extent(0);
-      assert(m == A.extent(1)  && "Eigendecomposition: A is not square");
-      assert(m == er.extent(0) && "Eigendecomposition: Length of er does not match to A's dimension");
-      assert(m == ei.extent(0) && "Eigendecomposition: Length of ei does not match to A's dimension");
-      assert(m == UL.extent(0) && "Eigendecomposition: Length of UL does not match to A's dimension");
-      assert(m == UL.extent(1) && "Eigendecomposition: Width of UL does not match to A's dimension");
-      assert(m == UR.extent(0) && "Eigendecomposition: Length of UR does not match to A's dimension");
-      assert(m == UR.extent(1) && "Eigendecomposition: Width of UR does not match to A's dimension");
-      assert(W.extent(0) >= (2*m*m+5*m) && "Eigendecomposition: workspace size is too small");
-      assert(W.stride(0) == 1  && "Eigendecomposition: Provided workspace is not contiguous");
+      assert(m == int(A.extent(1))  && "Eigendecomposition: A is not square");
+      assert(m == int(er.extent(0)) && "Eigendecomposition: Length of er does not match to A's dimension");
+      assert(m == int(ei.extent(0)) && "Eigendecomposition: Length of ei does not match to A's dimension");
+      assert(m == int(UL.extent(0)) && "Eigendecomposition: Length of UL does not match to A's dimension");
+      assert(m == int(UL.extent(1)) && "Eigendecomposition: Width of UL does not match to A's dimension");
+      assert(m == int(UR.extent(0)) && "Eigendecomposition: Length of UR does not match to A's dimension");
+      assert(m == int(UR.extent(1)) && "Eigendecomposition: Width of UR does not match to A's dimension");
+      assert(int(W.extent(0)) >= int(2*m*m+5*m) && "Eigendecomposition: workspace size is too small");
+      assert(int(W.stride(0)) == int(1)  && "Eigendecomposition: Provided workspace is not contiguous");
       
       /// static assert A,er,ei,UL,UR,W has the same value_type
       /// static assert all views have the same memory space

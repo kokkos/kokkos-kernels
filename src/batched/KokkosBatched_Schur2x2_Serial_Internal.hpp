@@ -91,8 +91,8 @@ namespace KokkosBatched {
             const real_type sqrt_mult_alpha_offdiags = ats::sqrt(mult_alpha_offdiags);
 
             /// redefine the rotation matrix
-            const real_type sqrt_abs_alpha01 = ats::sqrt(ats::abs(*alpha01));
-            const real_type sqrt_abs_alpha10 = ats::sqrt(ats::abs(*alpha10));
+            //const real_type sqrt_abs_alpha01 = ats::sqrt(ats::abs(*alpha01));
+            //const real_type sqrt_abs_alpha10 = ats::sqrt(ats::abs(*alpha10));
             const real_type abs_sum_offidags = ats::abs((*alpha01)+(*alpha10));
             const real_type c1 = ats::sqrt(ats::abs(*alpha01)/abs_sum_offidags);
             const real_type s1 = ats::sqrt(ats::abs(*alpha10)/abs_sum_offidags);

@@ -43,8 +43,7 @@ namespace Test {
       auto UR = Kokkos::subview(_UR, k, Kokkos::ALL(), Kokkos::ALL());
       auto W  = Kokkos::subview(_W,  k, Kokkos::ALL());
 
-      const int r_val = 
-        SerialEigendecomposition::invoke(A, er, ei, UL, UR, W);        
+      SerialEigendecomposition::invoke(A, er, ei, UL, UR, W);        
     }
     
     inline

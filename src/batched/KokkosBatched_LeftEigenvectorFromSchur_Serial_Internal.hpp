@@ -39,7 +39,7 @@ namespace KokkosBatched {
              const int * blks) {
         typedef ValueType value_type;
         typedef Kokkos::Details::ArithTraits<value_type> ats;
-        typedef typename ats::mag_type mag_type;
+        //typedef typename ats::mag_type mag_type;
         typedef Kokkos::complex<value_type> complex_type;
 
         const value_type zero(0), one(1);
@@ -58,7 +58,7 @@ namespace KokkosBatched {
         S_part2x2.partWithATL(S, m, m, 0, 0);
         V_part2x1.partWithAT(V, m, 0);
 
-        const mag_type tol = ats::epsilon();
+        //const mag_type tol = ats::epsilon();
         int m_stl = 0;
         for (;m_stl<(m-1);) {
           /// part 2x2 into 3x3

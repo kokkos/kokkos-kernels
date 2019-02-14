@@ -25,7 +25,7 @@ namespace KokkosBatched {
              const ValueType shift,
              /* */ Kokkos::pair<ValueType,ValueType> * GG, const bool request_schur) {
         typedef ValueType value_type;
-        typedef Kokkos::Details::ArithTraits<value_type> ats;
+        //typedef Kokkos::Details::ArithTraits<value_type> ats;
 
         const int hs = hs0+hs1;
         const value_type zero(0), one(1);
