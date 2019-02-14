@@ -11,7 +11,7 @@
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Serial_Impl.hpp"
 #include "KokkosBatched_InverseLU_Decl.hpp"
-#include "KokkosBatched_InverseLU_Serial_Impl.hpp"
+//#include "KokkosBatched_InverseLU_Serial_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -158,7 +158,7 @@ namespace Test {
     /// randomized input testing views
     AViewType a0("a0", N, BlkSize, BlkSize);
     AViewType a1("a1", N, BlkSize, BlkSize);
-    WViewType w ("w",  N, BlkSize*BlkSize );
+    WViewType w ("w",  N, BlkSize* BlkSize);
     AViewType c0("c0", N, BlkSize, BlkSize);
 
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
