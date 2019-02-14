@@ -104,10 +104,10 @@ run_graphcolor_d2(crsMat_type                                                   
     bool d2_coloring_is_valid = false;
     bool d2_coloring_validation_flags[4] = { false };
 
-    d2_coloring_is_valid = graph_verify_distance2_color(&kh, num_rows_1, num_cols_1,
-                                                        input_mat.graph.row_map,input_mat.graph.entries,
-                                                        input_mat.graph.row_map, input_mat.graph.entries,
-                                                        d2_coloring_validation_flags);
+    d2_coloring_is_valid = KokkosGraph::Impl::graph_verify_distance2_color(&kh, num_rows_1, num_cols_1,
+                                                                           input_mat.graph.row_map,input_mat.graph.entries,
+                                                                           input_mat.graph.row_map, input_mat.graph.entries,
+                                                                           d2_coloring_validation_flags);
 
 
 

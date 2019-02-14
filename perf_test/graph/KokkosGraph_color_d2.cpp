@@ -597,7 +597,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
 }
 
 
-template<typename size_type, typename lno_t, typename exec_space, typename hbm_mem_space, typename sbm_mem_space>
+template<typename size_type, typename lno_t, typename exec_space, typename hbm_mem_space>
 void experiment_driver(Parameters params)
 {
     using myExecSpace     = exec_space;
@@ -678,7 +678,7 @@ int main(int argc, char *argv[])
     {
         if(!use_multi_mem)
         {
-            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space>(params);
         }
     }
     #endif
@@ -688,7 +688,7 @@ int main(int argc, char *argv[])
     {
         if(!use_multi_mem)
         {
-            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(params);
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space>(params);
         }
     }
     #endif
@@ -698,7 +698,7 @@ int main(int argc, char *argv[])
     {
         if(!use_multi_mem)
         {
-            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(params);
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Serial, Kokkos::Serial::memory_space>(params);
         }
     }
     #endif

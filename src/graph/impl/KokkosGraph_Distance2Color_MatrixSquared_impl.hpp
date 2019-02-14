@@ -49,8 +49,8 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "KokkosGraph_GraphColorHandle.hpp"
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_Distance1ColorHandle.hpp"
+#include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 #ifndef _KOKKOSCOLORINGD2MATRIXSQUAREDIMP_HPP

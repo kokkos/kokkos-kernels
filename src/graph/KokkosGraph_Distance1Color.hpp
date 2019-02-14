@@ -40,13 +40,13 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef _KOKKOS_GRAPH_COLOR_HPP
-#define _KOKKOS_GRAPH_COLOR_HPP
+#ifndef _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
+#define _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
 
 #include <sstream>
 
+#include "KokkosGraph_Distance1ColorHandle.hpp"
 #include "KokkosGraph_Distance1Color_impl.hpp"
-#include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 
 namespace KokkosGraph{
@@ -208,4 +208,5 @@ void d2_graph_color(
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
 
-#endif//_KOKKOS_GRAPH_COLOR_HPP
+#endif   // _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
+

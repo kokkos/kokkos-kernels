@@ -43,9 +43,9 @@
 #ifndef _KOKKOS_GRAPH_COLORDISTANCE2_HPP
 #define _KOKKOS_GRAPH_COLORDISTANCE2_HPP
 
-#include "KokkosGraph_GraphColorHandle.hpp"
-#include "KokkosGraph_GraphColorDistance2Handle.hpp"
-#include "KokkosGraph_Distance1Color_impl.hpp"                  // TODO: can I remove the D2 SERIAL entirely from this?
+#include "KokkosGraph_Distance1ColorHandle.hpp"
+#include "KokkosGraph_Distance2ColorHandle.hpp"
+#include "KokkosGraph_Distance1Color_impl.hpp"                  // TODO: can I remove the D2 SERIAL entirely from this? (WCMCLEN-SCAFFOLDING)
 #include "KokkosGraph_Distance2Color_impl.hpp"
 #include "KokkosGraph_Distance2Color_MatrixSquared_impl.hpp"
 

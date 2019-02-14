@@ -41,8 +41,8 @@
 //@HEADER
 */
 #include <KokkosKernels_ExecSpaceUtils.hpp>
-#include "KokkosGraph_GraphColorHandle.hpp"
-#include "KokkosGraph_GraphColorDistance2Handle.hpp"
+#include "KokkosGraph_Distance1ColorHandle.hpp"
+#include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
 #include "KokkosSparse_spadd_handle.hpp"
@@ -407,7 +407,7 @@ public:
   // Distance-1 Graph Coloring
   GraphColoringHandleType *get_graph_coloring_handle(){
     // (wcmclen): Should there be a check here to make sure we've created a GC handle before
-    //            handing the pointer out to something? This is disabled for now because it 
+    //            handing the pointer out to something? This is disabled for now because it
     //            gets thrown in tests run by spot check. Moving forward, we should consider
     //            whether a "get the handle ptr, then allocate" vs. "only give out the handle ptr
     //            if it actually exists" model.
@@ -436,10 +436,13 @@ public:
   // Distance-2 Graph Coloring
   GraphColorDistance2HandleType *get_distance2_graph_coloring_handle()
   {
+    /* disabled for consistency with `get_graph_coloring_handle()`. See the comment there
+       for reasons.
     if(!this->is_owner_of_the_d2_gc_handle)
     {
       throw std::runtime_error("D2 graph coloring handle has not been created.");
     }
+    */
     return this->gcHandle_d2;
   }
   void create_distance2_graph_coloring_handle(KokkosGraph::GraphColoringAlgorithmDistance2 coloring_type = KokkosGraph::COLORING_D2_DEFAULT)

@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef _KOKKOSCOLORINGD2IMP_HPP
-#define _KOKKOSCOLORINGD2IMP_HPP
+#ifndef _KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
+#define _KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
 
 #include <iomanip>
 #include <stdexcept>
@@ -58,9 +58,9 @@
 
 #include <impl/Kokkos_Timer.hpp>
 
-#include "KokkosGraph_GraphColor.hpp"
-#include "KokkosGraph_GraphColorHandle.hpp"      // todo: remove this
-#include "KokkosGraph_GraphColorDistance2Handle.hpp"
+#include "KokkosGraph_Distance1Color.hpp"
+#include "KokkosGraph_Distance1ColorHandle.hpp"      // todo: remove this  (SCAFFOLDING - WCMCLEN)
+#include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 
@@ -99,7 +99,7 @@ class GraphColorDistance2
     using row_lno_host_view_type           = typename in_lno_row_view_type::HostMirror;
     using nnz_lno_host_view_type           = typename in_lno_nnz_view_type::HostMirror;
     using color_host_view_type             = typename HandleType::color_host_view_type;
-    using MyExecSpace                      = typename HandleType::HandleExecSpace;
+    using my_exec_space                    = typename HandleType::HandleExecSpace;
     using MyTempMemorySpace                = typename HandleType::HandleTempMemorySpace;
     using const_size_type                  = typename HandleType::const_size_type;
     using row_lno_view_device_type         = typename lno_row_view_t_::device_type;
@@ -111,8 +111,8 @@ class GraphColorDistance2
     using non_const_clno_nnz_view_t        = typename clno_nnz_view_t_::non_const_type;
     using nnz_lno_temp_work_view_t         = typename HandleType::nnz_lno_temp_work_view_type;
     using single_dim_index_view_type       = typename Kokkos::View<nnz_lno_type, row_lno_view_device_type>;
-    using my_exec_space                    = Kokkos::RangePolicy<MyExecSpace>;
-    using team_policy_type                 = Kokkos::TeamPolicy<MyExecSpace>;
+    using range_policy_type                = Kokkos::RangePolicy<my_exec_space>;
+    using team_policy_type                 = Kokkos::TeamPolicy<my_exec_space>;
     using team_member_type                 = typename team_policy_type::member_type;
     using non_const_1d_bool_view_t         = Kokkos::View<bool*>;
     using non_const_1d_size_type_view_type = typename HandleType::non_const_1d_size_type_view_type;
@@ -234,7 +234,8 @@ class GraphColorDistance2
             */
         }
 
-        #if 0      // WCMCLEN (EXPERIMENTAL) Distance-2 Degree calculation
+        #if 0
+        // (EXPERIMENTAL) Distance-2 Degree calculation
         // Compute Distance-2 Degree of the vertices.
         //  -- Keeping this around in case we need to use it later on as an example.
         size_t degree_d2_max=0;
@@ -254,8 +255,7 @@ class GraphColorDistance2
           nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
 
         // init conflictlist sequentially.
-        Kokkos::parallel_for(
-          "InitList", my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
+        Kokkos::parallel_for("InitList", range_policy_type(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
 
         // Next iteratons's conflictList
         nnz_lno_temp_work_view_t next_iteration_recolorList;
@@ -312,7 +312,7 @@ class GraphColorDistance2
                   this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
             }
 
-            MyExecSpace::fence();
+            my_exec_space::fence();
 
             if(this->_ticToc)
             {
@@ -345,7 +345,7 @@ class GraphColorDistance2
                                                next_iteration_recolorList,
                                                next_iteration_recolorListLength);
 
-            MyExecSpace::fence();
+            my_exec_space::fence();
 
             if(_ticToc)
             {
@@ -393,7 +393,7 @@ class GraphColorDistance2
                                          current_vertexListLength);
         }
 
-        MyExecSpace::fence();
+        my_exec_space::fence();
 
         if(_ticToc)
         {
@@ -455,7 +455,7 @@ class GraphColorDistance2
         Kokkos::deep_copy(d_flags, h_flags);
 
         functorVerifyDistance2Coloring vr(this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, d_flags, chunkSize_);
-        Kokkos::parallel_for("ValidateD2Coloring", my_exec_space(0, num_chunks), vr);
+        Kokkos::parallel_for("ValidateD2Coloring", range_policy_type(0, num_chunks), vr);
 
         // Deep copy flags back to host memory
         Kokkos::deep_copy(h_flags, d_flags);
@@ -482,10 +482,10 @@ class GraphColorDistance2
      */
     void compute_color_histogram(nnz_lno_temp_work_view_t& histogram)
     {
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_type, nnz_lno_temp_work_view_t, MyExecSpace>(
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_type, nnz_lno_temp_work_view_t, my_exec_space>(
           this->nv, this->gc_handle->get_vertex_colors(), histogram);
 
-        MyExecSpace::fence();
+        my_exec_space::fence();
     }
 
 
@@ -583,7 +583,7 @@ class GraphColorDistance2
 
         functorCalculateD2Degree calculateD2Degree(
           this->nv, this->xadj, this->adj, this->t_xadj, this->t_adj, v_chunk_size, degree_d2, m_space, hash_size, max_nonzeros);
-        Kokkos::parallel_for("Compute Degree D2", my_exec_space(0, v_num_chunks), calculateD2Degree);
+        Kokkos::parallel_for("Compute Degree D2", range_policy_type(0, v_num_chunks), calculateD2Degree);
 
         // Compute maximum d2 degree
         size_t _degree_d2_max = 0;
@@ -634,7 +634,7 @@ class GraphColorDistance2
             {
                 functorGreedyColorVB gc(
                   this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
-                Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, this->nv), gc);
+                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nv), gc);
             }
             break;
 
@@ -647,7 +647,7 @@ class GraphColorDistance2
             {
                 functorGreedyColorVB_BIT gc(
                   this->nv, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
-                Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, this->nv), gc);
+                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nv), gc);
             }
             break;
 
@@ -690,7 +690,7 @@ class GraphColorDistance2
                                                vertex_colors_,
                                                current_vertexList_,
                                                current_vertexListLength_);
-                Kokkos::parallel_for("LoopOverChunks", my_exec_space(0, this->nv), gc);
+                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nv), gc);
                 // prettyPrint1DView(vertex_colors_, "COLORS_GC_VB_BIT",500);
             }
             break;
@@ -733,7 +733,7 @@ class GraphColorDistance2
                                                          current_vertexList_,
                                                          next_iteration_recolorList_,
                                                          next_iteration_recolorListLength_);
-            Kokkos::parallel_reduce("FindConflicts", my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
+            Kokkos::parallel_reduce("FindConflicts", range_policy_type(0, current_vertexListLength_), conf, output_numUncolored);
         }
 
         return output_numUncolored;
@@ -1517,7 +1517,7 @@ class GraphColorDistance2
         const nnz_lno_type  _hash_size;
         const nnz_lno_type  _max_nonzeros;
 
-        Kokkos::Experimental::UniqueToken<MyExecSpace, Kokkos::Experimental::UniqueTokenScope::Global> tokens;
+        Kokkos::Experimental::UniqueToken<my_exec_space, Kokkos::Experimental::UniqueTokenScope::Global> tokens;
         // EXPERIMENTAL END
 
         functorCalculateD2Degree(nnz_lno_type                      num_verts,
@@ -1803,4 +1803,4 @@ void graph_print_distance2_color_histogram(KernelHandle *handle,
 }      // namespace KokkosGraph
 
 
-#endif      // _KOKKOSCOLORINGD2IMP_HPP
+#endif      // _KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP

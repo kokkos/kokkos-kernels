@@ -157,6 +157,13 @@ class GraphColorDistance2Handle
     {
         this->choose_default_algorithm();
         this->set_defaults(this->coloring_algorithm_type);
+
+        // Throw an error if PersistentMemSpace != TempMemSpace since we don't support them being different (for now).
+        if(!Kokkos::Impl::is_same<PersistentMemorySpace, TemporaryMemorySpace>::value)
+        {
+            std::string message = "Distance-2 Graph Coloring Handle does not currently support different mem spaces";
+            Kokkos::Impl::throw_runtime_exception(message);
+        }
     }
 
 

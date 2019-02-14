@@ -44,12 +44,16 @@
 
 /**
  * This maintains backwards-compatibility with older code that included
- * the KokkosGraph_graph_color.hpp file. The new file is renamed to 
- * KokkosGraph_GraphColor.hpp to be more consistent with file naming 
+ * the KokkosGraph_graph_color.hpp file. The new file is renamed to
+ * KokkosGraph_Distance1Color.hpp to be more consistent with file naming
  * used in other places within Kokkos-Kernels.
  */
-#include "KokkosGraph_GraphColor.hpp"
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+#include "KokkosGraph_Distance1Color.hpp"
 
-// TODO: SCAFFOLDING (Add a deprecation warning that this will go away in version 3.0)
+// This interface should be deprecated in version 3.0
+#pragma message("DEPRECATION WARNING: The KokkosGraph_graph_color.hpp header will be replaced by KokkosGraph_Distance1Color.hpp")
+
+#endif
 
 
