@@ -119,9 +119,9 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vector_type expected_y,
-    typename y_vector_type::non_const_value_type alpha,
-    typename y_vector_type::non_const_value_type beta, int numMV){
-  //typedef typename crsMat_t::StaticCrsGraphType graph_t;
+                   typename y_vector_type::non_const_value_type alpha,
+                   typename y_vector_type::non_const_value_type beta, int numMV) {
+
   typedef typename crsMat_t::execution_space ExecSpace;
   typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
 
@@ -135,7 +135,6 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
 
   KokkosSparse::spmv("N", alpha, input_mat, x, beta, y);
 
-
   for (int i = 0; i < numMV; ++i){
     auto x_i = Kokkos::subview (x, Kokkos::ALL (), i);
 
@@ -146,10 +145,10 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
     int num_errors = 0;
-    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv"
-                           ,my_exec_space(0,y_i.extent(0))
-                           ,fSPMV<decltype(y_i), decltype(y_spmv), y_vector_type>(y_i, y_spmv, eps)
-                           ,num_errors);
+    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv",
+                            my_exec_space(0,y_i.extent(0)),
+                            fSPMV<decltype(y_i), decltype(y_spmv), y_vector_type>(y_i, y_spmv, eps),
+                            num_errors);
     if(num_errors>0) printf("KokkosSparse::Test::spmv_mv: %i errors of %i for mv %i\n",
         num_errors,y_i.extent_int(0),i);
     EXPECT_TRUE(num_errors==0);
@@ -210,16 +209,12 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
 
 
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
-  //lno_t nr = input_mat.numRows();
-  //lno_t nc = input_mat.numCols();
 
   Kokkos::deep_copy(b_y_copy, b_y);
-
 
   Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, numMV);
   Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, numMV);
   Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, numMV);
-
 
 }
 
@@ -381,10 +376,11 @@ TEST_F( TestCategory,sparse ## _ ## spmv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## 
 
 #define EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## LAYOUT ## _ ## DEVICE ) { \
-  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 100, 10, 5); \
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 200, 10, 1); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 100, 10, 5); \
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10000, 10000 * 20, 100, 5, 10); \
 }
+
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   EXECUTE_TEST_ISSUE_101(TestExecSpace)
