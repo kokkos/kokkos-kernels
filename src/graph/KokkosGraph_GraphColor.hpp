@@ -45,7 +45,7 @@
 
 #include <sstream>
 
-#include "KokkosGraph_GraphColor_impl.hpp"
+#include "KokkosGraph_Distance1Color_impl.hpp"
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosKernels_Utils.hpp"
 

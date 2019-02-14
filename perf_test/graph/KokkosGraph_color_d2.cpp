@@ -393,7 +393,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         bool d2_coloring_is_valid            = false;
         bool d2_coloring_validation_flags[4] = { false };
 
-        d2_coloring_is_valid = graph_verify_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, d2_coloring_validation_flags);
+        d2_coloring_is_valid = KokkosGraph::Impl::graph_verify_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, d2_coloring_validation_flags);
 
         // Print out messages based on coloring validation check.
         if(d2_coloring_is_valid)
@@ -419,7 +419,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         // ------------------------------------------
         // Print out the colors histogram
         // ------------------------------------------
-        graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
+        KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
 
     } // for i...
 
@@ -438,7 +438,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
 
     size_t degree_d2_max=0;
-    graph_compute_distance2_degree(&kh, crsGraph.numRows(), crsGraph.numCols(),
+    KokkosGraph::Impl::graph_compute_distance2_degree(&kh, crsGraph.numRows(), crsGraph.numCols(),
                                    crsGraph.row_map, crsGraph.entries,
                                    crsGraph.row_map, crsGraph.entries,
                                    degree_d2_dist, degree_d2_max);
@@ -590,7 +590,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << label_algorithm
               << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << ",";
-    graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
+    KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
     std::cout << std::endl;
 
     // Kokkos::print_configuration(std::cout);
