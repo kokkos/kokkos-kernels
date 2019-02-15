@@ -92,7 +92,7 @@ namespace KokkosBatched {
         for (int m_htl=1;m_htl<(m-1);++m_htl) {
           // part 2x2 into 3x3
           H_part3x3.partWithABR(H_part2x2, 1, 1);
-          const int n_hbr = m - m_htl;
+          //const int n_hbr = m - m_htl;
           /// -----------------------------------------------------
           value_type *chi1 = H_part3x3.A11-hs1;
           value_type *chi2 = H_part3x3.A21-hs1;
