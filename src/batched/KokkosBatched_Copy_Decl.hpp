@@ -38,6 +38,32 @@ namespace KokkosBatched {
              const BViewType &B);
     };
 
+
+    ///
+    /// Selective Interface
+    ///
+    template<typename MemberType,
+             typename ArgTrans,
+             typename ArgMode>
+    struct Copy {
+      template<typename AViewType,
+               typename BViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static int
+      invoke(const MemberType &member,
+             const AViewType &A,
+             const BViewType &B) {
+        int r_val = 0;
+        if (std::is_same<ArgMode,Mode::Serial>::value) {
+          r_val = SerialCopy<ArgTrans>::invoke(A, B);
+        } else if (std::is_same<ArgMode,Mode::Team>::value) {
+          r_val = TeamCopy<MemberType,ArgTrans>::invoke(member, A, B);
+        } 
+        return r_val;
+      }
+    };      
+
+
   }
 }
 
