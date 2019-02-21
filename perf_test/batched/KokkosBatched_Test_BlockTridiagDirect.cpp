@@ -219,10 +219,11 @@ int main(int argc, char* argv[]) {
 #endif
       timer.reset();
       using policy_type = Kokkos::TeamPolicy<exec_space>;
+      using member_type = typename policy_type::member_type;
       policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
       Kokkos::parallel_for
         ("setTridiagToIdentity",
-         policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+         policy, KOKKOS_LAMBDA(const member_type &member) {
           const int i = member.league_rank();
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,AA.extent(1)),[&](const int &j) {
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
@@ -255,11 +256,12 @@ int main(int argc, char* argv[]) {
 #endif
       timer.reset();
       using policy_type = Kokkos::TeamPolicy<exec_space>;
+      using member_type = typename policy_type::member_type;
       policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
       Kokkos::parallel_for
         ("factorize",
          policy.set_scratch_size(0,Kokkos::PerTeam(S)), 
-         KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+         KOKKOS_LAMBDA(const member_type &member) {
 	  typedef FactorizeModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
 	  typedef default_mode_and_algo_type::mode_type mode_type; 
 	  typedef default_mode_and_algo_type::algo_type algo_type;
@@ -277,7 +279,7 @@ int main(int argc, char* argv[]) {
 	      
               if (L == 1) {
                 A.assign_data( &AAA(0, 1, 0, 0) );                
-                LU<typename policy_type::member_type,
+                LU<member_type,
 		  mode_type,algo_type>::invoke(member, A);
               } else {
                 for (int k=0;k<(L-1);++k) {
@@ -286,23 +288,23 @@ int main(int argc, char* argv[]) {
                   C.assign_data( &AAA(k,   0, 0, 0) );
                   D.assign_data( &AAA(k+1, 1, 0, 0) );
                 
-                  LU<typename policy_type::member_type,
+                  LU<member_type,
 		    mode_type,algo_type>
                     ::invoke(member, A);
-                  Trsm<typename policy_type::member_type,
+                  Trsm<member_type,
 		    Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,
 		    mode_type,algo_type>
                     ::invoke(member, 1.0, A, B);
-                  Trsm<typename policy_type::member_type,
+                  Trsm<member_type,
 		    Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
 		    mode_type,algo_type>
                     ::invoke(member, 1.0, A, C);
-                  Gemm<typename policy_type::member_type,
+                  Gemm<member_type,
 		    Trans::NoTranspose,Trans::NoTranspose,
 		    mode_type,algo_type>
                     ::invoke(member, -1.0, C, B, 1.0, D);
                 }
-                LU<typename policy_type::member_type,
+                LU<member_type,
 		  mode_type,algo_type>
 		  ::invoke(member, D);
               }
@@ -326,11 +328,12 @@ int main(int argc, char* argv[]) {
       timer.reset();
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked algo_type;
       using policy_type = Kokkos::TeamPolicy<exec_space>;
+      using member_type = typename policy_type::member_type;
       policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
       for (int iter=0;iter<niter;++iter) {
         Kokkos::parallel_for
           ("solve",
-           policy.set_scratch_size(0,Kokkos::PerTeam(S)), KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+           policy.set_scratch_size(0,Kokkos::PerTeam(S)), KOKKOS_LAMBDA(const member_type &member) {
 	    typedef SolveModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
 	    typedef default_mode_and_algo_type::mode_type mode_type; 
 	    typedef default_mode_and_algo_type::algo_type algo_type;
@@ -359,7 +362,7 @@ int main(int argc, char* argv[]) {
                     auto bk = Kokkos::subview(b, 0, Kokkos::ALL());
                     {
                       {//if (!is_same_x_and_b) {
-                        Copy<typename policy_type::member_type,
+                        Copy<member_type,
 			  Trans::NoTranspose,
 			  mode_type>
                           ::invoke(member, bk, xb);
@@ -376,18 +379,18 @@ int main(int argc, char* argv[]) {
                       
                       { //if (!is_same_x_and_b) {
                         bk.assign_data(&b(k+1, 0));
-                        Copy<typename policy_type::member_type,
+                        Copy<member_type,
 			  Trans::NoTranspose,
 			  mode_type>
                           ::invoke(member, bk, xb);
                       }
                       
-                      Trsv<typename policy_type::member_type,
+                      Trsv<member_type,
 			Uplo::Lower,Trans::NoTranspose,Diag::Unit,
 			mode_type,algo_type>
                         ::invoke(member, 1.0, LT, xt);
                       
-                      Gemv<typename policy_type::member_type,
+                      Gemv<member_type,
 			Trans::NoTranspose,
 			mode_type,algo_type>
                         ::invoke(member, -1.0, LB, xt, 1.0, xb);
@@ -395,7 +398,7 @@ int main(int argc, char* argv[]) {
                     {
                       LT.assign_data(&A(kend, 0, 0));
                       xt.assign_data(&x(kend, 0));
-                      Trsv<typename policy_type::member_type,
+                      Trsv<member_type,
 			Uplo::Lower,Trans::NoTranspose,Diag::Unit,
 			mode_type,algo_type>
                         ::invoke(member, 1.0, LT, xt);
@@ -417,12 +420,12 @@ int main(int argc, char* argv[]) {
                       xt.assign_data(&x(k-1, 0, 0));
                       xb.assign_data(&x(k,   0, 0));
                       
-                      Trsv<typename policy_type::member_type,
+                      Trsv<member_type,
 			Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
 			mode_type,algo_type>
                         ::invoke(member, 1.0, UB, xb);
                       
-                      Gemv<typename policy_type::member_type,
+                      Gemv<member_type,
 			Trans::NoTranspose,
 			mode_type,algo_type>
                         ::invoke(member, -1.0, UT, xb, 1.0, xt);
@@ -430,7 +433,7 @@ int main(int argc, char* argv[]) {
                     {
                       UB.assign_data(&A(0, 0, 0));
                       xb.assign_data(&x(0, 0));
-                      Trsv<typename policy_type::member_type,
+                      Trsv<member_type,
 			Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
 			mode_type,algo_type>
                         ::invoke(member, 1.0, UB, xb); 
@@ -451,13 +454,14 @@ int main(int argc, char* argv[]) {
     ///
     /// compute residual
     ///
-    {
+    if (0) {
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked algo_type;
       using policy_type = Kokkos::TeamPolicy<exec_space>;
+      using member_type = typename policy_type::member_type;
       policy_type policy(Acopy.extent(0), Kokkos::AUTO(), Acopy.extent(5));
       Kokkos::parallel_for
         ("compute residual",
-         policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+         policy, KOKKOS_LAMBDA(const member_type &member) {
           const int i = member.league_rank();
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, Acopy.extent(5)),[&](const int &v) {
               auto A = Kokkos::subview(Acopy, i, Kokkos::ALL(), 1, Kokkos::ALL(), Kokkos::ALL(), v);
@@ -475,10 +479,10 @@ int main(int argc, char* argv[]) {
                   auto b0 = Kokkos::subview(b, 0,   Kokkos::ALL());
                   auto r0 = Kokkos::subview(r, 0,   Kokkos::ALL());
 
-                  TeamCopy<typename policy_type::member_type,
+                  TeamCopy<member_type,
                            Trans::NoTranspose>
                     ::invoke(member, b0, r0);
-                  TeamGemv<typename policy_type::member_type,
+                  TeamGemv<member_type,
                            Trans::NoTranspose,algo_type>
                     ::invoke(member, -1.0, A0, x0, 1.0, r0);
                 } else {
@@ -493,14 +497,14 @@ int main(int argc, char* argv[]) {
                     
                     auto bk = Kokkos::subview(b, k, Kokkos::ALL());
                     auto rk = Kokkos::subview(r, k, Kokkos::ALL());
-                    TeamCopy<typename policy_type::member_type,
+                    TeamCopy<member_type,
                              Trans::NoTranspose>
                       ::invoke(member, bk, rk);
                     member.team_barrier();
-                    TeamGemv<typename policy_type::member_type,
+                    TeamGemv<member_type,
                              Trans::NoTranspose,algo_type>
                       ::invoke(member, -1.0, A1, x1, 1.0, rk);
-                    TeamGemv<typename policy_type::member_type,
+                    TeamGemv<member_type,
                              Trans::NoTranspose,algo_type>
                       ::invoke(member, -1.0, B2, x2, 1.0, rk);
                     ++k;
@@ -516,17 +520,17 @@ int main(int argc, char* argv[]) {
                     
                     auto bk = Kokkos::subview(b, k, Kokkos::ALL());
                     auto rk = Kokkos::subview(r, k, Kokkos::ALL());
-                    TeamCopy<typename policy_type::member_type,
+                    TeamCopy<member_type,
                              Trans::NoTranspose>
                       ::invoke(member, bk, rk);
                     member.team_barrier();
-                    TeamGemv<typename policy_type::member_type,
+                    TeamGemv<member_type,
                              Trans::NoTranspose,algo_type>
                       ::invoke(member, -1.0, C0, x0, 1.0, rk);
-                    TeamGemv<typename policy_type::member_type,
+                    TeamGemv<member_type,
                              Trans::NoTranspose,algo_type>
                       ::invoke(member, -1.0, A1, x1, 1.0, rk);
-                    TeamGemv<typename policy_type::member_type,
+                    TeamGemv<member_type,
                              Trans::NoTranspose,algo_type>
                       ::invoke(member, -1.0, B2, x2, 1.0, rk);
                   }
@@ -540,14 +544,14 @@ int main(int argc, char* argv[]) {
                     
                     auto bk = Kokkos::subview(b, k, Kokkos::ALL());
                     auto rk = Kokkos::subview(r, k, Kokkos::ALL());
-                    TeamCopy<typename policy_type::member_type,
+                    TeamCopy<member_type,
                              Trans::NoTranspose>
                       ::invoke(member, bk, rk);
                     member.team_barrier();
-                    TeamGemv<typename policy_type::member_type,
+                    TeamGemv<member_type,
                              Trans::NoTranspose,algo_type>
                       ::invoke(member, -1.0, C0, x0, 1.0, rk);
-                    TeamGemv<typename policy_type::member_type,Trans::NoTranspose,algo_type>
+                    TeamGemv<member_type,Trans::NoTranspose,algo_type>
                       ::invoke(member, -1.0, A1, x1, 1.0, rk);
                   }                   
                 }
