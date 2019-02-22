@@ -12,6 +12,8 @@
 #include <KokkosBatched_Vector.hpp>
 #include <KokkosBatched_Copy_Decl.hpp>
 #include <KokkosBatched_Copy_Impl.hpp>
+#include <KokkosBatched_SetIdentity_Decl.hpp>
+#include <KokkosBatched_SetIdentity_Impl.hpp>
 #include <KokkosBatched_AddRadial_Decl.hpp>
 #include <KokkosBatched_AddRadial_Impl.hpp>
 #include <KokkosBatched_Gemm_Decl.hpp>
@@ -30,7 +32,7 @@
 #include <KokkosBatched_LU_Serial_Impl.hpp>
 #include <KokkosBatched_LU_Team_Impl.hpp>
 
-//#define KOKKOSBATCHED_PROFILE 1
+#define KOKKOSBATCHED_PROFILE 1
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
 #include "cuda_profiler_api.h"
 #endif
@@ -107,6 +109,7 @@ int main(int argc, char* argv[]) {
     int Nvec = 1;
     int S = 0; /// scratch size
     int niter = 1;
+    int nsweep = 10; 
     for (int i=1;i<argc;++i) {
       const std::string& token = argv[i];
       if (token == std::string("-N")) N = std::atoi(argv[++i]);
@@ -115,6 +118,7 @@ int main(int argc, char* argv[]) {
       if (token == std::string("-Nvec")) Nvec = std::atoi(argv[++i]);
       if (token == std::string("-S")) S = std::atoi(argv[++i]);
       if (token == std::string("-Niter")) niter = std::atoi(argv[++i]);
+      if (token == std::string("-Nsweep")) nsweep = std::atoi(argv[++i]);
     }
 
     printf(" :::: Testing (N = %d, L = %d, Blk = %d, vl = %d, vi = %d)\n", N, L, Blk, vector_length, internal_vector_length);
@@ -166,6 +170,26 @@ int main(int argc, char* argv[]) {
                                                                                vector_length/internal_vector_length);
 
     /// double 16
+    Kokkos::View<vector_type****,Kokkos::LayoutRight,exec_space> yv("y",
+                                                                    N/vector_length, Nvec, L, Blk);
+
+    /// double
+    Kokkos::View<value_type*****,Kokkos::LayoutRight,exec_space> ys((value_type*)yv.data(),
+                                                                    yv.extent(0),
+                                                                    yv.extent(1),
+                                                                    yv.extent(2),
+                                                                    yv.extent(3),
+                                                                    vector_length);
+
+    /// double 2
+    Kokkos::View<internal_vector_type*****,Kokkos::LayoutRight,exec_space> yi((internal_vector_type*)yv.data(),
+                                                                               yv.extent(0),
+                                                                               yv.extent(1),
+                                                                               yv.extent(2),
+                                                                               yv.extent(3),
+                                                                               vector_length/internal_vector_length);
+
+    /// double 16
     Kokkos::View<vector_type****,Kokkos::LayoutRight,exec_space> bv("b",
                                                                     N/vector_length, Nvec, L, Blk);
 
@@ -205,6 +229,7 @@ int main(int argc, char* argv[]) {
     auto AA = Ai;
     auto bb = bi;
     auto xx = xi;
+    auto yy = yi;
 
     // auto AA = As;
     // auto bb = bs;
@@ -225,15 +250,15 @@ int main(int argc, char* argv[]) {
 #endif
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
-      policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
+      policy_type policy(AA.extent(0)*L, Kokkos::AUTO(), AA.extent(5));
       Kokkos::parallel_for
         ("diagonal dominant",
-         policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
-          const int i = member.league_rank();
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,AA.extent(1)),[&](const int &j) {
+         policy, KOKKOS_LAMBDA(const member_type &member) {
+          const int i = member.league_rank()/L;
+          const int k = member.league_rank()%L;
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,Blk),[&](const int &j) {
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
-                  for (int k=0;k<Blk;++k)
-                    AA(i, j, 1, k, k, v) += 3*Blk;
+		  AA(i, k, 1, j, j, v) += internal_vector_type(3*Blk);
                 });
             });
         });
@@ -258,12 +283,13 @@ int main(int argc, char* argv[]) {
 	typename exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged> scratch_view_type;
       
       using policy_type = Kokkos::TeamPolicy<exec_space>;
+      using member_type = typename policy_type::member_type;
       const int per_team_scratch = scratch_view_type::shmem_size(Blk, Blk, AA.extent(5));
       policy_type policy(AA.extent(0)*L, Kokkos::AUTO(), AA.extent(5));
       Kokkos::parallel_for
         ("inverse diagonals",
-         policy.set_scratch_size(0,Kokkos::PerTeam(S)), 
-         KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+         policy.set_scratch_size(0,Kokkos::PerTeam(S < per_team_scratch ? per_team_scratch : S)), 
+         KOKKOS_LAMBDA(const member_type &member) {
 	  typedef InverseDiagonalsModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
 	  typedef default_mode_and_algo_type::mode_type mode_type; 
 	  typedef default_mode_and_algo_type::algo_type algo_type;
@@ -277,20 +303,21 @@ int main(int argc, char* argv[]) {
 	      auto D = Kokkos::subview(AA, i, k, 3, Kokkos::ALL(), Kokkos::ALL(), v);
 	      auto W = Kokkos::subview(WW,          Kokkos::ALL(), Kokkos::ALL(), v);
 
-	      Copy<typename policy_type::member_type,
+	      Copy<member_type,
 		Trans::NoTranspose,
 		mode_type>
 		::invoke(member, A, W);
-	      SetIdentity<typename policy_type::member_type>
+	      SetIdentity<member_type,
+		mode_type>
 		::invoke(member, D);
-	      member.barrier();
-	      LU<typename policy_type::member_type,
+	      member.team_barrier();
+	      LU<member_type,
 		mode_type,algo_type>::invoke(member, W);
-	      Trsm<typename policy_type::member_type,
+	      Trsm<member_type,
 		Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,
 		mode_type,algo_type>
                 ::invoke(member, 1.0, W, D);
-              Trsm<typename policy_type::member_type,
+              Trsm<member_type,
 		Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
 		mode_type,algo_type>
                 ::invoke(member, 1.0, W, D);
@@ -307,127 +334,76 @@ int main(int argc, char* argv[]) {
     ///
     /// solve the matrix 20 times
     ///
-    if (0) {
+    if (1) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
       cudaProfilerStart();
 #endif
       timer.reset();
-      typedef KokkosBatched::Experimental::Algo::Level2::Unblocked algo_type;
+      typedef internal_vector_type scratch_value_type;
+      typedef Kokkos::View<scratch_value_type***,Kokkos::LayoutRight,
+	typename exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged> scratch_view_type;
+      const int per_team_scratch = scratch_view_type::shmem_size(4, Blk, AA.extent(5));
+      
       using policy_type = Kokkos::TeamPolicy<exec_space>;
-      policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
+      using member_type = typename policy_type::member_type;
+      policy_type policy(AA.extent(0)*L, Kokkos::AUTO(), AA.extent(5));
       for (int iter=0;iter<niter;++iter) {
-        Kokkos::parallel_for
-          ("solve",
-           policy.set_scratch_size(0,Kokkos::PerTeam(S)), KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
-	    typedef SolveModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
-	    typedef default_mode_and_algo_type::mode_type mode_type; 
-	    typedef default_mode_and_algo_type::algo_type algo_type;
-
-            const int i = member.league_rank();
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
-                auto A = Kokkos::subview(AA, i, Kokkos::ALL(), 1, Kokkos::ALL(), Kokkos::ALL(), v);
-                auto B = Kokkos::subview(AA, i, Kokkos::ALL(), 2, Kokkos::ALL(), Kokkos::ALL(), v);
-                auto C = Kokkos::subview(AA, i, Kokkos::ALL(), 0, Kokkos::ALL(), Kokkos::ALL(), v);
-                
-                for (int jvec=0;jvec<Nvec;++jvec) {
-                  auto x = Kokkos::subview(xx, i, jvec, Kokkos::ALL(), Kokkos::ALL(), v);
-                  auto b = Kokkos::subview(bb, i, jvec, Kokkos::ALL(), Kokkos::ALL(), v);
-
-		  auto xt = Kokkos::subview(x, 0, Kokkos::ALL());
-		  auto xb = Kokkos::subview(x, 0, Kokkos::ALL());
-                  
-                  ///
-                  /// forward substitution
-                  ///
-                  {
-                    //const bool is_same_x_and_b = (x.data() == b.data());
-                    auto LT = Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL());
-                    auto LB = Kokkos::subview(C, 0, Kokkos::ALL(), Kokkos::ALL());
-                    
-                    auto bk = Kokkos::subview(b, 0, Kokkos::ALL());
-                    {
-                      {//if (!is_same_x_and_b) {
-                        Copy<typename policy_type::member_type,
-			  Trans::NoTranspose,
-			  mode_type>
-                          ::invoke(member, bk, xb);
-                        member.team_barrier();
-                      }
-                    }
-                    const int kend = L - 1;
-                    for (int k=0;k<kend;++k) {
-                      LT.assign_data(&A(k, 0, 0));
-                      LB.assign_data(&C(k, 0, 0));
-                      
-                      xt.assign_data(&x(k,   0));
-                      xb.assign_data(&x(k+1, 0));
-                      
-                      { //if (!is_same_x_and_b) {
-                        bk.assign_data(&b(k+1, 0));
-                        Copy<typename policy_type::member_type,
-			  Trans::NoTranspose,
-			  mode_type>
-                          ::invoke(member, bk, xb);
-                      }
-                      
-                      Trsv<typename policy_type::member_type,
-			Uplo::Lower,Trans::NoTranspose,Diag::Unit,
-			mode_type,algo_type>
-                        ::invoke(member, 1.0, LT, xt);
-                      
-                      Gemv<typename policy_type::member_type,
-			Trans::NoTranspose,
-			mode_type,algo_type>
-                        ::invoke(member, -1.0, LB, xt, 1.0, xb);
-                    }
-                    {
-                      LT.assign_data(&A(kend, 0, 0));
-                      xt.assign_data(&x(kend, 0));
-                      Trsv<typename policy_type::member_type,
-			Uplo::Lower,Trans::NoTranspose,Diag::Unit,
-			mode_type,algo_type>
-                        ::invoke(member, 1.0, LT, xt);
-                    }
-                  } /// end forward substitution
-                  
-                  ///
-                  /// backward substitution
-                  ///
-                  {
-                    auto UT = Kokkos::subview(B, 0, Kokkos::ALL(), Kokkos::ALL());
-                    auto UB = Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL());
-                                        
-                    const int kbegin = L - 1;
-                    for (int k=kbegin;k>0;--k) {
-                      UT.assign_data(&B(k-1, 0, 0));
-                      UB.assign_data(&A(k,   0, 0));
-                      
-                      xt.assign_data(&x(k-1, 0, 0));
-                      xb.assign_data(&x(k,   0, 0));
-                      
-                      Trsv<typename policy_type::member_type,
-			Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
-			mode_type,algo_type>
-                        ::invoke(member, 1.0, UB, xb);
-                      
-                      Gemv<typename policy_type::member_type,
-			Trans::NoTranspose,
-			mode_type,algo_type>
-                        ::invoke(member, -1.0, UT, xb, 1.0, xt);
-                    }
-                    {
-                      UB.assign_data(&A(0, 0, 0));
-                      xb.assign_data(&x(0, 0));
-                      Trsv<typename policy_type::member_type,
-			Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
-			mode_type,algo_type>
-                        ::invoke(member, 1.0, UB, xb); 
-                    }
-                  } // end backward substitution
-                }
-              });
-          });
-        Kokkos::fence();
+	for (int nis=0;nis<nsweep;++nis) {
+	  Kokkos::parallel_for
+	    ("solve",
+	     policy.set_scratch_size(0,Kokkos::PerTeam(S < per_team_scratch ? per_team_scratch : S)), 
+	     KOKKOS_LAMBDA(const member_type &member) {
+	      typedef SolveModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
+	      typedef default_mode_and_algo_type::mode_type mode_type; 
+	      typedef default_mode_and_algo_type::algo_type algo_type;
+	      
+	      scratch_view_type WW(member.team_scratch(0), 4, Blk, AA.extent(5));	  
+	      
+	      const int i = member.league_rank()/L;
+	      const int k = member.league_rank()%L;
+	      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
+		  auto A  = Kokkos::subview(AA, i, k,           1, Kokkos::ALL(), Kokkos::ALL(), v);
+		  auto D  = Kokkos::subview(AA, i, k,           3, Kokkos::ALL(), Kokkos::ALL(), v);                 
+		  auto B  = Kokkos::subview(AA, i, k,           2, Kokkos::ALL(), Kokkos::ALL(), v);
+		  auto C  = Kokkos::subview(AA, i, k ? k-1 : 0, 0, Kokkos::ALL(), Kokkos::ALL(), v);
+		  
+		  auto w0 = Kokkos::subview(WW, 0, Kokkos::ALL(), v); 
+		  auto w1 = Kokkos::subview(WW, 1, Kokkos::ALL(), v); 
+		  auto w2 = Kokkos::subview(WW, 2, Kokkos::ALL(), v); 
+		  auto u  = Kokkos::subview(WW, 3, Kokkos::ALL(), v); 
+		  
+		  for (int jvec=0;jvec<Nvec;++jvec) {
+		    auto x0 = Kokkos::subview(xx, i, jvec, k == 0   ? 0 : k-1, Kokkos::ALL(), v);
+		    auto x1 = Kokkos::subview(xx, i, jvec, k,                  Kokkos::ALL(), v);
+		    auto x2 = Kokkos::subview(xx, i, jvec, k == L-1 ? 0 : k+1, Kokkos::ALL(), v);
+		    auto b  = Kokkos::subview(bb, i, jvec, k,                  Kokkos::ALL(), v);
+		    
+		    if (L == 1) {
+		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, b,  0.0, x1);
+		    } else {
+		      Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, b,  u);
+		      Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x1, w1);
+		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, A, w1, 1.0, u);		  
+		      
+		      if (k == 0) {
+			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x2, w2);
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, B, w2, 1.0, u);		    
+		      } else if (k == L-1) {
+			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x0, w0);
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, C, w0, 1.0, u);
+		      } else {
+			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x0, w0);
+			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x2, w2);
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, B, w2, 1.0, u);		    
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, C, w0, 1.0, u);
+		      }		    
+		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, u,  1.0, x1);
+		    }
+		  }
+		});
+	    });
+	  Kokkos::fence();
+	}
       }
       const double t = timer.seconds();
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
@@ -439,7 +415,7 @@ int main(int argc, char* argv[]) {
     ///
     /// compute residual
     ///
-    if (0) {
+    if (1) {
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked algo_type;
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       policy_type policy(Acopy.extent(0), Kokkos::AUTO(), Acopy.extent(5));

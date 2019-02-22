@@ -30,7 +30,7 @@
 #include <KokkosBatched_LU_Serial_Impl.hpp>
 #include <KokkosBatched_LU_Team_Impl.hpp>
 
-//#define KOKKOSBATCHED_PROFILE 1
+#define KOKKOSBATCHED_PROFILE 1
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
 #include "cuda_profiler_api.h"
 #endif
