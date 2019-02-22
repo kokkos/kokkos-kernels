@@ -170,26 +170,6 @@ int main(int argc, char* argv[]) {
                                                                                vector_length/internal_vector_length);
 
     /// double 16
-    Kokkos::View<vector_type****,Kokkos::LayoutRight,exec_space> yv("y",
-                                                                    N/vector_length, Nvec, L, Blk);
-
-    /// double
-    Kokkos::View<value_type*****,Kokkos::LayoutRight,exec_space> ys((value_type*)yv.data(),
-                                                                    yv.extent(0),
-                                                                    yv.extent(1),
-                                                                    yv.extent(2),
-                                                                    yv.extent(3),
-                                                                    vector_length);
-
-    /// double 2
-    Kokkos::View<internal_vector_type*****,Kokkos::LayoutRight,exec_space> yi((internal_vector_type*)yv.data(),
-                                                                               yv.extent(0),
-                                                                               yv.extent(1),
-                                                                               yv.extent(2),
-                                                                               yv.extent(3),
-                                                                               vector_length/internal_vector_length);
-
-    /// double 16
     Kokkos::View<vector_type****,Kokkos::LayoutRight,exec_space> bv("b",
                                                                     N/vector_length, Nvec, L, Blk);
 
@@ -229,7 +209,6 @@ int main(int argc, char* argv[]) {
     auto AA = Ai;
     auto bb = bi;
     auto xx = xi;
-    auto yy = yi;
 
     // auto AA = As;
     // auto bb = bs;
@@ -258,7 +237,7 @@ int main(int argc, char* argv[]) {
           const int k = member.league_rank()%L;
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,Blk),[&](const int &j) {
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
-		  AA(i, k, 1, j, j, v) += internal_vector_type(3*Blk);
+		  AA(i, k, 1, j, j, v) += internal_vector_type(9*Blk);
                 });
             });
         });
@@ -340,9 +319,9 @@ int main(int argc, char* argv[]) {
 #endif
       timer.reset();
       typedef internal_vector_type scratch_value_type;
-      typedef Kokkos::View<scratch_value_type***,Kokkos::LayoutRight,
+      typedef Kokkos::View<scratch_value_type**,Kokkos::LayoutRight,
 	typename exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged> scratch_view_type;
-      const int per_team_scratch = scratch_view_type::shmem_size(4, Blk, AA.extent(5));
+      const int per_team_scratch = scratch_view_type::shmem_size(Blk, AA.extent(5));
       
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
@@ -357,7 +336,7 @@ int main(int argc, char* argv[]) {
 	      typedef default_mode_and_algo_type::mode_type mode_type; 
 	      typedef default_mode_and_algo_type::algo_type algo_type;
 	      
-	      scratch_view_type WW(member.team_scratch(0), 4, Blk, AA.extent(5));	  
+	      scratch_view_type WW(member.team_scratch(0), Blk, AA.extent(5));	  
 	      
 	      const int i = member.league_rank()/L;
 	      const int k = member.league_rank()%L;
@@ -367,11 +346,7 @@ int main(int argc, char* argv[]) {
 		  auto B  = Kokkos::subview(AA, i, k,           2, Kokkos::ALL(), Kokkos::ALL(), v);
 		  auto C  = Kokkos::subview(AA, i, k ? k-1 : 0, 0, Kokkos::ALL(), Kokkos::ALL(), v);
 		  
-		  auto w0 = Kokkos::subview(WW, 0, Kokkos::ALL(), v); 
-		  auto w1 = Kokkos::subview(WW, 1, Kokkos::ALL(), v); 
-		  auto w2 = Kokkos::subview(WW, 2, Kokkos::ALL(), v); 
-		  auto u  = Kokkos::subview(WW, 3, Kokkos::ALL(), v); 
-		  
+		  auto u  = Kokkos::subview(WW, Kokkos::ALL(), v); 
 		  for (int jvec=0;jvec<Nvec;++jvec) {
 		    auto x0 = Kokkos::subview(xx, i, jvec, k == 0   ? 0 : k-1, Kokkos::ALL(), v);
 		    auto x1 = Kokkos::subview(xx, i, jvec, k,                  Kokkos::ALL(), v);
@@ -382,28 +357,21 @@ int main(int argc, char* argv[]) {
 		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, b,  0.0, x1);
 		    } else {
 		      Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, b,  u);
-		      Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x1, w1);
-		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, A, w1, 1.0, u);		  
-		      
 		      if (k == 0) {
-			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x2, w2);
-			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, B, w2, 1.0, u);		    
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, B, x2, 1.0, u);		    
 		      } else if (k == L-1) {
-			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x0, w0);
-			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, C, w0, 1.0, u);
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, C, x0, 1.0, u);
 		      } else {
-			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x0, w0);
-			Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, x2, w2);
-			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, B, w2, 1.0, u);		    
-			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, C, w0, 1.0, u);
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, B, x2, 1.0, u);		    
+			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, C, x0, 1.0, u);
 		      }		    
-		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, u,  1.0, x1);
+		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, u,  0.0, x1);
 		    }
 		  }
 		});
 	    });
-	  Kokkos::fence();
 	}
+	Kokkos::fence();
       }
       const double t = timer.seconds();
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
