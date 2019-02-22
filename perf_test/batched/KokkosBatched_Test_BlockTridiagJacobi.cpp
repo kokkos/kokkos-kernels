@@ -150,23 +150,25 @@ int main(int argc, char* argv[]) {
                                                                                Av.extent(4),
                                                                                vector_length/internal_vector_length);
     /// double 16
-    Kokkos::View<vector_type****,Kokkos::LayoutRight,exec_space> xv("x",
-                                                                    N/vector_length, Nvec, L, Blk);
+    Kokkos::View<vector_type*****,Kokkos::LayoutRight,exec_space> xv("x",
+                                                                    N/vector_length, Nvec, 2, L, Blk);
 
     /// double
-    Kokkos::View<value_type*****,Kokkos::LayoutRight,exec_space> xs((value_type*)xv.data(),
+    Kokkos::View<value_type******,Kokkos::LayoutRight,exec_space> xs((value_type*)xv.data(),
                                                                     xv.extent(0),
                                                                     xv.extent(1),
                                                                     xv.extent(2),
                                                                     xv.extent(3),
+                                                                    xv.extent(4),
                                                                     vector_length);
 
     /// double 2
-    Kokkos::View<internal_vector_type*****,Kokkos::LayoutRight,exec_space> xi((internal_vector_type*)xv.data(),
+    Kokkos::View<internal_vector_type******,Kokkos::LayoutRight,exec_space> xi((internal_vector_type*)xv.data(),
                                                                                xv.extent(0),
                                                                                xv.extent(1),
                                                                                xv.extent(2),
                                                                                xv.extent(3),
+                                                                               xv.extent(4),
                                                                                vector_length/internal_vector_length);
 
     /// double 16
@@ -325,9 +327,13 @@ int main(int argc, char* argv[]) {
       
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
-      policy_type policy(AA.extent(0)*L*nsweep, Kokkos::AUTO(), AA.extent(5));
+      policy_type policy(AA.extent(0)*L, Kokkos::AUTO(), AA.extent(5));
+
       for (int iter=0;iter<niter;++iter) {
-	{ //for (int nis=0;nis<nsweep;++nis) {
+        auto xxx = Kokkos::subview(xx, Kokkos::ALL(), Kokkos::ALL(), 0, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto yyy = Kokkos::subview(xx, Kokkos::ALL(), Kokkos::ALL(), 1, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        
+	for (int nis=0;nis<nsweep;++nis) {
 	  Kokkos::parallel_for
 	    ("solve",
 	     policy.set_scratch_size(0,Kokkos::PerTeam(S < per_team_scratch ? per_team_scratch : S)), 
@@ -337,20 +343,20 @@ int main(int argc, char* argv[]) {
 	      typedef default_mode_and_algo_type::algo_type algo_type;
 	      
 	      scratch_view_type WW(member.team_scratch(0), Blk, AA.extent(5));	    
-	      const int i = member.league_rank()/L%AA.extent(0);
+	      const int i = member.league_rank()/L; //%AA.extent(0);
 	      const int k = member.league_rank()%L;
 	      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
 		  auto A  = Kokkos::subview(AA, i, k,           1, Kokkos::ALL(), Kokkos::ALL(), v);
 		  auto D  = Kokkos::subview(AA, i, k,           3, Kokkos::ALL(), Kokkos::ALL(), v);                 
 		  auto B  = Kokkos::subview(AA, i, k,           2, Kokkos::ALL(), Kokkos::ALL(), v);
-		  auto C  = Kokkos::subview(AA, i, k ? k-1 : 0, 0, Kokkos::ALL(), Kokkos::ALL(), v);
-		  
+		  auto C  = Kokkos::subview(AA, i, k ? k-1 : 0, 0, Kokkos::ALL(), Kokkos::ALL(), v);		  
 		  auto u  = Kokkos::subview(WW, Kokkos::ALL(), v); 
 		  for (int jvec=0;jvec<Nvec;++jvec) {
-		    auto x0 = Kokkos::subview(xx, i, jvec, k == 0   ? 0 : k-1, Kokkos::ALL(), v);
-		    auto x1 = Kokkos::subview(xx, i, jvec, k,                  Kokkos::ALL(), v);
-		    auto x2 = Kokkos::subview(xx, i, jvec, k == L-1 ? 0 : k+1, Kokkos::ALL(), v);
-		    auto b  = Kokkos::subview(bb, i, jvec, k,                  Kokkos::ALL(), v);
+		    auto x0 = Kokkos::subview(xxx, i, jvec, k == 0   ? 0 : k-1, Kokkos::ALL(), v);
+		    auto x1 = Kokkos::subview(xxx, i, jvec, k,                  Kokkos::ALL(), v);
+		    auto x2 = Kokkos::subview(xxx, i, jvec, k == L-1 ? 0 : k+1, Kokkos::ALL(), v);
+		    auto y1 = Kokkos::subview(yyy, i, jvec, k,                  Kokkos::ALL(), v);
+		    auto b  = Kokkos::subview(bb,  i, jvec, k,                  Kokkos::ALL(), v);
 		    
 		    if (L == 1) {
 		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, b,  0.0, x1);
@@ -364,11 +370,12 @@ int main(int argc, char* argv[]) {
 			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, B, x2, 1.0, u);		    
 			Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member, -1.0, C, x0, 1.0, u);
 		      }		    
-		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, u,  0.0, x1);
+		      Gemv<member_type,Trans::NoTranspose,mode_type,algo_type>::invoke(member,  1.0, D, u,  0.0, y1);
 		    }
 		  }
 		});
 	    });
+          auto tmp = xxx; xxx = yyy; yyy = tmp;
 	}
 	Kokkos::fence();
       }
@@ -396,9 +403,9 @@ int main(int argc, char* argv[]) {
               auto C = Kokkos::subview(Acopy, i, Kokkos::ALL(), 0, Kokkos::ALL(), Kokkos::ALL(), v);
                 
               for (int jvec=0;jvec<rs.extent(1);++jvec) {
-                auto x = Kokkos::subview(xs, i, jvec, Kokkos::ALL(), Kokkos::ALL(), v);
-                auto b = Kokkos::subview(bs, i, jvec, Kokkos::ALL(), Kokkos::ALL(), v);
-                auto r = Kokkos::subview(rs, i, jvec, Kokkos::ALL(), Kokkos::ALL(), v);
+                auto x = Kokkos::subview(xs, i, jvec, nsweep%2, Kokkos::ALL(), Kokkos::ALL(), v);
+                auto b = Kokkos::subview(bs, i, jvec,           Kokkos::ALL(), Kokkos::ALL(), v);
+                auto r = Kokkos::subview(rs, i, jvec,           Kokkos::ALL(), Kokkos::ALL(), v);
                 
                 if (L == 1) {
                   auto A0 = Kokkos::subview(A, 0,   Kokkos::ALL(), Kokkos::ALL());
