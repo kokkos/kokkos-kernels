@@ -325,9 +325,9 @@ int main(int argc, char* argv[]) {
       
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
-      policy_type policy(AA.extent(0)*L, Kokkos::AUTO(), AA.extent(5));
+      policy_type policy(AA.extent(0)*L*nsweep, Kokkos::AUTO(), AA.extent(5));
       for (int iter=0;iter<niter;++iter) {
-	for (int nis=0;nis<nsweep;++nis) {
+	{ //for (int nis=0;nis<nsweep;++nis) {
 	  Kokkos::parallel_for
 	    ("solve",
 	     policy.set_scratch_size(0,Kokkos::PerTeam(S < per_team_scratch ? per_team_scratch : S)), 
@@ -336,9 +336,8 @@ int main(int argc, char* argv[]) {
 	      typedef default_mode_and_algo_type::mode_type mode_type; 
 	      typedef default_mode_and_algo_type::algo_type algo_type;
 	      
-	      scratch_view_type WW(member.team_scratch(0), Blk, AA.extent(5));	  
-	      
-	      const int i = member.league_rank()/L;
+	      scratch_view_type WW(member.team_scratch(0), Blk, AA.extent(5));	    
+	      const int i = member.league_rank()/L%AA.extent(0);
 	      const int k = member.league_rank()%L;
 	      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
 		  auto A  = Kokkos::subview(AA, i, k,           1, Kokkos::ALL(), Kokkos::ALL(), v);
