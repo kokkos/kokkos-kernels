@@ -454,7 +454,7 @@ int main(int argc, char* argv[]) {
     ///
     /// compute residual
     ///
-    if (0) {
+    if (1) {
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked algo_type;
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
