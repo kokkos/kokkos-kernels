@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    typedef Kokkos::Details::ArithTraits<value_type> ats;
+    //typedef Kokkos::Details::ArithTraits<value_type> ats;
     Kokkos::Impl::Timer timer;
 
     ///
@@ -402,7 +402,7 @@ int main(int argc, char* argv[]) {
               auto B = Kokkos::subview(Acopy, i, Kokkos::ALL(), 2, Kokkos::ALL(), Kokkos::ALL(), v);
               auto C = Kokkos::subview(Acopy, i, Kokkos::ALL(), 0, Kokkos::ALL(), Kokkos::ALL(), v);
                 
-              for (int jvec=0;jvec<rs.extent(1);++jvec) {
+              for (int jvec=0,jvecend=rs.extent(1);jvec<jvecend;++jvec) {
                 auto x = Kokkos::subview(xs, i, jvec, nsweep%2, Kokkos::ALL(), Kokkos::ALL(), v);
                 auto b = Kokkos::subview(bs, i, jvec,           Kokkos::ALL(), Kokkos::ALL(), v);
                 auto r = Kokkos::subview(rs, i, jvec,           Kokkos::ALL(), Kokkos::ALL(), v);
@@ -500,11 +500,11 @@ int main(int argc, char* argv[]) {
       Kokkos::fence();
       {
         double norm2 = 0, diff2 = 0;
-        for (int i0=0;i0<rs.extent(0);++i0) // N/vector_length
-          for (int i1=0;i1<rs.extent(1);++i1) // Nvec
-            for (int i2=0;i2<rs.extent(2);++i2) // L
-              for (int i3=0;i3<rs.extent(3);++i3) // Blk
-                for (int i4=0;i4<rs.extent(4);++i4) {// vector_length
+        for (int i0=0,i0end=rs.extent(0);i0<i0end;++i0) // N/vector_length
+          for (int i1=0,i1end=rs.extent(1);i1<i1end;++i1) // Nvec
+            for (int i2=0,i2end=rs.extent(2);i2<i2end;++i2) // L
+              for (int i3=0,i3end=rs.extent(3);i3<i3end;++i3) // Blk
+                for (int i4=0,i4end=rs.extent(4);i4<i4end;++i4) {// vector_length
                   const auto val = bs_host(i0,i1,i2,i3,i4);
                   const auto res = rs_host(i0,i1,i2,i3,i4);
                   norm2 += val*val;
