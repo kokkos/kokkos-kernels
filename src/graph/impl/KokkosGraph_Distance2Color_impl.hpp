@@ -1163,19 +1163,19 @@ class GraphColorDistance2
         nnz_lno_temp_work_view_t  _vertexList;            //
         nnz_lno_type              _vertexListLength;      //
 
-        functorGreedyColorVB_BIT_EF(nnz_lno_type              nv,
-                                    const_lno_row_view_type   xadj,
-                                    nnz_lno_temp_work_view_t  adj,
-                                    const_clno_row_view_t     t_xadj,
-                                    non_const_clno_nnz_view_t t_adj,
+        functorGreedyColorVB_BIT_EF(nnz_lno_type              nv_,
+                                    const_lno_row_view_type   xadj_,
+                                    nnz_lno_temp_work_view_t  adj_,
+                                    const_clno_row_view_t     t_xadj_,
+                                    non_const_clno_nnz_view_t t_adj_,
                                     color_view_type           colors,
                                     nnz_lno_temp_work_view_t  vertexList,
                                     nnz_lno_type              vertexListLength)
-            : _nv(nv)
-            , _idx(xadj)
-            , _adj(adj)
-            , _t_idx(t_xadj)
-            , _t_adj(t_adj)
+            : _nv(nv_)
+            , _idx(xadj_)
+            , _adj(adj_)
+            , _t_idx(t_xadj_)
+            , _t_adj(t_adj_)
             , _colors(colors)
             , _vertexList(vertexList)
             , _vertexListLength(vertexListLength)
