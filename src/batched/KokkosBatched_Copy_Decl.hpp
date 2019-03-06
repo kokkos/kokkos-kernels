@@ -68,4 +68,27 @@ namespace KokkosBatched {
 }
 
 
+#define KOKKOSBATCHED_SERIAL_COPY_MATRIX_NO_TRANSPOSE_INTERNAL_INVOKE(M,N,A,AS0,AS1,B,BS0,BS1) \
+  KokkosBatched::Experimental::SerialCopyInternal			\
+  ::invoke(M, N, A, AS0, AS1, B, BS0, BS1)
+
+#define KOKKOSBATCHED_TEAM_COPY_MATRIX_NO_TRANSPOSE_INTERNAL_INVOKE(MEMBER,M,N,A,AS0,AS1,B,BS0,BS1) \
+  KokkosBatched::Experimental::TeamCopyInternal				\
+  ::invoke(MEMBER, M, N, A, AS0, AS1, B, BS0, BS1)
+
+#define KOKKOSBATCHED_SERIAL_COPY_VECTOR_INTERNAL_INVOKE(M,A,AS,B,BS)	\
+  KokkosBatched::Experimental::SerialCopyInternal			\
+  ::invoke(M, A, AS, B, BS)
+
+#define KOKKOSBATCHED_TEAM_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(MEMBER,M,A,AS,B,BS) \
+  KokkosBatched::Experimental::TeamCopyInternal				\
+  ::invoke(MEMBER, M, A, AS, B, BS)
+
+#define KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(MODETYPE,MEMBER,M,A,AS,B,BS) \
+  if (std::is_same<MODETYPE,KokkosBatched::Experimental::Mode::Serial>::value) { \
+    KOKKOSBATCHED_SERIAL_COPY_VECTOR_INTERNAL_INVOKE(M,A,AS,B,BS);	\
+  } else if (std::is_same<MODETYPE,KokkosBatched::Experimental::Mode::Team>::value) { \
+    KOKKOSBATCHED_TEAM_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(MEMBER,M,A,AS,B,BS); \
+  }
+
 #endif
