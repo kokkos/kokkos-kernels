@@ -35,7 +35,7 @@
 #include "cuda_profiler_api.h"
 #endif
 
-//#define KOKKOSBATCHED_USE_128BIT_MEMORY_INST
+#define KOKKOSBATCHED_USE_128BIT_MEMORY_INST
 
 typedef Kokkos::DefaultExecutionSpace exec_space;
 typedef typename exec_space::memory_space memory_space;
