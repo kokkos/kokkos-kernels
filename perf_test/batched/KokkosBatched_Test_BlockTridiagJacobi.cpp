@@ -37,6 +37,8 @@
 #include "cuda_profiler_api.h"
 #endif
 
+#define KOKKOSBATCHED_USE_128BIT_MEMORY_INST
+
 typedef Kokkos::DefaultExecutionSpace exec_space;
 typedef typename exec_space::memory_space memory_space;
 typedef Kokkos::DefaultHostExecutionSpace host_space;
@@ -50,10 +52,18 @@ typedef double value_type;
 using namespace KokkosBatched::Experimental;
 
 static constexpr int vector_length = DefaultVectorLength<value_type,memory_space>::value;
+#if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
 static constexpr int internal_vector_length = DefaultInternalVectorLength<value_type,memory_space>::value;
+#else
+static constexpr int internal_vector_length = 1;
+#endif
 
 typedef Vector<SIMD<value_type>,vector_length> vector_type;
+#if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
 typedef Vector<SIMD<value_type>,internal_vector_length> internal_vector_type;
+#else
+typedef value_type internal_vector_type;
+#endif
 
 template<typename ActiveMemorySpace>
 struct InverseDiagonalsModeAndAlgo;
@@ -121,7 +131,8 @@ int main(int argc, char* argv[]) {
       if (token == std::string("-Nsweep")) nsweep = std::atoi(argv[++i]);
     }
 
-    printf(" :::: Testing (N = %d, L = %d, Blk = %d, vl = %d, vi = %d)\n", N, L, Blk, vector_length, internal_vector_length);
+    printf(" :::: Testing (N = %d, L = %d, Blk = %d, vl = %d, vi = %d, niter = %d, nsweep = %d)\n", 
+           N, L, Blk, vector_length, internal_vector_length, niter, nsweep);
 
 
     ///
@@ -208,14 +219,15 @@ int main(int argc, char* argv[]) {
                                                                     bs.extent(3), 
                                                                     bs.extent(4));
 
+#if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
     auto AA = Ai;
     auto bb = bi;
     auto xx = xi;
-
-    // auto AA = As;
-    // auto bb = bs;
-    // auto xx = xs;
-
+#else
+    auto AA = As;
+    auto bb = bs;
+    auto xx = xs;
+#endif
 
     /// randomize input
     Kokkos::Random_XorShift64_Pool<exec_space> random(13245);
@@ -266,7 +278,12 @@ int main(int argc, char* argv[]) {
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
       const int per_team_scratch = scratch_view_type::shmem_size(Blk, Blk, AA.extent(5));
-      policy_type policy(AA.extent(0)*L, Kokkos::AUTO(), AA.extent(5));
+      int team_size = 0;                                                                                      
+      if (Blk < 8)         { team_size =  32/AA.extent(5);                                                    
+      } else if (Blk < 12) { team_size =  32/AA.extent(5);                                                    
+      } else               { team_size =  64/AA.extent(5); } 
+
+      policy_type policy(AA.extent(0)*L, team_size, AA.extent(5));
       Kokkos::parallel_for
         ("inverse diagonals",
          policy.set_scratch_size(0,Kokkos::PerTeam(S < per_team_scratch ? per_team_scratch : S)), 
@@ -327,7 +344,11 @@ int main(int argc, char* argv[]) {
       
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
-      policy_type policy(AA.extent(0)*L, Kokkos::AUTO(), AA.extent(5));
+      int team_size = 0;                                                                                      
+      if (Blk < 8)         { team_size =  32/AA.extent(5);                                                    
+      } else if (Blk < 12) { team_size =  32/AA.extent(5);                                                    
+      } else               { team_size =  32/AA.extent(5); } 
+      policy_type policy(AA.extent(0)*L, team_size, AA.extent(5));
 
       for (int iter=0;iter<niter;++iter) {
         auto xxx = Kokkos::subview(xx, Kokkos::ALL(), Kokkos::ALL(), 0, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());

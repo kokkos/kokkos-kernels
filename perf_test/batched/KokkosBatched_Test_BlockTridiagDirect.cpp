@@ -35,6 +35,8 @@
 #include "cuda_profiler_api.h"
 #endif
 
+//#define KOKKOSBATCHED_USE_128BIT_MEMORY_INST
+
 typedef Kokkos::DefaultExecutionSpace exec_space;
 typedef typename exec_space::memory_space memory_space;
 typedef Kokkos::DefaultHostExecutionSpace host_space;
@@ -48,10 +50,18 @@ typedef double value_type;
 using namespace KokkosBatched::Experimental;
 
 static constexpr int vector_length = DefaultVectorLength<value_type,memory_space>::value;
+#if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
 static constexpr int internal_vector_length = DefaultInternalVectorLength<value_type,memory_space>::value;
+#else
+static constexpr int internal_vector_length = 1;
+#endif
 
 typedef Vector<SIMD<value_type>,vector_length> vector_type;
+#if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
 typedef Vector<SIMD<value_type>,internal_vector_length> internal_vector_type;
+#else
+typedef value_type internal_vector_type;
+#endif
 
 template<typename ActiveMemorySpace>
 struct FactorizeModeAndAlgo;
@@ -117,7 +127,8 @@ int main(int argc, char* argv[]) {
       if (token == std::string("-Niter")) niter = std::atoi(argv[++i]);
     }
 
-    printf(" :::: Testing (N = %d, L = %d, Blk = %d, vl = %d, vi = %d)\n", N, L, Blk, vector_length, internal_vector_length);
+    printf(" :::: Testing (N = %d, L = %d, Blk = %d, vl = %d, vi = %d, niter = %d)\n", 
+           N, L, Blk, vector_length, internal_vector_length, niter);
 
 
     ///
@@ -202,13 +213,15 @@ int main(int argc, char* argv[]) {
                                                                     bs.extent(3), 
                                                                     bs.extent(4));
 
+#if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
     auto AA = Ai;
     auto bb = bi;
     auto xx = xi;
-
-    // auto AA = As;
-    // auto bb = bs;
-    // auto xx = xs;
+#else
+    auto AA = As;
+    auto bb = bs;
+    auto xx = xs;
+#endif
 
     ///
     /// set identity
@@ -257,7 +270,12 @@ int main(int argc, char* argv[]) {
       timer.reset();
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
-      policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
+      int team_size = 0;
+      if        (Blk < 8)  { team_size =  32/AA.extent(5); 
+      } else if (Blk < 12) { team_size =  64/AA.extent(5);
+      } else               { team_size = 128/AA.extent(5); }
+
+      policy_type policy(AA.extent(0), team_size, AA.extent(5));
       Kokkos::parallel_for
         ("factorize",
          policy.set_scratch_size(0,Kokkos::PerTeam(S)), 
@@ -328,7 +346,12 @@ int main(int argc, char* argv[]) {
       timer.reset();
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
-      policy_type policy(AA.extent(0), Kokkos::AUTO(), AA.extent(5));
+      int team_size = 0;
+      if        (Blk < 8)  { team_size =  32/AA.extent(5); 
+      } else if (Blk < 12) { team_size =  64/AA.extent(5);
+      } else               { team_size = 128/AA.extent(5); }
+      
+      policy_type policy(AA.extent(0), team_size, AA.extent(5));
       for (int iter=0;iter<niter;++iter) {
         Kokkos::parallel_for
           ("solve",
