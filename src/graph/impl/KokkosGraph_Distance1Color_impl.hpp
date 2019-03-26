@@ -2626,6 +2626,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const int node) const {
+      typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       int myScore = score_(node);
       int numNeighs = xadj_(node + 1) - xadj_(node);
       for(int neigh = 0; neigh < numNeighs; ++neigh) {
@@ -2639,7 +2640,7 @@ public:
       }
       if(dependency_(node) == 0) {
         const size_type newFrontierIdx
-          = Kokkos::atomic_fetch_add(&newFrontierSize_(), 1);
+          = Kokkos::atomic_fetch_add(&newFrontierSize_(), atomic_incr_type(1));
         newFrontier_(newFrontierIdx) = node;
       }
     }
@@ -2672,6 +2673,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const size_type frontierIdx) const {
+      typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       size_type frontierNode = frontier_(frontierIdx);
       int* bannedColors = new int[maxColors_];
       for(size_type colorIdx= 0; colorIdx < maxColors_; ++colorIdx) {
@@ -2690,7 +2692,7 @@ public:
           // dependency(myAdj(neigh)) = dependency(myAdj(neigh)) - 1;
           if(myDependency - 1 == 0) {
             const size_type newFrontierIdx
-              = Kokkos::atomic_fetch_add(&newFrontierSize_(), 1);
+              = Kokkos::atomic_fetch_add(&newFrontierSize_(), atomic_incr_type(1));
             newFrontier_(newFrontierIdx) = adj_(neigh);
           }
         }
@@ -2733,6 +2735,7 @@ public:
     KOKKOS_INLINE_FUNCTION
     void operator() (const size_type frontierIdx) const {
 
+      typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       size_type frontierNode = frontier_(frontierIdx);
       // Initialize bit array to all bits = 0
       unsigned long long bannedColors = 0;
@@ -2757,7 +2760,7 @@ public:
               Kokkos::atomic_fetch_add(&dependency_(adj_(neigh)), -1);
             if(myDependency - 1 == 0) {
               const size_type newFrontierIdx
-                = Kokkos::atomic_fetch_add(&newFrontierSize_(), 1);
+                = Kokkos::atomic_fetch_add(&newFrontierSize_(), atomic_incr_type(1));
               newFrontier_(newFrontierIdx) = adj_(neigh);
             }
           }
