@@ -97,6 +97,9 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
 
 int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
 {
+  bool got_required_param_amtx      = false;
+  bool got_required_param_algorithm = false;
+
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       params.use_threads = atoi( argv[++i] );
@@ -123,6 +126,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.vector_size  = atoi( argv[++i] ) ;
     }
     else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
+      got_required_param_amtx = true;
       params.a_mtx_bin_file = argv[++i];
     }
     else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
@@ -132,6 +136,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.verbose = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
+      got_required_param_algorithm = true;
       ++i;
       if ( 0 == strcasecmp( argv[i] , "COLORING_DEFAULT" ) ) {
         params.algorithm = 1;
@@ -174,6 +179,24 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       return 1;
     }
   }
+  if(!got_required_param_amtx)
+  {
+    std::cout << "Missing required parameter amtx" << std::endl << std::endl;
+    print_options(std::cout, argv[0]);
+    return 1;
+  }
+  if(!got_required_param_algorithm)
+  {
+    std::cout << "Missing required parameter algorithm" << std::endl << std::endl;
+    print_options(std::cout, argv[0]);
+  return 1;
+  }
+  if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+  {
+    print_options(std::cout, argv[0]);
+    return 1;
+  }
+
   return 0;
 }
 
