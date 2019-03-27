@@ -164,13 +164,13 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       else {
         std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-        print_options();
+        print_options(std::cout, argv[0]);
         return 1;
       }
     }
     else {
       std::cerr << "3-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      print_options();
+      print_options(std::cout, argv[0]);
       return 1;
     }
   }
