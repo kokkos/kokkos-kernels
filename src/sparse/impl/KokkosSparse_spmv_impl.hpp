@@ -1226,13 +1226,13 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     // cannot be more than the number of columns of the matrix.  Thus,
     // the appropriate type is ordinal_type.
     const ordinal_type numRows = A.numRows();
-    const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / numRows);
 
 #ifndef KOKKOS_FAST_COMPILE // This uses templated functions on doalpha and dobeta and will produce 16 kernels
 
 #ifdef KOKKOS_ENABLE_OPENMP
     if(std::is_same<Kokkos::OpenMP, typename AMatrix::execution_space>::value) {
       int vector_length = 1;
+      const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / numRows);
       while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<8) ) vector_length*=2;
       const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space>(NNZPerRow);
 
