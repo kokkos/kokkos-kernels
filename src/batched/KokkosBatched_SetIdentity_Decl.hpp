@@ -34,6 +34,28 @@ namespace KokkosBatched {
              const AViewType &A);
     };
 
+
+    ///
+    /// Selective Interface
+    ///
+    template<typename MemberType,
+             typename ArgMode>
+    struct SetIdentity {
+      template<typename AViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static int
+      invoke(const MemberType &member,
+             const AViewType &A) {
+        int r_val = 0;
+        if (std::is_same<ArgMode,Mode::Serial>::value) {
+          r_val = SerialSetIdentity::invoke(A);
+        } else if (std::is_same<ArgMode,Mode::Team>::value) {
+          r_val = TeamSetIdentity<MemberType>::invoke(member, A);
+        } 
+        return r_val;
+      }
+    };      
+
   }
 }
 
