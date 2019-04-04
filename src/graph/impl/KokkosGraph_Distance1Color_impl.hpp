@@ -46,7 +46,7 @@
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <vector>
-#include "KokkosGraph_GraphColorHandle.hpp"
+#include "KokkosGraph_Distance1ColorHandle.hpp"
 
 #include <bitset>
 
