@@ -3,6 +3,9 @@
 #include "impl/Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
+#if  defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
+#if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
+
 /// KokkosKernels headers
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
@@ -549,3 +552,5 @@ int main(int argc, char* argv[]) {
 }
 
 
+#endif  // defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
+#endif  // !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
