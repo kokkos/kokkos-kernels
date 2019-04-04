@@ -5,6 +5,11 @@
 
 #if  defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
 #if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
+#define KOKKOSBATCHED_TEST_BLOCKTRIDIAGJACOBI
+#endif
+#endif
+
+#if defined( KOKKOSBATCHED_TEST_BLOCKTRIDIAGJACOBI )
 
 /// KokkosKernels headers
 #include "KokkosBatched_Util.hpp"
@@ -550,7 +555,8 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
-
-
-#endif  // defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
-#endif  // !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
+#else
+int main() {
+  return 0;
+}
+#endif
