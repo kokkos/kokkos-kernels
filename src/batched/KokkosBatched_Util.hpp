@@ -3,7 +3,8 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-//#define __KOKKOSBATCHED_PROMOTION__ 1
+// no experimental name space guard for trilinos
+#define __KOKKOSBATCHED_PROMOTION__ 1
 
 #include <iomanip>
 #include <random>
