@@ -56,7 +56,7 @@ typedef double value_type;
 ///
 /// simd typedefs
 ///
-using namespace KokkosBatched::Experimental;
+using namespace KokkosBatched;
 
 static constexpr int vector_length = DefaultVectorLength<value_type,memory_space>::value;
 #if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
@@ -486,7 +486,7 @@ int main(int argc, char* argv[]) {
     /// compute residual
     ///
     if (1) {
-      typedef KokkosBatched::Experimental::Algo::Level2::Unblocked algo_type;
+      typedef KokkosBatched::Algo::Level2::Unblocked algo_type;
       using policy_type = Kokkos::TeamPolicy<exec_space>;
       using member_type = typename policy_type::member_type;
       policy_type policy(Acopy.extent(0), Kokkos::AUTO(), Acopy.extent(5));
