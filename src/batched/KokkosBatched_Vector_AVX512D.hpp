@@ -7,7 +7,7 @@
 #include <immintrin.h>
 
 namespace KokkosBatched {
-  namespace Experimental {
+   {
     ///
     /// AVX512D double
     ///
