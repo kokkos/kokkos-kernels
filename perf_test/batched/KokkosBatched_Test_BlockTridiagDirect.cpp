@@ -448,8 +448,8 @@ int main(int argc, char* argv[]) {
                       UT.assign_data(&B(k-1, 0, 0));
                       UB.assign_data(&A(k,   0, 0));
                       
-                      xt.assign_data(&x(k-1, 0, 0));
-                      xb.assign_data(&x(k,   0, 0));
+                      xt.assign_data(&x(k-1, 0));
+                      xb.assign_data(&x(k,   0));
                       
                       Trsv<member_type,
 			Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,
