@@ -4,7 +4,7 @@
 
 #include "KokkosBatched_Test_Gemm_Host.hpp"
 
-using namespace KokkosBatched::Experimental;
+using namespace KokkosBatched;
 
 template<typename AlgoTagType>
 void run(const int N) {
