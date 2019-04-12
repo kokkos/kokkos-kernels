@@ -132,5 +132,5 @@ gesv (const char pivot[],
 
 } // namespace KokkosBlas
 
-#endif // KOKKOSBLAS_TRSV_HPP_
+#endif // KOKKOSBLAS_GESV_HPP_
 

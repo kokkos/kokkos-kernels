@@ -139,7 +139,7 @@ struct GESV< AMatrix, BXMV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                       false, true >; \
 
-#define KOKKOSBLAS_TRSV_ETI_SPEC_INST( SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
+#define KOKKOSBLAS_GESV_ETI_SPEC_INST( SCALAR_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
     template struct  \
     GESV<             Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,  \
                                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
