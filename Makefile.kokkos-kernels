@@ -35,7 +35,6 @@ MKL_PATH ?= ${SEMS_INTEL_ROOT}/mkl
 MKL_LIBS ?= -L${MKL_PATH}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl -L${MKL_PATH}/../compiler/lib/intel64
 
 MAGMA_PATH     ?= ${MAGMADIR}
-OPENBLAS_PATH  ?= ${OPENBLAS_ROOT}
 
 default-kokkos-kernels: kokkoskernels-build-lib
 	echo "Start Build"
@@ -314,8 +313,8 @@ ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
   KOKKOS_INTERNAL_NVCC_PATH := $(shell which nvcc)
   CUDA_PATH ?= $(KOKKOS_INTERNAL_NVCC_PATH:/bin/nvcc=)
   KOKKOSKERNELS_CPPFLAGS += -DADD_ -I${MAGMA_PATH}/include -I${MAGMA_PATH}/sparse/include -I${CUDA_PATH}/include
-  KOKKOSKERNELS_LDFLAGS += -L${MAGMA_PATH}/lib -L${CUDA_PATH}/lib64 -L${OPENBLAS_PATH}/lib
-  KOKKOSKERNELS_LIBS += -lmagma_sparse -lmagma -lcublas -lcudart -lcusparse -lopenblas -fopenmp
+  KOKKOSKERNELS_LDFLAGS += -L${MAGMA_PATH}/lib -L${CUDA_PATH}/lib64
+  KOKKOSKERNELS_LIBS += -lmagma_sparse -lmagma -lcublas -lcudart -lcusparse -fopenmp
 
   tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_MAGMA" >> KokkosKernels_config.tmp )
 endif
