@@ -112,11 +112,7 @@ run_graphcolor_d2(crsMat_type                                                   
 
 
     // Print out messages based on coloring validation check.
-    if(d2_coloring_is_valid)
-    {
-        std::cout << std::endl << "Distance-2 Graph Coloring is VALID" << std::endl << std::endl;
-    }
-    else
+    if(!d2_coloring_is_valid)
     {
         std::cout << std::endl
                   << "Distance-2 Graph Coloring is NOT VALID" << std::endl
