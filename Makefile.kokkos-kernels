@@ -80,17 +80,30 @@ tmp := $(shell echo "\#define KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.t
 
 # default mangling scheme with a single under score
 KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+  MAGMA_FORTRAN_MANGLING = ADD_
+endif
+
 KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle__" | wc -l))
 ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES), 1)
   KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#__
+  ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+    $(error MAGMA does not prefer Fortran mangling with double underscore)
+  endif
 else
   KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle_" | wc -l))
   ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE), 1)
     KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+	ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+      MAGMA_FORTRAN_MANGLING = ADD_
+    endif
   else 
     KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle" | wc -l))
     ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE), 1)
       KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#
+      ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
+        MAGMA_FORTRAN_MANGLING = NOCHANGE
+      endif
     endif
   endif
 endif
@@ -312,7 +325,7 @@ endif
 ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MAGMA}, 1)
   KOKKOS_INTERNAL_NVCC_PATH := $(shell which nvcc)
   CUDA_PATH ?= $(KOKKOS_INTERNAL_NVCC_PATH:/bin/nvcc=)
-  KOKKOSKERNELS_CPPFLAGS += -DADD_ -I${MAGMA_PATH}/include -I${MAGMA_PATH}/sparse/include -I${CUDA_PATH}/include
+  KOKKOSKERNELS_CPPFLAGS += -D${MAGMA_FORTRAN_MANGLING} -I${MAGMA_PATH}/include -I${MAGMA_PATH}/sparse/include -I${CUDA_PATH}/include
   KOKKOSKERNELS_LDFLAGS += -L${MAGMA_PATH}/lib -L${CUDA_PATH}/lib64
   KOKKOSKERNELS_LIBS += -lmagma_sparse -lmagma -lcublas -lcudart -lcusparse -fopenmp
 
