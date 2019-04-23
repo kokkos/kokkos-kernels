@@ -1,16 +1,39 @@
-INCLUDE(TribitsETISupport)
+
+
+IF(COMMAND TRIBITS_PACKAGE_DECL)
+  SET(KOKKOS_HAS_TRILINOS ON CACHE BOOL "")
+ELSE()
+  SET(KOKKOS_HAS_TRILINOS OFF CACHE BOOL "")
+ENDIF()
+
+
+IF(NOT KOKKOS_HAS_TRILINOS)
+  cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+  IF(NOT DEFINED ${PROJECT_NAME})
+    PROJECT(KokkosKernels CXX)
+  ENDIF()
+  set (KokkosKernels_VERSION_MAJOR 2)
+  set (KokkosKernels_VERSION_MINOR 7)
+  set (KokkosKernels_VERSION_PATCH 4)
+ENDIF()
+
+INCLUDE(cmake/fake_tribits.cmake)
+INCLUDE(cmake/kokkoskernels_tribits.cmake)
 
 #
 # Define the package
 #
-TRIBITS_PACKAGE(KokkosKernels)
+KOKKOSKERNELS_PACKAGE()
 
 # If building in debug mode, define the HAVE_KOKKOSKERNELS_DEBUG macro.
-TRIBITS_ADD_DEBUG_OPTION()
+KOKKOS_ADD_DEBUG_OPTION()
 
 #
 # Set up subpackage-specific configuration options
 #
+IF(NOT KOKKOS_HAS_TRILINOS)
+ FIND_PACKAGE(Kokkos REQUIRED)
+ENDIF()
 
 #
 # "Optimization level" for KokkosKernels computational kernels.  The
@@ -19,7 +42,7 @@ TRIBITS_ADD_DEBUG_OPTION()
 # better performance overall, and more uniform performance for corner
 # cases.  Values of current interest (24 Apr 2014) are 0, 1, and 2.
 #
-TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
+KOKKOS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
   KOKKOSLINALG_OPT_LEVEL
   "Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems."
   "1"
@@ -29,7 +52,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
 
 # Enable experimental features of KokkosKernels if set at configure
 # time. Default is no.
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_KOKKOSKERNELS_EXPERIMENTAL
   "Enable building and installation of experimental KokkosKernels features."
@@ -49,19 +72,19 @@ ASSERT_DEFINED (Kokkos_ENABLE_Serial)
 SET(${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_Serial})
 
 IF(${Kokkos_ENABLE_Cuda})
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_CUDA
   KOKKOSKERNELS_INST_EXECSPACE_CUDA
   "Whether to pre instantiate kernels for the execution space Kokkos::Cuda.  This option is KokkosKernels_INST_EXECSPACE_CUDA=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
   )
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_CUDAUVMSPACE
   KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE
   "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  This option is KokkosKernels_INST_EXECSPACE_CUDAUVMSPACE=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
   )
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_CUDASPACE
   KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE
   "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  This option is KokkosKernels_INST_EXECSPACE_CUDASPACE=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
@@ -82,7 +105,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ENDIF()
 
 IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP})
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE
   KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
   "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is KokkosKernels_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_Serial}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
@@ -91,7 +114,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ENDIF()
 
 IF(${Kokkos_ENABLE_OpenMP})
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_OPENMP
   KOKKOSKERNELS_INST_EXECSPACE_OPENMP
   "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  This option is KokkosKernels_INST_EXECSPACE_OPENMP=${Kokkos_ENABLE_OpenMP} by default.  Disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times."
@@ -104,7 +127,7 @@ ENDIF()
 
 
 IF(${Kokkos_ENABLE_Pthread})
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_THREADS
   KOKKOSKERNELS_INST_EXECSPACE_THREADS
   "Whether to build kernels for the execution space Kokkos::Threads.  This option is Kokkos_ENABLE_Pthread=${Kokkos_ENABLE_Pthread} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Pthread is enabled may increase build times."
@@ -117,7 +140,7 @@ ENDIF()
 
 
 IF(${Kokkos_ENABLE_Serial})
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_SERIAL
   KOKKOSKERNELS_INST_EXECSPACE_SERIAL
   "Whether to build kernels for the execution space Kokkos::Serial.  This option is Kokkos_ENABLE_Serial=${Kokkos_ENABLE_Serial} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Serial is enabled may increase build times."
@@ -132,21 +155,21 @@ ENDIF()
 # Enable Scalar Types for ETI
 # ==================================================================
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ETI_Only
   KOKKOSKERNELS_ETI_ONLY
   "Whether to restrict availability of kernels to ETI types only. This is off by default, i.e. any type combination can be instantiated. Turning this on guarantees that kernels are never build inside of object files which simply call KokkosKernels functions."
   OFF
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Test_ETI_Only
   KOKKOSKERNELS_TEST_ETI_ONLY
   "Whether to restrict testing to ETI types."
   ON
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_DOUBLE
   KOKKOSKERNELS_INST_DOUBLE
   "Whether to pre instantiate kernels for the scalar type double.  This option is KokkosKernels_INST_DOUBLE=ON by default.  Disabling this may increase build times."
@@ -159,13 +182,15 @@ ELSE()
   GLOBAL_SET(KokkosKernels_INST_FLOAT_DEFAULT  OFF)
 ENDIF()
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   KOKKOSKERNELS_INST_FLOAT
   "Whether to pre instantiate kernels for the scalar type float.  This option is KokkosKernels_INST_FLOAT=Trilinos_ENABLE_FLOAT by default.  Disabling this may increase build times."
   ${KokkosKernels_INST_FLOAT_DEFAULT}
   )
 
+#Just leave the Trilinos logic here alone
+#Outside of Trilinos, let the defaults be always OFF
 IF (KokkosKernels_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE)
   GLOBAL_SET(KokkosKernels_INST_COMPLEX_DOUBLE_DEFAULT ON)
 ELSE()
@@ -177,14 +202,14 @@ ELSE()
   GLOBAL_SET(KokkosKernels_INST_COMPLEX_FLOAT_DEFAULT OFF)
 ENDIF()
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
   KOKKOSKERNELS_INST_COMPLEX_DOUBLE
   "Whether to pre instantiate kernels for the scalar type complex<double>.  This option is KokkosKernels_INST_COMPLEX_DOUBLE=${Trilinos_ENABLE_COMPLEX_DOUBLE} by default.  Disabling this may increase build times."
   ${KokkosKernels_INST_COMPLEX_DOUBLE_DEFAULT}
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
   KOKKOSKERNELS_INST_COMPLEX_FLOAT
   "Whether to pre instantiate kernels for the scalar type complex<float>.  This option is KokkosKernels_INST_COMPLEX_FLOAT=${Trilinos_ENABLE_COMPLEX_FLOAT} by default.  Disabling this may increase build times."
@@ -208,14 +233,14 @@ IF (KokkosKernels_INST_FLOAT)
 ENDIF()
 
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_LAYOUTLEFT
   KOKKOSKERNELS_INST_LAYOUTLEFT
   "Whether to pre instantiate kernels for the view layout LayoutLeft.  This option is KokkosKernels_INST_LAYOUTLEFT=ON by default.  Disabling this may increase build times."
   ON
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_LAYOUTRIGHT
   KOKKOSKERNELS_INST_LAYOUTRIGHT
   "Whether to pre instantiate kernels for the view layout LayoutRight.  This option is KokkosKernels_INST_LAYOUTRIGHT=OFF by default.  Disabling this may increase build times."
@@ -231,14 +256,14 @@ GLOBAL_SET(KokkosKernels_INST_ORDINAL_INT_DEFAULT  ON)
 GLOBAL_SET(KokkosKernels_INST_ORDINAL_INT64_T_DEFAULT  OFF)
 
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_ORDINAL_INT
   KOKKOSKERNELS_INST_ORDINAL_INT
   "Whether to pre instantiate kernels for the ordinal type int.  This option is KokkosKernels_INST_ORDINAL_INT=ON by default."
   ${KokkosKernels_INST_ORDINAL_INT_DEFAULT}
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_ORDINAL_INT64_T
   KOKKOSKERNELS_INST_ORDINAL_INT64_T
   "Whether to pre instantiate kernels for the ordinal type int64_t.  This option is KokkosKernels_INST_ORDINAL_INT64_T=OFF by default."
@@ -264,14 +289,14 @@ GLOBAL_SET(KokkosKernels_INST_OFFSET_INT_DEFAULT  ON)
 #GLOBAL_SET(KokkosKernels_INST_OFFSET_INT64_T_DEFAULT  OFF)
 
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_OFFSET_INT
   KOKKOSKERNELS_INST_OFFSET_INT
   "Whether to pre instantiate kernels for the offset type int.  This option is KokkosKernels_INST_OFFSET_INT=ON by default."
   ${KokkosKernels_INST_OFFSET_INT_DEFAULT}
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_OFFSET_SIZE_T
   KOKKOSKERNELS_INST_OFFSET_SIZE_T
   "Whether to pre instantiate kernels for the offset type size_t.  This option is KokkosKernels_INST_OFFSET_SIZE_T=OFF by default."
@@ -382,12 +407,23 @@ MESSAGE("")
 # Process subdirectories
 # ==================================================================
 
+GET_DIRECTORY_PROPERTY(HAS_PARENT PARENT_DIRECTORY)
+IF (KOKKOS_HAS_TRILINOS)
+  SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+  SET(KOKKOSKERNELS_HEADER_DIR ${TRILINOS_INCDIR})
+ELSEIF(HAS_PARENT)
+  SET(KOKKOSKERNELS_HEADER_DIR "include/kokkos-kernels")
+ELSE()
+  SET(KOKKOSKERNELS_HEADER_DIR "include")
+ENDIF()
+
 ADD_SUBDIRECTORY(src)
 
-TRIBITS_ADD_TEST_DIRECTORIES(test_common)
-TRIBITS_ADD_TEST_DIRECTORIES(perf_test)
-TRIBITS_ADD_TEST_DIRECTORIES(unit_test)
-#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+KOKKOS_ADD_TEST_DIRECTORIES(test_common)
+KOKKOS_ADD_TEST_DIRECTORIES(perf_test)
+KOKKOS_ADD_TEST_DIRECTORIES(unit_test)
+#KOKKOS_ADD_EXAMPLE_DIRECTORIES(example)
 
-TRIBITS_PACKAGE_POSTPROCESS()
+KOKKOSKERNELS_PACKAGE_POSTPROCESS()
+
 
