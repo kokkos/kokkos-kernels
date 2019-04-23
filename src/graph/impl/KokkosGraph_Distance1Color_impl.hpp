@@ -2600,7 +2600,7 @@ public:
       : frontierSize_(frontierSize), newFrontierSize_(newFrontierSize) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const int dummy) const {
+    void operator() (const int /* dummy */) const {
       frontierSize_() = newFrontierSize_();
       newFrontierSize_() = 0;
     }

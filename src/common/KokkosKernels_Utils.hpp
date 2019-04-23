@@ -144,6 +144,10 @@ void get_suggested_vector_team_size(
 
     suggested_team_size_ = max_allowed_team_size / suggested_vector_size_;
   }
+#else
+  (void)max_allowed_team_size;
+  (void)nr;
+  (void)nnz;
 #endif
 
 #if defined( KOKKOS_ENABLE_QTHREAD)
@@ -393,7 +397,7 @@ struct FillSymmetricLowerEdgesHashMap{
     in_lno_nnz_view_t adj_,
     hashmap_t hashmap_,
     out_lno_row_view_t pre_pps_,
-    bool lower_only_ = false
+    bool /* lower_only_ */ = false
     ):num_rows(num_rows_),nnz(adj_.extent(0)), xadj(xadj_), adj(adj_),
         umap(hashmap_), pre_pps(pre_pps_){}
 
@@ -1005,7 +1009,7 @@ void permute_block_vector(
 
 template <typename value_array_type, typename MyExecSpace>
 void zero_vector(
-    typename value_array_type::value_type num_elements,
+    typename value_array_type::value_type /* num_elements */,
     value_array_type &vector
     ){
   typedef typename value_array_type::non_const_value_type val_type;

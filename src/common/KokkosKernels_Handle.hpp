@@ -285,7 +285,7 @@ public:
    * \param concurrency: input, the number of threads overall. Not used currently.
    * \param overall_work_size: The overall work size.
    */
-  int get_team_work_size(const int team_size, const int concurrency, const nnz_lno_t overall_work_size){
+  int get_team_work_size(const int team_size, const int /* concurrency */, const nnz_lno_t /* overall_work_size */){
     if (this->team_work_size != -1) {
       return this->team_work_size;
     }

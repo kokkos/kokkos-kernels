@@ -422,7 +422,7 @@ struct KokkosSPGEMM
           int overall_num_unsuccess = 0;
 
           Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-              [&] (const int threadid, int &overall_num_unsuccess_) {
+              [&] (const int /* threadid */, int &overall_num_unsuccess_) {
             overall_num_unsuccess_ += num_unsuccess;
           }, overall_num_unsuccess);
 
@@ -463,7 +463,7 @@ struct KokkosSPGEMM
     });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
     return shared_memory_size;
   }
 };

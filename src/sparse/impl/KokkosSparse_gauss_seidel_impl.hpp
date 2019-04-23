@@ -146,7 +146,7 @@ namespace KokkosSparse{
         nnz_scalar_t omega;
 
         PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
-             scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_, nnz_lno_persistent_work_view_t color_adj_,
+             scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_, nnz_lno_persistent_work_view_t /* color_adj_ */,
              nnz_scalar_t omega_,
              scalar_persistent_work_view_t permuted_inverse_diagonal_):
           _xadj( xadj_),
@@ -515,7 +515,7 @@ namespace KokkosSparse{
 
         }
 
-        size_t team_shmem_size (int team_size) const {
+        size_t team_shmem_size (int /* team_size */) const {
           return shared_memory_size;
         }
       };

@@ -629,7 +629,7 @@ namespace KokkosBatched {
       inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1];
       
     auto trsv = [&](const int p,
-                    ValueType &b_0p) {
+                    ValueType &/* b_0p */) {
       B[0*_bs0+p*_bs1] *= inv_a_00; /* b_0p /= a_00;*/   
     };
       
@@ -1366,7 +1366,7 @@ namespace KokkosBatched {
       inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1];
 
     auto trsv = [&](const int p,
-                    ValueType &b_0p) {
+                    ValueType &/* b_0p */) {
       // 0 iteration                         
       B[0*_bs0+p*_bs1] *= inv_a_00; /* b_0p /= a_00; */     
     };

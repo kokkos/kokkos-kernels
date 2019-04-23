@@ -539,7 +539,7 @@ struct SPMV_MV_LayoutLeft_Functor {
 
   template<int UNROLL>
   KOKKOS_INLINE_FUNCTION void
-  strip_mine (const team_member& dev, const ordinal_type& iRow, const ordinal_type& kk) const
+  strip_mine (const team_member& /* dev */, const ordinal_type& iRow, const ordinal_type& kk) const
   {
     y_value_type sum[UNROLL];
 
@@ -692,7 +692,7 @@ struct SPMV_MV_LayoutLeft_Functor {
   }
 
   KOKKOS_INLINE_FUNCTION void
-  strip_mine_1 (const team_member& dev, const ordinal_type& iRow) const
+  strip_mine_1 (const team_member& /* dev */, const ordinal_type& iRow) const
   {
     y_value_type sum = Kokkos::Details::ArithTraits<y_value_type>::zero ();
 

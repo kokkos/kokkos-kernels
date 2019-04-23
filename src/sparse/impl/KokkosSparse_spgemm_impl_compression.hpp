@@ -649,7 +649,7 @@ struct KokkosSPGEMM
       //if level-1 hash is full, it returns 1 (num_unsuccess=1)
       //a reduction is done to see whether any vector lanes failed.
       Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-          [&] (const int i, int &overall_num_unsuccess_) {
+          [&] (const int i, int &/* overall_num_unsuccess_ */) {
           n_set_index = result_keys[i];
           n_set = result_vals[i];
           nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
@@ -741,7 +741,7 @@ struct KokkosSPGEMM
 		    });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
 	  return shared_memory_size;
   }
 
