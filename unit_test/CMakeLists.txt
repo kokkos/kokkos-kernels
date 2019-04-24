@@ -23,12 +23,12 @@ KOKKOS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_
 SET(GTEST_SOURCE_DIR ${PACKAGE_SOURCE_DIR}/tpls/gtest)
 # Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
 
-KOKKOS_INCLUDE_DIRECTORIES(${GTEST_SOURCE_DIR})
 KOKKOS_ADD_TEST_LIBRARY(
   kokkoskernels_gtest
   HEADERS ${GTEST_SOURCE_DIR}/gtest/gtest.h
   SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
   )
+#this can be a raw call
 KOKKOS_TARGET_INCLUDE_DIRECTORIES(kokkoskernels_gtest ${GTEST_SOURCE_DIR})
 
 
