@@ -109,9 +109,9 @@ struct SPMV_MV_test_Functor {
   using ATV             = Kokkos::Details::ArithTraits<value_type>;
 
   const value_type alpha;
-  const value_type beta;
   AMatrix m_A;
   XVector m_x;
+  const value_type beta;
   YVector m_y;
 
   const ordinal_type numVecs;
@@ -120,12 +120,12 @@ struct SPMV_MV_test_Functor {
   ordinal_type rows_per_team;
   int x_strides[2], y_strides[2];
 
-  SPMV_MV_test_Functor (const value_type alpha_,
-                        const AMatrix m_A_,
-                        const XVector m_x_,
-                        const value_type beta_,
-                        const YVector m_y_,
-                        const ordinal_type rows_per_thread_) :
+  SPMV_MV_test_Functor (const value_type& alpha_,
+                        const AMatrix& m_A_,
+                        const XVector& m_x_,
+                        const value_type& beta_,
+                        const YVector& m_y_,
+                        const ordinal_type& rows_per_thread_) :
     alpha(alpha_), m_A(m_A_), m_x(m_x_), beta(beta_), m_y(m_y_),
     numVecs (m_x_.extent(1)), vecRemainder (m_x_.extent(1) % 16),
     rows_per_thread(rows_per_thread_) {
@@ -149,7 +149,7 @@ struct SPMV_MV_test_Functor {
 
       value_type sum[16] = {};
 
-      ordinal_type remainder = vecRemainder;
+      // ordinal_type remainder = vecRemainder;
       const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
       for(ordinal_type entryIdx = 0; entryIdx < row.length; ++entryIdx) {
         const value_type val = alpha*(conjugate ? ATV::conj(row.value(entryIdx)) : row.value(entryIdx));
@@ -175,7 +175,7 @@ struct SPMV_MV_test_Functor {
 };
 
 template<class AMatrix, class XVector, class YVector>
-void spmv_mv_test(double alpha, AMatrix A, XVector x1, double beta, YVector y1) {
+void spmv_mv_test(const double& alpha, AMatrix& A, XVector& x1, const double& beta, YVector& y1) {
   using size_type    = typename AMatrix::size_type;
   using ordinal_type = typename AMatrix::non_const_ordinal_type;
 
