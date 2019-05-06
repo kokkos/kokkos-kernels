@@ -99,11 +99,108 @@ int SparseMatrix_generate(const OrdinalType nrows, const OrdinalType ncols,
   return nnz;
 }
 
+template<class AMatrix, class XVector, class YVector, bool conjugate>
+struct SPMV_MV_test_Functor {
+  using execution_space = typename AMatrix::execution_space;
+  using ordinal_type    = typename AMatrix::non_const_ordinal_type;
+  using value_type      = typename AMatrix::non_const_value_type;
+  using team_policy     = typename Kokkos::TeamPolicy<execution_space>;
+  using team_member     = typename team_policy::member_type;
+  using ATV             = Kokkos::Details::ArithTraits<value_type>;
+
+  const value_type alpha;
+  const value_type beta;
+  AMatrix m_A;
+  XVector m_x;
+  YVector m_y;
+
+  const ordinal_type numVecs;
+  const ordinal_type vecRemainder;
+  const ordinal_type rows_per_thread;
+  ordinal_type rows_per_team;
+  int x_strides[2], y_strides[2];
+
+  SPMV_MV_test_Functor (const value_type alpha_,
+                        const AMatrix m_A_,
+                        const XVector m_x_,
+                        const value_type beta_,
+                        const YVector m_y_,
+                        const ordinal_type rows_per_thread_) :
+    alpha(alpha_), m_A(m_A_), m_x(m_x_), beta(beta_), m_y(m_y_),
+    numVecs (m_x_.extent(1)), vecRemainder (m_x_.extent(1) % 16),
+    rows_per_thread(rows_per_thread_) {
+    static_assert (static_cast<int> (XVector::rank) == 2,
+                   "XVector must be a rank 2 View.");
+    static_assert (static_cast<int> (YVector::rank) == 2,
+                   "YVector must be a rank 2 View.");
+
+    m_x.stride(x_strides);
+    m_y.stride(y_strides);
+  } // SPMV_MV_test_Functor ()
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const team_member& dev) const
+  {
+    for(ordinal_type loop = 0; loop < rows_per_thread; ++loop) {
+      const ordinal_type iRow = static_cast<ordinal_type>(dev.league_rank()*dev.team_size() + dev.team_rank())*rows_per_thread + loop;
+      if (iRow >= m_A.numRows ()) {
+	return;
+      }
+
+      value_type sum[16] = {};
+
+      ordinal_type remainder = vecRemainder;
+      const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
+      for(ordinal_type entryIdx = 0; entryIdx < row.length; ++entryIdx) {
+        const value_type val = alpha*(conjugate ? ATV::conj(row.value(entryIdx)) : row.value(entryIdx));
+        const ordinal_type colIdx = row.colidx(entryIdx);
+        // value_type* KOKKOS_RESTRICT x_ptr = &m_x(colIdx, 0);
+        for(ordinal_type vecIdx = 0; vecIdx < 16; ++vecIdx) {
+          // sum[vecIdx] += *(x_ptr + x_strides[1]*vecIdx)*val;
+	  sum[vecIdx] += m_x(colIdx, vecIdx)*val;
+        }
+      }
+
+      // value_type* KOKKOS_RESTRICT y_ptr = &m_y(iRow, 0);
+      for(ordinal_type vecIdx = 0; vecIdx < 16; ++vecIdx) {
+        // *(y_ptr + y_strides[1]*vecIdx) *= beta;
+        // *(y_ptr + y_strides[1]*vecIdx) += sum[vecIdx];
+	m_y(iRow, vecIdx) = m_y(iRow, vecIdx)*beta;
+	m_y(iRow, vecIdx) += sum[vecIdx];
+      }
+
+    }
+  } // operator()
+
+};
+
+template<class AMatrix, class XVector, class YVector>
+void spmv_mv_test(double alpha, AMatrix A, XVector x1, double beta, YVector y1) {
+  using size_type    = typename AMatrix::size_type;
+  using ordinal_type = typename AMatrix::non_const_ordinal_type;
+
+  const ordinal_type numRows = A.numRows();
+  const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / numRows);
+
+  int vector_length = 1;
+  while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length < 8) ) vector_length*=2;
+  const int rows_per_thread = KokkosSparse::RowsPerThread<typename AMatrix::execution_space>(NNZPerRow);
+
+  SPMV_MV_test_Functor<AMatrix, XVector, YVector, false> op (alpha, A, x1, beta, y1, rows_per_thread);
+
+  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>::team_size_recommended(op, vector_length);
+  const int rows_per_team = rows_per_thread*team_size;
+  const size_type worksets = (numRows + rows_per_team - 1) / rows_per_team;
+
+  Kokkos::parallel_for("KokkosSparse::spmv_mv_test<MV,NoTranspose>", Kokkos::TeamPolicy<typename AMatrix::execution_space>
+                       ( worksets , team_size , vector_length ) , op );
+}
+
 template<typename Scalar, typename Layout>
 int test_spmv_mv(int numRows, int numCols, int nnz, const int numVecs,
                  const double alpha, const double beta, const char* filename,
                  const bool binaryfile, int rows_per_thread, int team_size, int vector_length,
-                 int idx_offset, int schedule, int loop, const int verbose) {
+                 int idx_offset, int schedule, int loop, const bool verbose) {
   typedef KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int> matrix_type;
   typedef typename matrix_type::non_const_value_type   value_type;
   typedef typename matrix_type::device_type            device_type;
@@ -271,6 +368,29 @@ int test_spmv_mv(int numRows, int numCols, int nnz, const int numVecs,
           2.0*nnz*loop/ave_new_time/1e9, 2.0*nnz/max_new_time/1e9, 2.0*nnz/min_new_time/1e9,
           ave_new_time/loop*1000, max_new_time*1000, min_new_time*1000,
           num_errors);
+
+
+  Kokkos::fence();
+  if(verbose) { printf("Test performance of new spmv_mv implementation\n"); }
+  // Benchmark new impl
+  min_new_time = 1.0e32;
+  max_new_time = 0.0;
+  ave_new_time = 0.0;
+  for(int i = 0; i < loop; i++) {
+    Kokkos::Timer timer;
+    spmv_mv_test(alpha, A, x1, beta, y1);
+    Kokkos::fence();
+    double time = timer.seconds();
+    ave_new_time += time;
+    if(time > max_new_time) max_new_time = time;
+    if(time < min_new_time) min_new_time = time;
+  }
+  printf("%i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %6.3lf %6.3lf %6.3lf ) %i RESULT\n",nnz, numRows,numCols,problem_size,
+          (matrix_size+vector_readwrite)/ave_new_time*loop/1024, (matrix_size+vector_readwrite)/max_new_time/1024,(matrix_size+vector_readwrite)/min_new_time/1024,
+          2.0*nnz*loop/ave_new_time/1e9, 2.0*nnz/max_new_time/1e9, 2.0*nnz/min_new_time/1e9,
+          ave_new_time/loop*1000, max_new_time*1000, min_new_time*1000,
+          num_errors);
+
   return (int)total_error;
 }
 
