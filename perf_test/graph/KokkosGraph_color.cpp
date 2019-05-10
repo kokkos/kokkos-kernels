@@ -52,8 +52,7 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
-// #include "KokkosGraph_Distance1Color.hpp"
-#include "KokkosGraph_graph_color.hpp"
+#include "KokkosGraph_Distance1Color.hpp"
 
 
 

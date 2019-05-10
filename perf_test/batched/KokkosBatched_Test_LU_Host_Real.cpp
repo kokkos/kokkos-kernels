@@ -3,7 +3,7 @@
 #define KokkosBatched_Test_LU_Host_Real 1
 #include "KokkosBatched_Test_LU_Host.hpp"
 
-using namespace KokkosBatched::Experimental;
+using namespace KokkosBatched;
 
 template<typename AlgoTagType>
 void run(const int N) {

@@ -8,7 +8,7 @@
 #include <immintrin.h>
 
 namespace KokkosBatched {
-  namespace Experimental {
+   {
 
     ///
     /// AVX256D double
