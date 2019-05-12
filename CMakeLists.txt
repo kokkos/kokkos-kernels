@@ -365,6 +365,13 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 ENDIF()
 IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
   LIST(APPEND TPL_LIST "MAGMA")
+  IF (F77_BLAS_MANGLE STREQUAL "(name,NAME) name ## _")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DADD_ -fopenmp -lgfortran")
+  ELSEIF (F77_BLAS_MANGLE STREQUAL "(name,NAME) name ## __")
+    MESSAGE(FATAL_ERROR "MAGMA does not prefer Fortran mangling with double underscore")
+  ELSE ()
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOCHANGE -fopenmp -lgfortran")
+  ENDIF()
 ENDIF()
 
 # ==================================================================
