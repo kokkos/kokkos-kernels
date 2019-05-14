@@ -7,7 +7,7 @@ NameSpace=$4            #e.g. KokkosBlas: namespace it lives in
 KokkosKernelsPath=$5
 OrdinalList="int int64_t"
 OffsetList="int size_t"
-ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
+ScalarList="dbl f Kokkos::cmplx<dbl> Kokkos::cmplx<f>"
 LayoutList="LayoutLeft LayoutRight"
 ExecMemSpaceList="Cuda,CudaSpace Cuda,CudaUVMSpace OpenMP,HostSpace Threads,HostSpace Serial,HostSpace OpenMP,Experimental::HBWSpace Threads,Experimental::HBWSpace Serial,Experimental::HBWSpace"
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 KOKKOSKERNELS_PATH=$1
 cd ${KOKKOSKERNELS_PATH}/src/impl
-mkdir generated_specializations_hpp
-mkdir generated_specializations_cpp
+rm -rf ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_cpp/*
+rm -rf ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_hpp/*
 
 #sgs
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse_ml.bash gauss_seidel_symbolic KokkosSparse_gauss_seidel_symbolic KokkosSparse_gauss_seidel_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
