@@ -312,7 +312,7 @@ class GraphColorDistance2
                   this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
             }
 
-            my_exec_space::fence();
+            my_exec_space().fence();
 
             if(this->_ticToc)
             {
@@ -345,7 +345,7 @@ class GraphColorDistance2
                                                next_iteration_recolorList,
                                                next_iteration_recolorListLength);
 
-            my_exec_space::fence();
+            my_exec_space().fence();
 
             if(_ticToc)
             {
@@ -393,7 +393,7 @@ class GraphColorDistance2
                                          current_vertexListLength);
         }
 
-        my_exec_space::fence();
+        my_exec_space().fence();
 
         if(_ticToc)
         {
@@ -485,7 +485,7 @@ class GraphColorDistance2
         KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_type, nnz_lno_temp_work_view_t, my_exec_space>(
           this->nv, this->gc_handle->get_vertex_colors(), histogram);
 
-        my_exec_space::fence();
+        my_exec_space().fence();
     }
 
 

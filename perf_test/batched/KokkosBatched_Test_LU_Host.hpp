@@ -131,7 +131,7 @@ namespace KokkosBatched {
             // initialize matrix
             Kokkos::deep_copy(a, amat);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
@@ -146,7 +146,7 @@ namespace KokkosBatched {
                                                   (int*)pp.data());
                                  });
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -187,7 +187,7 @@ namespace KokkosBatched {
               // initialize matrix
               Kokkos::deep_copy(a, amat_simd);
                 
-              HostSpaceType::fence();
+              HostSpaceType().fence();
               timer.reset();
                 
               mkl_dgetrfnp_compact(MKL_ROW_MAJOR,
@@ -195,7 +195,7 @@ namespace KokkosBatched {
                                    (double*)a.data(), a.stride_1(),
                                    (MKL_INT*)&info, format, (MKL_INT)N*VectorLength);
                 
-              HostSpaceType::fence();
+              HostSpaceType().fence();
               const double t = timer.seconds();
               tmin = std::min(tmin, t);
               tavg += (iter >= 0)*t;
@@ -238,7 +238,7 @@ namespace KokkosBatched {
       //       // initialize matrix
       //       Kokkos::deep_copy(a, amat);
 
-      //       HostSpaceType::fence();
+      //       HostSpaceType().fence();
       //       timer.reset();
 
       //       Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
@@ -250,7 +250,7 @@ namespace KokkosBatched {
       //           SerialLU<AlgoTagType>::invoke(aa);
       //         });
 
-      //       HostSpaceType::fence();
+      //       HostSpaceType().fence();
       //       const double t = timer.seconds();
       //       tmin = std::min(tmin, t);
       //       tavg += (iter >= 0)*t;
@@ -290,7 +290,7 @@ namespace KokkosBatched {
             // initialize matrix
             Kokkos::deep_copy(a, amat_simd);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::RangePolicy<HostSpaceType,ScheduleType > policy(0, N);
@@ -302,7 +302,7 @@ namespace KokkosBatched {
                                    SerialLU<AlgoTagType>::invoke(aa);
                                  });
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;

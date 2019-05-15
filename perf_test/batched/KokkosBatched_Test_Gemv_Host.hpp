@@ -110,7 +110,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(x, xvec);
             Kokkos::deep_copy(y, 0);
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
             
             Kokkos::parallel_for("KokkosBatched::PerfTest::GemvHost::CblasOpenMP",
@@ -131,7 +131,7 @@ namespace KokkosBatched {
                                    }
                                  });
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             t += (iter >= 0)*timer.seconds();
           }
           t /= iter_end;
@@ -170,7 +170,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(x, xvec);
             Kokkos::deep_copy(y, 0);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::parallel_for("KokkosBatched::PerfTest::GemvHost::SerialOpenMP",
@@ -187,7 +187,7 @@ namespace KokkosBatched {
                                    }
                                  });
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             t += (iter >= 0)*timer.seconds();
           }
           t /= iter_end;
@@ -245,7 +245,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(x, xvec_simd);
             Kokkos::deep_copy(y, 0);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::parallel_for("KokkosBatched::PerfTest::GemvHost::SIMDSerialOpenMP",
@@ -262,7 +262,7 @@ namespace KokkosBatched {
                                    }
                                  });
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             t += (iter >= 0)*timer.seconds();
           }
           t /= iter_end;

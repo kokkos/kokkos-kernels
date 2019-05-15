@@ -124,7 +124,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(b, bmat);
             Kokkos::deep_copy(c, 0);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::parallel_for("KokkosBatched::PerfTest::GemmHost::CblasOpenMP",
@@ -155,7 +155,7 @@ namespace KokkosBatched {
                   
                                  });
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -215,7 +215,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(b, bmat);
             Kokkos::deep_copy(c, 0);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
             
             if (std::is_same<value_type,double>::value) {
@@ -242,7 +242,7 @@ namespace KokkosBatched {
                                 1, size_per_grp);                
             }
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -297,7 +297,7 @@ namespace KokkosBatched {
               Kokkos::deep_copy(b, bmat_simd);
               Kokkos::deep_copy(c, 0);
                 
-              HostSpaceType::fence();
+              HostSpaceType().fence();
               timer.reset();
                 
               if (std::is_same<value_type,double>::value) {
@@ -322,7 +322,7 @@ namespace KokkosBatched {
                                   format, N*VectorLength);
               }
                 
-              HostSpaceType::fence();
+              HostSpaceType().fence();
               const double t = timer.seconds();
               tmin = std::min(tmin, t);
               tavg += (iter >= 0)*t;
@@ -381,7 +381,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(b, bmat);
             Kokkos::deep_copy(c, 0);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::parallel_for("KokkosBatched::PerfTest::GemmHost::libxswmmOpenMP",
@@ -402,7 +402,7 @@ namespace KokkosBatched {
                                                 (double*)cc.data(), (const libxsmm_blasint*)&ldc);
                                  });
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -451,7 +451,7 @@ namespace KokkosBatched {
       //       Kokkos::deep_copy(b, bmat);
       //       Kokkos::deep_copy(c, 0);
 
-      //       HostSpaceType::fence();
+      //       HostSpaceType().fence();
       //       timer.reset();
 
       //       Kokkos::parallel_for
@@ -465,7 +465,7 @@ namespace KokkosBatched {
       //             invoke(1.0, aa, bb, 1.0, cc);
       //         });
             
-      //       HostSpaceType::fence();
+      //       HostSpaceType().fence();
       //       const double t = timer.seconds();
       //       tmin = std::min(tmin, t);
       //       tavg += (iter >= 0)*t;
@@ -511,7 +511,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(b, bmat_simd);
             Kokkos::deep_copy(c, 0);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::parallel_for("KokkosBatched::PerfTest::GemmHost::SIMDSerialOpenMP",
@@ -525,7 +525,7 @@ namespace KokkosBatched {
                                      invoke(1.0, aa, bb, 1.0, cc);
                                  });
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
