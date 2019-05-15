@@ -148,7 +148,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(a, amat);
             Kokkos::deep_copy(b, bmat);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
@@ -201,7 +201,7 @@ namespace KokkosBatched {
                                    }
                                  });
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -261,7 +261,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(a, amat);
             Kokkos::deep_copy(b, bmat);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             switch (test) {
@@ -342,7 +342,7 @@ namespace KokkosBatched {
             }
             }
             
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -391,7 +391,7 @@ namespace KokkosBatched {
               Kokkos::deep_copy(a, amat_simd);
               Kokkos::deep_copy(b, bmat_simd);
                 
-              HostSpaceType::fence();
+              HostSpaceType().fence();
               timer.reset();
                 
               switch (test) {
@@ -472,7 +472,7 @@ namespace KokkosBatched {
               }
               }
                 
-              HostSpaceType::fence();
+              HostSpaceType().fence();
               const double t = timer.seconds();
               tmin = std::min(tmin, t);
               tavg += (iter >= 0)*t;
@@ -518,7 +518,7 @@ namespace KokkosBatched {
       //       Kokkos::deep_copy(a, amat);
       //       Kokkos::deep_copy(b, bmat);
 
-      //       HostSpaceType::fence();
+      //       HostSpaceType().fence();
       //       timer.reset();
 
       //       Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
@@ -552,7 +552,7 @@ namespace KokkosBatched {
       //           }
       //         });
 
-      //       HostSpaceType::fence();
+      //       HostSpaceType().fence();
       //       const double t = timer.seconds();
       //       tmin = std::min(tmin, t);
       //       tavg += (iter >= 0)*t;
@@ -594,7 +594,7 @@ namespace KokkosBatched {
             Kokkos::deep_copy(a, amat_simd);
             Kokkos::deep_copy(b, bmat_simd);
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             timer.reset();
 
             Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N);
@@ -628,7 +628,7 @@ namespace KokkosBatched {
                                    }
                                  });
 
-            HostSpaceType::fence();
+            HostSpaceType().fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;

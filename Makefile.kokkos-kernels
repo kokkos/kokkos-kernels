@@ -464,16 +464,16 @@ endif
 ifeq ($(KOKKOS_OS),Linux)
   COPY_FLAG = -u
 endif
-ifeq ($(KOKKOS_OS),Darwin)
+#ifeq ($(KOKKOS_OS),Darwin)
   # If using Homebrew on OSX with the 'coreutils' package installed
   # we have a gnu version of cp which has the -u option
-  ifeq (,$(wildcard "/usr/local/opt/coreutils/libexec/gnubin/cp"))
-    CP = /usr/local/opt/coreutils/libexec/gnubin/cp
-    COPY_FLAG = -u
-  else
-    COPY_FLAG =
-  endif
-endif
+#  ifeq (,$(wildcard "/usr/local/opt/coreutils/libexec/gnubin/cp"))
+#    CP = /usr/local/opt/coreutils/libexec/gnubin/cp
+#    COPY_FLAG = -u
+#  else
+#    COPY_FLAG =
+#  endif
+#endif
 
 KOKKOSKERNELS_INTERNAL_SRC_BLAS_NODIR = $(notdir $(KOKKOSKERNELS_INTERNAL_SRC_BLAS))
 KOKKOSKERNELS_INTERNAL_SRC_SPARSE_NODIR = $(notdir $(KOKKOSKERNELS_INTERNAL_SRC_SPARSE))

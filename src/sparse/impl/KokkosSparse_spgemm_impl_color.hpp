@@ -429,7 +429,7 @@ void
         break;
       }
     }
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
 
   if (KOKKOSKERNELS_VERBOSE){
@@ -493,7 +493,7 @@ void
       team_row_chunk_size,
       use_dynamic_schedule);
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
   }
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tTranspose Time:" << timer1.seconds() << std::endl;
@@ -537,7 +537,7 @@ void
         KokkosKernels::Impl::kk_read_1Dview_from_file(vertex_color_view, this->handle->get_spgemm_handle()->coloring_input_file.c_str());
         KokkosKernels::Impl::view_reduce_max<typename HandleType::GraphColoringHandleType::color_view_t, MyExecSpace>
               (a_row_cnt, vertex_color_view, original_num_colors);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
 
         //KokkosKernels::Impl::kk_print_1Dview(vertex_color_view);
     }
@@ -551,7 +551,7 @@ void
     if (KOKKOSKERNELS_VERBOSE){
       //create histogram and print it.
       nnz_lno_temp_work_view_t histogram ("histogram", original_num_colors + 1);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
       timer1.reset();
       KokkosKernels::Impl::kk_get_histogram
       <typename HandleType::GraphColoringHandleType::color_view_t, nnz_lno_temp_work_view_t, MyExecSpace>(a_row_cnt, vertex_color_view, histogram);
@@ -630,14 +630,14 @@ void
         <typename HandleType::GraphColoringHandleType::color_view_t //nnz_lno_temp_work_view_t
         ,nnz_lno_persistent_work_view_t, MyExecSpace>
             (a_row_cnt, num_multi_color_steps, tmp_color_view, color_xadj, color_adj);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
 
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\t\tReverse Map Create Time:" << timer1.seconds() << std::endl;
       }
       h_color_xadj = Kokkos::create_mirror_view (color_xadj);
       Kokkos::deep_copy (h_color_xadj, color_xadj);
-      MyExecSpace::fence();
+      MyExecSpace().fence();
     }
     this->handle->destroy_graph_coloring_handle();
   }
