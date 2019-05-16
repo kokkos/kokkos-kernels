@@ -63,6 +63,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] + b[i];
     return r_val;
@@ -280,6 +283,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] - b[i];
     return r_val;
@@ -343,6 +349,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
 #endif
     for (int i=0;i<l;++i)
       r_val[i] = -a[i];
@@ -537,6 +546,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
 #endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] * b[i];
@@ -823,6 +835,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
 #endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] / b[i];

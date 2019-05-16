@@ -45,6 +45,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         _data[i] = 0;
     }
@@ -55,6 +58,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         _data[i] = val;
@@ -67,6 +73,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         _data[i] = b[i];
     }
@@ -78,6 +87,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         _data[i] = p[i];
@@ -96,6 +108,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         p[i] = _data[i];
@@ -514,6 +529,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         d[i] = val;
     }
@@ -527,6 +545,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];
@@ -618,6 +639,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];
     }
@@ -699,6 +723,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         d[i] = val;
     }
@@ -711,6 +738,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];
@@ -794,6 +824,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         d[i] = val;
     }
@@ -806,6 +839,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];
