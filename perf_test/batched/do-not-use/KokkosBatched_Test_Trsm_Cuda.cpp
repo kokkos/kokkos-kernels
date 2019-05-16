@@ -311,7 +311,7 @@ namespace KokkosBatched {
         Kokkos::deep_copy(amat_device, amat);
         Kokkos::deep_copy(bmat_device, bmat);
 
-        DeviceSpaceType().fence();
+        Kokkos::fence();
 
         const double one(1.0); //, zero(0.0);
         {
@@ -334,7 +334,7 @@ namespace KokkosBatched {
               cudaMemcpy(bb_device, bb, sizeof(value_type*)*N*VectorLength, cudaMemcpyHostToDevice) != cudaSuccess) {
             Kokkos::abort("CUDA memcpy failed\n");
           }
-          DeviceSpaceType().fence();
+          Kokkos::fence();
           for (int iter=iter_begin;iter<iter_end;++iter) {
             // flush
             flush.run();
@@ -420,7 +420,7 @@ namespace KokkosBatched {
             if (stat != CUBLAS_STATUS_SUCCESS) {
               Kokkos::abort("CUBLAS Trsm Batched failed\n");
             }
-            DeviceSpaceType().fence();
+            Kokkos::fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -473,12 +473,12 @@ namespace KokkosBatched {
             Kokkos::deep_copy(a, amat);
             Kokkos::deep_copy(b, bmat);
             
-            DeviceSpaceType().fence();
+            Kokkos::fence();
             timer.reset();
             
             Kokkos::parallel_for("KokkosBatched::PerfTest::RangeTag", policy, functor_type(a, b));
 
-            DeviceSpaceType().fence();
+            Kokkos::fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -536,12 +536,12 @@ namespace KokkosBatched {
             Kokkos::deep_copy(a, amat);
             Kokkos::deep_copy(b, bmat);
             
-            DeviceSpaceType().fence();
+            Kokkos::fence();
             timer.reset();
             
             Kokkos::parallel_for("KokkosBatched::PerfTest::TeamTagV1", policy, functor_type(a, b));
 
-            DeviceSpaceType().fence();
+            Kokkos::fence();
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -608,12 +608,20 @@ namespace KokkosBatched {
             Kokkos::deep_copy(a, amat);
             Kokkos::deep_copy(b, bmat);
             
+<<<<<<< HEAD:perf_test/batched/do-not-use/KokkosBatched_Test_Trsm_Cuda.cpp
+            Kokkos::fence();
+=======
             DeviceSpaceType().fence();
+>>>>>>> develop:perf_test/batched/KokkosBatched_Test_Trsm_Cuda.cpp
             timer.reset();
             
             Kokkos::parallel_for("KokkosBatched::PerfTest::TeamTagV2", policy, functor_type(a, b));
 
+<<<<<<< HEAD:perf_test/batched/do-not-use/KokkosBatched_Test_Trsm_Cuda.cpp
+            Kokkos::fence();
+=======
             DeviceSpaceType().fence();
+>>>>>>> develop:perf_test/batched/KokkosBatched_Test_Trsm_Cuda.cpp
             const double t = timer.seconds();
             tmin = std::min(tmin, t);
             tavg += (iter >= 0)*t;
@@ -685,12 +693,20 @@ namespace KokkosBatched {
               Kokkos::deep_copy(a, amat);
               Kokkos::deep_copy(b, bmat);
                   
+<<<<<<< HEAD:perf_test/batched/do-not-use/KokkosBatched_Test_Trsm_Cuda.cpp
+              Kokkos::fence();
+=======
               DeviceSpaceType().fence();
+>>>>>>> develop:perf_test/batched/KokkosBatched_Test_Trsm_Cuda.cpp
               timer.reset();
             
               Kokkos::parallel_for("KokkosBatched::PerfTest::TeamTagV3", policy, functor_type(a, b));
 
+<<<<<<< HEAD:perf_test/batched/do-not-use/KokkosBatched_Test_Trsm_Cuda.cpp
+              Kokkos::fence();
+=======
               DeviceSpaceType().fence();
+>>>>>>> develop:perf_test/batched/KokkosBatched_Test_Trsm_Cuda.cpp
               const double t = timer.seconds();
               tmin = std::min(tmin, t);
               tavg += (iter >= 0)*t;

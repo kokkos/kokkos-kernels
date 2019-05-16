@@ -15,20 +15,6 @@
 
 namespace KokkosBatched {
 
-  template<typename T, int v = 0>
-  struct TypeTraits {
-    typedef T thread_private_type;
-    typedef T team_private_type;
-  };
-
-  template<typename T, int l, int v>
-  struct TypeTraits<Vector<SIMD<T>,l>, v> {
-    typedef typename std::conditional<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value, 
-                                      Vector<SIMD<T>,l>, T>::type thread_private_type;
-    typedef typename std::conditional<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value, 
-                                      Vector<SIMD<T>,l>, Vector<SIMD<T>,(l/v)+(l%v>0)> > team_private_type;      
-  };
-  
   template<typename T, int l>
   class Vector<SIMD<T>,l> {
   public:
@@ -38,11 +24,7 @@ namespace KokkosBatched {
 
     enum : int { vector_length = l };
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
-    typedef __device_builtin__ __builtin_align__(16) value_type data_type[vector_length];
-#else
     typedef value_type data_type[vector_length];
-#endif
 
     KOKKOS_INLINE_FUNCTION
     static const char* label() { return "SIMD"; }
@@ -63,6 +45,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         _data[i] = 0;
     }
@@ -73,6 +58,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         _data[i] = val;
@@ -85,6 +73,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         _data[i] = b[i];
     }
@@ -96,6 +87,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         _data[i] = p[i];
@@ -114,6 +108,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         p[i] = _data[i];
@@ -136,6 +133,87 @@ namespace KokkosBatched {
 namespace KokkosBatched {
 
   template<>
+  class Vector<SIMD<float>,2> {
+  public:
+    using type = Vector<SIMD<float>,2>;
+    using value_type = float;
+    using mag_type = float;
+
+    enum : int { vector_length = 2 };
+    typedef float2 data_type;
+
+    KOKKOS_INLINE_FUNCTION
+    static const char* label() { return "CudaFloat2"; }
+
+    template<typename,int>
+    friend class Vector;
+
+  private:
+    mutable data_type _data;
+
+  public:
+    KOKKOS_INLINE_FUNCTION Vector() { _data.x = 0; _data.y = 0; }
+    KOKKOS_INLINE_FUNCTION Vector(const value_type &val) { _data.x = val; _data.y = val; }
+    KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.x = b._data.x; _data.y = b._data.y; }
+    KOKKOS_INLINE_FUNCTION Vector(const float2 &val) { _data.x = val.x; _data.y = val.y; }
+
+    template<typename ArgValueType>
+    KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
+      _data.x = val; 
+      _data.y = val;
+    }
+
+    template<typename ArgValueType>
+    KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+      _data.x = b[0];
+      _data.y = b[1];
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& operator=(const float2 &val) {
+      _data.x = val.x;
+      _data.y = val.y;
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    float2 float2() const {
+      return _data;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& loadAligned(const value_type *p) {
+      _data.x = *(p  );
+      _data.y = *(p+1);
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& loadUnaligned(const value_type *p) {
+      _data.x = *(p  );
+      _data.y = *(p+1);
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void storeAligned(value_type *p) const {
+      *(p  ) = _data.x;
+      *(p+1) = _data.y;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void storeUnaligned(value_type *p) const {
+      *(p  ) = _data.x;
+      *(p+1) = _data.y;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    value_type& operator[](const int &i) const {
+      return reinterpret_cast<value_type*>(&_data)[i];
+    }
+  };
+
+  template<>
   class Vector<SIMD<double>,2> {
   public:
     using type = Vector<SIMD<double>,2>;
@@ -143,7 +221,6 @@ namespace KokkosBatched {
     using mag_type = double;
 
     enum : int { vector_length = 2 };
-    //typedef __device_builtin__ __builtin_align__(16) value_type data_type[vector_length];
     typedef double2 data_type;
 
     KOKKOS_INLINE_FUNCTION
@@ -216,6 +293,198 @@ namespace KokkosBatched {
       return reinterpret_cast<value_type*>(&_data)[i];
     }
   };
+
+  template<>
+  class Vector<SIMD<float>,4> {
+  public:
+    using type = Vector<SIMD<float>,4>;
+    using value_type = float;
+    using mag_type = float;
+
+    enum : int { vector_length = 4 };
+    typedef float4 data_type;
+
+    KOKKOS_INLINE_FUNCTION
+    static const char* label() { return "CudaFloat4"; }
+
+    template<typename,int>
+    friend class Vector;
+
+  private:
+    mutable data_type _data;
+
+  public:
+    KOKKOS_INLINE_FUNCTION Vector() { _data.x = 0; _data.y = 0; _data.z = 0; _data.w = 0; }
+    KOKKOS_INLINE_FUNCTION Vector(const value_type &val) { _data.x = val; _data.y = val; _data.z = val; _data.w = val; }
+    KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.x = b._data.x; _data.y = b._data.y; _data.z = b._data.z; _data.w = b._data.w; }
+    KOKKOS_INLINE_FUNCTION Vector(const float4 &val) { _data.x = val.x; _data.y = val.y; _data.z = val.z; _data.w = val.w; }
+
+    template<typename ArgValueType>
+    KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
+      _data.x = val; 
+      _data.y = val;
+      _data.z = val; 
+      _data.w = val;
+    }
+
+    template<typename ArgValueType>
+    KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+      _data.x = b[0];
+      _data.y = b[1];
+      _data.z = b[2];
+      _data.w = b[3];
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& operator=(const float4 &val) {
+      _data.x = val.x;
+      _data.y = val.y;
+      _data.z = val.z;
+      _data.w = val.w;
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    float4 float4() const {
+      return _data;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& loadAligned(const value_type *p) {
+      _data.x = *(p  );
+      _data.y = *(p+1);
+      _data.z = *(p+2);
+      _data.w = *(p+3);
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& loadUnaligned(const value_type *p) {
+      _data.x = *(p  );
+      _data.y = *(p+1);
+      _data.z = *(p+2);
+      _data.w = *(p+3);
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void storeAligned(value_type *p) const {
+      *(p  ) = _data.x;
+      *(p+1) = _data.y;
+      *(p+2) = _data.z;
+      *(p+3) = _data.w;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void storeUnaligned(value_type *p) const {
+      *(p  ) = _data.x;
+      *(p+1) = _data.y;
+      *(p+2) = _data.z;
+      *(p+3) = _data.w;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    value_type& operator[](const int &i) const {
+      return reinterpret_cast<value_type*>(&_data)[i];
+    }
+  };
+
+  template<>
+  class Vector<SIMD<double>,4> {
+  public:
+    using type = Vector<SIMD<double>,4>;
+    using value_type = double;
+    using mag_type = double;
+
+    enum : int { vector_length = 4 };
+    typedef double4 data_type;
+
+    KOKKOS_INLINE_FUNCTION
+    static const char* label() { return "CudaDouble4"; }
+
+    template<typename,int>
+    friend class Vector;
+
+  private:
+    mutable data_type _data;
+
+  public:
+    KOKKOS_INLINE_FUNCTION Vector() { _data.x = 0; _data.y = 0; _data.z = 0; _data.w = 0; }
+    KOKKOS_INLINE_FUNCTION Vector(const value_type &val) { _data.x = val; _data.y = val; _data.z = val; _data.w = val; }
+    KOKKOS_INLINE_FUNCTION Vector(const type &b) { _data.x = b._data.x; _data.y = b._data.y; _data.z = b._data.z; _data.w = b._data.w; }
+    KOKKOS_INLINE_FUNCTION Vector(const double4 &val) { _data.x = val.x; _data.y = val.y; _data.z = val.z; _data.w = val.w; }
+
+    template<typename ArgValueType>
+    KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
+      _data.x = val; 
+      _data.y = val;
+      _data.z = val; 
+      _data.w = val;
+    }
+
+    template<typename ArgValueType>
+    KOKKOS_INLINE_FUNCTION Vector(const Vector<SIMD<ArgValueType>,vector_length> &b) {
+      _data.x = b[0];
+      _data.y = b[1];
+      _data.z = b[2];
+      _data.w = b[3];
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& operator=(const double4 &val) {
+      _data.x = val.x;
+      _data.y = val.y;
+      _data.z = val.z;
+      _data.w = val.w;
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    double4 double4() const {
+      return _data;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& loadAligned(const value_type *p) {
+      _data.x = *(p  );
+      _data.y = *(p+1);
+      _data.z = *(p+2);
+      _data.w = *(p+3);
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    type& loadUnaligned(const value_type *p) {
+      _data.x = *(p  );
+      _data.y = *(p+1);
+      _data.z = *(p+2);
+      _data.w = *(p+3);
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void storeAligned(value_type *p) const {
+      *(p  ) = _data.x;
+      *(p+1) = _data.y;
+      *(p+2) = _data.z;
+      *(p+3) = _data.w;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void storeUnaligned(value_type *p) const {
+      *(p  ) = _data.x;
+      *(p+1) = _data.y;
+      *(p+2) = _data.z;
+      *(p+3) = _data.w;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    value_type& operator[](const int &i) const {
+      return reinterpret_cast<value_type*>(&_data)[i];
+    }
+  };
+
+
 }
 #endif
 
@@ -260,6 +529,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         d[i] = val;
     }
@@ -273,6 +545,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];
@@ -364,6 +639,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];
     }
@@ -445,6 +723,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         d[i] = val;
     }
@@ -457,6 +738,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];
@@ -540,6 +824,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
+#endif
       for (int i=0;i<vector_length;++i)
         d[i] = val;
     }
@@ -552,6 +839,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__)
+#pragma omp simd
 #endif
       for (int i=0;i<vector_length;++i)
         dd[i] = bb[i];

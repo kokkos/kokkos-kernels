@@ -63,6 +63,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] + b[i];
     return r_val;
@@ -71,13 +74,49 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
   KOKKOS_FORCEINLINE_FUNCTION 
   static
-  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
-    operator + (const Vector<SIMD<double>,2> &a,  const Vector<SIMD<double>,2> &b) {
-    double2 r_val;
-    r_val.x = a.double2().x + b.double2().x;
-    r_val.y = a.double2().y + b.double2().y;
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
+    operator + (const Vector<SIMD<float>,2> &a,  const Vector<SIMD<float>,2> &b) {
+    const float2 aa(a), bb(b);
+    /* */ float2 r_val;
+    r_val.x = aa.x + bb.x;
+    r_val.y = aa.y + bb.y;
     return r_val;
   }
+  KOKKOS_FORCEINLINE_FUNCTION 
+  static
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
+    operator + (const Vector<SIMD<double>,2> &a,  const Vector<SIMD<double>,2> &b) {
+    const double2 aa(a), bb(b);
+    /* */ double2 r_val;
+    r_val.x = aa.x + bb.x;
+    r_val.y = aa.y + bb.y;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION 
+  static
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,4)
+    operator + (const Vector<SIMD<float>,4> &a,  const Vector<SIMD<float>,4> &b) {
+    const float4 aa(a), bb(b);
+    /* */ float4 r_val;
+    r_val.x = aa.x + bb.x;
+    r_val.y = aa.y + bb.y;
+    r_val.z = aa.z + bb.z;
+    r_val.w = aa.w + bb.w;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION 
+  static
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
+    operator + (const Vector<SIMD<double>,4> &a,  const Vector<SIMD<double>,4> &b) {
+    const double4 aa(a), bb(b);
+    /* */ double4 r_val;
+    r_val.x = aa.x + bb.x;
+    r_val.y = aa.y + bb.y;
+    r_val.z = aa.z + bb.z;
+    r_val.w = aa.w + bb.w;
+    return r_val;
+  }
+
 #endif
 
   template<typename T, int l>
@@ -244,6 +283,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] - b[i];
     return r_val;
@@ -252,11 +294,46 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
   KOKKOS_FORCEINLINE_FUNCTION
   static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
+    operator - (const Vector<SIMD<float>,2> &a, const Vector<SIMD<float>,2> &b) {
+    const float2 aa(a), bb(b);
+    /* */ float2 r_val;
+    r_val.x = aa.x - bb.x;
+    r_val.y = aa.y - bb.y;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
     operator - (const Vector<SIMD<double>,2> &a, const Vector<SIMD<double>,2> &b) {
-    double2 r_val;
-    r_val.x = a.double2().x - b.double2().x;
-    r_val.y = a.double2().y - b.double2().y;
+    const double2 aa(a), bb(b);
+    /* */ double2 r_val;
+    r_val.x = aa.x - bb.x;
+    r_val.y = aa.y - bb.y;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,4)
+    operator - (const Vector<SIMD<float>,4> &a, const Vector<SIMD<float>,4> &b) {
+    const float4 aa(a), bb(b);
+    /* */ float4 r_val;
+    r_val.x = aa.x - bb.x;
+    r_val.y = aa.y - bb.y;
+    r_val.z = aa.z - bb.z;
+    r_val.w = aa.w - bb.w;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
+    operator - (const Vector<SIMD<double>,4> &a, const Vector<SIMD<double>,4> &b) {
+    const double4 aa(a), bb(b);
+    /* */ double4 r_val;
+    r_val.x = aa.x - bb.x;
+    r_val.y = aa.y - bb.y;
+    r_val.z = aa.z - bb.z;
+    r_val.w = aa.w - bb.w;
     return r_val;
   }
 #endif
@@ -272,6 +349,9 @@ namespace KokkosBatched {
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
 #endif
     for (int i=0;i<l;++i)
       r_val[i] = -a[i];
@@ -467,6 +547,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] * b[i];
     return r_val;
@@ -475,11 +558,46 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
   KOKKOS_FORCEINLINE_FUNCTION
   static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
+    operator * (const Vector<SIMD<float>,2> &a, const Vector<SIMD<float>,2> &b) {
+    const float2 aa(a), bb(b);
+    /* */ float2 r_val;
+    r_val.x = aa.x * bb.x;
+    r_val.y = aa.y * bb.y;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
     operator * (const Vector<SIMD<double>,2> &a, const Vector<SIMD<double>,2> &b) {
-    double2 r_val;
-    r_val.x = a.double2().x * b.double2().x;
-    r_val.y = a.double2().y * b.double2().y;
+    const double2 aa(a), bb(b);
+    /* */ double2 r_val;
+    r_val.x = aa.x * bb.x;
+    r_val.y = aa.y * bb.y;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,4)
+    operator * (const Vector<SIMD<float>,4> &a, const Vector<SIMD<float>,4> &b) {
+    const float4 aa(a), bb(b);
+    /* */ float4 r_val;
+    r_val.x = aa.x * bb.x;
+    r_val.y = aa.y * bb.y;
+    r_val.z = aa.z * bb.z;
+    r_val.w = aa.w * bb.w;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
+    operator * (const Vector<SIMD<double>,4> &a, const Vector<SIMD<double>,4> &b) {
+    const double4 aa(a), bb(b);
+    /* */ double4 r_val;
+    r_val.x = aa.x * bb.x;
+    r_val.y = aa.y * bb.y;
+    r_val.z = aa.z * bb.z;
+    r_val.w = aa.w * bb.w;
     return r_val;
   }
 #endif
@@ -718,6 +836,9 @@ namespace KokkosBatched {
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
     for (int i=0;i<l;++i)
       r_val[i] = a[i] / b[i];
     return r_val;
@@ -726,11 +847,46 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
   KOKKOS_FORCEINLINE_FUNCTION
   static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
+    operator / (const Vector<SIMD<float>,2> &a, const Vector<SIMD<float>,2> &b) {
+    const float2 aa(a), bb(b);
+    /* */ float2 r_val;
+    r_val.x = aa.x / bb.x;
+    r_val.y = aa.y / bb.y;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
     operator / (const Vector<SIMD<double>,2> &a, const Vector<SIMD<double>,2> &b) {
-    double2 r_val;
-    r_val.x = a.double2().x / b.double2().x;
-    r_val.y = a.double2().y / b.double2().y;
+    const double2 aa(a), bb(b);
+    /* */ double2 r_val;
+    r_val.x = aa.x / bb.x;
+    r_val.y = aa.y / bb.y;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,4)
+    operator / (const Vector<SIMD<float>,4> &a, const Vector<SIMD<float>,4> &b) {
+    const float4 aa(a), bb(b);
+    /* */ float4 r_val;
+    r_val.x = aa.x / bb.x;
+    r_val.y = aa.y / bb.y;
+    r_val.z = aa.z / bb.z;
+    r_val.w = aa.w / bb.w;
+    return r_val;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,4)
+    operator / (const Vector<SIMD<double>,4> &a, const Vector<SIMD<double>,4> &b) {
+    const double4 aa(a), bb(b);
+    /* */ double4 r_val;
+    r_val.x = aa.x / bb.x;
+    r_val.y = aa.y / bb.y;
+    r_val.z = aa.z / bb.z;
+    r_val.w = aa.w / bb.w;
     return r_val;
   }
 #endif
