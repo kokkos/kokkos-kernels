@@ -94,6 +94,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas1_team_axpby.o
   OBJ_OPENMP += Test_OpenMP_Blas1_axpy.o
   OBJ_OPENMP += Test_OpenMP_Blas1_team_axpy.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_copy.o
   OBJ_OPENMP += Test_OpenMP_Blas1_dot.o
   OBJ_OPENMP += Test_OpenMP_Blas1_team_dot.o  
   OBJ_OPENMP += Test_OpenMP_Blas1_mult.o
@@ -206,6 +207,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas1_team_axpby.o
   OBJ_CUDA += Test_Cuda_Blas1_axpy.o
   OBJ_CUDA += Test_Cuda_Blas1_team_axpy.o
+  OBJ_CUDA += Test_Cuda_Blas1_copy.o
   OBJ_CUDA += Test_Cuda_Blas1_dot.o
   OBJ_CUDA += Test_Cuda_Blas1_team_dot.o
   OBJ_CUDA += Test_Cuda_Blas1_mult.o
@@ -311,6 +313,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Blas1_team_axpby.o
   OBJ_SERIAL += Test_Serial_Blas1_axpy.o
   OBJ_SERIAL += Test_Serial_Blas1_team_axpy.o
+  OBJ_SERIAL += Test_Serial_Blas1_copy.o
   OBJ_SERIAL += Test_Serial_Blas1_dot.o
   OBJ_SERIAL += Test_Serial_Blas1_team_dot.o
   OBJ_SERIAL += Test_Serial_Blas1_mult.o
@@ -423,6 +426,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Blas1_team_axpby.o
   OBJ_THREADS += Test_Threads_Blas1_axpy.o
   OBJ_THREADS += Test_Threads_Blas1_team_axpy.o
+  OBJ_THREADS += Test_Threads_Blas1_copy.o
   OBJ_THREADS += Test_Threads_Blas1_dot.o
   OBJ_THREADS += Test_Threads_Blas1_team_dot.o
   OBJ_THREADS += Test_Threads_Blas1_mult.o
