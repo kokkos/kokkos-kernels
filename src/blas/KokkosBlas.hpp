@@ -59,7 +59,7 @@
 #include<KokkosBlas1_scal.hpp>
 #include<KokkosBlas1_sum.hpp>
 #include<KokkosBlas1_update.hpp>
-
+#include<KokkosBlas1_copy.hpp>
 
 #include<KokkosBlas2_gemv.hpp>
 

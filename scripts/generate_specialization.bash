@@ -77,3 +77,7 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash gemv KokkosB
 
 #gemm
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash gemm KokkosBlas3_gemm KokkosBlas3_gemm_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+
+#copy
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash copy KokkosBlas1_copy KokkosBlas1_copy_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash copy KokkosBlas1_copy_mv KokkosBlas1_copy_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
