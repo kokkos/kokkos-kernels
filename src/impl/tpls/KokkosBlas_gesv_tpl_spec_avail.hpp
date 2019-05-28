@@ -82,23 +82,24 @@ struct gesv_tpl_spec_avail< \
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
 #endif
 
-//#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-// && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
-// KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( double,                 Kokkos::LayoutRight, Kokkos::CudaSpace)
-//#endif
-//#if defined (KOKKOSKERNELS_INST_FLOAT) \
-// && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
-// KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( float,                  Kokkos::LayoutRight, Kokkos::CudaSpace)
-//#endif
-//#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-// && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
-// KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<double>,Kokkos::LayoutRight, Kokkos::CudaSpace)
-//#endif
-//#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-// && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
-// KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::CudaSpace)
-//#endif
-
+/*
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( double,                 Kokkos::LayoutRight, Kokkos::CudaSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( float,                  Kokkos::LayoutRight, Kokkos::CudaSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<double>,Kokkos::LayoutRight, Kokkos::CudaSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+ KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::CudaSpace)
+#endif
+*/
 #endif
 
 }
