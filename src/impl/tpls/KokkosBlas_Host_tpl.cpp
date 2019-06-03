@@ -50,7 +50,15 @@ extern "C" {
   double F77_BLAS_MANGLE(dasum, DASUM )( const int* N, const double* x, const int* x_inc);
   float  F77_BLAS_MANGLE(scasum,SCASUM)( const int* N, const std::complex<float>* x, const int* x_inc);
   double F77_BLAS_MANGLE(dzasum,DZASUM)( const int* N, const std::complex<double>* x, const int* x_inc);
-    
+
+  ///
+  /// copy
+  ///
+  void F77_BLAS_MANGLE(scopy,SCOPY)( const int* N, const float* x, const int* x_inc,  float* y, const int* y_inc);
+  void F77_BLAS_MANGLE(dcopy,DCOPY)( const int* N, const double* x, const int* x_inc, double* y, const int* y_inc);
+  void F77_BLAS_MANGLE(ccopy,CCOPY)( const int* N, const std::complex<float>* x, const int* x_inc,  std::complex<float>* y, const int* y_inc);
+  void F77_BLAS_MANGLE(zcopy,ZCOPY)( const int* N, const std::complex<double>* x, const int* x_inc, std::complex<double>* y, const int* y_inc);
+									 
   ///
   /// dot 
   ///
@@ -286,6 +294,11 @@ extern "C" {
 #define F77_FUNC_SCASUM F77_BLAS_MANGLE(scasum, SCASUM)
 #define F77_FUNC_DZASUM F77_BLAS_MANGLE(dzasum, DZASUM)
 
+#define F77_FUNC_SCOPY F77_BLAS_MANGLE(scopy, SCOPY)
+#define F77_FUNC_DCOPY F77_BLAS_MANGLE(dcopy, DCOPY)
+#define F77_FUNC_CCOPY F77_BLAS_MANGLE(ccopy, CCOPY)
+#define F77_FUNC_ZCOPY F77_BLAS_MANGLE(zcopy, ZCOPY)
+
 #define F77_FUNC_SDOT  F77_BLAS_MANGLE(sdot,SDOT)
 #define F77_FUNC_DDOT  F77_BLAS_MANGLE(ddot,DDOT)
 #define F77_FUNC_CDOTU F77_BLAS_MANGLE(cdotu,CDOTU)
@@ -354,6 +367,13 @@ namespace KokkosBlas {
     HostBlas<float>::asum(int n, 
                              const float *x, int x_inc) {
       return F77_FUNC_SASUM(&n, x, &x_inc);
+    }
+    template<>
+    void
+    HostBlas<float>::copy(int n,
+                             const float *x, int x_inc,
+                             /* */ float *y, int y_inc) {
+      F77_FUNC_SCOPY(&n, x, &x_inc, y, &y_inc);
     }
     template<>
     float
@@ -474,6 +494,13 @@ namespace KokkosBlas {
       return F77_FUNC_DASUM(&n, x, &x_inc);
     }
     template<>
+    void
+    HostBlas<double>::copy(int n,
+                             const double *x, int x_inc,
+                             /* */ double *y, int y_inc) {
+      F77_FUNC_DCOPY(&n, x, &x_inc, y, &y_inc);
+    }
+    template<>
     double
     HostBlas<double>::dot(int n, 
                             const double *x, int x_inc,
@@ -590,6 +617,13 @@ namespace KokkosBlas {
     HostBlas<std::complex<float> >::asum(int n, 
                                             const std::complex<float> *x, int x_inc) {
       return F77_FUNC_SCASUM(&n, x, &x_inc);
+    }
+    template<>
+    void
+    HostBlas<std::complex<float> >::copy(int n,
+                                            const std::complex<float> *x, int x_inc,
+                                            /* */ std::complex<float> *y, int y_inc) {
+      F77_FUNC_CCOPY(&n, x, &x_inc, y, &y_inc);
     }
     template<>
     std::complex<float>
@@ -716,6 +750,13 @@ namespace KokkosBlas {
     HostBlas<std::complex<double> >::asum(int n, 
                                             const std::complex<double> *x, int x_inc) {
       return F77_FUNC_DZASUM(&n, x, &x_inc);
+    }
+    template<>
+    void
+    HostBlas<std::complex<double> >::copy(int n,
+                                            const std::complex<double> *x, int x_inc,
+                                            /* */ std::complex<double> *y, int y_inc) {
+      F77_FUNC_ZCOPY(&n, x, &x_inc, y, &y_inc);
     }
     template<>
     std::complex<double>

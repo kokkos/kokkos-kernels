@@ -41,28 +41,18 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS_HPP_
-#define KOKKOSBLAS_HPP_
 
-#include<KokkosBlas1_abs.hpp>
-#include<KokkosBlas1_axpby.hpp>
-#include<KokkosBlas1_dot.hpp>
-#include<KokkosBlas1_fill.hpp>
-#include<KokkosBlas1_mult.hpp>
-#include<KokkosBlas1_nrm1.hpp>
-#include<KokkosBlas1_nrm2.hpp>
-#include<KokkosBlas1_nrm2_squared.hpp>
-#include<KokkosBlas1_nrm2w.hpp>
-#include<KokkosBlas1_nrm2w_squared.hpp>
-#include<KokkosBlas1_nrminf.hpp>
-#include<KokkosBlas1_reciprocal.hpp>
-#include<KokkosBlas1_scal.hpp>
-#include<KokkosBlas1_sum.hpp>
-#include<KokkosBlas1_update.hpp>
-#include<KokkosBlas1_copy.hpp>
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
+#include "KokkosKernels_config.h"
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+#include "KokkosBlas1_copy_spec.hpp"
 
-#include<KokkosBlas2_gemv.hpp>
-
-
-#include<KokkosBlas3_gemm.hpp>
+namespace KokkosBlas {
+namespace Impl {
+ KOKKOSBLAS1_COPY_MV_ETI_SPEC_INST(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace)
+} // Impl
+} // KokkosBlas
 #endif

@@ -35,7 +35,12 @@ namespace KokkosBlas {
       static
       mag_type asum(int n, 
                     const T *x, int x_inc);
-      
+
+      static 
+      void copy(int n,
+                const T *x, int x_inc,
+                /* */ T *y, int y_inc);
+			
       static 
       T dot(int n,
             const T *x, int x_inc,
