@@ -52,7 +52,8 @@
 namespace KokkosSparse {
 namespace Experimental {
 
-enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1, SEQLVLSCHED_TP2 };
+// TP2 algorithm has issues with some offset-ordinal combo to be addressed
+enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/ };
 
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
@@ -183,7 +184,7 @@ public:
 
 #endif
 
-  void reset_handle_views( const size_type nrows_ ) {
+  void reset_handle( const size_type nrows_ ) {
     set_nrows(nrows_);
     set_num_levels(0);
     level_list = signed_nnz_lno_view_t( Kokkos::ViewAllocateWithoutInitializing("level_list"), nrows_),
@@ -239,16 +240,19 @@ public:
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
       std::cout << "SEQLVLSCHD_TP1" << std::endl;;
 
-    if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 )
+    /*
+    if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
       std::cout << "SEQLVLSCHED_TP2" << std::endl;;
       std::cout << "WARNING: With CUDA this is currently only reliable with int-int ordinal-offset pair" << std::endl;
+    }
+    */
   }
 
   inline SPTRSVAlgorithm StringToSPTRSVAlgorithm(std::string & name) {
     if(name=="SPTRSV_DEFAULT")             return SPTRSVAlgorithm::SEQLVLSCHD_RP;
     else if(name=="SPTRSV_RANGEPOLICY")    return SPTRSVAlgorithm::SEQLVLSCHD_RP;
     else if(name=="SPTRSV_TEAMPOLICY1")    return SPTRSVAlgorithm::SEQLVLSCHD_TP1;
-    else if(name=="SPTRSV_TEAMPOLICY2")    return SPTRSVAlgorithm::SEQLVLSCHED_TP2;
+    /*else if(name=="SPTRSV_TEAMPOLICY2")    return SPTRSVAlgorithm::SEQLVLSCHED_TP2;*/
     else
       throw std::runtime_error("Invalid SPTRSVAlgorithm name");
   }

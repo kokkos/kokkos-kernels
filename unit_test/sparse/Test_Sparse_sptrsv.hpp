@@ -443,8 +443,8 @@ void run_test_sptrsv() {
     }
     EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
 
-#if !defined(KOKKOS_ENABLE_CUDA)
-//FIXME Issues with various integral type combos
+/*
+//FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
     Kokkos::deep_copy(lhs, 0);
     kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
     kh.get_sptrsv_handle()->print_algorithm();
@@ -460,7 +460,7 @@ void run_test_sptrsv() {
       std::cout << "Lower Tri Solve SUCCESS!" << std::endl;
     }
     EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
-#endif
+*/
 
 
     kh.destroy_sptrsv_handle();
@@ -562,8 +562,8 @@ void run_test_sptrsv() {
     }
     EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
 
-#if !defined(KOKKOS_ENABLE_CUDA)
-//FIXME Issues with various integral type combos
+/*
+//FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
     Kokkos::deep_copy(lhs, 0);
     kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
     kh.get_sptrsv_handle()->print_algorithm();
@@ -579,7 +579,7 @@ void run_test_sptrsv() {
       std::cout << "Upper Tri Solve SUCCESS!" << std::endl;
     }
     EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
-#endif
+*/
 
 
     kh.destroy_sptrsv_handle();

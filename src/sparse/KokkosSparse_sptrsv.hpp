@@ -61,7 +61,7 @@
 namespace KokkosSparse {
 namespace Experimental {
 
-#define SAME_TYPE(A, B) std::is_same<typename std::remove_const<A>::type, typename std::remove_const<B>::type>::value
+#define KOKKOSKERNELS_SPTRSV_SAME_TYPE(A, B) std::is_same<typename std::remove_const<A>::type, typename std::remove_const<B>::type>::value
 
   template <typename KernelHandle,
             typename lno_row_view_t_,
@@ -74,10 +74,10 @@ namespace Experimental {
     typedef typename KernelHandle::size_type size_type;
     typedef typename KernelHandle::nnz_lno_t ordinal_type;
 
-    static_assert(SAME_TYPE(typename lno_row_view_t_::non_const_value_type, size_type),
+    static_assert(KOKKOSKERNELS_SPTRSV_SAME_TYPE(typename lno_row_view_t_::non_const_value_type, size_type),
         "sptrsv_symbolic: A size_type must match KernelHandle size_type (const doesn't matter)");
 
-    static_assert(SAME_TYPE(typename lno_nnz_view_t_::non_const_value_type, ordinal_type),
+    static_assert(KOKKOSKERNELS_SPTRSV_SAME_TYPE(typename lno_nnz_view_t_::non_const_value_type, ordinal_type),
         "sptrsv_symbolic: A entry type must match KernelHandle entry type (aka nnz_lno_t, and const doesn't matter)");
 
 
@@ -132,11 +132,11 @@ namespace Experimental {
     typedef typename KernelHandle::nnz_lno_t ordinal_type;
     typedef typename KernelHandle::nnz_scalar_t scalar_type;
     
-    static_assert(SAME_TYPE(typename lno_row_view_t_::non_const_value_type, size_type),
+    static_assert(KOKKOSKERNELS_SPTRSV_SAME_TYPE(typename lno_row_view_t_::non_const_value_type, size_type),
         "sptrsv_solve: A size_type must match KernelHandle size_type (const doesn't matter)");
-    static_assert(SAME_TYPE(typename lno_nnz_view_t_::non_const_value_type, ordinal_type),
+    static_assert(KOKKOSKERNELS_SPTRSV_SAME_TYPE(typename lno_nnz_view_t_::non_const_value_type, ordinal_type),
         "sptrsv_solve: A entry type must match KernelHandle entry type (aka nnz_lno_t, and const doesn't matter)");
-    static_assert(SAME_TYPE(typename scalar_nnz_view_t_::value_type, scalar_type),
+    static_assert(KOKKOSKERNELS_SPTRSV_SAME_TYPE(typename scalar_nnz_view_t_::value_type, scalar_type),
         "sptrsv_solve: A scalar type must match KernelHandle entry type (aka nnz_lno_t, and const doesn't matter)");
 
     static_assert (Kokkos::Impl::is_view<BType>::value,
@@ -217,7 +217,7 @@ namespace Experimental {
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#undef SAME_TYPE
+#undef KOKKOSKERNELS_SPTRSV_SAME_TYPE
 
 #endif // KOKKOSSPARSE_SPTRSV_HPP_
 

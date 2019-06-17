@@ -580,6 +580,8 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         LowerTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
         Kokkos::parallel_for("parfor_l_team", policy_type( lvl_nodes , team_size ), tstf);
       }
+      /*
+      // TP2 algorithm has issues with some offset-ordinal combo to be addressed
       else if ( thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
         typedef Kokkos::TeamPolicy<execution_space> tvt_policy_type;
 
@@ -601,6 +603,7 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         LowerTriLvlSchedTP2SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, node_groups);
         Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type( (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size, vector_size ), tstf);
       } // end elseif
+      */
 
       node_count += lvl_nodes;
 
@@ -647,6 +650,8 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         UpperTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
         Kokkos::parallel_for("parfor_l_team", policy_type( lvl_nodes , team_size ), tstf);
       }
+      /*
+      // TP2 algorithm has issues with some offset-ordinal combo to be addressed
       else if ( thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
         typedef Kokkos::TeamPolicy<execution_space> tvt_policy_type;
 
@@ -668,6 +673,7 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         UpperTriLvlSchedTP2SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, node_groups);
         Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type( (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size, vector_size ), tstf);
       } // end elseif
+      */
 
       node_count += lvl_nodes;
 
