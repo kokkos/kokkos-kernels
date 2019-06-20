@@ -44,6 +44,216 @@
 #ifndef KOKKOSBLAS_GESV_TPL_SPEC_DECL_HPP_
 #define KOKKOSBLAS_GESV_TPL_SPEC_DECL_HPP_
 
+namespace KokkosBlas {
+namespace Impl {
+  template<class AViewType, class BViewType>
+  inline void gesv_print_specialization() {
+      #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
+        #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+          printf("KokkosBlas::gesv<> TPL MAGMA specialization for < %s , %s >\n",typeid(AViewType).name(),typeid(BViewType).name());
+        #else
+          #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+            printf("KokkosBlas::gesv<> TPL Blas specialization for < %s , %s >\n",typeid(AViewType).name(),typeid(BViewType).name());
+          #endif        
+        #endif
+      #endif
+  }
+}
+}
+
+// Generic Host side BLAS (could be MKL or whatever)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#include<KokkosBlas_Host_tpl.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+#define KOKKOSBLAS_DGESV_BLAS( LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct GESV< \
+     Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     true, ETI_SPEC_AVAIL> { \
+  typedef double SCALAR; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
+ \
+  static void \
+  gesv (const char pivot[], \
+        const AViewType& A, \
+        const BViewType& B) { \
+    \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,double]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
+    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    \
+    const int N    = static_cast<int> (A.extent(1)); \
+    const int AST  = static_cast<int> (A.stride(1)); \
+    const int LDA  = (AST == 0) ? 1 : AST; \
+    const int BST  = static_cast<int> (B.stride(1)); \
+    const int LDB  = (BST == 0) ? 1 : BST; \
+    const int NRHS = static_cast<int> (B.extent(1)); \
+    \
+    int info = 0; \
+    \
+    if(pivot_t) { \
+      int *ipiv = NULL; \
+      ipiv = (int*)malloc(N*sizeof(int)); \
+      HostBlas<double>::gesv (N, NRHS, A.data(), LDA, ipiv, B.data(), LDB, info); \
+      free( ipiv ); \
+    } \
+    Kokkos::Profiling::popRegion(); \
+  } \
+};
+
+#define KOKKOSBLAS_SGESV_BLAS( LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct GESV< \
+     Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     true, ETI_SPEC_AVAIL> { \
+  typedef float SCALAR; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
+      \
+  static void \
+  gesv (const char pivot[], \
+        const AViewType& A, \
+        const BViewType& B) { \
+    \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,float]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
+    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    \
+    const int N    = static_cast<int> (A.extent(1)); \
+    const int AST  = static_cast<int> (A.stride(1)); \
+    const int LDA  = (AST == 0) ? 1 : AST; \
+    const int BST  = static_cast<int> (B.stride(1)); \
+    const int LDB  = (BST == 0) ? 1 : BST; \
+    const int NRHS = static_cast<int> (B.extent(1)); \
+    \
+    int info = 0; \
+    \
+    if(pivot_t) { \
+      int *ipiv = NULL; \
+      ipiv = (int*)malloc(N*sizeof(int)); \
+      HostBlas<float>::gesv (N, NRHS, A.data(), LDA, ipiv, B.data(), LDB, info); \
+      free( ipiv ); \
+    } \
+    Kokkos::Profiling::popRegion(); \
+  } \
+};
+
+#define KOKKOSBLAS_ZGESV_BLAS( LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct GESV< \
+     Kokkos::View<Kokkos::complex<double>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<Kokkos::complex<double>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     true, ETI_SPEC_AVAIL> { \
+  typedef Kokkos::complex<double> SCALAR; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
+      \
+  static void \
+  gesv (const char pivot[], \
+        const AViewType& A, \
+        const BViewType& B) { \
+    \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,complex<double>]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
+    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    \
+    const int N    = static_cast<int> (A.extent(1)); \
+    const int AST  = static_cast<int> (A.stride(1)); \
+    const int LDA  = (AST == 0) ? 1 : AST; \
+    const int BST  = static_cast<int> (B.stride(1)); \
+    const int LDB  = (BST == 0) ? 1 : BST; \
+    const int NRHS = static_cast<int> (B.extent(1)); \
+    \
+    int info = 0; \
+    \
+    if(pivot_t) { \
+      int *ipiv = NULL; \
+      ipiv = (int*)malloc(N*sizeof(int)); \
+      HostBlas<std::complex<double> >::gesv \
+        (N, NRHS, reinterpret_cast<std::complex<double>*>(A.data()), LDA, ipiv, reinterpret_cast<std::complex<double>*>(B.data()), LDB, info); \
+      free( ipiv ); \
+    } \
+    Kokkos::Profiling::popRegion(); \
+  } \
+}; \
+
+#define KOKKOSBLAS_CGESV_BLAS( LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct GESV< \
+     Kokkos::View<Kokkos::complex<float>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<Kokkos::complex<float>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     true, ETI_SPEC_AVAIL> { \
+  typedef Kokkos::complex<float> SCALAR; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
+  typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
+      \
+  static void \
+  gesv (const char pivot[], \
+        const AViewType& A, \
+        const BViewType& B) { \
+    \
+    Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,complex<float>]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
+    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    \
+    const int N    = static_cast<int> (A.extent(1)); \
+    const int AST  = static_cast<int> (A.stride(1)); \
+    const int LDA  = (AST == 0) ? 1 : AST; \
+    const int BST  = static_cast<int> (B.stride(1)); \
+    const int LDB  = (BST == 0) ? 1 : BST; \
+    const int NRHS = static_cast<int> (B.extent(1)); \
+    \
+    int info = 0; \
+    \
+    if(pivot_t) { \
+      int *ipiv = NULL; \
+      ipiv = (int*)malloc(N*sizeof(int)); \
+      HostBlas<std::complex<float> >::gesv \
+        (N, NRHS, reinterpret_cast<std::complex<float>*>(A.data()), LDA, ipiv, reinterpret_cast<std::complex<float>*>(B.data()), LDB, info); \
+      free( ipiv ); \
+    } \
+    Kokkos::Profiling::popRegion(); \
+  } \
+};
+
+KOKKOSBLAS_DGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS_DGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+
+KOKKOSBLAS_SGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS_SGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+
+KOKKOSBLAS_ZGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS_ZGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+
+KOKKOSBLAS_CGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS_CGESV_BLAS( Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+
+}
+}
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
+
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 #include<KokkosBlas_tpl_spec.hpp>
@@ -71,6 +281,7 @@ struct GESV< \
         const BViewType& B) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,double]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
     const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
     const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \
@@ -117,6 +328,7 @@ struct GESV< \
         const BViewType& B) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,float]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
     const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
     const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \
@@ -163,6 +375,7 @@ struct GESV< \
         const BViewType& B) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,complex<double>]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
     const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
     const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \
@@ -209,6 +422,7 @@ struct GESV< \
         const BViewType& B) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,complex<float>]"); \
+    gesv_print_specialization<AViewType,BViewType>(); \
     const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
     const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \

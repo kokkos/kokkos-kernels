@@ -93,6 +93,14 @@ gesv (const char pivot[],
       "Valid values include 'N' or 'n' (No pivoting), 'Y' or 'y' (partial pivoting).";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  if(!((pivot[0] == 'Y') || (pivot[0] == 'y'))) {
+    std::ostringstream os;
+    os << "KokkosBlas::gesv: pivot[0] = '" << pivot[0] << "'. " <<
+      "TPL BLAS does not support no pivoting.";
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+#endif
 
   // Check compatibility of dimensions at run time.
   int64_t A0 = A.extent(0);
