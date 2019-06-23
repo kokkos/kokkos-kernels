@@ -89,7 +89,7 @@ struct GESV< \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,double]"); \
     gesv_print_specialization<AViewType,BViewType>(); \
-    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -100,11 +100,11 @@ struct GESV< \
     \
     int info = 0; \
     \
-    if(pivot_t) { \
-      int *ipiv = NULL; \
-      ipiv = (int*)malloc(N*sizeof(int)); \
+    if(with_pivot) { \
+      int *ipiv = nullptr; \
+      ipiv = new int[N]; \
       HostBlas<double>::gesv (N, NRHS, A.data(), LDA, ipiv, B.data(), LDB, info); \
-      free( ipiv ); \
+      delete [] ipiv; \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -131,7 +131,7 @@ struct GESV< \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,float]"); \
     gesv_print_specialization<AViewType,BViewType>(); \
-    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -142,11 +142,11 @@ struct GESV< \
     \
     int info = 0; \
     \
-    if(pivot_t) { \
-      int *ipiv = NULL; \
-      ipiv = (int*)malloc(N*sizeof(int)); \
+    if(with_pivot) { \
+      int *ipiv = nullptr; \
+      ipiv = new int[N]; \
       HostBlas<float>::gesv (N, NRHS, A.data(), LDA, ipiv, B.data(), LDB, info); \
-      free( ipiv ); \
+      delete [] ipiv; \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -173,7 +173,7 @@ struct GESV< \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,complex<double>]"); \
     gesv_print_specialization<AViewType,BViewType>(); \
-    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -184,12 +184,12 @@ struct GESV< \
     \
     int info = 0; \
     \
-    if(pivot_t) { \
-      int *ipiv = NULL; \
-      ipiv = (int*)malloc(N*sizeof(int)); \
+    if(with_pivot) { \
+      int *ipiv = nullptr; \
+      ipiv = new int[N]; \
       HostBlas<std::complex<double> >::gesv \
         (N, NRHS, reinterpret_cast<std::complex<double>*>(A.data()), LDA, ipiv, reinterpret_cast<std::complex<double>*>(B.data()), LDB, info); \
-      free( ipiv ); \
+      delete [] ipiv; \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -216,7 +216,7 @@ struct GESV< \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,complex<float>]"); \
     gesv_print_specialization<AViewType,BViewType>(); \
-    const bool pivot_t = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -227,12 +227,12 @@ struct GESV< \
     \
     int info = 0; \
     \
-    if(pivot_t) { \
-      int *ipiv = NULL; \
-      ipiv = (int*)malloc(N*sizeof(int)); \
+    if(with_pivot) { \
+      int *ipiv = nullptr; \
+      ipiv = new int[N]; \
       HostBlas<std::complex<float> >::gesv \
         (N, NRHS, reinterpret_cast<std::complex<float>*>(A.data()), LDA, ipiv, reinterpret_cast<std::complex<float>*>(B.data()), LDB, info); \
-      free( ipiv ); \
+      delete [] ipiv; \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
