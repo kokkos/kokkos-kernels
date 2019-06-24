@@ -573,12 +573,12 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
       else if ( thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1 ) {
         typedef Kokkos::TeamPolicy<execution_space> policy_type;
         int team_size = thandle.get_team_size();
-        if ( team_size == -1 ) {
-          team_size = std::is_same< typename Kokkos::DefaultExecutionSpace::memory_space, Kokkos::HostSpace >::value ? 1 : 256;
-        }
 
         LowerTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
-        Kokkos::parallel_for("parfor_l_team", policy_type( lvl_nodes , team_size ), tstf);
+        if ( team_size == -1 )
+          Kokkos::parallel_for("parfor_l_team", policy_type( lvl_nodes , Kokkos::AUTO ), tstf);
+        else
+          Kokkos::parallel_for("parfor_l_team", policy_type( lvl_nodes , team_size ), tstf);
       }
       /*
       // TP2 algorithm has issues with some offset-ordinal combo to be addressed
@@ -643,12 +643,12 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         typedef Kokkos::TeamPolicy<execution_space> policy_type;
 
         int team_size = thandle.get_team_size();
-        if ( team_size == -1 ) {
-          team_size = std::is_same< typename Kokkos::DefaultExecutionSpace::memory_space, Kokkos::HostSpace >::value ? 1 : 256;
-        }
 
         UpperTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
-        Kokkos::parallel_for("parfor_l_team", policy_type( lvl_nodes , team_size ), tstf);
+        if ( team_size == -1 )
+          Kokkos::parallel_for("parfor_u_team", policy_type( lvl_nodes , Kokkos::AUTO ), tstf);
+        else
+          Kokkos::parallel_for("parfor_u_team", policy_type( lvl_nodes , team_size ), tstf);
       }
       /*
       // TP2 algorithm has issues with some offset-ordinal combo to be addressed
