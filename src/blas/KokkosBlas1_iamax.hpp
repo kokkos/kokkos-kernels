@@ -55,7 +55,7 @@ namespace KokkosBlas {
 ///
 /// \param x [in] Input 1-D View.
 ///
-/// \return The (smallest) index of the element of the maximum magnitude; a single value.
+/// \return The (smallest) index of the element of the maximum magnitude; a single value.   
 template<class XVector>
 typename XVector::size_type iamax (const XVector& x)
 {
@@ -90,10 +90,10 @@ typename XVector::size_type iamax (const XVector& x)
 /// Replace each entry in R with the (smallest) index of the element of the maximum magnitude of the
 /// corresponding entry in X.
 ///
-/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
-/// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
-///   the same rank as RMV, and its entries must be assignable to
-///   those of RMV.
+/// \tparam RMV 0-D or 1-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+///
+/// Special note for TPL cuBLAS:  RMV must be 0-D view and XMV must be 1-D view, and the index returned in RMV is 1-based since cuBLAS uses 1-based indexing for compatibility with Fortran
 template<class RV, class XMV>
 void
 iamax (const RV& R, const XMV& X,
@@ -128,8 +128,8 @@ iamax (const RV& R, const XMV& X,
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
-  // Create unmanaged versions of the input Views.  RV and XMV may be
-  // rank 1 or rank 2.
+  // Create unmanaged versions of the input Views.  RV may be rank 0 or rank 2. 
+  // XMV may be rank 1 or rank 2.
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
       RV::rank == 0,
