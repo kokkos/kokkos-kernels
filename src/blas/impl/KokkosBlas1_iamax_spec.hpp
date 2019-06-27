@@ -77,6 +77,13 @@ struct iamax_eti_spec_avail {
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        1> { enum : bool { value = true }; }; \
+    template<> \
+    struct iamax_eti_spec_avail< \
+        Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+        Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         1> { enum : bool { value = true }; };
 
 #define KOKKOSBLAS1_IAMAX_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
@@ -91,22 +98,22 @@ struct iamax_eti_spec_avail {
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX( INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST( INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     template<> \
     struct iamax_eti_spec_avail< \
         Kokkos::View<INDEX_TYPE*, \
                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                Kokkos::LayoutLeft, LAYOUT>::type, \
-                     Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         2> { enum : bool { value = true }; };
 
 #define KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
-    KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX( unsigned long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-    KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX( unsigned int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-    KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX( int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
+    KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST( unsigned long, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+    KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST( unsigned int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+    KOKKOSBLAS1_IAMAX_MV_ETI_SPEC_AVAIL_INDEX_HOST( int, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)
 
 // Include the actual specialization declarations
 #include<KokkosBlas1_iamax_tpl_spec_avail.hpp>
@@ -213,8 +220,13 @@ struct Iamax<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 //
 #define KOKKOSBLAS1_IAMAX_ETI_SPEC_DECL_INDEX( INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct Iamax< \
-         Kokkos::View<INDEX_TYPE, \
-                      LAYOUT, Kokkos::HostSpace, \
+         Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace, \
+                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+         1, false, true>; \
+extern template struct Iamax< \
+         Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -232,8 +244,13 @@ extern template struct Iamax< \
 //
 #define KOKKOSBLAS1_IAMAX_ETI_SPEC_INST_INDEX( INDEX_TYPE, SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Iamax< \
-         Kokkos::View<INDEX_TYPE, \
-                      LAYOUT, Kokkos::HostSpace, \
+         Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace, \
+                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+         1, false, true>; \
+template struct Iamax< \
+         Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -256,7 +273,7 @@ extern template struct Iamax< \
          Kokkos::View<INDEX_TYPE*, \
                       typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                 Kokkos::LayoutLeft, LAYOUT>::type, \
-                      Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -277,7 +294,7 @@ template struct Iamax< \
          Kokkos::View<INDEX_TYPE*, \
                       typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
                                                 Kokkos::LayoutLeft, LAYOUT>::type, \
-                      Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                      Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \

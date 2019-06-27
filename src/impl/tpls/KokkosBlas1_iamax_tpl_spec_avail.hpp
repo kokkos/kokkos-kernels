@@ -94,22 +94,29 @@ Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1> { enum : bool { value = true }; }; \
+template<class ExecSpace> \
+struct iamax_tpl_spec_avail< \
+Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 1> { enum : bool { value = true }; };
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, double,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, double,                 Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, double,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
 #endif
 #if defined (KOKKOSKERNELS_INST_FLOAT)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, float,                   Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, float,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, float,                   Kokkos::LayoutLeft, Kokkos::CudaSpace)
 #endif
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, Kokkos::complex<double>,Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 #endif
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_)
-KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
 #endif
 
