@@ -103,6 +103,7 @@ template<class RV, class XMV, class MagType, class SizeType = typename XMV::size
 struct MV_Iamax_FunctorVector
 {
   typedef typename XMV::execution_space                         execution_space;
+  typedef typename XMV::memory_space                            memory_space;
   typedef SizeType                                              size_type;
   typedef MagType                                               mag_type;
   typedef typename XMV::non_const_value_type                    xvalue_type;
@@ -131,6 +132,9 @@ struct MV_Iamax_FunctorVector
     static_assert (RV::rank == 1 && XMV::rank == 2,
                    "KokkosBlas::Impl::MV_Iamax_FunctorVector: "
                    "RV must have rank 1 and XMV must have rank 2.");
+    static_assert (Kokkos::Impl::MemorySpaceAccess< typename XMV::device_type::memory_space, typename RV::device_type::memory_space >::accessible,
+                   "KokkosBlas::Impl::MV_Iamax_FunctorVector: "
+                   "RV and XMV must have the same memory space if RV is 1-D view.");
   }
 
     KOKKOS_INLINE_FUNCTION
@@ -175,8 +179,16 @@ V_Iamax_Invoke (const RV& r, const XV& X)
   typedef V_Iamax_Functor<RV, XV, mag_type, SizeType> functor_type;
   functor_type op (X);
   maxloc_type maxloc;
-  Kokkos::parallel_reduce ("KokkosBlas::Iamax::S0", policy, op, maxloc_reducer(maxloc));
-  r() = maxloc.loc;  
+  Kokkos::parallel_reduce ("KokkosBlas::Iamax::S0", policy, op, maxloc_reducer(maxloc)); 
+
+  if(Kokkos::Impl::MemorySpaceAccess< typename maxloc_reducer::result_view_type::memory_space, typename RV::device_type::memory_space >::accessible) {
+    r() = maxloc.loc;
+  }
+  else {
+    typename RV::value_type r_val = maxloc.loc;
+    Kokkos::View<typename RV::value_type, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > r_loc(&r_val);
+    Kokkos::deep_copy(r,r_loc);
+  }
 }
 
 
@@ -214,14 +226,9 @@ MV_Iamax_Invoke (const RV& r, const XMV& X)
     V_Iamax_Invoke<RV0D, XV1D, SizeType> (r_0, X_0);
   }
   else {
-    typedef Kokkos::View<typename RV::non_const_value_type *,
-                         typename RV::array_layout,
-                         typename XMV::device_type> RV_D;
-    typedef MV_Iamax_FunctorVector<RV_D, XMV, mag_type, SizeType> functor_type;
-    RV_D r_d("r_d", r.extent(0));
-    functor_type op (r_d,X);
+    typedef MV_Iamax_FunctorVector<RV, XMV, mag_type, SizeType> functor_type;
+    functor_type op (r,X);
     Kokkos::parallel_for ("KokkosBlas::Iamax::S1", policy, op);
-    Kokkos::deep_copy(r,r_d);
   }
 }
 
