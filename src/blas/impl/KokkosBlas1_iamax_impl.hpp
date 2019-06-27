@@ -144,7 +144,7 @@ struct MV_Iamax_FunctorVector
       const int tid = teamMember.team_rank(); // threadId
 
       maxloc_type col_maxloc;
-      Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, m_x.extent(0)), [&] (const int& i, maxloc_type& thread_lmaxloc) {
+      Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, m_x.extent(0)), [&] (const int i, maxloc_type& thread_lmaxloc) {
         mag_type val = IPT::norm (m_x(i,lid));
         if( val > thread_lmaxloc.val ) { thread_lmaxloc.val = val; thread_lmaxloc.loc = i; }      
       }, maxloc_reducer(col_maxloc));
