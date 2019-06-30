@@ -136,7 +136,10 @@ iamax (const RV& R, const XMV& X,
       typename RV::non_const_value_type,
       typename RV::non_const_value_type* >::type,
     typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
-    typename RV::device_type,
+    typename Kokkos::Impl::if_c<
+      Kokkos::Impl::is_same<typename RV::device_type::memory_space, Kokkos::HostSpace>::value,
+      Kokkos::HostSpace,
+      typename RV::device_type >::type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV_Internal;
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
