@@ -63,7 +63,7 @@ struct V_Iamax_Functor
   typedef MagType                                                  mag_type;
   typedef typename XV::non_const_value_type                        xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type>    IPT;
-  typedef typename Kokkos::MaxLoc<mag_type,size_type>::value_type  maxloc_type;
+  typedef typename RV::value_type                                  value_type;
   
   typename XV::const_type m_x;
 
@@ -86,10 +86,36 @@ struct V_Iamax_Functor
                    "RV must have rank 0 and XV must have rank 1.");
   }
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type & i, maxloc_type & lmaxloc ) const {
-	mag_type val = IPT::norm (m_x(i));
-    if( val > lmaxloc.val ) { lmaxloc.val = val; lmaxloc.loc = i; }
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type& lmaxloc) const
+  {
+    mag_type val    = IPT::norm (m_x(i));
+    mag_type maxval = IPT::norm (m_x(lmaxloc));
+    if(val > maxval) lmaxloc = i;
+  }  
+ 
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type& update) const
+  {
+    update = Kokkos::reduction_identity<typename RV::value_type>::max();
+  }
+  
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update, const volatile value_type& source) const
+  {
+    mag_type source_val = IPT::norm (m_x(source));
+    mag_type update_val = IPT::norm (m_x(update));
+    if(update_val < source_val)
+      update = source;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (value_type& update, const value_type& source) const
+  {
+    mag_type source_val = IPT::norm (m_x(source));
+    mag_type update_val = IPT::norm (m_x(update));
+    if(update_val < source_val)
+      update = source;
   }
 };
 
@@ -108,15 +134,13 @@ struct MV_Iamax_FunctorVector
   typedef MagType                                               mag_type;
   typedef typename XMV::non_const_value_type                    xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::MaxLoc<mag_type,size_type>                         maxloc_reducer;
-  typedef typename Kokkos::MaxLoc<mag_type,size_type>::value_type    maxloc_type;
-  typedef typename Kokkos::TeamPolicy<execution_space>::member_type  member_type;
+  typedef typename RV::value_type                               value_type[];
 
+  size_type value_count;
   typename XMV::const_type m_x;
-  typename RV::non_const_type m_r;
   
-  MV_Iamax_FunctorVector (const RV& r, const XMV& x) :
-    m_r (r), m_x (x)
+  MV_Iamax_FunctorVector (const XMV& x) :
+    value_count (x.extent(1)), m_x (x)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::MV_Iamax_FunctorVector: "
@@ -132,24 +156,75 @@ struct MV_Iamax_FunctorVector
     static_assert (RV::rank == 1 && XMV::rank == 2,
                    "KokkosBlas::Impl::MV_Iamax_FunctorVector: "
                    "RV must have rank 1 and XMV must have rank 2.");
-    static_assert (Kokkos::Impl::MemorySpaceAccess< typename XMV::device_type::memory_space, typename RV::device_type::memory_space >::accessible,
-                   "KokkosBlas::Impl::MV_Iamax_FunctorVector: "
-                   "RV and XMV must have the same memory space if RV is 1-D view.");
   }
 
-    KOKKOS_INLINE_FUNCTION
-    void operator() (const member_type &teamMember) const
-    {
-      const int lid = teamMember.league_rank();// teamId
-      const int tid = teamMember.team_rank(); // threadId
-
-      maxloc_type col_maxloc;
-      Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, m_x.extent(0)), [&] (const int i, maxloc_type& thread_lmaxloc) {
-        mag_type val = IPT::norm (m_x(i,lid));
-        if( val > thread_lmaxloc.val ) { thread_lmaxloc.val = val; thread_lmaxloc.loc = i; }      
-      }, maxloc_reducer(col_maxloc));
-      if (tid==0) m_r(lid) = col_maxloc.loc;
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type i, value_type lmaxloc) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type j = 0; j < numVecs; ++j) {
+      mag_type val    = IPT::norm (m_x(i,j));
+      mag_type maxval = IPT::norm (m_x(lmaxloc[j],j));
+      if(val > maxval) lmaxloc[j] = i;
     }
+  }  
+ 
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type update) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type j = 0; j < numVecs; ++j) {
+      update[j] = Kokkos::reduction_identity<typename RV::value_type>::max();
+    }
+  }
+  
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type update, const volatile value_type source) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type j = 0; j < numVecs; ++j) {
+      mag_type source_val = IPT::norm (m_x(source[j],j));
+      mag_type update_val = IPT::norm (m_x(update[j],j));
+      if(update_val < source_val)
+        update[j] = source[j];
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (value_type update, const value_type source) const
+  {
+    const size_type numVecs = value_count;
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type j = 0; j < numVecs; ++j) {
+      mag_type source_val = IPT::norm (m_x(source[j],j));
+      mag_type update_val = IPT::norm (m_x(update[j],j));
+      if(update_val < source_val)
+        update[j] = source[j];
+    }
+  }
 };
 
 
@@ -163,9 +238,6 @@ V_Iamax_Invoke (const RV& r, const XV& X)
   typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> AT;
   typedef typename AT::mag_type mag_type;
 
-  typedef typename Kokkos::MaxLoc<mag_type,SizeType>::value_type maxloc_type;
-  typedef Kokkos::MaxLoc<mag_type,SizeType> maxloc_reducer;
-
   const SizeType numRows = static_cast<SizeType> (X.extent(0));
 
   // Avoid MaxLoc Reduction if this is a zero length view
@@ -178,17 +250,7 @@ V_Iamax_Invoke (const RV& r, const XV& X)
 
   typedef V_Iamax_Functor<RV, XV, mag_type, SizeType> functor_type;
   functor_type op (X);
-  maxloc_type maxloc;
-  Kokkos::parallel_reduce ("KokkosBlas::Iamax::S0", policy, op, maxloc_reducer(maxloc)); 
-
-  if(Kokkos::Impl::MemorySpaceAccess< typename maxloc_reducer::result_view_type::memory_space, typename RV::device_type::memory_space >::accessible) {
-    r() = maxloc.loc;
-  }
-  else {
-    typename RV::value_type r_val = maxloc.loc;
-    Kokkos::View<typename RV::value_type, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > r_loc(&r_val);
-    Kokkos::deep_copy(r,r_loc);
-  }
+  Kokkos::parallel_reduce ("KokkosBlas::Iamax::S0", policy, op, r);
 }
 
 
@@ -210,8 +272,7 @@ MV_Iamax_Invoke (const RV& r, const XMV& X)
     return;
   }
 
-  typedef Kokkos::TeamPolicy<execution_space>  team_policy;
-  const team_policy policy( r.extent(0), Kokkos::AUTO );
+  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.
@@ -227,8 +288,8 @@ MV_Iamax_Invoke (const RV& r, const XMV& X)
   }
   else {
     typedef MV_Iamax_FunctorVector<RV, XMV, mag_type, SizeType> functor_type;
-    functor_type op (r,X);
-    Kokkos::parallel_for ("KokkosBlas::Iamax::S1", policy, op);
+    functor_type op (X);
+    Kokkos::parallel_reduce ("KokkosBlas::Iamax::S1", policy, op, r);
   }
 }
 
