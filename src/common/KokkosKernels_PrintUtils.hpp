@@ -46,6 +46,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Timer.hpp"
+#include <fstream>
 
 namespace KokkosKernels{
 
@@ -130,6 +131,27 @@ inline void kk_print_1Dview(idx_array_type view, bool print_all = false, size_t 
       std::cout << host_view(i) << " ";
     }
     std::cout << std::endl;
+  }
+}
+
+/**
+ * \brief Stores the given view to a file.
+ * \param view: input view to store.
+ * \param file: the output file where the view is to be stored.
+ */
+template <typename idx_array_type>
+inline void kk_print_to_file(idx_array_type view, char* file){
+
+  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view (view);
+  Kokkos::deep_copy (host_view , view);
+  idx nr = host_view.extent(0);
+  std::ofstream out;
+  out.open(file);
+
+  for(idx i = 0; i < nr; ++i){
+    out << host_view(i) << "\n";
   }
 }
 
