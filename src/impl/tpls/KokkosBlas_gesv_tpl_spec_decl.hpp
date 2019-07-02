@@ -46,14 +46,14 @@
 
 namespace KokkosBlas {
 namespace Impl {
-  template<class AViewType, class BViewType>
+  template<class AViewType, class BViewType, class PViewType>
   inline void gesv_print_specialization() {
       #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
         #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-          printf("KokkosBlas::gesv<> TPL MAGMA specialization for < %s , %s >\n",typeid(AViewType).name(),typeid(BViewType).name());
+          printf("KokkosBlas::gesv<> TPL MAGMA specialization for < %s , %s, %s >\n",typeid(AViewType).name(),typeid(BViewType).name(),typeid(PViewType).name());
         #else
           #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-            printf("KokkosBlas::gesv<> TPL Blas specialization for < %s , %s >\n",typeid(AViewType).name(),typeid(BViewType).name());
+            printf("KokkosBlas::gesv<> TPL Blas specialization for < %s , %s, %s >\n",typeid(AViewType).name(),typeid(BViewType).name(),typeid(PViewType).name());
           #endif        
         #endif
       #endif
@@ -75,21 +75,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef double SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
- \
+  typedef Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+  \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,double]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -101,10 +105,7 @@ struct GESV< \
     int info = 0; \
     \
     if(with_pivot) { \
-      int *ipiv = nullptr; \
-      ipiv = new int[N]; \
-      HostBlas<double>::gesv (N, NRHS, A.data(), LDA, ipiv, B.data(), LDB, info); \
-      delete [] ipiv; \
+      HostBlas<double>::gesv (N, NRHS, A.data(), LDA, IPIV.data(), B.data(), LDB, info); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -117,21 +118,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef float SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-      \
+  typedef Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+  \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,float]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -143,10 +148,7 @@ struct GESV< \
     int info = 0; \
     \
     if(with_pivot) { \
-      int *ipiv = nullptr; \
-      ipiv = new int[N]; \
-      HostBlas<float>::gesv (N, NRHS, A.data(), LDA, ipiv, B.data(), LDB, info); \
-      delete [] ipiv; \
+      HostBlas<float>::gesv (N, NRHS, A.data(), LDA, IPIV.data(), B.data(), LDB, info); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -159,21 +161,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<Kokkos::complex<double>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef Kokkos::complex<double> SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-      \
+  typedef Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+  \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,complex<double>]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -185,11 +191,8 @@ struct GESV< \
     int info = 0; \
     \
     if(with_pivot) { \
-      int *ipiv = nullptr; \
-      ipiv = new int[N]; \
       HostBlas<std::complex<double> >::gesv \
-        (N, NRHS, reinterpret_cast<std::complex<double>*>(A.data()), LDA, ipiv, reinterpret_cast<std::complex<double>*>(B.data()), LDB, info); \
-      delete [] ipiv; \
+        (N, NRHS, reinterpret_cast<std::complex<double>*>(A.data()), LDA, IPIV.data(), reinterpret_cast<std::complex<double>*>(B.data()), LDB, info); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -202,21 +205,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<Kokkos::complex<float>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef Kokkos::complex<float> SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-      \
+  typedef Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+  \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,complex<float>]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool with_pivot = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
     const int AST  = static_cast<int> (A.stride(1)); \
@@ -228,11 +235,8 @@ struct GESV< \
     int info = 0; \
     \
     if(with_pivot) { \
-      int *ipiv = nullptr; \
-      ipiv = new int[N]; \
       HostBlas<std::complex<float> >::gesv \
-        (N, NRHS, reinterpret_cast<std::complex<float>*>(A.data()), LDA, ipiv, reinterpret_cast<std::complex<float>*>(B.data()), LDB, info); \
-      delete [] ipiv; \
+        (N, NRHS, reinterpret_cast<std::complex<float>*>(A.data()), LDA, IPIV.data(), reinterpret_cast<std::complex<float>*>(B.data()), LDB, info); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -268,22 +272,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef double SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
- \
+  typedef Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+  \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,double]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
-    const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     magma_int_t N    = static_cast<magma_int_t> (A.extent(1)); \
     magma_int_t AST  = static_cast<magma_int_t> (A.stride(1)); \
@@ -295,15 +302,12 @@ struct GESV< \
     KokkosBlas::Impl::MagmaSingleton & s = KokkosBlas::Impl::MagmaSingleton::singleton(); \
     magma_int_t  info = 0; \
     \
-    if(pivot_t) { \
-      magma_int_t *ipiv = NULL; \
-      magma_imalloc_cpu( &ipiv, N ); \
-      magma_dgesv_gpu ( N, NRHS, reinterpret_cast<magmaDouble_ptr>(A.data()), LDA, ipiv, reinterpret_cast<magmaDouble_ptr>(B.data()), LDB, &info ); \
-      magma_free_cpu( ipiv ); \
+    if(with_pivot) { \
+      magma_dgesv_gpu(N,NRHS,reinterpret_cast<magmaDouble_ptr>(A.data()),LDA,IPIV.data(),reinterpret_cast<magmaDouble_ptr>(B.data()),LDB,&info); \
     } \
-    if(nopivot_t) \
-      magma_dgesv_nopiv_gpu( N, NRHS, reinterpret_cast<magmaDouble_ptr>(A.data()), LDA, reinterpret_cast<magmaDouble_ptr>(B.data()), LDB, &info ); \
-    \
+    else { \
+      magma_dgesv_nopiv_gpu(N,NRHS,reinterpret_cast<magmaDouble_ptr>(A.data()),LDA,reinterpret_cast<magmaDouble_ptr>(B.data()),LDB,&info); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -315,22 +319,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef float SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-      \
+  typedef Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+  \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,float]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
-    const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     magma_int_t N    = static_cast<magma_int_t> (A.extent(1)); \
     magma_int_t AST  = static_cast<magma_int_t> (A.stride(1)); \
@@ -342,15 +349,12 @@ struct GESV< \
     KokkosBlas::Impl::MagmaSingleton & s = KokkosBlas::Impl::MagmaSingleton::singleton(); \
     magma_int_t  info = 0; \
     \
-    if(pivot_t) { \
-      magma_int_t *ipiv = NULL; \
-      magma_imalloc_cpu( &ipiv, N ); \
-      magma_sgesv_gpu ( N, NRHS, reinterpret_cast<magmaFloat_ptr>(A.data()), LDA, ipiv, reinterpret_cast<magmaFloat_ptr>(B.data()), LDB, &info ); \
-      magma_free_cpu( ipiv ); \
+    if(with_pivot) { \
+      magma_sgesv_gpu(N,NRHS,reinterpret_cast<magmaFloat_ptr>(A.data()),LDA,IPIV.data(),reinterpret_cast<magmaFloat_ptr>(B.data()),LDB,&info); \
     } \
-    if(nopivot_t) \
-      magma_sgesv_nopiv_gpu( N, NRHS, reinterpret_cast<magmaFloat_ptr>(A.data()), LDA, reinterpret_cast<magmaFloat_ptr>(B.data()), LDB, &info ); \
-    \
+    else { \
+      magma_sgesv_nopiv_gpu(N,NRHS,reinterpret_cast<magmaFloat_ptr>(A.data()),LDA,reinterpret_cast<magmaFloat_ptr>(B.data()),LDB,&info); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -362,22 +366,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<Kokkos::complex<double>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef Kokkos::complex<double> SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-      \
+  typedef Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+  \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,complex<double>]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
-    const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     magma_int_t N    = static_cast<magma_int_t> (A.extent(1)); \
     magma_int_t AST  = static_cast<magma_int_t> (A.stride(1)); \
@@ -389,15 +396,12 @@ struct GESV< \
     KokkosBlas::Impl::MagmaSingleton & s = KokkosBlas::Impl::MagmaSingleton::singleton(); \
     magma_int_t  info = 0; \
     \
-    if(pivot_t) { \
-      magma_int_t *ipiv = NULL; \
-      magma_imalloc_cpu( &ipiv, N ); \
-      magma_zgesv_gpu ( N, NRHS, reinterpret_cast<magmaDoubleComplex_ptr>(A.data()), LDA, ipiv, reinterpret_cast<magmaDoubleComplex_ptr>(B.data()), LDB, &info ); \
-      magma_free_cpu( ipiv ); \
+    if(with_pivot) { \
+      magma_zgesv_gpu(N,NRHS,reinterpret_cast<magmaDoubleComplex_ptr>(A.data()),LDA,IPIV.data(),reinterpret_cast<magmaDoubleComplex_ptr>(B.data()),LDB,&info); \
     } \
-    if(nopivot_t) \
-      magma_zgesv_nopiv_gpu( N, NRHS, reinterpret_cast<magmaDoubleComplex_ptr>(A.data()), LDA, reinterpret_cast<magmaDoubleComplex_ptr>(B.data()), LDB, &info ); \
-    \
+    else { \
+      magma_zgesv_nopiv_gpu(N,NRHS,reinterpret_cast<magmaDoubleComplex_ptr>(A.data()),LDA,reinterpret_cast<magmaDoubleComplex_ptr>(B.data()),LDB,&info); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 }; \
@@ -409,22 +413,25 @@ struct GESV< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<Kokkos::complex<float>**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef Kokkos::complex<float> SCALAR; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   typedef Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > BViewType; \
-      \
+  typedef Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > PViewType; \
+ \
   static void \
-  gesv (const char pivot[], \
-        const AViewType& A, \
-        const BViewType& B) { \
+  gesv (const AViewType& A, \
+        const BViewType& B, \
+        const PViewType& IPIV) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,complex<float>]"); \
-    gesv_print_specialization<AViewType,BViewType>(); \
-    const bool nopivot_t = (pivot[0]=='N') || (pivot[0]=='n'); \
-    const bool pivot_t   = (pivot[0]=='Y') || (pivot[0]=='y'); \
+    gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     magma_int_t N    = static_cast<magma_int_t> (A.extent(1)); \
     magma_int_t AST  = static_cast<magma_int_t> (A.stride(1)); \
@@ -436,15 +443,12 @@ struct GESV< \
     KokkosBlas::Impl::MagmaSingleton & s = KokkosBlas::Impl::MagmaSingleton::singleton(); \
     magma_int_t  info = 0; \
     \
-    if(pivot_t) { \
-      magma_int_t *ipiv = NULL; \
-      magma_imalloc_cpu( &ipiv, N ); \
-      magma_cgesv_gpu ( N, NRHS, reinterpret_cast<magmaFloatComplex_ptr>(A.data()), LDA, ipiv, reinterpret_cast<magmaFloatComplex_ptr>(B.data()), LDB, &info ); \
-      magma_free_cpu( ipiv ); \
+    if(with_pivot) { \
+      magma_cgesv_gpu(N,NRHS,reinterpret_cast<magmaFloatComplex_ptr>(A.data()),LDA,IPIV.data(),reinterpret_cast<magmaFloatComplex_ptr>(B.data()),LDB,&info); \
     } \
-    if(nopivot_t) \
-      magma_cgesv_nopiv_gpu( N, NRHS, reinterpret_cast<magmaFloatComplex_ptr>(A.data()), LDA, reinterpret_cast<magmaFloatComplex_ptr>(B.data()), LDB, &info ); \
-    \
+    else { \
+      magma_cgesv_nopiv_gpu(N,NRHS,reinterpret_cast<magmaFloatComplex_ptr>(A.data()),LDA,reinterpret_cast<magmaFloatComplex_ptr>(B.data()),LDB,&info); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 };

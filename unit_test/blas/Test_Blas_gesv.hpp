@@ -50,8 +50,29 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     // Deep copy device view to host view.
     Kokkos::deep_copy( h_X0, X0 );
 
-    // Solve.	
-    KokkosBlas::gesv(&mode[0],A,B);
+    // Allocate IPIV view on host
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+    typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
+    magma_int_t *ipiv_raw = nullptr;
+    int Nt = 0;
+    if(mode[0]=='Y') {
+      Nt = N;
+      magma_imalloc_cpu( &ipiv_raw, Nt );
+    }
+    ViewTypeP ipiv(ipiv_raw, Nt);
+#else
+    typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
+    int Nt = 0;
+    if(mode[0]=='Y') Nt = N;
+    ViewTypeP ipiv("IPIV", Nt);;
+#endif
+
+    printf("impl_test_gesv -- N %d -- ViewTypeP: type: %s, ipiv.extent(0) = %d, ViewTypeP::rank = %d\n", N, typeid(ViewTypeP).name(), ipiv.extent(0), ViewTypeP::rank);
+    if (ipiv.data()!=nullptr) printf("Not nullptr\n");
+    else printf("Is nullptr\n");
+	
+    // Solve.
+    KokkosBlas::gesv(A,B,ipiv);
     Kokkos::fence();
 
     // Get the solution vector.
@@ -69,6 +90,13 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
       }
     }	
     ASSERT_EQ( test_flag, true );
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+    if(mode[0]=='Y') {
+      magma_free_cpu( ipiv_raw );
+    }
+#endif
+
   }
 
 template<class ViewTypeA, class ViewTypeB, class Device>
@@ -112,8 +140,29 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     // Deep copy device view to host view.
     Kokkos::deep_copy( h_X0, X0 );
 
+    // Allocate IPIV view on host
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+    typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
+    magma_int_t *ipiv_raw = nullptr;
+    int Nt = 0;
+    if(mode[0]=='Y') {
+      Nt = N;
+      magma_imalloc_cpu( &ipiv_raw, Nt );
+    }
+    ViewTypeP ipiv(ipiv_raw, Nt);
+#else
+    typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
+    int Nt = 0;
+    if(mode[0]=='Y') Nt = N;
+    ViewTypeP ipiv("IPIV", Nt);;
+#endif
+
+    printf("impl_test_gesv_mrhs -- N %d -- ViewTypeP: type: %s, ipiv.extent(0) = %d, ViewTypeP::rank = %d\n", N, typeid(ViewTypeP).name(), ipiv.extent(0), ViewTypeP::rank);
+    if (ipiv.data()!=nullptr) printf("Not nullptr\n");
+    else printf("Is nullptr\n");
+
     // Solve.	
-    KokkosBlas::gesv(&mode[0],A,B);
+    KokkosBlas::gesv(A,B,ipiv);
     Kokkos::fence();
 
     // Get the solution vector.
@@ -132,8 +181,15 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
         }
       }
       if (test_flag == false) break;
-    }	
+    }
     ASSERT_EQ( test_flag, true );
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+    if(mode[0]=='Y') {
+      magma_free_cpu( ipiv_raw );
+    }
+#endif
+
   }
 
 }//namespace Test
@@ -144,7 +200,7 @@ int test_gesv(const char* mode) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<Scalar*,  Kokkos::LayoutLeft, Device> view_type_b_ll;
-  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 0);   //no padding
+  Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 2);   //no padding
   Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 13);  //no padding
   Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 179); //no padding
   Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 64);  //no padding
@@ -157,7 +213,7 @@ int test_gesv(const char* mode) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB*,  Kokkos::LayoutRight, Device> view_type_b_lr;
-  Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 0);   //no padding
+  Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 2);   //no padding
   Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 13);  //no padding
   Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 179); //no padding
   Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 64);  //no padding
@@ -176,7 +232,7 @@ int test_gesv_mrhs(const char* mode) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> view_type_b_ll;
-  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 0,   5);//no padding
+  Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 2,   5);//no padding
   Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 13,  5);//no padding
   Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 179, 5);//no padding
   Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device>(&mode[0], "N", 64,  5);//no padding
@@ -189,7 +245,7 @@ int test_gesv_mrhs(const char* mode) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device> view_type_b_lr;
-  Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 0,   5);//no padding
+  Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 2,   5);//no padding
   Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 13,  5);//no padding
   Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 179, 5);//no padding
   Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "N", 64,  5);//no padding
