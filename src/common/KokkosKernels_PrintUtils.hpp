@@ -46,7 +46,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Timer.hpp"
-#include <fstream>
 #include <ostream>
 
 namespace KokkosKernels{
