@@ -59,11 +59,11 @@ namespace Impl {
 template<class RV, class XV, class MagType, class SizeType = typename XV::size_type>
 struct V_Iamax_Functor
 {
-  typedef SizeType                                                 size_type;
-  typedef MagType                                                  mag_type;
-  typedef typename XV::non_const_value_type                        xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type>    IPT;
-  typedef typename RV::value_type                                  value_type;
+  using size_type   = SizeType;
+  using mag_type    = MagType;
+  using xvalue_type = typename XV::non_const_value_type;
+  using IPT         = Kokkos::Details::InnerProductSpaceTraits<xvalue_type>;
+  using value_type  = typename RV::value_type;
   
   typename XV::const_type m_x;
 
@@ -128,13 +128,13 @@ struct V_Iamax_Functor
 template<class RV, class XMV, class MagType, class SizeType = typename XMV::size_type>
 struct MV_Iamax_FunctorVector
 {
-  typedef typename XMV::execution_space                         execution_space;
-  typedef typename XMV::memory_space                            memory_space;
-  typedef SizeType                                              size_type;
-  typedef MagType                                               mag_type;
-  typedef typename XMV::non_const_value_type                    xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename RV::value_type                               value_type[];
+  using execution_space = typename XMV::execution_space;
+  using memory_space    = typename XMV::memory_space;
+  using size_type       = SizeType;
+  using mag_type        = MagType;
+  using xvalue_type     = typename XMV::non_const_value_type;
+  using IPT             = Kokkos::Details::InnerProductSpaceTraits<xvalue_type>;
+  using value_type      = typename RV::value_type[];
 
   size_type value_count;
   typename XMV::const_type m_x;
@@ -234,9 +234,9 @@ template<class RV, class XV, class SizeType>
 void
 V_Iamax_Invoke (const RV& r, const XV& X)
 {
-  typedef typename XV::execution_space execution_space;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> AT;
-  typedef typename AT::mag_type mag_type;
+  using execution_space = typename XV::execution_space;
+  using AT              = Kokkos::Details::ArithTraits<typename XV::non_const_value_type>;
+  using mag_type        = typename AT::mag_type;
 
   const SizeType numRows = static_cast<SizeType> (X.extent(0));
 
@@ -248,7 +248,7 @@ V_Iamax_Invoke (const RV& r, const XV& X)
 
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
-  typedef V_Iamax_Functor<RV, XV, mag_type, SizeType> functor_type;
+  using functor_type = V_Iamax_Functor<RV, XV, mag_type, SizeType>;
   functor_type op (X);
   Kokkos::parallel_reduce ("KokkosBlas::Iamax::S0", policy, op, r);
 }
@@ -260,9 +260,9 @@ template<class RV, class XMV, class SizeType>
 void
 MV_Iamax_Invoke (const RV& r, const XMV& X)
 {
-  typedef typename XMV::execution_space execution_space;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> AT;
-  typedef typename AT::mag_type mag_type;
+  using execution_space = typename XMV::execution_space;
+  using AT              = Kokkos::Details::ArithTraits<typename XMV::non_const_value_type>;
+  using mag_type        = typename AT::mag_type;
 
   const SizeType numRows = static_cast<SizeType> (X.extent(0));
 
@@ -277,17 +277,17 @@ MV_Iamax_Invoke (const RV& r, const XMV& X)
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.
   if (X.extent(1) == 1) {
-    typedef Kokkos::View<typename RV::non_const_value_type,
-                         typename RV::array_layout,
-                         typename RV::device_type,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV0D;
+    using RV0D = Kokkos::View<typename RV::non_const_value_type,
+                              typename RV::array_layout,
+                              typename RV::device_type,
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     RV0D r_0(r, 0);
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
-    typedef decltype (X_0) XV1D;
+    using XV1D = decltype(X_0);
     V_Iamax_Invoke<RV0D, XV1D, SizeType> (r_0, X_0);
   }
   else {
-    typedef MV_Iamax_FunctorVector<RV, XMV, mag_type, SizeType> functor_type;
+    using functor_type = MV_Iamax_FunctorVector<RV, XMV, mag_type, SizeType>;
     functor_type op (X);
     Kokkos::parallel_reduce ("KokkosBlas::Iamax::S1", policy, op, r);
   }
