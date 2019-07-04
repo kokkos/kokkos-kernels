@@ -82,14 +82,14 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "                 COLORING_VBDBIT   - Use the vertex-based deterministic with bit vectors method." << std::endl
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
-       << spaces << "      --repeat <N>        Set number of test repetitions (Default: 1) " << std::endl
-       << spaces << "      --verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
        << spaces << "      --chunksize <N>     Set the chunk size." << std::endl
        << spaces << "      --dynamic           Use dynamic scheduling." << std::endl
+       << spaces << "      --outputfile <FILE> Output the colors of the nodes to the file." << std::endl
+       << spaces << "      --repeat <N>        Set number of test repetitions (Default: 1) " << std::endl
        << spaces << "      --teamsize  <N>     Set the team size." << std::endl
        << spaces << "      --vectorsize <N>    Set the vector size." << std::endl
+       << spaces << "      --verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
        << spaces << "      --help              Print out command line help." << std::endl
-       << spaces << "      --outputfile <FILE> Output the colors of the nodes to the file." << std::endl
        << spaces << " " << std::endl;
 }
 
@@ -304,7 +304,8 @@ void run_experiment(
     std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
 
     if( params.coloring_output_file != NULL ) {
-      KokkosKernels::Impl::print_to_file(kh.get_graph_coloring_handle()->get_vertex_colors(), params.coloring_output_file);
+      std::ofstream os(params.coloring_output_file, std::ofstream::out);
+      KokkosKernels::Impl::print_1Dview(os, kh.get_graph_coloring_handle()->get_vertex_colors(), true, "\n"); 
     }
   }
 }
