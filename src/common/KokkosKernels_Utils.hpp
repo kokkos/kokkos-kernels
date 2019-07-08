@@ -567,6 +567,12 @@ struct FillSymmetricEdgeList_HashMap{
 
   }
 };
+
+template <typename idx_array_type>
+void print_1Dview(std::ostream& os, idx_array_type view, bool print_all=false, const char* sep=" "){
+  kk_print_1Dview(os, view, print_all, sep);
+}
+
 template <typename idx_array_type>
 void print_1Dview(idx_array_type view, bool print_all = false){
   kk_print_1Dview(view, print_all);
