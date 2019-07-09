@@ -55,6 +55,8 @@
 #include <KokkosSparse_sptrsv_symbolic_impl.hpp>
 #endif
 
+#define CUDAGRAPHTEST
+
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
@@ -161,13 +163,32 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::lower_tri_symbolic(*sptrsv_handle, row_map, entries);
       }
-      Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+      if ( sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN ) {
+        Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, true);
+      }
+      else {
+#if defined(CUDAGRAPHTEST) && defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+        Experimental::lower_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
+#else
+        //Experimental::lower_tri_solve_ncg( *sptrsv_handle, row_map, entries, values, b, x);
+        Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+#endif
+      }
     }
     else {
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::upper_tri_symbolic(*sptrsv_handle, row_map, entries);
       }
-      Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+      if ( sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN ) {
+        Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, false);
+      }
+      else {
+#if defined(CUDAGRAPHTEST) && defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+        Experimental::upper_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
+#else
+        Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+#endif
+      }
     }
   }
 
