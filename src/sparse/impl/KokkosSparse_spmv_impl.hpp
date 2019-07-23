@@ -305,6 +305,11 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
   int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
+  // std::cout << "worksets=" << worksets
+  //           << ", rows_per_team=" << rows_per_team
+  //           << ", team_size=" << team_size
+  //           << ", vector_length=" << vector_length << std::endl;
+
   SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
 
   if(A.nnz()>10000000) {
