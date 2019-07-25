@@ -50,26 +50,48 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     // Deep copy device view to host view.
     Kokkos::deep_copy( h_X0, X0 );
 
-    // Allocate IPIV view on host
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-    typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
-    magma_int_t *ipiv_raw = nullptr;
-    int Nt = 0;
-    if(mode[0]=='Y') {
-      Nt = N;
-      magma_imalloc_cpu( &ipiv_raw, Nt );
+    if( std::is_same< typename Device::execution_space, Kokkos::Cuda >::value ) {
+      // Allocate IPIV view on host
+      typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
+      magma_int_t *ipiv_raw = nullptr;
+      int Nt = 0;
+      if(mode[0]=='Y') {
+        Nt = N;
+        magma_imalloc_cpu( &ipiv_raw, Nt );
+      }
+      ViewTypeP ipiv(ipiv_raw, Nt);
+	  
+      // Solve.
+      KokkosBlas::gesv(A,B,ipiv);
+      Kokkos::fence();
+      
+      // Get the solution vector.
+      Kokkos::deep_copy( h_B, B );
+      
+      // Checking vs ref on CPU, this eps is about 10^-9
+      typedef typename ats::mag_type mag_type;
+      const mag_type eps = 1.0e7 * ats::epsilon();
+      bool test_flag = true;
+      for (int i=0; i<N; i++) {
+        if ( ats::abs(h_B(i) - h_X0(i)) > eps ) {
+          test_flag = false;
+          //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld)\n", N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), i );		
+          break;
+        }
+      }	
+      ASSERT_EQ( test_flag, true );
+
+      if(mode[0]=='Y') {
+        magma_free_cpu( ipiv_raw );
+      }
     }
-    ViewTypeP ipiv(ipiv_raw, Nt);
 #else
+    // Allocate IPIV view on host
     typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
     int Nt = 0;
     if(mode[0]=='Y') Nt = N;
-    ViewTypeP ipiv("IPIV", Nt);;
-#endif
-
-    printf("impl_test_gesv -- N %d -- ViewTypeP: type: %s, ipiv.extent(0) = %d, ViewTypeP::rank = %d\n", N, typeid(ViewTypeP).name(), ipiv.extent(0), ViewTypeP::rank);
-    if (ipiv.data()!=nullptr) printf("Not nullptr\n");
-    else printf("Is nullptr\n");
+    ViewTypeP ipiv("IPIV", Nt);
 	
     // Solve.
     KokkosBlas::gesv(A,B,ipiv);
@@ -90,11 +112,6 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
       }
     }	
     ASSERT_EQ( test_flag, true );
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-    if(mode[0]=='Y') {
-      magma_free_cpu( ipiv_raw );
-    }
 #endif
 
   }
@@ -140,26 +157,51 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     // Deep copy device view to host view.
     Kokkos::deep_copy( h_X0, X0 );
 
-    // Allocate IPIV view on host
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-    typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
-    magma_int_t *ipiv_raw = nullptr;
-    int Nt = 0;
-    if(mode[0]=='Y') {
-      Nt = N;
-      magma_imalloc_cpu( &ipiv_raw, Nt );
+    if( std::is_same< typename Device::execution_space, Kokkos::Cuda >::value ) {
+      // Allocate IPIV view on host
+      typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
+      magma_int_t *ipiv_raw = nullptr;
+      int Nt = 0;
+      if(mode[0]=='Y') {
+        Nt = N;
+        magma_imalloc_cpu( &ipiv_raw, Nt );
+      }
+      ViewTypeP ipiv(ipiv_raw, Nt);
+      
+      // Solve.	
+      KokkosBlas::gesv(A,B,ipiv);
+      Kokkos::fence();
+      
+      // Get the solution vector.
+      Kokkos::deep_copy( h_B, B );
+      
+      // Checking vs ref on CPU, this eps is about 10^-9
+      typedef typename ats::mag_type mag_type;
+      const mag_type eps = 1.0e7 * ats::epsilon();
+      bool test_flag = true;
+      for (int j=0; j<nrhs; j++) {
+        for (int i=0; i<N; i++) {
+          if ( ats::abs(h_B(i,j) - h_X0(i,j)) > eps ) {
+            test_flag = false;
+            //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld) at rhs %d\n", N, mode[0], padding[0], ats::abs(h_B(i,j)), ats::abs(h_X0(i,j)), i, j );		
+            break;
+          }
+        }
+        if (test_flag == false) break;
+      }
+      ASSERT_EQ( test_flag, true );
+
+      if(mode[0]=='Y') {
+        magma_free_cpu( ipiv_raw );
+      }
     }
-    ViewTypeP ipiv(ipiv_raw, Nt);
 #else
+    // Allocate IPIV view on host
     typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
     int Nt = 0;
     if(mode[0]=='Y') Nt = N;
-    ViewTypeP ipiv("IPIV", Nt);;
-#endif
-
-    printf("impl_test_gesv_mrhs -- N %d -- ViewTypeP: type: %s, ipiv.extent(0) = %d, ViewTypeP::rank = %d\n", N, typeid(ViewTypeP).name(), ipiv.extent(0), ViewTypeP::rank);
-    if (ipiv.data()!=nullptr) printf("Not nullptr\n");
-    else printf("Is nullptr\n");
+    ViewTypeP ipiv("IPIV", Nt);
 
     // Solve.	
     KokkosBlas::gesv(A,B,ipiv);
@@ -183,11 +225,6 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
       if (test_flag == false) break;
     }
     ASSERT_EQ( test_flag, true );
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-    if(mode[0]=='Y') {
-      magma_free_cpu( ipiv_raw );
-    }
 #endif
 
   }
@@ -264,6 +301,7 @@ int test_gesv_mrhs(const char* mode) {
 TEST_F( TestCategory, gesv_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_float");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv<float,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv<float,TestExecSpace> ("Y");//Partial pivoting
@@ -273,6 +311,7 @@ TEST_F( TestCategory, gesv_float ) {
 TEST_F( TestCategory, gesv_mrhs_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_float");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv_mrhs<float,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv_mrhs<float,TestExecSpace> ("Y");//Partial pivoting
@@ -284,6 +323,7 @@ TEST_F( TestCategory, gesv_mrhs_float ) {
 TEST_F( TestCategory, gesv_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_double");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv<double,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv<double,TestExecSpace> ("Y");//Partial pivoting
@@ -293,6 +333,7 @@ TEST_F( TestCategory, gesv_double ) {
 TEST_F( TestCategory, gesv_mrhs_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_double");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv_mrhs<double,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv_mrhs<double,TestExecSpace> ("Y");//Partial pivoting
@@ -304,6 +345,7 @@ TEST_F( TestCategory, gesv_mrhs_double ) {
 TEST_F( TestCategory, gesv_complex_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_double");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
@@ -313,6 +355,7 @@ TEST_F( TestCategory, gesv_complex_double ) {
 TEST_F( TestCategory, gesv_mrhs_complex_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_double");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
@@ -324,6 +367,7 @@ TEST_F( TestCategory, gesv_mrhs_complex_double ) {
 TEST_F( TestCategory, gesv_complex_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_float");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
@@ -333,6 +377,7 @@ TEST_F( TestCategory, gesv_complex_float ) {
 TEST_F( TestCategory, gesv_mrhs_complex_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_float");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
     test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
 #endif
     test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
