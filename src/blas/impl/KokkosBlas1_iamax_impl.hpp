@@ -89,22 +89,22 @@ struct V_Iamax_Functor
   KOKKOS_INLINE_FUNCTION void
   operator() (const size_type i, value_type& lmaxloc) const
   {
-    mag_type val    = IPT::norm (m_x(i));
-    mag_type maxval = IPT::norm (m_x(lmaxloc));
+    mag_type val    = IPT::norm (m_x(i-1));
+    mag_type maxval = IPT::norm (m_x(lmaxloc-1));
     if(val > maxval) lmaxloc = i;
   }  
  
   KOKKOS_INLINE_FUNCTION void
   init (value_type& update) const
   {
-    update = Kokkos::reduction_identity<typename RV::value_type>::max();
+    update = Kokkos::reduction_identity<typename RV::value_type>::max()+1;
   }
   
   KOKKOS_INLINE_FUNCTION void
   join (volatile value_type& update, const volatile value_type& source) const
   {
-    mag_type source_val = IPT::norm (m_x(source));
-    mag_type update_val = IPT::norm (m_x(update));
+    mag_type source_val = IPT::norm (m_x(source-1));
+    mag_type update_val = IPT::norm (m_x(update-1));
     if(update_val < source_val)
       update = source;
   }
@@ -112,8 +112,8 @@ struct V_Iamax_Functor
   KOKKOS_INLINE_FUNCTION void
   join (value_type& update, const value_type& source) const
   {
-    mag_type source_val = IPT::norm (m_x(source));
-    mag_type update_val = IPT::norm (m_x(update));
+    mag_type source_val = IPT::norm (m_x(source-1));
+    mag_type update_val = IPT::norm (m_x(update-1));
     if(update_val < source_val)
       update = source;
   }
@@ -169,8 +169,8 @@ struct MV_Iamax_FunctorVector
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
-      mag_type val    = IPT::norm (m_x(i,j));
-      mag_type maxval = IPT::norm (m_x(lmaxloc[j],j));
+      mag_type val    = IPT::norm (m_x(i-1,j));
+      mag_type maxval = IPT::norm (m_x(lmaxloc[j]-1,j));
       if(val > maxval) lmaxloc[j] = i;
     }
   }  
@@ -186,7 +186,7 @@ struct MV_Iamax_FunctorVector
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
-      update[j] = Kokkos::reduction_identity<typename RV::value_type>::max();
+      update[j] = Kokkos::reduction_identity<typename RV::value_type>::max()+1;
     }
   }
   
@@ -201,8 +201,8 @@ struct MV_Iamax_FunctorVector
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
-      mag_type source_val = IPT::norm (m_x(source[j],j));
-      mag_type update_val = IPT::norm (m_x(update[j],j));
+      mag_type source_val = IPT::norm (m_x(source[j]-1,j));
+      mag_type update_val = IPT::norm (m_x(update[j]-1,j));
       if(update_val < source_val)
         update[j] = source[j];
     }
@@ -219,8 +219,8 @@ struct MV_Iamax_FunctorVector
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
-      mag_type source_val = IPT::norm (m_x(source[j],j));
-      mag_type update_val = IPT::norm (m_x(update[j],j));
+      mag_type source_val = IPT::norm (m_x(source[j]-1,j));
+      mag_type update_val = IPT::norm (m_x(update[j]-1,j));
       if(update_val < source_val)
         update[j] = source[j];
     }
@@ -246,7 +246,7 @@ V_Iamax_Invoke (const RV& r, const XV& X)
     return;
   }
 
-  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy (1, numRows+1);
 
   using functor_type = V_Iamax_Functor<RV, XV, mag_type, SizeType>;
   functor_type op (X);
@@ -272,7 +272,7 @@ MV_Iamax_Invoke (const RV& r, const XMV& X)
     return;
   }
 
-  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy (1, numRows+1);
 
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.

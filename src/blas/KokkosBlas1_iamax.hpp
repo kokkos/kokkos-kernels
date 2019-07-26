@@ -56,7 +56,7 @@ namespace KokkosBlas {
 /// \param x [in] Input 1-D View.
 ///
 /// \return The (smallest) index of the element of the maximum magnitude; a single value.
-///         Note: Returned index is 0-based, except when TPL cuBLAS is used and returns result to a on-device 0-D view (1-based).    
+///         Note: Returned index is 1-based for compatibility with Fortran.    
 template<class XVector>
 typename XVector::size_type iamax (const XVector& x)
 {
@@ -95,9 +95,6 @@ typename XVector::size_type iamax (const XVector& x)
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
 ///
 /// Note for TPL cuBLAS: When TPL cuBLAS iamax is used and returns result to a view, RMV must be 0-D view and XMV must be 1-D view.
-///                      Since cuBLAS uses 1-based indexing for compatibility with Fortran, users should pay attention to the returned index. 
-///                      If RMV is on host, cuBLAS iamax result is automatically converted to 0-based index for users.
-///                      If RMV is on device, the index returned in RMV is still 1-based index. 
 template<class RV, class XMV>
 void
 iamax (const RV& R, const XMV& X,

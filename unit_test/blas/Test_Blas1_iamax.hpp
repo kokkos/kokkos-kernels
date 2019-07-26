@@ -41,7 +41,7 @@ namespace Test {
     size_type expected_max_loc = 0;
     for(int i=0;i<N;i++) {      
       mag_type val = AT::abs(h_a(i));
-      if(val > expected_result) { expected_result = val; expected_max_loc = i;}
+      if(val > expected_result) { expected_result = val; expected_max_loc = i+1;}
     }
 	
     if(N == 0) {expected_result = typename AT::mag_type(0); expected_max_loc = 0;}
@@ -80,31 +80,17 @@ namespace Test {
       KokkosBlas::iamax(r,a);
       Kokkos::deep_copy(h_r,r);
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-      if(std::is_same<typename Device::memory_space,Kokkos::CudaSpace>::value)
-        nonconst_max_loc = h_r()-1;
-      else
-        nonconst_max_loc = h_r();
-#else
       nonconst_max_loc = h_r();
-#endif
 
       ASSERT_EQ( nonconst_max_loc, expected_max_loc);
 
       KokkosBlas::iamax(r,c_a);
       Kokkos::deep_copy(h_r,r);
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-      if(std::is_same<typename Device::memory_space,Kokkos::CudaSpace>::value)
-        const_max_loc = h_r()-1;
-      else
-        const_max_loc = h_r();
-#else
       const_max_loc = h_r();
-#endif
 
       ASSERT_EQ( const_max_loc, expected_max_loc);
-	}
+    }
   }
 
   template<class ViewTypeA, class Device>
@@ -144,7 +130,7 @@ namespace Test {
       expected_result[j] = Kokkos::Details::ArithTraits<mag_type>::min();
       for(int i=0;i<N;i++) {
         mag_type val = AT::abs(h_a(i,j));
-        if(val > expected_result[j]) { expected_result[j] = val; expected_max_loc[j] = i;}
+        if(val > expected_result[j]) { expected_result[j] = val; expected_max_loc[j] = i+1;}
       }
       if(N == 0) {expected_result[j] = mag_type(0); expected_max_loc[j] = size_type(0);}
     }

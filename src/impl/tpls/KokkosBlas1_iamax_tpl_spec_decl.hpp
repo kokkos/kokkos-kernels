@@ -89,13 +89,13 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_BLAS,double]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0; return; } \
+    if (numElems == 0) { R() = 0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       int N = static_cast<int> (numElems); \
       const int XST = X.stride(0); \
       const int LDX = (XST == 0) ? 1 : XST; \
-      int idx = HostBlas<double>::iamax(N,X.data(),LDX)-1;  \
+      int idx = HostBlas<double>::iamax(N,X.data(),LDX);  \
       R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
@@ -123,13 +123,13 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_BLAS,float]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0f; return; } \
+    if (numElems == 0) { R() = 0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       int N = static_cast<int> (numElems); \
       const int XST = X.stride(0); \
       const int LDX = (XST == 0) ? 1 : XST; \
-      int idx = HostBlas<float>::iamax(N,X.data(),LDX)-1;  \
+      int idx = HostBlas<float>::iamax(N,X.data(),LDX);  \
       R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
@@ -157,13 +157,13 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_BLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0; return; } \
+    if (numElems == 0) { R() = 0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       int N = static_cast<int> (numElems); \
       const int XST = X.stride(0); \
       const int LDX = (XST == 0) ? 1 : XST; \
-      int idx = HostBlas<std::complex<double> >::iamax(N,reinterpret_cast<const std::complex<double>*>(X.data()),LDX)-1; \
+      int idx = HostBlas<std::complex<double> >::iamax(N,reinterpret_cast<const std::complex<double>*>(X.data()),LDX); \
       R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
@@ -191,13 +191,13 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_BLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { R() = 0.0f; return; } \
+    if (numElems == 0) { R() = 0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       int N = static_cast<int> (numElems); \
       const int XST = X.stride(0); \
       const int LDX = (XST == 0) ? 1 : XST; \
-      int idx = HostBlas<std::complex<float> >::iamax(N,reinterpret_cast<const std::complex<float>*>(X.data()),LDX)-1; \
+      int idx = HostBlas<std::complex<float> >::iamax(N,reinterpret_cast<const std::complex<float>*>(X.data()),LDX); \
       R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
@@ -258,7 +258,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       int idx; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasIdamax(s.handle, N, X.data(), LDX, &idx); \
-      R() = static_cast<size_type>(idx-1); \
+      R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
     } \
@@ -283,7 +283,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,double]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { Kokkos::deep_copy (R, 1); return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
@@ -329,7 +329,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       int idx; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasIsamax(s.handle, N, X.data(), LDX, &idx); \
-      R() = static_cast<size_type>(idx-1); \
+      R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
     } \
@@ -354,7 +354,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,float]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { Kokkos::deep_copy (R, 1);; return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0);; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
@@ -400,7 +400,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       int idx; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasIzamax(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), LDX, &idx); \
-      R() = static_cast<size_type>(idx-1); \
+      R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
     } \
@@ -425,7 +425,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { Kokkos::deep_copy (R, 1); return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
@@ -471,7 +471,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       int idx; \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       cublasIcamax(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), LDX, &idx); \
-      R() = static_cast<size_type>(idx-1); \
+      R() = static_cast<size_type>(idx); \
     } else { \
       Iamax<RV,XV,1,false,ETI_SPEC_AVAIL>::iamax(R,X); \
     } \
@@ -496,7 +496,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   { \
     Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
-    if (numElems == 0) { Kokkos::deep_copy (R, 1); return; } \
+    if (numElems == 0) { Kokkos::deep_copy (R, 0); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       iamax_print_specialization<RV,XV>(); \
       const int N = static_cast<int> (numElems); \
