@@ -44,6 +44,10 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash axpby Kokkos
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash dot KokkosBlas1_dot KokkosBlas1_dot_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash dot KokkosBlas1_dot_mv KokkosBlas1_dot_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 
+#iamax
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash iamax KokkosBlas1_iamax KokkosBlas1_iamax_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash iamax KokkosBlas1_iamax_mv KokkosBlas1_iamax_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
+
 #mult
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash mult KokkosBlas1_mult KokkosBlas1_mult_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash mult KokkosBlas1_mult_mv KokkosBlas1_mult_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
