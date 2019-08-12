@@ -72,16 +72,17 @@ spmv (const char mode[],
       const RANK_ONE)
 {
   // Make sure that both x and y have the same rank.
-  static_assert ((int) XVector::rank == (int) YVector::rank,
-                 "KokkosSparse::spmv: Vector ranks do not match.");
+  static_assert (static_cast<int> (XVector::rank) ==
+                 static_cast<int> (YVector::rank),
+    "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
-  static_assert ((int) XVector::rank == 1,
-                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 in "
-                 "order to call this specialization of spmv.");
+  static_assert (static_cast<int> (XVector::rank) == 1,
+    "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
+    "in order to call this specialization of spmv.");
   // Make sure that y is non-const.
   static_assert (std::is_same<typename YVector::value_type,
                    typename YVector::non_const_value_type>::value,
-                 "KokkosSparse::spmv: Output Vector must be non-const.");
+    "KokkosSparse::spmv: Output Vector must be non-const.");
 
   // Check compatibility of dimensions at run time.
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
@@ -94,7 +95,6 @@ spmv (const char mode[],
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1)
          ;
-
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
   }
@@ -108,11 +108,9 @@ spmv (const char mode[],
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1)
          ;
-
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
   }
-
 
   typedef KokkosSparse::CrsMatrix<
               typename AMatrix::const_value_type,
@@ -156,7 +154,7 @@ spmv (const char mode[],
 
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector ,
          class XLayout = typename XVector::array_layout>
-struct SPMV2D1D{
+struct SPMV2D1D {
   static bool spmv2d1d (const char mode[],
         const AlphaType& alpha,
         const AMatrix& A,
@@ -173,7 +171,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutSt
         const AMatrix& A,
         const XVector& x,
         const BetaType& beta,
-        const YVector& y){
+        const YVector& y)
+  {
 #if defined (KOKKOSKERNELS_INST_LAYOUTSTRIDE) || !defined(KOKKOSKERNELS_ETI_ONLY)
     spmv (mode, alpha, A, x, beta, y);
     return true;
@@ -190,7 +189,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutLe
         const AMatrix& A,
         const XVector& x,
         const BetaType& beta,
-        const YVector& y){
+        const YVector& y)
+  {
 #if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
     spmv (mode, alpha, A, x, beta, y);
     return true;
@@ -208,7 +208,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRi
         const AMatrix& A,
         const XVector& x,
         const BetaType& beta,
-        const YVector& y){
+        const YVector& y)
+  {
 #if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
     spmv (mode, alpha, A, x, beta, y);
     return true;
@@ -229,12 +230,13 @@ spmv (const char mode[],
       const RANK_TWO)
 {
   // Make sure that both x and y have the same rank.
-  static_assert (XVector::rank == YVector::rank,
-                 "KokkosBlas::spmv: Vector ranks do not match.");
+  static_assert (static_cast<int> (XVector::rank) ==
+                 static_cast<int> (YVector::rank),
+    "KokkosBlas::spmv: Vector ranks do not match.");
   // Make sure that y is non-const.
   static_assert (std::is_same<typename YVector::value_type,
                    typename YVector::non_const_value_type>::value,
-                 "KokkosBlas::spmv: Output Vector must be non-const.");
+    "KokkosBlas::spmv: Output Vector must be non-const.");
 
   // Check compatibility of dimensions at run time.
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
@@ -286,11 +288,11 @@ spmv (const char mode[],
     XVector_SubInternal x_i = Kokkos::subview (x, Kokkos::ALL (), 0);
     YVector_SubInternal y_i = Kokkos::subview (y, Kokkos::ALL (), 0);
 
-
-
     //spmv (mode, alpha, A, x_i, beta, y_i);
-    if (SPMV2D1D  <AlphaType, AMatrix_Internal, XVector_SubInternal,
-                    BetaType, YVector_SubInternal, typename XVector_SubInternal::array_layout>::spmv2d1d(mode, alpha, A, x_i, beta, y_i)){
+    using impl_type = SPMV2D1D<AlphaType, AMatrix_Internal,
+      XVector_SubInternal, BetaType, YVector_SubInternal,
+      typename XVector_SubInternal::array_layout>;
+    if (impl_type::spmv2d1d (mode, alpha, A, x_i, beta, y_i)) {
       return;
     }
   }
@@ -352,7 +354,9 @@ spmv(const char mode[],
      const XVector& x,
      const BetaType& beta,
      const YVector& y) {
-  typedef typename Kokkos::Impl::if_c<XVector::rank == 2, RANK_TWO, RANK_ONE>::type RANK_SPECIALISE;
+  using RANK_SPECIALISE =
+    typename std::conditional<static_cast<int> (XVector::rank) == 2,
+                              RANK_TWO, RANK_ONE>::type;
   spmv (mode, alpha, A, x, beta, y, RANK_SPECIALISE ());
 }
 
