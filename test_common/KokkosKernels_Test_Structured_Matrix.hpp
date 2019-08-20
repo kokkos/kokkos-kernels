@@ -1794,7 +1794,7 @@ namespace Test {
       values(rowOffset - 15) =  0.0;
       values(rowOffset - 14) = 32.0;
       values(rowOffset - 13) =  0.0;
-      values(rowOffset - 12) =  2.0;
+      values(rowOffset - 12) = -2.0;
       values(rowOffset - 11) =  0.0;
       values(rowOffset - 10) = -2.0;
       values(rowOffset -  9) = -1.0;
