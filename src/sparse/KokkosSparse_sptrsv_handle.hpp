@@ -53,7 +53,7 @@ namespace KokkosSparse {
 namespace Experimental {
 
 // TP2 algorithm has issues with some offset-ordinal combo to be addressed
-enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/ };
+enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/, CHOLMOD_NAIVE, CHOLMOD_ETREE };
 
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
@@ -96,6 +96,15 @@ public:
   typedef typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
   typedef Kokkos::View< signed_integral_t*, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type, typename nnz_row_view_t::memory_traits > signed_nnz_lno_view_t;
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+  typedef typename execution_space::memory_space  supercols_memory_space;
+
+  typedef Kokkos::DefaultHostExecutionSpace                      supercols_host_execution_space;
+  typedef typename supercols_host_execution_space::memory_space  supercols_host_memory_space;
+
+  typedef Kokkos::View<int*, supercols_memory_space>       supercols_t;
+  typedef Kokkos::View<int*, supercols_host_memory_space>  supercols_host_t;
+#endif
 
 private:
 
@@ -114,6 +123,29 @@ private:
 
   int team_size;
   int vector_size;
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+  // number of supernodal columns
+  signed_integral_t nsuper;
+
+  // etree, parent's id for each supernodal column
+  supercols_host_t etree_host;
+
+  // map from supernode to column id, i.e., superdols[s] = the first column id of s-th supernode
+  supercols_host_t supercols_host; // on the host
+  supercols_t      supercols;      // on the default host/device
+
+  // workspace size
+  signed_integral_t lwork;
+  // offset to workspace for each supernodal column
+  supercols_host_t work_offset_host;
+  supercols_t      work_offset;
+
+  // type of kernels used at each level
+  int sup_size_tol;
+  supercols_host_t kernel_type_host;
+  supercols_t      kernel_type;
+#endif
 
 public:
 
@@ -218,6 +250,7 @@ public:
 
   bool is_lower_tri() const { return lower_tri; }
   bool is_upper_tri() const { return !lower_tri; }
+  void set_is_lower_tri(bool lower_tri_) { lower_tri = lower_tri_; }
 
   bool is_symbolic_complete() const { return symbolic_complete; }
 
@@ -233,12 +266,97 @@ public:
   void set_vector_size(const int vs) {this->vector_size = vs;}
   int get_vector_size() const {return this->vector_size;}
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+  // set nsuper and supercols (# of supernodes, and map from supernode to column id
+  void set_supernodes (signed_integral_t nsuper_, int* supercols_, int *etree_) {
+    this->nsuper = nsuper_;
+
+    // etree
+    this->etree_host = supercols_host_t (etree_, nsuper_);
+
+    // supercols
+    this->supercols_host = supercols_host_t (supercols_, 1+nsuper_);
+    this->supercols = supercols_t ("supercols", 1+nsuper_);
+    Kokkos::deep_copy (this->supercols, this->supercols_host);
+
+    // workspace offset
+    this->work_offset_host = supercols_host_t ("workoffset_host", nsuper_);
+    this->work_offset = supercols_t ("workoffset", nsuper_);
+
+    // kernel type 
+    this->sup_size_tol = 500;
+    this->kernel_type_host = supercols_host_t ("kernel_type_host", nsuper_);
+    this->kernel_type = supercols_t ("kernel_type", nsuper_);
+  }
+
+  // return number of supernodes
+  signed_integral_t get_num_supernodes () {
+    return this->nsuper;
+  }
+
+  // return map to supernode to column id
+  const int* get_supercols () {
+    return this->supercols.data ();
+  }
+
+  const int* get_supercols_host () {
+    return this->supercols_host.data ();
+  }
+
+  // return parents info in etree of supernodes
+  const int* get_etree_parents () {
+    return this->etree_host.data ();
+  }
+
+  // workspace size
+  void set_workspace_size (signed_integral_t lwork_) {
+    this->lwork = lwork_;
+  }
+  signed_integral_t get_workspace_size () {
+    return this->lwork;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  supercols_t get_work_offset() const { 
+    return this->work_offset;
+  }
+
+  supercols_host_t get_work_offset_host() const { 
+    return this->work_offset_host;
+  }
+
+  // supernode size tolerance to pick right kernel type
+  int get_supernode_size_tol() {
+    return this->sup_size_tol;
+  }
+
+  void set_supernode_size_tol(int size_tol) {
+    this->sup_size_tol = size_tol;
+  }
+
+  // kernel type
+  supercols_host_t get_kernel_type_host () {
+    return this->kernel_type_host;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  supercols_t get_kernel_type () {
+    return this->kernel_type;
+  }
+#endif
+
   void print_algorithm() { 
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_RP )
       std::cout << "SEQLVLSCHD_RP" << std::endl;;
 
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
       std::cout << "SEQLVLSCHD_TP1" << std::endl;;
+
+    if ( algm == SPTRSVAlgorithm::CHOLMOD_NAIVE )
+      std::cout << "CHOLMOD_NAIVE" << std::endl;;
+
+    if ( algm == SPTRSVAlgorithm::CHOLMOD_ETREE )
+      std::cout << "CHOLMOD_ETREE" << std::endl;;
 
     /*
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {

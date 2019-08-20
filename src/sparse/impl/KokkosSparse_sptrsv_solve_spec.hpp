@@ -55,6 +55,11 @@
 #include <KokkosSparse_sptrsv_symbolic_impl.hpp>
 #endif
 
+#define _ENABLE_CUDA_PROFILE_
+#ifdef _ENABLE_CUDA_PROFILE_
+ #include "cudaProfiler.h"
+#endif
+
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
@@ -156,17 +161,24 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
   {
     // Call specific algorithm type
     auto sptrsv_handle = handle->get_sptrsv_handle();
-
     if ( sptrsv_handle->is_lower_tri() ) {
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::lower_tri_symbolic(*sptrsv_handle, row_map, entries);
       }
+      //printf( " calling lower_tri_solve from KokkosSparse_sptrsv_solve_spec.hpp\n" );
+      #ifdef _ENABLE_CUDA_PROFILE_
+      cudaProfilerStart ();
+      #endif
       Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+      #ifdef _ENABLE_CUDA_PROFILE_
+      cudaProfilerStop ();
+      #endif
     }
     else {
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::upper_tri_symbolic(*sptrsv_handle, row_map, entries);
       }
+      //printf( " calling upper_tri_solve from KokkosSparse_sptrsv_solve_spec.hpp\n" );
       Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
     }
   }

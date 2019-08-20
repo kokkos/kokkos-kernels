@@ -527,6 +527,11 @@ public:
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);
   }
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+  void set_supernodes (int nsuper, int *supercols, int *etree) {
+    this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
+  }
+#endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)
     {

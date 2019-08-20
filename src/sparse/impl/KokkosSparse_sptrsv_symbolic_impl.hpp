@@ -169,6 +169,163 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
   Kokkos::deep_copy(dlevel_list, level_list);
  }
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD 
+ else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::CHOLMOD_NAIVE ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::CHOLMOD_ETREE) {
+  typedef typename TriSolveHandle::size_type size_type;
+
+  typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
+  typedef typename TriSolveHandle::nnz_lno_view_t::HostMirror HostEntriesType;
+
+  typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
+  typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror HostSignedEntriesType;
+
+  typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
+
+  typedef typename TriSolveHandle::supercols_t             supercols_t;
+  typedef typename TriSolveHandle::supercols_t::HostMirror supercols_host_t;
+
+
+  // rowptr: pointer to begining of each row (CRS)
+  auto row_map = Kokkos::create_mirror_view(drow_map);
+  Kokkos::deep_copy(row_map, drow_map);
+
+  // # of nodes per level
+  DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
+  HostEntriesType nodes_per_level = Kokkos::create_mirror_view (dnodes_per_level);
+
+  // node ids in each level
+  DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
+  HostEntriesType nodes_grouped_by_level = Kokkos::create_mirror_view (dnodes_grouped_by_level);
+
+  // map node id to level that this node belongs to
+  DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
+  HostSignedEntriesType level_list = Kokkos::create_mirror_view (dlevel_list);
+
+  // type of kernels used at each level
+  int size_tol = thandle.get_supernode_size_tol();
+  supercols_t dkernel_type_by_level = thandle.get_kernel_type ();
+  supercols_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
+
+  // # of supernodal columns
+  size_type nsuper = thandle.get_num_supernodes ();
+  const int* supercols = thandle.get_supercols_host ();
+
+  // workspace
+  signed_integral_t max_lwork = 0;
+  supercols_host_t work_offset_host = thandle.get_work_offset_host ();
+  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::CHOLMOD_NAIVE) {
+    // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
+    // Set number of level equal to be the number of supernodal columns
+    thandle.set_num_levels (nsuper);
+
+    // Set up level sets: going through supernodal column one at a time from 1 to nsuper
+    for (size_type s = 0; s < nsuper; s++) {
+      nodes_per_level (s) = 1;           // # of nodes per level
+      nodes_grouped_by_level (s) = s;    // only one task per level (task id)
+      level_list (s) = s;                // map task id to level
+
+      // local/max workspace size
+      size_type row = supercols [s];
+      signed_integral_t lwork = row_map (row+1) - row_map(row);
+      if (max_lwork < lwork) {
+        max_lwork = lwork;
+      }
+
+      // kernel type
+      if (lwork < size_tol) {
+        kernel_type_by_level (s) = 0;
+      } else {
+        kernel_type_by_level (s) = 1;
+      }
+      work_offset_host (s) = 0;
+    }
+  } else {
+    /* initialize the ready tasks with leaves */
+    const int *parents = thandle.get_etree_parents ();
+    int *check = (int*)calloc(nsuper, sizeof(int));
+    for (size_type s = 0; s < nsuper; s++) {
+      if (parents[s] >= 0) {
+        check[parents[s]] ++;
+      }
+    }
+
+    signed_integral_t num_done = 0;
+    signed_integral_t level = 0;
+    while (num_done < nsuper) {
+      nodes_per_level (level) = 0; 
+      // look for ready-tasks
+      signed_integral_t lwork = 0;
+      signed_integral_t num_ready = 0;
+      signed_integral_t sup_size = 0;
+      for (size_type s = 0; s < nsuper; s++) {
+        if (check[s] == 0) {
+          //printf( " %d: ready[%d]=%d\n",level, num_done+num_ready, s );
+          nodes_per_level (level) ++; 
+          nodes_grouped_by_level (num_done + num_ready) = s;
+          level_list (s) = level;
+
+          // work offset
+          work_offset_host (s) = lwork;
+ 
+          // update workspace size
+          size_type row = supercols [s];
+          signed_integral_t nsrow = row_map (row+1) - row_map(row);
+          lwork += nsrow;
+
+          // total supernode size
+          sup_size += supercols[s+1]-supercols[s];
+
+          num_ready ++;
+        }
+      }
+      //printf( " lwork = %d\n",lwork );
+      if (lwork > max_lwork) {
+        max_lwork = lwork;
+      }
+
+      // kernel type
+      sup_size /= num_ready;
+      if (sup_size < size_tol) {
+        kernel_type_by_level (level) = 0;
+      } else {
+        kernel_type_by_level (level) = 1;
+      }
+
+      // free the dependency
+      for (signed_integral_t task = 0; task < num_ready; task++) {
+        size_type s = nodes_grouped_by_level (num_done + task);
+        check[s] = -1;
+        //printf( " %d: check[%d]=%d ",level,s,check[s]);
+        if (parents[s] >= 0) {
+          check[parents[s]] --;
+          //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+        }
+        //printf( "\n" );
+      }
+      num_done += num_ready;
+      //printf( " level=%d: num_done=%d / %d\n",level,num_done,nsuper );
+      level ++;
+    }
+    // Set number of level equal to be the number of supernodal columns
+    thandle.set_num_levels (level);
+    free(check);
+  }
+  // workspace size
+  thandle.set_workspace_size (max_lwork);
+  // workspace offset initialized to be zero
+  supercols_t work_offset = thandle.get_work_offset ();
+  Kokkos::deep_copy (work_offset, work_offset_host);
+
+  // deep copy to device
+  Kokkos::deep_copy (dnodes_grouped_by_level, nodes_grouped_by_level);
+  Kokkos::deep_copy (dnodes_per_level, nodes_per_level);
+  Kokkos::deep_copy (dlevel_list, level_list);
+  Kokkos::deep_copy (dkernel_type_by_level, kernel_type_by_level);
+
+  thandle.set_symbolic_complete();
+ }
+#endif
 } // end lowertri_level_sched
 
 
@@ -283,6 +440,186 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
   Kokkos::deep_copy(dlevel_list, level_list);
  }
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD 
+ else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::CHOLMOD_NAIVE ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::CHOLMOD_ETREE) {
+  typedef typename TriSolveHandle::size_type size_type;
+
+  typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
+  typedef typename TriSolveHandle::nnz_lno_view_t::HostMirror HostEntriesType;
+
+  typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
+  typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror HostSignedEntriesType;
+
+  typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
+
+  typedef typename TriSolveHandle::supercols_t             supercols_t;
+  typedef typename TriSolveHandle::supercols_t::HostMirror supercols_host_t;
+
+
+  // rowptr: pointer to begining of each row (CRS)
+  auto row_map = Kokkos::create_mirror_view(drow_map);
+  Kokkos::deep_copy(row_map, drow_map);
+
+  // # of nodes per level
+  DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
+  HostEntriesType nodes_per_level = Kokkos::create_mirror_view (dnodes_per_level);
+
+  // node ids in each level
+  DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
+  HostEntriesType nodes_grouped_by_level = Kokkos::create_mirror_view (dnodes_grouped_by_level);
+
+  // type of kernels used at each level
+  int size_tol = thandle.get_supernode_size_tol();
+  supercols_t dkernel_type_by_level = thandle.get_kernel_type ();
+  supercols_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
+
+  // map node id to level that this node belongs to
+  DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
+  HostSignedEntriesType level_list = Kokkos::create_mirror_view (dlevel_list);
+
+  // # of supernodal columns
+  size_type nsuper = thandle.get_num_supernodes ();
+  const int* supercols = thandle.get_supercols_host ();
+
+  // workspace
+  signed_integral_t max_lwork = 0;
+  supercols_host_t work_offset_host = thandle.get_work_offset_host ();
+  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::CHOLMOD_NAIVE) {
+    // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
+    // Set number of level equal to be the number of supernodal columns
+    thandle.set_num_levels (nsuper);
+
+    // Set up level sets: going through supernodal column one at a time from 1 to nsuper
+    for (size_type s = 0; s < nsuper; s++) {
+      nodes_per_level (s) = 1;                  // # of nodes per level
+      nodes_grouped_by_level (s) = nsuper-1-s;  // only one task per level (task id)
+      level_list (nsuper-1-s) = s;              // map task id to level
+
+      size_type row = supercols [s];
+      signed_integral_t lwork = row_map (row+1) - row_map(row);
+      if (max_lwork < lwork) {
+        max_lwork = lwork;
+      }
+      work_offset_host (s) = 0;
+
+      if (lwork < size_tol) {
+        kernel_type_by_level (s) = 0;
+      } else {
+        kernel_type_by_level (s) = 1;
+      }
+    }
+  }
+  else {
+    /* schduling from bottom to top (as for L-solve) *
+     * then reverse it for U-solve                   */
+
+    /* initialize the ready tasks with leaves */
+    const int *parents = thandle.get_etree_parents ();
+    int *check  = (int*)calloc(nsuper, sizeof(int));
+    for (size_type s = 0; s < nsuper; s++) {
+      if (parents[s] >= 0) {
+        check[parents[s]] ++;
+      }
+    }
+    //printf( " Init:\n" );
+    //for (size_type s = 0; s <nsuper; s++) printf( " check[%d] = %d\n",s,check[s] );
+
+    size_type nrows = thandle.get_nrows();
+    HostEntriesType inverse_nodes_per_level ("nodes_per_level", nrows);
+    HostEntriesType inverse_nodes_grouped_by_level ("nodes_grouped_by_level", nrows);
+
+    signed_integral_t num_done = 0;
+    signed_integral_t level = 0;
+    while (num_done < nsuper) {
+      nodes_per_level (level) = 0; 
+      // look for ready-tasks
+      signed_integral_t lwork = 0;
+      signed_integral_t num_ready = 0;
+      for (size_type s = 0; s < nsuper; s++) {
+        if (check[s] == 0) {
+          inverse_nodes_per_level (level) ++; 
+          inverse_nodes_grouped_by_level (num_done + num_ready) = s;
+          //printf( " level=%d: %d/%d: s=%d\n",level, num_done+num_ready,nsuper, s );
+
+          // work offset
+          work_offset_host (s) = lwork;
+ 
+          // update workspace size
+          size_type row = supercols [s];
+          signed_integral_t nsrow = row_map (row+1) - row_map(row);
+          //printf( " %d %d %d %d\n",num_done+num_ready, level, nsrow, supercols[s+1]-supercols[s] );
+          lwork += nsrow;
+
+          num_ready ++;
+        }
+      }
+      //printf( " lwork = %d\n",lwork );
+      if (lwork > max_lwork) {
+        max_lwork = lwork;
+      }
+
+      // free the dependency
+      for (signed_integral_t task = 0; task < num_ready; task++) {
+        size_type s = inverse_nodes_grouped_by_level (num_done + task);
+        check[s] = -1;
+        //printf( " %d: check[%d]=%d ",level,s,check[s]);
+        if (parents[s] >= 0) {
+          check[parents[s]] --;
+          //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+        }
+        //printf( "\n" );
+      }
+      num_done += num_ready;
+      //printf( " level=%d: num_done=%d / %d\n",level,num_done,nsuper );
+      level ++;
+    }
+    free(check);
+
+    // now invert the lists
+    num_done = 0;
+    signed_integral_t num_level = level;
+    for (level = 0; level < num_level; level ++) {
+      signed_integral_t num_ready = inverse_nodes_per_level (num_level - level - 1);
+      nodes_per_level (level) = num_ready;
+      //printf( " -> nodes_per_level(%d -> %d) = %d\n",num_level-level-1, level, num_ready );
+
+      signed_integral_t sup_size = 0;
+      for (signed_integral_t task = 0; task < num_ready; task++) {
+        signed_integral_t s = inverse_nodes_grouped_by_level (nsuper - num_done - 1);
+
+        nodes_grouped_by_level (num_done) = s;
+        level_list (s) = level;
+        //printf( " -> level=%d: %d->%d: s=%d\n",level, nsuper-num_done-1, num_done, s );
+        num_done ++;
+        sup_size += supercols[s+1]-supercols[s];
+      }
+      sup_size /= num_ready;
+      if (sup_size < size_tol) {
+        kernel_type_by_level (level) = 0;
+      } else {
+        kernel_type_by_level (level) = 1;
+      }
+    }
+
+    // Set number of levels
+    thandle.set_num_levels (num_level);
+  }
+  // workspace size
+  thandle.set_workspace_size (max_lwork);
+  // workspace offset initialized to be zero
+  supercols_t work_offset = thandle.get_work_offset ();
+  Kokkos::deep_copy (work_offset, work_offset_host);
+
+  // deep copy to device
+  Kokkos::deep_copy (dnodes_grouped_by_level, nodes_grouped_by_level);
+  Kokkos::deep_copy (dnodes_per_level, nodes_per_level);
+  Kokkos::deep_copy (dlevel_list, level_list);
+  Kokkos::deep_copy (dkernel_type_by_level, kernel_type_by_level);
+
+  thandle.set_symbolic_complete ();
+ }
+#endif
 } // end uppertri_level_sched
 
 
