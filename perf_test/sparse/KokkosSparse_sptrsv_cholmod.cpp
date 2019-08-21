@@ -68,90 +68,6 @@
 #include "cholmod.h"
 
 
-#if defined (KOKKOSKERNELS_INST_FLOAT)
- // Cholmod does not support float?
- #define CHOLMOD_DOUBLE_OR_SINGLE CHOLMOD_SINGLE
-
- #define cblas_trmm cblas_strmm
- #define cblas_gemm cblas_sgemm
-
- #define LAPACKE_trtri LAPACKE_strtri
-
-#elif defined(KOKKOSKERNELS_INST_DOUBLE)
-
- #define CHOLMOD_DOUBLE_OR_SINGLE CHOLMOD_DOUBLE
-
-  // double
-  void cblas_trmm (const CBLAS_ORDER layout,
-                   const CBLAS_SIDE      Side,   const CBLAS_UPLO Uplo,
-                   const CBLAS_TRANSPOSE TransA, const CBLAS_DIAG Diag,
-                   const int M, const int N,
-                   const double alpha, const double *A, const int lda,
-                                             double *B, const int ldb ) {
-    // calling cblas_dtrmm
-    cblas_dtrmm (layout, Side, Uplo, TransA, Diag,
-                 M, N, alpha, A, lda,
-                              B, ldb);
-  }
-
-  void cblas_gemm(const CBLAS_ORDER layout,
-                  const CBLAS_TRANSPOSE TransA, const CBLAS_TRANSPOSE TransB,
-                  const int M, const int N, const int K,
-                  const double alpha, const double *A, const int lda,
-                                      const double *B, const int ldb,
-                  const double beta,        double *C, const int ldc) {
-    // calling cblas_dtrmm
-    cblas_dgemm(layout, TransA, TransB,
-                M, N, K,
-                alpha, A, lda,
-                       B, ldb,
-                beta,  C, ldc);
-  }
-
-  lapack_int LAPACKE_trtri(int matrix_layout,
-                           char uplo, char diag,
-                           lapack_int n, double *a, lapack_int lda) {
-    // calling lapacke_dtrtri
-    return LAPACKE_dtrtri(matrix_layout,
-                          uplo, diag, n, a, lda);
-  }
-
-  // double
-  void cblas_trmm (const CBLAS_ORDER layout,
-                   const CBLAS_SIDE      Side,   const CBLAS_UPLO Uplo,
-                   const CBLAS_TRANSPOSE TransA, const CBLAS_DIAG Diag,
-                   const int M, const int N,
-                   const Kokkos::complex<double> alpha, const Kokkos::complex<double> *A, const int lda,
-                                                              Kokkos::complex<double> *B, const int ldb ) {
-    // calling cblas_dtrmm
-    cblas_ztrmm (layout, Side, Uplo, TransA, Diag,
-                 M, N, (const double*)(&alpha), (const double*)A, lda,
-                                                      (double*)B, ldb);
-  }
-
-  void cblas_gemm(const CBLAS_ORDER layout,
-                  const CBLAS_TRANSPOSE TransA, const CBLAS_TRANSPOSE TransB,
-                  const int M, const int N, const int K,
-                  const Kokkos::complex<double> alpha, const Kokkos::complex<double> *A, const int lda,
-                                                       const Kokkos::complex<double> *B, const int ldb,
-                  const Kokkos::complex<double> beta,        Kokkos::complex<double> *C, const int ldc) {
-    // calling cblas_dtrmm
-    cblas_zgemm(layout, TransA, TransB,
-                M, N, K,
-                (const double*)&alpha, (const double*)A, lda,
-                                       (const double*)B, ldb,
-                (const double*)&beta,        (double*)C, ldc);
-  }
-
-  lapack_int LAPACKE_trtri(int matrix_layout,
-                           char uplo, char diag,
-                           lapack_int n, Kokkos::complex<double> *a, lapack_int lda) {
-    // calling lapacke_dtrtri
-    return LAPACKE_ztrtri(matrix_layout,
-                          uplo, diag, n, (lapack_complex_double*)a, lda);
-  }
-#endif
-
 template<typename Scalar>
 void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
 
@@ -300,8 +216,8 @@ crsMat_t read_cholmod_factor(cholmod_factor *L, cholmod_common *cm, hostMat_t *h
     // so that we can do TRSM on the diagonal block
     #define CHOLMOD_INVERT_DIAG
     #ifdef CHOLMOD_INVERT_DIAG
-    LAPACKE_trtri(LAPACK_COL_MAJOR,
-                  'L', 'N', nscol, &Lx[psx], nsrow);              
+    LAPACKE_dtrtri(LAPACK_COL_MAJOR,
+                   'L', 'N', nscol, &Lx[psx], nsrow);
     #endif
     //printf( "nscol=%d, nsrow=%d\n",nscol,nsrow );
     for (ii = 0; ii < nscol; ii++) {
@@ -397,7 +313,7 @@ void solveL_cholmod(int nsuper, int *supptr, crsMat_t *L, int nrhs, Scalar *X, i
     printf( " nscol=%d, nsrows=%d (j1=%d, j2=%d), (i1=%d, i2=%d), psx=%d\n",nscol,nsrow, j1,j2, i1,i2, psx );
     /* TRSM with diagonal block */
     #ifdef CHOLMOD_INVERT_DIAG
-    cblas_trmm (CblasColMajor,
+    cblas_dtrmm (CblasColMajor,
         CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit,
         nscol, nrhs,
         one,  &Lx[psx], nsrow,
@@ -413,7 +329,7 @@ void solveL_cholmod(int nsuper, int *supptr, crsMat_t *L, int nrhs, Scalar *X, i
 
     /* GEMM to update with off diagonal blocks */
     if (nsrow2 > 0) {
-      cblas_gemm (CblasColMajor,
+      cblas_dgemm (CblasColMajor,
           CblasNoTrans, CblasNoTrans,
           nsrow2, nrhs, nscol,
           one,   &Lx[psx + nscol], nsrow,
@@ -464,7 +380,7 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, Scalar *nzvals, in
   A->packed = 1;
   A->itype = CHOLMOD_INT;
   A->xtype = CHOLMOD_REAL;
-  A->dtype = CHOLMOD_DOUBLE_OR_SINGLE;
+  A->dtype = CHOLMOD_DOUBLE;
 
   A->nrow = nrow;
   A->ncol = nrow;
@@ -558,7 +474,7 @@ void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
 
     /* TRSM with diagonal block */
     #ifdef CHOLMOD_INVERT_DIAG
-    cblas_trmm (CblasColMajor,
+    cblas_dtrmm (CblasColMajor,
         CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit,
         nscol, nrhs,
         one,   &Lx[psx], nsrow,
@@ -573,7 +489,7 @@ void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
 
     /* GEMM to update with off diagonal blocks */
     if (nsrow2 > 0) {
-      cblas_gemm (CblasColMajor,
+      cblas_dgemm (CblasColMajor,
           CblasNoTrans, CblasNoTrans,
           nsrow2, nrhs, nscol,
           one,   &Lx[psx + nscol], nsrow,
@@ -646,7 +562,7 @@ void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
     /* GEMM to update with off diagonal blocks */
     if (nsrow2 > 0)
     {   
-      cblas_gemm (CblasColMajor,
+      cblas_dgemm (CblasColMajor,
           CblasTrans, CblasNoTrans,
           nscol, nrhs, nsrow2,
           mone, &Lx[psx + nscol], nsrow,
@@ -656,7 +572,7 @@ void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
 
     /* TRSM with diagonal block */
     #ifdef CHOLMOD_INVERT_DIAG
-    cblas_trmm (CblasColMajor,
+    cblas_dtrmm (CblasColMajor,
         CblasLeft, CblasLower, CblasTrans, CblasNonUnit,
         nscol, nrhs,
         one,   &Lx[psx], nsrow,
@@ -688,7 +604,7 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/, CHOLMOD_NAIVE, CHOLMOD_ETREE};
+enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 
 template<typename Scalar>
@@ -776,8 +692,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
       cholmod_factor *L = NULL;
       crsmat_t cholmodMtx;
       switch(test) {
-        case CHOLMOD_NAIVE:
-        case CHOLMOD_ETREE:
+        case SUPERNODAL_NAIVE:
+        case SUPERNODAL_ETREE:
         {
           // call CHOLMOD on the host    
           int *etree;
@@ -795,14 +711,14 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           auto values  = cholmodMtx.values;
 
           // create an handle
-          if (test == CHOLMOD_NAIVE) {
-            std::cout << " > create handle for CHOLMOD_NAIVE" << std::endl << std::endl;
-            khL.create_sptrsv_handle (SPTRSVAlgorithm::CHOLMOD_NAIVE, nrows, true);
-            khU.create_sptrsv_handle (SPTRSVAlgorithm::CHOLMOD_NAIVE, nrows, false);
+          if (test == SUPERNODAL_NAIVE) {
+            std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl << std::endl;
+            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, false);
           } else {
-            std::cout << " > create handle for CHOLMOD_ETREE" << std::endl << std::endl;
-            khL.create_sptrsv_handle (SPTRSVAlgorithm::CHOLMOD_ETREE, nrows, true);
-            khU.create_sptrsv_handle (SPTRSVAlgorithm::CHOLMOD_ETREE, nrows, false);
+            std::cout << " > create handle for SUPERNODAL_ETREE" << std::endl << std::endl;
+            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, true);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
           }
           khL.get_sptrsv_handle ()->print_algorithm ();
 
@@ -829,7 +745,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
            // symbolic on the host
            timer.reset();
            sptrsv_symbolic (&khL, row_map, entries);
-           std::cout << " > Lower-TRI Symbolic Time: " << timer.seconds() << std::endl;
+           std::cout << " > Lower-TRI: " << std::endl;
+           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
            timer.reset();
            // numeric (only rhs is modified) on the default device/host space
@@ -842,7 +759,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
            //solveL_cholmod<Scalar>(L, 1, rhs.data(), nrows) ;
           #endif
           Kokkos::fence();
-          std::cout << " > Lower-TRI Solve Time   : " << timer.seconds() << std::endl;
+          std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
           //Kokkos::deep_copy (tmp_host, rhs);
           //for (int ii=0; ii<nrows; ii++) printf( " %d %e\n",ii,tmp_host(ii) );
           //printf( "\n" );
@@ -853,7 +770,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
            // symbolic on the host
            timer.reset ();
            sptrsv_symbolic (&khU, row_map, entries);
-           std::cout << " > Upper-TRI Symbolic Time: " << timer.seconds() << std::endl;
+           std::cout << " > Upper-TRI: " << std::endl;
+           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
            // numeric (only rhs is modified) on the default device/host space
            sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
@@ -861,7 +779,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           solveU_cholmod<Scalar>(L, 1, rhs.data(), nrows);
           #endif
           Kokkos::fence ();
-          std::cout << " > Upper-TRI Solve Time   : " << timer.seconds() << std::endl;
+          std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
  
           // copy solution to host
           Kokkos::deep_copy(tmp_host, rhs);
@@ -999,7 +917,7 @@ void print_help_sptrsv() {
 
 int main(int argc, char **argv)
 {
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   std::vector<int> tests;
   std::string filename;
 
@@ -1019,10 +937,10 @@ int main(int argc, char **argv)
     if((strcmp(argv[i],"--test")==0)) {
       i++;
       if((strcmp(argv[i],"cholmod-naive")==0)) {
-        tests.push_back( CHOLMOD_NAIVE );
+        tests.push_back( SUPERNODAL_NAIVE );
       }
       if((strcmp(argv[i],"cholmod-etree")==0)) {
-        tests.push_back( CHOLMOD_ETREE );
+        tests.push_back( SUPERNODAL_ETREE );
       }
       continue;
     }
