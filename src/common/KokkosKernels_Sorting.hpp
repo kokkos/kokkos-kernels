@@ -54,34 +54,23 @@ namespace Impl {
 //Radix sort for nonnegative integers, on a single thread within a team.
 //Pros: few diverging branches, so good for sorting on a single GPU thread/warp.
 //Con: requires auxiliary storage, this version only works for integers (although float/double is possible)
-template<typename Ordinal, typename ValueType, typename Thread>
-KOKKOS_INLINE_FUNCTION static void
-radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread& thread)
+template<typename Ordinal, typename ValueType, typename Thread, typename Space>
+KOKKOS_INLINE_FUNCTION void
+radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread thread)
 {
+  //printf("Sorting %d elems at %p.\n", int(n), values);
   static_assert(std::is_integral<ValueType>::value, "radixSort can only be run on integers.");
   if(n <= 1)
     return;
-  //sort 4 bits at a time, into 16 buckets
-  ValueType mask = 0xF;
-  //Is the data currently held in values (false) or valuesAux (true)?
-  bool inAux = false;
-  //maskPos counts the low bit index of mask (0, 4, 8, ...)
-  Ordinal maskPos = 0;
-  Ordinal sortBits = 0;
   ValueType minVal = Kokkos::ArithTraits<ValueType>::max();
   ValueType maxVal = 0;
-  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(thread, n),
-  [=](Ordinal i, ValueType& lminval)
+  for(Ordinal i = 0; i < n; i++)
   {
-    if(values[i] < lminval)
-      lminval = values[i];
-  }, Kokkos::Min<ValueType>(minVal));
-  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(thread, n),
-  [=](Ordinal i, ValueType& lmaxval)
-  {
-    if(values[i] > lmaxkey)
-      lmaxkey = values[i];
-  }, Kokkos::Max<ValueType>(maxVal));
+    if(minVal > values[i])
+      minVal = values[i];
+    if(maxVal < values[i])
+      maxVal = values[i];
+  }
   //apply a bias so that key range always starts at 0
   //also invert key values here for a descending sort
   Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
@@ -89,15 +78,22 @@ radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread
   {
     values[i] -= minVal;
   });
+  Ordinal sortBits = 0;
+  ValueType upperBound = maxVal - minVal;
+  while(upperBound)
+  {
+    upperBound >>= 1;
+    sortBits++;
+  }
   Kokkos::single(Kokkos::PerThread(thread),
   [=]()
   {
-    ValueType upperBound = maxVal - minVal;
-    while(upperBound)
-    {
-      upperBound >>= 1;
-      sortBits++;
-    }
+    //Is the data currently held in values (false) or valuesAux (true)?
+    bool inAux = false;
+    //sort 4 bits at a time, into 16 buckets
+    ValueType mask = 0xF;
+    //maskPos counts the low bit index of mask (0, 4, 8, ...)
+    Ordinal maskPos = 0;
     for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
     {
       //Count the number of elements in each bucket
@@ -150,8 +146,9 @@ radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread
       maskPos += 4;
     }
   });
-  //move values back into main array if they are currently in aux
-  if(inAux)
+  //Move values back into main array if they are currently in aux.
+  //This is the case if an odd number of rounds were done.
+  if(((sortBits + 3) / 4) % 2 == 1)
   {
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
     [=](Ordinal i)
@@ -159,14 +156,21 @@ radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread
       values[i] = valuesAux[i];
     });
   }
+  //remove bias to restore original values
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
+  [=](Ordinal i)
+  {
+    values[i] += minVal;
+  });
 }
 
 //Bitonic merge sort (requires only comparison operators and trivially-copyable)
-//In-place, plenty of parallelism for GPUs, and memory references are coalesced
+//Pros: In-place, plenty of parallelism for GPUs, and memory references are coalesced
+//Con: O(n log^2(n)) serial time is bad on CPUs
 //Good diagram of the algorithm at https://en.wikipedia.org/wiki/Bitonic_sorter
 template<typename Ordinal, typename ValueType, typename TeamMember>
-KOKKOS_INLINE_FUNCTION static void
-bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember& mem)
+KOKKOS_INLINE_FUNCTION void
+bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember mem)
 {
   //Algorithm only works on power-of-two input size only.
   //If n is not a power-of-two, will implicitly pretend
@@ -183,15 +187,15 @@ bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember& mem)
     for(Ordinal j = 0; j <= i; j++)
     {
       // n/2 pairs of items are compared in parallel
-      Kokkos::parallel_for(Kokkos::ThreadTeamRange(mem, npot / 2),
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(mem, npot / 2),
         [=](const Ordinal t)
         {
           //How big are the brown/pink boxes?
           Ordinal boxSize = Ordinal(2) << (i - j);
           //Which box contains this thread?
-          Ordinal boxID = t >> (1 + i - j);         //t * 2 / boxSize;
+          Ordinal boxID = t >> (i - j);         //t * 2 / boxSize;
           Ordinal boxStart = boxID << (1 + i - j);  //boxID * boxSize
-          Ordinal boxOffset = t - (boxStart << 1);  //t - boxID * boxSize / 2;
+          Ordinal boxOffset = t - (boxStart >> 1);  //t - boxID * boxSize / 2;
           Ordinal elem1 = boxStart + boxOffset;
           if(j == 0)
           {
@@ -200,7 +204,7 @@ bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember& mem)
             if(elem2 < n)
             {
               //both elements in bounds, so compare them and swap if out of order
-              if(values[elem1] >= values[elem2])
+              if(values[elem1] > values[elem2])
               {
                 ValueType temp = values[elem1];
                 values[elem1] = values[elem2];
@@ -214,7 +218,7 @@ bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember& mem)
             Ordinal elem2 = elem1 + boxSize / 2;
             if(elem2 < n)
             {
-              if(values[elem1] >= values[elem2])
+              if(values[elem1] > values[elem2])
               {
                 ValueType temp = values[elem1];
                 values[elem1] = values[elem2];
@@ -227,6 +231,8 @@ bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember& mem)
     }
   }
 }
+
+}}
 
 #endif
 

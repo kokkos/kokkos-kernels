@@ -71,7 +71,7 @@ IF (Kokkos_ENABLE_Cuda)
   )
   
   #currently float 128 test is not working. So common tests are explicitly added.  
-  APPEND_GLOB(CUDA_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Common_ArithTraits.cpp)
+  APPEND_GLOB(CUDA_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Common*.cpp)
   
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -128,7 +128,7 @@ IF (Kokkos_ENABLE_OpenMP)
     TESTONLYLIBS kokkoskernels_gtest
   )
   
-  APPEND_GLOB(OPENMP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Common_ArithTraits.cpp)
+  APPEND_GLOB(OPENMP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Common*.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     common_openmp
@@ -183,7 +183,7 @@ IF (Kokkos_ENABLE_Serial)
     TESTONLYLIBS kokkoskernels_gtest
   )
   
-  APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Common_ArithTraits.cpp)
+  APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Common*.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     common_serial
@@ -234,7 +234,7 @@ IF (Kokkos_ENABLE_Pthread)
   )
   
   
-  APPEND_GLOB(THREADS_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Common_ArithTraits.cpp)
+  APPEND_GLOB(THREADS_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Common*.cpp)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     common_threads
