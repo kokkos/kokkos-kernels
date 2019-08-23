@@ -957,8 +957,7 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   auto row_map_host = Kokkos::create_mirror_view (row_map);
   Kokkos::deep_copy (row_map_host, row_map);
 
-  signed_integral_t lwork = thandle.get_workspace_size ();
-  Kokkos::View<scalar_t*, memory_space> work ("work", lwork);
+  Kokkos::View<scalar_t*, memory_space> work = thandle.get_workspace ();
 
   supercols_t kernel_type = thandle.get_kernel_type ();
   supercols_t work_offset = thandle.get_work_offset ();
@@ -1116,14 +1115,14 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
-  auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
-  Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
+  //auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
+  //Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
 
   auto row_map_host = Kokkos::create_mirror_view (row_map);
   Kokkos::deep_copy (row_map_host, row_map);
 
-  signed_integral_t lwork = thandle.get_workspace_size ();
-  Kokkos::View<scalar_t*,  memory_space> work ("work", lwork);
+  // workspace
+  Kokkos::View<scalar_t*, memory_space> work = thandle.get_workspace ();
 
   supercols_t kernel_type = thandle.get_kernel_type ();
   supercols_t work_offset = thandle.get_work_offset ();

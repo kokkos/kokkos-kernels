@@ -53,7 +53,7 @@ namespace KokkosSparse {
 namespace Experimental {
 
 // TP2 algorithm has issues with some offset-ordinal combo to be addressed
-enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/, CHOLMOD_NAIVE, CHOLMOD_ETREE };
+enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE };
 
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
@@ -96,7 +96,7 @@ public:
   typedef typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
   typedef Kokkos::View< signed_integral_t*, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type, typename nnz_row_view_t::memory_traits > signed_nnz_lno_view_t;
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   typedef typename execution_space::memory_space  supercols_memory_space;
 
   typedef Kokkos::DefaultHostExecutionSpace                      supercols_host_execution_space;
@@ -104,6 +104,8 @@ public:
 
   typedef Kokkos::View<int*, supercols_memory_space>       supercols_t;
   typedef Kokkos::View<int*, supercols_host_memory_space>  supercols_host_t;
+
+  typedef typename Kokkos::View<nnz_scalar_t*, memory_space> WorkspaceType;
 #endif
 
 private:
@@ -124,7 +126,7 @@ private:
   int team_size;
   int vector_size;
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   // number of supernodal columns
   signed_integral_t nsuper;
 
@@ -137,6 +139,7 @@ private:
 
   // workspace size
   signed_integral_t lwork;
+  WorkspaceType work;
   // offset to workspace for each supernodal column
   supercols_host_t work_offset_host;
   supercols_t      work_offset;
@@ -266,7 +269,7 @@ public:
   void set_vector_size(const int vs) {this->vector_size = vs;}
   int get_vector_size() const {return this->vector_size;}
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
   void set_supernodes (signed_integral_t nsuper_, int* supercols_, int *etree_) {
     this->nsuper = nsuper_;
@@ -284,7 +287,7 @@ public:
     this->work_offset = supercols_t ("workoffset", nsuper_);
 
     // kernel type 
-    this->sup_size_tol = 500;
+    this->sup_size_tol = 500; // TODO: don't hardcode
     this->kernel_type_host = supercols_host_t ("kernel_type_host", nsuper_);
     this->kernel_type = supercols_t ("kernel_type", nsuper_);
   }
@@ -311,11 +314,19 @@ public:
   // workspace size
   void set_workspace_size (signed_integral_t lwork_) {
     this->lwork = lwork_;
+    this->work = WorkspaceType("work", lwork);
   }
   signed_integral_t get_workspace_size () {
     return this->lwork;
   }
 
+  // workspace
+  KOKKOS_INLINE_FUNCTION
+  WorkspaceType get_workspace() const {
+    return this->work;
+  }
+
+  // workspace
   KOKKOS_INLINE_FUNCTION
   supercols_t get_work_offset() const { 
     return this->work_offset;
@@ -352,11 +363,11 @@ public:
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
       std::cout << "SEQLVLSCHD_TP1" << std::endl;;
 
-    if ( algm == SPTRSVAlgorithm::CHOLMOD_NAIVE )
-      std::cout << "CHOLMOD_NAIVE" << std::endl;;
+    if ( algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE )
+      std::cout << "SUPERNODAL_NAIVE" << std::endl;;
 
-    if ( algm == SPTRSVAlgorithm::CHOLMOD_ETREE )
-      std::cout << "CHOLMOD_ETREE" << std::endl;;
+    if ( algm == SPTRSVAlgorithm::SUPERNODAL_ETREE )
+      std::cout << "SUPERNODAL_ETREE" << std::endl;;
 
     /*
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {

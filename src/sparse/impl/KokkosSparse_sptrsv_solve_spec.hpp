@@ -55,9 +55,9 @@
 #include <KokkosSparse_sptrsv_symbolic_impl.hpp>
 #endif
 
-#define _ENABLE_CUDA_PROFILE_
 #ifdef _ENABLE_CUDA_PROFILE_
  #include "cudaProfiler.h"
+ #include "cuda_profiler_api.h"
 #endif
 
 namespace KokkosSparse {
@@ -167,6 +167,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
       }
       //printf( " calling lower_tri_solve from KokkosSparse_sptrsv_solve_spec.hpp\n" );
       #ifdef _ENABLE_CUDA_PROFILE_
+      //cuProfilerInitialize ();
       cudaProfilerStart ();
       #endif
       Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
