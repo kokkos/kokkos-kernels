@@ -42,12 +42,13 @@
 */
 
 /// \file Test_Common_Sorting.hpp
-/// \brief Tests for radixSortThread and bitonicSortTeam in KokkoKernels_Sorting.hpp
+/// \brief Tests for radixSort and bitonicSort in KokkoKernels_Sorting.hpp
 
 #ifndef KOKKOSKERNELS_SORTINGTEST_HPP
 #define KOKKOSKERNELS_SORTINGTEST_HPP
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Sort.hpp>
 #include <KokkosKernels_SimpleUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
 #include <KokkosKernels_Sorting.hpp>
@@ -92,6 +93,7 @@ double getRandom<double>()
 template<typename View>
 void fillRandom(View v)
 {
+  srand(12345);
   typedef typename View::value_type Value;
   auto vhost = Kokkos::create_mirror_view(v);
   for(size_t i = 0; i < v.extent(0); i++)
@@ -103,7 +105,6 @@ template<typename ValView, typename OrdView>
 struct RadixSortFunctor
 {
   typedef typename ValView::value_type Value;
-  typedef typename ValView::memory_space Space;
 
   RadixSortFunctor(ValView& values_, ValView& valuesAux_, OrdView& counts_, OrdView& offsets_)
     : values(values_), valuesAux(valuesAux_), counts(counts_), offsets(offsets_)
@@ -114,7 +115,7 @@ struct RadixSortFunctor
     Kokkos::parallel_for(Kokkos::TeamThreadRange(t, counts.extent(0)),
       [=](const int i)
       {
-        KokkosKernels::Impl::radixSortThread<int, Value, TeamMem, Space>(&values(offsets(i)), &valuesAux(offsets(i)), counts(i), t);
+        KokkosKernels::Impl::radixSort<int, Value, TeamMem>(&values(offsets(i)), &valuesAux(offsets(i)), counts(i), t);
       });
   }
   ValView values;
@@ -124,7 +125,7 @@ struct RadixSortFunctor
 };
 
 template<typename ExecSpace, typename Scalar>
-void testRadixSort(bool perfTest)
+void testBatchRadixSort()
 {
   //Create a view of randomized data
   typedef typename ExecSpace::memory_space mem_space;
@@ -135,8 +136,6 @@ void testRadixSort(bool perfTest)
   OrdView offsets;
   //Generate k sub-array sizes, each with size about 20
   size_t k = 100;
-  if(perfTest)
-    k = 100000;
   size_t subSize = 20;
   size_t n = generateRandomOffsets<OrdView, ExecSpace>(counts, offsets, k, subSize);
   auto countsHost = Kokkos::create_mirror_view(counts);
@@ -147,33 +146,24 @@ void testRadixSort(bool perfTest)
   fillRandom(data);
   ValView dataAux("Radix sort aux data", n);
   //Run the sorting on device in all sub-arrays in parallel, just using vector loops
-  Kokkos::Timer timer;
   typedef Kokkos::TeamPolicy<ExecSpace> team_policy;
   Kokkos::parallel_for(team_policy(1, Kokkos::AUTO(), 32),
         RadixSortFunctor<ValView, OrdView>(data, dataAux, counts, offsets));
-  double time = timer.seconds();
-  if(perfTest)
+  //Sort using std::sort on host to do correctness test
+  Kokkos::View<Scalar*, Kokkos::HostSpace> gold("Host sorted", n);
+  Kokkos::deep_copy(gold, data);
+  for(size_t i = 0; i < k; i++)
   {
-    std::cout << "Radix sort took " << time << " s to sort " << k * subSize << " total items.\n";
+    Scalar* begin = &gold(offsetsHost(i));
+    Scalar* end = begin + countsHost(i);
+    std::sort(begin, end);
   }
-  else
+  //Copy result to host
+  auto dataHost = Kokkos::create_mirror_view(data);
+  Kokkos::deep_copy(dataHost, data);
+  for(size_t i = 0; i < n; i++)
   {
-    //Sort using std::sort on host to do correctness test
-    Kokkos::View<Scalar*, Kokkos::HostSpace> gold("Host sorted", n);
-    Kokkos::deep_copy(gold, data);
-    for(size_t i = 0; i < k; i++)
-    {
-      Scalar* begin = &gold(offsetsHost(i));
-      Scalar* end = begin + countsHost(i);
-      std::sort(begin, end);
-    }
-    //Copy result to host
-    auto dataHost = Kokkos::create_mirror_view(data);
-    Kokkos::deep_copy(dataHost, data);
-    for(size_t i = 0; i < n; i++)
-    {
-      ASSERT_EQ(dataHost(i), gold(i));
-    }
+    ASSERT_EQ(dataHost(i), gold(i));
   }
 }
 
@@ -190,7 +180,7 @@ struct BitonicSortFunctor
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMem t) const
   {
     int i = t.league_rank();
-    KokkosKernels::Impl::bitonicSortTeam<int, Value, TeamMem>(&values(offsets(i)), counts(i), t);
+    KokkosKernels::Impl::bitonicSort<int, Value, TeamMem>(&values(offsets(i)), counts(i), t);
   }
   ValView values;
   OrdView offsets;
@@ -198,7 +188,7 @@ struct BitonicSortFunctor
 };
 
 template<typename ExecSpace, typename Scalar>
-void testBitonicSort(bool perfTest)
+void testBatchBitonicSort()
 {
   //Create a view of randomized data
   typedef typename ExecSpace::memory_space mem_space;
@@ -210,11 +200,6 @@ void testBitonicSort(bool perfTest)
   //Generate k sub-array sizes, each with size about 20
   size_t k = 100;
   size_t subSize = 100;
-  if(perfTest)
-  {
-    k = 500;
-    subSize = 1000000;
-  }
   size_t n = generateRandomOffsets<OrdView, ExecSpace>(counts, offsets, k, subSize);
   auto countsHost = Kokkos::create_mirror_view(counts);
   auto offsetsHost = Kokkos::create_mirror_view(offsets);
@@ -222,42 +207,65 @@ void testBitonicSort(bool perfTest)
   Kokkos::deep_copy(offsetsHost, offsets);
   ValView data("Bitonic sort testing data", n);
   fillRandom(data);
-  ValView dataAux("Bitonic sort aux data", n);
-  Kokkos::Timer timer;
   //Run the sorting on device in all sub-arrays in parallel
   Kokkos::parallel_for(Kokkos::TeamPolicy<ExecSpace>(k, Kokkos::AUTO()),
       BitonicSortFunctor<ValView, OrdView>(data, counts, offsets));
-  double time = timer.seconds();
-  if(perfTest)
+  //Copy result to host
+  auto dataHost = Kokkos::create_mirror_view(data);
+  Kokkos::deep_copy(dataHost, data);
+  //Sort using std::sort on host to do correctness test
+  Kokkos::View<Scalar*, Kokkos::HostSpace> gold("Host sorted", n);
+  Kokkos::deep_copy(gold, data);
+  for(size_t i = 0; i < k; i++)
   {
-    std::cout << "Bitonic sort took " << time << " s to sort " << k * subSize << " total items.\n";
+    Scalar* begin = &gold(offsetsHost(i));
+    Scalar* end = begin + countsHost(i);
+    std::sort(begin, end);
   }
-  else
+  for(size_t i = 0; i < n; i++)
   {
-    //Copy result to host
-    auto dataHost = Kokkos::create_mirror_view(data);
-    Kokkos::deep_copy(dataHost, data);
-    //Sort using std::sort on host to do correctness test
-    Kokkos::View<Scalar*, Kokkos::HostSpace> gold("Host sorted", n);
-    Kokkos::deep_copy(gold, data);
-    for(size_t i = 0; i < k; i++)
-    {
-      Scalar* begin = &gold(offsetsHost(i));
-      Scalar* end = begin + countsHost(i);
-      std::sort(begin, end);
-    }
-    for(size_t i = 0; i < n; i++)
-    {
-      ASSERT_EQ(dataHost(i), gold(i));
-    }
+    ASSERT_EQ(dataHost(i), gold(i));
   }
+}
+
+template<typename View>
+struct CheckSortedFunctor
+{
+  CheckSortedFunctor(View& v_)
+    : v(v_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(int i, int& lval) const
+  {
+    if(v(i) > v(i + 1))
+      lval = 0;
+  }
+  View v;
+};
+
+template<typename ExecSpace, typename Scalar>
+void testBitonicSort()
+{
+  //Create a view of randomized data
+  typedef typename ExecSpace::memory_space mem_space;
+  typedef Kokkos::View<Scalar*, mem_space> ValView;
+  size_t n = 100000;
+  ValView data("Bitonic sort testing data", n);
+  fillRandom(data);
+  KokkosKernels::Impl::bitonicSort<ValView, ExecSpace, int>(data);
+  int ordered = 1;
+  Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpace>(0, n - 1),
+      CheckSortedFunctor<ValView>(data), Kokkos::Min<int>(ordered));
+  ASSERT_TRUE(ordered);
 }
 
 TEST_F( TestCategory, common_Sorting) {
-  testRadixSort<TestExecSpace, char>(false);
-  testRadixSort<TestExecSpace, int>(true);
-  testBitonicSort<TestExecSpace, int>(true);
-  testBitonicSort<TestExecSpace, double>(false);
+  testBatchRadixSort<TestExecSpace, char>();
+  testBatchRadixSort<TestExecSpace, int>();
+  testBatchBitonicSort<TestExecSpace, int>();
+  testBatchBitonicSort<TestExecSpace, double>();
+  testBitonicSort<TestExecSpace, char>();
+  testBitonicSort<TestExecSpace, int>();
+  testBitonicSort<TestExecSpace, double>();
 }
 
 #endif
+

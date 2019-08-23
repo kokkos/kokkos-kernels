@@ -51,12 +51,12 @@
 namespace KokkosKernels {
 namespace Impl {
 
-//Radix sort for nonnegative integers, on a single thread within a team.
-//Pros: few diverging branches, so good for sorting on a single GPU thread/warp.
-//Con: requires auxiliary storage, this version only works for integers (although float/double is possible)
-template<typename Ordinal, typename ValueType, typename Thread, typename Space>
+//Radix sort for integers, on a single thread within a team.
+//Pros: few diverging branches, so OK for sorting on a single GPU thread/warp. Better on CPU cores.
+//Con: requires auxiliary storage, and this version only works for integers
+template<typename Ordinal, typename ValueType, typename Thread>
 KOKKOS_INLINE_FUNCTION void
-radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread thread)
+radixSort(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread thread)
 {
   //printf("Sorting %d elems at %p.\n", int(n), values);
   static_assert(std::is_integral<ValueType>::value, "radixSort can only be run on integers.");
@@ -73,11 +73,15 @@ radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread
   }
   //apply a bias so that key range always starts at 0
   //also invert key values here for a descending sort
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-  [=](Ordinal i)
+  if(minVal != 0)
   {
-    values[i] -= minVal;
-  });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
+    [=](Ordinal i)
+    {
+      values[i] -= minVal;
+    });
+  }
+  //determine how many significant bits the data has
   Ordinal sortBits = 0;
   ValueType upperBound = maxVal - minVal;
   while(upperBound)
@@ -157,11 +161,136 @@ radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread
     });
   }
   //remove bias to restore original values
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-  [=](Ordinal i)
+  if(minVal != 0)
   {
-    values[i] += minVal;
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
+    [=](Ordinal i)
+    {
+      values[i] += minVal;
+    });
+  }
+}
+
+//Radix sort for integers, on a single thread within a team.
+//While sorting, also permute "perm" array along with the values.
+//Pros: few diverging branches, so good for sorting on a single GPU thread/warp.
+//Con: requires auxiliary storage, this version only works for integers (although float/double is possible)
+template<typename Ordinal, typename ValueType, typename PermType, typename Thread>
+KOKKOS_INLINE_FUNCTION void
+radixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermType* permAux, Ordinal n, const Thread thread)
+{
+  static_assert(std::is_integral<ValueType>::value, "radixSort can only be run on integers.");
+  if(n <= 1)
+    return;
+  ValueType minVal = Kokkos::ArithTraits<ValueType>::max();
+  ValueType maxVal = 0;
+  for(Ordinal i = 0; i < n; i++)
+  {
+    if(minVal > values[i])
+      minVal = values[i];
+    if(maxVal < values[i])
+      maxVal = values[i];
+  }
+  //apply a bias so that key range always starts at 0
+  //also invert key values here for a descending sort
+  if(minVal != 0)
+  {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
+    [=](Ordinal i)
+    {
+      values[i] -= minVal;
+    });
+  }
+  Ordinal sortBits = 0;
+  ValueType upperBound = maxVal - minVal;
+  while(upperBound)
+  {
+    upperBound >>= 1;
+    sortBits++;
+  }
+  Kokkos::single(Kokkos::PerThread(thread),
+  [=]()
+  {
+    //Is the data currently held in values (false) or valuesAux (true)?
+    bool inAux = false;
+    //sort 4 bits at a time, into 16 buckets
+    ValueType mask = 0xF;
+    //maskPos counts the low bit index of mask (0, 4, 8, ...)
+    Ordinal maskPos = 0;
+    for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
+    {
+      //Count the number of elements in each bucket
+      Ordinal count[16] = {0};
+      Ordinal offset[17];
+      if(!inAux)
+      {
+        for(Ordinal i = 0; i < n; i++)
+        {
+          count[(values[i] & mask) >> maskPos]++;
+        }
+      }
+      else
+      {
+        for(Ordinal i = 0; i < n; i++)
+        {
+          count[(valuesAux[i] & mask) >> maskPos]++;
+        }
+      }
+      offset[0] = 0;
+      //get offset as the prefix sum for count
+      for(Ordinal i = 0; i < 16; i++)
+      {
+        offset[i + 1] = offset[i] + count[i];
+      }
+      //now for each element in [lo, hi), move it to its offset in the other buffer
+      //this branch should be ok because whichBuf is the same on all threads
+      if(!inAux)
+      {
+        //copy from *Over to *Aux
+        for(Ordinal i = 0; i < n; i++)
+        {
+          Ordinal bucket = (values[i] & mask) >> maskPos;
+          valuesAux[offset[bucket + 1] - count[bucket]] = values[i];
+          permAux[offset[bucket + 1] - count[bucket]] = perm[i];
+          count[bucket]--;
+        }
+      }
+      else
+      {
+        //copy from *Aux to *Over
+        for(Ordinal i = 0; i < n; i++)
+        {
+          Ordinal bucket = (valuesAux[i] & mask) >> maskPos;
+          values[offset[bucket + 1] - count[bucket]] = valuesAux[i];
+          perm[offset[bucket + 1] - count[bucket]] = permAux[i];
+          count[bucket]--;
+        }
+      }
+      inAux = !inAux;
+      mask = mask << 4;
+      maskPos += 4;
+    }
   });
+  //Move values back into main array if they are currently in aux.
+  //This is the case if an odd number of rounds were done.
+  if(((sortBits + 3) / 4) % 2 == 1)
+  {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
+    [=](Ordinal i)
+    {
+      values[i] = valuesAux[i];
+      perm[i] = permAux[i];
+    });
+  }
+  if(minVal != 0)
+  {
+    //remove bias to restore original values
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
+    [=](Ordinal i)
+    {
+      values[i] += minVal;
+    });
+  }
 }
 
 //Bitonic merge sort (requires only comparison operators and trivially-copyable)
@@ -170,7 +299,7 @@ radixSortThread(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread
 //Good diagram of the algorithm at https://en.wikipedia.org/wiki/Bitonic_sorter
 template<typename Ordinal, typename ValueType, typename TeamMember>
 KOKKOS_INLINE_FUNCTION void
-bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember mem)
+bitonicSort(ValueType* values, Ordinal n, const TeamMember mem)
 {
   //Algorithm only works on power-of-two input size only.
   //If n is not a power-of-two, will implicitly pretend
@@ -228,6 +357,257 @@ bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember mem)
           }
         });
       mem.team_barrier();
+    }
+  }
+}
+
+//Sort "values", while applying the same swaps to "perm" 
+template<typename Ordinal, typename ValueType, typename PermType, typename TeamMember>
+KOKKOS_INLINE_FUNCTION void
+bitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember mem)
+{
+  //Algorithm only works on power-of-two input size only.
+  //If n is not a power-of-two, will implicitly pretend
+  //that values[i] for i >= n is just the max for ValueType, so it never gets swapped
+  Ordinal npot = 1;
+  Ordinal levels = 0;
+  while(npot < n)
+  {
+    levels++;
+    npot <<= 1;
+  }
+  for(Ordinal i = 0; i < levels; i++)
+  {
+    for(Ordinal j = 0; j <= i; j++)
+    {
+      // n/2 pairs of items are compared in parallel
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(mem, npot / 2),
+        [=](const Ordinal t)
+        {
+          //How big are the brown/pink boxes?
+          Ordinal boxSize = Ordinal(2) << (i - j);
+          //Which box contains this thread?
+          Ordinal boxID = t >> (i - j);         //t * 2 / boxSize;
+          Ordinal boxStart = boxID << (1 + i - j);  //boxID * boxSize
+          Ordinal boxOffset = t - (boxStart >> 1);  //t - boxID * boxSize / 2;
+          Ordinal elem1 = boxStart + boxOffset;
+          if(j == 0)
+          {
+            //first phase (brown box): within a block, compare with the opposite value in the box
+            Ordinal elem2 = boxStart + boxSize - 1 - boxOffset;
+            if(elem2 < n)
+            {
+              //both elements in bounds, so compare them and swap if out of order
+              if(values[elem1] > values[elem2])
+              {
+                ValueType temp = values[elem1];
+                values[elem1] = values[elem2];
+                values[elem2] = temp;
+                PermType temp2 = perm[elem1];
+                perm[elem1] = perm[elem2];
+                perm[elem2] = temp2;
+              }
+            }
+          }
+          else
+          {
+            //later phases (pink box): within a block, compare with fixed distance (boxSize / 2) apart
+            Ordinal elem2 = elem1 + boxSize / 2;
+            if(elem2 < n)
+            {
+              if(values[elem1] > values[elem2])
+              {
+                ValueType temp = values[elem1];
+                values[elem1] = values[elem2];
+                values[elem2] = temp;
+                PermType temp2 = perm[elem1];
+                perm[elem1] = perm[elem2];
+                perm[elem2] = temp2;
+              }
+            }
+          }
+        });
+      mem.team_barrier();
+    }
+  }
+}
+
+//Functor that sorts a view on one team
+template<typename View, typename Ordinal, typename TeamMember>
+struct BitonicSingleTeamFunctor
+{
+  BitonicSingleTeamFunctor(View& v_) : v(v_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
+  {
+    bitonicSort(v.data(), v.extent(0), t);
+  };
+  View v;
+};
+
+//Functor that sorts equally sized chunks on each team
+template<typename View, typename Ordinal, typename TeamMember>
+struct BitonicChunkFunctor
+{
+  BitonicChunkFunctor(View& v_, Ordinal chunkSize_) : v(v_), chunkSize(chunkSize_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
+  {
+    Ordinal chunk = t.league_rank();
+    Ordinal chunkStart = chunk * chunkSize;
+    Ordinal n = chunkSize;
+    if(chunkStart + n > Ordinal(v.extent(0)))
+      n = v.extent(0) - chunkStart;
+    bitonicSort(v.data() + chunkStart, n, t);
+  };
+  View v;
+  Ordinal chunkSize;
+};
+
+//Functor that does just the first phase (brown) of bitonic sort on equally-sized chunks
+template<typename View, typename Ordinal, typename TeamMember>
+struct BitonicPhase1Functor
+{
+  typedef typename View::value_type Value;
+  BitonicPhase1Functor(View& v_, Ordinal boxSize_, Ordinal teamsPerBox_)
+    : v(v_), boxSize(boxSize_), teamsPerBox(teamsPerBox_)
+  {}
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
+  {
+    Ordinal box = t.league_rank() / teamsPerBox;
+    Ordinal boxStart = boxSize * box;
+    Ordinal work = boxSize / teamsPerBox / 2;
+    Ordinal workStart = work * (t.league_rank() % teamsPerBox);
+    Ordinal workReflect = boxSize - workStart - 1;
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(t, work),
+      [=](const Ordinal i)
+      {
+        Ordinal elem1 = boxStart + workStart + i;
+        Ordinal elem2 = boxStart + workReflect - i;
+        if(elem2 < Ordinal(v.extent(0)))
+        {
+          if(v(elem1) > v(elem2))
+          {
+            Value temp = v(elem1);
+            v(elem1) = v(elem2);
+            v(elem2) = temp;
+          }
+        }
+      });
+  };
+  View v;
+  Ordinal boxSize;
+  Ordinal teamsPerBox;
+};
+
+//Functor that does the second phase (red) of bitonic sort
+template<typename View, typename Ordinal, typename TeamMember>
+struct BitonicPhase2Functor
+{
+  typedef typename View::value_type Value;
+  BitonicPhase2Functor(View& v_, Ordinal boxSize_, Ordinal teamsPerBox_)
+    : v(v_), boxSize(boxSize_), teamsPerBox(teamsPerBox_)
+  {}
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
+  {
+    Ordinal logBoxSize = 1;
+    while((Ordinal(1) << logBoxSize) < boxSize)
+      logBoxSize++;
+    Ordinal box = t.league_rank() / teamsPerBox;
+    Ordinal boxStart = boxSize * box;
+    Ordinal work = boxSize / teamsPerBox / 2;
+    Ordinal workStart = boxStart + work * (t.league_rank() % teamsPerBox);
+    Ordinal jump = boxSize / 2;
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(t, work),
+      [=](const Ordinal i)
+      {
+        Ordinal elem1 = workStart + i;
+        Ordinal elem2 = workStart + jump + i;
+        if(elem2 < Ordinal(v.extent(0)))
+        {
+          if(v(elem1) > v(elem2))
+          {
+            Value temp = v(elem1);
+            v(elem1) = v(elem2);
+            v(elem2) = temp;
+          }
+        }
+      });
+    if(teamsPerBox == 1)
+    {
+      //This team can finish phase 2 for all the smaller red boxes that follow,
+      //since there are no longer cross-team data dependencies
+      for(Ordinal subLevel = 1; subLevel < logBoxSize; subLevel++)
+      {
+        t.team_barrier();
+        Ordinal logSubBoxSize = logBoxSize - subLevel;
+        Ordinal subBoxSize = Ordinal(1) << logSubBoxSize;
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(t, work),
+          [=](const Ordinal i)
+          {
+            Ordinal globalThread = i + t.league_rank() * work;
+            Ordinal subBox = globalThread >> (logSubBoxSize - 1);
+            Ordinal subBoxStart = subBox << logSubBoxSize;
+            Ordinal subBoxOffset = globalThread & ((Ordinal(1) << (logSubBoxSize - 1)) - 1); //i % (subBoxSize / 2)
+            Ordinal elem1 = subBoxStart + subBoxOffset;
+            //later phases (pink box): within a block, compare with fixed distance (boxSize / 2) apart
+            Ordinal elem2 = elem1 + subBoxSize / 2;
+            if(elem2 < Ordinal(v.extent(0)))
+            {
+              if(v(elem1) > v(elem2))
+              {
+                Value temp = v(elem1);
+                v(elem1) = v(elem2);
+                v(elem2) = temp;
+              }
+            }
+          });
+      }
+    }
+  };
+  View v;
+  Ordinal boxSize;
+  Ordinal teamsPerBox;
+};
+
+//Version to be called from host on a single array
+//Generally ~2x slower than Kokkos::sort() for large arrays (> 50 M elements),
+//but faster for smaller arrays.
+//
+//This is also more general: supports 8- and 16-bit integers,
+//and any other trivially copyable value type that has device-compatible comparison operators.
+template<typename View, typename ExecSpace, typename Ordinal = typename View::size_type>
+void bitonicSort(View v)
+{
+  typedef Kokkos::TeamPolicy<ExecSpace> team_policy;
+  typedef typename team_policy::member_type team_member;
+  typedef typename View::value_type Value;
+  Ordinal n = v.extent(0);
+  //If n is small, just sort on a single team
+  if(n <= Ordinal(1) << 16)
+  {
+    Kokkos::parallel_for(team_policy(1, Kokkos::AUTO()),
+        BitonicSingleTeamFunctor<View, Ordinal, team_member>(v));
+  }
+  else
+  {
+    //Partition the data equally among fixed number of teams
+    const Ordinal numTeams = 256;
+    Ordinal npot = 1;
+    while(npot < n)
+      npot <<= 1;
+    Ordinal numPerTeam = npot / numTeams;
+    //First, sort within teams
+    Kokkos::parallel_for(team_policy(numTeams, Kokkos::AUTO()),
+        BitonicChunkFunctor<View, Ordinal, team_member>(v, numPerTeam));
+    for(int teamsPerBox = 2; teamsPerBox <= npot / numPerTeam; teamsPerBox *= 2)
+    {
+      Ordinal boxSize = teamsPerBox * numPerTeam;
+      Kokkos::parallel_for(team_policy(numTeams, Kokkos::AUTO()),
+          BitonicPhase1Functor<View, Ordinal, team_member>(v, boxSize, teamsPerBox));
+      for(int boxDiv = 1; teamsPerBox >> boxDiv; boxDiv++)
+      {
+        Kokkos::parallel_for(team_policy(numTeams, Kokkos::AUTO()),
+            BitonicPhase2Functor<View, Ordinal, team_member>(v, boxSize >> boxDiv, teamsPerBox >> boxDiv));
+      }
     }
   }
 }
