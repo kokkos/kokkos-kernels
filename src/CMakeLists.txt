@@ -127,7 +127,8 @@ KOKKOSKERNELS_ADD_LIBRARY(
 
 IF (KOKKOSKERNELS_HAS_TRILINOS)
   #no linking commands required - tribits does this
-ELSEIF()
+ELSEIF(KOKKOSKERNELS_HAS_PARENT)
+  TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC kokkos)
 ELSE()
   TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC Kokkos::kokkos)
 ENDIF()
