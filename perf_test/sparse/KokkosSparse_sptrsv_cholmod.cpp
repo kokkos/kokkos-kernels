@@ -598,6 +598,7 @@ void backwardP_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb, Scalar *
         X[Perm[i]] = B[i];
     }
 }
+#endif //  KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -607,6 +608,7 @@ using namespace KokkosKernels::Experimental;
 enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 template<typename Scalar>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_size, int vector_length, int idx_offset, int loop) {
 
@@ -695,13 +697,21 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
         case SUPERNODAL_NAIVE:
         case SUPERNODAL_ETREE:
         {
+          Kokkos::Timer timer;
           // call CHOLMOD on the host    
           int *etree;
+          timer.reset();
+          std::cout << " > call CHOLMOD for factorization" << std::endl;
           L = factor_cholmod<Scalar> (nrows, Mtx.nnz(), values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                                       &cm, &etree);
+          std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
+
           // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
+          timer.reset();
+          std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix, and copy to device " << std::endl;
           host_crsmat_t *cholmodMtx_host = nullptr;
           cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t> (L, &cm, cholmodMtx_host);
+          std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
           //print_factor_cholmod (&cholmodMtx_host);
 
           // crsMatrix (storing L-factor) on the default host/device
@@ -729,7 +739,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           khU.set_supernodes (nsuper, supercols, etree);
  
           // Init run to check the error, and also to clear the cache
-          Kokkos::Timer timer;
           // apply forward-pivot on the host
           HostValuesType tmp_host ("temp", nrows);
           forwardP_cholmod<Scalar> (L, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
@@ -754,9 +763,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           #else
            timer.reset();
            // solveL with Kokkos' csr version (read from Cholmod structure)
-           solveL_cholmod<crsmat_t, Scalar>((int)(L->nsuper), (int*)(L->super), &cholmodMtx, 1, rhs.data(), nrows) ;
+           solveL_cholmod<crsmat_t, Scalar>((int)(L->nsuper), (int*)(L->super), &cholmodMtx, 1, rhs.data(), nrows);
            // solveL with Cholmod data structure, L
-           //solveL_cholmod<Scalar>(L, 1, rhs.data(), nrows) ;
+           //solveL_cholmod<Scalar>(L, 1, rhs.data(), nrows);
           #endif
           Kokkos::fence();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
@@ -897,6 +906,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
 
   return 0;
 }
+#endif //  KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 
 
 void print_help_sptrsv() {
@@ -912,12 +922,11 @@ void print_help_sptrsv() {
   printf("  -vl [V]         : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
   printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
 }
-#endif
 
 
 int main(int argc, char **argv)
 {
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
   std::vector<int> tests;
   std::string filename;
 

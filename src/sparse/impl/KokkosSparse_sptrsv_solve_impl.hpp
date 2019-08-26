@@ -935,7 +935,6 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
 
   typedef typename ValuesType::non_const_value_type scalar_t;
-  typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
 
   typedef typename TriSolveHandle::supercols_t supercols_t;
   typedef typename TriSolveHandle::supercols_host_t supercols_host_t;
@@ -1099,12 +1098,13 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
 
   typedef typename ValuesType::non_const_value_type scalar_t;
-  typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
 
   typedef typename TriSolveHandle::supercols_t supercols_t;
-  typedef typename TriSolveHandle::supercols_host_t supercols_host_t;
 
+#if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
   typedef Kokkos::pair<int,int> range_type;
+  typedef typename TriSolveHandle::supercols_host_t supercols_host_t;
+#endif
 
   auto nlevels = thandle.get_num_levels();
   // Keep this a host View, create device version and copy to back to host during scheduling
@@ -1186,7 +1186,7 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 //Kokkos::Timer timer;
 //timer.reset();
         Kokkos::parallel_for ("parfor_usolve_cholmot", policy_type (lvl_nodes , Kokkos::AUTO), tstf);
-#if 0
+#if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
         supercols_host_t kernel_type_host = thandle.get_kernel_type_host ();
         if (kernel_type_host (lvl) == 2) {
           scalar_t zero (0.0);
