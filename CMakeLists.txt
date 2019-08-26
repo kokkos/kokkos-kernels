@@ -1,13 +1,13 @@
 
 
 IF(COMMAND TRIBITS_PACKAGE_DECL)
-  SET(KOKKOS_HAS_TRILINOS ON CACHE BOOL "")
+  SET(KOKKOSKERNELS_HAS_TRILINOS ON) #no reason for these to be cache variables
 ELSE()
-  SET(KOKKOS_HAS_TRILINOS OFF CACHE BOOL "")
+  SET(KOKKOSKERNELS_HAS_TRILINOS OFF) #no reason for these to be cache variables
 ENDIF()
 
 
-IF(NOT KOKKOS_HAS_TRILINOS)
+IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
   cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
   IF(NOT DEFINED ${PROJECT_NAME})
     PROJECT(KokkosKernels CXX)
@@ -15,6 +15,11 @@ IF(NOT KOKKOS_HAS_TRILINOS)
   set (KokkosKernels_VERSION_MAJOR 2)
   set (KokkosKernels_VERSION_MINOR 7)
   set (KokkosKernels_VERSION_PATCH 4)
+ENDIF()
+
+IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
+  MESSAGE(STATUS "Setting policy CMP0074 to use <Package>_ROOT variables")
+  CMAKE_POLICY(SET CMP0074 NEW)
 ENDIF()
 
 INCLUDE(cmake/fake_tribits.cmake)
@@ -31,8 +36,12 @@ KOKKOS_ADD_DEBUG_OPTION()
 #
 # Set up subpackage-specific configuration options
 #
-IF(NOT KOKKOS_HAS_TRILINOS)
+IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
  FIND_PACKAGE(Kokkos REQUIRED)
+ MESSAGE("Kokkos_ENABLE_CUDA     ${Kokkos_ENABLE_CUDA}")
+ MESSAGE("Kokkos_ENABLE_OpenMP   ${Kokkos_ENABLE_OpenMP}")
+ MESSAGE("Kokkos_ENABLE_PTHREAD  ${Kokkos_ENABLE_PTHREAD}")
+ MESSAGE("Kokkos_ENABLE_SERIAL   ${Kokkos_ENABLE_SERIAL}")
 ENDIF()
 
 #
@@ -62,32 +71,34 @@ KOKKOS_ADD_OPTION_AND_DEFINE(
 # KokkosKernels may enable fewer execution spaces than
 # Kokkos enables.  This can reduce build and test times.
 
-ASSERT_DEFINED (Kokkos_ENABLE_Cuda)
-SET(${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT ${Kokkos_ENABLE_Cuda})
-ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
+# JJW We should no longer assert on these. These variables will be undefined
+# if there off, defined to ON if they are enabled
+#ASSERT_DEFINED (Kokkos_ENABLE_CUDA)
+#ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
+#ASSERT_DEFINED (Kokkos_ENABLE_PTHREAD)
+#ASSERT_DEFINED (Kokkos_ENABLE_SERIAL)
+SET(${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT ${Kokkos_ENABLE_CUDA})
 SET(${PACKAGE_NAME}_INST_EXECSPACE_OPENMP_DEFAULT ${Kokkos_ENABLE_OpenMP})
-ASSERT_DEFINED (Kokkos_ENABLE_Pthread)
-SET(${PACKAGE_NAME}_INST_EXECSPACE_THREADS_DEFAULT ${Kokkos_ENABLE_Pthread})
-ASSERT_DEFINED (Kokkos_ENABLE_Serial)
-SET(${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_Serial})
+SET(${PACKAGE_NAME}_INST_EXECSPACE_THREADS_DEFAULT ${Kokkos_ENABLE_PTHREAD})
+SET(${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_SERIAL})
 
-IF(${Kokkos_ENABLE_Cuda})
+IF(Kokkos_ENABLE_CUDA})
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_CUDA
   KOKKOSKERNELS_INST_EXECSPACE_CUDA
-  "Whether to pre instantiate kernels for the execution space Kokkos::Cuda.  This option is KokkosKernels_INST_EXECSPACE_CUDA=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
+  "Whether to pre instantiate kernels for the execution space Kokkos::Cuda.  This option is KokkosKernels_INST_EXECSPACE_CUDA=${Kokkos_ENABLE_CUDA} by default.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
   )
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_CUDAUVMSPACE
   KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE
-  "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  This option is KokkosKernels_INST_EXECSPACE_CUDAUVMSPACE=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
+  "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  This option is KokkosKernels_INST_EXECSPACE_CUDAUVMSPACE=${Kokkos_ENABLE_CUDA} by default.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
   )
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_CUDASPACE
   KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE
-  "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  This option is KokkosKernels_INST_EXECSPACE_CUDASPACE=${Kokkos_ENABLE_Cuda} by default.  Disabling this when Kokkos_ENABLE_Cuda is enabled may increase build times."
+  "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  This option is KokkosKernels_INST_EXECSPACE_CUDASPACE=${Kokkos_ENABLE_CUDA} by default.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT}
   )
 
@@ -104,16 +115,16 @@ KOKKOS_ADD_OPTION_AND_DEFINE(
 
 ENDIF()
 
-IF(${Kokkos_ENABLE_Serial} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_OpenMP})
+IF(Kokkos_ENABLE_SERIAL OR Kokkos_ENABLE_PTHREAD OR Kokkos_ENABLE_OpenMP)
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE
   KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
-  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is KokkosKernels_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_Pthread} OR ${Kokkos_ENABLE_Serial}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
+  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is KokkosKernels_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_PTHREAD} OR ${Kokkos_ENABLE_SERIAL}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
   ON
   )
 ENDIF()
 
-IF(${Kokkos_ENABLE_OpenMP})
+IF(Kokkos_ENABLE_OpenMP)
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_OPENMP
   KOKKOSKERNELS_INST_EXECSPACE_OPENMP
@@ -126,11 +137,11 @@ KOKKOS_ADD_OPTION_AND_DEFINE(
 ENDIF()
 
 
-IF(${Kokkos_ENABLE_Pthread})
+IF(Kokkos_ENABLE_PTHREAD)
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_THREADS
   KOKKOSKERNELS_INST_EXECSPACE_THREADS
-  "Whether to build kernels for the execution space Kokkos::Threads.  This option is Kokkos_ENABLE_Pthread=${Kokkos_ENABLE_Pthread} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Pthread is enabled may increase build times."
+  "Whether to build kernels for the execution space Kokkos::Threads.  This option is Kokkos_ENABLE_PTHREAD=${Kokkos_ENABLE_PTHREAD} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_PTHREAD is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_THREADS_DEFAULT}
   )
   IF(${${PACKAGE_NAME}_INST_EXECSPACE_THREADS} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
@@ -139,11 +150,11 @@ KOKKOS_ADD_OPTION_AND_DEFINE(
 ENDIF()
 
 
-IF(${Kokkos_ENABLE_Serial})
+IF(Kokkos_ENABLE_SERIAL)
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_SERIAL
   KOKKOSKERNELS_INST_EXECSPACE_SERIAL
-  "Whether to build kernels for the execution space Kokkos::Serial.  This option is Kokkos_ENABLE_Serial=${Kokkos_ENABLE_Serial} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_Serial is enabled may increase build times."
+  "Whether to build kernels for the execution space Kokkos::Serial.  This option is Kokkos_ENABLE_SERIAL=${Kokkos_ENABLE_SERIAL} by default.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_SERIAL is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT}
   )
   IF(${${PACKAGE_NAME}_INST_EXECSPACE_SERIAL} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
@@ -344,7 +355,7 @@ ELSE()
   ENDIF()
 ENDIF()
 
-IF(${Kokkos_ENABLE_Cuda})
+IF(Kokkos_ENABLE_CUDA)
   # CUBLAS is ON by default when CUDA is enabled
   IF (NOT DEFINED KOKKOSKERNELS_ENABLE_TPL_CUBLAS)  
     SET(KOKKOSKERNELS_ENABLE_TPL_CUBLAS ON)
@@ -361,6 +372,19 @@ IF(${Kokkos_ENABLE_Cuda})
       SET(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE ${TPL_ENABLE_CUSPARSE})
     ENDIF()
   ENDIF()
+
+  IF (DEFINED KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+    IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)  
+      IF (NOT TPL_ENABLE_MAGMA)
+        MESSAGE( WARNING "KOKKOSKERNELS_ENABLE_TPL_MAGMA is ON but TPL_ENABLE_MAGMA is OFF. Please set TPL_ENABLE_MAGMA:BOOL=ON")
+        SET(KOKKOSKERNELS_ENABLE_TPL_MAGMA OFF)  
+      ENDIF()
+    ENDIF()
+  ELSE()
+    IF (TPL_ENABLE_MAGMA)
+      SET(KOKKOSKERNELS_ENABLE_TPL_MAGMA ${TPL_ENABLE_MAGMA})
+    ENDIF()
+  ENDIF()
 ENDIF()
 
 IF (KOKKOSKERNELS_ENABLE_TPL_BLAS)
@@ -374,6 +398,18 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
 ENDIF()
 IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
   LIST(APPEND TPL_LIST "CUBLAS")
+ENDIF()
+IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+  LIST(APPEND TPL_LIST "MAGMA")
+  IF (F77_BLAS_MANGLE STREQUAL "(name,NAME) name ## _")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DADD_ -fopenmp -lgfortran")
+  ELSEIF (F77_BLAS_MANGLE STREQUAL "(name,NAME) NAME")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUPCASE -fopenmp -lgfortran")
+  ELSEIF (F77_BLAS_MANGLE STREQUAL "(name,NAME) name")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOCHANGE -fopenmp -lgfortran")
+  ELSE ()
+    MESSAGE(FATAL_ERROR "F77_BLAS_MANGLE ${F77_BLAS_MANGLE} detected while MAGMA only accepts Fortran mangling that is one of single underscore (-DADD_), uppercase (-DUPCASE), and no change (-DNOCHANGE)")
+  ENDIF()
 ENDIF()
 
 # ==================================================================
@@ -407,11 +443,11 @@ MESSAGE("")
 # Process subdirectories
 # ==================================================================
 
-GET_DIRECTORY_PROPERTY(HAS_PARENT PARENT_DIRECTORY)
-IF (KOKKOS_HAS_TRILINOS)
+GET_DIRECTORY_PROPERTY(KOKKOSKERNELS_HAS_PARENT PARENT_DIRECTORY)
+IF (KOKKOSKERNELS_HAS_TRILINOS)
   SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
   SET(KOKKOSKERNELS_HEADER_DIR ${TRILINOS_INCDIR})
-ELSEIF(HAS_PARENT)
+ELSEIF(KOKKOSKERNELS_HAS_PARENT)
   SET(KOKKOSKERNELS_HEADER_DIR "include/kokkos-kernels")
 ELSE()
   SET(KOKKOSKERNELS_HEADER_DIR "include")

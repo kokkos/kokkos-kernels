@@ -40,10 +40,15 @@ FOREACH(DIR ${KK_INCLUDE_DIRS})
   APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 ENDFOREACH()
 
+#Blas Cuda wrapper
+IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS OR KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+  APPEND_GLOB(HEADERS ${DIR}/impl/tpls/KokkosBlas_Cuda_tpl.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/impl/tpls/KokkosBlas_Cuda_tpl.cpp)
+ENDIF()
 
 #Include BLAS, Blas host wrapper
 IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
-  #Do NOT add this to include path
+  APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls/KokkosBlas_Host_tpl.hpp)
   APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls/KokkosBlas_Host_tpl.cpp)
 ENDIF()
 
@@ -119,8 +124,12 @@ KOKKOSKERNELS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
 )
-IF (NOT KOKKOS_HAS_TRILINOS)
-  TARGET_LINK_KOKKOS(kokkoskernels PUBLIC)
+
+IF (KOKKOSKERNELS_HAS_TRILINOS)
+  #no linking commands required - tribits does this
+ELSEIF()
+ELSE()
+  TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC Kokkos::kokkos)
 ENDIF()
 
 

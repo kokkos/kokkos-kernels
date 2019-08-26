@@ -64,35 +64,35 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA)
   template<>
   struct DefaultVectorLength<float,Kokkos::CudaSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
   template<>
   struct DefaultVectorLength<double,Kokkos::CudaSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
   template<>
   struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
   template<>
   struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
   template<>
   struct DefaultVectorLength<float,Kokkos::CudaUVMSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
   template<>
   struct DefaultVectorLength<double,Kokkos::CudaUVMSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
   template<>
   struct DefaultVectorLength<Kokkos::complex<float>,Kokkos::CudaUVMSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
   template<>
   struct DefaultVectorLength<Kokkos::complex<double>,Kokkos::CudaUVMSpace> {
-    enum : int { value = 16 };
+    enum : int { value = 8 };
   };
 #endif
 

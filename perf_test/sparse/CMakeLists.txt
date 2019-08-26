@@ -3,22 +3,27 @@ KOKKOS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_pcg
-  SOURCES KokkosSparse_pcg.cpp  
+  SOURCES KokkosSparse_pcg.cpp
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spgemm
-  SOURCES KokkosSparse_spgemm.cpp 
+  SOURCES KokkosSparse_spgemm.cpp
   )
   
 KOKKOS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/spmv)
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
-  sparse_spmv
-  SOURCES KokkosSparse_spmv.cpp 
+  sparse_spmv_struct
+  SOURCES KokkosSparse_spmv_struct.cpp
   )
-  
-  
 
-  
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spmv
+  SOURCES KokkosSparse_spmv.cpp
+  )
 
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_sptrsv
+  SOURCES KokkosSparse_sptrsv.cpp 
+)

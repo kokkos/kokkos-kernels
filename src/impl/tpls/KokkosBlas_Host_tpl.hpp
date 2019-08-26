@@ -85,6 +85,12 @@ namespace KokkosBlas {
                 const T alpha, 
                 const T *a, int lda,
                 /* */ T *b, int ldb);
+
+      static
+      void gesv(int n, int rhs,
+                T *a, int lda, int *ipiv,
+                T *b, int ldb,
+                int info);
     };
 
   }
