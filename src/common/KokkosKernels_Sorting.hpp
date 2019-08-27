@@ -579,7 +579,6 @@ void bitonicSort(View v)
 {
   typedef Kokkos::TeamPolicy<ExecSpace> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef typename View::value_type Value;
   Ordinal n = v.extent(0);
   //If n is small, just sort on a single team
   if(n <= Ordinal(1) << 16)
