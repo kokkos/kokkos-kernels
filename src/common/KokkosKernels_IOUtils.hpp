@@ -995,7 +995,7 @@ int read_mtx (
   for (lno_t i = 0; i < nr; ++i){
     (*xadj)[i] = actual;
     bool is_first = true;
-    while (edges[eind].src == i){
+    while (eind < nE && edges[eind].src == i){
       if (is_first || !symmetrize || eind == 0 || (eind > 0 && edges[eind - 1].dst != edges[eind].dst)){
 
         (*adj)[actual] = edges[eind].dst;

@@ -141,6 +141,7 @@ struct SPMV_Struct_Functor {
   typedef Kokkos::Details::ArithTraits<value_type>           ATV;
   typedef Kokkos::View<ordinal_type*, scratch_space,
 		       Kokkos::MemoryTraits<Kokkos::Unmanaged> > shared_ordinal_1d;
+  using y_value_type = typename YVector::non_const_value_type;
 
   // Tags to perform SPMV on interior and boundaries
   struct interior3ptTag{};    // 1D FD and FE discretization
@@ -161,12 +162,12 @@ struct SPMV_Struct_Functor {
 
   // Additional structured spmv params
   int numDimensions = 0;
-  ordinal_type ni  = 0, nj = 0, nk = 0;
+  ordinal_type ni = 0, nj = 0, nk = 0;
   const int stencil_type;
   ordinal_type numInterior, numExterior;
   const int64_t rows_per_team;
 
-  SPMV_Struct_Functor (const Kokkos::View<ordinal_type*, Kokkos::HostSpace>structure_,
+  SPMV_Struct_Functor (const Kokkos::View<ordinal_type*, Kokkos::HostSpace> structure_,
 		       const int stencil_type_,
                        const value_type alpha_,
                        const AMatrix m_A_,
@@ -507,11 +508,19 @@ struct SPMV_Struct_Functor {
         rowIdx = (k + 1)*nj*ni + (j + 1)*ni + (i + 1);
 
         const size_type rowOffset = m_A.graph.row_map(rowIdx);
+
+	y_value_type sum(0.0);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+        for (ordinal_type idx = 0; idx < 27; ++idx) {
+         sum += m_A.values(rowOffset + idx)*m_x(rowIdx + columnOffsets(idx));
+        }
+#else
         const value_type* value_ptr = &(m_A.values(rowOffset));
-	value_type sum = 0.0;
-	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 27), [&] (const ordinal_type& idx, value_type& lclSum) {
-	    lclSum += *(value_ptr + idx)*m_x(rowIdx + columnOffsets(idx));
-	  }, sum);
+	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev, 27), [&] (const ordinal_type& idx, y_value_type& lclSum) {
+          lclSum += *(value_ptr + idx)*m_x(rowIdx + columnOffsets(idx));
+        }, sum);
+#endif
+
 	Kokkos::single(Kokkos::PerThread(dev), [&] () {
 	    m_y(rowIdx) = beta*m_y(rowIdx) + alpha*sum;
 	  });
