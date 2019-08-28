@@ -688,11 +688,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
     for ( auto test : tests ) {
       std::cout << "\ntest = " << test << std::endl;
 
-      KernelHandle khL, khU;
-      std::cout << "Create handle" << std::endl;
       cholmod_common cm;
       cholmod_factor *L = NULL;
       crsmat_t cholmodMtx;
+      KernelHandle khL, khU;
       switch(test) {
         case SUPERNODAL_NAIVE:
         case SUPERNODAL_ETREE:
@@ -708,7 +707,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
 
           // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
           timer.reset();
-          std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix, and copy to device " << std::endl;
+          std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
           host_crsmat_t *cholmodMtx_host = nullptr;
           cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t> (L, &cm, cholmodMtx_host);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
@@ -730,7 +729,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
           }
-          khL.get_sptrsv_handle ()->print_algorithm ();
+          //khL.get_sptrsv_handle ()->print_algorithm ();
 
           // setup supnodal info
           int nsuper = (int)(L->nsuper);
@@ -802,7 +801,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           // Error Check ** on host **
           Kokkos::fence();
           // normX
-          scalar_t sum = 0.0;
+          scalar_t normR = 0.0;
           scalar_t normX = 0.0;
           Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
             KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
@@ -810,16 +809,18 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
             }, normX);
           normX = sqrt(normX);
 
-          // sum = sum(B - AX)
+          // normR = ||B - AX||
           KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
           Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
             KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
               tsum += rhs_host(i) * rhs_host(i);
-            }, sum);
-          sum = sqrt(sum);
+            }, normR);
+          normR = sqrt(normR);
 
           std::cout << std::endl;
-          std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = " << sum << "/(" << normB << " + " << normA << " * " << normX << ") = " << sum/(normB + normA * normX) << std::endl;
+          std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
+                    << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
+                    << normR/(normB + normA * normX) << std::endl;
 
           // try again?
           {
@@ -840,16 +841,17 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
               }, normX);
             normX = sqrt(normX);
 
-            // sum = sum(B - AX)
+            // normR = ||B - AX||
             KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
             Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
               KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
                 tsum += rhs_host(i) * rhs_host(i);
-              }, sum);
-            sum = sqrt(sum);
+              }, normR);
+            normR = sqrt(normR);
 
-            std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = " << sum << "/(" << normB << " + " << normA << " * " << normX << ") = " << sum/(normB + normA * normX) << std::endl;
-            std::cout << std::endl;
+            std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
+                      << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
+                      << normR/(normB + normA * normX) << std::endl << std::endl;
           }
           std::cout << std::endl;
 

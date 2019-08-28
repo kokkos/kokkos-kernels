@@ -104,13 +104,13 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
   printf( " L = [\n ");
   for (int k = 0; k <= Lstore->nsuper; k++)
   {
-    int j1 = nb [k];
-    int j2 = nb [k+1];
-    int nscol  = j2 - j1;
+    int j1 = nb[k];
+    int j2 = nb[k+1];
+    int nscol = j2 - j1;
 
-    int i1 = mb [j1];
-    int i2 = mb [j1+1];
-    int nsrow  = i2 - i1;
+    int i1 = mb[j1];
+    int i2 = mb[j1+1];
+    int nsrow = i2 - i1;
     int nsrow2 = nsrow - nscol;
     int ps2    = i1 + nscol;
 
@@ -135,19 +135,21 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
   double *Uval = (double*)(Ustore->nzval);
   printf( " U = [\n ");
   for (int k = Lstore->nsuper; k >= 0; k--) {
-    int fsupc = L_FST_SUPC(k);
-    int istart = L_SUB_START(fsupc);
-    int nsupr = L_SUB_START(fsupc+1) - istart;
-    int nsupc = L_FST_SUPC(k+1) - fsupc;
-    int luptr = L_NZ_START(fsupc);
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    int i1 = mb[j1];
+    int nsrow = mb[j1+1] - i1;
+
+    int psx = colptr[j1];
 
     /* the diagonal block */
-    for (int i = 0; i < nsupc; i++) {
-      for (int j = i; j < nsupc; j++) printf( "%d %d %.16e\n",fsupc+i, fsupc+j, Lx[luptr + i + j*nsupr] );
+    for (int i = 0; i < nscol; i++) {
+      for (int j = i; j < nscol; j++) printf( "%d %d %.16e\n",j1+i, j1+j, Lx[psx + i + j*nsrow] );
     }
 
-    /* update with the off-diagonal blocks */
-    for (int jcol = fsupc; jcol < fsupc + nsupc; jcol++) {
+    /* the off-diagonal blocks */
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
         int irow = U_SUB(i);
         printf( "%d %d %.16e\n", irow, jcol, Uval[i] );
@@ -167,7 +169,7 @@ void print_crsmat(int n, crsMat_t &A) {
 
   for (int i = 0; i < n; i++) {
     for (int k = row_map[i]; k < row_map[i+1]; k++) {
-      printf( "%d %d %.16e\n",i,entries[k],values[k] );
+      printf( "%d %d %.16e %d\n",i,entries[k],values[k],k );
     }
   }
 }
@@ -175,7 +177,7 @@ void print_crsmat(int n, crsMat_t &A) {
 
 /* ========================================================================================= */
 template <typename crsMat_t, typename hostMat_t>
-crsMat_t read_superlu_factor(int n, SuperMatrix *L, hostMat_t *hostMat) {
+crsMat_t read_superlu_Lfactor(int n, SuperMatrix *L, hostMat_t *hostMat) {
 
   typedef typename hostMat_t::StaticCrsGraphType host_graph_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -310,6 +312,185 @@ crsMat_t read_superlu_factor(int n, SuperMatrix *L, hostMat_t *hostMat) {
 
 
 /* ========================================================================================= */
+template <typename crsMat_t, typename hostMat_t>
+crsMat_t read_superlu_Ufactor(int n, SuperMatrix *L,  SuperMatrix *U, hostMat_t *hostMat) {
+
+  typedef typename hostMat_t::StaticCrsGraphType host_graph_t;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+  typedef typename values_view_t::value_type scalar_t;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+
+  SCformat *Lstore = (SCformat*)(L->Store);
+  scalar_t *Lx = (scalar_t*)(Lstore->nzval);
+
+  NCformat *Ustore = (NCformat*)(U->Store);
+  double *Uval = (double*)(Ustore->nzval);
+
+  /* create a map from row id to supernode id */
+  int * nb = Lstore->sup_to_col;
+  int * mb = Lstore->rowind_colptr;
+  int * colptr = Lstore->nzval_colptr;
+
+  int supid = 0;
+  int * map = (int*)malloc(n * sizeof(int));
+  for (int k = 0; k <= Lstore->nsuper; k++)
+  {
+    int j1 = nb [k];
+    int j2 = nb [k+1];
+    for (int j = j1; j < j2; j++) {
+        map[j] = supid;
+    }
+    supid ++;
+  }
+
+  /* count number of nonzeros in each row */
+  row_map_view_t rowmap_view ("rowmap_view", n+1);
+  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  for (int i = 0; i < n; i++) {
+    hr (i) = 0;
+  }
+
+  int * check = (int*)calloc((Lstore->nsuper + 1), sizeof(int));
+  int * sup   = (int*)calloc((Lstore->nsuper + 1), sizeof(int));
+  for (int k = Lstore->nsuper; k >= 0; k--) {
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    /* the diagonal block */
+    for (int i = 0; i < nscol; i++) {
+      hr (j1+i + 1) += nscol;
+    }
+
+    /* the off-diagonal blocks */
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
+        int irow = U_SUB(i);
+
+        supid = map[irow];
+        if (check[supid] == 0) {
+          for (int ii = nb[supid]; ii < nb[supid+1]; ii++) {
+            hr (ii + 1) += nscol;
+          }
+          check[supid] = 1;
+        }
+      }
+    }
+    // reset check
+    for (int i = 0; i < Lstore->nsuper + 1; i++ ) {
+      check[i] = 0;
+    }
+  }
+
+  // convert to the offset for each row
+  //printf( " hr(%d) = %d\n",0,hr(0) );
+  for (int i = 1; i <= n; i++) {
+    //printf( " hr(%d) = %d",i,hr(i) );
+    hr (i) += hr (i-1);
+    //printf( " => %d\n",hr(i) );
+  }
+
+  /* Upper-triangular matrix */
+  int nnzA = hr (n);
+  cols_view_t    column_view ("colmap_view", nnzA);
+  values_view_t  values_view ("values_view", nnzA);
+  //printf( " nnzA = %d\n",nnzA );
+
+  typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
+  typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
+
+  for (int k = 0 ; k <= Lstore->nsuper; k++) {
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    int i1 = mb[j1];
+    int nsrow  = mb[j1+1] - i1;
+
+    /* the diagonal block */
+    int psx = colptr[j1];
+    #ifdef SUPERLU_INVERT_DIAG
+    LAPACKE_dtrtri(LAPACK_COL_MAJOR,
+                   'U', 'N', nscol, &Lx[psx], nsrow);
+    #endif
+    for (int i = 0; i < nscol; i++) {
+      for (int j = 0; j < i; j++) {
+        hc(hr(j1 + i) + j) = j1 + j;
+        hv(hr(j1 + i) + j) = STS::zero ();
+        //printf( " > %d %d %e (%d)\n",j1 + i,j1 + j,STS::zero (), hr(j1 + i) + j );
+      }
+
+      for (int j = i; j < nscol; j++) {
+        hc(hr(j1 + i) + j) = j1 + j;
+        hv(hr(j1 + i) + j) = Lx[psx + i + j*nsrow];
+        //printf( " > %d %d %e (%d)\n",j1 + i,j1 + j,Lx[psx + i + j*nsrow], hr(j1 + i) + j );
+      }
+      hr (j1 + i) += nscol;
+    }
+
+    /* the off-diagonal blocks */
+    // let me first find off-diagonal supernodal blocks..
+    int nsup = 0;
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
+        int irow = U_SUB(i);
+        if (check[map[irow]] == 0) {
+          check[map[irow]] = 1;
+
+          sup[nsup] = map[irow];
+          nsup ++;
+        }
+      }
+    }
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      // add nonzeros in jcol-th column
+      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
+        int irow = U_SUB(i);
+        hv(hr(irow)) = Uval[i];
+      }
+      // move up all the row pointers for all the supernodal blocks
+      for (int i = 0; i < nsup; i++) {
+        for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
+          hc(hr(ii)) = jcol;
+          hr(ii) ++;
+        }
+      }
+    }
+    // reset check
+    for (int i = 0; i < nsup; i++) {
+      check[sup[i]] = 0;
+    }
+  }
+  free(check); free(sup);
+  free(map);
+
+  // fix hr
+  for (int i = n; i >= 1; i--) {
+    hr(i) = hr(i-1);
+    //printf( "hr[%d] = %d\n",i-1,hr(i) );
+  }
+  hr(0) = 0;
+
+  // deepcopy
+  Kokkos::deep_copy (rowmap_view, hr);
+  Kokkos::deep_copy (column_view, hc);
+  Kokkos::deep_copy (values_view, hv);
+
+
+  // create crs
+  host_graph_t host_graph (hc, hr);
+  hostMat = new hostMat_t("HostMatrix", n, hv, host_graph);
+
+  // create crs
+  graph_t static_graph (column_view, rowmap_view);
+  crsMat_t crsmat("CrsMatrix", n, values_view, static_graph);
+  return crsmat;
+}
+
+
+/* ========================================================================================= */
 template<typename Scalar>
 void factor_superlu(const int nrow, const int nnz, Scalar *nzvals, int *rowptr, int *colind,
                     SuperMatrix &L, SuperMatrix &U, int **perm_r, int **perm_c, int **parents) {
@@ -322,9 +503,6 @@ void factor_superlu(const int nrow, const int nnz, Scalar *nzvals, int *rowptr, 
   SuperLUStat_t stat;
 
   set_default_options(&options);
-
-  /* Read the matrix in Harwell-Boeing format. */
-  //dreadhb(fp, &m, &n, &nnz, &a, &asub, &xa);
 
   dCreate_CompCol_Matrix(&A, nrow, nrow, nnz, nzvals, colind, rowptr, SLU_NC, SLU_D, SLU_GE);
   Astore = (NCformat*)(A.Store);
@@ -405,12 +583,12 @@ void solveL_superlu (SuperMatrix *L,
   /* Forward solve */
   for (int k = 0; k <= Lstore->nsuper; k++)
   {
-    int j1 = nb [k];
-    int j2 = nb [k+1];
+    int j1 = nb[k];
+    int j2 = nb[k+1];
     int nscol  = j2 - j1;
 
-    int i1 = mb [j1];
-    int i2 = mb [j1+1];
+    int i1 = mb[j1];
+    int i2 = mb[j1+1];
     int nsrow  = i2 - i1;
     int nsrow2 = nsrow - nscol;
     int ps2    = i1 + nscol;
@@ -465,27 +643,41 @@ void solveU_superlu (SuperMatrix *L, SuperMatrix *U,
   double *Lval = (double*)(Lstore->nzval);
   double *Uval = (double*)(Ustore->nzval);
 
+  int * nb = Lstore->sup_to_col;
+  int * mb = Lstore->rowind_colptr;
+  int * colptr = Lstore->nzval_colptr;
+
   /*
    * Back solve.
    */
   for (int k = Lstore->nsuper; k >= 0; k--) {
-    int fsupc = L_FST_SUPC(k);
-    int istart = L_SUB_START(fsupc);
-    int nsupr = L_SUB_START(fsupc+1) - istart;
-    int nsupc = L_FST_SUPC(k+1) - fsupc;
-    int luptr = L_NZ_START(fsupc);
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    int i1 = mb[j1];
+    int nsrow = mb[j1+1] - i1;
+
+    int psx = colptr[j1];
 
     /* do TRSM with the diagonal block */
+    #ifdef SUPERLU_INVERT_DIAG
+    cblas_dtrmm (CblasColMajor,
+        CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
+        nscol, nrhs,
+        one,  &Lval[psx], nsrow,
+              &Bmat[j1], ldb);
+    #else
     cblas_dtrsm (CblasColMajor,
         CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
-        nsupc, nrhs,
-        one, &Lval[luptr], nsupr,
-             &Bmat[fsupc], ldb);
+        nscol, nrhs,
+        one, &Lval[psx], nsrow,
+             &Bmat[j1], ldb);
+    #endif
 
     /* update with the off-diagonal blocks */
     for (int j = 0; j < nrhs; ++j) {
       double *rhs_work = &Bmat[j*ldb];
-      for (int jcol = fsupc; jcol < fsupc + nsupc; jcol++) {
+      for (int jcol = j1; jcol < j1 + nscol; jcol++) {
         for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
           int irow = U_SUB(i);
           rhs_work[irow] -= rhs_work[jcol] * Uval[i];
@@ -594,11 +786,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
     for ( auto test : tests ) {
       std::cout << "\ntest = " << test << std::endl;
 
-      KernelHandle khL, khU;
-      std::cout << "Create handle" << std::endl;
       SuperMatrix L;
       SuperMatrix U;
-      crsmat_t superluMtx;
+      crsmat_t superluL, superluU;
+      KernelHandle khL, khU;
       switch(test) {
         case SUPERNODAL_NAIVE:
         case SUPERNODAL_ETREE:
@@ -611,20 +802,32 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
                                   L, U, &perm_r, &perm_c, &etree);
           std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
 
-          // read SuperLU factor int crsMatrix on the host (superluMat_host) and copy to default host/device (superluMtx)
+          // read SuperLU factor int crsMatrix on the host (superluMat_host) and copy to default host/device (superluL)
+          std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
+          host_crsmat_t *superluL_host = nullptr;
+          host_crsmat_t *superluU_host = nullptr;
           timer.reset();
-          std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix, and copy to device " << std::endl;
-          host_crsmat_t *superluMtx_host = nullptr;
-          superluMtx = read_superlu_factor<crsmat_t, host_crsmat_t> (nrows, &L, superluMtx_host);
-          std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
+          superluL = read_superlu_Lfactor<crsmat_t, host_crsmat_t> (nrows, &L, superluL_host);
+          std::cout << "   Conversion Time for L: " << timer.seconds() << std::endl;
+
+          timer.reset();
+          superluU = read_superlu_Ufactor<crsmat_t, host_crsmat_t> (nrows, &L, &U, superluU_host);
+          std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
+
           //print_factor_superlu<Scalar> (nrows, &L, &U, perm_r, perm_c);
-          //print_crsmat<crsmat_t> (nrows, superluMtx);
+          //print_crsmat<crsmat_t> (nrows, superluL);
+          //print_crsmat<crsmat_t> (nrows, superluU);
 
           // crsMatrix (storing L-factor) on the default host/device
-          auto graph = superluMtx.graph; // in_graph
-          auto row_map = graph.row_map;
-          auto entries = graph.entries;
-          auto values  = superluMtx.values;
+          auto graphL = superluL.graph; // in_graph
+          auto row_mapL = graphL.row_map;
+          auto entriesL = graphL.entries;
+          auto valuesL  = superluL.values;
+
+          auto graphU = superluU.graph; // in_graph
+          auto row_mapU = graphU.row_map;
+          auto entriesU = graphU.entries;
+          auto valuesU  = superluU.values;
 
           // create an handle
           if (test == SUPERNODAL_NAIVE) {
@@ -636,7 +839,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
           }
-          khL.get_sptrsv_handle ()->print_algorithm ();
+          //khL.get_sptrsv_handle ()->print_algorithm ();
 
           // setup supnodal info
           SCformat *Lstore = (SCformat*)(L.Store);
@@ -660,13 +863,13 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           #if 1
            // symbolic on the host
            timer.reset();
-           sptrsv_symbolic (&khL, row_map, entries);
+           sptrsv_symbolic (&khL, row_mapL, entriesL);
            std::cout << " > Lower-TRI: " << std::endl;
            std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
            timer.reset();
            // numeric (only rhs is modified) on the default device/host space
-           sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
+           sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
           #else
            timer.reset();
            // solveL with Cholmod data structure, L
@@ -675,20 +878,20 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           Kokkos::fence();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
           //Kokkos::deep_copy (tmp_host, rhs);
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %e\n",ii,tmp_host(ii) );
+          //for (int ii=0; ii<nrows; ii++) printf( " y[%d] = %e\n",ii,tmp_host(ii) );
           //printf( "\n" );
 
           // ==============================================
           // do L^T solve
-          #if 0
+          #if 1
            // symbolic on the host
            timer.reset ();
-           sptrsv_symbolic (&khU, row_map, entries);
+           sptrsv_symbolic (&khU, row_mapU, entriesU);
            std::cout << " > Upper-TRI: " << std::endl;
            std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
            // numeric (only rhs is modified) on the default device/host space
-           sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
+           sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
           #else
           solveU_superlu<Scalar>(&L, &U, 1, rhs.data(), nrows);
           #endif
@@ -700,14 +903,14 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
 
           // apply backward-pivot
           backwardP_superlu<Scalar>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %e\n",ii,tmp_host(ii) );
+          //for (int ii=0; ii<nrows; ii++) printf( " x[%d] = %e\n",ii,tmp_host(ii) );
 
 
           // ==============================================
           // Error Check ** on host **
           Kokkos::fence();
           // normX
-          scalar_t sum = 0.0;
+          scalar_t normR = 0.0;
           scalar_t normX = 0.0;
           Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
             KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
@@ -715,16 +918,18 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
             }, normX);
           normX = sqrt(normX);
 
-          // sum = sum(B - AX)
+          // normR = ||B - AX||
           KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
           Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
             KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
               tsum += rhs_host(i) * rhs_host(i);
-            }, sum);
-          sum = sqrt(sum);
+            }, normR);
+          normR = sqrt(normR);
 
           std::cout << std::endl;
-          std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = " << sum << "/(" << normB << " + " << normA << " * " << normX << ") = " << sum/(normB + normA * normX) << std::endl;
+          std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
+                    << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
+                    << normR/(normB + normA * normX) << std::endl;
 
           // try again?
           {
@@ -732,9 +937,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
             forwardP_superlu<Scalar> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
-             #if 0
-             sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
-             sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
+             #if 1
+             sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
+             sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
              #else
              solveL_superlu<Scalar>(&L, 1, rhs.data(), nrows);
              solveU_superlu<Scalar>(&L, &U, 1, rhs.data(), nrows);
@@ -750,16 +955,17 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
               }, normX);
             normX = sqrt(normX);
 
-            // sum = sum(B - AX)
+            // normR = ||B - AX||
             KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
             Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
               KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
                 tsum += rhs_host(i) * rhs_host(i);
-              }, sum);
-            sum = sqrt(sum);
+              }, normR);
+            normR = sqrt(normR);
 
-            std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = " << sum << "/(" << normB << " + " << normA << " * " << normX << ") = " << sum/(normB + normA * normX) << std::endl;
-            std::cout << std::endl;
+            std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
+                      << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
+                      << normR/(normB + normA * normX) << std::endl << std::endl;
           }
           std::cout << std::endl;
 
@@ -771,7 +977,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           Kokkos::fence();
           for(int i=0;i<loop;i++) {
             timer.reset();
-            sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
+            sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -791,7 +997,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           Kokkos::fence();
           for(int i=0;i<loop;i++) {
             timer.reset();
-            sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
+            sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
