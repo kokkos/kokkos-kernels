@@ -1011,8 +1011,11 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
                thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE) {
         typedef Kokkos::TeamPolicy<execution_space> policy_type;
 
-//Kokkos::Timer timer;
-//timer.reset();
+        //#define profile_supernodal_etree
+        #ifdef profile_supernodal_etree
+        Kokkos::Timer timer;
+        timer.reset();
+        #endif
         supercols_host_t kernel_type_host = thandle.get_kernel_type_host ();
         if (kernel_type_host (lvl) == 2) { // using device-level kernels (functor is called just for scatering the results)
           scalar_t zero (0.0);
@@ -1076,8 +1079,10 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         LowerTriCholmodFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
           tstf (supercols, row_map, entries, values, lvl, kernel_type, lhs, work, work_offset, nodes_grouped_by_level, node_count);
         Kokkos::parallel_for ("parfor_lsolve_cholmot", policy_type(lvl_nodes , Kokkos::AUTO), tstf);
-//Kokkos::fence();
-//std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << timer.seconds() << std::endl;
+        #ifdef profile_supernodal_etree
+        Kokkos::fence();
+        std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << timer.seconds() << std::endl;
+        #endif
       }
 #endif
       node_count += lvl_nodes;
@@ -1179,14 +1184,16 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
                thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE) {
         typedef Kokkos::TeamPolicy<execution_space> policy_type;
 
+        #ifdef profile_supernodal_etree
+        Kokkos::Timer timer;
+        timer.reset();
+        #endif
         const int* supercols = thandle.get_supercols ();
         UpperTriCholmodFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
           tstf (supercols, row_map, entries, values, lvl, kernel_type, lhs, work, work_offset, nodes_grouped_by_level, node_count);
 
-//Kokkos::Timer timer;
-//timer.reset();
         Kokkos::parallel_for ("parfor_usolve_cholmot", policy_type (lvl_nodes , Kokkos::AUTO), tstf);
-#if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
+        #if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
         supercols_host_t kernel_type_host = thandle.get_kernel_type_host ();
         if (kernel_type_host (lvl) == 2) {
           scalar_t zero (0.0);
@@ -1248,9 +1255,11 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
                       zero, Xj);
           }
         }
-#endif
-//Kokkos::fence();
-//std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << timer.seconds() << std::endl;
+        #ifdef profile_supernodal_etree
+        Kokkos::fence();
+        std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << timer.seconds() << std::endl;
+        #endif
+        #endif
       }
 #endif
       node_count += lvl_nodes;

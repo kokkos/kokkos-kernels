@@ -752,8 +752,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           #if 1
            // symbolic on the host
            timer.reset();
-           sptrsv_symbolic (&khL, row_map, entries);
            std::cout << " > Lower-TRI: " << std::endl;
+           sptrsv_symbolic (&khL, row_map, entries);
            std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
            timer.reset();
@@ -777,8 +777,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           #if 1
            // symbolic on the host
            timer.reset ();
-           sptrsv_symbolic (&khU, row_map, entries);
            std::cout << " > Upper-TRI: " << std::endl;
+           sptrsv_symbolic (&khU, row_map, entries);
            std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
            // numeric (only rhs is modified) on the default device/host space
