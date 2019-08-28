@@ -180,7 +180,7 @@ struct BitonicSortFunctor
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMem t) const
   {
     int i = t.league_rank();
-    KokkosKernels::Impl::bitonicSort<int, Value, TeamMem>(&values(offsets(i)), counts(i), t);
+    KokkosKernels::Impl::bitonicSortTeam<int, Value, TeamMem>(&values(offsets(i)), counts(i), t);
   }
   ValView values;
   OrdView offsets;
@@ -247,7 +247,7 @@ void testBitonicSort()
   //Create a view of randomized data
   typedef typename ExecSpace::memory_space mem_space;
   typedef Kokkos::View<Scalar*, mem_space> ValView;
-  size_t n = 100000;
+  size_t n = 1599898;
   ValView data("Bitonic sort testing data", n);
   fillRandom(data);
   KokkosKernels::Impl::bitonicSort<ValView, ExecSpace, int>(data);
