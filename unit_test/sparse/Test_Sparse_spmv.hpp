@@ -667,9 +667,9 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
 #define EXECUTE_TEST_STRUCT(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv_struct ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_spmv_struct_1D<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 1, 1);            \
-  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 200, 3, 3);      \
+  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 201, 3, 3);      \
   test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (200, 250, 3, 3);      \
-  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (250, 250, 3, 3);      \
+  test_spmv_struct_2D<SCALAR,ORDINAL,OFFSET,DEVICE> (251, 251, 3, 3);      \
   test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (30, 30, 30, 3, 3, 3); \
   test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (40, 40, 40, 3, 3, 3); \
   test_spmv_struct_3D<SCALAR,ORDINAL,OFFSET,DEVICE> (25, 40, 50, 3, 3, 3); \

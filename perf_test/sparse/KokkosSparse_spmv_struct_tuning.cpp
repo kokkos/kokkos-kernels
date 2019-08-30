@@ -163,19 +163,16 @@ void struct_matvec(const int stencil_type,
 
   int64_t worksets_ext = (numInteriorPts + rows_per_team_ext - 1) / rows_per_team_ext;
 
-  KokkosSparse::Impl::SPMV_Struct_Functor<AMatrix,XVector,YVector,1,false> func(structure,
-                                                                                stencil_type,
-                                                                                alpha,A,x,beta,y,
-                                                                                rows_per_team_int,
-										rows_per_team_ext);
+  KokkosSparse::Impl::SPMV_Struct_Functor<AMatrix,XVector,YVector,1,false>
+    spmv_struct(structure, stencil_type, alpha,A,x,beta,y, rows_per_team_int, rows_per_team_ext);
 
   if(print_lp) {
     std::cout << "worksets=" << worksets_ext << ", team_size=" << team_size_ext
               << ", vector_length=" << vector_length << std::endl;
   }
 
-  func.compute_interior(worksets_int, team_size_int, vector_length);
-  func.compute_exterior(worksets_ext, team_size_ext, vector_length);
+  spmv_struct.compute_interior(worksets_int, team_size_int, vector_length);
+  spmv_struct.compute_exterior(worksets_ext, team_size_ext, vector_length);
 
 } // struct_matvec
 
