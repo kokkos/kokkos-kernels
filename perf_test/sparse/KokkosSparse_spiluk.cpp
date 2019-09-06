@@ -47,7 +47,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <limits>
-#include <limits.h>
 #include <cmath>
 #include <unordered_map>
 
@@ -65,8 +64,6 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 
-#define EXPAND_FACT 2
-
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -76,7 +73,7 @@ using namespace KokkosKernels::Experimental;
 enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/};
 
 template<typename Scalar>
-int test_spiluk_perf(std::vector<int> tests, std::string& afilename, int k, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
+int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
 
   typedef Scalar scalar_t;
   typedef int lno_t;
@@ -98,6 +95,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string& afilename, int k, int 
   scalar_t ZERO = scalar_t(0);
   scalar_t ONE  = scalar_t(1);
   scalar_t MONE = scalar_t(-1);
+  constexpr int EXPAND_FACT = 2;
 
 // Read amtx
 // Run all requested algorithms
@@ -328,7 +326,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string& afilename, int k, int 
 
       // Benchmark
       Kokkos::fence();
-      double min_time = 1.0e32;
+      double min_time = std::numeric_limits<double>::infinity();
       double max_time = 0.0;
       double ave_time = 0.0;
       
@@ -354,7 +352,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string& afilename, int k, int 
         lno_nnz_view_t A_entries("A_entries", nnz);
         scalar_view_t  A_values ("A_values",  nnz);
 
-        min_time = 1.0e32;
+        min_time = std::numeric_limits<double>::infinity();
         max_time = 0.0;
         ave_time = 0.0;
         
