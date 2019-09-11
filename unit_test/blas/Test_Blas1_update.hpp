@@ -150,6 +150,7 @@ namespace Test {
 
     KokkosBlas::update(a,x,b,y,c,z);
     KokkosBlas::dot(r,z,z);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA nonconst_nonconst_result = r(k);
       EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
@@ -158,6 +159,7 @@ namespace Test {
     Kokkos::deep_copy(b_z,b_org_z);
     KokkosBlas::update(a,c_x,b,y,c,z);
     KokkosBlas::dot(r,z,z);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       ScalarA const_non_const_result = r(k);
       EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);

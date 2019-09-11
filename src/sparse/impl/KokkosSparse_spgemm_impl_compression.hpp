@@ -211,6 +211,10 @@ struct KokkosSPGEMM
       return Kokkos::OpenMP::impl_hardware_thread_id();
   #endif
 #endif
+#if defined(KOKKOS_ENABLE_HPX)
+    case KokkosKernels::Impl::Exec_HPX:
+      return Kokkos::Experimental::HPX::impl_hardware_thread_id();
+#endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
   #ifdef KOKKOS_ENABLE_DEPRECATED_CODE

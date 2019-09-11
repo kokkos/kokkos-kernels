@@ -240,6 +240,17 @@ class GraphColorDistance2Handle
         }
 #endif
 
+#if defined(KOKKOS_ENABLE_HPX)
+
+        if(Kokkos::Impl::is_same<Kokkos::Experimental::HPX, ExecutionSpace>::value)
+        {
+            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+#ifdef VERBOSE
+            std::cout << "HPX Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+#endif
+        }
+#endif
+
 #if defined(KOKKOS_ENABLE_CUDA)
         if(Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace>::value)
         {

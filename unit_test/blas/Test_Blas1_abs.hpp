@@ -121,6 +121,9 @@ namespace Test {
 
     KokkosBlas::abs(y,x);
     KokkosBlas::dot(r,y,y);
+
+    Kokkos::fence();
+
     for(int k=0;k<K;k++) {
       ScalarA nonconst_result = r(k);
       typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
@@ -131,6 +134,9 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::abs(y,c_x);
     KokkosBlas::dot(r,y,y);
+
+    Kokkos::fence();
+
     for(int k=0;k<K;k++) {
       ScalarA const_result = r(k);
       typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);

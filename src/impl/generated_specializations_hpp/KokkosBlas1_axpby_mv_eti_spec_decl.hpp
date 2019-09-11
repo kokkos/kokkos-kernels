@@ -90,6 +90,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(double, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace)
@@ -142,6 +149,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(double, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(double, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
@@ -202,6 +216,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(float, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(float, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace)
@@ -254,6 +275,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(float, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(float, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
@@ -314,6 +342,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace)
@@ -366,6 +401,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
@@ -426,6 +468,13 @@ namespace Impl {
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Experimental::HPX, Kokkos::HostSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::Experimental::HBWSpace)
@@ -478,6 +527,13 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
  KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
+ && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+ && defined (KOKKOSKERNELS_INST_EXECSPACE_HPX) \
+ && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+ KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Experimental::HPX, Kokkos::HostSpace)
 #endif
 
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \

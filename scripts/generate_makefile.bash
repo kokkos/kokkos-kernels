@@ -55,6 +55,15 @@ do
         QTHREADS_PATH="${key#*=}"
       fi
       ;;
+    --with-hpx-options*)
+      KOKKOS_HPX_OPT="${key#*=}"
+      ;;
+    --with-hpx*)
+      KOKKOS_DEVICES="${KOKKOS_DEVICES},HPX"
+      if [ -z "$HPX_PATH" ]; then
+        HPX_PATH="${key#*=}"
+      fi
+      ;;
     --with-devices*)
       DEVICES="${key#*=}"
       KOKKOS_DEVICES="${KOKKOS_DEVICES},${DEVICES}"
@@ -160,6 +169,7 @@ do
       echo "--with-pthread:                       Enable Pthreads backend."
       echo "--with-serial:                        Enable Serial backend."
       echo "--with-qthreads[=/Path/To/Qthreads]:  Enable Qthreads backend."
+      echo "--with-hpx[=/Path/To/HPX]:            Enable HPX backend."
       echo "--with-devices:                       Explicitly add a set of backends."
       echo ""
       echo "--arch=[OPT]:  Set target architectures. Options are:"
@@ -218,6 +228,8 @@ do
       echo "                                        "
       echo "--with-cuda-options=[OPT]:            Additional options to CUDA:"
       echo "                                        force_uvm, use_ldg, enable_lambda, rdc"
+      echo "--with-hpx-options=[OPT]:             Additional options to HPX:"
+      echo "                                        enable_async_dispatch"
       echo "--make-j=[NUM]:                       DEPRECATED: call make with appropriate"
       echo "                                        -j flag"
       exit 0
@@ -321,6 +333,10 @@ if [ ${#QTHREADS_PATH} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} QTHREADS_PATH=${QTHREADS_PATH}"
 fi
 
+if [ ${#HPX_PATH} -gt 0 ]; then
+    KOKKOS_SETTINGS="${KOKKOS_SETTINGS} HPX_PATH=${HPX_PATH}"
+fi
+
 if [ ${#KOKKOS_OPT} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_OPTIONS=${KOKKOS_OPT}"
 fi
@@ -330,6 +346,10 @@ if [ ${#KOKKOS_CUDA_OPT} -gt 0 ]; then
   if [[ "${KOKKOS_CUDA_OPT}" =~ "force_uvm" ]]; then
     KOKKOSKERNELS_SPACES="CudaUVMSpace,${KOKKOSKERNELS_SPACES}"
   fi
+fi
+
+if [ ${#KOKKOS_HPX_OPT} -gt 0 ]; then
+    KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_HPX_OPTIONS=${KOKKOS_HPX_OPT}"
 fi
 
 if [ ${#KOKKOSKERNELS_SPACES} -gt 0 ]; then 

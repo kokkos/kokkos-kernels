@@ -17,10 +17,17 @@
         typedef Kokkos::complex<double> Kokkos_complex0double0; \
         typedef long long longlong;
     #else
-      #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
-                        typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> Kokkos_Device0Kokkos_OpenMP_Kokkos_HostSpace0; \
-        typedef Kokkos::complex<double> Kokkos_complex0double0; \
-        typedef long long longlong;
+      #ifdef KOKKOS_ENABLE_HPX
+      #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS() \
+          typedef Kokkos::Device<Kokkos::Experimental::HPX, Kokkos::Threads::memory_space> Kokkos_Device0Kokkos_HPX_Kokkos_HostSpace0; \
+          typedef Kokkos::complex<double> Kokkos_complex0double0; \
+          typedef long long longlong;
+      #else
+        #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
+                          typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> Kokkos_Device0Kokkos_OpenMP_Kokkos_HostSpace0; \
+          typedef Kokkos::complex<double> Kokkos_complex0double0; \
+          typedef long long longlong;
+      #endif
     #endif
   #endif
 #endif

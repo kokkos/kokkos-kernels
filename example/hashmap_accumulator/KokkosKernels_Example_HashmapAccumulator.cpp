@@ -73,6 +73,7 @@ typedef struct params
     uint32_t use_threads = false;
     uint32_t use_cuda    = false;
     uint32_t use_openmp  = false;
+    uint32_t use_hpx     = false;
     bool verbose     = false;
 
     size_t problem_size = 20;
@@ -319,6 +320,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "      --serial <N>        Execute serially." << std::endl
        << spaces << "      --threads <N>       Use N posix threads." << std::endl
        << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
+       << spaces << "      --hpx <N>           Use HPX with N threads." << std::endl
        << spaces << "      --cuda              Use CUDA" << std::endl
        << spaces << "  Optional Parameters:" << std::endl
        << spaces << "      --problem-size <N>  Problem Size (Default: 20)" << std::endl
@@ -352,6 +354,10 @@ int parse_inputs(parameters_t &params, int argc, char **argv)
         {
             params.use_openmp = atoi(argv[++i]);
         }
+        else if(0 == strcasecmp(argv[i], "--hpx"))
+        {
+            params.use_hpx = atoi(argv[++i]);
+        }
         else if(0 == strcasecmp(argv[i], "--cuda"))
         {
             params.use_cuda = 1;
@@ -380,7 +386,7 @@ int parse_inputs(parameters_t &params, int argc, char **argv)
             return 1;
         }
     }
-    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_openmp && !params.use_cuda)
     {
         print_options(std::cout, argv[0]);
         return 1;
@@ -404,7 +410,7 @@ int main(int argc, char *argv[])
     }
 
     const int device_id   = 0;
-    const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
+    const int num_threads = params.use_openmp ? params.use_openmp : params.use_hpx;
 
     Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 

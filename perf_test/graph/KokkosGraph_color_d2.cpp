@@ -112,6 +112,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "      --serial <N>        Execute serially." << std::endl
        << spaces << "      --threads <N>       Use N posix threads." << std::endl
        << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
+       << spaces << "      --hpx <N>           Use HPX with N threads." << std::endl
        << spaces << "      --cuda              Use CUDA" << std::endl
        << std::endl
        << spaces << "  Required Parameters:" << std::endl
@@ -156,6 +157,10 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
         {
             params.use_openmp = atoi(argv[++i]);
             std::cout << "use_openmp = " << params.use_openmp << std::endl;
+        }
+        else if(0 == strcasecmp(argv[i], "--hpx"))
+        {
+            params.use_hpx = 1;
         }
         else if(0 == strcasecmp(argv[i], "--cuda"))
         {
@@ -250,7 +255,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
         print_options(std::cout, argv[0]);
         return 1;
     }
-    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_hpx && !params.use_cuda)
     {
         print_options(std::cout, argv[0]);
         return 1;
@@ -679,6 +684,16 @@ int main(int argc, char *argv[])
         if(!use_multi_mem)
         {
             KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space>(params);
+        }
+    }
+    #endif
+
+    #if defined(KOKKOS_ENABLE_HPX)
+    if(params.use_hpx)
+    {
+        if(!use_multi_mem)
+        {
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Experimental::HPX, Kokkos::Experimental::HPX::memory_space>(params);
         }
     }
     #endif

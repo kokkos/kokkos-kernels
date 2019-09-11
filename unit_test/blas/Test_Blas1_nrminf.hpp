@@ -92,6 +92,7 @@ namespace Test {
     Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::nrminf(r,a);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       typename AT::mag_type nonconst_result = r(k);
       typename AT::mag_type exp_result = expected_result[k];
@@ -99,6 +100,7 @@ namespace Test {
     }
 
    /* KokkosBlas::nrminf(r,c_a);
+    Kokkos::fence();
     for(int k=0;k<K;k++) {
       typename AT::mag_type const_result = r(k);
       typename AT::mag_type exp_result = expected_result[k];
