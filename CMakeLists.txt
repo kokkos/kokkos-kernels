@@ -87,14 +87,12 @@ KOKKOS_ADD_OPTION_AND_DEFINE(
 # KokkosKernels may enable fewer execution spaces than
 # Kokkos enables.  This can reduce build and test times.
 
-# JJW We should no longer assert on these. These variables will be undefined
-# if there off, defined to ON if they are enabled
-#ASSERT_DEFINED (Kokkos_ENABLE_CUDA)
-#ASSERT_DEFINED (Kokkos_ENABLE_OpenMP)
-#ASSERT_DEFINED (Kokkos_ENABLE_PTHREAD)
-#ASSERT_DEFINED (Kokkos_ENABLE_SERIAL)
+ASSERT_DEFINED (Kokkos_ENABLE_CUDA)
+ASSERT_DEFINED (Kokkos_ENABLE_OPENMP)
+ASSERT_DEFINED (Kokkos_ENABLE_PTHREAD)
+ASSERT_DEFINED (Kokkos_ENABLE_SERIAL)
 SET(${PACKAGE_NAME}_INST_EXECSPACE_CUDA_DEFAULT ${Kokkos_ENABLE_CUDA})
-SET(${PACKAGE_NAME}_INST_EXECSPACE_OPENMP_DEFAULT ${Kokkos_ENABLE_OpenMP})
+SET(${PACKAGE_NAME}_INST_EXECSPACE_OPENMP_DEFAULT ${Kokkos_ENABLE_OPENMP})
 SET(${PACKAGE_NAME}_INST_EXECSPACE_THREADS_DEFAULT ${Kokkos_ENABLE_PTHREAD})
 SET(${PACKAGE_NAME}_INST_EXECSPACE_SERIAL_DEFAULT ${Kokkos_ENABLE_SERIAL})
 
@@ -131,20 +129,20 @@ KOKKOS_ADD_OPTION_AND_DEFINE(
 
 ENDIF()
 
-IF(Kokkos_ENABLE_SERIAL OR Kokkos_ENABLE_PTHREAD OR Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_SERIAL OR Kokkos_ENABLE_PTHREAD OR Kokkos_ENABLE_OPENMP)
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE
   KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
-  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is KokkosKernels_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OpenMP} OR ${Kokkos_ENABLE_PTHREAD} OR ${Kokkos_ENABLE_SERIAL}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
+  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  This option is KokkosKernels_INST_EXECSPACE_HOSTSPACE=(${Kokkos_ENABLE_OPENMP} OR ${Kokkos_ENABLE_PTHREAD} OR ${Kokkos_ENABLE_SERIAL}) by default.  Disabling this when one of the Host execution spaces is enabled may increase build times."
   ON
   )
 ENDIF()
 
-IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_OPENMP)
 KOKKOS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_EXECSPACE_OPENMP
   KOKKOSKERNELS_INST_EXECSPACE_OPENMP
-  "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  This option is KokkosKernels_INST_EXECSPACE_OPENMP=${Kokkos_ENABLE_OpenMP} by default.  Disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times."
+  "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  This option is KokkosKernels_INST_EXECSPACE_OPENMP=${Kokkos_ENABLE_OPENMP} by default.  Disabling this when Kokkos_ENABLE_OPENMP is enabled may increase build times."
   ${${PACKAGE_NAME}_INST_EXECSPACE_OPENMP_DEFAULT}
   )
   IF(${${PACKAGE_NAME}_INST_EXECSPACE_OPENMP} AND ${${PACKAGE_NAME}_INST_MEMSPACE_HOSTSPACE})
