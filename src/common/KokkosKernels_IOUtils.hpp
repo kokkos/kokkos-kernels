@@ -781,13 +781,13 @@ namespace MM
   }
 
   template<>
-  void writeScalar(std::ostream& os, Kokkos::complex<float> val)
+  inline void writeScalar(std::ostream& os, Kokkos::complex<float> val)
   {
     os << val.real() << ' ' << val.imag();
   }
 
   template<>
-  void writeScalar(std::ostream& os, Kokkos::complex<double> val)
+  inline void writeScalar(std::ostream& os, Kokkos::complex<double> val)
   {
     os << val.real() << ' ' << val.imag();
   }
@@ -879,7 +879,7 @@ scalar_t parseScalar(std::istream& is)
 }
 
 template<>
-Kokkos::complex<float> parseScalar(std::istream& is)
+inline Kokkos::complex<float> parseScalar(std::istream& is)
 {
   std::complex<float> val;
   is >> val;
@@ -887,7 +887,7 @@ Kokkos::complex<float> parseScalar(std::istream& is)
 }
 
 template<>
-Kokkos::complex<double> parseScalar(std::istream& is)
+inline Kokkos::complex<double> parseScalar(std::istream& is)
 {
   std::complex<double> val;
   is >> val;
