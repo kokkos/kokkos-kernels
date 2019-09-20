@@ -186,8 +186,6 @@ IF (KOKKOS_ENABLE_PTHREAD)
     SOURCES
       Test_Main.cpp
       ${THREADS_SPARSE_SOURCES}
-    NUM_MPI_PROCS 1
-    TESTONLYLIBS kokkoskernels_gtest
   )
   
   APPEND_GLOB(THREADS_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Graph*.cpp)
