@@ -144,9 +144,8 @@ void print_factor_cholmod(crsMat_t *L) {
 
 /* ========================================================================================= */
 template <typename crsMat_t, typename hostMat_t>
-crsMat_t read_cholmod_factor(cholmod_factor *L, cholmod_common *cm, hostMat_t *hostMat) {
+crsMat_t read_cholmod_factor(cholmod_factor *L, cholmod_common *cm) {
 
-  typedef typename hostMat_t::StaticCrsGraphType host_graph_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
@@ -255,16 +254,14 @@ crsMat_t read_cholmod_factor(cholmod_factor *L, cholmod_common *cm, hostMat_t *h
     //printf( "hr[%d] = %d\n",i-1,hr(i) );
   }
   hr(0) = 0;
+  std::cout << "    * Matrix size = " << n << std::endl;
+  std::cout << "    * Total nnz   = " << hr (n) << std::endl;
+  std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
 
   // deepcopy
   Kokkos::deep_copy (rowmap_view, hr);
   Kokkos::deep_copy (column_view, hc);
   Kokkos::deep_copy (values_view, hv);
-
-
-  // create crs
-  host_graph_t host_graph (hc, hr);
-  hostMat = new hostMat_t("HostMatrix", n, hv, host_graph);
 
   // create crs
   graph_t static_graph (column_view, rowmap_view);
@@ -287,7 +284,7 @@ void solveL_cholmod(int nsuper, int *supptr, crsMat_t *L, int nrhs, Scalar *X, i
   /* ---------------------------------------------------------------------- */
 
   ldw = L->numCols ();
-  work = (Scalar*)malloc(nrhs*ldw * sizeof(Scalar)); //E->x ; // maxesize = max supernode size
+  work = new Scalar [nrhs*ldw];
 
   graph_t  graph = L->graph;
   const int    *colptr = graph.row_map.data ();
@@ -346,7 +343,7 @@ void solveL_cholmod(int nsuper, int *supptr, crsMat_t *L, int nrhs, Scalar *X, i
       }
     }
   }
-  free(work);
+  delete[] work;
 }
 
 /* ========================================================================================= */
@@ -359,46 +356,45 @@ void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
   int *Iwork = (int*)(cm->Iwork);
   int *Parent = Iwork + (2*((size_t) n)); /* size nfsuper <= n [ */
 
-  *etree = (int*)malloc(nsuper * sizeof(int));
+  *etree = new int [nsuper];
   for (int ii = 0 ; ii < nsuper; ii++) (*etree)[ii] = Parent[ii];
 }
 
 /* ========================================================================================= */
 template<typename Scalar>
 cholmod_factor* factor_cholmod(const int nrow, const int nnz, Scalar *nzvals, int *rowptr, int *colind, cholmod_common *Comm, int **etree) {
-  cholmod_sparse *A;
-  cholmod_factor *L;
 
   // Start Cholmod
   cholmod_common *cm = Comm;
   cholmod_start (cm);
+  cm->supernodal = CHOLMOD_SUPERNODAL;
 
   // Manually, initialize the matrix
-  A = (cholmod_sparse*)malloc( sizeof(cholmod_sparse) );
-  A->stype = 1;   // symmetric
-  A->sorted = 0;
-  A->packed = 1;
-  A->itype = CHOLMOD_INT;
-  A->xtype = CHOLMOD_REAL;
-  A->dtype = CHOLMOD_DOUBLE;
+  cholmod_sparse A;
+  A.stype = 1;   // symmetric
+  A.sorted = 0;
+  A.packed = 1;
+  A.itype = CHOLMOD_INT;
+  A.xtype = CHOLMOD_REAL;
+  A.dtype = CHOLMOD_DOUBLE;
 
-  A->nrow = nrow;
-  A->ncol = nrow;
-  A->nzmax = nnz;
+  A.nrow = nrow;
+  A.ncol = nrow;
+  A.nzmax = nnz;
 
-  A->p = rowptr;
-  A->x = nzvals;
-  A->i = colind;
+  A.p = rowptr;
+  A.x = nzvals;
+  A.i = colind;
 
   // Symbolic factorization
-  cm->supernodal = CHOLMOD_SUPERNODAL;
-  L = cholmod_analyze (A, cm);
+  cholmod_factor *L;
+  L = cholmod_analyze (&A, cm);
   if (cm->status != CHOLMOD_OK) {
     printf( " ** cholmod_analyze returned with status = %d **",cm->status );
   }
 
   // Numerical factorization
-  if (!cholmod_factorize (A, L, cm)) {
+  if (!cholmod_factorize (&A, L, cm)) {
     printf( " ** cholmod_factorize returned FALSE **\n" );
   }
   if (cm->status != CHOLMOD_OK) {
@@ -408,15 +404,15 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, Scalar *nzvals, in
     for (i = 0; i < (int)(L->n); i++) printf( "%d %d\n",i,Perm[i] );
   }
   switch (cm->selected) {
-    case CHOLMOD_NATURAL: printf( "  > NATURAL ordering\n" ); break;
-    case CHOLMOD_AMD:     printf( "  > AMD ordering\n" ); break;
-    case CHOLMOD_METIS:   printf( "  > METIS ordering\n" ); break;
-    case CHOLMOD_NESDIS:  printf( "  > NESDIS ordering\n" ); break;
+    case CHOLMOD_NATURAL: printf( "  > NATURAL ordering (%d)\n", CHOLMOD_NATURAL ); break;
+    case CHOLMOD_AMD:     printf( "  > AMD ordering (%d)\n",     CHOLMOD_AMD     ); break;
+    case CHOLMOD_METIS:   printf( "  > METIS ordering (%d)\n",   CHOLMOD_METIS   ); break;
+    case CHOLMOD_NESDIS:  printf( "  > NESDIS ordering (%d)\n",  CHOLMOD_NESDIS  ); break;
   }
   //int *Perm = (int*)(L->Perm);
   //for (int i = 0; i < (int)(L->n); i++) printf( "%d\n",Perm[i] );
   //print_factor_cholmod<Scalar>(L, cm);
-  compute_etree_cholmod(A, cm, etree);
+  compute_etree_cholmod(&A, cm, etree);
 
   return L;
 }
@@ -446,7 +442,7 @@ void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
   /* ---------------------------------------------------------------------- */
 
   ldw = L->maxesize;
-  work = (Scalar*)malloc(nrhs*ldw * sizeof(Scalar)); //E->x ; // maxesize = max supernode size
+  work = new Scalar [nrhs*ldw];
 
   nsuper = L->nsuper;      // # of supernodal columns
   mb = (int*)(L->pi);      // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
@@ -505,7 +501,7 @@ void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
       }
     }
   }
-  free(work);
+  delete[] work;
 }
 
 template<typename Scalar>
@@ -522,7 +518,7 @@ void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
   /* ---------------------------------------------------------------------- */
 
   ldw = L->maxesize;
-  work = (Scalar*)malloc(nrhs*ldw * sizeof(Scalar)); //E->x ; // maxesize = max supernode size
+  work = new Scalar [nrhs*ldw];
 
   nsuper = L->nsuper ;      // # of supernodal columns
   mb = (int*)(L->pi) ;      // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
@@ -585,7 +581,7 @@ void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
                &B[j1],   ldb) ;
     #endif
   }
-  free(work);
+  delete[] work;
 }
 
 template<typename Scalar>
@@ -605,12 +601,12 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
+enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 template<typename Scalar>
-int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_size, int vector_length, int idx_offset, int loop) {
+int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
   typedef Scalar scalar_t;
   typedef int lno_t;
@@ -708,8 +704,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int team_siz
           // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
           timer.reset();
           std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
-          host_crsmat_t *cholmodMtx_host = nullptr;
-          cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t> (L, &cm, cholmodMtx_host);
+          cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t> (L, &cm);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
           //print_factor_cholmod (&cholmodMtx_host);
 
@@ -932,9 +927,6 @@ int main(int argc, char **argv)
   std::vector<int> tests;
   std::string filename;
 
-  int vector_length = -1;
-  int team_size = -1;
-  int idx_offset = 0;
   int loop = 1;
 
   if(argc == 1)
@@ -955,20 +947,20 @@ int main(int argc, char **argv)
       }
       continue;
     }
-    if((strcmp(argv[i],"-f")==0)) {filename = argv[++i]; continue;}
-    if((strcmp(argv[i],"-ts")==0)) {team_size=atoi(argv[++i]); continue;}
-    if((strcmp(argv[i],"-vl")==0)) {vector_length=atoi(argv[++i]); continue;}
-    if((strcmp(argv[i],"--offset")==0)) {idx_offset=atoi(argv[++i]); continue;}
-    if((strcmp(argv[i],"--loop")==0)) {loop=atoi(argv[++i]); continue;}
+    if((strcmp(argv[i],"-f")==0)) {
+      filename = argv[++i];
+      continue;
+    }
+    if((strcmp(argv[i],"--loop")==0)) {
+      loop = atoi(argv[++i]);
+      continue;
+    }
     if((strcmp(argv[i],"--help")==0) || (strcmp(argv[i],"-h")==0)) {
       print_help_sptrsv();
       return 0;
     }
   }
 
-  if (tests.size() == 0) {
-    tests.push_back(DEFAULT);
-  }
   std::cout << std::endl;
   for (size_t i = 0; i < tests.size(); ++i) {
     std::cout << "tests[" << i << "] = " << tests[i] << std::endl;
@@ -977,11 +969,11 @@ int main(int argc, char **argv)
   Kokkos::initialize(argc,argv);
   {
     // Cholmod may not support single, yet
-    //int total_errors = test_sptrsv_perf<float>(tests,filename,team_size,vector_length,idx_offset,loop);
+    //int total_errors = test_sptrsv_perf<float>(tests, filename, loop);
     // Kokkos::IO may not read complex?
-    //int total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests,filename,team_size,vector_length,idx_offset,loop);
+    //int total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, loop);
 
-    int total_errors = test_sptrsv_perf<double>(tests,filename,team_size,vector_length,idx_offset,loop);
+    int total_errors = test_sptrsv_perf<double>(tests, filename, loop);
     if(total_errors == 0)
       printf("Kokkos::SPTRSV Test: Passed\n\n");
     else

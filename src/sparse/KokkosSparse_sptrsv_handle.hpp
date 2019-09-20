@@ -53,7 +53,7 @@ namespace KokkosSparse {
 namespace Experimental {
 
 // TP2 algorithm has issues with some offset-ordinal combo to be addressed
-enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE };
+enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG };
 
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
@@ -132,6 +132,9 @@ private:
 
   // etree, parent's id for each supernodal column
   supercols_host_t etree_host;
+
+  // dag
+  int **dag_host;
 
   // map from supernode to column id, i.e., superdols[s] = the first column id of s-th supernode
   supercols_host_t supercols_host; // on the host
@@ -290,6 +293,14 @@ public:
     this->sup_size_tol = 500; // TODO: don't hardcode
     this->kernel_type_host = supercols_host_t ("kernel_type_host", nsuper_);
     this->kernel_type = supercols_t ("kernel_type", nsuper_);
+
+    // dag, set to be null
+    this->dag_host = NULL;
+  }
+
+  // set supernodal dag
+  void set_supernodal_dag (int** dag_) {
+    this->dag_host = dag_;
   }
 
   // return number of supernodes
@@ -309,6 +320,11 @@ public:
   // return parents info in etree of supernodes
   const int* get_etree_parents () {
     return this->etree_host.data ();
+  }
+
+  // return parents info in etree of supernodes
+  int** get_supernodal_dag () {
+    return this->dag_host;
   }
 
   // workspace size
@@ -368,6 +384,9 @@ public:
 
     if ( algm == SPTRSVAlgorithm::SUPERNODAL_ETREE )
       std::cout << "SUPERNODAL_ETREE" << std::endl;;
+
+    if ( algm == SPTRSVAlgorithm::SUPERNODAL_DAG )
+      std::cout << "SUPERNODAL_DAG" << std::endl;;
 
     /*
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {

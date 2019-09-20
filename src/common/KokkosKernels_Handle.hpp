@@ -531,6 +531,10 @@ public:
   void set_supernodes (int nsuper, int *supercols, int *etree) {
     this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
   }
+
+  void set_supernodal_dag (int** dag) {
+    this->sptrsvHandle->set_supernodal_dag (dag);
+  }
 #endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)

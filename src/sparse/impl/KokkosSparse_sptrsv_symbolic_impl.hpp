@@ -171,7 +171,8 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
  }
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
  else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE) {
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
   typedef typename TriSolveHandle::size_type size_type;
 
   typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
@@ -241,11 +242,23 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     }
   } else {
     /* initialize the ready tasks with leaves */
+    int **dag = thandle.get_supernodal_dag ();
     const int *parents = thandle.get_etree_parents ();
-    int *check = (int*)calloc(nsuper, sizeof(int));
+    int *check = new int[nsuper];
     for (size_type s = 0; s < nsuper; s++) {
-      if (parents[s] >= 0) {
-        check[parents[s]] ++;
+      check[s] = 0;
+    }
+
+    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG);
+    for (size_type s = 0; s < nsuper; s++) {
+      if (use_dag) {
+        for (size_type e = 0; e < dag[s][0]; e++) {
+          check[dag[s][e+1]] ++;
+        }
+      } else {
+        if (parents[s] >= 0) {
+          check[parents[s]] ++;
+        }
       }
     }
 
@@ -287,6 +300,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
           size_type row = supercols[s];
           signed_integral_t nsrow = row_map (row+1) - row_map(row);
           lwork += nsrow;
+          //printf( " > s=%d, row=%d, nsrow=%d\n",s,row,nsrow );
 
           // total supernode size
           avg_nsrow += supercols[s+1]-supercols[s];
@@ -355,9 +369,15 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
         size_type s = nodes_grouped_by_level (num_done + task);
         check[s] = -1;
         //printf( " %d: check[%d]=%d ",level,s,check[s]);
-        if (parents[s] >= 0) {
-          check[parents[s]] --;
-          //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+        if (use_dag) {
+          for (size_type e = 0; e < dag[s][0]; e++) {
+            check[dag[s][e+1]] --;
+          }
+        } else {
+          if (parents[s] >= 0) {
+            check[parents[s]] --;
+            //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+          }
         }
         //printf( "\n" );
       }
@@ -366,13 +386,15 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       level ++;
     }
     #ifdef profile_supernodal_etree
+    std::cout << "   * number of supernodes = " << nsuper << std::endl;
     std::cout << "   * supernodal rows: min = " << min_nsrow  << "\t max = " << max_nsrow  << "\t avg = " << tot_nsrow/nsuper << std::endl;
     std::cout << "   * supernodal cols: min = " << min_nscol  << "\t max = " << max_nscol  << "\t avg = " << tot_nscol/nsuper << std::endl;
     std::cout << "   * numer of leaves: min = " << min_nleave << "\t max = " << max_nleave << "\t avg = " << tot_nleave/level << std::endl;
+    std::cout << "   * level = " << level << std::endl;
     #endif
     // Set number of level equal to be the number of supernodal columns
     thandle.set_num_levels (level);
-    free(check);
+    delete[] check;
   }
   // workspace size
   thandle.set_workspace_size (max_lwork);
@@ -508,7 +530,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
  }
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
  else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE) {
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
   typedef typename TriSolveHandle::size_type size_type;
 
   typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
@@ -581,7 +604,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
     /* initialize the ready tasks with leaves */
     const int *parents = thandle.get_etree_parents ();
-    int *check  = (int*)calloc(nsuper, sizeof(int));
+    int *check = (int*)calloc(nsuper, sizeof(int));
     for (size_type s = 0; s < nsuper; s++) {
       if (parents[s] >= 0) {
         check[parents[s]] ++;
@@ -698,9 +721,11 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     }
     free(check);
     #ifdef profile_supernodal_etree
+    std::cout << "   * number of supernodes = " << nsuper << std::endl;
     std::cout << "   * supernodal rows: min = " << min_nsrow  << "\t max = " << max_nsrow  << "\t avg = " << tot_nsrow/nsuper << std::endl;
     std::cout << "   * supernodal cols: min = " << min_nscol  << "\t max = " << max_nscol  << "\t avg = " << tot_nscol/nsuper << std::endl;
     std::cout << "   * numer of leaves: min = " << min_nleave << "\t max = " << max_nleave << "\t avg = " << tot_nleave/level << std::endl;
+    std::cout << "   * level = " << level << std::endl;
     #endif
 
     // now invert the lists
