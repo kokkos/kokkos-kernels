@@ -14,7 +14,7 @@ MACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
     INCLUDE(CMakePackageConfigHelpers)
     configure_package_config_file(cmake/KokkosKernelsConfig.cmake.in
                                   "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfig.cmake"
-                                  INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake)
+                                  INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/KokkosKernels)
     write_basic_package_version_file("${KokkosKernels_BINARY_DIR}/KokkosKernelsConfigVersion.cmake"
             VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}"
             COMPATIBILITY SameMajorVersion)
@@ -22,9 +22,9 @@ MACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
     INSTALL(FILES
       "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfig.cmake"
       "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfigVersion.cmake"
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake)
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/KokkosKernels)
 
-    INSTALL(EXPORT KokkosKernelsTargets DESTINATION lib/cmake)
+    INSTALL(EXPORT KokkosKernelsTargets DESTINATION lib/cmake/KokkosKernels NAMESPACE Kokkos::)
   ENDIF()
 ENDMACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
 
