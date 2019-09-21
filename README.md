@@ -71,7 +71,7 @@ Following Kokkos style, all CMake options are of the form
 ````
 KokkosKernels_ENABLE_OPTION
 ````
-with options capitalized. Almost all Kokkos Kernels options determine
+with options capitalized at the end. Almost all Kokkos Kernels options determine
 whether ETI is used with a particular datatype, e.g.
 ````
 -DKokkosKernels_INST_DOUBLE=On 
@@ -91,6 +91,7 @@ for example:
 This does *NOT* enable CUDA directly, but rather verifies that the underlying Kokkos supports
 the desired option. If the underlying Kokkos was not built properly, CMake will crash
 and tell you to re-build Kokkos. The values (unlike the option names) are not case-sensitive.
+More details can be found in the [build instructions](BUILD.md) or [developer instructions](DEVELOPER.md).
 
 
 ### Spack
