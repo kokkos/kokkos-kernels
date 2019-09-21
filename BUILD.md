@@ -78,7 +78,7 @@ where `...` is the unique spec identifying the particular Kokkos configuration a
 A better way to use Spack for doing Kokkos development is the DIY feature of Spack.
 If you wish to develop Kokkos Kernels itself, go to the Kokkos source folder:
 ````
-spack diy -u cmake kokkos-kernels@diy ... 
+spack diy -u cmake kokkos-kernels +diy ... 
 ````
 where `...` is a Spack spec identifying the exact Kokkos Kernels configuration.
 This then creates a `spack-build` directory where you can run `make`.
