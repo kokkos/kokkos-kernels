@@ -242,6 +242,8 @@ void get_suggested_team_size(
 #if defined( KOKKOS_ENABLE_CUDA )
   if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
     suggested_team_size_ = max_allowed_team_size / suggested_vector_size;
+    if(suggested_team_size_ == 0)
+      suggested_team_size_ = 1;
   }
 #endif
 
