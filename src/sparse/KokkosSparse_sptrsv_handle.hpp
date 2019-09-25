@@ -148,9 +148,17 @@ private:
   supercols_t      work_offset;
 
   // type of kernels used at each level
-  int sup_size_tol;
+  int sup_size_unblocked;
+  int sup_size_blocked;
+  supercols_host_t diag_kernel_type_host;
+  supercols_t      diag_kernel_type;
   supercols_host_t kernel_type_host;
   supercols_t      kernel_type;
+
+  int num_streams;
+  #if defined(KOKKOS_ENABLE_CUDA)
+  cudaStream_t *cuda_streams;
+  #endif
 #endif
 
 public:
@@ -275,6 +283,12 @@ public:
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
   void set_supernodes (signed_integral_t nsuper_, int* supercols_, int *etree_) {
+    int default_sup_size_unblocked_ = 100;
+    int default_sup_size_blocked_ = 200;
+    set_supernodes(nsuper_, supercols_, etree_, default_sup_size_unblocked_, default_sup_size_blocked_);
+  }
+
+  void set_supernodes (signed_integral_t nsuper_, int* supercols_, int *etree_, int sup_size_unblocked_, int sup_size_blocked_) {
     this->nsuper = nsuper_;
 
     // etree
@@ -290,12 +304,18 @@ public:
     this->work_offset = supercols_t ("workoffset", nsuper_);
 
     // kernel type 
-    this->sup_size_tol = 500; // TODO: don't hardcode
+    this->sup_size_unblocked = sup_size_unblocked_;
+    this->sup_size_blocked = sup_size_blocked_;
+    this->diag_kernel_type_host = supercols_host_t ("diag_kernel_type_host", nsuper_);
+    this->diag_kernel_type = supercols_t ("diag_kernel_type", nsuper_);
     this->kernel_type_host = supercols_host_t ("kernel_type_host", nsuper_);
     this->kernel_type = supercols_t ("kernel_type", nsuper_);
 
     // dag, set to be null
     this->dag_host = NULL;
+
+    // number of streams
+    this->num_streams = 0;
   }
 
   // set supernodal dag
@@ -353,12 +373,21 @@ public:
   }
 
   // supernode size tolerance to pick right kernel type
-  int get_supernode_size_tol() {
-    return this->sup_size_tol;
+  int get_supernode_size_unblocked() {
+    return this->sup_size_unblocked;
   }
 
-  void set_supernode_size_tol(int size_tol) {
-    this->sup_size_tol = size_tol;
+  int get_supernode_size_blocked() {
+    return this->sup_size_blocked;
+  }
+
+
+  void set_supernode_size_unblocked(int size_unblocked) {
+    this->sup_size_unblocked = size_unblocked;
+  }
+
+  void set_supernode_size_blocked(int size_blocked) {
+    this->sup_size_blocked = size_blocked;
   }
 
   // kernel type
@@ -366,10 +395,37 @@ public:
     return this->kernel_type_host;
   }
 
+  supercols_host_t get_diag_kernel_type_host () {
+    return this->diag_kernel_type_host;
+  }
+
+
   KOKKOS_INLINE_FUNCTION
   supercols_t get_kernel_type () {
     return this->kernel_type;
   }
+
+  KOKKOS_INLINE_FUNCTION
+  supercols_t get_diag_kernel_type () {
+    return this->diag_kernel_type;
+  }
+
+  #if defined(KOKKOS_ENABLE_CUDA)
+  // streams
+  void setNumStreams(int num_streams_) {
+    this->num_streams = num_streams_;
+    if (num_streams_ > 0) {
+      this->cuda_streams = (cudaStream_t*)malloc(num_streams_ * sizeof(cudaStream_t));
+      for (int i = 0 ; i < num_streams_; i++) {
+        cudaStreamCreate(&(this->cuda_streams[i]));
+      }
+    }
+  }
+
+  cudaStream_t* getStream(int id) {
+    return &(this->cuda_streams[id]);
+  }
+  #endif
 #endif
 
   void print_algorithm() { 

@@ -532,6 +532,11 @@ public:
     this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
   }
 
+  void set_diag_supernode_sizes (int unblocked, int blocked) {
+    this->sptrsvHandle->set_supernode_size_unblocked(unblocked);
+    this->sptrsvHandle->set_supernode_size_blocked(blocked);
+  }
+
   void set_supernodal_dag (int** dag) {
     this->sptrsvHandle->set_supernodal_dag (dag);
   }

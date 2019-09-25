@@ -175,7 +175,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
           thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
   typedef typename TriSolveHandle::size_type size_type;
 
-  typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
+  typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
   typedef typename TriSolveHandle::nnz_lno_view_t::HostMirror HostEntriesType;
 
   typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
@@ -204,8 +204,9 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   HostSignedEntriesType level_list = Kokkos::create_mirror_view (dlevel_list);
 
   // type of kernels used at each level
-  int size_tol = thandle.get_supernode_size_tol();
-  supercols_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
+  int size_unblocked = thandle.get_supernode_size_unblocked();
+  int size_blocked = thandle.get_supernode_size_blocked();
+  supercols_host_t diag_kernel_type_by_level = thandle.get_kernel_type_host ();
 
   // # of supernodal columns
   size_type nsuper = thandle.get_num_supernodes ();
@@ -233,10 +234,15 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       }
 
       // kernel type
-      if (lwork < size_tol) {
-        kernel_type_by_level (s) = 0;
+      if (lwork < size_unblocked) {
+        // batched unblocked
+        diag_kernel_type_by_level (s) = 0;
+      //} else if (lwork < size_blocked) {
+      //  // batched blocked
+      //  diag_kernel_type_by_level (s) = 1;
       } else {
-        kernel_type_by_level (s) = 2;
+        // device
+        diag_kernel_type_by_level (s) = 3;
       }
       work_offset_host (s) = 0;
     }
@@ -285,6 +291,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       // look for ready-tasks
       signed_integral_t lwork = 0;
       signed_integral_t num_leave = 0;
+      signed_integral_t avg_nscol = 0;
       signed_integral_t avg_nsrow = 0;
       for (size_type s = 0; s < nsuper; s++) {
         if (check[s] == 0) {
@@ -300,10 +307,13 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
           size_type row = supercols[s];
           signed_integral_t nsrow = row_map (row+1) - row_map(row);
           lwork += nsrow;
+          //printf( " %d %d %d %d %d\n",num_done+num_leave, level, nsrow, supercols[s+1]-supercols[s],s );
+          //for (int i = supercols[s]; i < supercols[s+1]; i++) printf("%d %d %d\n",i,s,level );  // permute matrix based on scheduling
           //printf( " > s=%d, row=%d, nsrow=%d\n",s,row,nsrow );
 
           // total supernode size
-          avg_nsrow += supercols[s+1]-supercols[s];
+          avg_nsrow += row_map (row+1) - row_map(row);
+          avg_nscol += supercols[s+1] - supercols[s];
 
           #ifdef profile_supernodal_etree
           // gather static if requested
@@ -343,12 +353,19 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
       // average supernode size at this level
       avg_nsrow /= num_leave;
+      avg_nscol /= num_leave;
       // kernel type
-      if (avg_nsrow < size_tol) {
-        kernel_type_by_level (level) = 0;
+      if (avg_nscol < size_unblocked) {
+        // batched unblocked
+        diag_kernel_type_by_level (level) = 0;
+      //} else if (avg_nscol < size_blocked) {
+      //  // batched blocked
+      //  diag_kernel_type_by_level (level) = 1;
       } else {
-        kernel_type_by_level (level) = 2;
+        // device
+        diag_kernel_type_by_level (level) = 3;
       }
+      printf( " %d: num_leave=%d, avg_nsrow=%d, avg_nscol=%d, kernel_type=%d (%d, %d)\n",level,num_leave,avg_nsrow, avg_nscol,diag_kernel_type_by_level (level), size_unblocked,size_blocked );
       #ifdef profile_supernodal_etree
       if (level == 0) {
         max_nleave = num_leave;
@@ -403,8 +420,12 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy (work_offset, work_offset_host);
 
   // kernel types
+  // > off-diagonal
   supercols_t dkernel_type_by_level = thandle.get_kernel_type ();
-  Kokkos::deep_copy (dkernel_type_by_level, kernel_type_by_level);
+  Kokkos::deep_copy (dkernel_type_by_level, diag_kernel_type_by_level);
+  // > diagonal
+  supercols_t ddiag_kernel_type_by_level = thandle.get_diag_kernel_type ();
+  Kokkos::deep_copy (ddiag_kernel_type_by_level, diag_kernel_type_by_level);
 
   // deep copy to device (of scheduling info)
   Kokkos::deep_copy (dnodes_grouped_by_level, nodes_grouped_by_level);
@@ -559,8 +580,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   HostEntriesType nodes_grouped_by_level = Kokkos::create_mirror_view (dnodes_grouped_by_level);
 
   // type of kernels used at each level
-  int size_tol = thandle.get_supernode_size_tol();
-  supercols_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
+  int size_unblocked = thandle.get_supernode_size_unblocked();
+  supercols_host_t diag_kernel_type_by_level = thandle.get_kernel_type_host ();
 
   // map node id to level that this node belongs to
   DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
@@ -591,10 +612,12 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       }
       work_offset_host (s) = 0;
 
-      if (lwork < size_tol) {
-        kernel_type_by_level (s) = 0;
+      if (lwork < size_unblocked) {
+        // batched unblocked
+        diag_kernel_type_by_level (s) = 0;
       } else {
-        kernel_type_by_level (s) = 2;
+        // device
+        diag_kernel_type_by_level (s) = 3;
       }
     }
   }
@@ -603,13 +626,28 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
      * then reverse it for U-solve                   */
 
     /* initialize the ready tasks with leaves */
+    int **dag = thandle.get_supernodal_dag ();
     const int *parents = thandle.get_etree_parents ();
-    int *check = (int*)calloc(nsuper, sizeof(int));
+    int *check = new int[nsuper];
     for (size_type s = 0; s < nsuper; s++) {
-      if (parents[s] >= 0) {
-        check[parents[s]] ++;
+      check[s] = 0;
+    }
+
+    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG);
+    if (use_dag) {
+      for (size_type s = 0; s < nsuper; s++) {
+        for (size_type e = 0; e < dag[s][0]; e++) {
+          check[dag[s][e+1]] ++;
+        }
+      }
+    } else {
+      for (size_type s = 0; s < nsuper; s++) {
+        if (parents[s] >= 0) {
+          check[parents[s]] ++;
+        }
       }
     }
+
     //printf( " Init:\n" );
     //for (size_type s = 0; s <nsuper; s++) printf( " check[%d] = %d\n",s,check[s] );
 
@@ -651,7 +689,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
           // update workspace size
           size_type row = supercols[s];
           signed_integral_t nsrow = row_map (row+1) - row_map(row);
-          //printf( " %d %d %d %d\n",num_done+num_leave, level, nsrow, supercols[s+1]-supercols[s] );
+          //printf( " %d %d %d %d %d\n",num_done+num_leave, level, nsrow, supercols[s+1]-supercols[s],s );
+          //for (int i = supercols[s]; i < supercols[s+1]; i++) printf("%d %d %d\n",i,s,level );  // permute matrix based on scheduling
           lwork += nsrow;
 
           #ifdef profile_supernodal_etree
@@ -709,9 +748,15 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
         size_type s = inverse_nodes_grouped_by_level (num_done + task);
         check[s] = -1;
         //printf( " %d: check[%d]=%d ",level,s,check[s]);
-        if (parents[s] >= 0) {
-          check[parents[s]] --;
-          //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+       if (use_dag) {
+          for (size_type e = 0; e < dag[s][0]; e++) {
+            check[dag[s][e+1]] --;
+          }
+        } else {
+          if (parents[s] >= 0) {
+            check[parents[s]] --;
+            //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+          }
         }
         //printf( "\n" );
       }
@@ -736,6 +781,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       nodes_per_level (level) = num_leave;
       //printf( " -> nodes_per_level(%d -> %d) = %d\n",num_level-level-1, level, num_leave );
 
+      signed_integral_t avg_nscol = 0;
       signed_integral_t avg_nsrow = 0;
       for (signed_integral_t task = 0; task < num_leave; task++) {
         signed_integral_t s = inverse_nodes_grouped_by_level (nsuper - num_done - 1);
@@ -744,16 +790,22 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
         level_list (s) = level;
         //printf( " -> level=%d: %d->%d: s=%d\n",level, nsuper-num_done-1, num_done, s );
         num_done ++;
-        avg_nsrow += supercols[s+1]-supercols[s];
+
+        size_type row = supercols[s];
+        avg_nsrow += row_map (row+1) - row_map(row);
+        avg_nscol += supercols[s+1] - supercols[s];
       }
 
       // average supernodal size at this level
+      avg_nscol /= num_leave;
       avg_nsrow /= num_leave;
       // kernel type
-      if (avg_nsrow < size_tol) {
-        kernel_type_by_level (level) = 0;
+      if (avg_nscol < size_unblocked) {
+        // batched unblocked
+        diag_kernel_type_by_level (level) = 0;
       } else {
-        kernel_type_by_level (level) = 2;
+        // device
+        diag_kernel_type_by_level (level) = 3;
       }
     }
 
@@ -767,8 +819,12 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy (work_offset, work_offset_host);
 
   // kernel type
+  // > off-diagonal
   supercols_t dkernel_type_by_level = thandle.get_kernel_type ();
-  Kokkos::deep_copy (dkernel_type_by_level, kernel_type_by_level);
+  Kokkos::deep_copy (dkernel_type_by_level, diag_kernel_type_by_level);
+  // > diagonal
+  supercols_t ddiag_kernel_type_by_level = thandle.get_diag_kernel_type ();
+  Kokkos::deep_copy (ddiag_kernel_type_by_level, diag_kernel_type_by_level);
 
   // deep copy to device (info about scheduling)
   Kokkos::deep_copy (dnodes_grouped_by_level, nodes_grouped_by_level);
