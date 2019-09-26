@@ -290,7 +290,10 @@ struct ILUKLvlSchedTP1NumericFunctor
 #else
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
-      L_values(k) = fact;
+      if ( my_team == 0 ) L_values(k) = fact; 
+
+      team.team_barrier();
+
       Kokkos::parallel_for( Kokkos::TeamThreadRange( team, U_row_map(prev_row)+1, U_row_map(prev_row+1) ), [&] ( const long kk ) {
         auto col  = U_entries(kk);
         auto ipos = iw(my_league,col);
@@ -382,8 +385,8 @@ void iluk_numeric ( IlukHandle& thandle,
 
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();
 
-  typedef Kokkos::View< nnz_lno_t**, Kokkos::LayoutLeft, Kokkos::Device<execution_space,memory_space> > WorkViewType;
-    
+  typedef Kokkos::View< nnz_lno_t**, Kokkos::Device<execution_space,memory_space> > WorkViewType;
+  
   WorkViewType iw ( "iw", thandle.get_level_maxrows(), nrows );
   Kokkos::deep_copy(iw, nnz_lno_t(-1));
 
