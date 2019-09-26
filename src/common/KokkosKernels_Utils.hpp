@@ -212,49 +212,26 @@ void get_suggested_vector_size(
 
 }
 
-
-template <typename ExecutionSpace>
-void get_suggested_team_size(
-    int max_allowed_team_size,
-    int suggested_vector_size,
-    int &suggested_team_size_){
-
-    suggested_team_size_ = 1;
-
-#if defined( KOKKOS_ENABLE_SERIAL )
-  if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
-    suggested_team_size_ = 1;
+//Get the best team size for the given functor.
+//If it uses shared memory, the amount used must be available through f.team_shmem_size(n),
+//not through the TeamPolicy. If this is how dynamic shared is set, just use AUTO for the team size.
+template<typename team_policy_t, typename Functor, typename ParallelTag = Kokkos::ParallelForTag>
+int get_suggested_team_size(Functor& f, int vector_size)
+{
+#ifdef KOKKOS_ENABLE_CUDA
+  if(std::is_same<typename team_policy_t::traits::execution_space, Kokkos::Cuda>::value)
+  {
+    team_policy_t temp(1, 1, vector_size);
+    return temp.team_size_recommended(f, ParallelTag());
   }
+  else
 #endif
-
-#if defined( KOKKOS_ENABLE_THREADS )
-  if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
-    suggested_team_size_ =  1;
+  {
+    return 1;
   }
-#endif
-
-#if defined( KOKKOS_ENABLE_OPENMP )
-  if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-    suggested_team_size_ = 1;
-  }
-#endif
-
-#if defined( KOKKOS_ENABLE_CUDA )
-  if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-    suggested_team_size_ = max_allowed_team_size / suggested_vector_size;
-    if(suggested_team_size_ == 0)
-      suggested_team_size_ = 1;
-  }
-#endif
-
-#if defined( KOKKOS_ENABLE_QTHREAD)
-  if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-    suggested_team_size_ = 1;
-  }
-#endif
-
 }
-#endif
+
+#endif //ifdef KOKKOS_ENABLE_DEPRECATED_CODE ... else
 
 
 template <typename idx_array_type,
@@ -1150,19 +1127,13 @@ void symmetrize_and_get_lower_diagonal_edge_list(
         vector_size,
         xadj.extent(0) - 1, nnz);
 
-    team_policy tmp_policy(num_rows_to_symmetrize, Kokkos::AUTO, vector_size);
-    int max_allowed_team_size = tmp_policy.team_size_max( fse, Kokkos::ParallelForTag() );
-
-    get_suggested_team_size<MyExecSpace>(
-        max_allowed_team_size,
-        vector_size,
-        teamSizeMax);
+    teamSizeMax = get_suggested_team_size<team_policy>(fse, vector_size);
 #endif
     //std::cout << "max_allowed_team_size:" << max_allowed_team_size << " vs:" << vector_size << " tsm:" << teamSizeMax<< std::endl;
-
+    
+    team_policy pol((num_rows_to_symmetrize + teamSizeMax - 1) / teamSizeMax, teamSizeMax, vector_size);
     Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeAndGetLowerDiagonalEdgeList::S0",
-        team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
-        fse/*, num_symmetric_edges*/);
+        pol, fse/*, num_symmetric_edges*/);
     MyExecSpace().fence();
 
   }
@@ -1210,23 +1181,13 @@ void symmetrize_and_get_lower_diagonal_edge_list(
         vector_size,
         xadj.extent(0) - 1, nnz);
 
-    team_policy tmp_policy(num_rows_to_symmetrize, Kokkos::AUTO, vector_size);
-    int max_allowed_team_size = tmp_policy.team_size_max( FSCH, Kokkos::ParallelForTag() );
-
-    get_suggested_team_size<MyExecSpace>(
-        max_allowed_team_size,
-        vector_size,
-        teamSizeMax);
+    teamSizeMax = get_suggested_team_size<team_policy>(FSCH, vector_size);
 #endif
 
-    Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeAndGetLowerDiagonalEdgeList::S1",
-        team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
-        FSCH);
+    team_policy pol((num_rows_to_symmetrize + teamSizeMax - 1) / teamSizeMax, teamSizeMax, vector_size);
+    Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeAndGetLowerDiagonalEdgeList::S1", pol, FSCH);
     MyExecSpace().fence();
   }
-
-  MyExecSpace().fence();
-
 }
 
 
@@ -1295,18 +1256,12 @@ void symmetrize_graph_symbolic_hashmap(
         vector_size,
         xadj.extent(0) - 1, nnz);
 
-    team_policy tmp_policy(num_rows_to_symmetrize, Kokkos::AUTO, vector_size);
-    int max_allowed_team_size = tmp_policy.team_size_max( fse, Kokkos::ParallelForTag() );
-
-    get_suggested_team_size<MyExecSpace>(
-        max_allowed_team_size,
-        vector_size,
-        teamSizeMax);
+    teamSizeMax = get_suggested_team_size<team_policy>(fse, vector_size);
 #endif
 
+    team_policy pol((num_rows_to_symmetrize + teamSizeMax - 1) / teamSizeMax, teamSizeMax, vector_size);
     Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeGraphSymbolicHashMap::S0",
-        team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
-        fse/*, num_symmetric_edges*/);
+        pol, fse/*, num_symmetric_edges*/);
     MyExecSpace().fence();
   }
 
@@ -1351,18 +1306,13 @@ void symmetrize_graph_symbolic_hashmap(
         vector_size,
         xadj.extent(0) - 1, nnz);
 
-    team_policy tmp_policy(num_rows_to_symmetrize, Kokkos::AUTO, vector_size);
-    int max_allowed_team_size = tmp_policy.team_size_max( FSCH, Kokkos::ParallelForTag() );
+    teamSizeMax = get_suggested_team_size<team_policy>(FSCH, vector_size);
 
-    get_suggested_team_size<MyExecSpace>(
-        max_allowed_team_size,
-        vector_size,
-        teamSizeMax);
 #endif
 
+    team_policy pol((num_rows_to_symmetrize + teamSizeMax - 1) / teamSizeMax, teamSizeMax, vector_size);
     Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeGraphSymbolicHashMap::S1",
-        team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
-        FSCH);
+        pol, FSCH);
     MyExecSpace().fence();
   }
 
