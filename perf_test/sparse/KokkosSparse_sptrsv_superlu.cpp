@@ -614,7 +614,6 @@ crsMat_t read_superlu_Lfactor(int n, SuperMatrix *L) {
   typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
 
   // compute offset for each row
-  //printf( "\n -- store superlu factor (n=%d, nsuper=%d) --\n",n,nsuper );
   int j = 0;
   #ifdef SUPERLU_MERGE_SUPERNODES
   int nnz_per_row = 0;
@@ -627,7 +626,7 @@ crsMat_t read_superlu_Lfactor(int n, SuperMatrix *L) {
 
     int i1 = mb[j1];
     int i2 = mb[j1+1];
-    int nsrow = i2 - i1;    // "total" number of rows in all the supernodes (diagonal+off-diagonal)
+    int nsrow = i2 - i1;      // "total" number of rows in all the supernodes (diagonal+off-diagonal)
 
     for (int jj = 0; jj < nscol; jj++) {
       hr(j+1) = hr(j) + nsrow;
@@ -811,7 +810,6 @@ crsMat_t read_superlu_Ufactor(int n, SuperMatrix *L,  SuperMatrix *U) {
   }
 
   // convert to the offset for each row
-  //printf( " hr(%d) = %d\n",0,hr(0) );
   for (int i = 1; i <= n; i++) {
     hr (i) += hr (i-1);
   }
@@ -820,7 +818,6 @@ crsMat_t read_superlu_Ufactor(int n, SuperMatrix *L,  SuperMatrix *U) {
   int nnzA = hr (n);
   cols_view_t    column_view ("colmap_view", nnzA);
   values_view_t  values_view ("values_view", nnzA);
-  //printf( " nnzA = %d\n",nnzA );
 
   typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
   typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
@@ -843,13 +840,11 @@ crsMat_t read_superlu_Ufactor(int n, SuperMatrix *L,  SuperMatrix *U) {
       for (int j = 0; j < i; j++) {
         hc(hr(j1 + i) + j) = j1 + j;
         hv(hr(j1 + i) + j) = STS::zero ();
-        //printf( " > %d %d %e (%d)\n",j1 + i,j1 + j,STS::zero (), hr(j1 + i) + j );
       }
 
       for (int j = i; j < nscol; j++) {
         hc(hr(j1 + i) + j) = j1 + j;
         hv(hr(j1 + i) + j) = Lx[psx + i + j*nsrow];
-        //printf( " > %d %d %e (%d)\n",j1 + i,j1 + j,Lx[psx + i + j*nsrow], hr(j1 + i) + j );
       }
       hr (j1 + i) += nscol;
     }
@@ -893,21 +888,11 @@ crsMat_t read_superlu_Ufactor(int n, SuperMatrix *L,  SuperMatrix *U) {
   // fix hr
   for (int i = n; i >= 1; i--) {
     hr(i) = hr(i-1);
-    //printf( "hr[%d] = %d\n",i-1,hr(i) );
   }
   hr(0) = 0;
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
-  /*std::cout << " [" << std::endl;
-  for (int i = 0; i < n; i++ ) {
-    for (int j = hr (i) ; j < hr (i+1); j ++ ) {
-      if (hv(j) != STS:: zero()) {
-        std::cout << i << " " << hc (j) << " " << hv (j) << std::endl;
-      }
-    }
-  }
-  std::cout << " ];" << std::endl;*/
 
   // deepcopy
   Kokkos::deep_copy (rowmap_view, hr);
@@ -1107,165 +1092,6 @@ void forwardP_superlu(int n, int *perm_r, int nrhs, Scalar *B, int ldb, Scalar *
 }
 
 template<typename Scalar>
-void solveL_superlu (SuperMatrix *L,
-                     int nrhs, double *X, int ldx) {
-
-  double one  = 1.0;
-  double zero = 0.0;
-
-  SCformat *Lstore = (SCformat*)(L->Store);
-  double   *Lx = (double*)(Lstore->nzval);
-
-  /* allocate workspace */
-  int n = L->nrow;
-  int ldw = n;
-  double *work = new double[ldw];
-  double *Z;
-
-  int * nb = Lstore->sup_to_col;
-  int * mb = Lstore->rowind_colptr;
-  int * colptr = Lstore->nzval_colptr;
-  int * rowind = Lstore->rowind;
-
-  /* Forward solve */
-  for (int k = 0; k <= Lstore->nsuper; k++)
-  {
-    int j1 = nb[k];
-    int j2 = nb[k+1];
-    int nscol  = j2 - j1;
-
-    int i1 = mb[j1];
-    int i2 = mb[j1+1];
-    int nsrow  = i2 - i1;
-    int nsrow2 = nsrow - nscol;
-    int ps2    = i1 + nscol;
-
-    int psx = colptr[j1];
-
-    #if defined(SUPERLU_INVERT_OFFDIAG)
-      /* do GEMM update with the off-diagonal blocks */
-      for (int i = 0; i < nscol; i++)
-      {
-        for (int j = 0; j < nrhs; j++)
-        {
-          work[i + j*ldw] = X[j1 + i + j*ldx];
-        }
-      }
-      cblas_dtrmm (CblasColMajor,
-          CblasLeft, CblasLower, CblasNoTrans, CblasUnit,
-          nscol, nrhs,
-          one,  &Lx[psx], nsrow,
-                work,     ldw);
-      cblas_dgemm (CblasColMajor,
-            CblasNoTrans, CblasNoTrans,
-            nsrow2, nrhs, nscol,
-            one,    &Lx[psx+nscol], nsrow,
-                    &X[j1], ldx,
-            zero,   &work[nscol], ldw);
-      /* scatter/accumulate updates into vectors */
-      for (int i = 0; i < nscol; i++)
-      {
-        for (int j = 0; j < nrhs; j++)
-        {
-          X[j1 + i + j*ldx] = work[i + j*ldw];
-        }
-      }
-      Z = &work[nscol];
-    #else
-      /* do TRSM with the diagonal blocks */
-      #ifdef SUPERLU_INVERT_DIAG
-      cblas_dtrmm (CblasColMajor,
-          CblasLeft, CblasLower, CblasNoTrans, CblasUnit,
-          nscol, nrhs,
-          one,  &Lx[psx], nsrow,
-                &X[j1],   ldx);
-      #else
-      cblas_dtrsm (CblasColMajor,
-          CblasLeft, CblasLower, CblasNoTrans, CblasUnit,
-          nscol, nrhs,
-          one,  &Lx[psx], nsrow,
-                &X[j1],   ldx);
-      #endif
-
-      /* do GEMM update with the off-diagonal blocks */
-      cblas_dgemm (CblasColMajor,
-            CblasNoTrans, CblasNoTrans,
-            nsrow2, nrhs, nscol,
-            one,   &Lx[psx + nscol], nsrow,
-                   &X[j1], ldx,
-            zero,  work, ldw);
-      Z = work;
-    #endif
-
-    /* scatter/accumulate updates into vectors */
-    for (int ii = 0; ii < nsrow2; ii++)
-    {
-      int i = rowind[ps2 + ii];
-      for (int j = 0; j < nrhs; j++)
-      {
-        X[i + j*ldx] -= Z[ii + j*ldw];
-      }
-    }
-  } /* for L-solve */
-}
-
-template<typename Scalar>
-void solveU_superlu (SuperMatrix *L, SuperMatrix *U,
-                     int nrhs, double *Bmat, int ldb) {
-
-  double   one = 1.0;
-
-  SCformat *Lstore = (SCformat*)(L->Store);
-  NCformat *Ustore = (NCformat*)(U->Store);
-
-  double *Lval = (double*)(Lstore->nzval);
-  double *Uval = (double*)(Ustore->nzval);
-
-  int * nb = Lstore->sup_to_col;
-  int * mb = Lstore->rowind_colptr;
-  int * colptr = Lstore->nzval_colptr;
-
-  /*
-   * Back solve.
-   */
-  for (int k = Lstore->nsuper; k >= 0; k--) {
-    int j1 = nb[k];
-    int nscol = nb[k+1] - j1;
-
-    int i1 = mb[j1];
-    int nsrow = mb[j1+1] - i1;
-
-    int psx = colptr[j1];
-
-    /* do TRSM with the diagonal block */
-    #ifdef SUPERLU_INVERT_DIAG
-    cblas_dtrmm (CblasColMajor,
-        CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
-        nscol, nrhs,
-        one,  &Lval[psx], nsrow,
-              &Bmat[j1], ldb);
-    #else
-    cblas_dtrsm (CblasColMajor,
-        CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
-        nscol, nrhs,
-        one, &Lval[psx], nsrow,
-             &Bmat[j1], ldb);
-    #endif
-
-    /* update with the off-diagonal blocks */
-    for (int j = 0; j < nrhs; ++j) {
-      double *rhs_work = &Bmat[j*ldb];
-      for (int jcol = j1; jcol < j1 + nscol; jcol++) {
-        for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
-          int irow = U_SUB(i);
-          rhs_work[irow] -= rhs_work[jcol] * Uval[i];
-        }
-      }
-    }
-  } /* for U-solve */
-}
-
-template<typename Scalar>
 void backwardP_superlu(int n, int *perm_c, int nrhs, Scalar *B, int ldb, Scalar *X, int ldx) {
 
     /* Compute the final solution X := Pc*X. */
@@ -1276,6 +1102,7 @@ void backwardP_superlu(int n, int *perm_c, int nrhs, Scalar *B, int ldb, Scalar 
     }
 }
 #endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -1581,13 +1408,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
             int **dagL = generate_supernodal_dag<host_graph_t> (nsuper2, supL, supU);
             int **dagU = generate_supernodal_dag<host_graph_t> (nsuper2, supU, supL);
-            /*for (int s = 0; s < nsuper2; s++) {
-              printf( " %d : ",s );
-              for (int e = 0; e < dagL[s][0]; e++) {
-                printf( "%d ",dagL[s][1+e] );
-              }
-              printf( "\n" );
-            }*/
             khL.set_supernodal_dag (dagL);
             khU.set_supernodal_dag (dagU);
           }
@@ -1614,24 +1434,17 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           auto row_mapL = graphL.row_map;
           auto entriesL = graphL.entries;
           auto valuesL  = superluL.values;
-          #if 1
-           // symbolic on the host
-           timer.reset();
-           std::cout << std::endl;
-           std::cout << " > Lower-TRI: " << std::endl;
-           sptrsv_symbolic (&khL, row_mapL, entriesL);
-           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
-           timer.reset();
-           // numeric (only rhs is modified) on the default device/host space
-           sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
-          #else
-           timer.reset();
-           // solveL with SuperLU data structure, L
-           //solveL_superlu<Scalar>(&L, 1, rhs.data(), nrows);
-           solveL_superlu<Scalar>(&L, 1, tmp_host.data(), nrows);
-           Kokkos::deep_copy (rhs, tmp_host);
-          #endif
+         // symbolic on the host
+         timer.reset();
+         std::cout << std::endl;
+         std::cout << " > Lower-TRI: " << std::endl;
+         sptrsv_symbolic (&khL, row_mapL, entriesL);
+         std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+
+         timer.reset();
+         // numeric (only rhs is modified) on the default device/host space
+         sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
           Kokkos::fence();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
           //Kokkos::deep_copy (tmp_host, rhs);
@@ -1645,20 +1458,15 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           auto row_mapU = graphU.row_map;
           auto entriesU = graphU.entries;
           auto valuesU  = superluU.values;
-          #if 1
-           // symbolic on the host
-           timer.reset ();
-           std::cout << " > Upper-TRI: " << std::endl;
-           sptrsv_symbolic (&khU, row_mapU, entriesU);
-           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
-           // numeric (only rhs is modified) on the default device/host space
-           sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
-          #else
-           //solveU_superlu<Scalar>(&L, &U, 1, rhs.data(), nrows);
-           solveU_superlu<Scalar>(&L, &U, 1, tmp_host.data(), nrows);
-           Kokkos::deep_copy (rhs, tmp_host);
-          #endif
+          // symbolic on the host
+          timer.reset ();
+          std::cout << " > Upper-TRI: " << std::endl;
+          sptrsv_symbolic (&khU, row_mapU, entriesU);
+          std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+
+          // numeric (only rhs is modified) on the default device/host space
+          sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
           Kokkos::fence ();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
  
@@ -1706,13 +1514,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
             forwardP_superlu<Scalar> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
-             #if 1
-             sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
-             sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
-             #else
-             solveL_superlu<Scalar>(&L, 1, rhs.data(), nrows);
-             solveU_superlu<Scalar>(&L, &U, 1, rhs.data(), nrows);
-             #endif
+
+            sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
+            sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
+
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
             backwardP_superlu<Scalar>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
