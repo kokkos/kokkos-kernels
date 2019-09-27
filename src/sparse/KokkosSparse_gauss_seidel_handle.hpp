@@ -52,6 +52,8 @@ namespace KokkosSparse{
 
   enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER};
 
+  enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_RCM, CLUSTER_SHUFFLE, CLUSTER_GRADIENT};
+
   template <class size_type_, class lno_t_, class scalar_t_,
             class ExecutionSpace,
             class TemporaryMemorySpace,
@@ -88,6 +90,7 @@ namespace KokkosSparse{
   private:
     bool owner_of_coloring;
     GSAlgorithm algorithm_type;
+    ClusteringAlgorithm cluster_algo;
 
     nnz_lno_persistent_work_host_view_t color_set_xadj;
     nnz_lno_persistent_work_view_t color_sets;
@@ -136,9 +139,10 @@ namespace KokkosSparse{
     }
 
     //Constructor for cluster-coloring based GS and SGS
-    GaussSeidelHandle(nnz_lno_t cluster_size_):
+    GaussSeidelHandle(ClusteringAlgorithm cluster_algo_, nnz_lno_t cluster_size_):
       owner_of_coloring(false),
       algorithm_type(GS_CLUSTER),
+      cluster_algo(cluster_algo_),
       color_set_xadj(), color_sets(), numColors(0),
       permuted_xadj(),  permuted_adj(), permuted_adj_vals(), old_to_new_map(),
       called_symbolic(false), called_numeric(false), permuted_y_vector(), permuted_x_vector(),

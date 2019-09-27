@@ -486,10 +486,10 @@ public:
     this->is_owner_of_the_gs_handle = true;
     this->gsHandle = new GaussSeidelHandleType(gs_algorithm);
   }
-  void create_gs_handle(nnz_lno_t verts_per_cluster){
+  void create_gs_handle(ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new GaussSeidelHandleType(verts_per_cluster);
+    this->gsHandle = new GaussSeidelHandleType(clusterAlgo, verts_per_cluster);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){

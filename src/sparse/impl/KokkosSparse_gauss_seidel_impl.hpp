@@ -51,7 +51,7 @@
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
-#include "KokkosSparse_rcm_impl.hpp"
+#include "KokkosSparse_partitioning_impl.hpp"
 #ifndef _KOKKOSGSIMP_HPP
 #define _KOKKOSGSIMP_HPP
 
@@ -934,8 +934,8 @@ namespace KokkosSparse{
         typedef Kokkos::View<row_lno_t*, MyTempMemorySpace> RowmapView;
         typedef Kokkos::View<nnz_lno_t*, MyTempMemorySpace> EntriesView;
         typedef Kokkos::View<size_type*, MyTempMemorySpace> BitsetView;
-        ClusterEntryCountingFunctor(RowmapView& clusterRowmap_, BitsetView& denseClusterRow_, nnz_lno_persistent_work_view_t& rcmOrder_, nnz_lno_persistent_work_view_t& rcmPerm_, nnz_lno_t numClusters_, nnz_lno_t clusterSize_, row_lno_persistent_work_view_t& xadj_, nnz_lno_persistent_work_view_t& adj_, nnz_lno_t nthreads_, nnz_lno_t numRows_)
-          : clusterRowmap(clusterRowmap_), denseClusterRow(denseClusterRow_), rcmOrder(rcmOrder_), rcmPerm(rcmPerm_), numClusters(numClusters_), clusterSize(clusterSize_), xadj(xadj_), adj(adj_), nthreads(nthreads_), numRows(numRows_)
+        ClusterEntryCountingFunctor(RowmapView& clusterRowmap_, BitsetView& denseClusterRow_, nnz_lno_persistent_work_view_t& clusterOrder_, nnz_lno_persistent_work_view_t& clusterPerm_, nnz_lno_t numClusters_, nnz_lno_t clusterSize_, row_lno_persistent_work_view_t& xadj_, nnz_lno_persistent_work_view_t& adj_, nnz_lno_t nthreads_, nnz_lno_t numRows_)
+          : clusterRowmap(clusterRowmap_), denseClusterRow(denseClusterRow_), clusterOrder(clusterOrder_), clusterPerm(clusterPerm_), numClusters(numClusters_), clusterSize(clusterSize_), xadj(xadj_), adj(adj_), nthreads(nthreads_), numRows(numRows_)
         {}
 
         KOKKOS_INLINE_FUNCTION void operator()(const size_type tid) const
@@ -956,15 +956,15 @@ namespace KokkosSparse{
               nnz_lno_t clusterEnd = (c + 1) * clusterSize;
               if(c == numClusters - 1)
                 clusterEnd = numRows - 1;
-              for(nnz_lno_t rcmRow = clusterBegin; rcmRow < clusterEnd; rcmRow++)
+              for(nnz_lno_t orderRow = clusterBegin; orderRow < clusterEnd; orderRow++)
               {
-                nnz_lno_t origRow = rcmPerm(rcmRow);
+                nnz_lno_t origRow = clusterPerm(orderRow);
                 //map neighbors of origRow to the RCM matrix, then to clusters
                 for(size_type neiIndex = xadj(origRow); neiIndex < xadj(origRow + 1); neiIndex++)
                 {
                   nnz_lno_t nei = adj(neiIndex);
-                  nnz_lno_t rcmNei = rcmOrder(nei);
-                  nnz_lno_t clusterNei = rcmNei / clusterSize;
+                  nnz_lno_t orderNei = clusterOrder(nei);
+                  nnz_lno_t clusterNei = orderNei / clusterSize;
                   //record the entry in dense row
                   //this should be fast since bitsPerST is a power of 2
                   denseRow[clusterNei / bitsPerST] |= (size_type(1) << (clusterNei % bitsPerST));
@@ -984,8 +984,8 @@ namespace KokkosSparse{
         }
         RowmapView clusterRowmap;
         BitsetView denseClusterRow;
-        nnz_lno_persistent_work_view_t rcmOrder;
-        nnz_lno_persistent_work_view_t rcmPerm;
+        nnz_lno_persistent_work_view_t clusterOrder;
+        nnz_lno_persistent_work_view_t clusterPerm;
         nnz_lno_t numClusters;
         nnz_lno_t clusterSize;
         row_lno_persistent_work_view_t xadj;
@@ -1006,8 +1006,8 @@ namespace KokkosSparse{
             BitsetView&                     denseClusterRow_,
             row_lno_persistent_work_view_t& xadj_,
             nnz_lno_persistent_work_view_t& adj_,
-            nnz_lno_persistent_work_view_t& rcmOrder_,
-            nnz_lno_persistent_work_view_t& rcmPerm_,
+            nnz_lno_persistent_work_view_t& clusterOrder_,
+            nnz_lno_persistent_work_view_t& clusterPerm_,
             nnz_lno_t                       numClusters_,
             nnz_lno_t                       clusterSize_,
             nnz_lno_t                       numRows_,
@@ -1015,7 +1015,7 @@ namespace KokkosSparse{
           :
           clusterRowmap(clusterRowmap_), clusterEntries(clusterEntries_),
           denseClusterRow(denseClusterRow_), xadj(xadj_), adj(adj_),
-          rcmOrder(rcmOrder_), rcmPerm(rcmPerm_), numClusters(numClusters_),
+          clusterOrder(clusterOrder_), clusterPerm(clusterPerm_), numClusters(numClusters_),
           clusterSize(clusterSize_), numRows(numRows_), nthreads(nthreads_)
         {}
         KOKKOS_INLINE_FUNCTION void operator()(const size_type tid) const
@@ -1036,15 +1036,15 @@ namespace KokkosSparse{
               nnz_lno_t clusterEnd = (c + 1) * clusterSize;
               if(c == numClusters - 1)
                 clusterEnd = numRows - 1;
-              for(nnz_lno_t rcmRow = clusterBegin; rcmRow < clusterEnd; rcmRow++)
+              for(nnz_lno_t orderRow = clusterBegin; orderRow < clusterEnd; orderRow++)
               {
-                nnz_lno_t origRow = rcmPerm(rcmRow);
+                nnz_lno_t origRow = clusterPerm(orderRow);
                 //map neighbors of origRow to the RCM matrix, then to clusters
                 for(size_type neiIndex = xadj(origRow); neiIndex < xadj(origRow + 1); neiIndex++)
                 {
                   nnz_lno_t nei = adj(neiIndex);
-                  nnz_lno_t rcmNei = rcmOrder(nei);
-                  nnz_lno_t clusterNei = rcmNei / clusterSize;
+                  nnz_lno_t orderNei = clusterOrder(nei);
+                  nnz_lno_t clusterNei = orderNei / clusterSize;
                   //record the entry in dense row
                   //this should be fast since bitsPerST is a power of 2
                   denseRow[clusterNei / bitsPerST] |= (size_type(1) << (clusterNei % bitsPerST));
@@ -1071,8 +1071,8 @@ namespace KokkosSparse{
         BitsetView denseClusterRow;
         row_lno_persistent_work_view_t xadj;
         nnz_lno_persistent_work_view_t adj;
-        nnz_lno_persistent_work_view_t rcmOrder;
-        nnz_lno_persistent_work_view_t rcmPerm;
+        nnz_lno_persistent_work_view_t clusterOrder;
+        nnz_lno_persistent_work_view_t clusterPerm;
         nnz_lno_t numClusters;
         nnz_lno_t clusterSize;
         nnz_lno_t numRows;
@@ -1160,19 +1160,33 @@ namespace KokkosSparse{
         typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
         typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_t;
         //compute the RCM ordering of the graph
-        RCM<HandleType, rowmap_t, colinds_t> rcm(num_rows, xadj, adj);
-        //rcmOrder maps (bijectively) from original rows to RCM-ordered rows.
-        //rcmOrder[i] represents where in the _order_ row i is.
-        //rcmPerm is the inverse mapping: a list of all rows _permuted_ into the RCM ordering.
-        nnz_lno_persistent_work_view_t rcmOrder = rcm.rcm();
-        nnz_lno_persistent_work_view_t rcmPerm("RCM permutation array", num_rows);
-        Kokkos::parallel_for(my_exec_space(0, num_rows), OrderToPermFunctor(rcmOrder, rcmPerm));
+        nnz_lno_persistent_work_view_t clusterOrder;
+        auto clusterSize = gsHandler->get_cluster_size();
+        nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;
+        switch(cluster_algo)
+        {
+          case CLUSTER_RCM:
+          {
+            RCM<HandleType, rowmap_t, colinds_t> rcm(num_rows, xadj, adj);
+            clusterOrder = rcm.rcm();
+            break;
+          }
+          case CLUSTER_SHUFFLE:
+          {
+            ShuffleReorder<HandleType, rowmap_t, colinds_t> shuf(num_rows, xadj, adj);
+            clusterOrder = shuf.shuffledClusterOrder(clusterSize);
+            break;
+          }
+        }
+        //clusterOrder maps (bijectively) from original rows to RCM-ordered rows.
+        //clusterOrder[i] represents where in the _order_ row i is.
+        //clusterPerm is the inverse mapping: a list of all rows _permuted_ into the RCM ordering.
+        nnz_lno_persistent_work_view_t clusterPerm("RCM permutation array", num_rows);
+        Kokkos::parallel_for(my_exec_space(0, num_rows), OrderToPermFunctor(clusterOrder, clusterPerm));
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         std::cout << "\nRCM:" << timer.seconds() << '\n';
         timer.reset();
 #endif
-        auto clusterSize = gsHandler->get_cluster_size();
-        nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;
         //build the cluster graph using the (implicitly permuted) RCM order of the matrix (xadj, adj)
         //first, count the entries per row
         const size_type bitsPerST = 8 * sizeof(size_type);
@@ -1192,7 +1206,7 @@ namespace KokkosSparse{
         BitsetView denseClusterRow("Scratch for dense cluster graph rows", wordsPerRow * nthreads);
         RowmapView clusterRowmap("Row ptrs for cluster graph", numClusters + 1);
         //TODO: use a team policy here, and use shared memory for denseClusterRow
-        Kokkos::parallel_for(my_exec_space(0, nthreads), ClusterEntryCountingFunctor(clusterRowmap, denseClusterRow, rcmOrder, rcmPerm, numClusters, clusterSize, xadj, adj, nthreads, num_rows));
+        Kokkos::parallel_for(my_exec_space(0, nthreads), ClusterEntryCountingFunctor(clusterRowmap, denseClusterRow, clusterOrder, clusterPerm, numClusters, clusterSize, xadj, adj, nthreads, num_rows));
         //Prefix sum cluster entry counts to get the rowmap
         Kokkos::parallel_scan(my_exec_space(0, numClusters + 1), KokkosKernels::Impl::ExclusiveParallelPrefixSum<RowmapView>(clusterRowmap));
         auto clusterNNZ = Kokkos::subview(clusterRowmap, numClusters);
@@ -1200,7 +1214,7 @@ namespace KokkosSparse{
         Kokkos::deep_copy(h_clusterNNZ, clusterNNZ );
         //can now allocate the entries of cluster graph
         EntriesView clusterEntries("GS cluster ", h_clusterNNZ());
-        Kokkos::parallel_for(my_exec_space(0, nthreads), ClusterEntryFunctor(clusterRowmap, clusterEntries, denseClusterRow, xadj, adj, rcmOrder, rcmPerm, numClusters, clusterSize, num_rows, nthreads));
+        Kokkos::parallel_for(my_exec_space(0, nthreads), ClusterEntryFunctor(clusterRowmap, clusterEntries, denseClusterRow, xadj, adj, clusterOrder, clusterPerm, numClusters, clusterSize, num_rows, nthreads));
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         std::cout << "Cluster graph construction: " << timer.seconds() << '\n';
         timer.reset();

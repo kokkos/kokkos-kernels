@@ -46,18 +46,32 @@
 #include <Kokkos_Atomic.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_Sort.hpp>
+#include <Kokkos_Random.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Parallel_Reduce.hpp>
 #include "KokkosBlas1_fill.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 
-#ifndef _KOKKOSRCMIMP_HPP
-#define _KOKKOSRCMIMP_HPP
+#ifndef _KOKKOS_PARTITIONING_IMP_HPP
+#define _KOKKOS_PARTITIONING_IMP_HPP
 
 namespace KokkosSparse{
 
 namespace Impl{
+
+//Fill a view such that v(i) = i
+//Does the same thing as std::iota(begin, end)
+template<typename View, typename Ordinal>
+struct IotaFunctor
+{
+  IotaFunctor(View& v_) : v(v_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+  {
+    v(i) = i;
+  }
+  View v;
+};
 
 template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
 struct RCM
@@ -575,6 +589,268 @@ struct RCM
     nnz_lno_t periph = find_peripheral();
     //run Cuthill-McKee BFS from periph, then reverse the order
     return parallel_rcm(periph);
+  }
+};
+
+template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
+struct ShuffleReorder
+{
+  typedef typename HandleType::HandleExecSpace MyExecSpace;
+  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
+  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
+
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+
+  typedef typename lno_row_view_t::const_type const_lno_row_view_t;
+  typedef typename lno_row_view_t::non_const_type non_const_lno_row_view_t;
+  typedef typename non_const_lno_row_view_t::value_type offset_t;
+
+  typedef typename lno_nnz_view_t::const_type const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
+
+  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
+  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
+  typedef typename HandleType::row_lno_persistent_work_host_view_t row_lno_persistent_work_host_view_t; //Host view type
+
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t; //Host view type
+
+  typedef nnz_lno_persistent_work_view_t nnz_view_t;
+  typedef Kokkos::View<nnz_lno_t, MyTempMemorySpace, Kokkos::MemoryTraits<0>> single_view_t;
+  typedef Kokkos::View<nnz_lno_t, Kokkos::HostSpace, Kokkos::MemoryTraits<0>> single_view_host_t;
+
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  typedef Kokkos::Bitset<MyExecSpace> bitset_t;
+
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t ;
+  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
+  typedef typename team_policy_t::member_type team_member_t ;
+
+  ShuffleReorder(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
+    : numRows(numRows_), rowmap(rowmap_), colinds(colinds_)
+  {}
+
+  nnz_lno_t numRows;
+  const_lno_row_view_t rowmap;
+  const_lno_nnz_view_t colinds;
+
+  typedef Kokkos::Random_XorShift64_Pool<MyExecSpace> RandPool;
+  RandPool randPool;
+
+  struct ShuffleFunctor
+  {
+    ShuffleFunctor(nnz_view_t& order_, const_lno_nnz_view_t& row_map_, const_lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
+      : order(order_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), nodeLocks(numRows)
+    {}
+
+    KOKKOS_INLINE_FUNCTION nnz_lno_t origToCluster(nnz_lno_t orig)
+    {
+      return origToPermuted(orig) / clusterSize;
+    }
+
+    KOKKOS_INLINE_FUNCTION nnz_lno_t origToPermuted(nnz_lno_t orig)
+    {
+      return order(orig);
+    }
+
+    struct SharedData
+    {
+      nnz_lno_t node1;
+      nnz_lno_t node2;
+      nnz_lno_t numOutsideNeighbors;
+      bool lockedBoth;
+    };
+
+    KOKKOS_INLINE_FUNCTION void operator()(const team_member_t t) const
+    {
+      SharedData* wholeTeamShared = t.team_shmem().get_shmem(t.team_size() * sizeof(SharedData)));
+      SharedData& sh = wholeTeamShared[t.team_rank()];
+      for(int i = 0; i < 50)
+      {
+        //Each thread first chooses one row randomly
+        Kokkos::single(Kokkos::PerThread(t),
+          [&]()
+          {
+            auto state = randPool.get_state();
+            do
+            {
+              nnz_lno_t chosen = state.rand64(numRows);
+              //try to acquire the lock on chosen node
+              if(nodeLocks.set(chosen))
+              {
+                sh.node1 = chosen;
+                break;
+              }
+            }
+            while(true);
+            randPool.free_state(state);
+            //use numRows to represent that no second vertex has been chosen yet
+            sh.node2 = numRows;
+            sh.lockedBoth = false;
+          });
+        nnz_lno_t cluster1 = origToCluster(sh.node1);
+        //Figure out how many neighbors of node1 are not in cluster1.
+        //These are the candidate values for node2 (do nothing if numOutsideNeighbors == 0).
+        size_type row_start1 = row_map(sh.node1);
+        nnz_lno_t degree1 = row_map(sh.node1 + 1) - row_start1;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree1),
+          [&](const nnz_lno_t i, nnz_lno_t& lnumOutside)
+          {
+            nnz_lno_t nei = col_inds(row_start1 + i);
+            if(origToCluster(nei) != cluster1)
+              lnumOutside++;
+          }, numOutsideNeighbors);
+        if(numOutsideNeighbors == 0)
+        {
+          //Can't profit by swapping this row with anything,
+          //since swapping two nodes in the same cluster doesn't change the cluster graph.
+          Kokkos::single(Kokkos::PerThread(t),
+            [&]()
+            {
+              nodeLocks.clear(sh.node1);
+            });
+          continue;
+        }
+        //otherwise, randomly choose one of the outside neighbors to be node2.
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree1),
+          [&](const nnz_lno_t i, nnz_lno_t& lnode2)
+          {
+            nnz_lno_t nei = col_inds(row_start1 + i);
+            if(origToCluster(nei) != cluster1)
+            {
+              if(lnode2 == numRows)
+                lnode2 = nei;
+              else
+              {
+                nnz_lno_t chosen = state.rand64(numRows);
+                auto state = randPool.get_state();
+                if(state.rand(numOutsideNeighbors) == 0)
+                  lnode2 = nei;
+                randPool.free_state(state);
+              }
+            }
+          }, sh.node2);
+        //acquire the lock on node 2
+        Kokkos::single(Kokkos::PerThread(t),
+          [&]()
+          {
+            if(nodeLocks.set(sh.node2))
+              sh.lockedBoth = true;
+            if(!sh.lockedBoth)
+              nodeLocks.clear(sh.node1);
+          });
+        if(!sh.lockedBoth)
+        {
+          //can't proceed with this pair of vertices, try another in the next iteration
+          continue;
+        }
+        //finally, compute the value of swapping node1 and node2.
+        //Count the neighbors of node1 and node2 in their own clusters, and in each other's clusters.
+        //node1's number of self-cluster neighbors is already available.
+        nnz_lno_t cluster2 = origToCluster(sh.node2);
+        nnz_lno_t node1Self = degree1 - 1 - numOutsideNeighbors;
+        nnz_lno_t node1Cross = 0;
+        nnz_lno_t node2Self = 0;
+        nnz_lno_t node2Cross = 0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree1),
+          [&](const nnz_lno_t i, nnz_lno_t& lnode1Cross)
+          {
+            nnz_lno_t nei = col_inds(row_start1 + i);
+            if(origToCluster(nei) == cluster2)
+              lnode1Cross++;
+          }, node1Cross);
+        size_type row_start2 = row_map(sh.node2);
+        nnz_lno_t degree2 = row_map(sh.node2 + 1) - row_start2;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree2),
+          [&](const nnz_lno_t i, nnz_lno_t& lnode2Self)
+          {
+            nnz_lno_t nei = col_inds(row_start2 + i);
+            if(nei != sh.node2 && origToCluster(nei) == cluster2)
+              lnode2Self++;
+          }, node2Self);
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree2),
+          [&](const nnz_lno_t i, nnz_lno_t& lnode2Cross)
+          {
+            nnz_lno_t nei = col_inds(row_start2 + i);
+            if(origToCluster(nei) == cluster1)
+              lnode2Cross++;
+          }, node2Cross);
+        Kokkos::single(Kokkos::PerThread(t),
+          [&]()
+          {
+            //Compare the number of in-cluster entries with and without swapping.
+            //Note: neither the "self" nor "outside" counts include the diagonal edge,
+            //since that will never cross between clusters.
+            if(node1Self + node2Self < node1Cross + node2Cross)
+            {
+              nnz_lno_t tmp = order(sh.node1);
+              order(sh.node1) = order(sh.node2);
+              order(sh.node2) = tmp;
+            }
+            //in any case, can now unlock both nodes
+            nodeLocks.clear(sh.node1);
+            nodeLocks.clear(sh.node2);
+          });
+      }
+    }
+
+    size_t team_shmem_size(int team_size) const
+    {
+      return team_size * sizeof(SharedData);
+    }
+
+    nnz_view_t order;
+    const_lno_nnz_view_t row_map;
+    const_lno_nnz_view_t col_inds;
+    nnz_lno_t numClusters;
+    nnz_lno_t numRows;
+    RandPool randPool;
+    bitset_t nodeLocks;
+  };
+
+  //The shuffle-reorder algorithm tries to permute a graph's vertex labels so that the graph
+  //is as close to block diagonal as possible. Unlike RCM, it doesn't care about bandwidth. This
+  //is fine for graph partitioning: any entry outside the diagonal blocks is equally bad.
+  //
+  //Requires that the graph is symmetric.
+  //The graph for MT-GS/MT-SGS will always be symmetrized (if not symmetric on input) so this is fine.
+  //
+  //This algorithm directly tries to minimize the number of edges in the cluster graph for cluster Gauss-Seidel.
+  //
+  //Algorithm idea: Choose a node at random. Choose a random neighbor that is not in the same diagonal block (if any).
+  //If the total number of entries in the diagonal blocks would increase by swapping the node and its neighbor, do it.
+  nnz_view_t shuffledClusterOrder(nnz_lno_t clusterSize)
+  {
+    //order: the new label of each original node. Therefore maps from from original row to permuted row.
+    nnz_view_t order("Block diag order", numRows);
+    //start with the identity permutation
+    Kokkos::parallel_for(range_policy_t(0, numRows), IotaFunctor<nnz_view_t, nnz_lno_t>(order));
+    if(clusterSize == numRows)
+    {
+      //nothing to do, all in the same cluster
+      return order;
+    }
+    RandPool randPool(0xDEADBEEF);
+    ShuffleFunctor shuf(order, rowmap, entries, clusterSize, randPool);
+    int team_size = 0;
+    int vector_size = 0;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+    int max_allowed_team_size = team_policy::team_size_max(shuf);
+    get_suggested_vector_team_size<nnz_lno_t, MyExecSpace>(
+        max_allowed_team_size,
+        vector_size,
+        team_size,
+        numRows, entries.extent(0));
+#else
+    get_suggested_vector_size<nnz_lno_t, MyExecSpace>(
+        vector_size,
+        numRows, entries.extent(0));
+    team_size = get_suggested_team_size<team_policy>(shuf, vector_size);
+#endif
+    Kokkos::parallel_for(team_policy_t(256, team_size, vector_size), shuf);
+    return order;
   }
 };
 
