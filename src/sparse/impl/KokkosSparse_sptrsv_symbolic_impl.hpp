@@ -764,7 +764,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       //printf( " level=%d: num_done=%d / %d\n",level,num_done,nsuper );
       level ++;
     }
-    free(check);
+    delete [] check;
     #ifdef profile_supernodal_etree
     std::cout << "   * number of supernodes = " << nsuper << std::endl;
     std::cout << "   * supernodal rows: min = " << min_nsrow  << "\t max = " << max_nsrow  << "\t avg = " << tot_nsrow/nsuper << std::endl;
