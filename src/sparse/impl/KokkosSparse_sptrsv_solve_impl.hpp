@@ -508,8 +508,8 @@ struct LowerTriSupernodalFunctor
         //printf( " X(%d) = %e - %e = %e\n",i,X(i),Z(ii),X(i)-Z(ii) );
         Xatomic (i) -= Z (ii);
       }
+      team.team_barrier();
     }
-    team.team_barrier();
   }
 };
 
@@ -655,9 +655,11 @@ struct UpperTriSupernodalFunctor
 
       // workspace
       auto Y = subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
-      if (nscol == 1) {
-        Xj (0) *= Ljj(0, 0);
-      } else {
+      /*if (nscol == 1) {
+        if (team_rank == 0) {
+          Xj (0) *= Ljj(0, 0);
+        }
+      } else {*/
         for (int ii = team_rank; ii < nscol; ii += team_size) {
           Y (ii) = Xj (ii);
         }
@@ -676,8 +678,8 @@ struct UpperTriSupernodalFunctor
                      Y,
                zero, Xj);
         }*/
-      }
-      team.team_barrier();
+        team.team_barrier();
+      //}
     }
     //for (int ii=0; ii < nscol; ii++) printf( "%d %e\n",j1+ii,X(j1+ii));
     //printf( "\n" );

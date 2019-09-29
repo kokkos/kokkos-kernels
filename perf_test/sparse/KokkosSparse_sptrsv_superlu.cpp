@@ -244,24 +244,55 @@ crsMat_t merge_supernodes(int n, int *p_nsuper, int *nb, int *mb,
   int nnzA = 0;
   int *nb2 = new int[nsuper3];
   int *mb2 = new int[nsuper3];
+  #if defined(fill_supernodal_blocks) // force zeros to fill supernodes
+  int *work1 = new int[nsuper];
+  #else
   int *work1 = new int[n];
+  #endif
   int *work2 = new int[n];
+  int *work3 = new int[n]; // map row to supernode
   int **rowind = new int*[nsuper3];
+  for (int s = 0; s < nsuper; s++) {
+    for (int i = nb[s]; i < nb[s+1]; i++) {
+      work3[i] = s;
+    }
+  }
+  #if defined(fill_supernodal_blocks)
+  for (int i = 0; i < nsuper; i++) {
+    work1[i] = 0;
+  }
+  #else
   for (int i = 0; i < n; i++) {
     work1[i] = 0;
   }
+  #endif
   for (int s2 = 0, s = 0; s2 < nsuper3; s2++) {
     nb2[s2] = 0;
     mb2[s2] = 0;
     // merging supernodal rows
+    // NOTE: SuperLU may not fill zeros to fill the supernodes
+    //       So, these rows may be just subset of the supernodal rows
     while(s < nsuper && map2[s] == s2) {
       int j1 = nb[s];
       for (int k = row_mapL[j1]; k < row_mapL[j1+1]; k++) {
+        #if defined(fill_supernodal_blocks)
+        // forcing zeros to fill supernodal blocks
+        int s3 = work3[entriesL[k]];
+        if (work1[s3] == 0) {
+          for (int i = nb[s3]; i < nb[s3+1]; i++) {
+            work2[mb2[s2]] = i;
+            mb2[s2] ++;
+          }
+          work1[s3] = 1;
+        }
+        #else
+        // just taking union of rows
         if(work1[entriesL[k]] == 0) {
           work1[entriesL[k]] = 1;
           work2[mb2[s2]] = entriesL[k];
           mb2[s2] ++;
         }
+        #endif
       }
       nb2[s2] += (nb[s+1]-nb[s]);
       s ++;
@@ -273,8 +304,15 @@ crsMat_t merge_supernodes(int n, int *p_nsuper, int *nb, int *mb,
     rowind[s2] = new int [mb2[s2]];
     for (int k = 0; k < mb2[s2]; k++) {
       rowind[s2][k] = work2[k];
+      #if !defined(fill_supernodal_blocks)
       work1[work2[k]] = 0;
+      #endif
     }
+    #if defined(fill_supernodal_blocks)
+    for (int s3 = 0; s3 < nsuper; s3++) {
+      work1[s3] = 0;
+    }
+    #endif
     nnzA += nb2[s2] * mb2[s2];
   }
   delete[] work1;
@@ -388,6 +426,7 @@ crsMat_t merge_supernodes(int n, int *p_nsuper, int *nb, int *mb,
 
   for (int s = 0; s <nsuper3; s++) {
     //printf( " mb[%d]=%d, nb[%d]=%d, etree[%d]=%d (nrow=%d, ncol=%d)\n",s,mb[s],s,nb[s],s,etree[s],mb[s+1]-mb[s],nb[s+1]-nb[s] );
+    //printf( " %d: %d %d, %d\n",s,mb[s+1]-mb[s],nb[s+1]-nb[s],nb[s] );
     int j1 = nb[s];
     int j2 = nb[s+1];
 
@@ -448,13 +487,13 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
   int *colptr = Lstore->nzval_colptr;
   int *rowind = Lstore->rowind;
 
-  /*for (int k = 0; k <= Lstore->nsuper; k++)
+  for (int k = 0; k <= Lstore->nsuper; k++)
   {
     int j1 = nb[k];
     int j2 = nb[k+1];
     int nscol  = j2 - j1;
     printf( "%d %d %d\n",k,j1,nscol );
-  }*/
+  }
 
   /* permutation vectors */
   int *iperm_r = new int[n];
@@ -895,7 +934,7 @@ crsMat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMat
 
 /* ========================================================================================= */
 template <typename HostGraph_t, typename Graph_t>
-HostGraph_t generate_supernodal_graph(int n, Graph_t &graph, int nsuper, int *mb, int *nb) {
+HostGraph_t generate_supernodal_graph(bool merged, int n, Graph_t &graph, int nsuper, int *mb, int *nb) {
 
   typedef typename Graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename Graph_t::entries_type::non_const_type    cols_view_t;
@@ -917,20 +956,47 @@ HostGraph_t generate_supernodal_graph(int n, Graph_t &graph, int nsuper, int *mb
   }
 
   // count non-empty supernodal blocks
+  typedef typename HostGraph_t::row_map_type::non_const_type row_map_view_host_t;
+  row_map_view_host_t hr ("rowmap_view", nsuper+1);
+
+  int *check = new int[nsuper];
+  for (int s = 0; s < nsuper; s++) {
+    check[s] = 0;
+  }
   int nblocks = 0;
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
       int s2 = map[entries_host (i)];
-      nblocks ++;
-      i += (nb[s2+1]-nb[s2]);
+      #if defined(fill_supernodal_blocks)
+      // forced zeros to fill supernodal blocks
+      if (merged) {
+        nblocks ++;
+        i += (nb[s2+1]-nb[s2]);
+      } else
+      #endif
+      // may not have filled supernodal blocks with zeros
+      {
+        // rowids are not sorted
+        if (check[s2] == 0) {
+          check[s2] = 1;
+          nblocks ++;
+        }
+        i ++;
+      }
+    }
+    #if defined(fill_supernodal_blocks)
+    if (!merged)
+    #endif
+    {
+      for (int s2 = 0; s2 < nsuper; s2++) {
+        check[s2] = 0;
+      }
     }
   }
 
-  typedef typename HostGraph_t::row_map_type::non_const_type row_map_view_host_t;
-  typedef typename HostGraph_t::entries_type::non_const_type    cols_view_host_t;
-  row_map_view_host_t hr ("rowmap_view", nsuper+1);
-  cols_view_host_t    hc ("colmap_view", nblocks);
+  typedef typename HostGraph_t::entries_type::non_const_type cols_view_host_t;
+  cols_view_host_t hc ("colmap_view", nblocks);
 
   nblocks = 0;
   hr (0) = 0;
@@ -938,15 +1004,41 @@ HostGraph_t generate_supernodal_graph(int n, Graph_t &graph, int nsuper, int *mb
     int j1 = nb[s];
     for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
       int s2 = map[entries_host (i)];
-
-      hc (nblocks) = s2;
-      nblocks ++;
-      i += (nb[s2+1]-nb[s2]);
+      #if defined(fill_supernodal_blocks)
+      if (merged) {
+        hc (nblocks) = s2;
+        nblocks ++;
+        i += (nb[s2+1]-nb[s2]);
+      } else
+      #endif
+      {
+        // rowids are not sorted
+        if (check[s2] == 0) {
+          check[s2] = 1;
+          hc (nblocks) = s2;
+          nblocks ++;
+        }
+        i ++;
+      }
     }
     hr (s+1) = nblocks;
     std::sort(&(hc (hr (s))), &(hc (hr (s+1))));
+    #if defined(fill_supernodal_blocks)
+    if (!merged)
+    #endif
+    {
+      for (int s2 = hr(s); s2 < hr(s+1); s2++) {
+        check[hc(s2)] = 0;
+      }
+    }
   }
+  delete [] check;
 
+  //printf( " > supernodal graph:\n" );
+  //for (int s = 0; s < nsuper; s++) {
+  //  for (int i = hr(s); i < hr(s+1); i++) printf( "%d %d\n",s,hc(i) );
+  //}
+  //printf( "\n" );
   HostGraph_t static_graph (hc, hr);
   return static_graph;
 }
@@ -1232,6 +1324,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
     for ( auto test : tests ) {
       std::cout << "\ntest = " << test << std::endl;
 
+      // data for SuperLU
       SuperMatrix L;
       SuperMatrix U;
       host_crsmat_t superluL_host, superluU_host;
@@ -1242,10 +1335,11 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
         case SUPERNODAL_ETREE:
         case SUPERNODAL_DAG:
         {
-          Kokkos::Timer timer;
-          // callSuperLU on the host    
           int *etree;
           int *perm_r, *perm_c;
+
+          // call SuperLU on the host    
+          Kokkos::Timer timer;
           std::cout << " > call SuperLU for factorization" << std::endl;
           factor_superlu<Scalar> (metis, nrows, values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                                   panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
@@ -1289,6 +1383,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
           }
           //khL.get_sptrsv_handle ()->print_algorithm ();
+          khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
+          khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
 
           // setup supnodal info
           SCformat *Lstore = (SCformat*)(L.Store);
@@ -1323,7 +1419,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
                                                                   true, superluL_host, superluU_host, etreeL);
             // save the supernodal info in the handle for U-solve
             khL.set_supernodes (nsuperL, supercolsL, etreeL);
-            khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
             std::cout << "   L factor:" << std::endl;
             std::cout << "   Merge Supernodes Time: " << timer.seconds() << std::endl;
             std::cout << "   Number of nonzeros   : " << nnzL << " -> " << superluL.nnz () 
@@ -1356,7 +1451,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
                                                                   false, superluU_host, superluL_host, etreeU);
             // save the supernodal info in the handle for U-solve
             khU.set_supernodes (nsuperU, supercolsU, etreeU);
-            khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
             std::cout << "   U factor:" << std::endl;
             std::cout << "   Merge Supernodes Time: " << timer.seconds() << std::endl;
             std::cout << "   Number of nonzeros   : " << nnzU << " -> " << superluU.nnz () 
@@ -1367,8 +1461,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
           {
             // generate supernodal graphs for DAG scheduling
-            auto supL = generate_supernodal_graph<host_graph_t, graph_t> (nrows, superluL.graph, nsuperL, superrowsL, supercolsL);
-            auto supU = generate_supernodal_graph<host_graph_t, graph_t> (nrows, superluU.graph, nsuperU, superrowsL, supercolsL);
+            auto supL = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, superluL.graph, nsuperL, superrowsL, supercolsL);
+            auto supU = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, superluU.graph, nsuperU, superrowsL, supercolsL);
             //print_graph<host_graph_t> (nsuper2, supL);
             //print_graph<host_graph_t> (nsuper2, supU);
 
@@ -1409,7 +1503,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
           Kokkos::fence();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
-          //Kokkos::deep_copy (tmp_host, rhs);
+          Kokkos::deep_copy (tmp_host, rhs);
           //printf( "y=[" );
           //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
           //printf( "];\n" );
@@ -1436,10 +1530,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           Kokkos::deep_copy(tmp_host, rhs);
 
           // apply backward-pivot
-          backwardP_superlu<Scalar>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
           //printf( "x=[" );
           //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
           //printf( "];\n" );
+          backwardP_superlu<Scalar>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
 
           // ==============================================
