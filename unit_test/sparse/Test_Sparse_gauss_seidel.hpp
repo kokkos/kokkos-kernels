@@ -56,7 +56,7 @@
 #include <iostream>
 #include <complex>
 #include "KokkosSparse_gauss_seidel.hpp"
-#include "KokkosSparse_rcm_impl.hpp"
+#include "KokkosSparse_partitioning_impl.hpp"
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
@@ -287,7 +287,7 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
     output << "Testing cluster size = " << clusterSize << '\n';
 #endif
     KernelHandle kh;
-    kh.create_gs_handle(clusterSize);
+    kh.create_gs_handle(KokkosSparse::CLUSTER_SHUFFLE, clusterSize);
     //only need to do G-S setup (symbolic/numeric) once
     Kokkos::Impl::Timer timer;
     KokkosSparse::Experimental::gauss_seidel_symbolic<KernelHandle, lno_view_t, lno_nnz_view_t>
@@ -351,12 +351,44 @@ void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   //make a new CRS graph based on permuting the rows and columns of mat
 }
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
+{
+  using namespace Test;
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type lno_row_view_t;
+  typedef typename graph_t::entries_type lno_nnz_view_t;
+  typedef KokkosKernelsHandle
+      <size_type, lno_t, scalar_t,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+  srand(245);
+  size_type nnzTotal = nnzPerRow * numRows;
+  lno_t nnzVariance = nnzPerRow / 4;
+  crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numRows, nnzTotal, nnzVariance, bandwidth);
+  KokkosSparse::Impl::ShuffleReorder<KernelHandle, lno_row_view_t, lno_nnz_view_t> shuf(numRows, A.graph.row_map, A.graph.entries);
+  auto order = shuf.shuffledClusterOrder(8);
+  auto orderHost = Kokkos::create_mirror_view(order);
+  Kokkos::deep_copy(orderHost, order);
+  std::set<lno_t> rowSet;
+  for(lno_t i = 0; i < numRows; i++)
+    rowSet.insert(orderHost(i));
+  if((lno_t) rowSet.size() != numRows)
+  {
+    std::cerr << "Only got back " << rowSet.size() << " unique row IDs!\n";
+    return;
+  }
+}
+
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
 } \
 TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
+} \
+TEST_F( TestCategory, sparse ## _ ## greedy_partition ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_greedy_partition<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
 } \
 TEST_F( TestCategory, sparse ## _ ## cluster_sgs ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_cluster_sgs<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \

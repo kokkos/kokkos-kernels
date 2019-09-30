@@ -108,10 +108,6 @@ struct RCM
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 
-  typedef Kokkos::MinLoc<nnz_lno_t, nnz_lno_t, MyTempMemorySpace> MinLocReducer;
-  typedef Kokkos::MaxLoc<nnz_lno_t, nnz_lno_t, MyTempMemorySpace> MaxLocReducer;
-  typedef Kokkos::ValLocScalar<nnz_lno_t, nnz_lno_t> ValLoc;
-
   typedef nnz_lno_t LO;
 
   RCM(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
@@ -629,7 +625,7 @@ struct ShuffleReorder
   typedef typename team_policy_t::member_type team_member_t ;
 
   ShuffleReorder(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
-    : numRows(numRows_), rowmap(rowmap_), colinds(colinds_)
+    : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
   {}
 
   nnz_lno_t numRows;
@@ -641,16 +637,16 @@ struct ShuffleReorder
 
   struct ShuffleFunctor
   {
-    ShuffleFunctor(nnz_view_t& order_, const_lno_nnz_view_t& row_map_, const_lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
-      : order(order_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), nodeLocks(numRows)
+    ShuffleFunctor(nnz_view_t& order_, const_lno_row_view_t& row_map_, const_lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
+      : order(order_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), randPool(randPool_), nodeLocks(numRows)
     {}
 
-    KOKKOS_INLINE_FUNCTION nnz_lno_t origToCluster(nnz_lno_t orig)
+    KOKKOS_INLINE_FUNCTION nnz_lno_t origToCluster(nnz_lno_t orig) const
     {
       return origToPermuted(orig) / clusterSize;
     }
 
-    KOKKOS_INLINE_FUNCTION nnz_lno_t origToPermuted(nnz_lno_t orig)
+    KOKKOS_INLINE_FUNCTION nnz_lno_t origToPermuted(nnz_lno_t orig) const
     {
       return order(orig);
     }
@@ -665,9 +661,9 @@ struct ShuffleReorder
 
     KOKKOS_INLINE_FUNCTION void operator()(const team_member_t t) const
     {
-      SharedData* wholeTeamShared = t.team_shmem().get_shmem(t.team_size() * sizeof(SharedData)));
+      SharedData* wholeTeamShared = (SharedData*) t.team_shmem().get_shmem(t.team_size() * sizeof(SharedData));
       SharedData& sh = wholeTeamShared[t.team_rank()];
-      for(int i = 0; i < 50)
+      for(int iter = 0; iter < 50; iter++)
       {
         //Each thread first chooses one row randomly
         Kokkos::single(Kokkos::PerThread(t),
@@ -701,15 +697,15 @@ struct ShuffleReorder
             nnz_lno_t nei = col_inds(row_start1 + i);
             if(origToCluster(nei) != cluster1)
               lnumOutside++;
-          }, numOutsideNeighbors);
-        if(numOutsideNeighbors == 0)
+          }, sh.numOutsideNeighbors);
+        if(sh.numOutsideNeighbors == 0)
         {
           //Can't profit by swapping this row with anything,
           //since swapping two nodes in the same cluster doesn't change the cluster graph.
           Kokkos::single(Kokkos::PerThread(t),
             [&]()
             {
-              nodeLocks.clear(sh.node1);
+              nodeLocks.reset(sh.node1);
             });
           continue;
         }
@@ -724,9 +720,8 @@ struct ShuffleReorder
                 lnode2 = nei;
               else
               {
-                nnz_lno_t chosen = state.rand64(numRows);
                 auto state = randPool.get_state();
-                if(state.rand(numOutsideNeighbors) == 0)
+                if(state.rand(sh.numOutsideNeighbors) == 0)
                   lnode2 = nei;
                 randPool.free_state(state);
               }
@@ -739,7 +734,7 @@ struct ShuffleReorder
             if(nodeLocks.set(sh.node2))
               sh.lockedBoth = true;
             if(!sh.lockedBoth)
-              nodeLocks.clear(sh.node1);
+              nodeLocks.reset(sh.node1);
           });
         if(!sh.lockedBoth)
         {
@@ -750,7 +745,7 @@ struct ShuffleReorder
         //Count the neighbors of node1 and node2 in their own clusters, and in each other's clusters.
         //node1's number of self-cluster neighbors is already available.
         nnz_lno_t cluster2 = origToCluster(sh.node2);
-        nnz_lno_t node1Self = degree1 - 1 - numOutsideNeighbors;
+        nnz_lno_t node1Self = degree1 - 1 - sh.numOutsideNeighbors;
         nnz_lno_t node1Cross = 0;
         nnz_lno_t node2Self = 0;
         nnz_lno_t node2Cross = 0;
@@ -790,8 +785,8 @@ struct ShuffleReorder
               order(sh.node2) = tmp;
             }
             //in any case, can now unlock both nodes
-            nodeLocks.clear(sh.node1);
-            nodeLocks.clear(sh.node2);
+            nodeLocks.reset(sh.node1);
+            nodeLocks.reset(sh.node2);
           });
       }
     }
@@ -802,9 +797,9 @@ struct ShuffleReorder
     }
 
     nnz_view_t order;
-    const_lno_nnz_view_t row_map;
+    const_lno_row_view_t row_map;
     const_lno_nnz_view_t col_inds;
-    nnz_lno_t numClusters;
+    nnz_lno_t clusterSize;
     nnz_lno_t numRows;
     RandPool randPool;
     bitset_t nodeLocks;
@@ -832,22 +827,21 @@ struct ShuffleReorder
       //nothing to do, all in the same cluster
       return order;
     }
-    RandPool randPool(0xDEADBEEF);
-    ShuffleFunctor shuf(order, rowmap, entries, clusterSize, randPool);
+    ShuffleFunctor shuf(order, rowmap, colinds, clusterSize, randPool);
     int team_size = 0;
     int vector_size = 0;
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    int max_allowed_team_size = team_policy::team_size_max(shuf);
-    get_suggested_vector_team_size<nnz_lno_t, MyExecSpace>(
+    int max_allowed_team_size = team_policy_t::team_size_max(shuf);
+    KokkosKernels::Impl::get_suggested_vector_team_size<nnz_lno_t, MyExecSpace>(
         max_allowed_team_size,
         vector_size,
         team_size,
-        numRows, entries.extent(0));
+        numRows, colinds.extent(0));
 #else
-    get_suggested_vector_size<nnz_lno_t, MyExecSpace>(
+    KokkosKernels::Impl::get_suggested_vector_size<nnz_lno_t, MyExecSpace>(
         vector_size,
-        numRows, entries.extent(0));
-    team_size = get_suggested_team_size<team_policy>(shuf, vector_size);
+        numRows, colinds.extent(0));
+    team_size = get_suggested_team_size<team_policy_t>(shuf, vector_size);
 #endif
     Kokkos::parallel_for(team_policy_t(256, team_size, vector_size), shuf);
     return order;

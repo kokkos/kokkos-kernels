@@ -52,7 +52,7 @@ namespace KokkosSparse{
 
   enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER};
 
-  enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_RCM, CLUSTER_SHUFFLE, CLUSTER_GRADIENT};
+  enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_RCM, CLUSTER_SHUFFLE};
 
   template <class size_type_, class lno_t_, class scalar_t_,
             class ExecutionSpace,
@@ -209,6 +209,7 @@ namespace KokkosSparse{
 
     //getters
     GSAlgorithm get_algorithm_type() const {return this->algorithm_type;}
+    ClusteringAlgorithm get_clustering_algo() const {return this->cluster_algo;}
     bool is_owner_of_coloring() const {return this->owner_of_coloring;}
 
     nnz_lno_persistent_work_host_view_t get_color_xadj() {

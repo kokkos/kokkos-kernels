@@ -1163,7 +1163,7 @@ namespace KokkosSparse{
         nnz_lno_persistent_work_view_t clusterOrder;
         auto clusterSize = gsHandler->get_cluster_size();
         nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;
-        switch(cluster_algo)
+        switch(gsHandler->get_clustering_algo())
         {
           case CLUSTER_RCM:
           {
@@ -1171,6 +1171,7 @@ namespace KokkosSparse{
             clusterOrder = rcm.rcm();
             break;
           }
+          case CLUSTER_DEFAULT:
           case CLUSTER_SHUFFLE:
           {
             ShuffleReorder<HandleType, rowmap_t, colinds_t> shuf(num_rows, xadj, adj);

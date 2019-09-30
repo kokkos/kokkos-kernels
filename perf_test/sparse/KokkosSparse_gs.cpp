@@ -116,7 +116,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
     else
     {
       //this constructor is for cluster (block) coloring
-      kh.create_gs_handle(clusterSize);
+      kh.create_gs_handle(KokkosSparse::CLUSTER_SHUFFLE, clusterSize);
     }
     //zero out LHS initially
     KokkosBlas::fill(x, 0);
