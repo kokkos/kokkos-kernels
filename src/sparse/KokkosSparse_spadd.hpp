@@ -367,26 +367,6 @@ namespace Experimental {
     CcolindsT Bpos;
   };
 
-  //from tpetra
-  template <typename size_type, typename view_type>
-  struct parallel_prefix_sum{
-    view_type input;
-    view_type output;
-    typedef typename view_type::non_const_value_type value_type;
-    parallel_prefix_sum(view_type in, view_type out): input(in), output(out) {}
-    KOKKOS_INLINE_FUNCTION void
-    operator() (const size_type& i, value_type& update, const bool fin) const
-    {
-      size_type n = input.extent(0);
-      value_type curVal = (i < n) ? input(i) : 0;
-      if(fin)
-      {
-        output(i) = update;
-      }
-      update += (i < n) ? curVal : 0;
-    }
-  };
-
   //Symbolic: count entries in each row in C to produce rowmap
   //kernel handle has information about whether it is sorted add or not.
   template <typename KernelHandle,
@@ -431,15 +411,12 @@ namespace Experimental {
     typedef Kokkos::RangePolicy<execution_space, ordinal_type> range_type;
     if(addHandle->is_input_sorted())
     {
-      clno_row_view_t_ c_rowcounts("C row counts", nrows);
       //call entry count functor to get entry counts per row
       SortedCountEntries<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_, clno_row_view_t_>
-        countEntries(a_rowmap, a_entries, b_rowmap, b_entries, c_rowcounts);
+        countEntries(a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
       Kokkos::parallel_for("KokkosSparse::SpAdd::Symbolic::InputSorted::CountEntries", range_type(0, nrows), countEntries);
       execution_space().fence();
-      //get c_rowmap as cumulative sum
-      parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
-      Kokkos::parallel_scan("KokkosSparse::SpAdd:Symbolic::InputSorted::PrefixSum", range_type(0, nrows + 1), prefix);
+      KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<clno_row_view_t_, execution_space>(nrows + 1, c_rowmap);
       execution_space().fence();
     }
     else
@@ -449,17 +426,12 @@ namespace Experimental {
       clno_row_view_t_ c_rowmap_upperbound("C row counts upper bound", nrows + 1);
       size_t c_nnz_upperbound = 0;
       {
-        clno_row_view_t_ c_rowcounts_upperbound("C row counts upper bound", nrows);
         UnsortedEntriesUpperBound<size_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_>
-          countEntries(a_rowmap, b_rowmap, c_rowcounts_upperbound);
+          countEntries(a_rowmap, b_rowmap, c_rowmap_upperbound);
         Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::CountEntires", range_type(0, nrows), countEntries);
         execution_space().fence();
-        //get (temporary) c_rowmap as cumulative sum
-        parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts_upperbound, c_rowmap_upperbound);
-        Kokkos::parallel_scan("KokkosSparse::SpAdd:Symbolic::InputNotSorted::PrefixSum", range_type(0, nrows + 1), prefix);
-        //compute uncompressed entries of C (just indices, no scalars)
+        KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<clno_row_view_t_, execution_space>(nrows + 1, c_rowmap_upperbound);
         execution_space().fence();
-
         auto d_c_nnz_size = Kokkos::subview(c_rowmap_upperbound, nrows);
         auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
         Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
@@ -483,14 +455,12 @@ namespace Experimental {
       clno_nnz_view_t_ b_pos("B entry positions", b_entries.extent(0));
       //merge the entries and compute Apos/Bpos, as well as Crowcounts
       {
-        clno_row_view_t_ c_rowcounts("C row counts", nrows);
         MergeEntriesFunctor<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_, clno_nnz_view_t_>
-          mergeEntries(a_rowmap, b_rowmap, c_rowmap_upperbound, c_rowcounts, c_entries_uncompressed, ab_perm, a_pos, b_pos);
+          mergeEntries(a_rowmap, b_rowmap, c_rowmap_upperbound, c_rowmap, c_entries_uncompressed, ab_perm, a_pos, b_pos);
         Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::MergeEntries", range_type(0, nrows), mergeEntries);
         execution_space().fence();
         //compute actual c_rowmap
-        parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
-        Kokkos::parallel_scan("KokkosSparse::SpAdd:Symbolic::InputNotSorted::PrefixSumSecond", range_type(0, nrows + 1), prefix);
+        KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<clno_row_view_t_, execution_space>(nrows + 1, c_rowmap);
         execution_space().fence();
       }
       addHandle->set_a_b_pos(a_pos, b_pos);
