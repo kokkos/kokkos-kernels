@@ -49,6 +49,7 @@
 #include <limits>
 #include <cmath>
 #include <unordered_map>
+#include <iomanip>      // std::setprecision
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include <cusparse.h>
@@ -91,11 +92,11 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
                               execution_space, memory_space, memory_space > KernelHandle;
-
+  printf("Execution space: %s, Memory space: %s\n", typeid(execution_space).name(), typeid(memory_space).name());
   scalar_t ZERO = scalar_t(0);
   scalar_t ONE  = scalar_t(1);
   scalar_t MONE = scalar_t(-1);
-  constexpr int EXPAND_FACT = 2;
+  constexpr int EXPAND_FACT = 6;
 
 // Read amtx
 // Run all requested algorithms
@@ -158,6 +159,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
         case LVLSCHED_TP1:
           kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, EXPAND_FACT*nnz*(fill_lev+1), EXPAND_FACT*nnz*(fill_lev+1));
           kh.get_spiluk_handle()->print_algorithm();
+          kh.get_spiluk_handle()->set_team_size(team_size);
           break;
         //case LVLSCHED_TP2:
         //  kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHED_TP2, nrows, EXPAND_FACT*nnz*(fill_lev+1), EXPAND_FACT*nnz*(fill_lev+1));
@@ -166,6 +168,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
         default:
           kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, EXPAND_FACT*nnz*(fill_lev+1), EXPAND_FACT*nnz*(fill_lev+1));
           kh.get_spiluk_handle()->print_algorithm();
+          kh.get_spiluk_handle()->set_team_size(team_size);
       }
 	    
       lno_view_t     L_row_map("L_row_map", nrows + 1);
@@ -188,6 +191,13 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
       Kokkos::resize(L_values,  kh.get_spiluk_handle()->get_nnzL());
       Kokkos::resize(U_entries, kh.get_spiluk_handle()->get_nnzU());
       Kokkos::resize(U_values,  kh.get_spiluk_handle()->get_nnzU());
+
+      std::cout << "num levels: "          << kh.get_spiluk_handle()->get_num_levels() << std::endl;
+      std::cout << "max num rows levels: " << kh.get_spiluk_handle()->get_level_maxrows() << std::endl;
+      std::cout << "team size: "           << kh.get_spiluk_handle()->get_team_size() << std::endl;
+      std::cout << "vector size: "         << kh.get_spiluk_handle()->get_vector_size() << std::endl;
+      std::cout << "nnzL: " << kh.get_spiluk_handle()->get_nnzL() << std::endl;
+      std::cout << "nnzU: " << kh.get_spiluk_handle()->get_nnzU() << std::endl;
       
       timer.reset();
       spiluk_numeric( &kh, fill_lev, 
@@ -210,14 +220,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
 	  
       scalar_t bb_nrm = KokkosBlas::nrm2(bb);
 
-      std::cout << "ILU(k) fill_level: "   << fill_lev << std::endl;
-      std::cout << "num levels: "          << kh.get_spiluk_handle()->get_num_levels() << std::endl;
-      std::cout << "max num rows levels: " << kh.get_spiluk_handle()->get_level_maxrows() << std::endl;
-      std::cout << "team size: "           << kh.get_spiluk_handle()->get_team_size() << std::endl;
-      std::cout << "vector size: "         << kh.get_spiluk_handle()->get_vector_size() << std::endl;
-      std::cout << "nnzL: " << kh.get_spiluk_handle()->get_nnzL() << std::endl;
-      std::cout << "nnzU: " << kh.get_spiluk_handle()->get_nnzU() << std::endl;
-      std::cout << "nrm2(A*e-L*U*e) = " << bb_nrm << std::endl;
+      std::cout << "nrm2(A*e-L*U*e) = " << std::setprecision(15) << bb_nrm << std::endl;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       if (fill_lev==0) {
@@ -310,11 +313,11 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
                 else
                   std::cout << "ILU(0) FAILURE: non-zero col idx on row " << i << " do not match -- KK (U part) = " << h_tmp_entries(k) << ", cuSPARSE = " << h_A_entries(a_row_start+k) << std::endl;
                 return 1;
-              } else if ( abs(h_tmp_values(k) - h_A_values(a_row_start+k)) > 1e-9 ) {
+              } else if ( abs(h_tmp_values(k) - h_A_values(a_row_start+k)) > 1e-3 ) {
                 if ( h_A_entries(a_row_start+k) < i )
-                  std::cout << "ILU(0) FAILURE: non-zero entry on row " << i << "do not match -- KK (L part) = " << h_tmp_values(k) << " at col " << h_tmp_entries(k) << ", cuSPARSE = " << h_A_values(a_row_start+k) << " at col " << h_A_entries(a_row_start+k) << std::endl;
+                  std::cout << "ILU(0) FAILURE: non-zero entry on row " << i << " do not match -- KK (L part) = " << h_tmp_values(k) << " at col " << h_tmp_entries(k) << ", cuSPARSE = " << h_A_values(a_row_start+k) << " at col " << h_A_entries(a_row_start+k) << std::endl;
                 else
-                  std::cout << "ILU(0) FAILURE: non-zero entry on row " << i << "do not match -- KK (U part) = " << h_tmp_values(k) << " at col " << h_tmp_entries(k) << ", cuSPARSE = " << h_A_values(a_row_start+k) << " at col " << h_A_entries(a_row_start+k) << std::endl;
+                  std::cout << "ILU(0) FAILURE: non-zero entry on row " << i << " do not match -- KK (U part) = " << h_tmp_values(k) << " at col " << h_tmp_entries(k) << ", cuSPARSE = " << h_A_values(a_row_start+k) << " at col " << h_A_entries(a_row_start+k) << std::endl;
                 return 1;
               }
             }// end col
