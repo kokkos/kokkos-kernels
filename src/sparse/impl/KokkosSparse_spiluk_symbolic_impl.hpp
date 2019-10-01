@@ -250,7 +250,7 @@ void iluk_symbolic ( IlukHandle& thandle,
     size_type k2 = A_row_map(i+1);
 
     for ( size_type k = k1; k < k2; ++k ) {
-      nnz_lno_t col = A_entries(k);
+      size_type col = static_cast<size_type>(A_entries(k));
       if (col > i) {//U part
         h_iw(col)         = lenu;
         h_iL(iU+lenu)     = col;
@@ -267,13 +267,13 @@ void iluk_symbolic ( IlukHandle& thandle,
 
     //Eliminate rows
     nnz_lno_t j = -1;
-    while (++j < lenl) {
+    while (static_cast<size_type>(++j) < lenl) {
       size_type row  = search_col_index(j, lenl, h_iL, h_llev, h_iw);
       nnz_lno_t jlev = h_llev(j);
       k1 = U_row_map(row)  +1;
       k2 = U_row_map(row+1);
       for (size_type k = k1; k < k2; ++k) {
-        nnz_lno_t col  = U_entries(k);
+        size_type col  = static_cast<size_type>(U_entries(k));
         nnz_lno_t lev1 = jlev + h_lev(k) + 1;
         if (lev1 > fill_lev) continue;
         nnz_lno_t ipos = h_iw(col);
