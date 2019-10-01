@@ -540,6 +540,10 @@ public:
   void set_supernodal_dag (int** dag) {
     this->sptrsvHandle->set_supernodal_dag (dag);
   }
+
+  void set_invert_offdiagonal (bool flag) {
+    this->sptrsvHandle->set_invert_offdiagonal (flag);
+  }
 #endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)

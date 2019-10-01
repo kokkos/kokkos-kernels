@@ -309,7 +309,6 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
           lwork += nsrow;
           //printf( " %d %d %d %d %d\n",num_done+num_leave, level, nsrow, supercols[s+1]-supercols[s],s );
           //for (int i = supercols[s]; i < supercols[s+1]; i++) printf("%d %d %d\n",i,s,level );  // permute matrix based on scheduling
-          //printf( " > s=%d, row=%d, nsrow=%d\n",s,row,nsrow );
 
           // total supernode size
           avg_nsrow += row_map (row+1) - row_map(row);
@@ -346,7 +345,6 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
           num_leave ++;
         }
       }
-      //printf( " lwork = %d\n",lwork );
       if (lwork > max_lwork) {
         max_lwork = lwork;
       }

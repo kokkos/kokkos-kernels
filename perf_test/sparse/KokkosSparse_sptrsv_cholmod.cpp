@@ -67,11 +67,12 @@
 #include "lapacke.h"
 #include "cholmod.h"
 
+#include "KokkosSparse_sptrsv_aux.hpp"
 
-template<typename Scalar>
+template<typename scalar_t>
 void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
 
-  Scalar *Lx;
+  scalar_t *Lx;
   int *mb, *colptr, *rowind, *nb;
   int nsuper, j1, j2, i1, i2, psx, nsrow, nscol, i, ii, jj, s,
       nsrow2, ps2;
@@ -85,7 +86,7 @@ void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
   nb = (int*)(L->super);
   colptr = (int*)(L->px);
   rowind = (int*)(L->s);               // rowind
-  Lx = (Scalar*)(L->x);                // data
+  Lx = (scalar_t*)(L->x);                // data
 
   printf( " >> print factor(n=%ld, nsuper=%d) <<\n",L->n,nsuper );
   for (s = 0 ; s < nsuper ; s++) {
@@ -123,10 +124,10 @@ void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
 }
 
 
-template <typename crsMat_t>
-void print_factor_cholmod(crsMat_t *L) {
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+template <typename crsmat_t>
+void print_factor_cholmod(crsmat_t *L) {
+  typedef typename crsmat_t::StaticCrsGraphType graph_t;
+  typedef typename crsmat_t::values_type::non_const_type values_view_t;
   typedef typename values_view_t::value_type scalar_t;
 
   graph_t  graph = L->graph;
@@ -143,13 +144,13 @@ void print_factor_cholmod(crsMat_t *L) {
 }
 
 /* ========================================================================================= */
-template <typename crsMat_t, typename hostMat_t>
-crsMat_t read_cholmod_factor(cholmod_factor *L, cholmod_common *cm) {
+template <typename crsmat_t, typename host_crsmat_t>
+crsmat_t read_cholmod_factor(cholmod_factor *L, cholmod_common *cm) {
 
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+  typedef typename crsmat_t::values_type::non_const_type values_view_t;
 
   typedef typename values_view_t::value_type scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
@@ -265,17 +266,17 @@ crsMat_t read_cholmod_factor(cholmod_factor *L, cholmod_common *cm) {
 
   // create crs
   graph_t static_graph (column_view, rowmap_view);
-  crsMat_t crsmat("CrsMatrix", n, values_view, static_graph);
+  crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
   return crsmat;
 }
 
-template <typename crsMat_t, typename Scalar>
-void solveL_cholmod(int nsuper, int *supptr, crsMat_t *L, int nrhs, Scalar *X, int ldx) {
+template <typename crsmat_t, typename scalar_t>
+void solveL_cholmod(int nsuper, int *supptr, crsmat_t *L, int nrhs, scalar_t *X, int ldx) {
 
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsmat_t::StaticCrsGraphType graph_t;
 
-  Scalar *work;
-  Scalar zero, one;
+  scalar_t *work;
+  scalar_t zero, one;
   int j1, j2, i1, i2, psx, nsrow, nscol, ii, s,
       nsrow2, ps2, j, i, ldw;
 
@@ -284,12 +285,12 @@ void solveL_cholmod(int nsuper, int *supptr, crsMat_t *L, int nrhs, Scalar *X, i
   /* ---------------------------------------------------------------------- */
 
   ldw = L->numCols ();
-  work = new Scalar [nrhs*ldw];
+  work = new scalar_t [nrhs*ldw];
 
   graph_t  graph = L->graph;
   const int    *colptr = graph.row_map.data ();
   const int    *rowind = graph.entries.data ();
-  const Scalar *Lx     = L->values.data ();
+  const scalar_t *Lx     = L->values.data ();
 
   zero = 0.0;
   one  = 1.0;
@@ -361,8 +362,8 @@ void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
 }
 
 /* ========================================================================================= */
-template<typename Scalar>
-cholmod_factor* factor_cholmod(const int nrow, const int nnz, Scalar *nzvals, int *rowptr, int *colind, cholmod_common *Comm, int **etree) {
+template<typename scalar_t>
+cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_t *nzvals, int *rowptr, int *colind, cholmod_common *Comm, int **etree) {
 
   // Start Cholmod
   cholmod_common *cm = Comm;
@@ -411,15 +412,15 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, Scalar *nzvals, in
   }
   //int *Perm = (int*)(L->Perm);
   //for (int i = 0; i < (int)(L->n); i++) printf( "%d\n",Perm[i] );
-  //print_factor_cholmod<Scalar>(L, cm);
+  //print_factor_cholmod<scalar_t>(L, cm);
   compute_etree_cholmod(&A, cm, etree);
 
   return L;
 }
 
 /* ========================================================================================= */
-template<typename Scalar>
-void forwardP_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb, Scalar *X, int ldx) {
+template<typename scalar_t>
+void forwardP_cholmod(cholmod_factor *L, int nrhs, scalar_t *B, int ldb, scalar_t *X, int ldx) {
 
   int i;
   int *Perm = (int*)(L->Perm);
@@ -428,11 +429,11 @@ void forwardP_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb, Scalar *X
   }
 }
 
-template<typename Scalar>
-void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
+template<typename scalar_t>
+void solveL_cholmod(cholmod_factor *L, int nrhs, scalar_t *X, int ldx) {
 
-  Scalar *Lx, *work;
-  Scalar zero, one;
+  scalar_t *Lx, *work;
+  scalar_t zero, one;
   int *mb, *colptr, *rowind, *nb;
   int nsuper, j1, j2, i1, i2, psx, nsrow, nscol, ii, s,
       nsrow2, ps2, j, i, ldw;
@@ -442,7 +443,7 @@ void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
   /* ---------------------------------------------------------------------- */
 
   ldw = L->maxesize;
-  work = new Scalar [nrhs*ldw];
+  work = new scalar_t [nrhs*ldw];
 
   nsuper = L->nsuper;      // # of supernodal columns
   mb = (int*)(L->pi);      // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
@@ -450,7 +451,7 @@ void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
 
   colptr = (int*)(L->px);
   rowind = (int*)(L->s);   // rowind
-  Lx = (Scalar*)(L->x);    // data
+  Lx = (scalar_t*)(L->x);    // data
 
   zero = 0.0;
   one  = 1.0;
@@ -504,11 +505,11 @@ void solveL_cholmod(cholmod_factor *L, int nrhs, Scalar *X, int ldx) {
   delete[] work;
 }
 
-template<typename Scalar>
-void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
+template<typename scalar_t>
+void solveU_cholmod(cholmod_factor *L, int nrhs, scalar_t *B, int ldb) {
 
-  Scalar *Lx, *work ;
-  Scalar one, mone ;
+  scalar_t *Lx, *work ;
+  scalar_t one, mone ;
   int *mb, *colptr, *rowind, *nb ;
   int nsuper, j1, j2, i1, i2, psx, nsrow, nscol, ii, s,
       nsrow2, ps2, j, i, ldw;
@@ -518,7 +519,7 @@ void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
   /* ---------------------------------------------------------------------- */
 
   ldw = L->maxesize;
-  work = new Scalar [nrhs*ldw];
+  work = new scalar_t [nrhs*ldw];
 
   nsuper = L->nsuper ;      // # of supernodal columns
   mb = (int*)(L->pi) ;      // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
@@ -526,7 +527,7 @@ void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
 
   colptr = (int*)(L->px) ;
   rowind = (int*)(L->s) ;           // rowind
-  Lx = (Scalar*)(L->x) ;            // data
+  Lx = (scalar_t*)(L->x) ;            // data
 
   one  =  1.0 ;
   mone = -1.0 ;
@@ -584,8 +585,8 @@ void solveU_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb) {
   delete[] work;
 }
 
-template<typename Scalar>
-void backwardP_cholmod(cholmod_factor *L, int nrhs, Scalar *B, int ldb, Scalar *X, int ldx) {
+template<typename scalar_t>
+void backwardP_cholmod(cholmod_factor *L, int nrhs, scalar_t *B, int ldb, scalar_t *X, int ldx) {
 
     int i;
     int *Perm = (int*)(L->Perm) ;
@@ -605,10 +606,10 @@ enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
-template<typename Scalar>
+template<typename scalar_t>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
-  typedef Scalar scalar_t;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
   typedef int lno_t;
   typedef int size_type;
 
@@ -625,8 +626,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   typedef KokkosSparse::CrsMatrix<scalar_t, lno_t,      execution_space, void, size_type> crsmat_t;
 
   //
-  typedef Kokkos::View< scalar_t*, host_memory_space > HostValuesType;
-  typedef Kokkos::View< scalar_t*,      memory_space > ValuesType;
+  typedef Kokkos::View< scalar_t*, host_memory_space > host_scalar_view_t;
+  typedef Kokkos::View< scalar_t*,      memory_space > scalar_view_t;
 
   //
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
@@ -635,52 +636,29 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   scalar_t ZERO = scalar_t(0);
   scalar_t ONE = scalar_t(1);
 
+  // tolerance
+  scalar_t tol = STS::epsilon();
 
-// Read mtx
-// Run all requested algorithms
-
+  int num_failed = 0;
   std::cout << std::endl;
   std::cout << "Execution space: " << execution_space::name () << std::endl;
   std::cout << "Memory space   : " << memory_space::name () << std::endl;
   std::cout << std::endl;
   if (!filename.empty())
   {
+    // ==============================================
     // read the matrix ** on host **
     std::cout << " CHOLMOD Tester Begin: Read matrix filename " << filename << std::endl;
     host_crsmat_t Mtx = KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t>(filename.c_str()); //in_matrix
     auto  graph_host  = Mtx.graph; // in_graph
     const size_type nrows = graph_host.numRows();
-    //print_factor_cholmod(&Mtx);
-
-    // Create the known solution and set to all 1's ** on host **
-    HostValuesType sol_host("sol_host", nrows);
-    Kokkos::deep_copy(sol_host, ONE);
-
-    // Create the rhs ** on host **
-    // A*known_sol generates rhs: rhs is dense, use spmv
-    HostValuesType rhs_host("rhs_host", nrows);
-    KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-
-    // normB
-    scalar_t normB = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, rhs_host.extent(0)), 
-      KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-        tsum += rhs_host(i)*rhs_host(i);
-      }, normB);
-    normB = sqrt(normB);
-
-    // normA
-    scalar_t normA = 0.0;
     auto row_map_host = graph_host.row_map;
     auto entries_host = graph_host.entries;
     auto values_host  = Mtx.values;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, Mtx.nnz()), 
-      KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-        tsum += values_host(i)*values_host(i);
-      }, normA);
-    normA = sqrt(normA);
+    //print_factor_cholmod(&Mtx);
 
-    // Solution to find
+    // ==============================================
+    // Run all requested algorithms
     for ( auto test : tests ) {
       std::cout << "\ntest = " << test << std::endl;
 
@@ -693,14 +671,16 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
         case SUPERNODAL_ETREE:
         {
           Kokkos::Timer timer;
+          // ==============================================
           // call CHOLMOD on the host    
           int *etree;
           timer.reset();
           std::cout << " > call CHOLMOD for factorization" << std::endl;
-          L = factor_cholmod<Scalar> (nrows, Mtx.nnz(), values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
+          L = factor_cholmod<scalar_t> (nrows, Mtx.nnz(), values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                                       &cm, &etree);
           std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
 
+          // ==============================================
           // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
           timer.reset();
           std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
@@ -714,6 +694,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           auto entries = graph.entries;
           auto values  = cholmodMtx.values;
 
+          // ==============================================
           // create an handle
           if (test == SUPERNODAL_NAIVE) {
             std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl << std::endl;
@@ -724,42 +705,68 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
           }
-          //khL.get_sptrsv_handle ()->print_algorithm ();
 
+          // ==============================================
           // setup supnodal info
           int nsuper = (int)(L->nsuper);
           int *supercols = (int*)(L->super);
           khL.set_supernodes (nsuper, supercols, etree);
           khU.set_supernodes (nsuper, supercols, etree);
  
-          // Init run to check the error, and also to clear the cache
-          // apply forward-pivot on the host
-          HostValuesType tmp_host ("temp", nrows);
-          forwardP_cholmod<Scalar> (L, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+          // ==============================================
+          // set some solver options
+          // NOTE: not sure where to set this?
+          khL.set_invert_offdiagonal(false);
+          khU.set_invert_offdiagonal(false);
 
+          // ==============================================
+          // symbolic for L-solve on the host
+          timer.reset();
+          sptrsv_symbolic (&khL, row_map, entries);
+          std::cout << " > Lower-TRI: " << std::endl;
+          std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+
+          // ==============================================
+          // symbolic for L^T-solve on the host
+          timer.reset ();
+          std::cout << " > Upper-TRI: " << std::endl;
+          sptrsv_symbolic (&khU, row_map, entries);
+          std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+
+          // ==============================================
+          // Create the known solution and set to all 1's ** on host **
+          host_scalar_view_t sol_host("sol_host", nrows);
+          Kokkos::deep_copy(sol_host, ONE);
+
+          // ==============================================
+          // Create the rhs ** on host **
+          // A*sol 
+          host_scalar_view_t rhs_host("rhs_host", nrows);
+          KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
+
+          // ==============================================
+          // apply forward-pivot on the host
+          host_scalar_view_t tmp_host ("temp", nrows);
+          forwardP_cholmod<scalar_t> (L, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+
+          // ==============================================
           // copy rhs to the default host/device
-          ValuesType rhs ("rhs", nrows);
-          ValuesType sol ("sol", nrows);
+          scalar_view_t rhs ("rhs", nrows);
+          scalar_view_t sol ("sol", nrows);
           Kokkos::deep_copy (rhs, tmp_host);
 
           // ==============================================
           // do L solve
           #if 1
-           // symbolic on the host
-           timer.reset();
-           std::cout << " > Lower-TRI: " << std::endl;
-           sptrsv_symbolic (&khL, row_map, entries);
-           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
-
            timer.reset();
            // numeric (only rhs is modified) on the default device/host space
            sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
           #else
            timer.reset();
            // solveL with Kokkos' csr version (read from Cholmod structure)
-           solveL_cholmod<crsmat_t, Scalar>((int)(L->nsuper), (int*)(L->super), &cholmodMtx, 1, rhs.data(), nrows);
+           solveL_cholmod<crsmat_t, scalar_t>((int)(L->nsuper), (int*)(L->super), &cholmodMtx, 1, rhs.data(), nrows);
            // solveL with Cholmod data structure, L
-           //solveL_cholmod<Scalar>(L, 1, rhs.data(), nrows);
+           //solveL_cholmod<scalar_t>(L, 1, rhs.data(), nrows);
           #endif
           Kokkos::fence();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
@@ -770,83 +777,45 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // ==============================================
           // do L^T solve
           #if 1
-           // symbolic on the host
-           timer.reset ();
-           std::cout << " > Upper-TRI: " << std::endl;
-           sptrsv_symbolic (&khU, row_map, entries);
-           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
-
            // numeric (only rhs is modified) on the default device/host space
            sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
           #else
-          solveU_cholmod<Scalar>(L, 1, rhs.data(), nrows);
+          solveU_cholmod<scalar_t>(L, 1, rhs.data(), nrows);
           #endif
           Kokkos::fence ();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
  
-          // copy solution to host
-          Kokkos::deep_copy(tmp_host, rhs);
 
+          // ==============================================
           // apply backward-pivot
-          backwardP_cholmod<Scalar>(L, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+          // > copy solution to host
+          Kokkos::deep_copy(tmp_host, rhs);
+          backwardP_cholmod<scalar_t>(L, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
           //for (int ii=0; ii<nrows; ii++) printf( " %d %e\n",ii,tmp_host(ii) );
 
 
           // ==============================================
           // Error Check ** on host **
           Kokkos::fence();
-          // normX
-          scalar_t normR = 0.0;
-          scalar_t normX = 0.0;
-          Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-            KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-              tsum += sol_host(i)*sol_host(i);
-            }, normX);
-          normX = sqrt(normX);
-
-          // normR = ||B - AX||
-          KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
-          Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-            KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-              tsum += rhs_host(i) * rhs_host(i);
-            }, normR);
-          normR = sqrt(normR);
-
-          std::cout << std::endl;
-          std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
-                    << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
-                    << normR/(normB + normA * normX) << std::endl;
+          if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
+            num_failed ++;
+          }
 
           // try again?
           {
             Kokkos::deep_copy(sol_host, ONE);
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-            forwardP_cholmod<Scalar> (L, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+            forwardP_cholmod<scalar_t> (L, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
              sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
              sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
-            backwardP_cholmod<Scalar>(L, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+            backwardP_cholmod<scalar_t>(L, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
-            // normX
-            Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-              KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-                tsum += sol_host(i)*sol_host(i);
-              }, normX);
-            normX = sqrt(normX);
-
-            // normR = ||B - AX||
-            KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
-            Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-              KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-                tsum += rhs_host(i) * rhs_host(i);
-              }, normR);
-            normR = sqrt(normR);
-
-            std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
-                      << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
-                      << normR/(normB + normA * normX) << std::endl << std::endl;
+            if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
+              num_failed ++;
+            }
           }
           std::cout << std::endl;
 
@@ -901,7 +870,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   }
   std::cout << std::endl << std::endl;
 
-  return 0;
+  return num_failed;
 }
 #endif //  KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 

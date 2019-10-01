@@ -147,6 +147,9 @@ private:
   supercols_host_t work_offset_host;
   supercols_t      work_offset;
 
+  // 
+  bool invert_offdiagonal;
+
   // type of kernels used at each level
   int sup_size_unblocked;
   int sup_size_blocked;
@@ -388,6 +391,15 @@ public:
 
   void set_supernode_size_blocked(int size_blocked) {
     this->sup_size_blocked = size_blocked;
+  }
+
+  // invert_offdiagonal
+  void set_invert_offdiagonal(bool flag) {
+    this->invert_offdiagonal = flag;
+  }
+
+  bool get_invert_offdiagonal() {
+    return this->invert_offdiagonal;
   }
 
   // kernel type

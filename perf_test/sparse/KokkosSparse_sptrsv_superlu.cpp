@@ -55,11 +55,11 @@
 #include <Kokkos_Core.hpp>
 #include <matrix_market.hpp>
 
+#include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include <KokkosKernels_IOUtils.hpp>
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
@@ -73,414 +73,16 @@
 #endif
 
 #define SUPERLU_INVERT_OFFDIAG
-
-class sort_indices {
-   public:
-     sort_indices(int* rowinds) : rowinds_(rowinds){}
-     bool operator()(int i, int j) const { return rowinds_[i] < rowinds_[j]; }
-   private:
-     int* rowinds_; // rowindices
-};
-
-
-template <typename crsMat_host_t, typename crsMat_t>
-crsMat_t merge_supernodes(int n, int *p_nsuper, int *nb, int *mb,
-                          bool unit_diag, crsMat_host_t &superluL, crsMat_host_t &superluU,
-                          int *etree) {
-
-  auto graphL = superluL.graph; // in_graph
-  auto row_mapL = graphL.row_map;
-  auto entriesL = graphL.entries;
-  auto valuesL  = superluL.values;
-
-  auto graphU = superluU.graph; // in_graph
-  auto row_mapU = graphU.row_map;
-  auto entriesU = graphU.entries;
-  auto valuesU  = superluU.values;
-
-  // ---------------------------------------------------------------
-  int nsuper = *p_nsuper;
-  int min_nsrow = 0, max_nsrow = 0, tot_nsrow = 0;
-  int min_nscol = 0, max_nscol = 0, tot_nscol = 0;
-  for (int s = 0; s <nsuper; s++) {
-    //printf( " mb[%d]=%d, nb[%d]=%d, etree[%d]=%d (nrow=%d, ncol=%d)\n",s,mb[s],s,nb[s],s,etree[s],mb[s+1]-mb[s],nb[s+1]-nb[s] );
-    int j1 = nb[s];
-    int j2 = nb[s+1];
-
-    int nscol = j2 - j1;
-    int nsrow = mb[j1+1] - mb[j1];
-
-    if (s == 0) {
-      min_nscol = max_nscol = tot_nscol = nscol;
-      min_nsrow = max_nsrow = tot_nsrow = nsrow;
-    } else {
-      if (min_nsrow > nsrow) {
-        min_nsrow = nsrow;
-      }
-      if (max_nsrow < nsrow) {
-        max_nsrow = nsrow;
-      }
-      tot_nsrow += nsrow;
-
-      if (min_nscol > nscol) {
-        min_nscol = nscol;
-      }
-      if (max_nscol < nscol) {
-        max_nscol = nscol;
-      }
-      tot_nscol += nscol;
-    }
-  }
-  printf( "\n ------------------------------------- \n" );
-  printf( " Original structure:\n" );
-  printf( "  + nsuper = %d\n",nsuper );
-  printf( "  > nsrow: min = %d, max = %d, avg = %d\n",min_nsrow,max_nsrow,tot_nsrow/nsuper );
-  printf( "  > nscol: min = %d, max = %d, avg = %d\n",min_nscol,max_nscol,tot_nscol/nsuper );
-
-  // ---------------------------------------------------------------
-  // looking for supernodes to merge (i.e., dense diagonal blocks)
-  double tol = 0.8;
-  int nsuper2 = 0;
-  // map the first supernode
-  int *map = new int[nsuper]; // map old to new supernodes
-  map[0] = 0;
-  for (int s = 0; s < nsuper-1; s++) {
-    //printf( " -- s = %d->%d --\n",s,nsuper2 );
-    // checking if the next supernode can be merged
-    int s2 = s;
-    bool merged = false;
-    do {
-      int nnzL = 0;
-      int nnzU = 0;
-
-      int nscol1 = nb[s2+1] - nb[s];    // size of the current merged supernode
-      int nscol2 = nb[s2+2] - nb[s2+1]; // size of the current supernode
-      int nssize = nscol1 * nscol2;
-      for (int t = s; t <= s2; t++ ) {
-        //int nscol = nb[s2+1] - nb[t];   // size of the current supernode
-        for (int j = nb[t]; j < nb[t+1]; j++) {
-          // counting nnzL
-          for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
-            if (entriesL[k] >= nb[s2+1]) {
-              if (entriesL[k] < nb[s2+2]) {
-                nnzL ++;
-              } else {
-                break;
-              }
-            }
-          }
-          // counting nnzU
-          for (int k = row_mapU[j]; k < row_mapU[j+1]; k++) {
-            if (entriesU[k] >= nb[s2+1]) {
-              if (entriesU[k] < nb[s2+2]) {
-                nnzU ++;
-              } else {
-                break;
-              }
-            }
-          }
-        }
-      }
-      merged = (nnzL > tol*nssize && nnzU > tol*nssize);
-      if (merged) {
-        //printf( "  >> merge s2+1=%d(%dx%d, row=%d:%d) with s=%d(%dx%d) (%dx%d: %d,%d, %.2e,%.2e) <<\n",
-        //              s2+1,nb[s2+2]-nb[s2+1],nb[s2+2]-nb[s2+1],nb[s2+1],nb[s2+2]-1, s,nb[s+1]-nb[s],nb[s+1]-nb[s],
-        //              nscol1,nscol2, nnzL,nnzU,((double)nnzL)/((double)nssize),((double)nnzU)/((double)nssize) );
-        map[s2+1] = nsuper2;
-        s2 ++;
-      } else {
-        //printf( "  -- not merge s2+1=%d(%dx%d, row=%d:%d) with s=%d(%dx%d) (%dx%d: %d,%d, %.2e,%.2e) --\n",
-        //           s2+1,nb[s2+2]-nb[s2+1],nb[s2+2]-nb[s2+1],nb[s2+1],nb[s2+2]-1, s,nb[s+1]-nb[s],nb[s+1]-nb[s],
-        //           nscol1,nscol2, nnzL,nnzU,((double)nnzL)/((double)nssize),((double)nnzU)/((double)nssize) );
-        map[s2+1] = nsuper2+1;
-      }
-    } while (merged && s2 < nsuper-1);
-    s = s2;
-    nsuper2 ++;
-  }
-  nsuper2 = map[nsuper-1]+1;
-  //printf( " nsuper2 = %d\n",nsuper2 );
-  //printf( " map:\n" );
-  //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map[s] );
-
-  // ----------------------------------------------------------
-  // make sure each of the merged supernodes has the same parent in the etree
-  int nsuper3 = 0;
-  int *map2 = new int[nsuper]; // map old to new supernodes
-  for (int s2 = 0, s = 0; s2 < nsuper2; s2++) {
-    // look for parent of the first supernode
-    int s3 = s;
-    while (etree[s3] != -1 && map[etree[s3]] == map[s3]) {
-      s3 ++;
-    }
-    map2[s] = nsuper3;
-    int p = (etree[s3] == -1 ? -1 : map[etree[s3]]);
-
-    // go through the rest of the supernode in this merged supernode
-    s++;
-    while (s < nsuper && map[s] == s2) {
-      int q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
-      while (etree[s3] != -1 && map[etree[s3]] == map[s3]) {
-        s3 ++;
-        q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
-      }
-       
-      if (q != p) {
-        p = q;
-        nsuper3 ++;
-      }
-      map2[s] = nsuper3;
-      s ++;
-    }
-    nsuper3 ++;
-  }
-  delete[] map;
-  //printf( " nsuper3 = %d\n",nsuper3 );
-  //printf( " map:\n" );
-  //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map2[s] );
-
-  // ----------------------------------------------------------
-  // now let me find nsrow for the merged supernode
-  int nnzA = 0;
-  int *nb2 = new int[nsuper3];
-  int *mb2 = new int[nsuper3];
-  #if defined(fill_supernodal_blocks) // force zeros to fill supernodes
-  int *work1 = new int[nsuper];
-  #else
-  int *work1 = new int[n];
-  #endif
-  int *work2 = new int[n];
-  int *work3 = new int[n]; // map row to supernode
-  int **rowind = new int*[nsuper3];
-  for (int s = 0; s < nsuper; s++) {
-    for (int i = nb[s]; i < nb[s+1]; i++) {
-      work3[i] = s;
-    }
-  }
-  #if defined(fill_supernodal_blocks)
-  for (int i = 0; i < nsuper; i++) {
-    work1[i] = 0;
-  }
-  #else
-  for (int i = 0; i < n; i++) {
-    work1[i] = 0;
-  }
-  #endif
-  for (int s2 = 0, s = 0; s2 < nsuper3; s2++) {
-    nb2[s2] = 0;
-    mb2[s2] = 0;
-    // merging supernodal rows
-    // NOTE: SuperLU may not fill zeros to fill the supernodes
-    //       So, these rows may be just subset of the supernodal rows
-    while(s < nsuper && map2[s] == s2) {
-      int j1 = nb[s];
-      for (int k = row_mapL[j1]; k < row_mapL[j1+1]; k++) {
-        #if defined(fill_supernodal_blocks)
-        // forcing zeros to fill supernodal blocks
-        int s3 = work3[entriesL[k]];
-        if (work1[s3] == 0) {
-          for (int i = nb[s3]; i < nb[s3+1]; i++) {
-            work2[mb2[s2]] = i;
-            mb2[s2] ++;
-          }
-          work1[s3] = 1;
-        }
-        #else
-        // just taking union of rows
-        if(work1[entriesL[k]] == 0) {
-          work1[entriesL[k]] = 1;
-          work2[mb2[s2]] = entriesL[k];
-          mb2[s2] ++;
-        }
-        #endif
-      }
-      nb2[s2] += (nb[s+1]-nb[s]);
-      s ++;
-    }
-    // sort such that diagonal come on the top
-    std::sort(work2, work2+mb2[s2]);
-
-    // save nonzero row ids
-    rowind[s2] = new int [mb2[s2]];
-    for (int k = 0; k < mb2[s2]; k++) {
-      rowind[s2][k] = work2[k];
-      #if !defined(fill_supernodal_blocks)
-      work1[work2[k]] = 0;
-      #endif
-    }
-    #if defined(fill_supernodal_blocks)
-    for (int s3 = 0; s3 < nsuper; s3++) {
-      work1[s3] = 0;
-    }
-    #endif
-    nnzA += nb2[s2] * mb2[s2];
-  }
-  delete[] work1;
-  delete[] work2;
-
-  // ----------------------------------------------------------
-  // construct new etree
-  int *etree2 = new int[nsuper3];
-  for (int s = 0; s < nsuper; s++) {
-    // etree
-    int s2 = map2[s];
-    int p = (etree[s] == -1 ? -1 : map2[etree[s]]);
-    if (p != s2) {
-      etree2[s2] = p;
-    }
-  }
-
-  // ----------------------------------------------------------
-  // now let's create crs
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crsMat_t::values_type::non_const_type values_view_t;
-
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-
-  row_map_view_t rowmap_view ("rowmap_view", n+1);
-  cols_view_t    column_view ("colmap_view", nnzA);
-  values_view_t  values_view ("values_view", nnzA);
-
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
-  typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
-  double *dwork = new double[n];
-  for (int i = 0; i < n; i++) {
-    dwork[i] = 0.0;
-  }
-
-  nnzA = 0;
-  hr(0) = 0;
-  for (int s2 = 0, s = 0; s2 < nsuper3; s2++) {
-    int nnzD = nnzA;
-    while(s < nsuper && map2[s] == s2) {
-      for (int j = nb[s]; j < nb[s+1]; j++) {
-        for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
-          dwork[entriesL[k]] = valuesL[k];
-        }
-        for (int k = 0; k < mb2[s2]; k++) {
-          hc(nnzA) = rowind[s2][k];
-          hv(nnzA) = dwork[rowind[s2][k]];
-          nnzA ++;
-        }
-        for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
-          dwork[entriesL[k]] = STS::zero ();
-        }
-        hr(j+1) = nnzA;
-      }
-      s++;
-    }
-    delete[] rowind[s2];
-
-    int nscol = nb2[s2];
-    int nsrow = mb2[s2];
-    if (unit_diag) {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'L', 'U', nscol, &hv(nnzD), nsrow);
-      #if defined(SUPERLU_INVERT_OFFDIAG)
-      if (nsrow > nscol) {
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, CblasLower, CblasNoTrans, CblasUnit,
-              nsrow-nscol, nscol,
-              STS::one (), &hv(nnzD), nsrow,
-                           &hv(nnzD+nscol), nsrow);
-      }
-      #endif
-    } else {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'L', 'N', nscol, &hv(nnzD), nsrow);
-      /*#if defined(SUPERLU_INVERT_OFFDIAG)
-      cblas_dtrmm (CblasColMajor,
-            CblasRight, CblasLower, CblasNoTrans, CblasNonUnit,
-            nsrow-nscol, nscol,
-            STS::one (), &hv(nnzD), nsrow,
-                         &hv(nnzD+nscol), nsrow);
-      #endif*/
-    }
-  }
-  delete[] map2;
-  delete[] dwork;
-  delete[] rowind;
-  for (int s = 0; s <nsuper3; s++) {
-    // copy supernode id to column id
-    nb[s+1] = nb[s]+nb2[s];
-
-    int j1 = nb[s];
-    int j2 = nb[s+1];
-    for (int j = j1; j < j2; j++) {
-      mb[j+1] = mb[j]+mb2[s];
-      //printf( " -> mb[%d]=%d, mb[%d]=%d\n",j,mb[j],j+1,mb[j+1]);
-    }
-
-    // copy etree
-    etree[s] = etree2[s];
-    //printf( " -> mb[%d]=%d, nb[%d]=%d, etree[%d]=%d\n",j2,mb[j2],s+1,nb[s+1],s,etree[s] );
-  }
-  *p_nsuper = nsuper3;
-  delete[] nb2;
-  delete[] mb2;
-  delete[] etree2;
-
-  for (int s = 0; s <nsuper3; s++) {
-    //printf( " mb[%d]=%d, nb[%d]=%d, etree[%d]=%d (nrow=%d, ncol=%d)\n",s,mb[s],s,nb[s],s,etree[s],mb[s+1]-mb[s],nb[s+1]-nb[s] );
-    //printf( " %d: %d %d, %d\n",s,mb[s+1]-mb[s],nb[s+1]-nb[s],nb[s] );
-    int j1 = nb[s];
-    int j2 = nb[s+1];
-
-    int nscol = j2 - j1;
-    int nsrow = mb[j1+1] - mb[j1];
-
-    if (s == 0) {
-      min_nscol = max_nscol = tot_nscol = nscol;
-      min_nsrow = max_nsrow = tot_nsrow = nsrow;
-    } else {
-      if (min_nsrow > nsrow) {
-        min_nsrow = nsrow;
-      }
-      if (max_nsrow < nsrow) {
-        max_nsrow = nsrow;
-      }
-      tot_nsrow += nsrow;
-
-      if (min_nscol > nscol) {
-        min_nscol = nscol;
-      }
-      if (max_nscol < nscol) {
-        max_nscol = nscol;
-      }
-      tot_nscol += nscol;
-    }
-  }
-  std::cout << "    + Supernode   = " << nsuper3 << std::endl;
-  std::cout << "      > nsrow: min = " << min_nsrow << ", max = " << max_nsrow << ", avg = " << tot_nsrow/nsuper3 << std::endl;
-  std::cout << "      > nscol: min = " << min_nscol << ", max = " << max_nscol << ", avg = " << tot_nscol/nsuper3 << std::endl;
-  std::cout << "    + Matrix size = " << n << std::endl;
-  std::cout << "    + Total nnz   = " << hr (n) << std::endl;
-  std::cout << "    + nnz / n     = " << hr (n)/n << std::endl;
-
-  // deepcopy
-  Kokkos::deep_copy (rowmap_view, hr);
-  Kokkos::deep_copy (column_view, hc);
-  Kokkos::deep_copy (values_view, hv);
-
-  // create crs
-  graph_t static_graph (column_view, rowmap_view);
-  crsMat_t crsmat("CrsMatrix", n, values_view, static_graph);
-  return crsmat;
-}
-
+#include "KokkosSparse_sptrsv_aux.hpp"
 
 
 /* ========================================================================================= */
-template <typename Scalar>
+template <typename scalar_t>
 void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, int *perm_c) {
-  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
   SCformat *Lstore = (SCformat*)(L->Store);
-  Scalar   *Lx = (Scalar*)(Lstore->nzval);
+  scalar_t   *Lx = (scalar_t*)(Lstore->nzval);
 
   int *nb = Lstore->sup_to_col;
   int *mb = Lstore->rowind_colptr;
@@ -579,46 +181,14 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
 }
 
 
-template <typename crsMat_t>
-void print_crsmat(int n, crsMat_t &A) {
-  auto graph = A.graph; // in_graph
-  auto row_map = graph.row_map;
-  auto entries = graph.entries;
-  auto values  = A.values;
-
-  std::cout << "[";
-  for (int i = 0; i < n; i++) {
-    for (int k = row_map[i]; k < row_map[i+1]; k++) {
-      std::cout << i << " " << entries[k] << " " << values[k] << " " << k << std::endl;
-    }
-  }
-  std::cout << "];" << std::endl;
-}
-
-
-template <typename graph_t>
-void print_graph(int n, graph_t &graph) {
-  auto row_map = graph.row_map;
-  auto entries = graph.entries;
-
-  std::cout << "[";
-  for (int i = 0; i < n; i++) {
-    for (int k = row_map[i]; k < row_map[i+1]; k++) {
-      std::cout << i << " " << entries[k] << " " << std::endl;
-    }
-  }
-  std::cout << "];" << std::endl;
-}
-
-
 /* ========================================================================================= */
-template <typename crsMat_t>
-crsMat_t read_superlu_Lfactor(bool merge, bool invert_diag, int n, SuperMatrix *L) {
+template <typename crsmat_t>
+crsmat_t read_superlu_Lfactor(bool merge, bool invert_diag, int n, SuperMatrix *L) {
 
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+  typedef typename crsmat_t::values_type::non_const_type values_view_t;
 
   typedef typename values_view_t::value_type scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
@@ -754,19 +324,19 @@ crsMat_t read_superlu_Lfactor(bool merge, bool invert_diag, int n, SuperMatrix *
 
   // create crs
   graph_t static_graph (column_view, rowmap_view);
-  crsMat_t crsmat ("CrsMatrix", n, values_view, static_graph);
+  crsmat_t crsmat ("CrsMatrix", n, values_view, static_graph);
   return crsmat;
 }
 
 
 /* ========================================================================================= */
-template <typename crsMat_t>
-crsMat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMatrix *U) {
+template <typename crsmat_t>
+crsmat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMatrix *U) {
 
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+  typedef typename crsmat_t::values_type::non_const_type values_view_t;
 
   typedef typename values_view_t::value_type scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
@@ -927,166 +497,14 @@ crsMat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMat
 
   // create crs
   graph_t static_graph (column_view, rowmap_view);
-  crsMat_t crsmat("CrsMatrix", n, values_view, static_graph);
+  crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
   return crsmat;
 }
 
 
 /* ========================================================================================= */
-template <typename HostGraph_t, typename Graph_t>
-HostGraph_t generate_supernodal_graph(bool merged, int n, Graph_t &graph, int nsuper, int *mb, int *nb) {
-
-  typedef typename Graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename Graph_t::entries_type::non_const_type    cols_view_t;
-
-  auto row_map = graph.row_map;
-  auto entries = graph.entries;
-
-  typename row_map_view_t::HostMirror row_map_host = Kokkos::create_mirror_view (row_map);
-  typename cols_view_t::HostMirror    entries_host = Kokkos::create_mirror_view (entries);
-  Kokkos::deep_copy (row_map_host, row_map);
-  Kokkos::deep_copy (entries_host, entries);
-
-  // map col/row to supernode
-  int *map = new int[n];
-  for (int s = 0; s < nsuper; s++) {
-    for (int j = nb[s]; j < nb[s+1]; j++) {
-      map[j] = s;
-    }
-  }
-
-  // count non-empty supernodal blocks
-  typedef typename HostGraph_t::row_map_type::non_const_type row_map_view_host_t;
-  row_map_view_host_t hr ("rowmap_view", nsuper+1);
-
-  int *check = new int[nsuper];
-  for (int s = 0; s < nsuper; s++) {
-    check[s] = 0;
-  }
-  int nblocks = 0;
-  for (int s = 0; s < nsuper; s++) {
-    int j1 = nb[s];
-    for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
-      int s2 = map[entries_host (i)];
-      #if defined(fill_supernodal_blocks)
-      // forced zeros to fill supernodal blocks
-      if (merged) {
-        nblocks ++;
-        i += (nb[s2+1]-nb[s2]);
-      } else
-      #endif
-      // may not have filled supernodal blocks with zeros
-      {
-        // rowids are not sorted
-        if (check[s2] == 0) {
-          check[s2] = 1;
-          nblocks ++;
-        }
-        i ++;
-      }
-    }
-    #if defined(fill_supernodal_blocks)
-    if (!merged)
-    #endif
-    {
-      for (int s2 = 0; s2 < nsuper; s2++) {
-        check[s2] = 0;
-      }
-    }
-  }
-
-  typedef typename HostGraph_t::entries_type::non_const_type cols_view_host_t;
-  cols_view_host_t hc ("colmap_view", nblocks);
-
-  nblocks = 0;
-  hr (0) = 0;
-  for (int s = 0; s < nsuper; s++) {
-    int j1 = nb[s];
-    for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
-      int s2 = map[entries_host (i)];
-      #if defined(fill_supernodal_blocks)
-      if (merged) {
-        hc (nblocks) = s2;
-        nblocks ++;
-        i += (nb[s2+1]-nb[s2]);
-      } else
-      #endif
-      {
-        // rowids are not sorted
-        if (check[s2] == 0) {
-          check[s2] = 1;
-          hc (nblocks) = s2;
-          nblocks ++;
-        }
-        i ++;
-      }
-    }
-    hr (s+1) = nblocks;
-    std::sort(&(hc (hr (s))), &(hc (hr (s+1))));
-    #if defined(fill_supernodal_blocks)
-    if (!merged)
-    #endif
-    {
-      for (int s2 = hr(s); s2 < hr(s+1); s2++) {
-        check[hc(s2)] = 0;
-      }
-    }
-  }
-  delete [] check;
-
-  //printf( " > supernodal graph:\n" );
-  //for (int s = 0; s < nsuper; s++) {
-  //  for (int i = hr(s); i < hr(s+1); i++) printf( "%d %d\n",s,hc(i) );
-  //}
-  //printf( "\n" );
-  HostGraph_t static_graph (hc, hr);
-  return static_graph;
-}
-
-template <typename Graph_t>
-int** generate_supernodal_dag(int nsuper, Graph_t &supL, Graph_t &supU) {
-
-  auto row_mapL = supL.row_map;
-  auto entriesL = supL.entries;
-  auto row_mapU = supU.row_map;
-  auto entriesU = supU.entries;
-
-  int *edges = new int[nsuper];
-  int **dag = (int**)malloc(nsuper * sizeof(int*));
-  for (int s = 0; s < nsuper; s ++) {
-    // count # of edges (search for first matching nonzero)
-    int nedges = 0;
-    int k1 = 1 + row_mapL (s); // skip diagonal
-    int k2 = 1 + row_mapU (s); // skip diagonal
-    for (; k1 < row_mapL (s+1); k1++) {
-       // look for match
-       while (entriesL (k1) > entriesU (k2) && k2 < row_mapU (s+1)) {
-         k2 ++;
-       }
-       if (entriesL (k1) <= entriesU (k2)) {
-         edges[nedges] = entriesL (k1);
-         nedges ++;
-         if (entriesL (k1) == entriesU (k2)) {
-           break;
-         }
-      }
-    }
-    // store the edges
-    dag[s] = new int [1+nedges];
-    dag[s][0] = nedges;
-    for (int k = 0; k < nedges; k++) {
-      dag[s][1+k] = edges[k];
-    }
-  }
-  delete[] edges;
-
-  return dag;
-}
-
-
-/* ========================================================================================= */
-template<typename Scalar>
-void factor_superlu(bool metis, const int nrow, Scalar *nzvals, int *rowptr, int *colind,
+template<typename scalar_t>
+void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, int *colind,
                     int panel_size, int relax_size, SuperMatrix &L, SuperMatrix &U,
                     int **perm_r, int **perm_c, int **parents) {
 
@@ -1200,29 +618,6 @@ void factor_superlu(bool metis, const int nrow, Scalar *nzvals, int *rowptr, int
   return;
 }
 
-
-/* ========================================================================================= */
-template<typename Scalar>
-void forwardP_superlu(int n, int *perm_r, int nrhs, Scalar *B, int ldb, Scalar *X, int ldx) {
-
-  /* Permute right hand sides to form Pr*B */
-  for (int j = 0; j < nrhs; j++) {
-      double *rhs_work = &B[j*ldb];
-      double *sol_work = &X[j*ldx];
-      for (int k = 0; k < n; k++) sol_work[perm_r[k]] = rhs_work[k];
-  }
-}
-
-template<typename Scalar>
-void backwardP_superlu(int n, int *perm_c, int nrhs, Scalar *B, int ldb, Scalar *X, int ldx) {
-
-    /* Compute the final solution X := Pc*X. */
-    for (int j = 0; j < nrhs; j++) {
-        double *rhs_work = &B[j*ldb];
-        double *sol_work = &X[j*ldx];
-        for (int k = 0; k < n; k++) sol_work[k] = rhs_work[perm_c[k]];
-    }
-}
 #endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 
 
@@ -1235,11 +630,10 @@ enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG};
 
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
-template<typename Scalar>
-int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, bool merge,
+template<typename scalar_t>
+int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, bool merge, bool invert_offdiag,
                      int panel_size, int relax_size, int sup_size_unblocked, int sup_size_blocked, int loop) {
 
-  typedef Scalar scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
   typedef int lno_t;
   typedef int size_type;
@@ -1262,8 +656,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
   typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
 
   //
-  typedef Kokkos::View< scalar_t*, host_memory_space > HostValuesType;
-  typedef Kokkos::View< scalar_t*,      memory_space > ValuesType;
+  typedef Kokkos::View< scalar_t*, host_memory_space > host_scalar_view_t;
+  typedef Kokkos::View< scalar_t*,      memory_space > scalar_view_t;
 
   //
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
@@ -1272,6 +666,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
   scalar_t ZERO = scalar_t(0);
   scalar_t ONE = scalar_t(1);
 
+  // tolerance
+  scalar_t tol = STS::epsilon();
+
   int num_failed = 0;
   std::cout << std::endl;
   std::cout << "Execution space: " << execution_space::name () << std::endl;
@@ -1279,6 +676,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
   std::cout << std::endl;
   if (!filename.empty())
   {
+    // ==============================================
     // read the matrix ** on host **
     std::cout << " SuperLU Tester Begin: Read matrix filename " << filename << std::endl;
     host_crsmat_t Mtx = KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t>(filename.c_str()); //in_matrix
@@ -1291,62 +689,39 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
     auto values_host  = Mtx.values;
     //print_crsmat<host_crsmat_t> (nrows, Mtx);
 
-    // Create the known solution and set to all 1's ** on host **
-    HostValuesType sol_host("sol_host", nrows);
-    Kokkos::deep_copy(sol_host, ONE);
+    // ==============================================
+    // call SuperLU on the host    
+    // > data for SuperLU
+    int *etree;
+    int *perm_r, *perm_c;
+    SuperMatrix L;
+    SuperMatrix U;
+    host_crsmat_t superluL_host, superluU_host;
+    crsmat_t superluL, superluU;
+    // > call SuperLU
+    Kokkos::Timer timer;
+    std::cout << " > call SuperLU for factorization" << std::endl;
+    factor_superlu<scalar_t> (metis, nrows, values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
+                            panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
+    std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
 
-    // Create the rhs ** on host **
-    // A*sol generates rhs: rhs is dense, use spmv
-    HostValuesType rhs_host("rhs_host", nrows);
-    KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-    //for (int i = 0; i < nrows; i++) printf( "%.16e\n",rhs_host(i) );
-
-    // tolerance
-    scalar_t tol = STS::epsilon();
-
-    // normB
-    scalar_t normB = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, rhs_host.extent(0)), 
-      KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-        tsum += rhs_host(i)*rhs_host(i);
-      }, normB);
-    normB = sqrt(normB);
-
-    // normA
-    scalar_t normA = 0.0;
-    Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, Mtx.nnz()), 
-      KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-        tsum += values_host(i)*values_host(i);
-      }, normA);
-    normA = sqrt(normA);
-
+    // ==============================================
     // Run all requested algorithms
     for ( auto test : tests ) {
       std::cout << "\ntest = " << test << std::endl;
 
-      // data for SuperLU
-      SuperMatrix L;
-      SuperMatrix U;
-      host_crsmat_t superluL_host, superluU_host;
-      crsmat_t superluL, superluU;
       KernelHandle khL, khU;
       switch(test) {
         case SUPERNODAL_NAIVE:
         case SUPERNODAL_ETREE:
         case SUPERNODAL_DAG:
         {
-          int *etree;
-          int *perm_r, *perm_c;
-
-          // call SuperLU on the host    
-          Kokkos::Timer timer;
-          std::cout << " > call SuperLU for factorization" << std::endl;
-          factor_superlu<Scalar> (metis, nrows, values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
-                                  panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
-          std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
-
+          // ==============================================
           // read SuperLU factor int crsMatrix on the host (superluMat_host) and copy to default host/device (superluL)
           std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
+          if (merge) {
+            std::cout << " > Merge supernodes" << std::endl;
+          }
           timer.reset();
           if (merge) {
             bool invert_diag = false; // invert after merge
@@ -1366,8 +741,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             superluU = read_superlu_Ufactor<crsmat_t> (invert_diag, nrows, &L, &U);
           }
           std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
-          //print_factor_superlu<Scalar> (nrows, &L, &U, perm_r, perm_c);
+          //print_factor_superlu<scalar_t> (nrows, &L, &U, perm_r, perm_c);
 
+          // ==============================================
           // create an handle
           if (test == SUPERNODAL_NAIVE) {
             std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl << std::endl;
@@ -1382,10 +758,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
           }
-          //khL.get_sptrsv_handle ()->print_algorithm ();
           khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
           khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
 
+          // ==============================================
           // setup supnodal info
           SCformat *Lstore = (SCformat*)(L.Store);
           int nsuper = 1 + Lstore->nsuper;
@@ -1416,7 +792,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             // merge L-factor
             int nnzL = superluL_host.nnz ();
             superluL = merge_supernodes<host_crsmat_t, crsmat_t> (nrows, &nsuperL, supercolsL, superrowsL,
-                                                                  true, superluL_host, superluU_host, etreeL);
+
             // save the supernodal info in the handle for U-solve
             khL.set_supernodes (nsuperL, supercolsL, etreeL);
             std::cout << "   L factor:" << std::endl;
@@ -1474,93 +850,93 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           //print_crsmat<crsmat_t> (nrows, superluL);
           //print_crsmat<crsmat_t> (nrows, superluU);
  
-          // Init run to check the error, and also to clear the cache
-          // apply forward-pivot on the host
-          HostValuesType tmp_host ("temp", nrows);
-          forwardP_superlu<Scalar> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
-
-          // copy rhs to the default host/device
-          ValuesType rhs ("rhs", nrows);
-          ValuesType sol ("sol", nrows);
-          Kokkos::deep_copy (rhs, tmp_host);
 
           // ==============================================
-          // do L solve
+          // do symbolic for L solve on the host
           auto graphL = superluL.graph; // in_graph
           auto row_mapL = graphL.row_map;
           auto entriesL = graphL.entries;
           auto valuesL  = superluL.values;
-
-          // symbolic on the host
           timer.reset();
           std::cout << std::endl;
-          std::cout << " > Lower-TRI: " << std::endl;
           sptrsv_symbolic (&khL, row_mapL, entriesL);
+          std::cout << " > Lower-TRI: " << std::endl;
           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
+          // ==============================================
+          // do symbolic for U solve on the host
+          auto graphU = superluU.graph; // in_graph
+          auto row_mapU = graphU.row_map;
+          auto entriesU = graphU.entries;
+          auto valuesU  = superluU.values;
+          timer.reset ();
+          sptrsv_symbolic (&khU, row_mapU, entriesU);
+          std::cout << " > Upper-TRI: " << std::endl;
+          std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+
+          // ==============================================
+          // Preaparing for the first solve
+          //> create the known solution and set to all 1's ** on host **
+          host_scalar_view_t sol_host("sol_host", nrows);
+          Kokkos::deep_copy(sol_host, ONE);
+
+          // NOTE: not sure how to set this?
+          if (invert_offdiag) {
+            std::cout << " > Invert off-diagonal blocks of L-factor" << std::endl;
+          }
+          khL.set_invert_offdiagonal(invert_off_diag);
+          khU.set_invert_offdiagonal(invert_off_diag);
+
+          // > create the rhs ** on host **
+          // A*sol generates rhs: rhs is dense, use spmv
+          host_scalar_view_t rhs_host("rhs_host", nrows);
+          KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
+          //for (int i = 0; i < nrows; i++) printf( "%.16e\n",rhs_host(i) );
+
+
+          // ==============================================
+          // apply forward-pivot to rhs on the host
+          host_scalar_view_t tmp_host ("temp", nrows);
+          forwardP_superlu<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+
+          // copy rhs to the default host/device
+          scalar_view_t rhs ("rhs", nrows);
+          scalar_view_t sol ("sol", nrows);
+          Kokkos::deep_copy (rhs, tmp_host);
+
+          // ==============================================
+          // do L solve
           timer.reset();
-          // numeric (only rhs is modified) on the default device/host space
           sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
           Kokkos::fence();
+          std::cout << " > Lower-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
-          Kokkos::deep_copy (tmp_host, rhs);
+          //Kokkos::deep_copy (tmp_host, rhs);
           //printf( "y=[" );
           //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
           //printf( "];\n" );
 
           // ==============================================
-          // do L^T solve
-          auto graphU = superluU.graph; // in_graph
-          auto row_mapU = graphU.row_map;
-          auto entriesU = graphU.entries;
-          auto valuesU  = superluU.values;
-
-          // symbolic on the host
-          timer.reset ();
-          std::cout << " > Upper-TRI: " << std::endl;
-          sptrsv_symbolic (&khU, row_mapU, entriesU);
-          std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
-
-          // numeric (only rhs is modified) on the default device/host space
+          // do U solve
           sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
           Kokkos::fence ();
+          std::cout << " > Upper-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
  
           // copy solution to host
           Kokkos::deep_copy(tmp_host, rhs);
-
           // apply backward-pivot
+          backwardP_superlu<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
           //printf( "x=[" );
           //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
           //printf( "];\n" );
-          backwardP_superlu<Scalar>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
 
           // ==============================================
           // Error Check ** on host **
           Kokkos::fence();
-          // normX
-          scalar_t normR = 0.0;
-          scalar_t normX = 0.0;
-          Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-            KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-              tsum += sol_host(i)*sol_host(i);
-            }, normX);
-          normX = sqrt(normX);
-
-          // normR = ||B - AX||
-          KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
-          Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-            KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-              tsum += rhs_host(i) * rhs_host(i);
-            }, normR);
-          normR = sqrt(normR);
-
           std::cout << std::endl;
-          std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
-                    << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
-                    << normR/(normB + normA * normX) << std::endl;
-          if (normR/(scalar_t(nrows) * (normB + normA * normX)) > tol) {
+          if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
             num_failed ++;
           }
 
@@ -1568,7 +944,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           {
             Kokkos::deep_copy(sol_host, ONE);
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-            forwardP_superlu<Scalar> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+            forwardP_superlu<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
 
             sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
@@ -1576,27 +952,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
-            backwardP_superlu<Scalar>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+            backwardP_superlu<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
-            // normX
-            Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-              KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-                tsum += sol_host(i)*sol_host(i);
-              }, normX);
-            normX = sqrt(normX);
-
-            // normR = ||B - AX||
-            KokkosSparse::spmv( "N", -ONE, Mtx, sol_host, ONE, rhs_host);
-            Kokkos::parallel_reduce( Kokkos::RangePolicy<host_execution_space>(0, sol_host.extent(0)), 
-              KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-                tsum += rhs_host(i) * rhs_host(i);
-              }, normR);
-            normR = sqrt(normR);
-
-            std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
-                      << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
-                      << normR/(normB + normA * normX) << std::endl << std::endl;
-            if (normR/(scalar_t(nrows) * (normB + normA * normX)) > tol) {
+            if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
               num_failed ++;
             }
           }
@@ -1687,6 +1045,8 @@ int main(int argc, char **argv)
   bool metis = false;
   // merge supernodes
   bool merge = false;
+  // invert off-diagonal of L-factor
+  bool invert_offdiag = false;
   // parameters for SuperLU (only affects factorization)
   int panel_size = sp_ienv(1);
   int relax_size = sp_ienv(2);
@@ -1738,6 +1098,10 @@ int main(int argc, char **argv)
       merge = true;
       continue;
     }
+    if((strcmp(argv[i],"--invert-offdiag")==0)) {
+      invert_offdiag = true;
+      continue;
+    }
     if((strcmp(argv[i],"--panel-size")==0)) {
       panel_size = atoi(argv[++i]);
       continue;
@@ -1761,7 +1125,7 @@ int main(int argc, char **argv)
   {
     std::cout << " > supernode_size_unblocked: " << sup_size_unblocked << std::endl;
     std::cout << " > supernode_size_blocked:   " << sup_size_blocked << std::endl;
-    int total_errors = test_sptrsv_perf<double>(tests, filename, metis, merge, panel_size,
+    int total_errors = test_sptrsv_perf<double>(tests, filename, metis, merge, invert_offdiag, panel_size,
                                                 relax_size, sup_size_unblocked, sup_size_blocked, loop);
     if(total_errors == 0)
       printf("Kokkos::SPTRSV Test: Passed\n\n");
