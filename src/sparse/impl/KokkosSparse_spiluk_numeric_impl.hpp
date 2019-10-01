@@ -89,8 +89,8 @@ struct ILUKLvlSchedRPNumericFunctor
   WorkViewType  iw;
   nnz_lno_t     lev_start;
 
-  ILUKLvlSchedRPNumericFunctor( const ARowMapType &A_row_map_, const AEntriesType &A_entries_, const AValuesType &A_values_, const LRowMapType &L_row_map_, const LEntriesType &L_entries_, LValuesType &L_values_, const URowMapType &U_row_map_, const UEntriesType &U_entries_, UValuesType &U_values_, const LevelViewType &level_idx, WorkViewType &iw_, const nnz_lno_t &lev_start_ ) :
-    A_row_map(A_row_map_), A_entries(A_entries_), A_values(A_values_), L_row_map(L_row_map_), L_entries(L_entries_), L_values(L_values_), U_row_map(U_row_map_), U_entries(U_entries_), U_values(U_values_), level_idx(level_idx), iw(iw_), lev_start(lev_start_) {}
+  ILUKLvlSchedRPNumericFunctor( const ARowMapType &A_row_map_, const AEntriesType &A_entries_, const AValuesType &A_values_, const LRowMapType &L_row_map_, const LEntriesType &L_entries_, LValuesType &L_values_, const URowMapType &U_row_map_, const UEntriesType &U_entries_, UValuesType &U_values_, const LevelViewType &level_idx_, WorkViewType &iw_, const nnz_lno_t &lev_start_ ) :
+    A_row_map(A_row_map_), A_entries(A_entries_), A_values(A_values_), L_row_map(L_row_map_), L_entries(L_entries_), L_values(L_values_), U_row_map(U_row_map_), U_entries(U_entries_), U_values(U_values_), level_idx(level_idx_), iw(iw_), lev_start(lev_start_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const lno_t i) const {
@@ -222,8 +222,8 @@ struct ILUKLvlSchedTP1NumericFunctor
   WorkViewType  iw;
   nnz_lno_t     lev_start;
 
-  ILUKLvlSchedTP1NumericFunctor( const ARowMapType &A_row_map_, const AEntriesType &A_entries_, const AValuesType &A_values_, const LRowMapType &L_row_map_, const LEntriesType &L_entries_, LValuesType &L_values_, const URowMapType &U_row_map_, const UEntriesType &U_entries_, UValuesType &U_values_, const LevelViewType &level_idx, WorkViewType &iw_, const nnz_lno_t &lev_start_ ) :
-    A_row_map(A_row_map_), A_entries(A_entries_), A_values(A_values_), L_row_map(L_row_map_), L_entries(L_entries_), L_values(L_values_), U_row_map(U_row_map_), U_entries(U_entries_), U_values(U_values_), level_idx(level_idx), iw(iw_), lev_start(lev_start_) {}
+  ILUKLvlSchedTP1NumericFunctor( const ARowMapType &A_row_map_, const AEntriesType &A_entries_, const AValuesType &A_values_, const LRowMapType &L_row_map_, const LEntriesType &L_entries_, LValuesType &L_values_, const URowMapType &U_row_map_, const UEntriesType &U_entries_, UValuesType &U_values_, const LevelViewType &level_idx_, WorkViewType &iw_, const nnz_lno_t &lev_start_ ) :
+    A_row_map(A_row_map_), A_entries(A_entries_), A_values(A_values_), L_row_map(L_row_map_), L_entries(L_entries_), L_values(L_values_), U_row_map(U_row_map_), U_entries(U_entries_), U_values(U_values_), level_idx(level_idx_), iw(iw_), lev_start(lev_start_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const member_type & team ) const {
