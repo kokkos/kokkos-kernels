@@ -56,7 +56,8 @@ class sort_indices {
 /* ========================================================================================= */
 template <typename host_crsmat_t, typename crsmat_t>
 crsmat_t merge_supernodes(int n, int *p_nsuper, int *nb, int *mb,
-                          bool unit_diag, host_crsmat_t &superluL, host_crsmat_t &superluU,
+                          bool unit_diag, bool invert_diag, bool invert_offdiag,
+                          host_crsmat_t &superluL, host_crsmat_t &superluU,
                           int *etree) {
 
   auto graphL = superluL.graph; // in_graph
@@ -348,28 +349,28 @@ crsmat_t merge_supernodes(int n, int *p_nsuper, int *nb, int *mb,
 
     int nscol = nb2[s2];
     int nsrow = mb2[s2];
-    if (unit_diag) {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'L', 'U', nscol, &hv(nnzD), nsrow);
-      #if defined(SUPERLU_INVERT_OFFDIAG)
-      if (nsrow > nscol) {
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, CblasLower, CblasNoTrans, CblasUnit,
-              nsrow-nscol, nscol,
-              STS::one (), &hv(nnzD), nsrow,
-                           &hv(nnzD+nscol), nsrow);
+    if (invert_diag) {
+      if (unit_diag) {
+        LAPACKE_dtrtri(LAPACK_COL_MAJOR,
+                       'L', 'U', nscol, &hv(nnzD), nsrow);
+        if (nsrow > nscol && invert_offdiag) {
+          cblas_dtrmm (CblasColMajor,
+                CblasRight, CblasLower, CblasNoTrans, CblasUnit,
+                nsrow-nscol, nscol,
+                STS::one (), &hv(nnzD), nsrow,
+                             &hv(nnzD+nscol), nsrow);
+        }
+      } else {
+        LAPACKE_dtrtri(LAPACK_COL_MAJOR,
+                       'L', 'N', nscol, &hv(nnzD), nsrow);
+        if (nsrow > nscol && invert_offdiag) {
+          cblas_dtrmm (CblasColMajor,
+                CblasRight, CblasLower, CblasNoTrans, CblasNonUnit,
+                nsrow-nscol, nscol,
+                STS::one (), &hv(nnzD), nsrow,
+                             &hv(nnzD+nscol), nsrow);
+        }
       }
-      #endif
-    } else {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'L', 'N', nscol, &hv(nnzD), nsrow);
-      /*#if defined(SUPERLU_INVERT_OFFDIAG)
-      cblas_dtrmm (CblasColMajor,
-            CblasRight, CblasLower, CblasNoTrans, CblasNonUnit,
-            nsrow-nscol, nscol,
-            STS::one (), &hv(nnzD), nsrow,
-                         &hv(nnzD+nscol), nsrow);
-      #endif*/
     }
   }
   delete[] map2;

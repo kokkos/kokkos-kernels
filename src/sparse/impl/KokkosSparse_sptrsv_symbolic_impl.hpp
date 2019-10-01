@@ -295,7 +295,6 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       signed_integral_t avg_nsrow = 0;
       for (size_type s = 0; s < nsuper; s++) {
         if (check[s] == 0) {
-          //printf( " %d: ready[%d]=%d\n",level, num_done+num_leave, s );
           nodes_per_level (level) ++; 
           nodes_grouped_by_level (num_done + num_leave) = s;
           level_list (s) = level;

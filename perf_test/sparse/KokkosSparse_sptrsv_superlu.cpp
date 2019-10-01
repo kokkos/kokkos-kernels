@@ -72,7 +72,6 @@
 #include "metis.h"
 #endif
 
-#define SUPERLU_INVERT_OFFDIAG
 #include "KokkosSparse_sptrsv_aux.hpp"
 
 
@@ -183,7 +182,7 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
 
 /* ========================================================================================= */
 template <typename crsmat_t>
-crsmat_t read_superlu_Lfactor(bool merge, bool invert_diag, int n, SuperMatrix *L) {
+crsmat_t read_superlu_Lfactor(bool merge, bool invert_diag, bool invert_offdiag, int n, SuperMatrix *L) {
 
   typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
@@ -257,15 +256,13 @@ crsmat_t read_superlu_Lfactor(bool merge, bool invert_diag, int n, SuperMatrix *
     if (invert_diag) {
       LAPACKE_dtrtri(LAPACK_COL_MAJOR,
                      'L', 'U', nscol, &Lx[psx], nsrow);
-      #if defined(SUPERLU_INVERT_OFFDIAG)
-      if (nsrow2 > 0) {
+      if (nsrow2 > 0 && invert_offdiag) {
         cblas_dtrmm (CblasColMajor,
               CblasRight, CblasLower, CblasNoTrans, CblasUnit,
               nsrow2, nscol,
               1.0, &Lx[psx], nsrow,
                    &Lx[psx+nscol], nsrow);
       }
-      #endif
     }
     for (int ii = 0; ii < nscol; ii++) {
       // lower-triangular part
@@ -288,7 +285,6 @@ crsmat_t read_superlu_Lfactor(bool merge, bool invert_diag, int n, SuperMatrix *
 
     /* off-diagonal blocks */
     if (merge) {
-      // TODO: sort + cblas_dtrmm seems to mess up sorted_rowind
       // sort rowind (to merge supernodes)
       for (int ii = 0; ii < nsrow2; ii++) {
         sorted_rowind[ii] = ii;
@@ -725,10 +721,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           timer.reset();
           if (merge) {
             bool invert_diag = false; // invert after merge
-            superluL_host = read_superlu_Lfactor<host_crsmat_t> (merge, invert_diag, nrows, &L);
+            superluL_host = read_superlu_Lfactor<host_crsmat_t> (merge, invert_diag, invert_offdiag, nrows, &L);
           } else {
             bool invert_diag = true; // only, invert diag is supported for now
-            superluL = read_superlu_Lfactor<crsmat_t> (merge, invert_diag, nrows, &L);
+            superluL = read_superlu_Lfactor<crsmat_t> (merge, invert_diag, invert_offdiag, nrows, &L);
           }
           std::cout << "   Conversion Time for L: " << timer.seconds() << std::endl;
 
@@ -790,8 +786,11 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             }
 
             // merge L-factor
+            bool invert_diag = true;
             int nnzL = superluL_host.nnz ();
             superluL = merge_supernodes<host_crsmat_t, crsmat_t> (nrows, &nsuperL, supercolsL, superrowsL,
+                                                                  true, invert_diag, invert_offdiag,
+                                                                  superluL_host, superluU_host, etreeL);
 
             // save the supernodal info in the handle for U-solve
             khL.set_supernodes (nsuperL, supercolsL, etreeL);
@@ -822,9 +821,13 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
               superrowsU[i] = superrows[i];
             }
             // merge U-factor
+            bool invert_diag = true;
+            // TODO: invert offdiagonal for U-solve
+            bool invert_offdiagU = false;
             int nnzU = superluU_host.nnz ();
             superluU = merge_supernodes<host_crsmat_t, crsmat_t> (nrows, &nsuperU, supercolsU, superrowsU,
-                                                                  false, superluU_host, superluL_host, etreeU);
+                                                                  false, invert_diag, invert_offdiagU,
+                                                                  superluU_host, superluL_host, etreeU);
             // save the supernodal info in the handle for U-solve
             khU.set_supernodes (nsuperU, supercolsU, etreeU);
             std::cout << "   U factor:" << std::endl;
@@ -884,8 +887,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           if (invert_offdiag) {
             std::cout << " > Invert off-diagonal blocks of L-factor" << std::endl;
           }
-          khL.set_invert_offdiagonal(invert_off_diag);
-          khU.set_invert_offdiagonal(invert_off_diag);
+          khL.set_invert_offdiagonal(invert_offdiag);
+          khU.set_invert_offdiagonal(invert_offdiag);
 
           // > create the rhs ** on host **
           // A*sol generates rhs: rhs is dense, use spmv
