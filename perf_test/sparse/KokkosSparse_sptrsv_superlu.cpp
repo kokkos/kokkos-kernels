@@ -204,126 +204,10 @@ crsmat_t read_superlu_Lfactor(bool cusparse, bool merge, bool invert_diag, bool 
   int * colptr = Lstore->nzval_colptr;
   int * rowind = Lstore->rowind;
 
-  int nnzA = colptr[n] - colptr[0];
-  row_map_view_t rowmap_view ("rowmap_view", n+1);
-  cols_view_t    column_view ("colmap_view", nnzA);
-  values_view_t  values_view ("values_view", nnzA);
-
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
-  typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
-
-  // compute offset for each row
-  int j = 0;
-  int max_nnz_per_row = 0;
-  hr(j) = 0;
-  for (int s = 0 ; s < nsuper ; s++) {
-    int j1 = nb[s];
-    int j2 = nb[s+1];
-    int nscol = j2 - j1;      // number of columns in the s-th supernode column
-
-    int i1 = mb[j1];
-    int i2 = mb[j1+1];
-    int nsrow = i2 - i1;      // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-
-    for (int jj = 0; jj < nscol; jj++) {
-      hr(j+1) = hr(j) + nsrow;
-      j++;
-    }
-    if (nsrow > max_nnz_per_row) {
-      max_nnz_per_row = nsrow;
-    }
-  }
-
-  int *sorted_rowind = new int[max_nnz_per_row];
-  // store L in csr
-  for (int s = 0 ; s < nsuper ; s++) {
-    int j1 = nb[s];
-    int j2 = nb[s+1];
-    int nscol = j2 - j1;      // number of columns in the s-th supernode column
-
-    int i1 = mb[j1];
-    int i2 = mb[j1+1];
-    int nsrow  = i2 - i1;    // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-    int nsrow2 = nsrow - nscol;  // "total" number of rows in all the off-diagonal supernodes
-    int ps2    = i1 + nscol;     // offset into rowind
-
-    int psx = colptr[j1] ;        // offset into data,   Lx[s][s]
-
-    /* diagonal block */
-    // for each column (or row due to symmetry), the diagonal supernodal block is stored (in ascending order of row indexes) first
-    // so that we can do TRSM on the diagonal block
-    if (invert_diag) {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'L', 'U', nscol, &Lx[psx], nsrow);
-      if (nsrow2 > 0 && invert_offdiag) {
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, CblasLower, CblasNoTrans, CblasUnit,
-              nsrow2, nscol,
-              1.0, &Lx[psx], nsrow,
-                   &Lx[psx+nscol], nsrow);
-      }
-    }
-    for (int ii = 0; ii < nscol; ii++) {
-      // lower-triangular part
-      for (int jj = 0; jj < ii; jj++) {
-        hc(hr(j1+jj)) = j1+ii;
-        hv(hr(j1+jj)) = Lx[psx + (ii + jj*nsrow)];
-        hr(j1+jj) ++;
-      }
-      // diagonal
-      hc(hr(j1+ii)) = j1+ii;
-      hv(hr(j1+ii)) = STS::one ();
-      hr(j1+ii) ++;
-      if (!cusparse) {
-        // explicitly store zeros in upper-part
-        for (int jj = ii+1; jj < nscol; jj++) {
-          hc(hr(j1+jj)) = j1+ii;
-          hv(hr(j1+jj)) = STS::zero ();
-          hr(j1+jj) ++;
-        }
-      }
-    }
-
-    /* off-diagonal blocks */
-    if (merge) {
-      // sort rowind (to merge supernodes)
-      for (int ii = 0; ii < nsrow2; ii++) {
-        sorted_rowind[ii] = ii;
-      }
-      std::sort(&(sorted_rowind[0]), &(sorted_rowind[nsrow2]), sort_indices(&rowind[ps2]));
-    }
-    for (int kk = 0; kk < nsrow2; kk++) {
-      int ii = (merge ? sorted_rowind[kk] : kk); // sorted rowind
-      int i = rowind[ps2 + ii];
-      for (int jj = 0; jj < nscol; jj++) {
-        hc(hr(j1+jj)) = i;
-        hv(hr(j1+jj)) = Lx[psx + (nscol+ii + jj*nsrow)];
-        hr(j1+jj) ++;
-      }
-    }
-  }
-  delete [] sorted_rowind;
-
-  // fix hr
-  for (int i = n; i >= 1; i--) {
-    hr(i) = hr(i-1);
-  }
-  hr(0) = 0;
-  
-  std::cout << "    * Matrix size = " << n << std::endl;
-  std::cout << "    * Total nnz   = " << hr (n) << std::endl;
-  std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
-
-  // deepcopy
-  Kokkos::deep_copy (rowmap_view, hr);
-  Kokkos::deep_copy (column_view, hc);
-  Kokkos::deep_copy (values_view, hv);
-
-  // create crs
-  graph_t static_graph (column_view, rowmap_view);
-  crsmat_t crsmat ("CrsMatrix", n, values_view, static_graph);
-  return crsmat;
+  bool unit_diag = true;
+  bool mb_by_column = true;
+  return read_supernodal_L<crsmat_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
+                                                unit_diag, n, nsuper, mb_by_column, mb, nb, colptr, rowind, Lx);
 }
 
 
@@ -424,7 +308,7 @@ crsmat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMat
     int i1 = mb[j1];
     int nsrow = mb[j1+1] - i1;
 
-    /* the diagonal block */
+    /* the diagonal *dense* block */
     int psx = colptr[j1];
     if (invert_diag) {
       LAPACKE_dtrtri(LAPACK_COL_MAJOR,
@@ -713,7 +597,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
         case SUPERNODAL_DAG:
         {
           // ==============================================
-          // read SuperLU factor int crsMatrix on the host (superluMat_host) and copy to default host/device (superluL)
+          // read SuperLU factor on the host (and copy to default host/device)
           host_crsmat_t superluL_host, superluU_host;
           crsmat_t superluL, superluU;
           std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
@@ -789,16 +673,19 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
               superrowsL[i] = superrows[i];
             }
 
-            // merge L-factor
+            // merge L-graph
             bool invert_diag = true;
             int nnzL = superluL_host.nnz ();
-            superluL = merge_supernodes<host_crsmat_t, crsmat_t> (nrows, &nsuperL, supercolsL, superrowsL,
+            auto graphL = merge_supernodes_graph<host_graph_t, graph_t> (nrows, &nsuperL, supercolsL, superrowsL,
+                                                                  superluL_host.graph, superluU_host.graph, etreeL);
+            // convert into merged crs
+            superluL = merge_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuperL, supercolsL, superrowsL,
                                                                   true, invert_diag, invert_offdiag,
-                                                                  superluL_host, superluU_host, etreeL);
+                                                                  superluL_host, graphL);
 
             // save the supernodal info in the handle for U-solve
             khL.set_supernodes (nsuperL, supercolsL, etreeL);
-            std::cout << "   L factor:" << std::endl;
+            std::cout << " for L factor:" << std::endl;
             std::cout << "   Merge Supernodes Time: " << timer.seconds() << std::endl;
             std::cout << "   Number of nonzeros   : " << nnzL << " -> " << superluL.nnz () 
                       << " : " << double(superluL.nnz ()) / double(nnzL) << "x" << std::endl;
@@ -829,12 +716,15 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             // TODO: invert offdiagonal for U-solve
             bool invert_offdiagU = false;
             int nnzU = superluU_host.nnz ();
-            superluU = merge_supernodes<host_crsmat_t, crsmat_t> (nrows, &nsuperU, supercolsU, superrowsU,
-                                                                  false, invert_diag, invert_offdiagU,
-                                                                  superluU_host, superluL_host, etreeU);
+            auto graphU = merge_supernodes_graph<host_graph_t, graph_t> (nrows, &nsuperU, supercolsU, superrowsU,
+                                                                     superluU_host.graph, superluL_host.graph, etreeU);
+            // convert into merged crs
+            superluU = merge_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuperU, supercolsU, superrowsU,
+                                                                     false, invert_diag, invert_offdiagU,
+                                                                     superluU_host, graphU);
             // save the supernodal info in the handle for U-solve
             khU.set_supernodes (nsuperU, supercolsU, etreeU);
-            std::cout << "   U factor:" << std::endl;
+            std::cout << " for U factor:" << std::endl;
             std::cout << "   Merge Supernodes Time: " << timer.seconds() << std::endl;
             std::cout << "   Number of nonzeros   : " << nnzU << " -> " << superluU.nnz () 
                       << " : " << double(superluU.nnz ()) / double(nnzU) << "x" << std::endl;
@@ -904,7 +794,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           // ==============================================
           // apply forward-pivot to rhs on the host
           host_scalar_view_t tmp_host ("temp", nrows);
-          forwardP_superlu<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+          forwardP_supernode<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
 
           // copy rhs to the default host/device
           scalar_view_t rhs ("rhs", nrows);
@@ -933,7 +823,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           // copy solution to host
           Kokkos::deep_copy(tmp_host, rhs);
           // apply backward-pivot
-          backwardP_superlu<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+          backwardP_supernode<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
           //printf( "x=[" );
           //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
           //printf( "];\n" );
@@ -951,7 +841,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           {
             Kokkos::deep_copy(sol_host, ONE);
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-            forwardP_superlu<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+            forwardP_supernode<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
 
             sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
@@ -959,7 +849,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
-            backwardP_superlu<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+            backwardP_supernode<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
             if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
               num_failed ++;
@@ -979,8 +869,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
-            if(time>max_time) max_time = time;
-            if(time<min_time) min_time = time;
+            if(time > max_time) max_time = time;
+            if(time < min_time) min_time = time;
             //std::cout << time << std::endl;
           }
           std::cout << " L-solve: loop = " << loop << std::endl;
@@ -999,8 +889,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
-            if(time>max_time) max_time = time;
-            if(time<min_time) min_time = time;
+            if(time > max_time) max_time = time;
+            if(time < min_time) min_time = time;
             //std::cout << time << std::endl;
           }
           std::cout << " U-solve: loop = " << loop << std::endl;
@@ -1012,10 +902,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
         case CUSPARSE:
         {
-
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) 
           // ==============================================
-          // read SuperLU factor int crsMatrix on the host (superluMat_host) and copy to default host/device (superluL)
+          // read SuperLU factor on the host (and copy to default host/device)
           crsmat_t superluL, superluU;
           std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
           timer.reset();
@@ -1029,242 +917,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
           //print_factor_superlu<scalar_t> (nrows, &L, &U, perm_r, perm_c);
 
-          // ==============================================
-          // > create a handle
-          cusparseStatus_t status;
-          cusparseHandle_t handle = 0;
-          status = cusparseCreate(&handle);
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "handle create status error name " << (status) << std::endl;
-          cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST); // scalars are passed by reference on host
-
-          // > create a empty info structure
-          //std::cout << "  cusparse: create csrsv2info" << std::endl;
-          csrsv2Info_t info = 0;
-          status = cusparseCreateCsrsv2Info(&info);
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "csrsv2info create status error name " << (status) << std::endl;
-
-          // ==============================================
-          // Preparing for L-solve
-          // step 1: create a descriptor
-          int nnzL = superluL.nnz();
-          auto graphL = superluL.graph; // in_graph
-          auto row_mapL = graphL.row_map;
-          auto entriesL = graphL.entries;
-          auto valuesL  = superluL.values;
-
-          // NOTE: it is stored in CSC = UPPER + TRANSPOSE
-          cusparseMatDescr_t descrL = 0;
-          status = cusparseCreateMatDescr(&descrL);
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "matdescr create status error name " << (status) << std::endl;
-          cusparseSetMatIndexBase(descrL, CUSPARSE_INDEX_BASE_ZERO);
-          cusparseSetMatFillMode(descrL, CUSPARSE_FILL_MODE_UPPER);
-          cusparseSetMatDiagType(descrL, CUSPARSE_DIAG_TYPE_NON_UNIT);
-          cusparseSetMatType(descrL,CUSPARSE_MATRIX_TYPE_GENERAL);
-
-          // ==============================================
-          // step 2: query how much memory used in csrsv2, and allocate the buffer
-          // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
-          int pBufferSize;
-          void *pBufferL = 0;
-          cusparseOperation_t trans = CUSPARSE_OPERATION_TRANSPOSE;
-          cusparseDcsrsv2_bufferSize(handle, trans, nrows, nnzL, descrL,
-                                     valuesL.data(), row_mapL.data(), entriesL.data(), info,
-                                     &pBufferSize);
-          cudaMalloc((void**)&pBufferL, pBufferSize);
-
-          // ==============================================
-          // step 3: analysis
-          std::cout << "  Lower-Triangular" << std::endl;
-          timer.reset();
-          const cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
-          status = cusparseDcsrsv2_analysis(handle, trans, nrows, nnzL, descrL,
-                                            valuesL.data(), row_mapL.data(), entriesL.data(),
-                                            info, policy, pBufferL);
-          std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "analysis status error name " << (status) << std::endl;
-          // L has unit diagonal, so no structural zero is reported.
-
-          //std::cout << "  cusparse path: analysis" << std::endl;
-          int structural_zero;
-          status = cusparseXcsrsv2_zeroPivot(handle, info, &structural_zero);
-          if (CUSPARSE_STATUS_ZERO_PIVOT == status){
-             printf("L(%d,%d) is missing\n", structural_zero, structural_zero);
-          }
-
-          // ==============================================
-          // Preaparing for the first solve
-          //> create the known solution and set to all 1's ** on host **
-          host_scalar_view_t sol_host("sol_host", nrows);
-          Kokkos::deep_copy(sol_host, ONE);
-
-          // > create the rhs ** on host **
-          // A*sol generates rhs: rhs is dense, use spmv
-          host_scalar_view_t rhs_host("rhs_host", nrows);
-          KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-          //for (int i = 0; i < nrows; i++) printf( "%.16e\n",rhs_host(i) );
-
-          // ==============================================
-          // step 1: apply forward-pivot to rhs on the host
-          host_scalar_view_t tmp_host ("temp", nrows);
-          forwardP_superlu<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
-
-          // copy rhs to the default host/device
-          scalar_view_t rhs ("rhs", nrows);
-          scalar_view_t sol ("sol", nrows);
-          Kokkos::deep_copy (rhs, tmp_host);
-
-          // ==============================================
-          // step 2: solve L*y = x
-          timer.reset();
-          const double alpha = 1.;
-          status = cusparseDcsrsv2_solve(handle, trans, nrows, nnzL, &alpha, descrL, 
-                                         valuesL.data(), row_mapL.data(), entriesL.data(), info, 
-                                         rhs.data(), sol.data(), policy, pBufferL);
-          Kokkos::fence();
-          std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "solve status error name " << (status) << std::endl;
-          // L has unit diagonal, so no numerical zero is reported.
-          int numerical_zero;
-          status = cusparseXcsrsv2_zeroPivot(handle, info, &numerical_zero);
-          if (CUSPARSE_STATUS_ZERO_PIVOT == status){
-            printf("L(%d,%d) is zero\n", numerical_zero, numerical_zero);
-          }
-          //Kokkos::deep_copy (tmp_host, sol);
-          //printf( "y=[" );
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
-          //printf( "];\n" );
-
-
-          // ==============================================
-          // Preparing for U-solve
-          int nnzU = superluU.nnz();
-          auto graphU = superluU.graph; // in_graph
-          auto row_mapU = graphU.row_map;
-          auto entriesU = graphU.entries;
-          auto valuesU  = superluU.values;
-
-          // ==============================================
-          // step 1: create a descriptor
-          // NOTE: it is stored in CSR = UPPER + NO-TRANSPOSE
-          cusparseMatDescr_t descrU = 0;
-          status = cusparseCreateMatDescr(&descrU);
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "matdescr create status error name " << (status) << std::endl;
-          cusparseSetMatIndexBase(descrU, CUSPARSE_INDEX_BASE_ZERO);
-          cusparseSetMatFillMode(descrU, CUSPARSE_FILL_MODE_UPPER);
-          cusparseSetMatDiagType(descrU, CUSPARSE_DIAG_TYPE_NON_UNIT);
-          cusparseSetMatType(descrU,CUSPARSE_MATRIX_TYPE_GENERAL);
-
-          // ==============================================
-          // step 2: query how much memory used in csrsv2, and allocate the buffer
-          // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
-          void *pBufferU = 0;
-          trans = CUSPARSE_OPERATION_NON_TRANSPOSE;
-          cusparseDcsrsv2_bufferSize(handle, trans, nrows, nnzU, descrU,
-                                     valuesU.data(), row_mapU.data(), entriesU.data(),
-                                     info, &pBufferSize);
-          cudaMalloc((void**)&pBufferU, pBufferSize);
-
-          // ==============================================
-          // step 3: analysis
-          std::cout << std::endl << "  Upper-Triangular" << std::endl;
-          timer.reset();
-          status = cusparseDcsrsv2_analysis(handle, trans, nrows, nnzU, descrU,
-                                            valuesU.data(), row_mapU.data(), entriesU.data(),
-                                            info, policy, pBufferU);
-          std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "analysis status error name " << (status) << std::endl;
-
-          status = cusparseXcsrsv2_zeroPivot(handle, info, &structural_zero);
-          if (CUSPARSE_STATUS_ZERO_PIVOT == status){
-            printf("L(%d,%d) is missing\n", structural_zero, structural_zero);
-          }
-
-          // ==============================================
-          // step 1: solve U*y = x
-          timer.reset();
-          status = cusparseDcsrsv2_solve(handle, trans, nrows, nnzU, &alpha, descrU,
-                                         valuesU.data(), row_mapU.data(), entriesU.data(), info,
-                                         sol.data(), rhs.data(), policy, pBufferU);
-          Kokkos::fence();
-          std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
-          if (CUSPARSE_STATUS_SUCCESS != status)
-            std::cout << "solve status error name " << (status) << std::endl;
-          status = cusparseXcsrsv2_zeroPivot(handle, info, &numerical_zero);
-          if (CUSPARSE_STATUS_ZERO_PIVOT == status){
-            printf("L(%d,%d) is zero\n", numerical_zero, numerical_zero);
-          }
-
-          // ==============================================
-          // copy solution to host
-          Kokkos::deep_copy(tmp_host, rhs);
-          // apply backward-pivot
-          backwardP_superlu<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
-          //printf( "x=[" );
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
-          //printf( "];\n" );
-
-          // ==============================================
-          // Error Check ** on host **
-          Kokkos::fence();
-          std::cout << std::endl;
-          if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
+          if (!check_cusparse(Mtx, superluL, superluU, perm_r, perm_c, tol, loop)) {
             num_failed ++;
           }
-          std::cout << std::endl;
-
-          // ==============================================
-          // Benchmark
-          // L-solve
-          double min_time = 1.0e32;
-          double max_time = 0.0;
-          double ave_time = 0.0;
-          Kokkos::fence();
-          for(int i = 0; i < loop; i++) {
-            timer.reset();
-            cusparseDcsrsv2_solve(handle, trans, nrows, nnzL, &alpha, descrL, 
-                                  valuesL.data(), row_mapL.data(), entriesL.data(), info, 
-                                  rhs.data(), sol.data(), policy, pBufferL);
-            Kokkos::fence();
-            double time = timer.seconds();
-            ave_time += time;
-            if(time>max_time) max_time = time;
-            if(time<min_time) min_time = time;
-            //std::cout << time << std::endl;
-          }
-          std::cout << " L-solve: loop = " << loop << std::endl;
-          std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
-          std::cout << "  LOOP_MAX_TIME:  " << max_time << std::endl;
-          std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl << std::endl;
-
-          // U-solve
-          min_time = 1.0e32;
-          max_time = 0.0;
-          ave_time = 0.0;
-          Kokkos::fence();
-          for(int i = 0; i < loop; i++) {
-            timer.reset();
-            cusparseDcsrsv2_solve(handle, trans, nrows, nnzU, &alpha, descrU,
-                                  valuesU.data(), row_mapU.data(), entriesU.data(), info,
-                                  sol.data(), rhs.data(), policy, pBufferU);
-            Kokkos::fence();
-            double time = timer.seconds();
-            ave_time += time;
-            if(time>max_time) max_time = time;
-            if(time<min_time) min_time = time;
-            //std::cout << time << std::endl;
-          }
-          std::cout << " U-solve: loop = " << loop << std::endl;
-          std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
-          std::cout << "  LOOP_MAX_TIME:  " << max_time << std::endl;
-          std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl << std::endl;
-#endif
         }
         break;
 
