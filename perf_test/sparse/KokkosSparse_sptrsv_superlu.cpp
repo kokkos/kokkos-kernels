@@ -179,18 +179,32 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
 #endif
 }
 
+/* ========================================================================================= */
+template <typename graph_t>
+graph_t read_superlu_graphL(bool cusparse, bool merge, int n, SuperMatrix *L) {
+
+  /* ---------------------------------------------------------------------- */
+  /* get inputs */
+  /* ---------------------------------------------------------------------- */
+  SCformat *Lstore = (SCformat*)(L->Store);
+
+  int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
+  int * mb = Lstore->rowind_colptr;
+  int * nb = Lstore->sup_to_col;
+  int * colptr = Lstore->nzval_colptr;
+  int * rowind = Lstore->rowind;
+
+  bool ptr_by_column = true;
+  return read_supernodal_graphL<graph_t> (cusparse, merge,
+                                          n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
+}
 
 /* ========================================================================================= */
-template <typename crsmat_t>
-crsmat_t read_superlu_Lfactor(bool cusparse, bool merge, bool invert_diag, bool invert_offdiag, int n, SuperMatrix *L) {
+template <typename crsmat_t, typename graph_t>
+crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert_offdiag, int n, SuperMatrix *L, graph_t &static_graph) {
 
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
   typedef typename crsmat_t::values_type::non_const_type values_view_t;
-
   typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
   /* ---------------------------------------------------------------------- */
   /* get inputs */
@@ -205,35 +219,27 @@ crsmat_t read_superlu_Lfactor(bool cusparse, bool merge, bool invert_diag, bool 
   int * rowind = Lstore->rowind;
 
   bool unit_diag = true;
-  bool mb_by_column = true;
-  return read_supernodal_L<crsmat_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
-                                                unit_diag, n, nsuper, mb_by_column, mb, nb, colptr, rowind, Lx);
+  bool ptr_by_column = true;
+  return read_supernodal_valuesL<crsmat_t, graph_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
+                                                               unit_diag, n, nsuper, ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
 }
 
 
 /* ========================================================================================= */
-template <typename crsmat_t>
-crsmat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMatrix *U) {
+template <typename graph_t>
+graph_t read_superlu_graphU(int n, SuperMatrix *L,  SuperMatrix *U) {
 
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
   SCformat *Lstore = (SCformat*)(L->Store);
-  scalar_t *Lx = (scalar_t*)(Lstore->nzval);
-
   NCformat *Ustore = (NCformat*)(U->Store);
-  double *Uval = (double*)(Ustore->nzval);
 
   /* create a map from row id to supernode id */
   int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
   int *nb = Lstore->sup_to_col;
-  int *mb = Lstore->rowind_colptr;
-  int *colptr = Lstore->nzval_colptr;
+  int *colptrU = Ustore->colptr;
+  int *rowindU = Ustore->rowind;
 
   int *map = new int[n];
   int supid = 0;
@@ -269,9 +275,8 @@ crsmat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMat
 
     /* the off-diagonal blocks */
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
-      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
-        int irow = U_SUB(i);
-
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+        int irow = rowindU[i];
         supid = map[irow];
         if (check[supid] == 0) {
           for (int ii = nb[supid]; ii < nb[supid+1]; ii++) {
@@ -295,58 +300,39 @@ crsmat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMat
   /* Upper-triangular matrix */
   int nnzA = hr (n);
   cols_view_t    column_view ("colmap_view", nnzA);
-  values_view_t  values_view ("values_view", nnzA);
-
   typename cols_view_t::HostMirror   hc = Kokkos::create_mirror_view (column_view);
-  typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
 
   int *sup = new int[nsuper];
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
 
-    int i1 = mb[j1];
-    int nsrow = mb[j1+1] - i1;
-
-    /* the diagonal *dense* block */
-    int psx = colptr[j1];
-    if (invert_diag) {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'U', 'N', nscol, &Lx[psx], nsrow);
-    }
+    /* the diagonal "dense" block */
     for (int i = 0; i < nscol; i++) {
       for (int j = 0; j < i; j++) {
         hc(hr(j1 + i) + j) = j1 + j;
-        hv(hr(j1 + i) + j) = STS::zero ();
       }
 
       for (int j = i; j < nscol; j++) {
         hc(hr(j1 + i) + j) = j1 + j;
-        hv(hr(j1 + i) + j) = Lx[psx + i + j*nsrow];
       }
       hr (j1 + i) += nscol;
     }
 
-    /* the off-diagonal blocks */
+    /* the off-diagonal "sparse" blocks */
     // let me first find off-diagonal supernodal blocks..
     int nsup = 0;
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
-      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
-        int irow = U_SUB(i);
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+        int irow = rowindU[i];
         if (check[map[irow]] == 0) {
           check[map[irow]] = 1;
-
           sup[nsup] = map[irow];
           nsup ++;
         }
       }
     }
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
-      // add nonzeros in jcol-th column
-      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
-        int irow = U_SUB(i);
-        hv(hr(irow)) = Uval[i];
-      }
       // move up all the row pointers for all the supernodal blocks
       for (int i = 0; i < nsup; i++) {
         for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
@@ -375,10 +361,133 @@ crsmat_t read_superlu_Ufactor(bool invert_diag, int n, SuperMatrix *L,  SuperMat
   // deepcopy
   Kokkos::deep_copy (rowmap_view, hr);
   Kokkos::deep_copy (column_view, hc);
-  Kokkos::deep_copy (values_view, hv);
 
   // create crs
   graph_t static_graph (column_view, rowmap_view);
+  return static_graph;
+}
+
+/* ========================================================================================= */
+template <typename crsmat_t, typename graph_t>
+crsmat_t read_superlu_valuesU(bool invert_diag, int n, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
+
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename crsmat_t::values_type::non_const_type values_view_t;
+
+  typedef typename values_view_t::value_type scalar_t;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+
+  SCformat *Lstore = (SCformat*)(L->Store);
+  scalar_t *Lx = (scalar_t*)(Lstore->nzval);
+
+  NCformat *Ustore = (NCformat*)(U->Store);
+  double *Uval = (double*)(Ustore->nzval);
+
+  /* create a map from row id to supernode id */
+  int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
+  int *nb = Lstore->sup_to_col;
+  int *mb = Lstore->rowind_colptr;
+  int *colptrL = Lstore->nzval_colptr;
+  int *colptrU = Ustore->colptr;
+  int *rowindU = Ustore->rowind;
+
+  int *map = new int[n];
+  int supid = 0;
+  for (int k = 0; k < nsuper; k++)
+  {
+    int j1 = nb[k];
+    int j2 = nb[k+1];
+    for (int j = j1; j < j2; j++) {
+        map[j] = supid;
+    }
+    supid ++;
+  }
+
+  auto rowmap_view = static_graph.row_map;
+  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  Kokkos::deep_copy (hr, rowmap_view);
+
+  /* Upper-triangular matrix */
+  int nnzA = hr (n);
+  values_view_t  values_view ("values_view", nnzA);
+  typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+  int *sup = new int[nsuper];
+  int *check = new int[nsuper];
+  for (int k = 0; k < nsuper; k++) {
+    check[k] = 0;
+  }
+  for (int k = 0; k < nsuper; k++) {
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    int i1 = mb[j1];
+    int nsrow = mb[j1+1] - i1;
+
+    /* the diagonal "dense" block */
+    int psx = colptrL[j1];
+    if (invert_diag) {
+      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
+                     'U', 'N', nscol, &Lx[psx], nsrow);
+    }
+    for (int i = 0; i < nscol; i++) {
+      for (int j = 0; j < i; j++) {
+        hv(hr(j1 + i) + j) = STS::zero ();
+      }
+
+      for (int j = i; j < nscol; j++) {
+        hv(hr(j1 + i) + j) = Lx[psx + i + j*nsrow];
+      }
+      hr (j1 + i) += nscol;
+    }
+
+    /* the off-diagonal "sparse" blocks */
+    // let me first find off-diagonal supernodal blocks..
+    int nsup = 0;
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+        int irow = rowindU[i];
+        if (check[map[irow]] == 0) {
+          check[map[irow]] = 1;
+          sup[nsup] = map[irow];
+          nsup ++;
+        }
+      }
+    }
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      // add nonzeros in jcol-th column
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+        int irow = rowindU[i];
+        hv(hr(irow)) = Uval[i];
+      }
+      // move up all the row pointers for all the supernodal blocks
+      for (int i = 0; i < nsup; i++) {
+        for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
+          hr(ii) ++;
+        }
+      }
+    }
+    // reset check
+    for (int i = 0; i < nsup; i++) {
+      check[sup[i]] = 0;
+    }
+  }
+  delete[] sup;
+  delete[] check;
+
+  // fix hr
+  for (int i = n; i >= 1; i--) {
+    hr(i) = hr(i-1);
+  }
+  hr(0) = 0;
+  std::cout << "    * Matrix size = " << n << std::endl;
+  std::cout << "    * Total nnz   = " << hr (n) << std::endl;
+  std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+
+  // deepcopy
+  Kokkos::deep_copy (values_view, hv);
+  // create crs
   crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
   return crsmat;
 }
@@ -598,30 +707,28 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
         {
           // ==============================================
           // read SuperLU factor on the host (and copy to default host/device)
-          host_crsmat_t superluL_host, superluU_host;
-          crsmat_t superluL, superluU;
           std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
           if (merge) {
             std::cout << " > Merge supernodes" << std::endl;
           }
           timer.reset();
           bool cusparse = false; // pad diagonal blocks with zeros
+          host_graph_t graphL_host;
+          host_graph_t graphU_host;
+          graph_t graphL;
+          graph_t graphU;
           if (merge) {
-            bool invert_diag = false; // invert after merge
-            superluL_host = read_superlu_Lfactor<host_crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, nrows, &L);
+            graphL_host = read_superlu_graphL<host_graph_t> (cusparse, merge, nrows, &L);
           } else {
-            bool invert_diag = true; // only, invert diag is supported for now
-            superluL = read_superlu_Lfactor<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, nrows, &L);
+            graphL = read_superlu_graphL<graph_t> (cusparse, merge, nrows, &L);
           }
           std::cout << "   Conversion Time for L: " << timer.seconds() << std::endl;
 
           timer.reset();
           if (merge) {
-            bool invert_diag = false; // invert after merge
-            superluU_host = read_superlu_Ufactor<host_crsmat_t> (invert_diag, nrows, &L, &U);
+            graphU_host = read_superlu_graphU<host_graph_t> (nrows, &L, &U);
           } else {
-            bool invert_diag = true; // only, invert diag is supported for now
-            superluU = read_superlu_Ufactor<crsmat_t> (invert_diag, nrows, &L, &U);
+            graphU = read_superlu_graphU<graph_t> (nrows, &L, &U);
           }
           std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
           //print_factor_superlu<scalar_t> (nrows, &L, &U, perm_r, perm_c);
@@ -650,109 +757,78 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           SCformat *Lstore = (SCformat*)(L.Store);
           int nsuper = 1 + Lstore->nsuper;
           int *supercols = Lstore->sup_to_col;
-          int *superrows = Lstore->rowind_colptr;
 
-          int nsuperL = nsuper;
-          int *supercolsL = supercols;
-          int *superrowsL = superrows;
           if (merge) {
+            // ==============================================
+            // merge supernodes
             timer.reset ();
-            // make a copy of etree
-            int *etreeL = new int[nsuper];
+            int nsuper_merged = nsuper;
+            // > make a copy of etree
+            int *etree_merged = new int[nsuper];
             for (int i = 0; i < nsuper; i++) {
-              etreeL[i] = etree[i];
+              etree_merged[i] = etree[i];
             }
-            // make a copy of supercols
-            supercolsL = new int[1+nsuper];
+            // > make a copy of supercols
+            int *supercols_merged = new int[1+nsuper];
             for (int i = 0; i <= nsuper; i++) {
-              supercolsL[i] = supercols[i];
+              supercols_merged[i] = supercols[i];
             }
-            // make a copy of superrows
-            superrowsL = new int[1+nrows];
-            for (int i = 0; i <= nrows; i++) {
-              superrowsL[i] = superrows[i];
-            }
+            check_supernode_sizes("Original structure", nrows, nsuper, supercols_merged, graphL_host);
+            merge_supernodal_graph<host_graph_t> (nrows, &nsuper_merged, supercols_merged,
+                                                  graphL_host, graphU_host, etree_merged);
 
-            // merge L-graph
-            bool invert_diag = true;
-            int nnzL = superluL_host.nnz ();
-            auto graphL = merge_supernodes_graph<host_graph_t, graph_t> (nrows, &nsuperL, supercolsL, superrowsL,
-                                                                  superluL_host.graph, superluU_host.graph, etreeL);
-            // convert into merged crs
-            superluL = merge_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuperL, supercolsL, superrowsL,
-                                                                  true, invert_diag, invert_offdiag,
-                                                                  superluL_host, graphL);
-
-            // save the supernodal info in the handle for U-solve
-            khL.set_supernodes (nsuperL, supercolsL, etreeL);
+            // ==============================================
+            // generate merged graph for L-solve
+            int nnzL_merged;
+            int nnzL = graphL_host.row_map (nrows);
+            graphL = generate_merged_supernodal_graph<host_graph_t, graph_t> (nrows, nsuper, supercols,
+                                                                              nsuper_merged, supercols_merged,
+                                                                              graphL_host, &nnzL_merged);
+            check_supernode_sizes("After Merge", nrows, nsuper_merged, supercols_merged, graphL);
             std::cout << " for L factor:" << std::endl;
             std::cout << "   Merge Supernodes Time: " << timer.seconds() << std::endl;
-            std::cout << "   Number of nonzeros   : " << nnzL << " -> " << superluL.nnz () 
-                      << " : " << double(superluL.nnz ()) / double(nnzL) << "x" << std::endl;
-          } else {
-            khL.set_supernodes (nsuper, supercols, etree);
-          }
-          int nsuperU = nsuper;
-          if (merge) {
-            // NOTE: starting over for U-factor
-            timer.reset ();
-            // make a copy of etree
-            int *etreeU = new int[nsuper];
-            for (int i = 0; i < nsuper; i++) {
-              etreeU[i] = etree[i];
-            }
-            // make a copy of supercols
-            int *supercolsU = new int[1+nsuper];
-            for (int i = 0; i <= nsuper; i++) {
-              supercolsU[i] = supercols[i];
-            }
-            // make a copy of superrows
-            int *superrowsU = new int[1+nrows];
-            for (int i = 0; i <= nrows; i++) {
-              superrowsU[i] = superrows[i];
-            }
-            // merge U-factor
-            bool invert_diag = true;
-            // TODO: invert offdiagonal for U-solve
-            bool invert_offdiagU = false;
-            int nnzU = superluU_host.nnz ();
-            auto graphU = merge_supernodes_graph<host_graph_t, graph_t> (nrows, &nsuperU, supercolsU, superrowsU,
-                                                                     superluU_host.graph, superluL_host.graph, etreeU);
-            // convert into merged crs
-            superluU = merge_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuperU, supercolsU, superrowsU,
-                                                                     false, invert_diag, invert_offdiagU,
-                                                                     superluU_host, graphU);
-            // save the supernodal info in the handle for U-solve
-            khU.set_supernodes (nsuperU, supercolsU, etreeU);
+            std::cout << "   Number of nonzeros   : " << nnzL << " -> " << nnzL_merged 
+                      << " : " << double(nnzL_merged) / double(nnzL) << "x" << std::endl;
+
+            // ==============================================
+            // generate merged graph for L-solve
+            int nnzU_merged;
+            int nnzU = graphU_host.row_map (nrows);
+            graphU = generate_merged_supernodal_graph<host_graph_t, graph_t> (nrows, nsuper, supercols,
+                                                                              nsuper_merged, supercols_merged,
+                                                                              graphU_host, &nnzU_merged);
+            check_supernode_sizes("After Merge", nrows, nsuper_merged, supercols_merged, graphU);
             std::cout << " for U factor:" << std::endl;
             std::cout << "   Merge Supernodes Time: " << timer.seconds() << std::endl;
-            std::cout << "   Number of nonzeros   : " << nnzU << " -> " << superluU.nnz () 
-                      << " : " << double(superluU.nnz ()) / double(nnzU) << "x" << std::endl;
-          } else {
-            khU.set_supernodes (nsuper, supercols, etree);
+            std::cout << "   Number of nonzeros   : " << nnzU << " -> " << nnzU_merged
+                      << " : " << double(nnzU_merged) / double(nnzU) << "x" << std::endl;
+
+            // replace the supernodal info with the merged ones
+            nsuper = nsuper_merged;
+            supercols = supercols_merged;
+            etree = etree_merged;
           }
 
-          {
-            // generate supernodal graphs for DAG scheduling
-            auto supL = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, superluL.graph, nsuperL, superrowsL, supercolsL);
-            auto supU = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, superluU.graph, nsuperU, superrowsL, supercolsL);
-            //print_graph<host_graph_t> (nsuper2, supL);
-            //print_graph<host_graph_t> (nsuper2, supU);
+          // ==============================================
+          // save the supernodal info in the handle for U-solve
+          khL.set_supernodes (nsuper, supercols, etree);
+          khU.set_supernodes (nsuper, supercols, etree);
 
-            int **dagL = generate_supernodal_dag<host_graph_t> (nsuperL, supL, supU);
-            int **dagU = generate_supernodal_dag<host_graph_t> (nsuperU, supU, supL);
+          /*if (test == SUPERNODAL_DAG)*/ {
+            // generate supernodal graphs for DAG scheduling
+            auto supL = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, graphL, nsuper, supercols);
+            auto supU = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, graphU, nsuper, supercols);
+
+            int **dagL = generate_supernodal_dag<host_graph_t> (nsuper, supL, supU);
+            int **dagU = generate_supernodal_dag<host_graph_t> (nsuper, supU, supL);
             khL.set_supernodal_dag (dagL);
             khU.set_supernodal_dag (dagU);
           }
-          //print_crsmat<crsmat_t> (nrows, superluL);
-          //print_crsmat<crsmat_t> (nrows, superluU);
- 
+
           // ==============================================
           // do symbolic for L solve on the host
-          auto graphL = superluL.graph; // in_graph
           auto row_mapL = graphL.row_map;
           auto entriesL = graphL.entries;
-          auto valuesL  = superluL.values;
           timer.reset();
           std::cout << std::endl;
           sptrsv_symbolic (&khL, row_mapL, entriesL);
@@ -761,14 +837,41 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
           // ==============================================
           // do symbolic for U solve on the host
-          auto graphU = superluU.graph; // in_graph
           auto row_mapU = graphU.row_map;
           auto entriesU = graphU.entries;
-          auto valuesU  = superluU.values;
           timer.reset ();
           sptrsv_symbolic (&khU, row_mapU, entriesU);
           std::cout << " > Upper-TRI: " << std::endl;
           std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+
+          crsmat_t superluL, superluU;
+          host_crsmat_t superluL_host, superluU_host;
+          if (merge) {
+            // NOTE: we first load into CRS, and then merge (should be combined)
+
+            // ==============================================
+            // read in the numerical L-values into merged crs
+            bool invert_diag = false; // invert after merge
+            superluL_host = read_superlu_valuesL<host_crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, nrows, &L, graphL_host);
+            invert_diag = true;       // TODO: diagonals are always inverted
+            superluL = read_merged_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuper, supercols,
+                                                                                 true, invert_diag, invert_offdiag,
+                                                                                 superluL_host, graphL);
+
+            // ==============================================
+            // read in the numerical U-values into merged crs
+            invert_diag = false;     // invert after merge
+            superluU_host = read_superlu_valuesU<host_crsmat_t, host_graph_t> (invert_diag, nrows, &L, &U, graphU_host);
+            invert_diag = true;      // TODO: diagonals are always inverted
+            bool invert_offdiagU = false;  // TODO: offdiagonal iversion are not supported for U-solve
+            superluU = read_merged_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuper, supercols,
+                                                                                 false, invert_diag, invert_offdiagU,
+                                                                                 superluU_host, graphU);
+          } else {
+            bool invert_diag = true; // only, invert diag is supported for now
+            superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, nrows, &L, graphL);
+            superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, nrows, &L, &U, graphU);
+          }
 
           // ==============================================
           // setup some solver options
@@ -789,7 +892,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           // A*sol generates rhs: rhs is dense, use spmv
           host_scalar_view_t rhs_host("rhs_host", nrows);
           KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-          //for (int i = 0; i < nrows; i++) printf( "%.16e\n",rhs_host(i) );
 
           // ==============================================
           // apply forward-pivot to rhs on the host
@@ -804,17 +906,15 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           // ==============================================
           // do L solve
           timer.reset();
+          auto valuesL  = superluL.values;
           sptrsv_solve (&khL, row_mapL, entriesL, valuesL, sol, rhs);
           Kokkos::fence();
           std::cout << " > Lower-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
-          //Kokkos::deep_copy (tmp_host, rhs);
-          //printf( "y=[" );
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
-          //printf( "];\n" );
 
           // ==============================================
           // do U solve
+          auto valuesU  = superluU.values;
           sptrsv_solve (&khU, row_mapU, entriesU, valuesU, sol, rhs);
           Kokkos::fence ();
           std::cout << " > Upper-TRI: " << std::endl;
@@ -824,9 +924,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           Kokkos::deep_copy(tmp_host, rhs);
           // apply backward-pivot
           backwardP_supernode<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
-          //printf( "x=[" );
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
-          //printf( "];\n" );
 
 
           // ==============================================
@@ -904,16 +1001,21 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
         {
           // ==============================================
           // read SuperLU factor on the host (and copy to default host/device)
-          crsmat_t superluL, superluU;
-          std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
-          timer.reset();
           bool cusparse = true; // pad diagonal blocks with zeros
           bool invert_diag = false;
-          superluL = read_superlu_Lfactor<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, nrows, &L);
+          std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
+          timer.reset();
+          graph_t graphL;
+          crsmat_t superluL;
+          graphL = read_superlu_graphL<graph_t> (cusparse, merge, nrows, &L);
+          superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, nrows, &L, graphL);
           std::cout << "   Conversion Time for L: " << timer.seconds() << std::endl;
 
           timer.reset();
-          superluU = read_superlu_Ufactor<crsmat_t> (invert_diag, nrows, &L, &U);
+          graph_t graphU;
+          crsmat_t superluU;
+          graphU = read_superlu_graphU<graph_t> (nrows, &L, &U);
+          superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, nrows, &L, &U, graphU);
           std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
           //print_factor_superlu<scalar_t> (nrows, &L, &U, perm_r, perm_c);
 

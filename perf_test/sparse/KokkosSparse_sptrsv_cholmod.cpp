@@ -170,8 +170,10 @@ crsmat_t read_cholmod_factor(bool cusparse, bool invert_diag, cholmod_factor *L,
   bool invert_offdiag = false;
   bool unit_diag = false;
   bool ptr_by_column = false;
-  return read_supernodal_L<crsmat_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
-                                                unit_diag, n, nsuper, ptr_by_column, mb, nb, colptr, rowind, Lx);
+  auto graphL = read_supernodal_graphL<graph_t> (cusparse, merge,
+                                                 n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
+  return read_supernodal_valuesL<crsmat_t, graph_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
+                                                               unit_diag, n, nsuper, ptr_by_column, mb, nb, colptr, rowind, Lx, graphL);
 }
 
 /* ========================================================================================= */
