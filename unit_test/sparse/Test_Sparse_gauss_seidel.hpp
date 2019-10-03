@@ -324,6 +324,7 @@ void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_row_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
@@ -332,9 +333,13 @@ void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance = nnzPerRow / 4;
   crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numRows, nnzTotal, nnzVariance, bandwidth);
-  typedef KokkosSparse::Impl::RCM<KernelHandle, typename graph_t::row_map_type, typename graph_t::entries_type> rcm_t;
-  typename rcm_t::const_lno_row_view_t rowmap = A.graph.row_map;
-  rcm_t rcm(numRows, A.graph.row_map, A.graph.entries);
+  lno_row_view_t symRowmap;
+  lno_nnz_view_t symEntries;
+  KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
+    <typename graph_t::row_map_type, typename graph_t::entries_type, lno_row_view_t, lno_nnz_view_t, typename device::execution_space>
+    (numRows, A.graph.row_map, A.graph.entries, symRowmap, symEntries);
+  typedef KokkosSparse::Impl::RCM<KernelHandle, typename graph_t::row_map_type::non_const_type, typename graph_t::entries_type::non_const_type> rcm_t;
+  rcm_t rcm(numRows, symRowmap, symEntries);
   lno_nnz_view_t rcmOrder = rcm.rcm();
   //perm(i) = the node with timestamp i
   //make sure that perm is in fact a permutation matrix (contains each row exactly once)
@@ -357,8 +362,11 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type lno_row_view_t;
-  typedef typename graph_t::entries_type lno_nnz_view_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename graph_t::row_map_type const_lno_row_view_t;
+  typedef typename graph_t::entries_type const_lno_nnz_view_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_row_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
@@ -366,7 +374,19 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance = nnzPerRow / 4;
   crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numRows, nnzTotal, nnzVariance, bandwidth);
-  KokkosSparse::Impl::ShuffleReorder<KernelHandle, lno_row_view_t, lno_nnz_view_t> shuf(numRows, A.graph.row_map, A.graph.entries);
+  lno_row_view_t symRowmap;
+  lno_nnz_view_t symEntries;
+  KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
+    <const_lno_row_view_t, const_lno_nnz_view_t, lno_row_view_t, lno_nnz_view_t, typename device::execution_space>
+    (numRows, A.graph.row_map, A.graph.entries, symRowmap, symEntries);
+  /*
+  scalar_view_t Bscalar("Dummy symmetrized scalars", symEntries.extent(0));
+  Kokkos::deep_copy(Bscalar, 1.0);
+  crsMat_t B("symmetrized", numRows, numRows, symEntries.extent(0), Bscalar, symRowmap, symEntries);
+  KokkosKernels::Impl::write_kokkos_crst_matrix(B, "graph.mtx");
+  */
+  std::cout << "Test matrix has " << numRows << " rows and " << A.values.extent(0) << " nonzeros.\n";
+  KokkosSparse::Impl::ShuffleReorder<KernelHandle, lno_row_view_t, lno_nnz_view_t> shuf(numRows, symRowmap, symEntries);
   auto order = shuf.shuffledClusterOrder(8);
   auto orderHost = Kokkos::create_mirror_view(order);
   Kokkos::deep_copy(orderHost, order);

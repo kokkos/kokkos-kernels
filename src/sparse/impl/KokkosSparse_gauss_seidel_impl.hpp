@@ -1160,22 +1160,27 @@ namespace KokkosSparse{
         typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
         typedef typename HandleType::GraphColoringHandleType::color_view_t color_view_t;
         //compute the RCM ordering of the graph
-        nnz_lno_persistent_work_view_t clusterOrder;
+        nnz_lno_persistent_work_view_t vertClusters;
         auto clusterSize = gsHandler->get_cluster_size();
-        nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;
         switch(gsHandler->get_clustering_algo())
         {
           case CLUSTER_RCM:
           {
             RCM<HandleType, rowmap_t, colinds_t> rcm(num_rows, xadj, adj);
-            clusterOrder = rcm.rcm();
+            vertClusters = cm_cluster(clusterSize);
             break;
           }
-          case CLUSTER_DEFAULT:
           case CLUSTER_SHUFFLE:
           {
             ShuffleReorder<HandleType, rowmap_t, colinds_t> shuf(num_rows, xadj, adj);
-            clusterOrder = shuf.shuffledClusterOrder(clusterSize);
+            vertClusters = shuf.shuffledClusterOrder(clusterSize);
+            break;
+          }
+          case CLUSTER_DEFAULT:
+          case CLUSTER_QUICK:
+          {
+            QuickBFS quick(num_rows, xadj, adj);
+            vertClusters = quick.quickClustering(clusterSize);
             break;
           }
         }
@@ -1213,6 +1218,7 @@ namespace KokkosSparse{
         auto clusterNNZ = Kokkos::subview(clusterRowmap, numClusters);
         auto h_clusterNNZ = Kokkos::create_mirror_view(clusterNNZ);
         Kokkos::deep_copy(h_clusterNNZ, clusterNNZ );
+        std::cout << "Cluster graph has " << h_clusterNNZ() << " entries.\n";
         //can now allocate the entries of cluster graph
         EntriesView clusterEntries("GS cluster ", h_clusterNNZ());
         Kokkos::parallel_for(my_exec_space(0, nthreads), ClusterEntryFunctor(clusterRowmap, clusterEntries, denseClusterRow, xadj, adj, clusterOrder, clusterPerm, numClusters, clusterSize, num_rows, nthreads));
