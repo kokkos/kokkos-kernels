@@ -433,11 +433,9 @@ namespace Experimental {
 
 
   template <typename KernelHandle,
-            class BType,
             class XType>
   void sptrsv_solve(
       KernelHandle *handle, 
-      BType b,
       XType x)
   {
     auto crsmat = handle->get_sptrsv_handle ()->get_crsmat ();
@@ -446,7 +444,8 @@ namespace Experimental {
     auto row_map = graph.row_map;
     auto entries = graph.entries;
 
-    sptrsv_solve(handle, row_map, entries, values, b, x);
+    // the fifth argument (i.e., first x) is not used
+    sptrsv_solve(handle, row_map, entries, values, x, x);
   }
 #endif
 

@@ -64,8 +64,6 @@
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
-#include "cblas.h"
-#include "lapacke.h"
 #include "slu_ddefs.h"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
@@ -310,6 +308,7 @@ void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, i
 
 #endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 template<typename scalar_t>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, bool merge, bool invert_offdiag,
@@ -415,13 +414,16 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
           khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
 
+
           // ==============================================
           // do symbolic analysis (preprocssing, e.g., merging supernodes & inverting diagonal/offdiagonal blocks, scheduling based on graph/dag)
           sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, merge, L, U, etree);
 
+
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
           sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, merge, invert_offdiag, L, U);
+
 
           // ==============================================
           // Preaparing for the first solve
@@ -434,6 +436,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           host_scalar_view_t rhs_host("rhs_host", nrows);
           KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
 
+
           // ==============================================
           // apply forward-pivot to rhs on the host
           host_scalar_view_t tmp_host ("temp", nrows);
@@ -441,20 +444,19 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
           // copy rhs to the default host/device
           scalar_view_t rhs ("rhs", nrows);
-          scalar_view_t sol ("sol", nrows);
           Kokkos::deep_copy (rhs, tmp_host);
 
           // ==============================================
           // do L solve
           timer.reset();
-          sptrsv_solve (&khL, sol, rhs);
+          sptrsv_solve (&khL, rhs);
           Kokkos::fence();
           std::cout << " > Lower-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
 
           // ==============================================
           // do U solve
-          sptrsv_solve (&khU, sol, rhs);
+          sptrsv_solve (&khU, rhs);
           Kokkos::fence ();
           std::cout << " > Upper-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
@@ -480,8 +482,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             forwardP_supernode<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
 
-            sptrsv_solve (&khL, sol, rhs);
-            sptrsv_solve (&khU, sol, rhs);
+            sptrsv_solve (&khL, rhs);
+            sptrsv_solve (&khU, rhs);
 
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
@@ -501,7 +503,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           Kokkos::fence();
           for(int i = 0; i < loop; i++) {
             timer.reset();
-            sptrsv_solve (&khL, sol, rhs);
+            sptrsv_solve (&khL, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -521,7 +523,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           Kokkos::fence();
           for(int i = 0; i < loop; i++) {
             timer.reset();
-            sptrsv_solve (&khU, sol, rhs);
+            sptrsv_solve (&khU, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
