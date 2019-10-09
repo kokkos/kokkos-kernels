@@ -1,6 +1,6 @@
 ![Kokkos](https://avatars2.githubusercontent.com/u/10199860?s=200&v=4)
 
-# How to Setup CMake for Your Roject
+# How to Setup CMake for Your Project
 
 ## Kokkos Kernels Philosophy
 Kokkos Kernels provides a modern CMake style build system.
@@ -14,7 +14,7 @@ which would occur, e.g., if they were submodules.
 
 ## Finding Installed Packages
 
-CMake installs file called `<Package>Config.cmake` in the chosen install folder for a given `<PACKAGES>`.
+CMake installs file called `<Package>Config.cmake` in the chosen install folder for a given `<PACKAGE>`.
 For Kokkos, it installs `KokkosConfig.cmake` in `<prefix>/lib/cmake/Kokkos` and for Kokkos Kernels it installs a `KokkosKernelsConfig.cmake` in `<prefix>/lib/cmake/KokkosKernels`.
 
 For `find_package` calls in the `CMakeLists.txt` to succeed, you must point CMake to the correct installation folder.
