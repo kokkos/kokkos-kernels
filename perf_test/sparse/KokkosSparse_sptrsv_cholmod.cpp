@@ -67,6 +67,7 @@
 #include "lapacke.h"
 #include "cholmod.h"
 
+#define KOKKOSSPARSE_SPTRSV_CHOLMOD
 #include "KokkosSparse_sptrsv_aux.hpp"
 
 template<typename scalar_t>

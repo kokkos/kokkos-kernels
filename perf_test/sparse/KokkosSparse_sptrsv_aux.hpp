@@ -44,6 +44,7 @@
 #ifndef KOKKOSSPARSE_SPTRSV_AUX
 #define KOKKOSSPARSE_SPTRSV_AUX
 
+#ifdef KOKKOSSPARSE_SPTRSV_CHOLMOD
 class sort_indices {
    public:
      sort_indices(int* rowinds) : rowinds_(rowinds){}
@@ -733,135 +734,7 @@ read_merged_supernodes(int n, int nsuper, int *nb,
   crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
   return crsmat;
 }
-
-/* ========================================================================================= */
-template <typename host_graph_t, typename graph_t>
-host_graph_t
-generate_supernodal_graph(bool merged, int n, graph_t &graph, int nsuper, int *nb) {
-
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type    cols_view_t;
-
-  auto row_map = graph.row_map;
-  auto entries = graph.entries;
-
-  typename row_map_view_t::HostMirror row_map_host = Kokkos::create_mirror_view (row_map);
-  typename cols_view_t::HostMirror    entries_host = Kokkos::create_mirror_view (entries);
-  Kokkos::deep_copy (row_map_host, row_map);
-  Kokkos::deep_copy (entries_host, entries);
-
-  // map col/row to supernode
-  int *map = new int[n];
-  for (int s = 0; s < nsuper; s++) {
-    for (int j = nb[s]; j < nb[s+1]; j++) {
-      map[j] = s;
-    }
-  }
-
-  // count non-empty supernodal blocks
-  typedef typename host_graph_t::row_map_type::non_const_type row_map_view_host_t;
-  row_map_view_host_t hr ("rowmap_view", nsuper+1);
-
-  int *check = new int[nsuper];
-  for (int s = 0; s < nsuper; s++) {
-    check[s] = 0;
-  }
-  int nblocks = 0;
-  for (int s = 0; s < nsuper; s++) {
-    int j1 = nb[s];
-    for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
-      int s2 = map[entries_host (i)];
-      // supernodal blocks may not be filled with zeros
-      // so need to check by each row
-      // (also rowids are not sorted)
-      if (check[s2] == 0) {
-        check[s2] = 1;
-        nblocks ++;
-      }
-      i ++;
-    }
-    // reset check
-    for (int s2 = 0; s2 < nsuper; s2++) {
-      check[s2] = 0;
-    }
-  }
-
-  typedef typename host_graph_t::entries_type::non_const_type cols_view_host_t;
-  cols_view_host_t hc ("colmap_view", nblocks);
-
-  nblocks = 0;
-  hr (0) = 0;
-  for (int s = 0; s < nsuper; s++) {
-    int j1 = nb[s];
-    for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
-      int s2 = map[entries_host (i)];
-      // supernodal blocks may not be filled with zeros
-      // so need to check by each row
-      // (also rowids are not sorted)
-      if (check[s2] == 0) {
-        check[s2] = 1;
-        hc (nblocks) = s2;
-        nblocks ++;
-      }
-      i ++;
-    }
-    hr (s+1) = nblocks;
-    std::sort(&(hc (hr (s))), &(hc (hr (s+1))));
-    // reset check
-    for (int s2 = hr(s); s2 < hr(s+1); s2++) {
-      check[hc(s2)] = 0;
-    }
-  }
-  delete [] check;
-
-  //printf( " > supernodal graph:\n" );
-  //for (int s = 0; s < nsuper; s++) {
-  //  for (int i = hr(s); i < hr(s+1); i++) printf( "%d %d\n",s,hc(i) );
-  //}
-  //printf( "\n" );
-  host_graph_t static_graph (hc, hr);
-  return static_graph;
-}
-
-template <typename graph_t>
-int** generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
-
-  auto row_mapL = supL.row_map;
-  auto entriesL = supL.entries;
-  auto row_mapU = supU.row_map;
-  auto entriesU = supU.entries;
-
-  int *edges = new int[nsuper];
-  int **dag = (int**)malloc(nsuper * sizeof(int*));
-  for (int s = 0; s < nsuper; s ++) {
-    // count # of edges (search for first matching nonzero)
-    int nedges = 0;
-    int k1 = 1 + row_mapL (s); // skip diagonal
-    int k2 = 1 + row_mapU (s); // skip diagonal
-    for (; k1 < row_mapL (s+1); k1++) {
-       // look for match
-       while (entriesL (k1) > entriesU (k2) && k2 < row_mapU (s+1)) {
-         k2 ++;
-       }
-       if (entriesL (k1) <= entriesU (k2)) {
-         edges[nedges] = entriesL (k1);
-         nedges ++;
-         if (entriesL (k1) == entriesU (k2)) {
-           break;
-         }
-      }
-    }
-    // store the edges
-    dag[s] = new int [1+nedges];
-    dag[s][0] = nedges;
-    for (int k = 0; k < nedges; k++) {
-      dag[s][1+k] = edges[k];
-    }
-  }
-  delete[] edges;
-
-  return dag;
-}
+#endif
 
 
 /* ========================================================================================= */

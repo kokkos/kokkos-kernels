@@ -43,6 +43,11 @@
 
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
+
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#include "KokkosSparse_CrsMatrix.hpp"
+#endif
+
 #include <iostream>
 #include <string>
 
@@ -105,7 +110,15 @@ public:
   typedef Kokkos::View<int*, supercols_memory_space>       supercols_t;
   typedef Kokkos::View<int*, supercols_host_memory_space>  supercols_host_t;
 
-  typedef typename Kokkos::View<nnz_scalar_t*, memory_space> WorkspaceType;
+  typedef typename Kokkos::View<nnz_scalar_t*, memory_space> workspace_t;
+
+  //
+  typedef KokkosSparse::CrsMatrix<nnz_scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type> host_crsmat_t;
+  typedef KokkosSparse::CrsMatrix<nnz_scalar_t, nnz_lno_t,                execution_space, void, size_type> crsmat_t;
+
+  //
+  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
+  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
 #endif
 
 private:
@@ -142,7 +155,7 @@ private:
 
   // workspace size
   signed_integral_t lwork;
-  WorkspaceType work;
+  workspace_t work;
   // offset to workspace for each supernodal column
   supercols_host_t work_offset_host;
   supercols_t      work_offset;
@@ -157,6 +170,13 @@ private:
   supercols_t      diag_kernel_type;
   supercols_host_t kernel_type_host;
   supercols_t      kernel_type;
+
+  // graphs
+  host_graph_t graph_host;
+  graph_t graph;
+
+  // crsmat
+  crsmat_t crsmat;
 
   int num_streams;
   #if defined(KOKKOS_ENABLE_CUDA)
@@ -353,7 +373,7 @@ public:
   // workspace size
   void set_workspace_size (signed_integral_t lwork_) {
     this->lwork = lwork_;
-    this->work = WorkspaceType("work", lwork);
+    this->work = workspace_t("work", lwork);
   }
   signed_integral_t get_workspace_size () {
     return this->lwork;
@@ -361,7 +381,7 @@ public:
 
   // workspace
   KOKKOS_INLINE_FUNCTION
-  WorkspaceType get_workspace() const {
+  workspace_t get_workspace() const {
     return this->work;
   }
 
@@ -420,6 +440,32 @@ public:
   KOKKOS_INLINE_FUNCTION
   supercols_t get_diag_kernel_type () {
     return this->diag_kernel_type;
+  }
+
+  // graphs
+  void set_graph_host (host_graph_t graph_host_) {
+    this->graph_host = graph_host_;
+  }
+
+  host_graph_t get_graph_host () {
+    return this->graph_host;
+  }
+
+  void set_graph (graph_t graph_) {
+    this->graph = graph_;
+  }
+
+  graph_t get_graph () {
+    return this->graph;
+  }
+
+  // crsmat
+  void set_crsmat (crsmat_t crsmat_) {
+    this->crsmat = crsmat_;
+  }
+
+  crsmat_t get_crsmat () {
+    return this->crsmat;
   }
 
   #if defined(KOKKOS_ENABLE_CUDA)
