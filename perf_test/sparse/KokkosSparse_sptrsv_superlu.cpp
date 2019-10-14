@@ -70,12 +70,12 @@
 #include "metis.h"
 #endif
 
+// headers from Kokkos-kernel
+#include "KokkosSparse_sptrsv_supernode.hpp"
+#include "KokkosSparse_sptrsv_superlu.hpp"
+
 // auxiliary functions (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
-// headers from Kokkos-kernel
-#include "KokkosSparse_sptrsv_superlu.hpp"
-#include "KokkosSparse_sptrsv_supernode.hpp"
-
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -119,7 +119,6 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
   //}
   //printf( "];\n" );
 
-#if 1
   /* Lower-triangular matrix */
   printf( " L = [\n ");
   for (int k = 0; k <= Lstore->nsuper; k++)
@@ -152,9 +151,7 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
     }
   }
   printf( "];\n ");
-#endif
 
-#if 0
   /* Upper-triangular matrix */
   NCformat *Ustore = (NCformat*)(U->Store);
   double *Uval = (double*)(Ustore->nzval);
@@ -186,7 +183,6 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
     }
   }
   printf( "];\n" );
-#endif
 }
 
 
@@ -548,15 +544,15 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           timer.reset();
           graph_t graphL;
           crsmat_t superluL;
-          graphL = read_superlu_graphL<graph_t> (cusparse, merge, nrows, &L);
-          superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, nrows, &L, graphL);
+          graphL = read_superlu_graphL<graph_t> (cusparse, merge, &L);
+          superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
           std::cout << "   Conversion Time for L: " << timer.seconds() << std::endl;
 
           timer.reset();
           graph_t graphU;
           crsmat_t superluU;
-          graphU = read_superlu_graphU<graph_t> (nrows, &L, &U);
-          superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, nrows, &L, &U, graphU);
+          graphU = read_superlu_graphU<graph_t> (&L, &U);
+          superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
           std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
           //print_factor_superlu<scalar_t> (nrows, &L, &U, perm_r, perm_c);
 

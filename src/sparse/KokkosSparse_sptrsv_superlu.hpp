@@ -53,7 +53,7 @@
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 #include "slu_ddefs.h"
-#endif
+
 #include "KokkosSparse_sptrsv_supernode.hpp"
 
 namespace KokkosSparse {
@@ -65,11 +65,12 @@ namespace Experimental {
 
 /* ========================================================================================= */
 template <typename graph_t>
-graph_t read_superlu_graphL(bool cusparse, bool merge, int n, SuperMatrix *L) {
+graph_t read_superlu_graphL(bool cusparse, bool merge, SuperMatrix *L) {
 
   /* ---------------------------------------------------------------------- */
   /* get inputs */
   /* ---------------------------------------------------------------------- */
+  int n = L->nrow;
   SCformat *Lstore = (SCformat*)(L->Store);
 
   int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
@@ -86,7 +87,7 @@ graph_t read_superlu_graphL(bool cusparse, bool merge, int n, SuperMatrix *L) {
 
 /* ========================================================================================= */
 template <typename graph_t>
-graph_t read_superlu_graphU(int n, SuperMatrix *L,  SuperMatrix *U) {
+graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
@@ -95,6 +96,7 @@ graph_t read_superlu_graphU(int n, SuperMatrix *L,  SuperMatrix *U) {
   NCformat *Ustore = (NCformat*)(U->Store);
 
   /* create a map from row id to supernode id */
+  int n = L->nrow;
   int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
   int *nb = Lstore->sup_to_col;
   int *colptrU = Ustore->colptr;
@@ -233,7 +235,7 @@ graph_t read_superlu_graphU(int n, SuperMatrix *L,  SuperMatrix *U) {
 
 /* ========================================================================================= */
 template <typename crsmat_t, typename graph_t>
-crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert_offdiag, int n, SuperMatrix *L, graph_t &static_graph) {
+crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert_offdiag, SuperMatrix *L, graph_t &static_graph) {
 
   typedef typename crsmat_t::values_type::non_const_type values_view_t;
   typedef typename values_view_t::value_type scalar_t;
@@ -244,6 +246,7 @@ crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool 
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
 
+  int n = L->nrow;
   int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
   int * mb = Lstore->rowind_colptr;
   int * nb = Lstore->sup_to_col;
@@ -259,7 +262,7 @@ crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool 
 
 /* ========================================================================================= */
 template <typename crsmat_t, typename graph_t>
-crsmat_t read_superlu_valuesU(bool invert_diag, int n, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
+crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
@@ -274,7 +277,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, int n, SuperMatrix *L,  SuperMat
   NCformat *Ustore = (NCformat*)(U->Store);
   double *Uval = (double*)(Ustore->nzval);
 
-  /* create a map from row id to supernode id */
+  int n = L->nrow;
   int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
   int *nb = Lstore->sup_to_col;
   int *mb = Lstore->rowind_colptr;
@@ -282,6 +285,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, int n, SuperMatrix *L,  SuperMat
   int *colptrU = Ustore->colptr;
   int *rowindU = Ustore->rowind;
 
+  /* create a map from row id to supernode id */
   int *map = new int[n];
   int supid = 0;
   for (int k = 0; k < nsuper; k++)
@@ -385,5 +389,6 @@ crsmat_t read_superlu_valuesU(bool invert_diag, int n, SuperMatrix *L,  SuperMat
 } // namespace Experimental
 } // namespace KokkosSparse
 
+#endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 #endif // KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 

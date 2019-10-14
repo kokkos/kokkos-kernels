@@ -68,7 +68,20 @@
 #include "cholmod.h"
 
 #define KOKKOSSPARSE_SPTRSV_CHOLMOD
+// headers from Kokkos-kernel
+#include "KokkosSparse_sptrsv_supernode.hpp"
+#include "KokkosSparse_sptrsv_cholmod.hpp"
+
+// auxiliary functions (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
+
+using namespace KokkosSparse;
+using namespace KokkosSparse::Experimental;
+using namespace KokkosKernels;
+using namespace KokkosKernels::Experimental;
+
+enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
+
 
 template<typename scalar_t>
 void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
@@ -144,52 +157,6 @@ void print_factor_cholmod(crsmat_t *L) {
   }
 }
 
-/* ========================================================================================= */
-template <typename crsmat_t, typename host_crsmat_t>
-crsmat_t read_cholmod_factor(bool cusparse, bool invert_diag, cholmod_factor *L, cholmod_common *cm) {
-
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-
-  /* ---------------------------------------------------------------------- */
-  /* get inputs */
-  /* ---------------------------------------------------------------------- */
-  int n = L->n;
-  int nsuper = L->nsuper;     // # of supernodal columns
-  int *mb = (int*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
-  int *nb = (int*)(L->super);
-  int *colptr = (int*)(L->px);      // colptr
-  int *rowind = (int*)(L->s);       // rowind
-  scalar_t *Lx = (scalar_t*)(L->x); // data
-
-  bool merge = false;
-  bool invert_offdiag = false;
-  bool unit_diag = false;
-  bool ptr_by_column = false;
-  auto graphL = read_supernodal_graphL<graph_t> (cusparse, merge,
-                                                 n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
-  return read_supernodal_valuesL<crsmat_t, graph_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
-                                                               unit_diag, n, nsuper, ptr_by_column, mb, nb, colptr, rowind, Lx, graphL);
-}
-
-/* ========================================================================================= */
-void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
-  cholmod_factor *L;
-  L = cholmod_analyze (A, cm);
-
-  int n = L->n;
-  int nsuper = L->nsuper;      // # of supernodal columns
-  int *Iwork = (int*)(cm->Iwork);
-  int *Parent = Iwork + (2*((size_t) n)); /* size nfsuper <= n [ */
-
-  *etree = new int [nsuper];
-  for (int ii = 0 ; ii < nsuper; ii++) (*etree)[ii] = Parent[ii];
-}
 
 /* ========================================================================================= */
 template<typename scalar_t>
@@ -248,13 +215,6 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_t *nzvals, 
 
 #endif //  KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 
-using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
-using namespace KokkosKernels;
-using namespace KokkosKernels::Experimental;
-
-enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
-
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 template<typename scalar_t>
@@ -274,7 +234,11 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
   //
   typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t,      execution_space, void, size_type> crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t,      execution_space, void, size_type>      crsmat_t;
+
+  //
+  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
 
   //
   typedef Kokkos::View< scalar_t*, host_memory_space > host_scalar_view_t;
@@ -336,23 +300,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
         case SUPERNODAL_ETREE:
         {
           // ==============================================
-          // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
-          timer.reset();
-          std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
-          crsmat_t cholmodMtx;
-          bool cusparse = false;
-          bool invert_diag = true; // NOTE: always invert diagonal for now
-          cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t> (cusparse, invert_diag, L, &cm);
-          std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
-
-          // crsMatrix (storing L-factor) on the default host/device
-          auto graph = cholmodMtx.graph; // in_graph
-          auto row_map = graph.row_map;
-          auto entries = graph.entries;
-          auto values  = cholmodMtx.values;
-
-          // ==============================================
-          // create an handle
+          // Create handles for U and U^T solves
           if (test == SUPERNODAL_NAIVE) {
             std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
@@ -364,31 +312,12 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           }
 
           // ==============================================
-          // setup supnodal info
-          int nsuper = (int)(L->nsuper);
-          int *supercols = (int*)(L->super);
-          khL.set_supernodes (nsuper, supercols, etree);
-          khU.set_supernodes (nsuper, supercols, etree);
- 
-          // ==============================================
-          // set some solver options
-          // NOTE: not sure where to set this?
-          khL.set_invert_offdiagonal(false);
-          khU.set_invert_offdiagonal(false);
+          // Do symbolic analysis
+          sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, L, &cm, etree);
 
           // ==============================================
-          // symbolic for L-solve on the host
-          timer.reset();
-          sptrsv_symbolic (&khL, row_map, entries);
-          std::cout << " > Lower-TRI: " << std::endl;
-          std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
-
-          // ==============================================
-          // symbolic for L^T-solve on the host
-          timer.reset ();
-          std::cout << " > Upper-TRI: " << std::endl;
-          sptrsv_symbolic (&khU, row_map, entries);
-          std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+          // Do numerical compute
+          sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, L, &cm);
 
           // ==============================================
           // Create the known solution and set to all 1's ** on host **
@@ -409,25 +338,21 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // ==============================================
           // copy rhs to the default host/device
           scalar_view_t rhs ("rhs", nrows);
-          scalar_view_t sol ("sol", nrows);
           Kokkos::deep_copy (rhs, tmp_host);
 
           // ==============================================
           // do L solve
          // numeric (only rhs is modified) on the default device/host space
           timer.reset();
-           sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
+           sptrsv_solve (&khL, rhs);
           Kokkos::fence();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
-          //Kokkos::deep_copy (tmp_host, rhs);
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %e\n",ii,tmp_host(ii) );
-          //printf( "\n" );
 
           // ==============================================
           // do L^T solve
           // numeric (only rhs is modified) on the default device/host space
           timer.reset();
-           sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
+           sptrsv_solve (&khU, rhs);
           Kokkos::fence ();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
  
@@ -437,7 +362,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // > copy solution to host
           Kokkos::deep_copy(tmp_host, rhs);
           backwardP_supernode<scalar_t>(nrows, perm, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
-          //for (int ii=0; ii<nrows; ii++) printf( " %d %e\n",ii,tmp_host(ii) );
 
 
           // ==============================================
@@ -453,8 +377,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
             forwardP_supernode<scalar_t> (nrows, perm, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
-             sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
-             sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
+             sptrsv_solve (&khL, rhs);
+             sptrsv_solve (&khU, rhs);
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
             backwardP_supernode<scalar_t>(nrows, perm, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
@@ -473,7 +397,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           Kokkos::fence();
           for(int i=0;i<loop;i++) {
             timer.reset();
-            sptrsv_solve (&khL, row_map, entries, values, sol, rhs);
+            sptrsv_solve (&khL, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -493,7 +417,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           Kokkos::fence();
           for(int i=0;i<loop;i++) {
             timer.reset();
-            sptrsv_solve (&khU, row_map, entries, values, sol, rhs);
+            sptrsv_solve (&khU, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -514,10 +438,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
           timer.reset();
           std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
-          crsmat_t cholmodMtx;
           bool cusparse = true;
           bool invert_diag = false;
-          cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t> (cusparse, invert_diag, L, &cm);
+          auto graph = read_cholmod_graphL<graph_t>(cusparse, L, &cm);
+          auto cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t, graph_t> (cusparse, invert_diag, L, &cm, graph);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
 
           if (!check_cusparse(Mtx, cholmodMtx, cholmodMtx, perm, perm, tol, loop)) {

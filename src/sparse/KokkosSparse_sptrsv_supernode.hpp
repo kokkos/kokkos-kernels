@@ -51,6 +51,7 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
+// TODO: need to protect them with TPL
 #include "cblas.h"
 #include "lapacke.h"
 
@@ -267,6 +268,7 @@ void merge_supernodal_graph(int n, int *p_nsuper, int *nb,
 
   // ---------------------------------------------------------------
   // looking for supernodes to merge (i.e., dense diagonal blocks)
+  // TODO: should be based on supernodal graph, instead of by elements
   double tol = 0.8;
   int nsuper2 = 0;
   // map the first supernode
