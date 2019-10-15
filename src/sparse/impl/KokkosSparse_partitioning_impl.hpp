@@ -684,7 +684,7 @@ struct FastClustering
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 
-  QuickBFS(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
+  FastClustering(size_type numRows_, const_lno_row_view_t& rowmap_, const_lno_nnz_view_t& colinds_)
     : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
   {}
 
@@ -701,9 +701,9 @@ struct FastClustering
   struct EqualizeTag {};
   struct RefineTag {};
 
-  struct QuickBFSFunctor
+  struct FastClusteringFunctor
   {
-    QuickBFSFunctor(nnz_view_t vertClusters_, const_lno_row_view_t& row_map_, const_lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
+    FastClusteringFunctor(nnz_view_t vertClusters_, const_lno_row_view_t& row_map_, const_lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
       : vertClusters(vertClusters_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), randPool(randPool_), nodeLocks(numRows)
     {
       numClusters = (numRows + clusterSize - 1) / clusterSize;
@@ -951,19 +951,51 @@ struct FastClustering
   {
     nnz_view_t vertClusters = nnz_view_t("Vertex clusters", numRows);
     RandPool randPool(0xDEADBEEF);
-    QuickBFSFunctor funct(vertClusters, rowmap, entries, clusterSize, randPool);
+    FastClusteringFunctor funct(vertClusters, rowmap, entries, clusterSize, randPool);
     nnz_lno_t numClusters = funct.numClusters;
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitTag>(0, numClusters), funct);
+    MyExecSpace().fence();
     size_type numUpdates;
     do
     {
       Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, FirstFillTag>(0, numRows), funct, numUpdates);
+      MyExecSpace().fence();
     }
     while(numUpdates > 0);
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, IsolatedCleanupTag>(0, numRows), funct);
+    MyExecSpace().fence();
     for(int i = 0; i < 4; i++)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, EqualizeTag>(0, numRows), funct);
+      MyExecSpace().fence();
+    }
+    //Finally, run a few sweeps of refinement
+    //note: refinement is the only tag in FastClusteringFunctor that uses
+    //a team policy - if another tag taking a team_member are added,
+    //must make a new functor (so that shared memory calculation is correct)
+    {
+      int teamSize;
+      int vectorSize;
+      typedef Kokkos::TeamPolicy<RefineTag, MyExecSpace> RefinePolicy;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+      int maxTeamSize = RefinePolicy::team_size_max(funct);
+      get_suggested_vector_team_size<int, MyExecSpace>(
+          maxTeamSize,
+          vectorSize,
+          teamSize,
+          numRows, colinds.extent(0));
+#else
+      get_suggested_vector_size<int, MyExecSpace>(
+          vectorSize,
+          numRows, colinds.extent(0));
+      teamSize = get_suggested_team_size<RefinePolicy>(funct, vectorSize, 0, sizeof(FastClusteringFunctor::RefineSharedData));
+#endif
+      RefinePolicy refinePol = RefinePolicy((colinds.extent(0) + teamSize - 1) / teamSize, teamSize, vectorSize).(0, Kokkos::PerThread(sizeof(FastClusteringFunctor::RefineSharedData)));
+      for(int i = 0; i < 2; i++)
+      {
+        Kokkos::parallel_for(refinePol, funct);
+        MyExecSpace().fence();
+      }
     }
     return vertClusters;
   }

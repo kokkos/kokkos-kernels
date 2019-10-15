@@ -233,6 +233,22 @@ int get_suggested_team_size(Functor& f, int vector_size)
 
 #endif //ifdef KOKKOS_ENABLE_DEPRECATED_CODE ... else
 
+template<typename team_policy_t, typename Functor, typename ParallelTag = Kokkos::ParallelForTag>
+int get_suggested_team_size(Functor& f, int vector_size, size_t sharedPerTeam, size_t sharedPerThread)
+{
+#ifdef KOKKOS_ENABLE_CUDA
+  if(std::is_same<typename team_policy_t::traits::execution_space, Kokkos::Cuda>::value)
+  {
+    team_policy_t temp = team_policy_t(1, 1, vector_size).
+      set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam), Kokkos::PerThread(sharedPerThread));
+    return temp.team_size_recommended(f, ParallelTag());
+  }
+  else
+#endif
+  {
+    return 1;
+  }
+}
 
 template <typename idx_array_type,
           typename idx_edge_array_type,
