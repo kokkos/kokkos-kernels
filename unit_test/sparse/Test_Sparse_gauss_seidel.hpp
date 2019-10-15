@@ -287,7 +287,7 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
     output << "Testing cluster size = " << clusterSize << '\n';
 #endif
     KernelHandle kh;
-    kh.create_gs_handle(KokkosSparse::CLUSTER_SHUFFLE, clusterSize);
+    kh.create_gs_handle(KokkosSparse::CLUSTER_FAST, clusterSize);
     //only need to do G-S setup (symbolic/numeric) once
     Kokkos::Impl::Timer timer;
     KokkosSparse::Experimental::gauss_seidel_symbolic<KernelHandle, lno_view_t, lno_nnz_view_t>
@@ -386,18 +386,39 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   KokkosKernels::Impl::write_kokkos_crst_matrix(B, "graph.mtx");
   */
   std::cout << "Test matrix has " << numRows << " rows and " << A.values.extent(0) << " nonzeros.\n";
-  KokkosSparse::Impl::ShuffleReorder<KernelHandle, lno_row_view_t, lno_nnz_view_t> shuf(numRows, symRowmap, symEntries);
-  auto order = shuf.shuffledClusterOrder(8);
-  auto orderHost = Kokkos::create_mirror_view(order);
-  Kokkos::deep_copy(orderHost, order);
-  std::set<lno_t> rowSet;
-  for(lno_t i = 0; i < numRows; i++)
-    rowSet.insert(orderHost(i));
-  if((lno_t) rowSet.size() != numRows)
+  KokkosSparse::Impl::FastClustering<KernelHandle, lno_row_view_t, lno_nnz_view_t> fast(numRows, symRowmap, symEntries);
+  const lno_t clusterSize = 8;
+  auto vertClusters = fast.run(clusterSize);
+  //validate results: make sure cluster labels are in bounds, and that the number of clusters is correct
+  auto vertClustersHost = Kokkos::create_mirror_view(vertClusters);
+  Kokkos::deep_copy(vertClustersHost, vertClusters);
+  lno_t numClusters = (numRows + clusterSize - 1) / clusterSize;
+
   {
-    std::cerr << "Only got back " << rowSet.size() << " unique row IDs!\n";
-    return;
+    std::vector<std::vector<lno_t>> clusters(numClusters);
+    for(lno_t i = 0; i < numRows; i++)
+    {
+      clusters[vertClustersHost(i)].push_back(i);
+    }
+    std::cout << "Raw clusters:\n";
+    for(lno_t i = 0; i < numClusters; i++)
+    {
+      std::cout << i << ": ";
+      for(auto v : clusters[i])
+        std::cout << v << ' ';
+      std::cout << '\n';
+    }
+    std::cout << '\n';
   }
+
+  std::set<lno_t> uniqueClusterIDs;
+  for(lno_t i = 0; i < numRows; i++)
+  {
+    EXPECT_TRUE(vertClustersHost(i) >= 0);
+    EXPECT_TRUE(vertClustersHost(i) < numClusters);
+    uniqueClusterIDs.insert(vertClustersHost(i));
+  }
+  EXPECT_TRUE(uniqueClusterIDs.size() == numClusters);
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
