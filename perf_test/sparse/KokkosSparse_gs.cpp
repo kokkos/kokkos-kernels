@@ -94,7 +94,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
   //initial LHS is 0
   scalar_view_t x("x", nrows);
   //Data to dump to CSV
-  //cluster size sequence: 1, 2, 3, 5, 8, 12, 18, ... until there are between 64 and 96 clusters.
+  //cluster size sequence: 1, 2, 3, 5, 8, 12, 18, ... up to 1000, or < 96 clusters (whichever comes first)
   std::vector<int> clusterSizes;
   //how long symbolic/numeric phases take (the graph reuse case isn't that interesting since numeric doesn't do much)
   std::vector<double> symbolicTimes;
@@ -104,19 +104,26 @@ void runGS(string matrixPath, string devName, bool symmetric)
   //the initial residual norm (for x = 0) is bnorm
   double bnorm = KokkosBlas::nrm2(b);
   Kokkos::Timer timer;
-  for(int clusterSize = 1; clusterSize <= nrows / 64; clusterSize = ceil(1.5 * clusterSize))
+  clusterSizes.push_back(1);
+  clusterSizes.push_back(16);
+  //for(int clusterSize = 1; clusterSize <= nrows / 64 && clusterSize <= 1000; clusterSize = ceil(1.5 * clusterSize))
+  //  clusterSizes.push_back(clusterSize);
+  for(int clusterSize : clusterSizes)
   {
-    clusterSizes.push_back(clusterSize);
     //cluster size of 1 is standard multicolor GS
     if(clusterSize == 1)
     {
+      std::cout << "\n\n***** RUNNING POINT COLORING SGS\n";
       //this constructor is for point coloring
       kh.create_gs_handle(KokkosSparse::GS_DEFAULT);
     }
     else
     {
+      std::cout << "\n\n***** RUNNING CLUSTER SGS, cluster size = " << clusterSize << "\n";
       //this constructor is for cluster (block) coloring
-      kh.create_gs_handle(KokkosSparse::CLUSTER_DEFAULT, clusterSize);
+      kh.create_gs_handle(KokkosSparse::CLUSTER_CUTHILL_MCKEE, clusterSize);
+      //kh.create_gs_handle(KokkosSparse::CLUSTER_DEFAULT, clusterSize);
+      //kh.create_gs_handle(KokkosSparse::CLUSTER_DO_NOTHING, clusterSize);
     }
     //zero out LHS initially
     KokkosBlas::fill(x, 0);
@@ -124,15 +131,18 @@ void runGS(string matrixPath, string devName, bool symmetric)
     KokkosSparse::Experimental::gauss_seidel_symbolic//<KernelHandle, lno_view_t, lno_nnz_view_t>
       (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, symmetric);
     symbolicTimes.push_back(timer.seconds());
+    std::cout << "\n*** symbolic time: " << symbolicTimes.back() << '\n';
     timer.reset();
     KokkosSparse::Experimental::gauss_seidel_numeric//<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t>
       (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, symmetric);
     numericTimes.push_back(timer.seconds());
+    std::cout << "\n*** numeric time: " << numericTimes.back() << '\n';
     timer.reset();
     KokkosSparse::Experimental::symmetric_gauss_seidel_apply
       //<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
       (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 1.0, 5);
     applyTimes.push_back(timer.seconds());
+    std::cout << "\n*** apply time: " << applyTimes.back() << '\n';
     //Now, compute the 2-norm of residual 
     scalar_view_t res("Ax-b", nrows);
     Kokkos::deep_copy(res, b);

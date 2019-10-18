@@ -624,7 +624,6 @@ struct RCM
     nnz_lno_t periph = find_peripheral();
     //run Cuthill-McKee BFS from periph
     auto ordering = parallel_cuthill_mckee(periph);
-    std::cout << "RCM final number of intra-cluster entries = " << countBlockDiagEntries(ordering, 8) << '\n';
     return ordering;
   }
 
@@ -732,7 +731,7 @@ struct FastClustering
         for(size_type adj = row_map(i); adj < row_map(i + 1); adj++)
         {
           nnz_lno_t neiCluster = vertClusters(col_inds(adj));
-          if(neiCluster != numClusters && clusterCounts(neiCluster) < clusterSize + 2)
+          if(neiCluster != numClusters) //&& clusterCounts(neiCluster) < clusterSize)
           {
             vertClusters(i) = neiCluster;
             Kokkos::atomic_increment(&clusterCounts(neiCluster));
@@ -952,27 +951,36 @@ struct FastClustering
     nnz_view_t vertClusters = nnz_view_t("Vertex clusters", numRows);
     FastClusteringFunctor funct(vertClusters, rowmap, colinds, clusterSize, randPool);
     nnz_lno_t numClusters = funct.numClusters;
+    Kokkos::Impl::Timer globalTimer;
+    Kokkos::Impl::Timer timer;
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitTag>(0, numClusters), funct);
     MyExecSpace().fence();
+    std::cout << "Setting roots: " << timer.seconds() << '\n';
+    timer.reset();
     size_type numUpdates;
+    int iters = 0;
     do
     {
       Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, FirstFillTag>(0, numRows), funct, numUpdates);
       MyExecSpace().fence();
+      iters++;
     }
     while(numUpdates > 0);
-    Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, IsolatedCleanupTag>(0, numRows), funct);
-    MyExecSpace().fence();
-    for(int i = 0; i < 2; i++)
+    std::cout << "BFS filling for " << iters << " iterations: " << timer.seconds() << '\n';
+    timer.reset();
+    //Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, IsolatedCleanupTag>(0, numRows), funct);
+    //MyExecSpace().fence();
+    for(int i = 0; i < 20; i++)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, EqualizeTag>(0, numRows), funct);
       MyExecSpace().fence();
     }
+    std::cout << "Size equalizing for 4 iterations: " << timer.seconds() << '\n';
+    timer.reset();
     //Finally, run a few sweeps of refinement
     //note: refinement is the only tag in FastClusteringFunctor that uses
     //a team policy - if another tag taking a team_member are added,
     //must make a new functor (so that shared memory calculation is correct)
-    /*
     {
       int teamSize = 0;
       int vectorSize = 0;
@@ -991,13 +999,14 @@ struct FastClustering
       teamSize = KokkosKernels::Impl::get_suggested_team_size<RefinePolicy>(funct, vectorSize, 0, sizeof(typename FastClusteringFunctor::RefineSharedData));
 #endif
       RefinePolicy refinePol = RefinePolicy((colinds.extent(0) + teamSize - 1) / teamSize, teamSize, vectorSize).set_scratch_size(0, Kokkos::PerThread(sizeof(typename FastClusteringFunctor::RefineSharedData)));
-      for(int i = 0; i < 100; i++)
+      for(int i = 0; i < 20; i++)
       {
         Kokkos::parallel_for(refinePol, funct);
         MyExecSpace().fence();
       }
     }
-    */
+    std::cout << "\n\n****Refining boundaries for 1 iterations: " << timer.seconds() << '\n';
+    std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
     return vertClusters;
   }
 };

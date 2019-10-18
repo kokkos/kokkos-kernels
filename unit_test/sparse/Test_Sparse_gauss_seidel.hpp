@@ -385,7 +385,7 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   crsMat_t B("symmetrized", numRows, numRows, symEntries.extent(0), Bscalar, symRowmap, symEntries);
   KokkosKernels::Impl::write_kokkos_crst_matrix(B, "graph.mtx");
   */
-  std::cout << "Test matrix has " << numRows << " rows and " << A.values.extent(0) << " nonzeros.\n";
+  //std::cout << "Test matrix has " << numRows << " rows and " << A.values.extent(0) << " nonzeros.\n";
   KokkosSparse::Impl::FastClustering<KernelHandle, lno_row_view_t, lno_nnz_view_t> fast(numRows, symRowmap, symEntries);
   const lno_t clusterSize = 8;
   auto vertClusters = fast.run(clusterSize);
@@ -394,6 +394,7 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   Kokkos::deep_copy(vertClustersHost, vertClusters);
   lno_t numClusters = (numRows + clusterSize - 1) / clusterSize;
 
+  /*
   {
     std::vector<std::vector<lno_t>> clusters(numClusters);
     for(lno_t i = 0; i < numRows; i++)
@@ -410,6 +411,7 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
     }
     std::cout << '\n';
   }
+  */
 
   std::set<lno_t> uniqueClusterIDs;
   for(lno_t i = 0; i < numRows; i++)
@@ -429,7 +431,7 @@ TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## 
   test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
 } \
 TEST_F( TestCategory, sparse ## _ ## greedy_partition ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_greedy_partition<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
+  test_greedy_partition<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 100, 2000); \
 } \
 TEST_F( TestCategory, sparse ## _ ## cluster_sgs ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_cluster_sgs<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
