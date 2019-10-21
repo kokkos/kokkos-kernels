@@ -1023,18 +1023,21 @@ int read_mtx (
   {
     if(!std::is_floating_point<scalar_t>::value)
       throw std::runtime_error("scalar_t in read_mtx() incompatible with float or double typed MatrixMarket file.");
-    mtx_field = REAL;
+    else
+      mtx_field = REAL;
   }
   else if (fline.find("complex") != std::string::npos){
     if(!(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
           std::is_same<scalar_t, Kokkos::complex<double>>::value))
       throw std::runtime_error("scalar_t in read_mtx() incompatible with complex-typed MatrixMarket file.");
-    mtx_field = COMPLEX;
+    else
+      mtx_field = COMPLEX;
   }
   else if (fline.find("integer") != std::string::npos){
-    if(!std::is_integral<scalar_t>::value)
+    if(std::is_integral<scalar_t>::value)
+      mtx_field = INTEGER;
+    else
       throw std::runtime_error("scalar_t in read_mtx() incompatible with integer-typed MatrixMarket file.");
-    mtx_field = INTEGER;
   }
   else if (fline.find("pattern") != std::string::npos){
     mtx_field = PATTERN;
