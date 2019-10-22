@@ -121,8 +121,8 @@ void runGS(string matrixPath, string devName, bool symmetric)
     {
       std::cout << "\n\n***** RUNNING CLUSTER SGS, cluster size = " << clusterSize << "\n";
       //this constructor is for cluster (block) coloring
-      kh.create_gs_handle(KokkosSparse::CLUSTER_CUTHILL_MCKEE, clusterSize);
-      //kh.create_gs_handle(KokkosSparse::CLUSTER_DEFAULT, clusterSize);
+      //kh.create_gs_handle(KokkosSparse::CLUSTER_CUTHILL_MCKEE, clusterSize);
+      kh.create_gs_handle(KokkosSparse::CLUSTER_DEFAULT, clusterSize);
       //kh.create_gs_handle(KokkosSparse::CLUSTER_DO_NOTHING, clusterSize);
     }
     //zero out LHS initially

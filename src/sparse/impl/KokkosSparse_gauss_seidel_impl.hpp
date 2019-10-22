@@ -1560,25 +1560,17 @@ namespace KokkosSparse{
           }
           if(finalPass)
           {
-            std::cout << "Final lcount for cluster row " << i << "(point row " << row << "): " << lcount << '\n';
-            std::cout << "Row " << row << " contributes " << rowEntries << " entries to the cluster graph.\n";
-            std::cout << "Note: i = " << i << " and this cluster ranges from " << clusterStart << " to " << clusterEnd << '\n';
             //if this is the last row in the cluster, update the upper bound in clusterRowmap
             if(i == clusterStart)
             {
-              //std::cout << "Row " << row << " is the last one in cluster " << cluster << ", so setting the rowmap entry for cluster to " << lcount << '\n';
-              //std::cout <<  "***Setting rowmap entry " << cluster << " to " << lcount << '\n';
               clusterRowmap(cluster) = lcount;
             }
-            //std::cout << "Cluster entry offset for row " << row << " in cluster " << cluster << " is " << lcount << '\n';
-            //std::cout << "Row has " <<  rowEntries << " entries present.\n";
             nnz_lno_t clusterEdge = lcount;
             //populate clusterEntries for these edges
             for(size_type j = rowStart; j < rowEnd; j++)
             {
               if(edgeMask.test(j))
               {
-                //std::cout << "   ***Inserting edge " << cluster << " <-> " << vertClusters(colinds(j)) << " at offset " << clusterEdge << '\n';
                 clusterEntries(clusterEdge++) = vertClusters(colinds(j));
               }
             }
@@ -1588,8 +1580,6 @@ namespace KokkosSparse{
           if(i == numRows - 1 && finalPass)
           {
             //on the very last row, set the last entry of the cluster rowmap
-            //std::cout << "Row " << row << " is the last one in cluster " << cluster << ", so setting the rowmap entry for cluster to " << lcount << '\n';
-            std::cout << "Final rowmap entry: " << lcount << " should match " << clusterEntries.extent(0) << '\n';
             clusterRowmap(clusterRowmap.extent(0) - 1) = lcount;
           }
         }
@@ -1649,7 +1639,7 @@ namespace KokkosSparse{
 #endif
         typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
         typedef nnz_lno_persistent_work_view_t nnz_view_t;
-        typedef Kokkos::View<nnz_lno_t, typename nnz_view_t::memory_space> single_view_t;
+        //typedef Kokkos::View<nnz_lno_t, typename nnz_view_t::memory_space> single_view_t;
         //compute the RCM ordering of the graph
         nnz_lno_t clusterSize = gsHandler->get_cluster_size();
         nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;

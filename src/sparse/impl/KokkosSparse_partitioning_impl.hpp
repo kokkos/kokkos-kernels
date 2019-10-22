@@ -647,6 +647,7 @@ struct RCM
   }
 };
 
+/*
 template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
 struct FastClustering
 {
@@ -970,7 +971,7 @@ struct FastClustering
     timer.reset();
     //Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, IsolatedCleanupTag>(0, numRows), funct);
     //MyExecSpace().fence();
-    for(int i = 0; i < 20; i++)
+    for(int i = 0; i < 4; i++)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, EqualizeTag>(0, numRows), funct);
       MyExecSpace().fence();
@@ -1006,6 +1007,247 @@ struct FastClustering
       }
     }
     std::cout << "\n\n****Refining boundaries for 1 iterations: " << timer.seconds() << '\n';
+    std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
+    return vertClusters;
+  }
+};
+*/
+
+template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
+struct FastClustering
+{
+  typedef typename HandleType::HandleExecSpace MyExecSpace;
+  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
+  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
+
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+
+  typedef typename lno_row_view_t::value_type offset_t;
+
+  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
+  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
+  typedef typename HandleType::row_lno_persistent_work_host_view_t row_lno_persistent_work_host_view_t; //Host view type
+
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t; //Host view type
+
+  typedef nnz_lno_persistent_work_view_t nnz_view_t;
+  typedef Kokkos::View<nnz_lno_t**, MyPersistentMemorySpace> nnz_double_buf_t;
+  //typedef Kokkos::View<nnz_lno_t, MyTempMemorySpace, Kokkos::MemoryTraits<0>> single_view_t;
+  //typedef Kokkos::View<nnz_lno_t, Kokkos::HostSpace, Kokkos::MemoryTraits<0>> single_view_host_t;
+
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  typedef Kokkos::Bitset<MyExecSpace> bitset_t;
+
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t ;
+  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
+  typedef typename team_policy_t::member_type team_member_t ;
+
+  FastClustering(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
+    : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
+  {}
+
+  nnz_lno_t numRows;
+  lno_row_view_t rowmap;
+  lno_nnz_view_t colinds;
+
+  typedef Kokkos::Random_XorShift64_Pool<MyExecSpace> RandPool;
+  RandPool randPool;
+
+  struct InitRootsTag {};   //select roots; set their distances to 0
+  struct RandomFillTag {};  //assign non-roots to random clusters, and assign large random distances
+  struct BfsTag{};          //assign non-labeled vertices to smallest neighboring cluster
+  struct UpdateDistanceTag{}; //minimize the distances from each vertex to its root using its neighbors' distances
+  struct OptimizeTag {};      //relabel vertices to greedily optimize the cost function
+
+  struct FastClusteringFunctor
+  {
+    FastClusteringFunctor(nnz_view_t& vertClusters_, nnz_view_t& distances_, lno_row_view_t& row_map_, lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
+      : vertClusters(vertClusters_), distances(distances_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), randPool(randPool_)
+    {
+      numClusters = (numRows + clusterSize - 1) / clusterSize;
+      clusterCounts = nnz_view_t("Vertices per cluster", numClusters);
+      Kokkos::deep_copy(vertClusters, (nnz_lno_t) numClusters);
+    }
+
+    //Run init version over the number of clusters.
+    KOKKOS_INLINE_FUNCTION void operator()(const InitRootsTag, const nnz_lno_t i) const
+    {
+      clusterCounts(i) = 1;
+      nnz_lno_t root;
+      auto state = randPool.get_state();
+      do
+      {
+        root = state.rand(numRows);
+      }
+      while(!Kokkos::atomic_compare_exchange_strong(&vertClusters(root), numClusters, root));
+      randPool.free_state(state);
+      distances(root) = 0;
+      vertClusters(root) = i;
+    }
+
+    KOKKOS_INLINE_FUNCTION void operator()(const RandomFillTag, const nnz_lno_t i) const
+    {
+      if(vertClusters(i) == numClusters)
+      {
+        auto state = randPool.get_state();
+        vertClusters(i) = state.rand(numClusters);
+        distances(i) = numRows;
+        randPool.free_state(state);
+      }
+    };
+
+    //Join unlabeled vertices to smallest adjacent cluster
+    KOKKOS_INLINE_FUNCTION void operator()(const BfsTag, const nnz_lno_t i) const
+    {
+      if(vertClusters(i) == numClusters)
+      {
+        nnz_lno_t bestCluster = numClusters;
+        nnz_lno_t bestSize = numRows;
+        nnz_lno_t bestDist = numRows;
+        size_type rowStart = row_map(i);
+        size_type rowEnd = row_map(i + 1);
+        for(size_type j = rowStart; j < rowEnd; j++)
+        {
+          nnz_lno_t neiCluster = vertClusters(col_inds(j));
+          if(neiCluster != numClusters)
+          {
+            if(clusterCounts(neiCluster) < bestSize)
+            {
+              bestSize = clusterCounts(neiCluster);
+              bestCluster = neiCluster;
+              bestDist = distances(col_inds(j)) + 1;
+            }
+          }
+          else if(distances(col_inds(j)) < bestDist - 1)
+          {
+            //have a better distance to the current cluster
+            bestDist = distances(col_inds(j)) + 1;
+          }
+        }
+        if(bestCluster != numClusters)
+        {
+          Kokkos::atomic_increment(&clusterCounts(bestCluster));
+          vertClusters(i) = bestCluster;
+          distances(i) = bestDist;
+        }
+      }
+    }
+
+    /*
+    //Update the root distance for node i, as in one step of Djikstra's shortest path algo
+    KOKKOS_INLINE_FUNCTION void operator()(const UpdateDistanceTag, const nnz_lno_t i) const
+    {
+      nnz_lno_t cluster = vertClusters(back, i);
+      if(cluster != numClusters)
+      {
+        nnz_lno_t rootDist = distances(back, i);
+        size_type rowStart = row_map(i);
+        size_type rowEnd = row_map(i + 1);
+        for(size_type j = rowStart; j < rowEnd; j++)
+        {
+          nnz_lno_t nei = col_inds(j);
+          if(vertClusters(front, nei) == cluster)
+          {
+            nnz_lno_t neiDist = distances(back, nei);
+            if(neiDist + 1 < rootDist)
+              rootDist = neiDist + 1;
+          }
+        }
+        distances(front, i) = rootDist;
+      }
+    }
+    */
+
+    //Minimize the cost function by moving vertex i to a diffferent cluster (if improvement)
+    KOKKOS_INLINE_FUNCTION void operator()(const OptimizeTag, const nnz_lno_t i) const
+    {
+      const nnz_lno_t k = 5;
+      nnz_lno_t selfDist = distances(i);
+      nnz_lno_t selfCluster = vertClusters(i);
+      nnz_lno_t origCluster = selfCluster;
+      if(selfDist == 0)
+      {
+        //Roots (distance = 0) can't change cluster.
+        return;
+      }
+      //Get the cost for staying the current cluster
+      size_type rowStart = row_map(i);
+      size_type rowEnd = row_map(i + 1);
+      for(size_type j = rowStart; j < rowEnd; j++)
+      {
+        nnz_lno_t nei = col_inds(j);
+        nnz_lno_t neiCluster = vertClusters(nei);
+        if(neiCluster == selfCluster || neiCluster == numClusters)
+          continue;
+        nnz_lno_t neiDist = distances(nei);
+        nnz_lno_t selfSizeCost = Kokkos::volatile_load(&clusterCounts(selfCluster)) - clusterSize;
+        nnz_lno_t neiSizeCost = Kokkos::volatile_load(&clusterCounts(neiCluster)) - clusterSize;
+        nnz_lno_t switchCost = k * (neiSizeCost - selfSizeCost) + neiDist - selfDist;
+        if(switchCost < 0)
+        {
+          selfDist = neiDist + 1;
+          selfCluster = neiCluster;
+        }
+      }
+      //update the partitioning for next iteration
+      if(origCluster != selfCluster)
+      {
+        distances(i) = selfDist;
+        vertClusters(i) = selfCluster;
+        Kokkos::atomic_decrement(&clusterCounts(origCluster));
+        Kokkos::atomic_increment(&clusterCounts(selfCluster));
+      }
+    }
+
+    nnz_view_t vertClusters;
+    nnz_view_t distances;
+    //clusterCounts is read+updated atomically
+    nnz_view_t clusterCounts;
+    //row_map/col_inds of input graph (read-only)
+    lno_row_view_t row_map;
+    lno_nnz_view_t col_inds;
+    //constants
+    nnz_lno_t clusterSize;
+    nnz_lno_t numClusters;
+    nnz_lno_t numRows;
+    RandPool randPool;
+  };
+
+  nnz_view_t run(nnz_lno_t clusterSize)
+  {
+    nnz_view_t vertClusters("Vertex cluster labels", numRows);
+    nnz_view_t distances("Root distances", numRows);
+    FastClusteringFunctor funct(vertClusters, distances, rowmap, colinds, clusterSize, randPool);
+    nnz_lno_t numClusters = funct.numClusters;
+    Kokkos::Impl::Timer globalTimer;
+    Kokkos::Impl::Timer timer;
+    timer.reset();
+    Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
+    MyExecSpace().fence();
+    std::cout << "Creating roots: " << timer.seconds() << '\n';
+    timer.reset();
+    //Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
+    //MyExecSpace().fence();
+    //std::cout << "Randomly filling: " << timer.seconds() << '\n';
+    //timer.reset();
+    for(int i = 0; i < 4; i++)
+    {
+      Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, BfsTag>(0, numRows), funct);
+      MyExecSpace().fence();
+    }
+    std::cout << "Initial BFS: " << timer.seconds() << '\n';
+    timer.reset();
+    Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
+    for(int i = 0; i < 3; i++)
+    {
+      Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, OptimizeTag>(0, numRows), funct);
+      MyExecSpace().fence();
+    }
+    std::cout << "Optimizing: " << timer.seconds() << '\n';
+    timer.reset();
     std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
     return vertClusters;
   }
