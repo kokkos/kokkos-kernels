@@ -647,374 +647,8 @@ struct RCM
   }
 };
 
-/*
 template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
-struct FastClustering
-{
-  typedef typename HandleType::HandleExecSpace MyExecSpace;
-  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
-  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
-
-  typedef typename HandleType::size_type size_type;
-  typedef typename HandleType::nnz_lno_t nnz_lno_t;
-
-  typedef typename lno_row_view_t::value_type offset_t;
-
-  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_host_view_t row_lno_persistent_work_host_view_t; //Host view type
-
-  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t; //Host view type
-
-  typedef nnz_lno_persistent_work_view_t nnz_view_t;
-  typedef Kokkos::View<nnz_lno_t, MyTempMemorySpace, Kokkos::MemoryTraits<0>> single_view_t;
-  typedef Kokkos::View<nnz_lno_t, Kokkos::HostSpace, Kokkos::MemoryTraits<0>> single_view_host_t;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  typedef Kokkos::Bitset<MyExecSpace> bitset_t;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t ;
-  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
-  typedef typename team_policy_t::member_type team_member_t ;
-
-  FastClustering(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
-    : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
-  {}
-
-  nnz_lno_t numRows;
-  lno_row_view_t rowmap;
-  lno_nnz_view_t colinds;
-
-  typedef Kokkos::Random_XorShift64_Pool<MyExecSpace> RandPool;
-  RandPool randPool;
-
-  struct InitTag {};
-  struct FirstFillTag {};
-  struct IsolatedCleanupTag {};
-  struct EqualizeTag {};
-  struct RefineTag {};
-
-  struct FastClusteringFunctor
-  {
-    FastClusteringFunctor(nnz_view_t vertClusters_, lno_row_view_t& row_map_, lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
-      : vertClusters(vertClusters_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), randPool(randPool_), nodeLocks(numRows)
-    {
-      numClusters = (numRows + clusterSize - 1) / clusterSize;
-      clusterCounts = nnz_view_t("Vertices per cluster", numClusters);
-      Kokkos::deep_copy(vertClusters, (nnz_lno_t) numClusters);
-    }
-
-    //Run init version over the number of clusters.
-    KOKKOS_INLINE_FUNCTION void operator()(const InitTag, const nnz_lno_t i) const
-    {
-      if(i == numClusters - 1)
-        clusterCounts(i) = 1 + numRows % clusterSize;
-      else
-        clusterCounts(i) = 1;
-      nnz_lno_t root;
-      auto state = randPool.get_state();
-      do
-      {
-        root = state.rand(numRows);
-      }
-      while(!Kokkos::atomic_compare_exchange_strong(&vertClusters(root), numClusters, root));
-      randPool.free_state(state);
-      vertClusters(root) = i;
-    }
-
-    //Run a reduction of first-fill over all vertices, until the reduction produces zero.
-    KOKKOS_INLINE_FUNCTION void operator()(const FirstFillTag, const size_type i, size_type& lNumUpdates) const
-    {
-      if(vertClusters(i) == numClusters)
-      {
-        for(size_type adj = row_map(i); adj < row_map(i + 1); adj++)
-        {
-          nnz_lno_t neiCluster = vertClusters(col_inds(adj));
-          if(neiCluster != numClusters) //&& clusterCounts(neiCluster) < clusterSize)
-          {
-            vertClusters(i) = neiCluster;
-            Kokkos::atomic_increment(&clusterCounts(neiCluster));
-            lNumUpdates++;
-            break;
-          }
-        }
-      }
-    }
-
-    //Run isolated cleanup next
-    KOKKOS_INLINE_FUNCTION void operator()(const IsolatedCleanupTag, const size_type i) const
-    {
-      if(vertClusters(i) == numClusters)
-      {
-        auto state = randPool.get_state();
-        nnz_lno_t c = state.rand(numClusters);
-        vertClusters(i) = c;
-        Kokkos::atomic_increment(&clusterCounts(c));
-        randPool.free_state(state);
-      }
-    }
-
-    //Equalize is run over vertices. It trades vertices from larger clusters to smaller ones.
-    KOKKOS_INLINE_FUNCTION void operator()(const EqualizeTag, const size_type i) const
-    {
-      nnz_lno_t cluster = vertClusters(i);
-      nnz_lno_t count = clusterCounts(cluster);
-      for(size_type adj = row_map(i); adj < row_map(i + 1); adj++)
-      {
-        nnz_lno_t neiCluster = vertClusters(col_inds(adj));
-        if(cluster != neiCluster)
-        {
-          nnz_lno_t neiCount = clusterCounts(neiCluster);
-          if(neiCount < count - 1)
-          {
-            if(nodeLocks.set(cluster))
-            {
-              bool moved = false;
-              if(nodeLocks.set(neiCluster))
-              {
-                if(Kokkos::atomic_fetch_add(&clusterCounts(cluster), -1) >=
-                    Kokkos::atomic_fetch_add(&clusterCounts(neiCluster), 1))
-                {
-                  vertClusters(i) = neiCluster;
-                  moved = true;
-                }
-                else
-                {
-                  Kokkos::atomic_increment(&clusterCounts(cluster));
-                  Kokkos::atomic_decrement(&clusterCounts(neiCluster));
-                }
-                nodeLocks.reset(neiCluster);
-              }
-              nodeLocks.reset(cluster);
-              if(moved)
-                break;
-            }
-          }
-        }
-      }
-    }
-
-    struct RefineSharedData
-    {
-      nnz_lno_t node1;
-      nnz_lno_t node2;
-      nnz_lno_t cluster1;
-      nnz_lno_t cluster2;
-    };
-
-    KOKKOS_INLINE_FUNCTION nnz_lno_t getEdgeCol(size_type edge) const
-    {
-      //the column is given immediately by col_inds
-      return col_inds(edge);
-    }
-
-    KOKKOS_INLINE_FUNCTION nnz_lno_t getEdgeRow(size_type edge, nnz_lno_t col, const team_member_t t) const
-    {
-      size_type colOffset = row_map(col);
-      size_type colDegree = row_map(col + 1) - colOffset;
-      //look through the neighbors of col for an entry matching 
-      nnz_lno_t row = 0;
-      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(t, colDegree),
-        [&](const nnz_lno_t i, nnz_lno_t& lrow)
-        {
-          if(lrow)
-            return;
-          size_type neiI = col_inds(colOffset + i);
-          if(row_map(neiI) <= edge && edge < row_map(neiI + 1))
-            lrow = neiI;
-        }, row);
-      return row;
-    }
-
-    KOKKOS_INLINE_FUNCTION void operator()(const RefineTag, const team_member_t t) const
-    {
-      RefineSharedData* wholeTeamShared = (RefineSharedData*) t.team_shmem().get_shmem(t.team_size() * sizeof(RefineSharedData));
-      RefineSharedData& sh = wholeTeamShared[t.team_rank()];
-      size_type edge = t.league_rank() * t.team_size() + t.team_rank();
-      if(edge >= (size_type) col_inds.extent(0))
-        return;
-      //determine the two nodes which are the endpoints of this edge
-      nnz_lno_t col = getEdgeCol(edge);
-      nnz_lno_t row = getEdgeRow(edge, col, t);
-      Kokkos::single(Kokkos::PerThread(t),
-        [&]()
-        {
-          sh.node1 = row;
-          sh.node2 = col;
-        });
-      if(col <= row)
-      {
-        //only doing superdiagonal entries so
-        //each undirected edge is hit only once
-        return;
-      }
-      Kokkos::single(Kokkos::PerThread(t),
-        [&]()
-        {
-          sh.cluster1 = vertClusters(sh.node1);
-          sh.cluster2 = vertClusters(sh.node1);
-        });
-      if(sh.cluster1 == sh.cluster2)
-        return;
-      //Now, evaluate the profitability of swapping the cluster labels
-      //of node1 and node2.
-      size_type row_start1 = row_map(sh.node1);
-      size_type row_start2 = row_map(sh.node2);
-      nnz_lno_t degree1 = row_map(sh.node1 + 1) - row_start1;
-      nnz_lno_t degree2 = row_map(sh.node2 + 1) - row_start2;
-      nnz_lno_t n1c1 = 0; //connections from node1 to cluster1
-      nnz_lno_t n1c2 = 0; //connections from node1 to cluster2
-      nnz_lno_t n2c2 = 0; //connections from node2 to cluster2
-      nnz_lno_t n2c1 = 0; //connections from node2 to cluster1
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree1),
-        [&](const nnz_lno_t i, nnz_lno_t& lcnt)
-        {
-          nnz_lno_t nei = col_inds(row_start1 + i);
-          if(nei != sh.node1 && vertClusters(nei) == sh.cluster1)
-            lcnt++;
-        }, n1c1);
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree1),
-        [&](const nnz_lno_t i, nnz_lno_t& lcnt)
-        {
-          nnz_lno_t nei = col_inds(row_start1 + i);
-          if(vertClusters(nei) == sh.cluster2)
-            lcnt++;
-        }, n1c2);
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree2),
-        [&](const nnz_lno_t i, nnz_lno_t& lcnt)
-        {
-          nnz_lno_t nei = col_inds(row_start2 + i);
-          if(nei != sh.node2 && vertClusters(nei) == sh.cluster2)
-            lcnt++;
-        }, n2c2);
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, degree2),
-        [&](const nnz_lno_t i, nnz_lno_t& lcnt)
-        {
-          nnz_lno_t nei = col_inds(row_start2 + i);
-          if(vertClusters(nei) == sh.cluster1)
-            lcnt++;
-        }, n2c1);
-      Kokkos::single(Kokkos::PerThread(t),
-        [&]()
-        {
-          //Compare the number of intra-cluster edges touching n1 and n2, and how many
-          //there would be after swapping the cluster labels of n1,n2. Trying to maximize
-          //intra-cluster edges.
-          //
-          //Diagonal entries (self-loops) aren't counted in nXcX.
-          if(n1c1 + n2c2 < n1c2 + n2c1 - 1)
-          {
-            //"lock" the cluster labels using a bitset.
-            //Note that locks are only acquired if a profitable edge is found,
-            //so contention should be very low.
-            if(nodeLocks.set(sh.node1))
-            {
-              if(nodeLocks.set(sh.node2))
-              {
-                //success, acquired both locks.
-                //make sure the cluster labels haven't changed since starting this
-                if(vertClusters(sh.node1) == sh.cluster1
-                    && vertClusters(sh.node2) == sh.cluster2)
-                {
-                  //finally, can do the swap
-                  vertClusters(sh.node1) = sh.cluster2;
-                  vertClusters(sh.node2) = sh.cluster1;
-                }
-                nodeLocks.reset(sh.node2);
-              }
-              nodeLocks.reset(sh.node1);
-            }
-          }
-        });
-    }
-
-    size_t team_shmem_size(int team_size) const
-    {
-      return team_size * sizeof(RefineSharedData);
-    }
-
-    nnz_view_t vertClusters;
-    nnz_view_t clusterCounts;
-    lno_row_view_t row_map;
-    lno_nnz_view_t col_inds;
-    nnz_lno_t clusterSize;
-    nnz_lno_t numClusters;
-    nnz_lno_t numRows;
-    RandPool randPool;
-    bitset_t nodeLocks;
-    nnz_lno_t numIters;
-  };
-
-  nnz_view_t run(nnz_lno_t clusterSize)
-  {
-    nnz_view_t vertClusters = nnz_view_t("Vertex clusters", numRows);
-    FastClusteringFunctor funct(vertClusters, rowmap, colinds, clusterSize, randPool);
-    nnz_lno_t numClusters = funct.numClusters;
-    Kokkos::Impl::Timer globalTimer;
-    Kokkos::Impl::Timer timer;
-    Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitTag>(0, numClusters), funct);
-    MyExecSpace().fence();
-    std::cout << "Setting roots: " << timer.seconds() << '\n';
-    timer.reset();
-    size_type numUpdates;
-    int iters = 0;
-    do
-    {
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, FirstFillTag>(0, numRows), funct, numUpdates);
-      MyExecSpace().fence();
-      iters++;
-    }
-    while(numUpdates > 0);
-    std::cout << "BFS filling for " << iters << " iterations: " << timer.seconds() << '\n';
-    timer.reset();
-    //Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, IsolatedCleanupTag>(0, numRows), funct);
-    //MyExecSpace().fence();
-    for(int i = 0; i < 4; i++)
-    {
-      Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, EqualizeTag>(0, numRows), funct);
-      MyExecSpace().fence();
-    }
-    std::cout << "Size equalizing for 4 iterations: " << timer.seconds() << '\n';
-    timer.reset();
-    //Finally, run a few sweeps of refinement
-    //note: refinement is the only tag in FastClusteringFunctor that uses
-    //a team policy - if another tag taking a team_member are added,
-    //must make a new functor (so that shared memory calculation is correct)
-    {
-      int teamSize = 0;
-      int vectorSize = 0;
-      typedef Kokkos::TeamPolicy<RefineTag, MyExecSpace> RefinePolicy;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      int maxTeamSize = RefinePolicy::team_size_max(funct);
-      KokkosKernels::Impl::get_suggested_vector_team_size<int, MyExecSpace>(
-          maxTeamSize,
-          vectorSize,
-          teamSize,
-          numRows, colinds.extent(0));
-#else
-      KokkosKernels::Impl::get_suggested_vector_size<int, MyExecSpace>(
-          vectorSize,
-          numRows, colinds.extent(0));
-      teamSize = KokkosKernels::Impl::get_suggested_team_size<RefinePolicy>(funct, vectorSize, 0, sizeof(typename FastClusteringFunctor::RefineSharedData));
-#endif
-      RefinePolicy refinePol = RefinePolicy((colinds.extent(0) + teamSize - 1) / teamSize, teamSize, vectorSize).set_scratch_size(0, Kokkos::PerThread(sizeof(typename FastClusteringFunctor::RefineSharedData)));
-      for(int i = 0; i < 20; i++)
-      {
-        Kokkos::parallel_for(refinePol, funct);
-        MyExecSpace().fence();
-      }
-    }
-    std::cout << "\n\n****Refining boundaries for 1 iterations: " << timer.seconds() << '\n';
-    std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
-    return vertClusters;
-  }
-};
-*/
-
-template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
-struct FastClustering
+struct SSSP_Clustering
 {
   typedef typename HandleType::HandleExecSpace MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
@@ -1045,7 +679,7 @@ struct FastClustering
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 
-  FastClustering(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
+  SSSP_Clustering(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
     : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
   {}
 
@@ -1062,9 +696,9 @@ struct FastClustering
   struct UpdateDistanceTag{}; //minimize the distances from each vertex to its root using its neighbors' distances
   struct OptimizeTag {};      //relabel vertices to greedily optimize the cost function
 
-  struct FastClusteringFunctor
+  struct ClusteringFunctor
   {
-    FastClusteringFunctor(nnz_view_t& vertClusters_, nnz_view_t& distances_, lno_row_view_t& row_map_, lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
+    ClusteringFunctor(nnz_view_t& vertClusters_, nnz_view_t& distances_, lno_row_view_t& row_map_, lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
       : vertClusters(vertClusters_), distances(distances_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), randPool(randPool_)
     {
       numClusters = (numRows + clusterSize - 1) / clusterSize;
@@ -1136,31 +770,6 @@ struct FastClustering
       }
     }
 
-    /*
-    //Update the root distance for node i, as in one step of Djikstra's shortest path algo
-    KOKKOS_INLINE_FUNCTION void operator()(const UpdateDistanceTag, const nnz_lno_t i) const
-    {
-      nnz_lno_t cluster = vertClusters(back, i);
-      if(cluster != numClusters)
-      {
-        nnz_lno_t rootDist = distances(back, i);
-        size_type rowStart = row_map(i);
-        size_type rowEnd = row_map(i + 1);
-        for(size_type j = rowStart; j < rowEnd; j++)
-        {
-          nnz_lno_t nei = col_inds(j);
-          if(vertClusters(front, nei) == cluster)
-          {
-            nnz_lno_t neiDist = distances(back, nei);
-            if(neiDist + 1 < rootDist)
-              rootDist = neiDist + 1;
-          }
-        }
-        distances(front, i) = rootDist;
-      }
-    }
-    */
-
     //Minimize the cost function by moving vertex i to a diffferent cluster (if improvement)
     KOKKOS_INLINE_FUNCTION void operator()(const OptimizeTag, const nnz_lno_t i) const
     {
@@ -1220,7 +829,7 @@ struct FastClustering
   {
     nnz_view_t vertClusters("Vertex cluster labels", numRows);
     nnz_view_t distances("Root distances", numRows);
-    FastClusteringFunctor funct(vertClusters, distances, rowmap, colinds, clusterSize, randPool);
+    ClusteringFunctor funct(vertClusters, distances, rowmap, colinds, clusterSize, randPool);
     nnz_lno_t numClusters = funct.numClusters;
     Kokkos::Impl::Timer globalTimer;
     Kokkos::Impl::Timer timer;
@@ -1229,10 +838,6 @@ struct FastClustering
     MyExecSpace().fence();
     std::cout << "Creating roots: " << timer.seconds() << '\n';
     timer.reset();
-    //Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
-    //MyExecSpace().fence();
-    //std::cout << "Randomly filling: " << timer.seconds() << '\n';
-    //timer.reset();
     for(int i = 0; i < 4; i++)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, BfsTag>(0, numRows), funct);

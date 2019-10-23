@@ -1300,237 +1300,6 @@ namespace KokkosSparse{
         bitset_t mask;
       };
 
-      template<typename Rowmap, typename Colinds, typename nnz_view_t, typename color_view_t, typename single_view_t>
-      struct ColorClustersFunctor
-      {
-        ColorClustersFunctor(Rowmap& rowmap_, Colinds& colinds_, nnz_view_t& clusterOffsets_, nnz_view_t& clusterVerts_, nnz_view_t& vertClusters_, color_view_t& clusterColors_, nnz_lno_t chunkSize_, nnz_view_t& workList_, single_view_t& workListLength_, bitset_t& edgeMask_)
-          : rowmap(rowmap_), colinds(colinds_),
-            clusterOffsets(clusterOffsets_), clusterVerts(clusterVerts_), vertClusters(vertClusters_),
-            clusterColors(clusterColors_),
-            numClusters(clusterColors.extent(0)),
-            chunkSize(chunkSize_),
-            workList(workList_), workListLength(workListLength_),
-            edgeMask(edgeMask_) //note: this makes a ConstBitset from a Bitset (the mask is read-only in this functor)
-        {}
-
-        struct SharedData
-        {
-          uint64_t forbidden;
-        };
-
-        void setChunkSize(nnz_lno_t chunkSize_)
-        {
-          chunkSize = chunkSize_;
-        }
-
-        KOKKOS_INLINE_FUNCTION void operator()(const team_member_t t) const
-        {
-          SharedData* sh = (SharedData*) t.team_shmem().get_shmem(sizeof(SharedData));
-          nnz_lno_t workStart = t.league_rank() * chunkSize;
-          nnz_lno_t totalWorkLength = workListLength();
-          for(nnz_lno_t work = workStart; work < workStart + chunkSize; work++)
-          {
-            if(work >= totalWorkLength)
-              break;
-            nnz_lno_t cluster = workList(work);
-            nnz_lno_t clusterSize = clusterOffsets(cluster + 1) - clusterOffsets(cluster);
-            nnz_lno_t colorOffset = 1;
-            for(;; colorOffset += 64)
-            {
-              uint64_t teamForbidden = 0;
-              //now, for each row belonging to the cluster, iterate through the neighbors
-              Kokkos::parallel_reduce(Kokkos::TeamThreadRange(t, clusterSize),
-                [&] (const nnz_lno_t i, uint64_t& lTeamForbidden)
-                {
-                  nnz_lno_t row = clusterVerts(clusterOffsets(cluster) + i);
-                  nnz_lno_t rowDeg = rowmap(row + 1) - rowmap(row);
-                  uint64_t threadForbidden = 0;
-                  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, rowDeg),
-                    [&] (const nnz_lno_t j, uint64_t& lThreadForbidden)
-                    {
-                      if(edgeMask.test(rowmap(row) + j))
-                      {
-                        nnz_lno_t nei = colinds(rowmap(row) + j);
-                        nnz_lno_t neiCluster = vertClusters(nei);
-                        if(neiCluster != cluster)
-                        {
-                          nnz_lno_t neiColor = clusterColors(neiCluster);
-                          if(colorOffset <= neiColor && neiColor < colorOffset + 64)
-                          {
-                            //neighbor's color is forbidden
-                            lThreadForbidden |= ((uint64_t) 1 << (neiColor - colorOffset));
-                          }
-                        }
-                      }
-                    }, threadForbidden);
-                  Kokkos::single(Kokkos::PerThread(t),
-                    [&]()
-                    {
-                      lTeamForbidden |= threadForbidden;
-                    });
-                }, teamForbidden);
-              Kokkos::single(Kokkos::PerTeam(t),
-                [&]()
-                {
-                  sh->forbidden = teamForbidden;
-                });
-              t.team_barrier();
-              //Are there 0 bits in forbidden (this must be shared, so that all lanes can access it)
-              if(~sh->forbidden)
-              {
-                break;
-              }
-            }
-            //Have the color in terms of forbidden and colorOffset
-            Kokkos::single(Kokkos::PerTeam(t),
-              [&]()
-              {
-                //find the position of the rightmost 0 bit in sh->forbidden
-                nnz_lno_t c = colorOffset;
-                uint64_t f = sh->forbidden;
-                for(uint64_t mask = 1;; mask <<= 1)
-                {
-                  if(!(f & mask))
-                    break;
-                  c++;
-                }
-                clusterColors(cluster) = c;
-              });
-          }
-        }
-
-        size_t team_shmem_size(int) const
-        {
-          return sizeof(SharedData);
-        }
-
-        Rowmap rowmap;
-        Colinds colinds;
-        nnz_view_t clusterOffsets;
-        nnz_view_t clusterVerts;
-        nnz_view_t vertClusters;
-        color_view_t clusterColors;
-        nnz_lno_t numClusters;
-        nnz_lno_t chunkSize;
-        nnz_view_t workList;
-        single_view_t workListLength;
-        const_bitset_t edgeMask;
-      };
-
-      template<typename Rowmap, typename Colinds, typename Xadj_t, typename Adj_t, typename label_view_t, typename color_view_t>
-      struct ClusterMarkConflictsFunctor
-      {
-        ClusterMarkConflictsFunctor(Rowmap& rowmap_, Colinds& colinds_, Xadj_t& clusterOffsets_, Adj_t& clusterVerts_, label_view_t& vertClusters_, color_view_t& clusterColors_, nnz_lno_t chunkSize_, bitset_t& edgeMask_)
-          : rowmap(rowmap_), colinds(colinds_),
-            clusterOffsets(clusterOffsets_), clusterVerts(clusterVerts_), vertClusters(vertClusters_),
-            clusterColors(clusterColors_),
-            numClusters(clusterColors.extent(0)),
-            chunkSize(chunkSize_),
-            edgeMask(edgeMask_)
-        {}
-
-        KOKKOS_INLINE_FUNCTION void operator()(const team_member_t t, nnz_lno_t& lnumGlobalConflicts) const
-        {
-          nnz_lno_t workStart = t.league_rank() * chunkSize;
-          for(nnz_lno_t cluster = workStart; cluster < workStart + chunkSize; cluster++)
-          {
-            if(cluster >= numClusters)
-              break;
-            nnz_lno_t clusterSize = clusterOffsets(cluster + 1) - clusterOffsets(cluster);
-            //now, for each row belonging to the cluster, iterate through the neighbors
-            //the result of this reduction is nonzero if this cluster has a color conflict
-            //with a lower-numbered neighbor
-            int hasConflict = 0;
-            nnz_lno_t myColor = clusterColors(cluster);
-            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(t, clusterSize),
-              [&] (const nnz_lno_t i, int& lTeamHasConflict)
-              {
-                if(lTeamHasConflict)
-                {
-                  return;
-                }
-                nnz_lno_t row = clusterVerts(clusterOffsets(cluster) + i);
-                nnz_lno_t rowDeg = rowmap(row + 1) - rowmap(row);
-                int threadHasConflict = 0;
-                Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, rowDeg),
-                  [&] (const nnz_lno_t j, int& lThreadHasConflict)
-                  {
-                    if(lThreadHasConflict)
-                      return;
-                    nnz_lno_t nei = colinds(rowmap(row) + j);
-                    nnz_lno_t neiCluster = vertClusters(nei);
-                    if(neiCluster < cluster)
-                    {
-                      nnz_lno_t neiColor = clusterColors(neiCluster);
-                      if(myColor == neiColor)
-                      {
-                        lThreadHasConflict |= 1;
-                      }
-                    }
-                  }, threadHasConflict);
-                Kokkos::single(Kokkos::PerThread(t),
-                  [&]()
-                  {
-                    lTeamHasConflict |= threadHasConflict;
-                  });
-              }, hasConflict);
-            Kokkos::single(Kokkos::PerTeam(t),
-                [&]()
-                {
-                  if(hasConflict)
-                  {
-                    //printf("Conflict on cluster %d.\n", (int) cluster);
-                    clusterColors(cluster) = 0;
-                    lnumGlobalConflicts++;
-                  }
-                });
-          }
-        }
-
-        Rowmap rowmap;
-        Colinds colinds;
-        Xadj_t clusterOffsets;
-        Adj_t clusterVerts;
-        label_view_t vertClusters;
-        color_view_t clusterColors;
-        nnz_lno_t numClusters;
-        nnz_lno_t chunkSize;
-        const_bitset_t edgeMask;
-      };
-
-      //Functor that uses a scan to accumulate the vertices with color 0
-      template<typename color_view_t, typename nnz_view_t, typename single_view_t>
-      struct GatherRecolorFunctor
-      {
-        GatherRecolorFunctor(color_view_t& colors_, nnz_view_t& workList_, single_view_t& workListLength_)
-          : colors(colors_), workList(workList_), workListLength(workListLength_), numClusters(colors.extent(0))
-        {}
-
-        KOKKOS_INLINE_FUNCTION void operator()(const nnz_lno_t i, nnz_lno_t& lcount, const bool& finalPass) const
-        {
-          if(finalPass)
-          {
-            if(colors(i) == 0)
-              workList(lcount) = i;
-          }
-          if(colors(i) == 0)
-          {
-            lcount++;
-          }
-          if(finalPass && (i == numClusters - 1))
-          {
-            //this is the last entry: store the work list length
-            workListLength() = lcount;
-            printf("Work list length = %d\n", (int) lcount);
-          }
-        }
-
-        color_view_t colors;
-        nnz_view_t workList;
-        single_view_t workListLength;
-        nnz_lno_t numClusters;
-      };
-
       template<typename Rowmap, typename Colinds, typename nnz_view_t>
       struct FillClusterEntriesFunctor
       {
@@ -1547,7 +1316,6 @@ namespace KokkosSparse{
           size_type rowEnd = rowmap(row + 1);
           nnz_lno_t cluster = vertClusters(row);
           nnz_lno_t clusterStart = clusterOffsets(cluster);
-          nnz_lno_t clusterEnd = clusterOffsets(cluster + 1);
           //Count the number of entries in this row.
           //This is how much lcount will be increased by,
           //yielding the offset corresponding to
@@ -1644,7 +1412,17 @@ namespace KokkosSparse{
         nnz_lno_t clusterSize = gsHandler->get_cluster_size();
         nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;
         nnz_view_t vertClusters;
-        switch(gsHandler->get_clustering_algo())
+        auto clusterAlgo = gsHandler->get_clustering_algo();
+        if(clusterAlgo == CLUSTER_DEFAULT)
+        {
+          //Use CM if > 50 entries per row, otherwise SSSP.
+          //CM is quite fast if the level sets fan out quickly, otherwise slow and non-scalable.
+          if(adj.extent(0) / num_rows > 50)
+            clusterAlgo = CLUSTER_CUTHILL_MCKEE;
+          else
+            clusterAlgo = CLUSTER_SSSP;
+        }
+        switch(clusterAlgo)
         {
           case CLUSTER_CUTHILL_MCKEE:
           {
@@ -1654,13 +1432,10 @@ namespace KokkosSparse{
             Kokkos::parallel_for(my_exec_space(0, num_rows), ReorderedClusteringFunctor<nnz_view_t>(vertClusters, cmOrder, clusterSize));
             break;
           }
-          case CLUSTER_DEFAULT:
-          case CLUSTER_FAST:
+          case CLUSTER_SSSP:
           {
-            std::cout << "Running clustering...";
-            FastClustering<HandleType, rowmap_t, colinds_t> fast(num_rows, xadj, adj);
-            vertClusters = fast.run(clusterSize);
-            std::cout << "done.\n";
+            SSSP_Clustering<HandleType, rowmap_t, colinds_t> sssp(num_rows, xadj, adj);
+            vertClusters = sssp.run(clusterSize);
             break;
           }
           case CLUSTER_DO_NOTHING:
@@ -1670,27 +1445,28 @@ namespace KokkosSparse{
             Kokkos::parallel_for(my_exec_space(0, num_rows), NopVertClusteringFunctor<nnz_view_t>(vertClusters, clusterSize));
             break;
           }
+          default:
+            throw std::runtime_error("Clustering algo " + std::to_string((int) clusterAlgo) + " is not implemented");
         }
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "Graph clustering: " << timer.seconds() << '\n';
         timer.reset();
 #endif
-        //Construct the cluster offset and vertex array. These allow fast iteration over all vertices in a given cluster.
-        std::cout << "Cluster labels 20 per line:\n";
-        for(int i =0 ; i < num_rows; i++)
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
-          std::cout << vertClusters(i) << ' ';
-          if(i % 20 == 19)
-            std::cout << '\n';
+          auto vertClustersHost = Kokkos::create_mirror_view(vertClusters);
+          Kokkos::deep_copy(vertClustersHost, vertClusters);
+          puts("Cluster labels for each vertex (20 per line):");
+          for(int i = 0 ; i < num_rows; i++)
+          {
+            printf("%d ", (int) vertClustersHost(i));
+            if(i % 20 == 19)
+              putchar('\n');
+          }
+          printf("\n\n\n");
         }
-            std::cout << '\n';
-            std::cout << '\n';
-            std::cout << '\n';
-        /*
-        KokkosKernels::Impl::create_reverse_map
-          <nnz_view_t, nnz_view_t, MyExecSpace>
-          (num_rows, numClusters, vertClusters, clusterOffsets, clusterVerts);
-          */
+#endif
+        //Construct the cluster offset and vertex array. These allow fast iteration over all vertices in a given cluster.
         nnz_view_t clusterOffsets("Cluster offsets", numClusters + 1);
         nnz_view_t clusterVerts("Cluster -> vertices", num_rows);
         Kokkos::parallel_for(my_exec_space(0, num_rows), ClusterSizeFunctor<nnz_view_t>(clusterOffsets, vertClusters));
@@ -1701,15 +1477,6 @@ namespace KokkosSparse{
           Kokkos::parallel_for(my_exec_space(0, num_rows), FillClusterVertsFunctor<nnz_view_t>(clusterOffsets, clusterVerts, vertClusters, tempInsertCounts));
         }
         MyExecSpace().fence();
-        std::cout << "Rows in each cluster: \n";
-        for(int i = 0; i < numClusters; i++)
-        {
-          std::cout << i << ": ";
-          for(int j = clusterOffsets(i); j < clusterOffsets(i + 1); j++)
-            std::cout << clusterVerts(j) << ' ';
-          std::cout << '\n';
-        }
-        std::cout << '\n';
         //Determine the set of edges (in the point graph) that cross between two distinct clusters
         int vectorSize = this->handle->get_suggested_vector_size(num_rows, adj.extent(0));
         bitset_t crossClusterEdgeMask(adj.extent(0));
@@ -1723,76 +1490,27 @@ namespace KokkosSparse{
           MyExecSpace().fence();
           numClusterEdges = crossClusterEdgeMask.count();
         }
-        std::cout << "There will be " << numClusterEdges << " cluster edges.\n";
         nnz_view_t clusterRowmap("Cluster graph rowmap", numClusters + 1);
         nnz_view_t clusterEntries("Cluster graph colinds", numClusterEdges);
         Kokkos::parallel_scan(my_exec_space(0, num_rows), FillClusterEntriesFunctor<rowmap_t, colinds_t, nnz_view_t>(xadj, adj, clusterRowmap, clusterEntries, clusterOffsets, clusterVerts, vertClusters, crossClusterEdgeMask));
-        /*
-        //Color the cluster graph. The cluster graph is not an explicit CRS graph, but connectivity can be accessed
-        //implicitly using xadj, adj, clusterOffsets, clusterVerts and vertClusters.
-        color_view_t clusterColors("Cluster colors", numClusters);
-        //colorWorkList is a list of the clusters which need to be recolored (currently have color 0)
-        nnz_lno_persistent_work_view_t colorWorkList("Color work list", numClusters);
-        //this is the current length of colorWorkList
-        single_view_t colorWorkListLength("Color work list length");
-        const nnz_lno_t coloringChunkSize = 8;
-        ColorClustersFunctor<rowmap_t, colinds_t, nnz_view_t, color_view_t, single_view_t>
-          coloringFunctor(xadj, adj, clusterOffsets, clusterVerts, vertClusters, clusterColors, coloringChunkSize, colorWorkList, colorWorkListLength, crossClusterEdgeMask);
-        typedef ClusterMarkConflictsFunctor<rowmap_t, colinds_t, nnz_view_t, nnz_view_t, nnz_view_t, color_view_t> ConflictMarking;
-        ConflictMarking conflictMarkingFunctor(xadj, adj, clusterOffsets, clusterVerts, vertClusters, clusterColors, coloringChunkSize, crossClusterEdgeMask);
-        int coloringTeamShared = coloringFunctor.team_shmem_size(0);
-        int teamSizeColoring =
-          KokkosKernels::Impl::get_suggested_team_size<team_policy_t>
-          (coloringFunctor, vectorSize, coloringTeamShared, 0);
-        int teamSizeConflictMarking =
-          KokkosKernels::Impl::get_suggested_team_size<team_policy_t, ConflictMarking, Kokkos::ParallelReduceTag>
-          (conflictMarkingFunctor, vectorSize, 0, 0);
-        std::cout << "Creating initial work list...";
-        //Initially, have to color every cluster
-        Kokkos::parallel_for(my_exec_space(0, numClusters), KokkosSparse::Impl::IotaFunctor<nnz_view_t, nnz_lno_t>(colorWorkList));
-        Kokkos::deep_copy(colorWorkListLength, numClusters);
-        std::cout << "done.\n";
-        //Run the coloring pass once with chunks
-        std::cout << "Doing first color sweep...";
-        Kokkos::parallel_for(
-            team_policy_t((numClusters + coloringChunkSize - 1) / coloringChunkSize, teamSizeColoring, vectorSize)
-            .set_scratch_size(0, Kokkos::PerTeam(coloringTeamShared)),
-            coloringFunctor);
-        std::cout << "done\n";
-        //From now on, few clusters should need recoloring each iteration, so set the chunk size to 1
-        coloringFunctor.setChunkSize(1);
-        GatherRecolorFunctor<color_view_t, nnz_view_t, single_view_t> gatherRecolor(clusterColors, colorWorkList, colorWorkListLength);
-        while(true)
+        MyExecSpace().fence();
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
-          int numConflicts = 0;
-          //set colors to 0 to fix conflicts
-          std::cout << "Marking conflicts...";
-          Kokkos::parallel_reduce(
-              team_policy_t((numClusters + coloringChunkSize - 1) / coloringChunkSize, teamSizeConflictMarking, vectorSize),
-              conflictMarkingFunctor, numConflicts);
-          std::cout << "done.\n";
-          if(numConflicts == 0)
+          auto clusterRowmapHost = Kokkos::create_mirror_view(clusterRowmap);
+          auto clusterEntriesHost = Kokkos::create_mirror_view(clusterEntries);
+          puts("Cluster graph (cluster #, and neighbors):");
+          for(nnz_lno_t i = 0; i < numClusters; i++)
           {
-            //have a valid coloring, done
-            break;
+            printf("%d: ", (int) i);
+            for(nnz_lno_t j = clusterRowmapHost(i); j < clusterRowmapHost(i + 1); j++)
+            {
+              printf("%d ", (int) clusterEntries(j));
+            }
+            putchar('\n');
           }
-          //otherwise, populate the work list with the number of uncolored clusters
-          std::cout << "Building new work list...";
-          Kokkos::parallel_scan(my_exec_space(0, numClusters), gatherRecolor);
-          nnz_lno_t h_colorWorkListLength;
-          Kokkos::deep_copy(h_colorWorkListLength, colorWorkListLength);
-          std::cout << "done.\n";
-          std::cout << "Running coloring again...";
-          Kokkos::parallel_for(
-              team_policy_t(h_colorWorkListLength, teamSizeColoring, vectorSize)
-              .set_scratch_size(0, Kokkos::PerTeam(coloringTeamShared)),
-              coloringFunctor);
-          std::cout << "done.\n";
+          printf("\n\n\n");
         }
-        //find the number of colors used
-        nnz_lno_t numClusterColors;
-        KokkosKernels::Impl::view_reduce_max<color_view_t, MyExecSpace>(numClusters, clusterColors, numClusterColors);
-        */
+#endif
         //Create a handle that uses nnz_lno_t as the size_type, since the cluster graph should never be larger than 2^31 entries.
         KokkosKernels::Experimental::KokkosKernelsHandle<nnz_lno_t, nnz_lno_t, double, MyExecSpace, MyPersistentMemorySpace, MyPersistentMemorySpace> kh;
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
@@ -1802,48 +1520,6 @@ namespace KokkosSparse{
         color_view_t clusterColors = coloringHandle->get_vertex_colors();
         nnz_lno_t numClusterColors = coloringHandle->get_num_colors();
         kh.destroy_graph_coloring_handle();
-
-        // DEBUGGING
-        //
-        //
-        //
-        std::unordered_map<nnz_lno_t, nnz_lno_t> reorderToOrig;
-        for(nnz_lno_t i = 0; i < num_rows; i++)
-        {
-          reorderToOrig[clusterVerts(i)] = i;
-        }
-
-        std::vector<nnz_lno_t> reorderedRowmap(num_rows + 1);
-        std::vector<nnz_lno_t> reorderedEntries(adj.extent(0));
-        std::vector<nnz_lno_t> insertOffsets(num_rows);
-        nnz_lno_t accum = 0;
-        for(nnz_lno_t row = 0; row <= num_rows; row++)
-        {
-          reorderedRowmap[row] = accum;
-          if(row == num_rows)
-            break;
-          nnz_lno_t origRow = reorderToOrig[row];
-          for(size_type i = xadj(origRow); i < xadj(origRow + 1); i++)
-          {
-            reorderedEntries[reorderedRowmap[row] + insertOffsets[row]++] = clusterVerts(adj(i));
-            accum++;
-          }
-        }
-        std::vector<double> dummyScalars(adj.extent(0), 1);
-        KokkosKernels::Impl::write_graph_mtx<nnz_lno_t, nnz_lno_t, double>(num_rows, reorderedEntries.size(), reorderedRowmap.data(), reorderedEntries.data(), dummyScalars.data(), "reordered_graph.mtx");
-
-        KokkosKernels::Impl::write_graph_mtx<nnz_lno_t, nnz_lno_t, double>(numClusters, clusterEntries.extent(0), clusterRowmap.ptr_on_device(), clusterEntries.ptr_on_device(), dummyScalars.data(), "cluster_graph.mtx");
-
-        std::cout << "Neighbors of each cluster: \n";
-        for(int i = 0; i < numClusters; i++)
-        {
-          std::cout << i << ": ";
-          for(int j = clusterRowmap(i); j < clusterRowmap(i + 1); j++)
-            std::cout << clusterEntries(j) << ' ';
-          std::cout << '\n';
-        }
-        std::cout << '\n';
-
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "Cluster graph coloring with " << numClusterColors << " colors: " << timer.seconds() << '\n';
         timer.reset();
@@ -1871,397 +1547,6 @@ namespace KokkosSparse{
 #endif
         return vertexColors;
       }
-
-      /*
-      //This functor gets an upper bound to the degree of each cluster
-      template<typename Rowmap, typename Colinds, typename Xadj_t, typename Adj_t, typename label_view_t, typename work_view_t>
-      struct CountClusterNeighborsFunctor
-      {
-        CountClusterNeighborsFunctor(Rowmap& rowmap_, Colinds& colinds_, Xadj_t& clusterOffsets_, Adj_t clusterVerts_, label_view_t vertClusters_, work_view_t neighborCounts_)
-          : rowmap(rowmap_), colinds(colinds_), clusterOffsets(clusterOffsets_), clusterVerts(clusterVerts_), vertClusters(vertClusters_), neighborCounts(neighborCounts_)
-        {}
-
-        KOKKOS_INLINE_FUNCTION constexpr int tableSize() const
-        {
-          //Should always be a power-of-two, so that X % tableSize() reduces to a bitwise and.
-          return 1024;
-        }
-
-        //Given a cluster index, get the hash table index.
-        //This is the 32-bit xorshift RNG, but it works as a hash function.
-        KOKKOS_INLINE_FUNCTION unsigned xorshiftHash(nnz_lno_t cluster) const
-        {
-          unsigned x = cluster;
-          x ^= x << 13;
-          x ^= x >> 17;
-          x ^= x << 5;
-          return x;
-        }
-
-        KOKKOS_INLINE_FUNCTION bool lookup(nnz_lno_t cluster, int* table) const
-        {
-          unsigned h = xorshiftHash(cluster);
-          for(unsigned i = h; i < h + 2; i++)
-          {
-            if(table[i % tableSize()] == cluster)
-              return true;
-          }
-          return false;
-        }
-
-        //Try to insert the edge between cluster (team's cluster) and neighbor (neighboring cluster)
-        //by inserting nei into the table.
-        KOKKOS_INLINE_FUNCTION bool insert(nnz_lno_t cluster, nnz_lno_t nei, int* table) const
-        {
-          unsigned h = xorshiftHash(nei);
-          for(unsigned i = h; i < h + 2; i++)
-          {
-            if(Kokkos::atomic_compare_exchange_strong(&table[i % tableSize()], cluster, nei))
-              return true;
-          }
-          return false;
-        }
-
-        KOKKOS_INLINE_FUNCTION void operator()(const team_member_t t) const
-        {
-          nnz_lno_t cluster = t.league_rank();
-          nnz_lno_t clusterSize = clusterOffsets(cluster + 1) - clusterOffsets(cluster);
-          //Use a fixed-size hash table per thread to accumulate neighbor of the cluster.
-          //If it fills up (very unlikely) then just count every remaining edge going to another cluster
-          //not already in the table; this provides a reasonable upper bound for overallocating the cluster graph.
-          //each thread handles a cluster
-          int* table = (int*) t.team_shmem().get_shmem(tableSize() * sizeof(int));
-          //mark every entry as cluster (self-loop) to represent free/empty
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(t, tableSize()),
-            [&](const nnz_lno_t i)
-            {
-              table[i] = cluster;
-            });
-          t.team_barrier();
-          //now, for each row belonging to the cluster, iterate through the neighbors
-          nnz_lno_t fallback = 0;
-          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(t, clusterSize),
-            [&] (const nnz_lno_t i, nnz_lno_t& lteamNumNei)
-            {
-              nnz_lno_t row = clusterVerts(clusterOffsets(cluster) + i);
-              nnz_lno_t rowDeg = rowmap(row + 1) - rowmap(row);
-              nnz_lno_t threadNumNei = 0;
-              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, rowDeg),
-                [&] (const nnz_lno_t j, nnz_lno_t& lthreadNumNei)
-                {
-                  nnz_lno_t nei = colinds(rowmap(row) + j);
-                  nnz_lno_t neiCluster = vertClusters(nei);
-                  if(neiCluster != cluster)
-                  {
-                    //Have a neighbor. Try to find it in the table.
-                    if(!lookup(neiCluster, table))
-                    {
-                      //Not in the table. Try to insert it.
-                      if(!insert(cluster, neiCluster, table))
-                      {
-                        //Failed to insert; increment the fallback counter.
-                        lthreadNumNei++;
-                      }
-                    }
-                  }
-                }, Kokkos::Sum<nnz_lno_t>(threadNumNei));
-              Kokkos::single(Kokkos::PerThread(t),
-                [&]()
-                {
-                  lteamNumNei += threadNumNei;
-                });
-            }, fallback);
-          t.team_barrier();
-          //Finally, count the entries in the table
-          nnz_lno_t tableCount = 0;
-          Kokkos::parallel_reduce(Kokkos::TeamVectorRange(t, tableSize()),
-            [&](const nnz_lno_t i, nnz_lno_t& ltableCount)
-            {
-              if(table[i] != cluster)
-                ltableCount++;
-            }, tableCount);
-          //have the (upper bound of) neighbor count for this cluster
-          Kokkos::single(Kokkos::PerTeam(t),
-            [&]()
-            {
-              neighborCounts(cluster) = tableCount + fallback;
-            });
-        }
-
-        size_t team_shmem_size(int teamSize) const
-        {
-          return tableSize() * sizeof(int);
-        }
-
-        Rowmap rowmap;
-        Colinds colinds;
-        Xadj_t clusterOffsets;
-        Adj_t clusterVerts;
-        label_view_t vertClusters;
-        work_view_t neighborCounts;
-      };
-
-      //This functor populates the cluster graph entries (after the rowmap has been computed)
-      template<typename Rowmap, typename Colinds, typename ClusterRowmap, typename ClusterColinds, typename Xadj_t, typename Adj_t, typename label_view_t>
-      struct InsertClusterNeighborsFunctor
-      {
-        InsertClusterNeighborsFunctor(Rowmap& rowmap_, Colinds& colinds_, ClusterRowmap& clusterRowmap_, ClusterColinds& clusterEntries_, Xadj_t& clusterOffsets_, Adj_t clusterVerts_, label_view_t vertClusters_)
-          : rowmap(rowmap_), colinds(colinds_),
-            clusterRowmap(clusterRowmap_), clusterEntries(clusterEntries_),
-            clusterOffsets(clusterOffsets_), clusterVerts(clusterVerts_), vertClusters(vertClusters_)
-        {}
-
-        KOKKOS_INLINE_FUNCTION constexpr int tableSize() const
-        {
-          return 1024;
-        }
-
-        //Given a cluster index, get the hash table index.
-        //This is the 32-bit xorshift RNG, but it works as a hash function.
-        KOKKOS_INLINE_FUNCTION unsigned xorshiftHash(nnz_lno_t cluster) const
-        {
-          unsigned x = cluster;
-          x ^= x << 13;
-          x ^= x >> 17;
-          x ^= x << 5;
-          return x;
-        }
-
-        KOKKOS_INLINE_FUNCTION bool lookup(nnz_lno_t cluster, int* table) const
-        {
-          unsigned h = xorshiftHash(cluster);
-          for(unsigned i = h; i < h + 3; i++)
-          {
-            if(table[i % tableSize()] == cluster)
-              return true;
-          }
-          return false;
-        }
-
-        //Try to insert the edge between cluster (team's cluster) and neighbor (neighboring cluster)
-        //by inserting nei into the table.
-        KOKKOS_INLINE_FUNCTION bool insert(nnz_lno_t cluster, nnz_lno_t nei, int* table) const
-        {
-          unsigned h = xorshiftHash(nei);
-          for(unsigned i = h; i < h + 3; i++)
-          {
-            if(Kokkos::atomic_compare_exchange_strong(&table[i % tableSize()], cluster, nei))
-              return true;
-          }
-          return false;
-        }
-
-        struct SharedData
-        {
-          nnz_lno_t insertedOffset;
-        };
-
-        KOKKOS_INLINE_FUNCTION void operator()(const team_member_t t) const
-        {
-          nnz_lno_t cluster = t.league_rank();
-          nnz_lno_t clusterSize = clusterOffsets(cluster + 1) - clusterOffsets(cluster);
-          size_type clusterStart = clusterRowmap(cluster);
-          nnz_lno_t clusterDegree = clusterRowmap(cluster + 1) - clusterStart;
-          //Use a fixed-size hash table per thread to accumulate neighbor of the cluster.
-          //If it fills up (very unlikely) then just count every remaining edge going to another cluster
-          //not already in the table; this provides a reasonable upper bound for overallocating the cluster graph.
-          //each thread handles a cluster
-          int* table = (int*) t.team_shmem().get_shmem(tableSize() * sizeof(int));
-          SharedData* shared = (SharedData*) t.team_shmem().get_shmem(sizeof(SharedData));
-          Kokkos::single(Kokkos::PerTeam(t),
-            [&]()
-            {
-              shared->insertedOffset = 0;
-            });
-          //mark every entry as cluster (self-loop) to represent free/empty
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(t, tableSize()),
-            [&](const nnz_lno_t i)
-            {
-              table[i] = cluster;
-            });
-          //and mark every edge as a self-loop, so it won't be counted in graph coloring
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(t, clusterDegree),
-            [&](const nnz_lno_t i)
-            {
-              clusterEntries(clusterStart + i) = cluster;
-            });
-          t.team_barrier();
-          //now, for each row belonging to the cluster, iterate through the neighbors
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(t, clusterSize),
-            [&] (const nnz_lno_t i)
-            {
-              nnz_lno_t row = clusterVerts(clusterOffsets(cluster) + i);
-              nnz_lno_t rowDeg = rowmap(row + 1) - rowmap(row);
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, rowDeg),
-                [&] (const nnz_lno_t j)
-                {
-                  nnz_lno_t nei = colinds(rowmap(row) + j);
-                  nnz_lno_t neiCluster = vertClusters(nei);
-                  if(neiCluster != cluster)
-                  {
-                    //Have a neighbor. Try to find it in the table.
-                    if(!lookup(neiCluster, table))
-                    {
-                      //Not in the table. Try to insert it.
-                      if(!insert(cluster, neiCluster, table))
-                      {
-                        //Failed to insert in the hash table, so just add the entry directly
-                        nnz_lno_t off = Kokkos::atomic_fetch_add(&shared->insertedOffset, 1);
-                        if(off < clusterDegree)
-                          clusterEntries(clusterStart + off) = neiCluster;
-                      }
-                    }
-                  }
-                });
-            });
-          t.team_barrier();
-          //copy entries out of the table and into the remaining space in the row
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(t, tableSize()),
-            [&](const nnz_lno_t i)
-            {
-              if(table[i] != cluster)
-              {
-                nnz_lno_t off = Kokkos::atomic_fetch_add(&shared->insertedOffset, 1);
-                if(off < clusterDegree)
-                  clusterEntries(clusterStart + off) = table[i];
-              }
-            });
-        }
-
-        size_t team_shmem_size(int) const
-        {
-          return tableSize() * sizeof(int) + sizeof(SharedData);
-        }
-
-        Rowmap rowmap;
-        Colinds colinds;
-        ClusterRowmap clusterRowmap;
-        ClusterColinds clusterEntries;
-        Xadj_t clusterOffsets;
-        Adj_t clusterVerts;
-        label_view_t vertClusters;
-      };
-/////////////////////////////
-        //clusterOffsets, clusterVerts store the vertices in each cluster like a CRS graph
-        nnz_lno_persistent_work_view_t clusterOffsets;
-        nnz_lno_persistent_work_view_t clusterVerts;
-        KokkosKernels::Impl::create_reverse_map
-          <nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, MyExecSpace>
-          (num_rows, numClusters, vertClusters, clusterOffsets, clusterVerts);
-        //Count the neighbors of each cluster
-        typedef typename rowmap_t::non_const_type cluster_rowmap_t;
-        cluster_rowmap_t clusterRowmap("Cluster graph rowmap", numClusters + 1);
-        //Use the same vector size for all teampolicy kernels
-        int vectorSize = 1;
-#ifdef KOKKOS_ENABLE_CUDA
-        if(std::is_same<MyExecSpace, Kokkos::Cuda>::value)
-          vectorSize = 32;
-#endif
-        size_type totalClusterEntries = 0;
-        {
-          CountClusterNeighborsFunctor
-            <rowmap_t, colinds_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, cluster_rowmap_t>
-            countClusterNeighbors(xadj, adj, clusterOffsets, clusterVerts, vertClusters, clusterRowmap);
-          int sharedPerTeam = countClusterNeighbors.team_shmem_size(0);
-          int teamSize = KokkosKernels::Impl::get_suggested_team_size<team_policy_t>(countClusterNeighbors, vectorSize, sharedPerTeam, 0);
-          Kokkos::parallel_for(team_policy_t(numClusters, teamSize, vectorSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam)), countClusterNeighbors);
-          MyExecSpace().fence();
-          //Prefix sum cluster neighbor counts to get rowmap
-          KokkosKernels::Impl::exclusive_parallel_prefix_sum<cluster_rowmap_t, MyExecSpace>(numClusters + 1, clusterRowmap);
-          Kokkos::deep_copy(totalClusterEntries, Kokkos::subview(clusterRowmap, numClusters));
-        }
-        nnz_lno_persistent_work_view_t clusterEntries("Cluster graph entries", totalClusterEntries);
-        {
-          InsertClusterNeighborsFunctor
-            <rowmap_t, colinds_t, cluster_rowmap_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
-            insertClusterNeighbors(xadj, adj, clusterRowmap, clusterEntries, clusterOffsets, clusterVerts, vertClusters);
-          int sharedPerTeam = insertClusterNeighbors.team_shmem_size(0);
-          int teamSize = KokkosKernels::Impl::get_suggested_team_size<team_policy_t>(insertClusterNeighbors, vectorSize, sharedPerTeam, 0);
-          Kokkos::parallel_for(team_policy_t(numClusters, teamSize, vectorSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam)), insertClusterNeighbors);
-          MyExecSpace().fence();
-        }
-        std::cout << "Verifying cluster graph...\n";
-        for(nnz_lno_t i = 0; i < numClusters; i++)
-        {
-          //the set of neighbors (self-loops not included) that is in the actual clusterRowmap/clusterEntries
-          std::set<nnz_lno_t> actualNeighbors;
-          //the correct set of neighbors
-          std::set<nnz_lno_t> correctNeighbors;
-          for(size_type j = clusterRowmap(i); j < clusterRowmap(i + 1); j++)
-          {
-            if(clusterEntries(j) != i)
-              actualNeighbors.insert(clusterEntries(j));
-          }
-          //iterate through every row in the cluster
-          for(nnz_lno_t j = clusterOffsets(i); j < clusterOffsets(i + 1); j++)
-          {
-            //iterate through every neighbor in the original graph, and look up their clusters
-            nnz_lno_t pointRow = clusterVerts(j);
-            for(size_type k = xadj(pointRow); k < xadj(pointRow + 1); k++)
-            {
-              nnz_lno_t clusterNeighbor = vertClusters(adj(k));
-              if(clusterNeighbor != i)
-                correctNeighbors.insert(clusterNeighbor);
-            }
-          }
-          if(actualNeighbors != correctNeighbors)
-          {
-            std::cout << "Cluster graph incorrect for neighbors of " << i << "!\n";
-            std::vector<nnz_lno_t> extra;
-            std::set_difference(actualNeighbors.begin(), actualNeighbors.end(),
-                correctNeighbors.begin(), correctNeighbors.end(),
-                std::inserter(extra, extra.begin()));
-            if(extra.size())
-            {
-              std::cout << "Had neighbors that it shouldn't: ";
-              for(auto n : extra)
-                std::cout << n << ' ';
-              std::cout << '\n';
-              throw 0;
-            }
-            std::vector<nnz_lno_t> missing;
-            std::set_difference(correctNeighbors.begin(), correctNeighbors.end(),
-                actualNeighbors.begin(), actualNeighbors.end(),
-                std::inserter(missing, missing.begin()));
-            if(missing.size())
-            {
-              std::cout << "Missing neighbors that it should have: ";
-              for(auto n : missing)
-                std::cout << n << ' ';
-              std::cout << '\n';
-              throw 0;
-            }
-          }
-        }
-      */
-
-        /*
-        std::cout << "Cluster graph (cluster, then neighbors):\n";
-        for(nnz_lno_t i = 0; i < numClusters; i++)
-        {
-          std::cout << i << ": ";
-          for(size_type j = clusterRowmap(i); j < clusterRowmap(i + 1); j++)
-          {
-            std::cout << clusterEntries(j) << ' ';
-          }
-          std::cout << '\n';
-        }
-        std::cout << '\n';
-        */
-        //now that cluster graph is computed, color it
-        /*
-        HandleType kh;
-        kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
-        KokkosGraph::Experimental::graph_color_symbolic(&kh, numClusters, numClusters, clusterRowmap, clusterEntries, false); 
-        MyExecSpace::fence();
-        //retrieve colors
-        typedef typename HandleType::GraphColoringHandleType GCHandle;
-        GCHandle* coloringHandle = kh.get_graph_coloring_handle();
-        typedef typename GCHandle::color_view_t ColorView;
-        ColorView clusterColors = coloringHandle->get_vertex_colors();
-        color_t numClusterColors = coloringHandle->get_num_colors();
-        kh.destroy_graph_coloring_handle();
-        */
 
       struct create_permuted_xadj{
         nnz_lno_persistent_work_view_t color_adj;
