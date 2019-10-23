@@ -202,8 +202,8 @@ namespace Experimental {
       size_type rowStart = Crowptrs(i);
       size_type rowEnd = Crowptrs(i + 1);
       size_type rowNum = rowEnd - rowStart;
-      KokkosKernels::Impl::radixSort2<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type, TeamMember>
-        (Ccolinds.data() + rowStart, CcolindsAux.data() + rowStart, ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum, t);
+      KokkosKernels::Impl::SerialRadixSort2<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type>
+        (Ccolinds.data() + rowStart, CcolindsAux.data() + rowStart, ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum);
     }
     CrowptrsT Crowptrs;
     CcolindsT Ccolinds;
@@ -230,7 +230,7 @@ namespace Experimental {
       size_type rowStart = Crowptrs(i);
       size_type rowEnd = Crowptrs(i + 1);
       size_type rowNum = rowEnd - rowStart;
-      KokkosKernels::Impl::bitonicSortTeam2<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type, TeamMember>
+      KokkosKernels::Impl::TeamBitonicSort2<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type, TeamMember>
         (Ccolinds.data() + rowStart, ABperm.data() + rowStart, rowNum, t);
     }
     CrowptrsT Crowptrs;

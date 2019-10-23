@@ -54,9 +54,9 @@ namespace Impl {
 //Radix sort for integers, on a single thread within a team.
 //Pros: few diverging branches, so OK for sorting on a single GPU thread/warp. Better on CPU cores.
 //Con: requires auxiliary storage, and this version only works for integers
-template<typename Ordinal, typename ValueType, typename Thread>
+template<typename Ordinal, typename ValueType>
 KOKKOS_INLINE_FUNCTION void
-radixSort(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread thread)
+SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n)
 {
   //printf("Sorting %d elems at %p.\n", int(n), values);
   static_assert(std::is_integral<ValueType>::value, "radixSort can only be run on integers.");
@@ -75,11 +75,10 @@ radixSort(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread threa
   //also invert key values here for a descending sort
   if(minVal != 0)
   {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-    [=](Ordinal i)
+    for(Ordinal i = 0; i < n; i++)
     {
       values[i] -= minVal;
-    });
+    }
   }
   //determine how many significant bits the data has
   Ordinal sortBits = 0;
@@ -89,95 +88,89 @@ radixSort(ValueType* values, ValueType* valuesAux, Ordinal n, const Thread threa
     upperBound >>= 1;
     sortBits++;
   }
-  Kokkos::single(Kokkos::PerThread(thread),
-  [=]()
+  //Is the data currently held in values (false) or valuesAux (true)?
+  bool inAux = false;
+  //sort 4 bits at a time, into 16 buckets
+  ValueType mask = 0xF;
+  //maskPos counts the low bit index of mask (0, 4, 8, ...)
+  Ordinal maskPos = 0;
+  for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
   {
-    //Is the data currently held in values (false) or valuesAux (true)?
-    bool inAux = false;
-    //sort 4 bits at a time, into 16 buckets
-    ValueType mask = 0xF;
-    //maskPos counts the low bit index of mask (0, 4, 8, ...)
-    Ordinal maskPos = 0;
-    for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
+    //Count the number of elements in each bucket
+    Ordinal count[16] = {0};
+    Ordinal offset[17];
+    if(!inAux)
     {
-      //Count the number of elements in each bucket
-      Ordinal count[16] = {0};
-      Ordinal offset[17];
-      if(!inAux)
+      for(Ordinal i = 0; i < n; i++)
       {
-        for(Ordinal i = 0; i < n; i++)
-        {
-          count[(values[i] & mask) >> maskPos]++;
-        }
+        count[(values[i] & mask) >> maskPos]++;
       }
-      else
-      {
-        for(Ordinal i = 0; i < n; i++)
-        {
-          count[(valuesAux[i] & mask) >> maskPos]++;
-        }
-      }
-      offset[0] = 0;
-      //get offset as the prefix sum for count
-      for(Ordinal i = 0; i < 16; i++)
-      {
-        offset[i + 1] = offset[i] + count[i];
-      }
-      //now for each element in [lo, hi), move it to its offset in the other buffer
-      //this branch should be ok because whichBuf is the same on all threads
-      if(!inAux)
-      {
-        //copy from *Over to *Aux
-        for(Ordinal i = 0; i < n; i++)
-        {
-          Ordinal bucket = (values[i] & mask) >> maskPos;
-          valuesAux[offset[bucket + 1] - count[bucket]] = values[i];
-          count[bucket]--;
-        }
-      }
-      else
-      {
-        //copy from *Aux to *Over
-        for(Ordinal i = 0; i < n; i++)
-        {
-          Ordinal bucket = (valuesAux[i] & mask) >> maskPos;
-          values[offset[bucket + 1] - count[bucket]] = valuesAux[i];
-          count[bucket]--;
-        }
-      }
-      inAux = !inAux;
-      mask = mask << 4;
-      maskPos += 4;
     }
-  });
+    else
+    {
+      for(Ordinal i = 0; i < n; i++)
+      {
+        count[(valuesAux[i] & mask) >> maskPos]++;
+      }
+    }
+    offset[0] = 0;
+    //get offset as the prefix sum for count
+    for(Ordinal i = 0; i < 16; i++)
+    {
+      offset[i + 1] = offset[i] + count[i];
+    }
+    //now for each element in [lo, hi), move it to its offset in the other buffer
+    //this branch should be ok because whichBuf is the same on all threads
+    if(!inAux)
+    {
+      //copy from *Over to *Aux
+      for(Ordinal i = 0; i < n; i++)
+      {
+        Ordinal bucket = (values[i] & mask) >> maskPos;
+        valuesAux[offset[bucket + 1] - count[bucket]] = values[i];
+        count[bucket]--;
+      }
+    }
+    else
+    {
+      //copy from *Aux to *Over
+      for(Ordinal i = 0; i < n; i++)
+      {
+        Ordinal bucket = (valuesAux[i] & mask) >> maskPos;
+        values[offset[bucket + 1] - count[bucket]] = valuesAux[i];
+        count[bucket]--;
+      }
+    }
+    inAux = !inAux;
+    mask = mask << 4;
+    maskPos += 4;
+  }
   //Move values back into main array if they are currently in aux.
   //This is the case if an odd number of rounds were done.
   if(((sortBits + 3) / 4) % 2 == 1)
   {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-    [=](Ordinal i)
+    for(Ordinal i = 0; i < n; i++)
     {
       values[i] = valuesAux[i];
-    });
+    }
   }
   //remove bias to restore original values
   if(minVal != 0)
   {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-    [=](Ordinal i)
+    for(Ordinal i = 0; i < n; i++)
     {
       values[i] += minVal;
-    });
+    }
   }
 }
 
-//Radix sort for integers, on a single thread within a team.
+//Radix sort for integers (no internal parallelism).
 //While sorting, also permute "perm" array along with the values.
 //Pros: few diverging branches, so good for sorting on a single GPU thread/warp.
 //Con: requires auxiliary storage, this version only works for integers (although float/double is possible)
-template<typename Ordinal, typename ValueType, typename PermType, typename Thread>
+template<typename Ordinal, typename ValueType, typename PermType>
 KOKKOS_INLINE_FUNCTION void
-radixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermType* permAux, Ordinal n, const Thread thread)
+SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermType* permAux, Ordinal n)
 {
   static_assert(std::is_integral<ValueType>::value, "radixSort can only be run on integers.");
   if(n <= 1)
@@ -195,11 +188,10 @@ radixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermType* pe
   //also invert key values here for a descending sort
   if(minVal != 0)
   {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-    [=](Ordinal i)
+    for(Ordinal i = 0; i < n; i++)
     {
       values[i] -= minVal;
-    });
+    }
   }
   Ordinal sortBits = 0;
   ValueType upperBound = maxVal - minVal;
@@ -208,88 +200,82 @@ radixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermType* pe
     upperBound >>= 1;
     sortBits++;
   }
-  Kokkos::single(Kokkos::PerThread(thread),
-  [=]()
+  //Is the data currently held in values (false) or valuesAux (true)?
+  bool inAux = false;
+  //sort 4 bits at a time, into 16 buckets
+  ValueType mask = 0xF;
+  //maskPos counts the low bit index of mask (0, 4, 8, ...)
+  Ordinal maskPos = 0;
+  for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
   {
-    //Is the data currently held in values (false) or valuesAux (true)?
-    bool inAux = false;
-    //sort 4 bits at a time, into 16 buckets
-    ValueType mask = 0xF;
-    //maskPos counts the low bit index of mask (0, 4, 8, ...)
-    Ordinal maskPos = 0;
-    for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
+    //Count the number of elements in each bucket
+    Ordinal count[16] = {0};
+    Ordinal offset[17];
+    if(!inAux)
     {
-      //Count the number of elements in each bucket
-      Ordinal count[16] = {0};
-      Ordinal offset[17];
-      if(!inAux)
+      for(Ordinal i = 0; i < n; i++)
       {
-        for(Ordinal i = 0; i < n; i++)
-        {
-          count[(values[i] & mask) >> maskPos]++;
-        }
+        count[(values[i] & mask) >> maskPos]++;
       }
-      else
-      {
-        for(Ordinal i = 0; i < n; i++)
-        {
-          count[(valuesAux[i] & mask) >> maskPos]++;
-        }
-      }
-      offset[0] = 0;
-      //get offset as the prefix sum for count
-      for(Ordinal i = 0; i < 16; i++)
-      {
-        offset[i + 1] = offset[i] + count[i];
-      }
-      //now for each element in [lo, hi), move it to its offset in the other buffer
-      //this branch should be ok because whichBuf is the same on all threads
-      if(!inAux)
-      {
-        //copy from *Over to *Aux
-        for(Ordinal i = 0; i < n; i++)
-        {
-          Ordinal bucket = (values[i] & mask) >> maskPos;
-          valuesAux[offset[bucket + 1] - count[bucket]] = values[i];
-          permAux[offset[bucket + 1] - count[bucket]] = perm[i];
-          count[bucket]--;
-        }
-      }
-      else
-      {
-        //copy from *Aux to *Over
-        for(Ordinal i = 0; i < n; i++)
-        {
-          Ordinal bucket = (valuesAux[i] & mask) >> maskPos;
-          values[offset[bucket + 1] - count[bucket]] = valuesAux[i];
-          perm[offset[bucket + 1] - count[bucket]] = permAux[i];
-          count[bucket]--;
-        }
-      }
-      inAux = !inAux;
-      mask = mask << 4;
-      maskPos += 4;
     }
-  });
+    else
+    {
+      for(Ordinal i = 0; i < n; i++)
+      {
+        count[(valuesAux[i] & mask) >> maskPos]++;
+      }
+    }
+    offset[0] = 0;
+    //get offset as the prefix sum for count
+    for(Ordinal i = 0; i < 16; i++)
+    {
+      offset[i + 1] = offset[i] + count[i];
+    }
+    //now for each element in [lo, hi), move it to its offset in the other buffer
+    //this branch should be ok because whichBuf is the same on all threads
+    if(!inAux)
+    {
+      //copy from *Over to *Aux
+      for(Ordinal i = 0; i < n; i++)
+      {
+        Ordinal bucket = (values[i] & mask) >> maskPos;
+        valuesAux[offset[bucket + 1] - count[bucket]] = values[i];
+        permAux[offset[bucket + 1] - count[bucket]] = perm[i];
+        count[bucket]--;
+      }
+    }
+    else
+    {
+      //copy from *Aux to *Over
+      for(Ordinal i = 0; i < n; i++)
+      {
+        Ordinal bucket = (valuesAux[i] & mask) >> maskPos;
+        values[offset[bucket + 1] - count[bucket]] = valuesAux[i];
+        perm[offset[bucket + 1] - count[bucket]] = permAux[i];
+        count[bucket]--;
+      }
+    }
+    inAux = !inAux;
+    mask = mask << 4;
+    maskPos += 4;
+  }
   //Move values back into main array if they are currently in aux.
   //This is the case if an odd number of rounds were done.
   if(((sortBits + 3) / 4) % 2 == 1)
   {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-    [=](Ordinal i)
+    for(Ordinal i = 0; i < n; i++)
     {
       values[i] = valuesAux[i];
       perm[i] = permAux[i];
-    });
+    }
   }
   if(minVal != 0)
   {
     //remove bias to restore original values
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, n),
-    [=](Ordinal i)
+    for(Ordinal i = 0; i < n; i++)
     {
       values[i] += minVal;
-    });
+    }
   }
 }
 
@@ -308,7 +294,7 @@ struct DefaultComparator
 //Good diagram of the algorithm at https://en.wikipedia.org/wiki/Bitonic_sorter
 template<typename Ordinal, typename ValueType, typename TeamMember, typename Comparator = DefaultComparator<ValueType>>
 KOKKOS_INLINE_FUNCTION void
-bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember mem)
+TeamBitonicSort(ValueType* values, Ordinal n, const TeamMember mem)
 {
   //Algorithm only works on power-of-two input size only.
   //If n is not a power-of-two, will implicitly pretend
@@ -325,7 +311,7 @@ bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember mem)
     for(Ordinal j = 0; j <= i; j++)
     {
       // n/2 pairs of items are compared in parallel
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(mem, npot / 2),
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(mem, npot / 2),
         [=](const Ordinal t)
         {
           //How big are the brown/pink boxes?
@@ -374,7 +360,7 @@ bitonicSortTeam(ValueType* values, Ordinal n, const TeamMember mem)
 //Sort "values", while applying the same swaps to "perm" 
 template<typename Ordinal, typename ValueType, typename PermType, typename TeamMember, typename Comparator = DefaultComparator<ValueType>>
 KOKKOS_INLINE_FUNCTION void
-bitonicSortTeam2(ValueType* values, PermType* perm, Ordinal n, const TeamMember mem)
+TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember mem)
 {
   //Algorithm only works on power-of-two input size only.
   //If n is not a power-of-two, will implicitly pretend
@@ -391,7 +377,7 @@ bitonicSortTeam2(ValueType* values, PermType* perm, Ordinal n, const TeamMember 
     for(Ordinal j = 0; j <= i; j++)
     {
       // n/2 pairs of items are compared in parallel
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(mem, npot / 2),
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(mem, npot / 2),
         [=](const Ordinal t)
         {
           //How big are the brown/pink boxes?
@@ -450,7 +436,7 @@ struct BitonicSingleTeamFunctor
   BitonicSingleTeamFunctor(View& v_) : v(v_) {}
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
   {
-    bitonicSortTeam<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data(), v.extent(0), t);
+    TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data(), v.extent(0), t);
   };
   View v;
 };
@@ -467,7 +453,7 @@ struct BitonicChunkFunctor
     Ordinal n = chunkSize;
     if(chunkStart + n > Ordinal(v.extent(0)))
       n = v.extent(0) - chunkStart;
-    bitonicSortTeam<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data() + chunkStart, n, t);
+    TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data() + chunkStart, n, t);
   };
   View v;
   Ordinal chunkSize;
@@ -602,18 +588,18 @@ void bitonicSort(View v)
   }
   else
   {
-    //Partition the data equally among fixed number of teams
-    const Ordinal numTeams = 256;
     Ordinal npot = 1;
     while(npot < n)
       npot <<= 1;
-    Ordinal numPerTeam = npot / numTeams;
+    //Partition the data equally among fixed number of teams
+    Ordinal chunkSize = 512;
+    Ordinal numTeams = npot / chunkSize;
     //First, sort within teams
     Kokkos::parallel_for(team_policy(numTeams, Kokkos::AUTO()),
-        BitonicChunkFunctor<View, Ordinal, team_member, Comparator>(v, numPerTeam));
-    for(int teamsPerBox = 2; teamsPerBox <= npot / numPerTeam; teamsPerBox *= 2)
+        BitonicChunkFunctor<View, Ordinal, team_member, Comparator>(v, chunkSize));
+    for(int teamsPerBox = 2; teamsPerBox <= npot / chunkSize; teamsPerBox *= 2)
     {
-      Ordinal boxSize = teamsPerBox * numPerTeam;
+      Ordinal boxSize = teamsPerBox * chunkSize;
       Kokkos::parallel_for(team_policy(numTeams, Kokkos::AUTO()),
           BitonicPhase1Functor<View, Ordinal, team_member, Comparator>(v, boxSize, teamsPerBox));
       for(int boxDiv = 1; teamsPerBox >> boxDiv; boxDiv++)
