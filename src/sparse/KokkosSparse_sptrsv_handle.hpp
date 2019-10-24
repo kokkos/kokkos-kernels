@@ -161,6 +161,7 @@ private:
   supercols_t      work_offset;
 
   // 
+  bool merge_supernodes;
   bool invert_offdiagonal;
 
   // type of kernels used at each level
@@ -197,6 +198,12 @@ public:
     algm(choice),
     team_size(-1),
     vector_size(-1)
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+    , merge_supernodes (false)
+    , invert_offdiagonal (false)
+    , sup_size_unblocked (100)
+    , sup_size_blocked (200)
+#endif
   {}
 
 #if 0
@@ -413,7 +420,16 @@ public:
     this->sup_size_blocked = size_blocked;
   }
 
-  // invert_offdiagonal
+  // specify to merge supernodes
+  void set_merge_supernodes(bool flag) {
+    this->merge_supernodes = flag;
+  }
+
+  bool get_merge_supernodes() {
+    return this->merge_supernodes;
+  }
+
+  // specify to apply the inverse of diagonal to the offdiagonal blocks
   void set_invert_offdiagonal(bool flag) {
     this->invert_offdiagonal = flag;
   }

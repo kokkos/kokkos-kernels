@@ -920,9 +920,6 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   typedef typename ValuesType::non_const_value_type scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
-  typedef typename TriSolveHandle::supercols_t supercols_t;
-  typedef typename TriSolveHandle::supercols_host_t supercols_host_t;
-
   typedef Kokkos::pair<int,int> range_type;
 
   auto nlevels = thandle.get_num_levels();
@@ -934,6 +931,9 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+  typedef typename TriSolveHandle::supercols_t supercols_t;
+  typedef typename TriSolveHandle::supercols_host_t supercols_host_t;
+
   auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
 
@@ -1099,9 +1099,6 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
 
   typedef typename ValuesType::non_const_value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-
-  typedef typename TriSolveHandle::supercols_t supercols_t;
 
 #if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
   typedef Kokkos::pair<int,int> range_type;
@@ -1117,6 +1114,8 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+  typedef typename TriSolveHandle::supercols_t supercols_t;
+
   //auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   //Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
 
@@ -1201,6 +1200,7 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         supercols_host_t diag_kernel_type_host = thandle.get_diag_kernel_type_host ();
 
         if (kernel_type_host (lvl) == 3) {
+          typedef Kokkos::Details::ArithTraits<scalar_t> STS;
           // using device-level kernels (functor is called to gather the input into workspace)
           scalar_t zero = STS::zero ();
           scalar_t one = STS::one ();

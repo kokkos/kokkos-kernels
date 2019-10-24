@@ -766,15 +766,10 @@ template <typename scalar_t, typename crsmat_t, typename scalar_view_t>
 bool check_errors(scalar_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol) {
 
   typedef typename crsmat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type entries_view_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-
   typedef typename entries_view_t::non_const_value_type lno_t;
-  //typedef typename values_view_t::value_type scalar_t;
 
   typedef typename scalar_view_t::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
 
   scalar_t ZERO = scalar_t(0);
   scalar_t ONE = scalar_t(1);

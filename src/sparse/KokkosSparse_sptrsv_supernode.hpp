@@ -666,9 +666,9 @@ read_merged_supernodes(int n, int nsuper, const int *nb,
 
   // ----------------------------------------------------------
   // now let's copy numerical values
-  double *dwork = new double[n];
+  scalar_t *dwork = new scalar_t[n];
   for (int i = 0; i < n; i++) {
-    dwork[i] = 0.0;
+    dwork[i] = STS::zero ();
   }
 
   int nnzA = hr (n);

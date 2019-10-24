@@ -91,6 +91,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename cols_view_t::HostMirror            host_cols_view_t;
 
   SCformat *Lstore = (SCformat*)(L->Store);
   NCformat *Ustore = (NCformat*)(U->Store);
@@ -160,8 +161,8 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
   /* Upper-triangular matrix */
   int nnzA = hr (n);
-  cols_view_t    column_view ("colmap_view", nnzA);
-  typename cols_view_t::HostMirror   hc = Kokkos::create_mirror_view (column_view);
+  cols_view_t column_view ("colmap_view", nnzA);
+  host_cols_view_t hc = Kokkos::create_mirror_view (column_view);
 
   int *sup = new int[nsuper];
   for (int k = 0; k < nsuper; k++) {
@@ -265,7 +266,6 @@ template <typename crsmat_t, typename graph_t>
 crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
   typedef typename crsmat_t::values_type::non_const_type values_view_t;
 
   typedef typename values_view_t::value_type scalar_t;
@@ -275,7 +275,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
 
   NCformat *Ustore = (NCformat*)(U->Store);
-  double *Uval = (double*)(Ustore->nzval);
+  scalar_t *Uval = (scalar_t*)(Ustore->nzval);
 
   int n = L->nrow;
   int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns

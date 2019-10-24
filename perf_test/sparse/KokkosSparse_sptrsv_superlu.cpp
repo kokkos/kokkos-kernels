@@ -196,8 +196,8 @@ void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, i
   *perm_c = new int[nrow];
   *perm_r = new int[nrow];
 
-  #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
   if (metis) {
+    #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
     idx_t n = nrow;
     idx_t nnz = rowptr[n];
       
@@ -235,8 +235,10 @@ void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, i
     delete [] metis_iperm;
     delete [] metis_rowptr;
     delete [] metis_colind;
+    #else
+    std::cout << std::endl << " ** METIS not ENABLED **" << std::endl << std::endl;
+    #endif
   }
-  #endif
 
   SuperMatrix A;
   NCformat *Astore;
@@ -302,10 +304,7 @@ void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, i
   return;
 }
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 template<typename scalar_t>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, bool merge, bool invert_offdiag,
                      int panel_size, int relax_size, int sup_size_unblocked, int sup_size_blocked, int loop) {
@@ -326,8 +325,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
   //
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
     execution_space, memory_space, memory_space > KernelHandle;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
-    host_execution_space, host_memory_space, memory_space > HostKernelHandle;
 
   //
   typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, host_execution_space, void, size_type> host_crsmat_t;
@@ -407,8 +404,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
           }
-          khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
-          khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
+          // used to determine which kernels were used based on the block sizes, but not currently used
+          //khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
+          //khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
 
 
           // ==============================================
@@ -418,7 +416,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
-          sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, merge, invert_offdiag, L, U);
+          sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, invert_offdiag, L, U);
 
 
           // ==============================================
@@ -682,13 +680,13 @@ int main(int argc, char **argv)
     int total_errors = test_sptrsv_perf<double>(tests, filename, metis, merge, invert_offdiag, panel_size,
                                                 relax_size, sup_size_unblocked, sup_size_blocked, loop);
     if(total_errors == 0)
-      printf("Kokkos::SPTRSV Test: Passed\n\n");
+      std::cout << "Kokkos::SPTRSV Test: Passed" << std::endl << std::endl;
     else
-      printf("Kokkos::SPTRSV Test: Failed\n\n");
+      std::cout << "Kokkos::SPTRSV Test: Failed" << std::endl << std::endl;
   }
   Kokkos::finalize();
 #else
-  std::cout << "SUPERLU NOT ENABLED:" << std::endl;
+  std::cout << std::endl << " ** SUPERLU NOT ENABLED **" << std::endl << std::endl;
   exit(0);
 #endif
   return 0;
@@ -696,15 +694,15 @@ int main(int argc, char **argv)
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 int main() {
 #if !defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )
-  printf( " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined\n" );
+  std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
 #if defined(KOKKOS_ENABLE_CUDA)
-  printf( " KOKKOS_ENABLE_CUDA defined\n" );
+  std::cout << " KOKKOS_ENABLE_CUDA defined" << std::endl;
   #if !defined(KOKKOS_ENABLE_CUDA_LAMBDA)
-  printf( " KOKKOS_ENABLE_CUDA_LAMBDA **not** defined\n" );
+  std::cout << " KOKKOS_ENABLE_CUDA_LAMBDA **not** defined" << std::endl;
   #endif
 #endif
-  printf( " CUDA_VERSION = %d\n", CUDA_VERSION );
+  std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
   return 0;
 }
 #endif

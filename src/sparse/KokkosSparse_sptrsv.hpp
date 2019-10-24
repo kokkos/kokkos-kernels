@@ -239,11 +239,6 @@ namespace Experimental {
       SuperMatrix &U,
       int *etree)
   {
-    typedef typename graph_t::row_map_type::non_const_type row_map_view_type;
-    typedef typename graph_t::entries_type::non_const_type entries_view_type;
-    typedef typename entries_view_type::non_const_value_type lno_type;
-    typedef typename entries_view_type::non_const_value_type size_type;
-
     // ===================================================================
     // read CrsGraph from SuperLU factor
     std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
@@ -366,6 +361,11 @@ namespace Experimental {
     std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
     // ===================================================================
+    // save options
+    handleL->get_sptrsv_handle ()->set_merge_supernodes (merge);
+    handleU->get_sptrsv_handle ()->set_merge_supernodes (merge);
+
+    // ===================================================================
     // save graphs
     handleL->get_sptrsv_handle ()->set_graph (graphL);
     handleL->get_sptrsv_handle ()->set_graph_host (graphL_host);
@@ -382,13 +382,15 @@ namespace Experimental {
   void sptrsv_compute(
       KernelHandle *handleL,
       KernelHandle *handleU,
-      bool merge,
       bool invert_offdiag,
       SuperMatrix &L,
       SuperMatrix &U)
   {
     typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
     typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+
+    // load options
+    bool merge = handleL->get_sptrsv_handle ()->get_merge_supernodes ();
 
     // load graphs
     auto graphL = handleL->get_sptrsv_handle ()->get_graph ();

@@ -110,7 +110,6 @@ crsmat_t read_cholmod_factor(bool cusparse, bool invert_diag, cholmod_factor *L,
 
   typedef typename crsmat_t::values_type::non_const_type values_view_t;
   typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
   /* ---------------------------------------------------------------------- */
   /* get inputs */

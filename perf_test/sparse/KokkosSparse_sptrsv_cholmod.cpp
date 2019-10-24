@@ -1,7 +1,6 @@
 /*
 //@HEADER
 // ************************************************************************
-//
 //               KokkosKernels 0.9: Linear Algebra and Graph Kernels
 //                 Copyright 2017 Sandia Corporation
 //
@@ -535,13 +534,13 @@ int main(int argc, char **argv)
 
     int total_errors = test_sptrsv_perf<double>(tests, filename, loop);
     if(total_errors == 0)
-      printf("Kokkos::SPTRSV Test: Passed\n\n");
+      std::cout << "Kokkos::SPTRSV Test: Passed" << std::endl << std::endl;
     else
-      printf("Kokkos::SPTRSV Test: Failed\n\n");
+      std::cout << "Kokkos::SPTRSV Test: Failed" << std::endl << std::endl;
   }
   Kokkos::finalize();
 #else
-  std::cout << "CHOLMOD NOT ENABLED:" << std::endl;
+  std::cout << std::endl << "** CHOLMOD NOT ENABLED **" << std::endl << std::endl;
   exit(0);
 #endif
   return 0;
@@ -549,15 +548,15 @@ int main(int argc, char **argv)
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 int main() {
 #if !defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )
-  printf( " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined\n" );
+  std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
 #if defined(KOKKOS_ENABLE_CUDA)
-  printf( " KOKKOS_ENABLE_CUDA defined\n" );
+  std::cout << " KOKKOS_ENABLE_CUDA defined" << std::endl;
   #if !defined(KOKKOS_ENABLE_CUDA_LAMBDA)
-  printf( " KOKKOS_ENABLE_CUDA_LAMBDA **not** defined\n" );
+  std::cout << " KOKKOS_ENABLE_CUDA_LAMBDA not defined\n" << std::endl;
   #endif
 #endif
-printf( " CUDA_VERSION = %d\n", CUDA_VERSION );
+  std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
   return 0;
 }
 #endif
