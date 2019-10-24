@@ -1420,7 +1420,7 @@ namespace KokkosSparse{
           if(adj.extent(0) / num_rows > 50)
             clusterAlgo = CLUSTER_CUTHILL_MCKEE;
           else
-            clusterAlgo = CLUSTER_SSSP;
+            clusterAlgo = CLUSTER_BALLOON;
         }
         switch(clusterAlgo)
         {
@@ -1432,9 +1432,9 @@ namespace KokkosSparse{
             Kokkos::parallel_for(my_exec_space(0, num_rows), ReorderedClusteringFunctor<nnz_view_t>(vertClusters, cmOrder, clusterSize));
             break;
           }
-          case CLUSTER_SSSP:
+          case CLUSTER_BALLOON:
           {
-            SSSP_Clustering<HandleType, rowmap_t, colinds_t> sssp(num_rows, xadj, adj);
+            BalloonClustering<HandleType, rowmap_t, colinds_t> sssp(num_rows, xadj, adj);
             vertClusters = sssp.run(clusterSize);
             break;
           }
@@ -1452,6 +1452,7 @@ namespace KokkosSparse{
         std::cout << "Graph clustering: " << timer.seconds() << '\n';
         timer.reset();
 #endif
+        //#define KOKKOSSPARSE_IMPL_PRINTDEBUG 1
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
           auto vertClustersHost = Kokkos::create_mirror_view(vertClusters);
@@ -1477,6 +1478,23 @@ namespace KokkosSparse{
           Kokkos::parallel_for(my_exec_space(0, num_rows), FillClusterVertsFunctor<nnz_view_t>(clusterOffsets, clusterVerts, vertClusters, tempInsertCounts));
         }
         MyExecSpace().fence();
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
+        {
+          auto clusterOffsetsHost = Kokkos::create_mirror_view(clusterOffsets);
+          auto clusterVertsHost = Kokkos::create_mirror_view(clusterVerts);
+          puts("Clusters (cluster #, and vertex #s):");
+          for(nnz_lno_t i = 0; i < numClusters; i++)
+          {
+            printf("%d: ", (int) i);
+            for(nnz_lno_t j = clusterOffsetsHost(i); j < clusterOffsetsHost(i + 1); j++)
+            {
+              printf("%d ", (int) clusterVerts(j));
+            }
+            putchar('\n');
+          }
+          printf("\n\n\n");
+        }
+#endif
         //Determine the set of edges (in the point graph) that cross between two distinct clusters
         int vectorSize = this->handle->get_suggested_vector_size(num_rows, adj.extent(0));
         bitset_t crossClusterEdgeMask(adj.extent(0));
@@ -1546,6 +1564,7 @@ namespace KokkosSparse{
         timer.reset();
 #endif
         return vertexColors;
+#undef KOKKOSSPARSE_IMPL_PRINTDEBUG
       }
 
       struct create_permuted_xadj{

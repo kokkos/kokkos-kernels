@@ -105,6 +105,8 @@ void runGS(string matrixPath, string devName, bool symmetric)
   double bnorm = KokkosBlas::nrm2(b);
   Kokkos::Timer timer;
   clusterSizes.push_back(1);
+  clusterSizes.push_back(4);
+  clusterSizes.push_back(8);
   clusterSizes.push_back(16);
   //for(int clusterSize = 1; clusterSize <= nrows / 64 && clusterSize <= 1000; clusterSize = ceil(1.5 * clusterSize))
   //  clusterSizes.push_back(clusterSize);
@@ -140,7 +142,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
     timer.reset();
     KokkosSparse::Experimental::symmetric_gauss_seidel_apply
       //<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
-      (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 1.0, 5);
+      (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 1.2, 5);
     applyTimes.push_back(timer.seconds());
     std::cout << "\n*** apply time: " << applyTimes.back() << '\n';
     //Now, compute the 2-norm of residual 
