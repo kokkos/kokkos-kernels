@@ -647,499 +647,6 @@ struct RCM
   }
 };
 
-/*
-template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
-struct BalloonClustering
-{
-  typedef typename HandleType::HandleExecSpace MyExecSpace;
-  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
-  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
-
-  typedef typename HandleType::size_type size_type;
-  typedef typename HandleType::nnz_lno_t nnz_lno_t;
-
-  typedef typename lno_row_view_t::value_type offset_t;
-
-  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_host_view_t row_lno_persistent_work_host_view_t; //Host view type
-
-  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t; //Host view type
-
-  typedef nnz_lno_persistent_work_view_t nnz_view_t;
-  //typedef Kokkos::View<nnz_lno_t, MyTempMemorySpace, Kokkos::MemoryTraits<0>> single_view_t;
-  //typedef Kokkos::View<nnz_lno_t, Kokkos::HostSpace, Kokkos::MemoryTraits<0>> single_view_host_t;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  typedef Kokkos::Bitset<MyExecSpace> bitset_t;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t ;
-  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
-  typedef typename team_policy_t::member_type team_member_t ;
-
-  BalloonClustering(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
-    : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
-  {}
-
-  nnz_lno_t numRows;
-  lno_row_view_t rowmap;
-  lno_nnz_view_t colinds;
-
-  typedef Kokkos::Random_XorShift64_Pool<MyExecSpace> RandPool;
-  RandPool randPool;
-
-  struct InitRootsTag {};   //select roots; set their distances to 0
-  struct RandomFillTag {};  //assign non-roots to random clusters, and assign large random distances
-  struct LimitedBfsTag{};   //assign non-labeled vertices to smallest neighboring cluster, but only if the cluster is below max size
-  struct OpenBfsTag{};      //assign non-labeled vertices to smallest neighboring cluster, even if it's already oversized
-  struct UpdateDistanceTag{}; //minimize the distances from each vertex to its root using its neighbors' distances
-  struct OptimizeTag {};      //relabel vertices to greedily optimize the cost function
-
-  struct BalloonFunctor 
-  {
-    BalloonFunctor(nnz_view_t& vertClusters_, nnz_view_t& distances_, lno_row_view_t& row_map_, lno_nnz_view_t& col_inds_, nnz_lno_t clusterSize_, RandPool& randPool_)
-      : vertClusters(vertClusters_), distances(distances_), row_map(row_map_), col_inds(col_inds_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), randPool(randPool_)
-    {
-      numClusters = (numRows + clusterSize - 1) / clusterSize;
-      clusterCounts = nnz_view_t("Vertices per cluster", numClusters);
-      Kokkos::deep_copy(vertClusters, (nnz_lno_t) numClusters);
-    }
-
-    //Run init version over the number of clusters.
-    KOKKOS_INLINE_FUNCTION void operator()(const InitRootsTag, const nnz_lno_t i) const
-    {
-      clusterCounts(i) = 1;
-      nnz_lno_t root;
-      auto state = randPool.get_state();
-      do
-      {
-        root = state.rand(numRows);
-      }
-      while(!Kokkos::atomic_compare_exchange_strong(&vertClusters(root), numClusters, root));
-      randPool.free_state(state);
-      distances(root) = 0;
-      vertClusters(root) = i;
-    }
-
-    KOKKOS_INLINE_FUNCTION void operator()(const RandomFillTag, const nnz_lno_t i) const
-    {
-      if(vertClusters(i) == numClusters)
-      {
-        auto state = randPool.get_state();
-        vertClusters(i) = state.rand(numClusters);
-        Kokkos::atomic_increment(&clusterCounts(vertClusters(i)));
-        distances(i) = numRows;
-        randPool.free_state(state);
-      }
-    };
-
-    //Join unlabeled vertices to smallest adjacent cluster
-    KOKKOS_INLINE_FUNCTION void operator()(const LimitedBfsTag, const nnz_lno_t i, nnz_lno_t& lUpdates) const
-    {
-      if(vertClusters(i) == numClusters)
-      {
-        nnz_lno_t bestCluster = numClusters;
-        nnz_lno_t bestSize = numRows;
-        nnz_lno_t bestDist = numRows;
-        size_type rowStart = row_map(i);
-        size_type rowEnd = row_map(i + 1);
-        for(size_type j = rowStart; j < rowEnd; j++)
-        {
-          nnz_lno_t neiCluster = vertClusters(col_inds(j));
-          if(neiCluster != numClusters && clusterCounts(neiCluster) < clusterSize)
-          {
-            if(clusterCounts(neiCluster) < bestSize)
-            {
-              bestSize = clusterCounts(neiCluster);
-              bestCluster = neiCluster;
-              bestDist = distances(col_inds(j)) + 1;
-            }
-          }
-          else if(distances(col_inds(j)) < bestDist - 1)
-          {
-            //have a better distance to the current cluster
-            bestDist = distances(col_inds(j)) + 1;
-          }
-        }
-        if(bestCluster != numClusters)
-        {
-          Kokkos::atomic_increment(&clusterCounts(bestCluster));
-          vertClusters(i) = bestCluster;
-          distances(i) = bestDist;
-          lUpdates++;
-        }
-      }
-    }
-
-    //Join unlabeled vertices to smallest adjacent cluster
-    KOKKOS_INLINE_FUNCTION void operator()(const OpenBfsTag, const nnz_lno_t i, nnz_lno_t& lUpdates) const
-    {
-      if(vertClusters(i) == numClusters)
-      {
-        nnz_lno_t bestCluster = numClusters;
-        nnz_lno_t bestSize = numRows;
-        nnz_lno_t bestDist = numRows;
-        size_type rowStart = row_map(i);
-        size_type rowEnd = row_map(i + 1);
-        for(size_type j = rowStart; j < rowEnd; j++)
-        {
-          nnz_lno_t neiCluster = vertClusters(col_inds(j));
-          if(neiCluster != numClusters)
-          {
-            if(clusterCounts(neiCluster) < bestSize)
-            {
-              bestSize = clusterCounts(neiCluster);
-              bestCluster = neiCluster;
-              bestDist = distances(col_inds(j)) + 1;
-            }
-          }
-          else if(distances(col_inds(j)) < bestDist - 1)
-          {
-            //have a better distance to the current cluster
-            bestDist = distances(col_inds(j)) + 1;
-          }
-        }
-        if(bestCluster != numClusters)
-        {
-          Kokkos::atomic_increment(&clusterCounts(bestCluster));
-          vertClusters(i) = bestCluster;
-          distances(i) = bestDist;
-          lUpdates++;
-        }
-      }
-    }
-
-    //Minimize the cost function by moving vertex i to a diffferent cluster (if improvement)
-    KOKKOS_INLINE_FUNCTION void operator()(const OptimizeTag, const nnz_lno_t i) const
-    {
-      const nnz_lno_t k = 5;
-      nnz_lno_t selfDist = distances(i);
-      nnz_lno_t selfCluster = vertClusters(i);
-      nnz_lno_t origCluster = selfCluster;
-      if(selfDist == 0)
-      {
-        //Roots (distance = 0) can't change cluster.
-        return;
-      }
-      //Get the cost for staying the current cluster
-      size_type rowStart = row_map(i);
-      size_type rowEnd = row_map(i + 1);
-      for(size_type j = rowStart; j < rowEnd; j++)
-      {
-        nnz_lno_t nei = col_inds(j);
-        nnz_lno_t neiCluster = vertClusters(nei);
-        if(neiCluster == selfCluster || neiCluster == numClusters)
-          continue;
-        nnz_lno_t neiDist = distances(nei);
-        nnz_lno_t selfSizeCost = Kokkos::volatile_load(&clusterCounts(selfCluster)) - clusterSize;
-        nnz_lno_t neiSizeCost = Kokkos::volatile_load(&clusterCounts(neiCluster)) - clusterSize;
-        nnz_lno_t switchCost = k * (neiSizeCost - selfSizeCost) + neiDist - selfDist;
-        if(switchCost < 0)
-        {
-          selfDist = neiDist + 1;
-          selfCluster = neiCluster;
-        }
-      }
-      //update the partitioning for next iteration
-      if(origCluster != selfCluster)
-      {
-        distances(i) = selfDist;
-        vertClusters(i) = selfCluster;
-        Kokkos::atomic_decrement(&clusterCounts(origCluster));
-        Kokkos::atomic_increment(&clusterCounts(selfCluster));
-      }
-    }
-
-    nnz_view_t vertClusters;
-    nnz_view_t distances;
-    //clusterCounts is read+updated atomically
-    nnz_view_t clusterCounts;
-    //row_map/col_inds of input graph (read-only)
-    lno_row_view_t row_map;
-    lno_nnz_view_t col_inds;
-    //constants
-    nnz_lno_t clusterSize;
-    nnz_lno_t numClusters;
-    nnz_lno_t numRows;
-    RandPool randPool;
-  };
-
-  nnz_view_t run(nnz_lno_t clusterSize)
-  {
-    nnz_view_t vertClusters("Vertex cluster labels", numRows);
-    nnz_view_t distances("Root distances", numRows);
-    BalloonFunctor funct(vertClusters, distances, rowmap, colinds, clusterSize, randPool);
-    nnz_lno_t numClusters = funct.numClusters;
-    Kokkos::Impl::Timer globalTimer;
-    Kokkos::Impl::Timer timer;
-    timer.reset();
-    Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
-    MyExecSpace().fence();
-    std::cout << "Creating roots: " << timer.seconds() << '\n';
-    timer.reset();
-    //Initially, only the roots have labels
-    nnz_lno_t totalLabeled = numClusters;
-    while(true)
-    {
-      nnz_lno_t iterLabeled = 0;
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, LimitedBfsTag>(0, numRows), funct, iterLabeled);
-      MyExecSpace().fence();
-      if(totalLabeled > 0.5 * numRows && iterLabeled < 0.01 * numRows)
-        break;
-      totalLabeled += iterLabeled;
-    }
-    while(totalLabeled < 0.995 * numRows)
-    {
-      nnz_lno_t iterLabeled = 0;
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, OpenBfsTag>(0, numRows), funct, iterLabeled);
-      MyExecSpace().fence();
-      if(iterLabeled == 0)
-        break;
-      totalLabeled += iterLabeled;
-    }
-    std::cout << "BFS from roots: " << timer.seconds() << '\n';
-    timer.reset();
-    if(totalLabeled < numRows)
-    {
-      Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
-      MyExecSpace().fence();
-    }
-    for(int i = 0; i < 3; i++)
-    {
-      Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, OptimizeTag>(0, numRows), funct);
-      MyExecSpace().fence();
-    }
-    std::cout << "Optimizing boundaries: " << timer.seconds() << '\n';
-    timer.reset();
-    std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
-    return vertClusters;
-  }
-};
-*/
-
-/*
-template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
-struct BalloonClustering
-{
-  typedef typename HandleType::HandleExecSpace MyExecSpace;
-  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
-  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
-
-  typedef typename HandleType::size_type size_type;
-  typedef typename HandleType::nnz_lno_t nnz_lno_t;
-
-  typedef typename lno_row_view_t::value_type offset_t;
-
-  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_host_view_t row_lno_persistent_work_host_view_t; //Host view type
-
-  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t; //Host view type
-
-  typedef nnz_lno_persistent_work_view_t nnz_view_t;
-  typedef Kokkos::View<float*, MyPersistentMemorySpace> float_view_t;
-  //typedef Kokkos::View<nnz_lno_t, MyTempMemorySpace, Kokkos::MemoryTraits<0>> single_view_t;
-  //typedef Kokkos::View<nnz_lno_t, Kokkos::HostSpace, Kokkos::MemoryTraits<0>> single_view_host_t;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  typedef Kokkos::Bitset<MyExecSpace> bitset_t;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t ;
-  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
-  typedef typename team_policy_t::member_type team_member_t ;
-
-  BalloonClustering(size_type numRows_, lno_row_view_t& rowmap_, lno_nnz_view_t& colinds_)
-    : numRows(numRows_), rowmap(rowmap_), colinds(colinds_), randPool(0xDEADBEEF)
-  {}
-
-  nnz_lno_t numRows;
-  lno_row_view_t rowmap;
-  lno_nnz_view_t colinds;
-
-  typedef Kokkos::Random_XorShift64_Pool<MyExecSpace> RandPool;
-  RandPool randPool;
-
-  struct InitRootsTag {};   //select roots; set their distances to 0
-  struct RandomFillTag {};  //assign non-roots to random clusters, and assign large random distances
-  struct UpdatePressureAndAffinityTag {};
-  struct BalloonTag {};     //run the "balloon" procedure, where each cluster tries to inflate up to clusterSize
-
-  struct BalloonFunctor 
-  {
-    BalloonFunctor(nnz_view_t& vertClusters_, nnz_view_t& clusterCounts_, nnz_view_t& distances_, lno_row_view_t& row_map_, lno_nnz_view_t& col_inds_, float_view_t affinity_, float_view_t pressure_, nnz_lno_t clusterSize_, RandPool& randPool_)
-      : vertClusters(vertClusters_), clusterCounts(clusterCounts_), distances(distances_), row_map(row_map_), col_inds(col_inds_), affinity(affinity_), pressure(pressure_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), vertLocks(numRows), randPool(randPool_)
-    {
-      numClusters = (numRows + clusterSize - 1) / clusterSize;
-      iter = 0;
-    }
-
-    //Run init version over the number of clusters.
-    KOKKOS_INLINE_FUNCTION void operator()(const InitRootsTag, const nnz_lno_t i) const
-    {
-      nnz_lno_t root;
-      auto state = randPool.get_state();
-      do
-      {
-        root = state.rand(numRows);
-      }
-      while(!Kokkos::atomic_compare_exchange_strong(&vertClusters(root), numClusters, i));
-      randPool.free_state(state);
-      distances(root) = 0;
-      pressure(root) = 1;
-      affinity(root) = 100;
-    }
-
-    KOKKOS_INLINE_FUNCTION void operator()(const RandomFillTag, const nnz_lno_t i) const
-    {
-      if(vertClusters(i) == numClusters)
-      {
-        auto state = randPool.get_state();
-        nnz_lno_t cluster = state.rand(numClusters);
-        randPool.free_state(state);
-        vertClusters(i) = cluster;
-        Kokkos::atomic_increment(&clusterCounts(cluster));
-        distances(i) = numRows;
-        pressure(i) = 0;
-        affinity(i) = 0.5;
-      }
-    };
-
-    KOKKOS_INLINE_FUNCTION void operator()(const UpdatePressureAndAffinityTag, const nnz_lno_t i) const
-    {
-      nnz_lno_t cluster = vertClusters(i);
-      if(cluster == numClusters)
-        return;
-      //update affinity
-      const float k = 0.5;
-      //count the number of neighbors in the same cluster
-      nnz_lno_t sameClusterNeighbors = 0;
-      for(size_type j = row_map(i); j < row_map(i + 1); j++)
-      {
-        nnz_lno_t nei = col_inds(j);
-        if(nei != i && vertClusters(nei) == cluster)
-        {
-          //while we're at it, minimize distance to root as in Djikstra's
-          if(distances(nei) + 1 < distances(i))
-            distances(i) = distances(nei) + 1;
-          sameClusterNeighbors++;
-        }
-      }
-      nnz_lno_t curSize = clusterCounts(cluster);
-      affinity(i) += k * (1.0f + sameClusterNeighbors) * ((float) clusterSize / (float) curSize) / (1.0f + distances(i));
-      //update pressure, if cluster is undersized
-      nnz_lno_t shortage = clusterSize - curSize;
-      float pressureChange = (iter * shortage * shortage) / (1.0f + distances(i));
-      if(shortage > 0)
-        pressure(i) += pressureChange;
-    }
-
-    KOKKOS_INLINE_FUNCTION void operator()(const BalloonTag, const nnz_lno_t i, nnz_lno_t& lUpdates) const
-    {
-      nnz_lno_t cluster = vertClusters(i);
-      if(cluster == numClusters)
-        return;
-      //find the weakest affinity neighbor
-      nnz_lno_t weakNei = numRows;
-      float weakestAffinity = pressure(i);
-      nnz_lno_t weakNeiCluster = numClusters;
-      for(size_type j = row_map(i); j < row_map(i + 1); j++)
-      {
-        nnz_lno_t nei = col_inds(j);
-        if(nei != i && vertClusters(nei) != cluster && affinity(nei) < weakestAffinity)
-        {
-          weakNei = nei;
-          weakestAffinity = affinity(nei);
-          weakNeiCluster = vertClusters(nei);
-        }
-      }
-      if(weakestAffinity < pressure(i))
-      {
-        //this cluster will take over weakNei
-        if(vertLocks.set(i))
-        {
-          if(vertLocks.set(weakNei))
-          {
-            if(clusterCounts(cluster) < clusterSize)
-            {
-              Kokkos::atomic_increment(&clusterCounts(cluster));
-              if(weakNeiCluster != numClusters)
-                Kokkos::atomic_decrement(&clusterCounts(weakNeiCluster));
-              vertClusters(weakNei) = cluster;
-              affinity(weakNei) = pressure(i);
-              pressure(weakNei) = 0;
-              distances(weakNei) = distances(i) + 1;
-              lUpdates++;
-              vertLocks.reset(weakNei);
-            }
-          }
-          vertLocks.reset(i);
-        }
-      }
-    }
-
-    nnz_view_t vertClusters;
-    nnz_view_t clusterCounts;
-    nnz_view_t distances;
-    //row_map/col_inds of input graph (read-only)
-    lno_row_view_t row_map;
-    lno_nnz_view_t col_inds;
-    float_view_t affinity;
-    float_view_t pressure;
-    //constants
-    nnz_lno_t clusterSize;
-    nnz_lno_t numClusters;
-    nnz_lno_t numRows;
-    nnz_lno_t iter;
-    Kokkos::Bitset<MyExecSpace> vertLocks;
-    RandPool randPool;
-  };
-
-  nnz_view_t run(nnz_lno_t clusterSize)
-  {
-    nnz_lno_t numClusters = (numRows + clusterSize - 1) / clusterSize;
-    //std::cout << "^^^^^^^ Have " << numRows << " rows and clsuterSiez " << clusterSize << " requested, so numClusters = " << numClusters << '\n';
-    nnz_view_t vertClusters("Vertex cluster labels", numRows);
-    nnz_view_t distances("Root distances", numRows);
-    nnz_view_t clusterCounts("Vertices per cluster", numClusters);
-    float_view_t affinity("Cluster affinity", numRows);
-    float_view_t pressure("Cluster pressure", numRows);
-    Kokkos::deep_copy(clusterCounts, 1);
-    Kokkos::deep_copy(vertClusters, (nnz_lno_t) numClusters);
-    Kokkos::deep_copy(distances, numRows);
-    BalloonFunctor funct(vertClusters, clusterCounts, distances, rowmap, colinds, affinity, pressure, clusterSize, randPool);
-    Kokkos::Impl::Timer globalTimer;
-    Kokkos::Impl::Timer timer;
-    timer.reset();
-    Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
-    MyExecSpace().fence();
-    std::cout << "Creating roots: " << timer.seconds() << '\n';
-    timer.reset();
-    for(int i = 0; i < 10; i++)
-    {
-      Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, UpdatePressureAndAffinityTag>(0, numRows), funct);
-      MyExecSpace().fence();
-      nnz_lno_t numUpdates = 0;
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, BalloonTag>(0, numRows), funct, numUpdates);
-      MyExecSpace().fence();
-      if(numUpdates == 0)
-        break;
-      funct.iter++;
-    }
-    std::cout << "Expanding clusters: " << timer.seconds() << '\n';
-    timer.reset();
-    Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
-    MyExecSpace().fence();
-    std::cout << "Randomly assigning clusters to remaining: " << timer.seconds() << '\n';
-    std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
-    return vertClusters;
-  }
-};
-*/
-
 template <typename HandleType, typename lno_row_view_t, typename lno_nnz_view_t>
 struct BalloonClustering
 {
@@ -1250,11 +757,9 @@ struct BalloonClustering
       nnz_lno_t curSize = clusterCounts(cluster);
       //update pressure, if cluster is undersized
       nnz_lno_t shortage = clusterSize - curSize;
-      float pressureChange = (iter * shortage * shortage * (1.0f + 0.2f * sameClusterNeighbors)) / (1.0f + distances(i));
+      float pressureChange = (shortage * shortage * (1.0f + 0.2f * sameClusterNeighbors)) / (1.0f + distances(i));
       if(shortage > 0)
         pressure(i) += pressureChange;
-      else
-        pressure(i) -= pressureChange;
     }
 
     KOKKOS_INLINE_FUNCTION void operator()(const BalloonTag, const nnz_lno_t i, double& sizeDeviation) const
@@ -1329,29 +834,38 @@ struct BalloonClustering
     float_view_t pressure("Cluster pressure", numRows);
     Kokkos::deep_copy(clusterCounts, 1);
     Kokkos::deep_copy(vertClusters, (nnz_lno_t) numClusters);
-    Kokkos::deep_copy(distances, numRows); BalloonFunctor funct(vertClusters, clusterCounts, distances, rowmap, colinds, pressure, clusterSize, randPool); Kokkos::Impl::Timer globalTimer;
+    Kokkos::deep_copy(distances, numRows);
+    BalloonFunctor funct(vertClusters, clusterCounts, distances, rowmap, colinds, pressure, clusterSize, randPool);
+    Kokkos::Impl::Timer globalTimer;
     Kokkos::Impl::Timer timer;
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
     MyExecSpace().fence();
     std::cout << "Creating roots: " << timer.seconds() << '\n';
     timer.reset();
+    //Best possible clustering has (numClusters - n) of size (clusterSize), and (n) of size (clusterSize - 1).
+    double optimalDeviation = numRows % clusterSize;
     double deviation = 0;
     while(true)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, UpdatePressureTag>(0, numRows), funct);
       MyExecSpace().fence();
       double iterDeviation = 0;
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, BalloonTag>(0, numRows), funct, iterDeviation);
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, BalloonTag>(0, numRows), funct, Kokkos::Sum<double>(iterDeviation));
       MyExecSpace().fence();
-      if(funct.iter > 0 && deviation < iterDeviation)
+      if(funct.iter > 0)
       {
-        //Failed to improve clustering; return
-        break;
+        if(iterDeviation == optimalDeviation || iterDeviation >= deviation * 0.98)
+        {
+          //Case 1: clustering is optimal
+          //Case 2: failed to improve clustering last iteration by >2%, so assume further improvement is not worthwhile
+          break;
+        }
       }
       deviation = iterDeviation;
       funct.iter++;
     }
+    std::cout << "Final deviation: " << deviation << '\n';
     std::cout << "Expanding clusters for " << funct.iter << "iterations: " << timer.seconds() << '\n';
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);

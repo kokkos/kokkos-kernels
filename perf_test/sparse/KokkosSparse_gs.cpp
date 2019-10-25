@@ -140,9 +140,10 @@ void runGS(string matrixPath, string devName, bool symmetric)
     numericTimes.push_back(timer.seconds());
     std::cout << "\n*** numeric time: " << numericTimes.back() << '\n';
     timer.reset();
+    //Last two parameters are damping factor (should be 1) and sweeps
     KokkosSparse::Experimental::symmetric_gauss_seidel_apply
       //<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
-      (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 1.2, 5);
+      (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 1.0, 5);
     applyTimes.push_back(timer.seconds());
     std::cout << "\n*** apply time: " << applyTimes.back() << '\n';
     //Now, compute the 2-norm of residual 

@@ -287,7 +287,7 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
     output << "Testing cluster size = " << clusterSize << '\n';
 #endif
     KernelHandle kh;
-    kh.create_gs_handle(KokkosSparse::CLUSTER_FAST, clusterSize);
+    kh.create_gs_handle(KokkosSparse::CLUSTER_BALLOON, clusterSize);
     //only need to do G-S setup (symbolic/numeric) once
     Kokkos::Impl::Timer timer;
     KokkosSparse::Experimental::gauss_seidel_symbolic<KernelHandle, lno_view_t, lno_nnz_view_t>
@@ -362,7 +362,6 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename graph_t::row_map_type const_lno_row_view_t;
   typedef typename graph_t::entries_type const_lno_nnz_view_t;
   typedef typename graph_t::row_map_type::non_const_type lno_row_view_t;
@@ -379,16 +378,9 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
   KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
     <const_lno_row_view_t, const_lno_nnz_view_t, lno_row_view_t, lno_nnz_view_t, typename device::execution_space>
     (numRows, A.graph.row_map, A.graph.entries, symRowmap, symEntries);
-  /*
-  scalar_view_t Bscalar("Dummy symmetrized scalars", symEntries.extent(0));
-  Kokkos::deep_copy(Bscalar, 1.0);
-  crsMat_t B("symmetrized", numRows, numRows, symEntries.extent(0), Bscalar, symRowmap, symEntries);
-  KokkosKernels::Impl::write_kokkos_crst_matrix(B, "graph.mtx");
-  */
-  //std::cout << "Test matrix has " << numRows << " rows and " << A.values.extent(0) << " nonzeros.\n";
-  KokkosSparse::Impl::FastClustering<KernelHandle, lno_row_view_t, lno_nnz_view_t> fast(numRows, symRowmap, symEntries);
+  KokkosSparse::Impl::BalloonClustering<KernelHandle, lno_row_view_t, lno_nnz_view_t> balloon(numRows, symRowmap, symEntries);
   const lno_t clusterSize = 8;
-  auto vertClusters = fast.run(clusterSize);
+  auto vertClusters = balloon.run(clusterSize);
   //validate results: make sure cluster labels are in bounds, and that the number of clusters is correct
   auto vertClustersHost = Kokkos::create_mirror_view(vertClusters);
   Kokkos::deep_copy(vertClustersHost, vertClusters);
