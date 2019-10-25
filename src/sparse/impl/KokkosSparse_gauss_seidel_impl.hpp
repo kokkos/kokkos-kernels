@@ -1452,7 +1452,8 @@ namespace KokkosSparse{
         std::cout << "Graph clustering: " << timer.seconds() << '\n';
         timer.reset();
 #endif
-        //#define KOKKOSSPARSE_IMPL_PRINTDEBUG 1
+        #define KOKKOSSPARSE_IMPL_PRINTDEBUG 1
+        /*
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
           auto vertClustersHost = Kokkos::create_mirror_view(vertClusters);
@@ -1467,6 +1468,7 @@ namespace KokkosSparse{
           printf("\n\n\n");
         }
 #endif
+*/
         //Construct the cluster offset and vertex array. These allow fast iteration over all vertices in a given cluster.
         nnz_view_t clusterOffsets("Cluster offsets", numClusters + 1);
         nnz_view_t clusterVerts("Cluster -> vertices", num_rows);
@@ -1512,6 +1514,7 @@ namespace KokkosSparse{
         nnz_view_t clusterEntries("Cluster graph colinds", numClusterEdges);
         Kokkos::parallel_scan(my_exec_space(0, num_rows), FillClusterEntriesFunctor<rowmap_t, colinds_t, nnz_view_t>(xadj, adj, clusterRowmap, clusterEntries, clusterOffsets, clusterVerts, vertClusters, crossClusterEdgeMask));
         MyExecSpace().fence();
+        /*
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
           auto clusterRowmapHost = Kokkos::create_mirror_view(clusterRowmap);
@@ -1529,6 +1532,7 @@ namespace KokkosSparse{
           printf("\n\n\n");
         }
 #endif
+*/
         //Create a handle that uses nnz_lno_t as the size_type, since the cluster graph should never be larger than 2^31 entries.
         KokkosKernels::Experimental::KokkosKernelsHandle<nnz_lno_t, nnz_lno_t, double, MyExecSpace, MyPersistentMemorySpace, MyPersistentMemorySpace> kh;
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
