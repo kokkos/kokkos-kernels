@@ -118,7 +118,7 @@ IF(KOKKOS_ENABLE_CUDA)
    )
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDASPACE
-   ${KOKKOSKERNES_INST_EXECSPACE_CUDA_DEFAULT}
+   ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
    BOOL
    "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
    )
