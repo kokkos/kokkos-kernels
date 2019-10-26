@@ -133,6 +133,7 @@ private:
   bool lower_tri;
 
   bool symbolic_complete;
+  bool numeric_complete;
 
   SPTRSVAlgorithm algm;
 
@@ -163,6 +164,7 @@ private:
   // 
   bool merge_supernodes;
   bool invert_offdiagonal;
+  int *etree;
 
   // type of kernels used at each level
   int sup_size_unblocked;
@@ -187,7 +189,7 @@ private:
 
 public:
 
-  SPTRSVHandle ( SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, bool symbolic_complete_ = false ) :
+  SPTRSVHandle ( SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, bool symbolic_complete_ = false, bool numeric_complete_ = false ) :
     level_list(),
     nodes_per_level(),
     nodes_grouped_by_level(),
@@ -195,12 +197,14 @@ public:
     nlevel(0),
     lower_tri( lower_tri_ ),
     symbolic_complete( symbolic_complete_ ),
+    numeric_complete( numeric_complete_ ),
     algm(choice),
     team_size(-1),
     vector_size(-1)
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
     , merge_supernodes (false)
     , invert_offdiagonal (false)
+    , etree (NULL)
     , sup_size_unblocked (100)
     , sup_size_blocked (200)
 #endif
@@ -297,12 +301,16 @@ public:
   void set_is_lower_tri(bool lower_tri_) { lower_tri = lower_tri_; }
 
   bool is_symbolic_complete() const { return symbolic_complete; }
+  bool is_numeric_complete() const { return numeric_complete; }
 
   size_type get_num_levels() const { return nlevel; }
   void set_num_levels(size_type nlevels_) { this->nlevel = nlevels_; }
 
   void set_symbolic_complete() { this->symbolic_complete = true; }
+  void set_numeric_complete() { this->numeric_complete = true; }
+
   void reset_symbolic_complete() { this->symbolic_complete = false; }
+  void reset_numeric_complete() { this->numericc_complete = false; }
 
   void set_team_size(const int ts) {this->team_size = ts;}
   int get_team_size() const {return this->team_size;}
@@ -427,6 +435,15 @@ public:
 
   bool get_merge_supernodes() {
     return this->merge_supernodes;
+  }
+
+  // specify etree
+  void set_etree(int *etree_) {
+    this->etree = etree_;
+  }
+
+  int* get_etree() {
+    return this->etree;
   }
 
   // specify to apply the inverse of diagonal to the offdiagonal blocks

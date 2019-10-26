@@ -408,15 +408,28 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
           //khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
           //khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
 
+          // specify wheather to merge supernodes (optional, default merge is false)
+          khL.set_merge_supernodes (merge);
+          khU.set_merge_supernodes (merge);
+
+          // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
+          khL.set_invert_offdiagonal (invert_offdiag);
+          khU.set_invert_offdiagonal (invert_offdiag);
+
+          // set etree (required)
+          khL.set_etree (etree);
+          khU.set_etree (etree);
+
 
           // ==============================================
-          // do symbolic analysis (preprocssing, e.g., merging supernodes & inverting diagonal/offdiagonal blocks, scheduling based on graph/dag)
-          sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, merge, L, U, etree);
+          // do symbolic analysis (preprocssing, e.g., merging supernodes, inverting diagonal/offdiagonal blocks,
+          // and scheduling based on graph/dag)
+          sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, L, U);
 
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
-          sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, invert_offdiag, L, U);
+          sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, L, U);
 
 
           // ==============================================

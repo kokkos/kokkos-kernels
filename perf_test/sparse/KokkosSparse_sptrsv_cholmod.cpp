@@ -311,8 +311,13 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           }
 
           // ==============================================
+          // set etree (required)
+          khL.set_etree (etree);
+          khU.set_etree (etree);
+
+          // ==============================================
           // Do symbolic analysis
-          sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, L, &cm, etree);
+          sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, L, &cm);
 
           // ==============================================
           // Do numerical compute

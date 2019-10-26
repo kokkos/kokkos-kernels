@@ -537,12 +537,20 @@ public:
     this->sptrsvHandle->set_supernode_size_blocked(blocked);
   }
 
+  void set_merge_supernodes (bool flag) {
+    this->sptrsvHandle->set_merge_supernodes (flag);
+  }
+
   void set_supernodal_dag (int** dag) {
     this->sptrsvHandle->set_supernodal_dag (dag);
   }
 
   void set_invert_offdiagonal (bool flag) {
     this->sptrsvHandle->set_invert_offdiagonal (flag);
+  }
+
+  void set_etree (int *etree) {
+    this->sptrsvHandle->set_etree (etree);
   }
 #endif
   void destroy_sptrsv_handle(){
