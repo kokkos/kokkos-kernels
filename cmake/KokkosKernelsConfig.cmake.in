@@ -5,6 +5,8 @@ GET_FILENAME_COMPONENT(KokkosKernels_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH
 
 include(CMakeFindDependencyMacro)
 
+@KOKKOSKERNELS_TPL_EXPORTS@
+
 find_dependency(Kokkos HINTS @Kokkos_DIR@)
 
 SET(Kokkos_ENABLE_OPENMP  @Kokkos_ENABLE_OPENMP@)

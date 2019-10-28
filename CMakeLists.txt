@@ -8,6 +8,9 @@ ENDIF()
 
 GET_DIRECTORY_PROPERTY(KOKKOSKERNELS_HAS_PARENT PARENT_DIRECTORY)
 
+SET(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
   cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
@@ -42,14 +45,18 @@ ELSEIF(KOKKOSKERNELS_HAS_PARENT)
  SET(KOKKOSKERNELS_TARGET_NAME KokkosTargets)
 ELSE()
  FIND_PACKAGE(Kokkos REQUIRED)
+ MESSAGE(STATUS "Found Kokkos at ${Kokkos_DIR}")
  SET(KOKKOSKERNELS_HEADER_DIR "include")
  SET(KOKKOS_DEPENDENCY_NAME Kokkos::kokkos) #depend on installed library
  SET(KOKKOSKERNELS_TARGET_NAME KokkosKernelsTargets)
 ENDIF()
 
-
 INCLUDE(cmake/fake_tribits.cmake)
 INCLUDE(cmake/kokkoskernels_tribits.cmake)
+
+#This will collect imported TPLs we need to export
+#in our config file
+GLOBAL_SET(KOKKOS_TPL_EXPORTS)
 
 #
 # Define the package
@@ -350,6 +357,9 @@ ENDIF()
 # Enable Third Party Libraries
 # ==================================================================
 
+IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
+  SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+ENDIF()
 INCLUDE(cmake/kokkoskernels_tpls.cmake)
 
 # ==================================================================
