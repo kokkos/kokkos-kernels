@@ -71,11 +71,39 @@ MACRO(kokkoskernels_create_imported_tpl NAME)
   ENDIF()
 ENDMACRO()
 
+MACRO(kokkoskernels_find_header VAR_NAME HEADER TPL_NAME)
+  IF (NOT ${ARGC} STREQUAL "3") #have to do it this way in a macro (3=min expected)
+    #we got custom paths
+    #ONLY look in these paths and nowhere else
+    FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${ARGN} NO_DEFAULT_PATH)
+  ELSEIF(DEFINED ${TPL_NAME}_ROOT OR DEFINED Kokkos_${TPL_NAME}_DIR)
+    #ONLY look in the root directory
+    FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${${TPL_NAME}_ROOT}/include ${Kokkos_${TPL_NAME}_DIR}/include NO_DEFAULT_PATH)
+  ELSE()
+    #Now go ahead and look in system paths
+    FIND_PATH(${VAR_NAME} ${HEADER})
+  ENDIF()
+ENDMACRO()
+
+MACRO(kokkoskernels_find_library VAR_NAME LIB TPL_NAME)
+  IF (NOT ${ARGC} STREQUAL "3") #have to do it this way in a macro (3=min expected)
+    #we got custom paths
+    #ONLY look in these paths and nowhere else
+    FIND_LIBRARY(${VAR_NAME} ${LIB} PATHS ${ARGN} NO_DEFAULT_PATH)
+  ELSEIF(DEFINED ${TPL_NAME}_ROOT OR DEFINED Kokkos_${TPL_NAME}_DIR)
+    #ONLY look in the root directory
+    FIND_LIBRARY(${VAR_NAME} ${LIB} PATHS ${${TPL_NAME}_ROOT}/lib ${Kokkos_${TPL_NAME}_DIR}/lib NO_DEFAULT_PATH)
+  ELSE()
+    #Now go ahead and look in system paths
+    FIND_LIBRARY(${VAR_NAME} ${LIB})
+  ENDIF()
+ENDMACRO()
+
 MACRO(kokkoskernels_find_imported NAME)
   CMAKE_PARSE_ARGUMENTS(TPL
    "INTERFACE"
    "HEADER;LIBRARY;IMPORTED_NAME"
-   "HEADER_PATHS;LIBRARY_PATHS;HEADERS;LIBRARIES"
+   "HEADERS;LIBRARIES;HEADER_PATHS;LIBRARY_PATHS"
    ${ARGN})
 
   IF (NOT TPL_IMPORTED_NAME)
@@ -88,19 +116,11 @@ MACRO(kokkoskernels_find_imported NAME)
 
   SET(${NAME}_INCLUDE_DIRS)
   IF (TPL_HEADER)
-    IF(TPL_HEADER_PATHS)
-      FIND_PATH(${NAME}_INCLUDE_DIRS ${TPL_HEADER} PATHS ${TPL_HEADER_PATHS})
-    ELSE()
-      FIND_PATH(${NAME}_INCLUDE_DIRS ${TPL_HEADER} PATHS ${${NAME}_ROOT}/include ${KOKKOS_${NAME}_DIR}/include)
-    ENDIF()
+    KOKKOSKERNELS_FIND_HEADER(${NAME}_INCLUDE_DIRS ${TPL_HEADER} ${NAME} ${TPL_HEADER_PATHS})
   ENDIF()
 
   FOREACH(HEADER ${TPL_HEADERS})
-    IF(TPL_HEADER_PATHS)
-      FIND_LIBRARY(HEADER_FIND_TEMP ${HEADER} PATHS ${TPL_HEADER_PATHS})
-    ELSE()
-      FIND_LIBRARY(HEADER_FIND_TEMP ${HEADER} PATHS ${${NAME}_ROOT}/lib ${KOKKOS_${NAME}_DIR}/lib)
-    ENDIF()
+    KOKKOSKERNELS_FIND_HEADER(HEADER_FIND_TEMP ${HEADER} ${NAME} ${TPL_HEADER_PATHS})
     IF(HEADER_FIND_TEMP)
       LIST(APPEND ${NAME}_INCLUDE_DIRS ${HEADER_FIND_TEMP})
     ENDIF()
@@ -108,14 +128,10 @@ MACRO(kokkoskernels_find_imported NAME)
 
   SET(${NAME}_LIBRARY)
   IF(TPL_LIBRARY)
-    IF(TPL_LIBRARY_PATHS)
-      FIND_LIBRARY(${NAME}_LIBRARY ${TPL_LIBRARY} PATHS ${TPL_LIBRARY_PATHS})
-    ELSE()
-      FIND_LIBRARY(${NAME}_LIBRARY ${TPL_LIBRARY} PATHS ${${NAME}_ROOT}/lib ${KOKKOS_${NAME}_DIR}/lib)
-    ENDIF()
+    KOKKOSKERNELS_FIND_LIBRARY(${NAME}_LIBRARY ${TPL_LIBRARY} ${NAME} ${TPL_LIBRARY_PATHS})
   ENDIF()
 
-  SET(${NAME}_LIBRARIES)
+  SET(${NAME}_FOUND_LIBRARIES)
   FOREACH(LIB ${TPL_LIBRARIES})
     #we want the actual name, not the name -lblas, etc
     SET(LIB_CLEAN ${LIB})
@@ -124,20 +140,18 @@ MACRO(kokkoskernels_find_imported NAME)
       STRING(SUBSTRING ${LIB} 2 -1 LIB_CLEAN)
     ENDIF()
 
-    IF(TPL_LIBRARY_PATHS)
-      FIND_LIBRARY(${LIB}_LOCATION ${LIB_CLEAN} PATHS ${TPL_LIBRARY_PATHS})
-    ELSE()
-      FIND_LIBRARY(${LIB}_LOCATION ${LIB_CLEAN} PATHS ${${NAME}_ROOT}/lib ${KOKKOS_${NAME}_DIR}/lib)
-    ENDIF()
+    KOKKOSKERNELS_FIND_LIBRARY(${LIB}_LOCATION ${LIB} ${NAME} ${TPL_LIBRARY_PATHS})
     IF(${LIB}_LOCATION)
-      LIST(APPEND ${NAME}_LIBRARIES ${${LIB}_LOCATION})
+      LIST(APPEND ${NAME}_FOUND_LIBRARIES ${${LIB}_LOCATION})
     ELSE()
-      SET(${NAME}_LIBRARIES ${${LIB}_LOCATION})
+      SET(${NAME}_FOUND_LIBRARIES ${${LIB}_LOCATION})
       BREAK()
     ENDIF()
   ENDFOREACH()
 
   INCLUDE(FindPackageHandleStandardArgs)
+  #My understanding is that these don't "short-circuit" like find_package does
+  #These always execute regardless of _FOUND variables defined
   IF (TPL_LIBRARY)
     FIND_PACKAGE_HANDLE_STANDARD_ARGS(${NAME} DEFAULT_MSG ${NAME}_LIBRARY)
   ENDIF()
@@ -145,10 +159,10 @@ MACRO(kokkoskernels_find_imported NAME)
     FIND_PACKAGE_HANDLE_STANDARD_ARGS(${NAME} DEFAULT_MSG ${NAME}_INCLUDE_DIRS)
   ENDIF()
   IF(TPL_LIBRARIES)
-    FIND_PACKAGE_HANDLE_STANDARD_ARGS(${NAME} DEFAULT_MSG ${NAME}_LIBRARIES)
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS(${NAME} DEFAULT_MSG ${NAME}_FOUND_LIBRARIES)
   ENDIF()
 
-  MARK_AS_ADVANCED(${NAME}_INCLUDE_DIRS ${NAME}_LIBRARIES ${NAME}_LIBRARY)
+  MARK_AS_ADVANCED(${NAME}_INCLUDE_DIRS ${NAME}_FOUND_LIBRARIES ${NAME}_LIBRARY)
 
   SET(IMPORT_TYPE)
   IF (TPL_INTERFACE)
@@ -158,7 +172,7 @@ MACRO(kokkoskernels_find_imported NAME)
     ${IMPORT_TYPE}
     INCLUDES "${${NAME}_INCLUDE_DIRS}"
     LIBRARY  "${${NAME}_LIBRARY}"
-    LINK_LIBRARIES "${${NAME}_LIBRARIES}")
+    LINK_LIBRARIES "${${NAME}_FOUND_LIBRARIES}")
 ENDMACRO()
 
 MACRO(kokkoskernels_export_imported_tpl NAME)
