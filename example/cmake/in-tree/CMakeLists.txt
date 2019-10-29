@@ -1,4 +1,4 @@
-#Kokkos requires at least 3.10 
+#Kokkos requires at least 3.10
 #but really you should use 3.12
 cmake_minimum_required (VERSION 3.10)
 
@@ -6,11 +6,11 @@ project (MyProgram)
 
 # The add_subdirectory calls must occur in the order below
 
-# This assumes you have copied the source, sym-linked to source, 
+# This assumes you have copied the source, sym-linked to source,
 # or have kokkos available as a git submodule
 add_subdirectory(kokkos)
 
-# This assumes you have copied the source, sym-linked to source, 
+# This assumes you have copied the source, sym-linked to source,
 # or have kokkos-kernels available as a git submodule
 add_subdirectory(kokkos-kernels)
 

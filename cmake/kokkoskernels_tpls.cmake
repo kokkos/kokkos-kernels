@@ -76,9 +76,9 @@ MACRO(kokkoskernels_find_header VAR_NAME HEADER TPL_NAME)
     #we got custom paths
     #ONLY look in these paths and nowhere else
     FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${ARGN} NO_DEFAULT_PATH)
-  ELSEIF(DEFINED ${TPL_NAME}_ROOT OR DEFINED Kokkos_${TPL_NAME}_DIR)
+  ELSEIF(DEFINED ${TPL_NAME}_ROOT OR DEFINED KokkosKernels_${TPL_NAME}_DIR)
     #ONLY look in the root directory
-    FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${${TPL_NAME}_ROOT}/include ${Kokkos_${TPL_NAME}_DIR}/include NO_DEFAULT_PATH)
+    FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${${TPL_NAME}_ROOT}/include ${KokkosKernels_${TPL_NAME}_DIR}/include NO_DEFAULT_PATH)
   ELSE()
     #Now go ahead and look in system paths
     FIND_PATH(${VAR_NAME} ${HEADER})
@@ -90,9 +90,9 @@ MACRO(kokkoskernels_find_library VAR_NAME LIB TPL_NAME)
     #we got custom paths
     #ONLY look in these paths and nowhere else
     FIND_LIBRARY(${VAR_NAME} ${LIB} PATHS ${ARGN} NO_DEFAULT_PATH)
-  ELSEIF(DEFINED ${TPL_NAME}_ROOT OR DEFINED Kokkos_${TPL_NAME}_DIR)
+  ELSEIF(DEFINED ${TPL_NAME}_ROOT OR DEFINED KokkosKernels_${TPL_NAME}_DIR)
     #ONLY look in the root directory
-    FIND_LIBRARY(${VAR_NAME} ${LIB} PATHS ${${TPL_NAME}_ROOT}/lib ${Kokkos_${TPL_NAME}_DIR}/lib NO_DEFAULT_PATH)
+    FIND_LIBRARY(${VAR_NAME} ${LIB} PATHS ${${TPL_NAME}_ROOT}/lib ${KokkosKernels_${TPL_NAME}_DIR}/lib NO_DEFAULT_PATH)
   ELSE()
     #Now go ahead and look in system paths
     FIND_LIBRARY(${VAR_NAME} ${LIB})
