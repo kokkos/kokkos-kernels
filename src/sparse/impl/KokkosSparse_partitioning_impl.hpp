@@ -137,7 +137,6 @@ struct RCM
   {
     size_type maxDeg = 0;
     Kokkos::parallel_reduce(range_policy_t(0, numRows), MaxDegreeFunctor<const_lno_row_view_t>(rowmap), Kokkos::Max<size_type>(maxDeg));
-    MyExecSpace().fence();
     //max degree should be computed as an offset_t,
     //but must fit in a nnz_lno_t
     return maxDeg;
@@ -407,7 +406,6 @@ struct RCM
     const nnz_lno_t LNO_MAX = Kokkos::ArithTraits<nnz_lno_t>::max();
     const nnz_lno_t NOT_VISITED = LNO_MAX;
     KokkosBlas::fill(visit, NOT_VISITED);
-    MyExecSpace().fence();
     //the visit queue
     //one of q1,q2 is active at a time and holds the nodes to process in next BFS level
     //elements which are LNO_MAX are just placeholders (nothing to process)
@@ -418,7 +416,6 @@ struct RCM
     Kokkos::View<nnz_lno_t**, MyTempMemorySpace, Kokkos::MemoryTraits<0u>> scratch("Scratch buffer shared by threads", nthreads, maxDeg);
     Kokkos::parallel_for(team_policy_t(1, nthreads), BfsFunctor(workQueue, scratch, visit, rowmap, colinds, numLevels, threadNeighborCounts, start, numRows));
     Kokkos::deep_copy(numLevelsHost, numLevels);
-    MyExecSpace().fence();
     //now that level structure has been computed, construct xadj/adj
     KokkosKernels::Impl::create_reverse_map<nnz_view_t, nnz_view_t, MyExecSpace>
       (numRows, numLevelsHost(), visit, xadj, adj);
@@ -542,12 +539,9 @@ struct RCM
     Kokkos::View<offset_t*, MyTempMemorySpace, Kokkos::MemoryTraits<0u>> scores("RCM scores for sorting", maxLevelSize);
     Kokkos::View<offset_t*, MyTempMemorySpace, Kokkos::MemoryTraits<0u>> scoresAux("RCM scores for sorting (radix sort aux)", maxLevelSize);
     nnz_view_t adjAux("RCM scores for sorting (radix sort aux)", maxLevelSize);
-    MyExecSpace().fence();
     Kokkos::parallel_for(team_policy_t(1, nthreads), CuthillMcKeeFunctor(numLevels, maxDegree, rowmap, colinds, scores, scoresAux, visit, xadj, adj, adjAux));
-    MyExecSpace().fence();
     //reverse the visit order (for the 'R' in RCM)
     Kokkos::parallel_for(range_policy_t(0, numRows), OrderReverseFunctor(visit, numRows));
-    MyExecSpace().fence();
     return visit;
   }
 
@@ -593,7 +587,6 @@ struct RCM
     MinLocVal v;
     Kokkos::parallel_reduce(range_policy_t(0, numRows),
         MinDegreeRowFunctor<MinLocReducer>(rowmap), MinLocReducer(v));
-    MyExecSpace().fence();
     return v.loc;
   }
 
@@ -632,7 +625,6 @@ struct RCM
     nnz_view_t cm = cuthill_mckee();
     //reverse the visit order (for the 'R' in RCM)
     Kokkos::parallel_for(range_policy_t(0, numRows), OrderReverseFunctor(cm, numRows));
-    MyExecSpace().fence();
     return cm;
   }
 
@@ -642,7 +634,6 @@ struct RCM
     nnz_view_t vertClusters("Vert to cluster", numRows);
     OrderToClusterFunctor makeClusters(cm, vertClusters, clusterSize);
     Kokkos::parallel_for(range_policy_t(0, numRows), makeClusters);
-    MyExecSpace().fence();
     return vertClusters;
   }
 };
@@ -840,7 +831,6 @@ struct BalloonClustering
     Kokkos::Impl::Timer timer;
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
-    MyExecSpace().fence();
     std::cout << "Creating roots: " << timer.seconds() << '\n';
     timer.reset();
     //Best possible clustering has (numClusters - n) of size (clusterSize), and (n) of size (clusterSize - 1).
@@ -849,10 +839,8 @@ struct BalloonClustering
     while(true)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, UpdatePressureTag>(0, numRows), funct);
-      MyExecSpace().fence();
       double iterDeviation = 0;
       Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, BalloonTag>(0, numRows), funct, Kokkos::Sum<double>(iterDeviation));
-      MyExecSpace().fence();
       if(funct.iter > 0)
       {
         if(iterDeviation == optimalDeviation || iterDeviation >= deviation * 0.98)
@@ -869,7 +857,6 @@ struct BalloonClustering
     std::cout << "Expanding clusters for " << funct.iter << "iterations: " << timer.seconds() << '\n';
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
-    MyExecSpace().fence();
     std::cout << "Randomly assigning clusters to remaining: " << timer.seconds() << '\n';
     std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
     return vertClusters;

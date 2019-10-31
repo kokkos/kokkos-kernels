@@ -131,11 +131,8 @@ namespace KokkosSparse{
       suggested_vector_size(0), suggested_team_size(0), permuted_inverse_diagonal(), block_size(1), cluster_size(1), max_nnz_input_row(-1),
       num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0)
     {
-      if (gs == GS_DEFAULT){
+      if (gs == GS_DEFAULT)
         this->choose_default_algorithm();
-      }
-
-
     }
 
     //Constructor for cluster-coloring based GS and SGS
@@ -144,10 +141,8 @@ namespace KokkosSparse{
       algorithm_type(GS_CLUSTER),
       cluster_algo(cluster_algo_),
       color_set_xadj(), color_sets(), numColors(0),
-      permuted_xadj(),  permuted_adj(), permuted_adj_vals(), old_to_new_map(),
-      called_symbolic(false), called_numeric(false), permuted_y_vector(), permuted_x_vector(),
-      suggested_vector_size(0), suggested_team_size(0), block_size(1), cluster_size(cluster_size_), max_nnz_input_row(-1),
-    num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0)
+      called_symbolic(false), called_numeric(false),
+      suggested_vector_size(0), suggested_team_size(0), cluster_size(cluster_size_), max_nnz_input_row(-1)
     {}
 
     void set_block_size(nnz_lno_t bs){this->block_size = bs; }
