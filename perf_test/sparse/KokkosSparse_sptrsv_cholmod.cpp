@@ -50,14 +50,14 @@
 #include <cmath>
 #include <unordered_map>
 
-#include <Kokkos_Core.hpp>
-#include <matrix_market.hpp>
+#include "Kokkos_Core.hpp"
+#include "matrix_market.hpp"
 
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include <KokkosKernels_IOUtils.hpp>
+#include "KokkosKernels_IOUtils.hpp"
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
@@ -82,6 +82,7 @@ using namespace KokkosKernels::Experimental;
 enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 
+/* ========================================================================================= */
 template<typename scalar_t>
 void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
 
@@ -212,10 +213,9 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_t *nzvals, 
   return L;
 }
 
-#endif //  KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+/* ========================================================================================= */
 template<typename scalar_t>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 

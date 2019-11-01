@@ -52,8 +52,8 @@
 #include <unordered_map>
 #include <algorithm>
 
-#include <Kokkos_Core.hpp>
-#include <matrix_market.hpp>
+#include "Kokkos_Core.hpp"
+#include "matrix_market.hpp"
 
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
@@ -305,6 +305,7 @@ void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, i
 }
 
 
+/* ========================================================================================= */
 template<typename scalar_t>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, bool merge, bool invert_offdiag,
                      int panel_size, int relax_size, int sup_size_unblocked, int sup_size_blocked, int loop) {

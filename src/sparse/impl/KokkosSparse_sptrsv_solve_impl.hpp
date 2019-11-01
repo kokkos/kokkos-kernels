@@ -608,9 +608,12 @@ struct UpperTriSupernodalFunctor
         Z (ii) = X (i);
       }
       team.team_barrier();
-      //if (diag_kernel_type (level) != 3)
+      /* GEMM to update with off diagonal blocks, Xj = -Lij^T * Z */
+      #define SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS
+      #if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
+      if (diag_kernel_type (level) != 3)
+      #endif
       { // not device-level GEMV-udpate
-        /* GEMM to update with off diagonal blocks, Xj = -Lij^T * Z */
         auto Lij = Kokkos::subview (viewL, range_type (nscol, nsrow), Kokkos::ALL ());
         //if (diag_kernel_type (level) == 0) {
           KokkosBatched::TeamGemv<member_type,
@@ -628,9 +631,11 @@ struct UpperTriSupernodalFunctor
       }
     }
 
-    //if (diag_kernel_type (level) != 3) // TODO: there seems to be a bug in KokkosBlas::gemv with "T" and CUDA
+    /* TRSM with diagonal block */
+    #if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
+    if (diag_kernel_type (level) != 3) // TODO: there seems to be a bug in KokkosBlas::gemv with "T" and CUDA
+    #endif
     { // not device-level TRSM-solve
-      /* TRSM with diagonal block */
       // extract diagonal and off-diagonal blocks of L
       auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
 
@@ -1077,7 +1082,9 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
-        std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << timer.seconds() << std::endl;
+        std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << timer.seconds()
+                  << " kernel-type: " << kernel_type_host (lvl)
+                  << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
       }
 #endif
@@ -1116,8 +1123,10 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
   typedef typename TriSolveHandle::supercols_t supercols_t;
 
-  //auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
-  //Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
+  #if defined(SUPERNODAL_SPTRSV_USOLVE_WITH_KOKKOS_BLAS)
+  auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
+  Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
+  #endif
 
   auto row_map_host = Kokkos::create_mirror_view (row_map);
   Kokkos::deep_copy (row_map_host, row_map);
@@ -1200,8 +1209,8 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         supercols_host_t diag_kernel_type_host = thandle.get_diag_kernel_type_host ();
 
         if (kernel_type_host (lvl) == 3) {
-          typedef Kokkos::Details::ArithTraits<scalar_t> STS;
           // using device-level kernels (functor is called to gather the input into workspace)
+          typedef Kokkos::Details::ArithTraits<scalar_t> STS;
           scalar_t zero = STS::zero ();
           scalar_t one = STS::one ();
 
@@ -1239,7 +1248,7 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
               auto Lij = Kokkos::subview (viewL, range_type (nscol, nsrow), Kokkos::ALL ());
               auto Z = Kokkos::subview (work, range_type(workoffset+nscol, workoffset+nscol+nsrow2));  // needed with gemv for update&scatter
               KokkosBlas::
-              gemv("N", -one, Lij,
+              gemv("T", -one, Lij,
                               Z,
                          one, Xj);
             }
@@ -1257,7 +1266,9 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         #endif
         #ifdef profile_supernodal_etree
         Kokkos::fence();
-        std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << timer.seconds() << std::endl;
+        std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << timer.seconds()
+                  << " kernel-type: " << kernel_type_host (lvl)
+                  << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
       }
 #endif
