@@ -335,6 +335,106 @@ KOKKOSBLAS3_CGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::Layout
 namespace KokkosBlas {
 namespace Impl {
 
+
+struct TagInit{};
+struct TagMult{};
+
+template<class ExecSpace, class AV, class BV, class CV>
+struct DotBasedGEMM{
+
+  AV A;
+  BV B;
+  CV C;
+
+  typedef typename AV::non_const_value_type scalar_A;
+  typedef typename AV::size_type size_A;
+  typedef typename CV::non_const_value_type scalar_C;
+  typedef typename CV::size_type size_C;
+
+  scalar_A alpha;
+  scalar_C beta;
+
+  size_C numCrows;
+  size_C numCcols;
+
+  size_C numDivPerDot;
+  size_C numTeams;
+  
+  size_A dotSize;    
+  size_A chunkSize;  
+  
+
+  DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_):A(A_),B(B_),C(C_),alpha(alpha_),beta(beta_) 
+  {
+    numCrows = C.extent(0);
+    numCcols = C.extent(1);
+    dotSize = A.extent(0);
+  }
+
+  void run() {
+
+    size_C ndots = C.extent(0) * C.extent(1);
+    size_C appxNumTeams = (dotSize * ndots) / 4096;
+
+    if(appxNumTeams < 32)
+      appxNumTeams = 32;
+    if(appxNumTeams > 1024)
+      appxNumTeams = 1024;
+
+    if(ndots >= appxNumTeams) {
+      numTeams = ndots;
+      numDivPerDot = 1;
+    }
+    else{
+      numDivPerDot = appxNumTeams / ndots;
+      numTeams = ndots * numDivPerDot;
+    }
+
+    chunkSize = dotSize / numDivPerDot;
+    if(numDivPerDot > 1)
+      chunkSize++;
+
+    Kokkos::RangePolicy<TagInit, ExecSpace> policy1(0, ndots);
+    Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policy1, *this);
+
+    Kokkos::TeamPolicy<TagMult, ExecSpace> policy2(numTeams, Kokkos::AUTO);
+    Kokkos::parallel_for("Perform Dot Product Based GEMM", policy2, *this);
+
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const TagInit&, const size_C &i) const {
+    const size_C rowId = i / numCcols;
+    const size_C colId = i % numCcols;
+    C(rowId, colId) = beta * C(rowId, colId);
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const TagMult&, const typename Kokkos::TeamPolicy<>::member_type& teamMember) const {
+
+    const size_C globalRank = teamMember.league_rank();
+    const size_C localRank = globalRank % numDivPerDot;
+    const size_C i = globalRank / numDivPerDot;
+    const size_C rowId = i / numCcols;
+    const size_C colId = i % numCcols;
+    
+
+    scalar_C result = 0;
+    const size_A baseInd = chunkSize*localRank; 
+    Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
+	if(baseInd + k < dotSize)
+	  update += alpha * A(baseInd+k, rowId) * B(baseInd+k, colId);
+      }, result );
+
+    
+    if(teamMember.team_rank() == 0)
+      Kokkos::atomic_add(&C(rowId, colId), result);
+  }
+
+};
+
+  
 #define KOKKOSBLAS3_DGEMM_CUBLAS( LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct GEMM< \
@@ -389,11 +489,23 @@ struct GEMM< \
       transb = CUBLAS_OP_T; \
     else \
       transb = CUBLAS_OP_C; \
-    KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      cublasDgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA, B.data(), LDB, &beta, C.data(), LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      cublasDgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB, A.data(), LDA, &beta, C.data(), LDC); \
+    \
+    bool useDotBasedGemm = false; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+      useDotBasedGemm = true; \
+    \
+    if(useDotBasedGemm) { \
+      DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
+      gemm.run(); \
+    } \
+    else { \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      if(!A_is_lr && !B_is_lr && !C_is_lr )				\
+	cublasDgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA, B.data(), LDB, &beta, C.data(), LDC); \
+      if(A_is_lr && B_is_lr && C_is_lr )				\
+	cublasDgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB, A.data(), LDA, &beta, C.data(), LDC); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -452,11 +564,23 @@ struct GEMM< \
       transb = CUBLAS_OP_T; \
     else \
       transb = CUBLAS_OP_C; \
-    KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      cublasSgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA, B.data(), LDB, &beta, C.data(), LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      cublasSgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB, A.data(), LDA, &beta, C.data(), LDC); \
+    \
+    bool useDotBasedGemm = false; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+      useDotBasedGemm = true; \
+    \
+    if(useDotBasedGemm) { \
+      DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
+      gemm.run(); \
+    } \
+    else { \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      if(!A_is_lr && !B_is_lr && !C_is_lr ) \
+        cublasSgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA, B.data(), LDB, &beta, C.data(), LDC); \
+      if(A_is_lr && B_is_lr && C_is_lr ) \
+        cublasSgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB, A.data(), LDA, &beta, C.data(), LDC); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -515,11 +639,23 @@ struct GEMM< \
       transb = CUBLAS_OP_T; \
     else \
       transb = CUBLAS_OP_C; \
-    KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      cublasZgemm(s.handle, transa, transb, M, N, K, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<const cuDoubleComplex*>(B.data()), LDB, reinterpret_cast<const cuDoubleComplex*>(&beta), reinterpret_cast<cuDoubleComplex*>(C.data()), LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      cublasZgemm(s.handle, transb, transa, N, M, K, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(B.data()), LDB, reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<const cuDoubleComplex*>(&beta), reinterpret_cast<cuDoubleComplex*>(C.data()), LDC); \
+    \
+    bool useDotBasedGemm = false; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+      useDotBasedGemm = true; \
+    \
+    if(useDotBasedGemm) { \
+      DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
+      gemm.run(); \
+    } \
+    else { \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      if(!A_is_lr && !B_is_lr && !C_is_lr ) \
+	cublasZgemm(s.handle, transa, transb, M, N, K, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<const cuDoubleComplex*>(B.data()), LDB, reinterpret_cast<const cuDoubleComplex*>(&beta), reinterpret_cast<cuDoubleComplex*>(C.data()), LDC); \
+      if(A_is_lr && B_is_lr && C_is_lr ) \
+	cublasZgemm(s.handle, transb, transa, N, M, K, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(B.data()), LDB, reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<const cuDoubleComplex*>(&beta), reinterpret_cast<cuDoubleComplex*>(C.data()), LDC); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 }; \
@@ -578,11 +714,23 @@ struct GEMM< \
       transb = CUBLAS_OP_T; \
     else \
       transb = CUBLAS_OP_C; \
-    KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      cublasCgemm(s.handle, transa, transb, M, N, K, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<const cuComplex*>(B.data()), LDB, reinterpret_cast<const cuComplex*>(&beta), reinterpret_cast<cuComplex*>(C.data()), LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      cublasCgemm(s.handle, transb, transa, N, M, K, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(B.data()), LDB, reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<const cuComplex*>(&beta), reinterpret_cast<cuComplex*>(C.data()), LDC); \
+    \
+    bool useDotBasedGemm = false; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+      useDotBasedGemm = true; \
+    \
+    if(useDotBasedGemm) { \
+      DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
+      gemm.run(); \
+    } \
+    else { \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      if(!A_is_lr && !B_is_lr && !C_is_lr ) \
+	cublasCgemm(s.handle, transa, transb, M, N, K, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<const cuComplex*>(B.data()), LDB, reinterpret_cast<const cuComplex*>(&beta), reinterpret_cast<cuComplex*>(C.data()), LDC); \
+      if(A_is_lr && B_is_lr && C_is_lr ) \
+	cublasCgemm(s.handle, transb, transa, N, M, K, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(B.data()), LDB, reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<const cuComplex*>(&beta), reinterpret_cast<cuComplex*>(C.data()), LDC); \
+    } \
     Kokkos::Profiling::popRegion(); \
   } \
 };
