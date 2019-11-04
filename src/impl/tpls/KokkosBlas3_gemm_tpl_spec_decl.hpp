@@ -336,9 +336,15 @@ namespace KokkosBlas {
 namespace Impl {
 
 
-struct TagInit{};
-struct TagMult{};
+// DotBasedGEMM implements the optimization for C = beta*C + alpha*A^TB 
+// with A and B matrices both being tall and skinny. C matrix is assumably 
+// small, so, each entry of C is computed by performing the dot product of 
+// respective columns of A and B matrices. Note that the dot products are
+// performed on very long vectors, so, each dot product is distributed among
+// numDivPerDot teams.     
 
+struct TagInit{};   // The tag for the initialization parallel_for 
+struct TagMult{};   // The tag for the multiplication parallel_for 
 template<class ExecSpace, class AV, class BV, class CV>
 struct DotBasedGEMM{
 
@@ -354,14 +360,16 @@ struct DotBasedGEMM{
   scalar_A alpha;
   scalar_C beta;
 
-  size_C numCrows;
+  // The following types (especially dotSize) could have simply been int,
+  // e.g., see lines 488-490.
+  size_C numCrows;           
   size_C numCcols;
 
-  size_C numDivPerDot;
-  size_C numTeams;
+  size_C numDivPerDot;   // number of teams collectively performing a dot product
+  size_C numTeams;       // total number of teams
   
-  size_A dotSize;    
-  size_A chunkSize;  
+  size_A dotSize;        // the length of the vectors in the dot products
+  size_A chunkSize;      // the local length of each team's share on the dot product  
   
 
   DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_):A(A_),B(B_),C(C_),alpha(alpha_),beta(beta_) 
@@ -373,30 +381,43 @@ struct DotBasedGEMM{
 
   void run() {
 
-    size_C ndots = C.extent(0) * C.extent(1);
-    size_C appxNumTeams = (dotSize * ndots) / 4096;
+    size_C ndots = C.extent(0) * C.extent(1);       // Number of dot products
+    size_C appxNumTeams = (dotSize * ndots) / 4096; // First, estimate the appxNumTeams
+                                                    // each team performs 4096 mult-add ops
 
+    // Adjust appxNumTeams in case it is too small or too large
     if(appxNumTeams < 32)
       appxNumTeams = 32;
     if(appxNumTeams > 1024)
       appxNumTeams = 1024;
 
+    // If there are more dot products than the number of teams,
+    // then set the number of teams to be number of dot products
+    // and each team will perform only one dot product.
+    // We don't want a team to perform more than one dot product.
     if(ndots >= appxNumTeams) {
       numTeams = ndots;
       numDivPerDot = 1;
     }
+    // If there are more teams than dot products, each dot product can
+    // potentially be performed by multiple teams. First, compute 
+    // numDivPerDot as an integer (take the floor, not ceiling), then,
+    // compute actual number of teams by using this factor.
     else{
       numDivPerDot = appxNumTeams / ndots;
       numTeams = ndots * numDivPerDot;
     }
 
+    // Determine the local length for the dot product
     chunkSize = dotSize / numDivPerDot;
     if(numDivPerDot > 1)
       chunkSize++;
 
+    // Initialize C matrix as beta*C
     Kokkos::RangePolicy<TagInit, ExecSpace> policy1(0, ndots);
     Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policy1, *this);
 
+    // Multiply alpha*A^TB and add it to beta*C
     Kokkos::TeamPolicy<TagMult, ExecSpace> policy2(numTeams, Kokkos::AUTO);
     Kokkos::parallel_for("Perform Dot Product Based GEMM", policy2, *this);
 
