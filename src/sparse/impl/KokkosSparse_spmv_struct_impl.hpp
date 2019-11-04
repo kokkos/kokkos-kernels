@@ -530,7 +530,7 @@ struct SPMV_Struct_Functor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const exterior1DTag&, const ordinal_type& exteriorIdx) const
   {
-    typedef typename YVector::non_const_value_type y_value_type;
+    typedef typename YVector::non_const_value_type y_value_type_;
 
     ordinal_type rowIdx = exteriorIdx*(ni - 1);
 
@@ -538,7 +538,7 @@ struct SPMV_Struct_Functor {
     const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
     const value_type* value_ptr = &(m_A.values(rowOffset));
     const ordinal_type* column_ptr = &(m_A.graph.entries(rowOffset));
-    y_value_type sum = 0;
+    y_value_type_ sum = 0;
     for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
       sum += (*(value_ptr + entryIdx))*m_x(*(column_ptr + entryIdx));
     }
@@ -548,7 +548,7 @@ struct SPMV_Struct_Functor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const exterior2DTag&, const ordinal_type& exteriorIdx) const
   {
-    typedef typename YVector::non_const_value_type y_value_type;
+    typedef typename YVector::non_const_value_type y_value_type_;
     const ordinal_type topFlag = exteriorIdx / (ni + 2*nj - 4);
     const ordinal_type bottomFlag = static_cast<ordinal_type>((exteriorIdx / ni) == 0);
 
@@ -568,7 +568,7 @@ struct SPMV_Struct_Functor {
     const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
     const value_type* value_ptr = &(m_A.values(rowOffset));
     const ordinal_type* column_ptr = &(m_A.graph.entries(rowOffset));
-    y_value_type sum = 0;
+    y_value_type_ sum = 0;
     for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
       sum += (*(value_ptr + entryIdx))*m_x(*(column_ptr + entryIdx));
     }
@@ -578,7 +578,7 @@ struct SPMV_Struct_Functor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const exterior3DTag&, const ordinal_type& exteriorIdx) const
   {
-    typedef typename YVector::non_const_value_type y_value_type;
+    typedef typename YVector::non_const_value_type y_value_type_;
     const ordinal_type topFlag = static_cast<ordinal_type>(numExterior - exteriorIdx - 1 < ni*nj);
     const ordinal_type bottomFlag = static_cast<ordinal_type>(exteriorIdx / (ni*nj) == 0);
 
@@ -612,7 +612,7 @@ struct SPMV_Struct_Functor {
     const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
     const value_type* value_ptr = &(m_A.values(rowOffset));
     const ordinal_type* column_ptr = &(m_A.graph.entries(rowOffset));
-    y_value_type sum = 0;
+    y_value_type_ sum = 0;
     for(ordinal_type entryIdx = 0; entryIdx < row_length; ++entryIdx) {
       sum += (*(value_ptr + entryIdx))*m_x(*(column_ptr + entryIdx));
     }
