@@ -41,31 +41,27 @@
 //@HEADER
 */
 
-#include <algorithm>
-#include <stdlib.h>
+// Standard Library Headers
+#include <iomanip>
+#include <iostream>
 #include <string>
 #include <unistd.h>
 
-#include <iostream>
-#include <iomanip>
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <limits>
-#include <string>
-#include <sys/time.h>
-
+// Kokkos Headers
 #include <Kokkos_Core.hpp>
-#include <KokkosKernels_IOUtils.hpp>
-#include <KokkosGraph_Distance2Color.hpp>
+#include <Kokkos_StaticCrsGraph.hpp>
 
-#include "KokkosKernels_CrsMatrix.hpp"
+// Kokkos-Kernels Headers
+#include <KokkosGraph_Distance2Color.hpp>
+#include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
+
+// Example Headers
 #include "KokkosKernels_Parameters.hpp"
-#include "KokkosKernels_StaticCrsGraph.hpp"
+
 
 using namespace KokkosGraph;
+
 
 #ifdef KOKKOSKERNELS_INST_DOUBLE
 using kk_scalar_type = double;
@@ -95,6 +91,8 @@ using kk_lno_type    = int64_t;
 
 using namespace KokkosGraph;
 
+namespace KokkosKernels {
+namespace Example {
 
 
 void
@@ -256,10 +254,6 @@ parse_inputs(KokkosKernels::Example::Parameters& params, int argc, char** argv)
 }
 
 
-namespace KokkosKernels {
-namespace Example {
-
-
 std::string
 getCurrentDateTimeStr()
 {
@@ -272,24 +266,22 @@ getCurrentDateTimeStr()
 }
 
 
-template<typename ExecSpace, 
-         typename CrsGraph_type1, 
-         typename CrsGraph_type2, 
-         typename CrsGraph_type3, 
-         typename TempMemSpace, 
+template<typename ExecSpace,
+         typename DataType,
+         typename CrsGraph_type,
+         typename TempMemSpace,
          typename PersistentMemSpace>
 void
-run_experiment(CrsGraph_type1 crsGraph, Parameters params)
+run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
 {
     using namespace KokkosGraph;
     using namespace KokkosGraph::Experimental;
 
     int algorithm = params.algorithm;
     int shmemsize = params.shmemsize;
-//    int verbose   = params.verbose_level;
 
-    using lno_view_type     = typename CrsGraph_type3::row_map_type::non_const_type;
-    using lno_nnz_view_type = typename CrsGraph_type3::entries_type::non_const_type;
+    using lno_view_type     = typename CrsGraph_type::row_map_type::non_const_type;
+    using lno_nnz_view_type = typename CrsGraph_type::entries_type::non_const_type;
     using size_type         = typename lno_view_type::non_const_value_type;
     using lno_type          = typename lno_nnz_view_type::non_const_value_type;
     using KernelHandle_type = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_type, kk_scalar_type, ExecSpace, TempMemSpace, PersistentMemSpace>;
@@ -349,12 +341,17 @@ run_experiment(CrsGraph_type1 crsGraph, Parameters params)
 
 
     // Call the distance-2 graph coloring routine
-    graph_compute_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+    graph_compute_distance2_color(&kh,
+                                  crsGraph.numRows(),
+                                  num_cols,
+                                  crsGraph.row_map,
+                                  crsGraph.entries,
+                                  crsGraph.row_map,
+                                  crsGraph.entries);
 
 
     total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
     total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();
-
 
     if(params.verbose_level > 0)
     {
@@ -383,19 +380,20 @@ run_experiment(CrsGraph_type1 crsGraph, Parameters params)
     if(0 != params.validate)
     {
         str_color_is_valid = "VALID";
-    
+
         bool d2_coloring_is_valid              = false;
         bool d2_coloring_validation_flags[ 4 ] = {false};
 
         d2_coloring_is_valid = KokkosGraph::Impl::graph_verify_distance2_color(&kh,
                                                                                crsGraph.numRows(),
-                                                                               crsGraph.numCols(),
+                                                                               //crsGraph.numCols(),
+                                                                               num_cols,
                                                                                crsGraph.row_map,
                                                                                crsGraph.entries,
                                                                                crsGraph.row_map,
                                                                                crsGraph.entries,
                                                                                d2_coloring_validation_flags);
-    
+
         // Print out messages based on coloring validation check.
         if(d2_coloring_is_valid)
         {
@@ -423,18 +421,15 @@ run_experiment(CrsGraph_type1 crsGraph, Parameters params)
     // ------------------------------------------
     if(0 != params.output_histogram)
     {
-        KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, 
-                                                                 crsGraph.numRows(), 
-                                                                 crsGraph.numCols(), 
-                                                                 crsGraph.row_map, 
-                                                                 crsGraph.entries, 
-                                                                 crsGraph.row_map, 
-                                                                 crsGraph.entries, 
+        KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh,
+                                                                 crsGraph.numRows(),
+                                                                 num_cols,
+                                                                 crsGraph.row_map,
+                                                                 crsGraph.entries,
+                                                                 crsGraph.row_map,
+                                                                 crsGraph.entries,
                                                                  false);
     }
-
-
-    Kokkos::Impl::Timer timer;
 
     double total_time                   = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time();
     double total_time_color_greedy      = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase1();
@@ -491,7 +486,8 @@ run_experiment(CrsGraph_type1 crsGraph, Parameters params)
               << std::endl
               << std::endl;
 
-}   // run_experiment()
+}   // run_example()
+
 
 
 template<typename size_type, typename lno_type, typename exec_space, typename hbm_mem_space>
@@ -500,19 +496,23 @@ driver(Parameters params)
 {
     using myExecSpace       = exec_space;
     using myFastDevice      = Kokkos::Device<exec_space, hbm_mem_space>;
-    using fast_crstmat_type = typename KokkosKernelsGraphExample::CrsMatrix<double, lno_type, myFastDevice, void, size_type>;
+    using fast_crstmat_type = typename KokkosSparse::CrsMatrix<double, lno_type, myFastDevice, void, size_type>;
     using fast_graph_type   = typename fast_crstmat_type::StaticCrsGraphType;
+    using data_type         = typename fast_graph_type::data_type;
 
     char* mat_file = params.mtx_bin_file;
 
     fast_graph_type fast_crsgraph;
 
     fast_crstmat_type fast_crsmat;
+
     fast_crsmat            = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_type>(mat_file);
     fast_crsgraph          = fast_crsmat.graph;
-    fast_crsgraph.num_cols = fast_crsmat.numCols();
 
-    KokkosKernels::Example::run_experiment<myExecSpace, fast_graph_type, fast_graph_type, fast_graph_type, hbm_mem_space, hbm_mem_space>(fast_crsgraph, params);
+    data_type num_cols  = fast_crsmat.numCols();
+
+    KokkosKernels::Example::run_example<myExecSpace, data_type, fast_graph_type, hbm_mem_space, hbm_mem_space>
+        (fast_crsgraph, num_cols, params);
 
 } // driver()
 
@@ -550,26 +550,26 @@ main(int argc, char* argv[])
         Kokkos::print_configuration(std::cout);
     }
 
-#if defined(KOKKOS_ENABLE_OPENMP)
+    #if defined(KOKKOS_ENABLE_OPENMP)
     if(params.use_openmp)
     {
         KokkosKernels::Example::driver<kk_size_type, kk_lno_type, Kokkos::OpenMP, Kokkos::OpenMP::memory_space>(params);
     }
-#endif
+    #endif
 
-#if defined(KOKKOS_ENABLE_CUDA)
+    #if defined(KOKKOS_ENABLE_CUDA)
     if(params.use_cuda)
     {
         KokkosKernels::Example::driver<kk_size_type, kk_lno_type, Kokkos::Cuda, Kokkos::Cuda::memory_space>(params);
     }
-#endif
+    #endif
 
-#if defined(KOKKOS_ENABLE_SERIAL)
+    #if defined(KOKKOS_ENABLE_SERIAL)
     if(params.use_serial)
     {
         KokkosKernels::Example::driver<kk_size_type, kk_lno_type, Kokkos::Serial, Kokkos::Serial::memory_space>(params);
     }
-#endif
+    #endif
 
     Kokkos::finalize();
 
