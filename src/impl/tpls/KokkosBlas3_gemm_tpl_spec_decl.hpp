@@ -348,42 +348,38 @@ struct TagMult{};   // The tag for the multiplication parallel_for
 template<class ExecSpace, class AV, class BV, class CV>
 struct DotBasedGEMM{
 
-  AV A;
-  BV B;
+  const AV A;
+  const BV B;
   CV C;
 
-  typedef typename AV::non_const_value_type scalar_A;
-  typedef typename AV::size_type size_A;
-  typedef typename CV::non_const_value_type scalar_C;
-  typedef typename CV::size_type size_C;
+  using scalar_A = typename AV::non_const_value_type;
+  using size_A = typename AV::size_type;
+  using scalar_C = typename CV::non_const_value_type;
+  using size_C = typename CV::size_type;
 
-  scalar_A alpha;
-  scalar_C beta;
+  const scalar_A alpha;
+  const scalar_C beta;
 
   // The following types (especially dotSize) could have simply been int,
   // e.g., see lines 488-490.
-  size_C numCrows;           
-  size_C numCcols;
+  const size_C numCrows;           
+  const size_C numCcols;
 
   size_C numDivPerDot;   // number of teams collectively performing a dot product
   size_C numTeams;       // total number of teams
   
-  size_A dotSize;        // the length of the vectors in the dot products
+  const size_A dotSize;        // the length of the vectors in the dot products
   size_A chunkSize;      // the local length of each team's share on the dot product  
   
 
-  DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_):A(A_),B(B_),C(C_),alpha(alpha_),beta(beta_) 
-  {
-    numCrows = C.extent(0);
-    numCcols = C.extent(1);
-    dotSize = A.extent(0);
-  }
+  DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_):A(A_),B(B_),C(C_),alpha(alpha_),beta(beta_),numCrows(C.extent(0)),numCcols(C.extent(1)),dotSize(A.extent(0))
+  { }
 
   void run() {
 
-    size_C ndots = C.extent(0) * C.extent(1);       // Number of dot products
-    size_C appxNumTeams = (dotSize * ndots) / 4096; // First, estimate the appxNumTeams
-                                                    // each team performs 4096 mult-add ops
+    constexpr size_C workPerTeam = 4096;                   // Amount of work per team
+    const size_C ndots = numCrows * numCcols;              // Number of dot products
+    size_C appxNumTeams = (dotSize * ndots) / workPerTeam; // Estimation for appxNumTeams
 
     // Adjust appxNumTeams in case it is too small or too large
     if(appxNumTeams < 32)
@@ -414,6 +410,10 @@ struct DotBasedGEMM{
       chunkSize++;
 
     // Initialize C matrix as beta*C
+    // This is not required for the Belos MvTransMv use case which
+    // already initializes C to zero, however, absolutely needed for 
+    // other cases, e.g., when beta is nonzero or when C was not 
+    // initialized for the case beta being zero.  
     Kokkos::RangePolicy<TagInit, ExecSpace> policy1(0, ndots);
     Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policy1, *this);
 
@@ -512,8 +512,10 @@ struct GEMM< \
       transb = CUBLAS_OP_C; \
     \
     bool useDotBasedGemm = false; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+    constexpr int numDotsLayoutLeftThreshold = 1600; \
+    constexpr int numDotsLayoutRightThreshold = 100; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
       useDotBasedGemm = true; \
     \
     if(useDotBasedGemm) { \
@@ -587,8 +589,10 @@ struct GEMM< \
       transb = CUBLAS_OP_C; \
     \
     bool useDotBasedGemm = false; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+    constexpr int numDotsLayoutLeftThreshold = 1600; \
+    constexpr int numDotsLayoutRightThreshold = 100; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
       useDotBasedGemm = true; \
     \
     if(useDotBasedGemm) { \
@@ -662,8 +666,10 @@ struct GEMM< \
       transb = CUBLAS_OP_C; \
     \
     bool useDotBasedGemm = false; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+    constexpr int numDotsLayoutLeftThreshold = 1600; \
+    constexpr int numDotsLayoutRightThreshold = 100; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
       useDotBasedGemm = true; \
     \
     if(useDotBasedGemm) { \
@@ -737,8 +743,10 @@ struct GEMM< \
       transb = CUBLAS_OP_C; \
     \
     bool useDotBasedGemm = false; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 1600) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < 100)) \
+    constexpr int numDotsLayoutLeftThreshold = 1600; \
+    constexpr int numDotsLayoutRightThreshold = 100; \
+    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
       useDotBasedGemm = true; \
     \
     if(useDotBasedGemm) { \
