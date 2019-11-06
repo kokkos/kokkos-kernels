@@ -51,6 +51,7 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosSparse_gauss_seidel_impl.hpp"
+#include "KokkosSparse_cluster_gauss_seidel_impl.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -236,10 +237,21 @@ namespace KokkosSparse {
                              a_lno_view_t entries,
                              bool is_graph_symmetric){
 
-        typedef typename Impl::GaussSeidel<KernelHandle, a_size_view_t_,
-                                           a_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t> SGS;
-        SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
-        sgs.initialize_symbolic();
+        auto gsHandler = handle->get_gs_handle();
+        if(gsHandler->get_algorithm_type() == GS_CLUSTER)
+        {
+          typedef typename Impl::ClusterGaussSeidel
+            <KernelHandle, a_size_view_t_, a_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t> SGS;
+          SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
+          sgs.initialize_symbolic();
+        }
+        else
+        {
+          typedef typename Impl::PointGaussSeidel
+            <KernelHandle, a_size_view_t_, a_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t> SGS;
+          SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
+          sgs.initialize_symbolic();
+        }
       }
     };
 
@@ -257,11 +269,23 @@ namespace KokkosSparse {
                            a_scalar_view_t values,
                            bool is_graph_symmetric
                            ){
-        typedef typename Impl::GaussSeidel
-          <KernelHandle,a_size_view_t_,
-           a_lno_view_t,a_scalar_view_t> SGS;
-        SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
-        sgs.initialize_numeric();
+        auto gsHandler = handle->get_gs_handle();
+        if(gsHandler->get_algorithm_type() == GS_CLUSTER)
+        {
+          typedef typename Impl::ClusterGaussSeidel
+            <KernelHandle,a_size_view_t_,
+             a_lno_view_t,a_scalar_view_t> SGS;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
+          sgs.initialize_numeric();
+        }
+        else
+        {
+          typedef typename Impl::PointGaussSeidel
+            <KernelHandle,a_size_view_t_,
+             a_lno_view_t,a_scalar_view_t> SGS;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
+          sgs.initialize_numeric();
+        }
       }
 
       static void
@@ -301,17 +325,32 @@ namespace KokkosSparse {
                          bool update_y_vector,
                          typename KernelHandle::nnz_scalar_t omega, int numIter, bool apply_forward, bool apply_backward){
 
-        typedef typename Impl::GaussSeidel <KernelHandle,
-                                            a_size_view_t_, a_lno_view_t,a_scalar_view_t > SGS;
-        SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
-        sgs.apply(
-                  x_lhs_output_vec,
-                  y_rhs_input_vec,
-                  init_zero_x_vector,
-                  numIter,
-                  omega,
-                  apply_forward,
-                  apply_backward, update_y_vector);
+        if(gsHandler->get_algorithm_type() == GS_CLUSTER)
+        {
+          typedef typename Impl::ClusterGaussSeidel <KernelHandle, a_size_view_t_, a_lno_view_t,a_scalar_view_t > SGS;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
+          sgs.apply(
+                    x_lhs_output_vec,
+                    y_rhs_input_vec,
+                    init_zero_x_vector,
+                    numIter,
+                    omega,
+                    apply_forward,
+                    apply_backward, update_y_vector);
+        }
+        else
+        {
+          typedef typename Impl::PointGaussSeidel <KernelHandle, a_size_view_t_, a_lno_view_t,a_scalar_view_t > SGS;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
+          sgs.apply(
+                    x_lhs_output_vec,
+                    y_rhs_input_vec,
+                    init_zero_x_vector,
+                    numIter,
+                    omega,
+                    apply_forward,
+                    apply_backward, update_y_vector);
+        }
       }
     };
 #endif

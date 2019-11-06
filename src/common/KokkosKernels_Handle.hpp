@@ -170,6 +170,14 @@ public:
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GaussSeidelHandleType;
 
+  //These are subclasses of GaussSeidelHandleType.
+  typedef typename KokkosSparse::
+    PointGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      PointGaussSeidelHandleType;
+  typedef typename KokkosSparse::
+    ClusterGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      ClusterGaussSeidelHandleType;
+
   typedef typename KokkosSparse::
     SPGEMMHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPGEMMHandleType;
@@ -484,12 +492,12 @@ public:
     KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT){
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new GaussSeidelHandleType(gs_algorithm);
+    this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
   }
   void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new GaussSeidelHandleType(clusterAlgo, verts_per_cluster);
+    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, verts_per_cluster);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){
