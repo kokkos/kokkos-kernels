@@ -172,7 +172,9 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
  else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
           thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG   ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
   typedef typename TriSolveHandle::size_type size_type;
 
   typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
@@ -205,7 +207,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
   // type of kernels used at each level
   int size_unblocked = thandle.get_supernode_size_unblocked();
-  int size_blocked = thandle.get_supernode_size_blocked();
+  //int size_blocked = thandle.get_supernode_size_blocked();
   supercols_host_t diag_kernel_type_by_level = thandle.get_kernel_type_host ();
 
   // # of supernodal columns
@@ -255,7 +257,8 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       check[s] = 0;
     }
 
-    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG);
+    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                    thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
     for (size_type s = 0; s < nsuper; s++) {
       if (use_dag) {
         for (size_type e = 0; e < dag[s][0]; e++) {
@@ -270,7 +273,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
     signed_integral_t num_done = 0;
     signed_integral_t level = 0;
-    #define profile_supernodal_etree
+    //#define profile_supernodal_etree
     #ifdef profile_supernodal_etree
     // min, max, tot size of supernodes
     signed_integral_t max_nsrow = 0;
@@ -362,8 +365,11 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
         // device
         diag_kernel_type_by_level (level) = 3;
       }
-      printf( " %d: num_leave=%d, avg_nsrow=%d, avg_nscol=%d, kernel_type=%d (%d, %d)\n",level,num_leave,avg_nsrow, avg_nscol,diag_kernel_type_by_level (level), size_unblocked,size_blocked );
       #ifdef profile_supernodal_etree
+      std::cout << level <<  " : num_leave="
+                << num_leave << ", avg_nsrow=" << avg_nsrow << ", avg_nscol=" << avg_nscol 
+                << ", kernel_type=" << diag_kernel_type_by_level (level)
+                << "(" << size_unblocked << "," << thandle.get_supernode_size_blocked() << ")" << std::endl;
       if (level == 0) {
         max_nleave = num_leave;
         min_nleave = num_leave;
@@ -411,6 +417,10 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     delete[] check;
   }
   // workspace size
+  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+      thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+    max_lwork = thandle.get_nrows ();
+  }
   thandle.set_workspace_size (max_lwork);
   // workspace offset initialized to be zero
   supercols_t work_offset = thandle.get_work_offset ();

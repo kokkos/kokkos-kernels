@@ -232,18 +232,20 @@ namespace Experimental {
             typename host_graph_t,
             typename graph_t>
   void sptrsv_symbolic(
-      KernelHandle *handleL,
-      KernelHandle *handleU,
+      KernelHandle *kernelHandleL,
+      KernelHandle *kernelHandleU,
       SuperMatrix &L,
       SuperMatrix &U)
   {
     // ===================================================================
     // load options
-    int *etree = handleL->get_sptrsv_handle ()->get_etree ();
-    bool merge = handleL->get_sptrsv_handle ()->get_merge_supernodes ();
+    auto *handleL = kernelHandleL->get_sptrsv_handle ();
+    auto *handleU = kernelHandleU->get_sptrsv_handle ();
+    int *etree = handleL->get_etree ();
+    bool merge = handleL->get_merge_supernodes ();
     if (etree == NULL) {
       std::cout << std::endl
-                << " etree needs to be set before calling sptrsv_symbolic with SuperLU "
+                << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
                 << std::endl << std::endl;
       return;
     }
@@ -336,18 +338,19 @@ namespace Experimental {
 
     // ===================================================================
     // save the supernodal info in the handles for L/U solves
-    handleL->set_supernodes (nsuper, supercols, etree);
-    handleU->set_supernodes (nsuper, supercols, etree);
+    kernelHandleL->set_supernodes (nsuper, supercols, etree);
+    kernelHandleU->set_supernodes (nsuper, supercols, etree);
 
-    if (handleL->get_sptrsv_handle ()->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
+    if (handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
+        handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
       // generate supernodal graphs for DAG scheduling
       auto supL = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, graphL, nsuper, supercols);
       auto supU = generate_supernodal_graph<host_graph_t, graph_t> (merge, nrows, graphU, nsuper, supercols);
 
       int **dagL = generate_supernodal_dag<host_graph_t> (nsuper, supL, supU);
       int **dagU = generate_supernodal_dag<host_graph_t> (nsuper, supU, supL);
-      handleL->set_supernodal_dag (dagL);
-      handleU->set_supernodal_dag (dagU);
+      kernelHandleL->set_supernodal_dag (dagL);
+      kernelHandleU->set_supernodal_dag (dagU);
     }
 
     // ===================================================================
@@ -356,7 +359,7 @@ namespace Experimental {
     auto entriesL = graphL.entries;
     timer.reset();
     std::cout << std::endl;
-    sptrsv_symbolic (handleL, row_mapL, entriesL);
+    sptrsv_symbolic (kernelHandleL, row_mapL, entriesL);
     std::cout << " > Lower-TRI: " << std::endl;
     std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
@@ -365,28 +368,28 @@ namespace Experimental {
     auto row_mapU = graphU.row_map;
     auto entriesU = graphU.entries;
     timer.reset ();
-    sptrsv_symbolic (handleU, row_mapU, entriesU);
+    sptrsv_symbolic (kernelHandleU, row_mapU, entriesU);
     std::cout << " > Upper-TRI: " << std::endl;
     std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
     // ===================================================================
     // save options
-    handleL->get_sptrsv_handle ()->set_merge_supernodes (merge);
-    handleU->get_sptrsv_handle ()->set_merge_supernodes (merge);
+    handleL->set_merge_supernodes (merge);
+    handleU->set_merge_supernodes (merge);
 
     // ===================================================================
     // save graphs
-    handleL->get_sptrsv_handle ()->set_graph (graphL);
-    handleL->get_sptrsv_handle ()->set_graph_host (graphL_host);
+    handleL->set_graph (graphL);
+    handleL->set_graph_host (graphL_host);
 
-    handleU->get_sptrsv_handle ()->set_graph (graphU);
-    handleU->get_sptrsv_handle ()->set_graph_host (graphU_host);
+    handleU->set_graph (graphU);
+    handleU->set_graph_host (graphU_host);
 
     // ===================================================================
-    handleL->get_sptrsv_handle ()->set_symbolic_complete ();
-    handleU->get_sptrsv_handle ()->set_symbolic_complete ();
-    handleL->get_sptrsv_handle ()->set_etree (etree);
-    handleU->get_sptrsv_handle ()->set_etree (etree);
+    handleL->set_symbolic_complete ();
+    handleU->set_symbolic_complete ();
+    handleL->set_etree (etree);
+    handleU->set_etree (etree);
   }
 
 
@@ -395,45 +398,52 @@ namespace Experimental {
             typename host_crsmat_t,
             typename crsmat_t>
   void sptrsv_compute(
-      KernelHandle *handleL,
-      KernelHandle *handleU,
+      KernelHandle *kernelHandleL,
+      KernelHandle *kernelHandleU,
       SuperMatrix &L,
       SuperMatrix &U)
   {
     typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
     typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
 
-    if (!(handleL->get_sptrsv_handle ()->is_symbolic_complete()) ||
-        !(handleU->get_sptrsv_handle ()->is_symbolic_complete())) {
+    typedef typename KernelHandle::nnz_scalar_t scalar_type;
+    typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+
+    auto *handleL = kernelHandleL->get_sptrsv_handle ();
+    auto *handleU = kernelHandleU->get_sptrsv_handle ();
+
+    if (!(handleL->is_symbolic_complete()) ||
+        !(handleU->is_symbolic_complete())) {
       std::cout << std::endl
-                << " needs to call sptrsv_symbolic before calling sptrsv_numeric "
+                << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **"
                 << std::endl << std::endl;
       return;
     }
 
     // ===================================================================
     // load options
-    bool merge = handleL->get_sptrsv_handle ()->get_merge_supernodes ();
-    bool invert_offdiag = handleL->get_sptrsv_handle ()->get_invert_offdiagonal ();
+    bool merge = handleL->get_merge_supernodes ();
+    bool invert_offdiag = handleL->get_invert_offdiagonal ();
+    if (merge)          printf( " >> merge\n" );
+    if (invert_offdiag) printf( " >> invert offdiag\n" );
 
     // ===================================================================
     // load graphs
-    auto graphL = handleL->get_sptrsv_handle ()->get_graph ();
-    auto graphL_host = handleL->get_sptrsv_handle ()->get_graph_host ();
+    auto graphL = handleL->get_graph ();
+    auto graphL_host = handleL->get_graph_host ();
 
-    auto graphU = handleU->get_sptrsv_handle ()->get_graph ();
-    auto graphU_host = handleU->get_sptrsv_handle ()->get_graph_host ();
+    auto graphU = handleU->get_graph ();
+    auto graphU_host = handleU->get_graph_host ();
 
     int nrows = L.nrow;
-    int nsuper = handleL->get_sptrsv_handle ()->get_num_supernodes ();
-    const int* supercols = handleL->get_sptrsv_handle ()->get_supercols_host ();
+    int nsuper = handleL->get_num_supernodes ();
+    const int* supercols = handleL->get_supercols_host ();
     crsmat_t superluL, superluU;
     host_crsmat_t superluL_host, superluU_host;
     if (merge) {
-      // NOTE: we first load into CRS, and then merge (should be combined)
-
-      // ==============================================
+      // ========================================================
       // read in the numerical L-values into merged crs
+      // NOTE: we first load into CRS, and then merge (should be combined)
       bool cusparse = false;
       bool invert_diag = false; // invert after merge
       superluL_host = read_superlu_valuesL<host_crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL_host);
@@ -442,7 +452,7 @@ namespace Experimental {
                                                                            true, invert_diag, invert_offdiag,
                                                                            superluL_host, graphL);
 
-      // ==============================================
+      // ========================================================
       // read in the numerical U-values into merged crs
       invert_diag = false;     // invert after merge
       superluU_host = read_superlu_valuesU<host_crsmat_t, host_graph_t> (invert_diag, &L, &U, graphU_host);
@@ -452,22 +462,160 @@ namespace Experimental {
                                                                            false, invert_diag, invert_offdiagU,
                                                                            superluU_host, graphU);
     } else {
+      // ========================================================
+      // read in the numerical values into merged crs for L and U
       bool cusparse = false;
       bool invert_diag = true; // only, invert diag is supported for now
       superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
       superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
     }
 
+    // ===================================================================
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+        handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+      using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+      using cols_view_t    = typename graph_t::entries_type::non_const_type;
+      using values_view_t  = typename crsmat_t::values_type::non_const_type;
+
+      using row_map_view_host_t = typename row_map_view_t::HostMirror;
+      using cols_view_host_t    = typename cols_view_t::HostMirror;
+      using values_view_host_t  = typename values_view_t::HostMirror;
+
+      // number of supernodes per level
+      auto nodes_per_level = handleL->get_nodes_per_level ();
+      auto hnodes_per_level = Kokkos::create_mirror_view (nodes_per_level);
+      Kokkos::deep_copy (hnodes_per_level, nodes_per_level);
+
+      // id of supernodes at each level
+      auto nodes_grouped_by_level = handleL->get_nodes_grouped_by_level ();
+      auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
+      Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
+
+      // crsgraph for L
+      auto row_map = graphL.row_map;
+      auto entries = graphL.entries;
+      auto values  = superluL.values;
+
+      row_map_view_host_t row_mapL = Kokkos::create_mirror_view (row_map);
+      cols_view_host_t    entriesL = Kokkos::create_mirror_view (entries);
+      values_view_host_t  valuesL  = Kokkos::create_mirror_view (values);
+      Kokkos::deep_copy (row_mapL, row_map);
+      Kokkos::deep_copy (entriesL, entries);
+      Kokkos::deep_copy (valuesL,  values);
+
+      int node_count = 0; // number of supernodes processed
+      int nlevels = handleL->get_num_levels ();
+      // form crsgraph for each submatrix at each level
+      graph_t  **sub_graphs = new graph_t*[nlevels];
+      crsmat_t **sub_crsmats = new crsmat_t*[nlevels];
+      for (int lvl = 0; lvl < nlevels; ++lvl) {
+        // > count nnz
+        int nnzL = 0;
+        int lvl_nodes = hnodes_per_level (lvl); // number of supernodes at this level
+        for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+          auto s = nodes_grouped_by_level_host (node_count + league_rank);
+
+          // supernodal column size
+          const int* supercols_host = handleL->get_supercols_host ();
+          int j1 = supercols_host[s];
+          int j2 = supercols_host[s+1];
+          int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
+
+          // number of rows in this supernode
+          int i1 = row_mapL (j1);
+          int i2 = row_mapL (j1+1);
+          int nsrow = i2 - i1;         // "total" number of rows in all the supernodes (diagonal+off-diagonal)
+
+          nnzL += (nscol*nsrow);
+        }
+
+        // allocate subgraph
+        row_map_view_t rowmap_view ("rowmap_view", nrows+1);
+        cols_view_t    column_view ("colmap_view", nnzL);
+        values_view_t  values_view ("values_view", nnzL);
+        row_map_view_host_t hr = Kokkos::create_mirror_view (rowmap_view);
+        cols_view_host_t    hc = Kokkos::create_mirror_view (column_view);
+        values_view_host_t  hv = Kokkos::create_mirror_view (values_view);
+        hr (0) = 0;
+
+        // create subgraph
+        nnzL = 0;
+        int j0 = 0; // end of previous supernode at this level (not including this column)
+        for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+          auto s = nodes_grouped_by_level_host (node_count + league_rank);
+
+          // start/end column id for this supernodal column at this level
+          // (these column ids are sorted in ascending order at each level)
+          const int* supercols_host = handleL->get_supercols_host ();
+          int j1 = supercols_host[s];                  // start of this supernode
+          int j2 = supercols_host[s+1];                // start of next supernode
+          int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
+
+          // insert empty columns for the columns skipped (between the previous and this supernodes)
+          for (int j = j0+1; j <= j1; j++) {
+            if (j > 0) {
+              hr (j) = hr (j-1);
+            }
+          }
+
+          // insert the columns in this supernode
+          for (int j = j1; j < j2; j++) {
+            // diagonals
+            for (int k = row_mapL (j); k < row_mapL (j) + nscol; k++) {
+              // remove zeros
+              if (valuesL (k) != STS::zero ()) {
+                hc (nnzL) = entriesL (k);
+                hv (nnzL) = valuesL (k);
+                nnzL ++;
+              }
+            }
+
+            // off-diagonals
+            for (int k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
+              // remove zeros, and minus for updating off-diagonal elements with Spmv
+              if (valuesL (k) != STS::zero ()) {
+                hc (nnzL) =  entriesL (k);
+                hv (nnzL) = -valuesL (k);
+                nnzL ++;
+              }
+            }
+            hr(j+1) = nnzL;
+          }
+          j0 = j2; // update the last column of the processed supernode (not including this column)
+        }
+        // insert empty columns at the end
+        for (int j = j0+1; j <= nrows; j++) {
+          if (j > 0) {
+            hr (j) = hr (j-1);
+          }
+        }
+        // create crs-graph
+        Kokkos::deep_copy (rowmap_view, hr);
+        Kokkos::deep_copy (column_view, hc);
+        Kokkos::deep_copy (values_view, hv);
+        sub_graphs[lvl] = new graph_t(column_view, rowmap_view);
+        sub_crsmats[lvl] = new crsmat_t("CrsMatrix", nrows, values_view, *(sub_graphs[lvl]));
+
+        // update the number of supernodes processed
+        node_count += lvl_nodes;
+      }
+      handleL->set_submatrices (sub_crsmats);
+    }
+    // end of creating submat
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
     // ==============================================
     // save crsmat
-    handleL->get_sptrsv_handle ()->set_invert_offdiagonal(invert_offdiag);
-    handleU->get_sptrsv_handle ()->set_invert_offdiagonal(invert_offdiag);
-    handleL->get_sptrsv_handle ()->set_crsmat (superluL);
-    handleU->get_sptrsv_handle ()->set_crsmat (superluU);
+    handleL->set_invert_offdiagonal (invert_offdiag);
+    handleU->set_invert_offdiagonal (invert_offdiag);
+    handleL->set_crsmat (superluL);
+    handleU->set_crsmat (superluU);
 
     // ===================================================================
-    handleL->get_sptrsv_handle ()->set_numeric_complete ();
-    handleU->get_sptrsv_handle ()->set_numeric_complete ();
+    handleL->set_numeric_complete ();
+    handleU->set_numeric_complete ();
   } // sptrsv_compute
 #endif //KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 
@@ -488,7 +636,7 @@ namespace Experimental {
     int *etree = handleL->get_sptrsv_handle ()->get_etree ();
     if (etree == NULL) {
       std::cout << std::endl
-                << " etree needs to be set before calling sptrsv_symbolic with SuperLU "
+                << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
                 << std::endl << std::endl;
       return;
     }
@@ -551,7 +699,7 @@ namespace Experimental {
     if (!(handleL->get_sptrsv_handle ()->is_symbolic_complete()) ||
         !(handleU->get_sptrsv_handle ()->is_symbolic_complete())) {
       std::cout << std::endl
-                << " needs to call sptrsv_symbolic before calling sptrsv_numeric "
+                << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **"
                 << std::endl << std::endl;
       return;
     }
@@ -597,7 +745,7 @@ namespace Experimental {
 
     if (!(handle->get_sptrsv_handle ()->is_numeric_complete())) {
       std::cout << std::endl
-                << " needs to call sptrsv_compute before calling sptrsv_solve "
+                << " ** needs to call sptrsv_compute before calling sptrsv_solve **"
                 << std::endl << std::endl;
       return;
     }

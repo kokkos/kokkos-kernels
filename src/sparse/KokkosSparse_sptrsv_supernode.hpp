@@ -632,6 +632,12 @@ int** generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
 }
 
 
+/* ========================================================================================= */
+template <typename graph_t>
+graph_t split_supernodal_graph(int nsuper, graph_t &supL, graph_t &supU) {
+}
+
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For numeric computation                                                                   */
 

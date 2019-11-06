@@ -58,7 +58,7 @@ namespace KokkosSparse {
 namespace Experimental {
 
 // TP2 algorithm has issues with some offset-ordinal combo to be addressed
-enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG };
+enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1/*, SEQLVLSCHED_TP2*/, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_SPMV, SUPERNODAL_SPMV_DAG };
 
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
@@ -180,6 +180,10 @@ private:
 
   // crsmat
   crsmat_t crsmat;
+
+  // for supernodal spmv
+  graph_t **sub_graphs;
+  crsmat_t **sub_crsmats;
 
   int num_streams;
   #if defined(KOKKOS_ENABLE_CUDA)
@@ -501,6 +505,21 @@ public:
     return this->crsmat;
   }
 
+  // sub graph/matrix
+  void set_subgraphs(graph_t **subgraphs) {
+    this->sub_graphs = subgraphs;
+  }
+
+  void set_submatrices(crsmat_t **subcrsmats) {
+    this->sub_crsmats = subcrsmats;
+  }
+
+  crsmat_t* get_submatrix(int i) {
+    return this->sub_crsmats[i];
+  }
+
+
+
   #if defined(KOKKOS_ENABLE_CUDA)
   // streams
   void setNumStreams(int num_streams_) {
@@ -521,19 +540,25 @@ public:
 
   void print_algorithm() { 
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_RP )
-      std::cout << "SEQLVLSCHD_RP" << std::endl;;
+      std::cout << "SEQLVLSCHD_RP" << std::endl;
 
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
-      std::cout << "SEQLVLSCHD_TP1" << std::endl;;
+      std::cout << "SEQLVLSCHD_TP1" << std::endl;
 
     if ( algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE )
-      std::cout << "SUPERNODAL_NAIVE" << std::endl;;
+      std::cout << "SUPERNODAL_NAIVE" << std::endl;
 
     if ( algm == SPTRSVAlgorithm::SUPERNODAL_ETREE )
-      std::cout << "SUPERNODAL_ETREE" << std::endl;;
+      std::cout << "SUPERNODAL_ETREE" << std::endl;
 
     if ( algm == SPTRSVAlgorithm::SUPERNODAL_DAG )
-      std::cout << "SUPERNODAL_DAG" << std::endl;;
+      std::cout << "SUPERNODAL_DAG" << std::endl;
+
+    if ( algm == SPTRSVAlgorithm::SUPERNODAL_SPMV )
+      std::cout << "SUPERNODAL_SPMV" << std::endl;
+
+    if ( algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG )
+      std::cout << "SUPERNODAL_SPMV_DAG" << std::endl;
 
     /*
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {

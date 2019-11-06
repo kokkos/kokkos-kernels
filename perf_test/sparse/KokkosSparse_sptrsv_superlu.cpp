@@ -82,7 +82,7 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG};
+enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_SPMV, SUPERNODAL_SPMV_DAG};
 
 
 /* ========================================================================================= */
@@ -389,6 +389,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
         case SUPERNODAL_NAIVE:
         case SUPERNODAL_ETREE:
         case SUPERNODAL_DAG:
+        case SUPERNODAL_SPMV:
+        case SUPERNODAL_SPMV_DAG:
         {
           // ==============================================
           // create an handle
@@ -400,10 +402,20 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             std::cout << " > create handle for SUPERNODAL_ETREE" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
-          } else {
+          } else if (test == SUPERNODAL_DAG) {
             std::cout << " > create handle for SUPERNODAL_DAG" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
+          } else if (test == SUPERNODAL_SPMV_DAG) {
+            //invert_offdiag = true;
+            std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl << std::endl;
+            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
+          } else {
+            //invert_offdiag = true;
+            std::cout << " > create handle for SUPERNODAL_SPMV" << std::endl << std::endl;
+            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, true);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
           }
           // used to determine which kernels were used based on the block sizes, but not currently used
           //khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
@@ -634,6 +646,12 @@ int main(int argc, char **argv)
       }
       if((strcmp(argv[i],"superlu-dag")==0)) {
         tests.push_back( SUPERNODAL_DAG );
+      }
+      if((strcmp(argv[i],"superlu-spmv")==0)) {
+        tests.push_back( SUPERNODAL_SPMV );
+      }
+      if((strcmp(argv[i],"superlu-spmv-dag")==0)) {
+        tests.push_back( SUPERNODAL_SPMV_DAG );
       }
       if((strcmp(argv[i],"cusparse")==0)) {
         tests.push_back( CUSPARSE );

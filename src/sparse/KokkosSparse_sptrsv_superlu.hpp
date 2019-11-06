@@ -224,7 +224,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
   Kokkos::deep_copy (rowmap_view, hr);
   Kokkos::deep_copy (column_view, hc);
 
-  // create crs
+  // create crsgraph
   graph_t static_graph (column_view, rowmap_view);
   return static_graph;
 }

@@ -514,11 +514,10 @@ public:
     }
   }
 
-
-
   SPTRSVHandleType *get_sptrsv_handle(){
     return this->sptrsvHandle;
   }
+
   void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri) {
     this->destroy_sptrsv_handle();
     this->is_owner_of_the_sptrsv_handle = true;
@@ -526,7 +525,14 @@ public:
     this->sptrsvHandle->reset_handle(nrows);
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);
+
+    // need to invert offdiagonal for SpMV option
+    if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+        algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+      this->set_invert_offdiagonal (true);
+    }
   }
+
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   void set_supernodes (int nsuper, int *supercols, int *etree) {
     this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
@@ -546,7 +552,15 @@ public:
   }
 
   void set_invert_offdiagonal (bool flag) {
-    this->sptrsvHandle->set_invert_offdiagonal (flag);
+    KokkosSparse::Experimental::SPTRSVAlgorithm algm = this->sptrsvHandle->get_algorithm ();
+    if (flag == true || (algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV &&
+                         algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
+      this->sptrsvHandle->set_invert_offdiagonal (flag);
+    } else {
+      std::cout << std::endl
+                << " ** need to invert offdiagonal for SpMV option **"
+                << std::endl << std::endl;
+    }
   }
 
   void set_etree (int *etree) {

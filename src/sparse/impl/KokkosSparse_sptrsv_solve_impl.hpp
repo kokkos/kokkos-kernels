@@ -52,8 +52,9 @@
 #include <KokkosSparse_sptrsv_handle.hpp>
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
-#include <KokkosBlas2_gemv.hpp>
-#include <KokkosBlas2_team_gemv.hpp>
+#include "KokkosBlas2_gemv.hpp"
+#include "KokkosBlas2_team_gemv.hpp"
+#include "KokkosSparse_spmv.hpp"
 
 #include "KokkosBatched_Util.hpp"
 
@@ -317,6 +318,67 @@ struct LowerTriLvlSchedTP2SolverFunctor
 };
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+template <class LHSType, class NGBLType>
+struct LowerTriSupernodalSpMVFunctor
+{
+  typedef typename LHSType::execution_space execution_space;
+  typedef typename execution_space::memory_space memory_space;
+
+  typedef Kokkos::TeamPolicy<execution_space> policy_type;
+  typedef typename policy_type::member_type member_type;
+
+  typedef typename LHSType::non_const_value_type scalar_t;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+
+  typedef typename Kokkos::View<scalar_t*, memory_space> WorkspaceType;
+
+  int flag;
+  long node_count;
+  NGBLType nodes_grouped_by_level;
+
+  const int *supercols;
+
+  LHSType X;
+  WorkspaceType work;
+
+  // constructor
+  LowerTriSupernodalSpMVFunctor (int flag_,
+                                 long  node_count_,
+                                 const NGBLType &nodes_grouped_by_level_,
+                                 const int *supercols_,
+                                 LHSType &X_,
+                                 WorkspaceType work_) :
+    flag(flag_), node_count(node_count_), nodes_grouped_by_level(nodes_grouped_by_level_), supercols(supercols_),
+    X(X_), work(work_) {
+  }
+
+  // operator
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const member_type & team) const {
+    const int league_rank = team.league_rank(); // batch id
+    const int team_size = team.team_size ();
+    const int team_rank = team.team_rank ();
+    auto s = nodes_grouped_by_level (node_count + league_rank);
+
+    // copy vector elements for the diagonal to input vector (work)
+    // and zero out the corresponding elements in output (X)
+    int j1 = supercols[s];
+    int j2 = supercols[s+1];
+    int nscol = j2 - j1 ;       // number of columns in the s-th supernode column
+    if (flag == 1) {
+      for (int j = team_rank; j < nscol; j += team_size) {
+        work (j1 + j) = X (j1 + j);
+        X (j1 + j) = STS::zero ();
+      }
+    } else {
+      for (int j = team_rank; j < nscol; j += team_size) {
+        work (j1 + j) = STS::zero ();
+      }
+    }
+    team.team_barrier ();
+  }
+};
+
 template <class ColptrView, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct LowerTriSupernodalFunctor
 {
@@ -1086,6 +1148,31 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
+      }
+      else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+               thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+
+        scalar_t zero = STS::zero ();
+        scalar_t one = STS::one ();
+
+        // initialize input & output vectors
+        typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
+        const int* supercols = thandle.get_supercols ();
+        LowerTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+          sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
+        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+
+        // update with one spmv
+        auto *submat = thandle.get_submatrix (lvl);
+        KokkosSparse::
+        spmv("T", one, *submat,
+                       work,
+                  one, lhs);
+
+        // reinitialize workspace
+        LowerTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+          sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, lhs, work);
+        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_finalize_functor);
       }
 #endif
       node_count += lvl_nodes;
