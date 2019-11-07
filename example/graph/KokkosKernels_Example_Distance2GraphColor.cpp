@@ -56,9 +56,6 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 
-// Example Headers
-#include "KokkosKernels_Parameters.hpp"
-
 
 using namespace KokkosGraph;
 
@@ -75,7 +72,7 @@ using kk_scalar_type = float;
 using kk_size_type = int;
 #else
 #ifdef KOKKOSKERNELS_INST_OFFSET_SIZE_T
-using kk_size_type   = size_t;
+using kk_size_type = size_t;
 #endif
 #endif
 
@@ -83,7 +80,7 @@ using kk_size_type   = size_t;
 using kk_lno_type = int;
 #else
 #ifdef KOKKOSKERNELS_INST_ORDINAL_INT64_T
-using kk_lno_type    = int64_t;
+using kk_lno_type = int64_t;
 #endif
 #endif
 
@@ -93,6 +90,51 @@ using namespace KokkosGraph;
 
 namespace KokkosKernels {
 namespace Example {
+
+
+
+struct Parameters
+{
+    int   algorithm;
+    int   repeat;
+    int   chunk_size;
+    int   output_graphviz_vert_max;
+    int   output_graphviz;
+    int   shmemsize;
+    int   verbose_level;
+    int   check_output;
+    char* coloring_input_file;
+    char* coloring_output_file;
+    int   output_histogram;
+    int   use_threads;
+    int   use_openmp;
+    int   use_cuda;
+    int   use_serial;
+    int   validate;
+    char* mtx_bin_file;
+
+    Parameters()
+    {
+        algorithm                = 0;
+        repeat                   = 6;
+        chunk_size               = -1;
+        shmemsize                = 16128;
+        verbose_level            = 0;
+        check_output             = 0;
+        coloring_input_file      = NULL;
+        coloring_output_file     = NULL;
+        output_histogram         = 0;
+        output_graphviz          = 0;
+        output_graphviz_vert_max = 1500;
+        use_threads              = 0;
+        use_openmp               = 0;
+        use_cuda                 = 0;
+        use_serial               = 0;
+        validate                 = 0;
+        mtx_bin_file             = NULL;
+    }
+};
+
 
 
 void
@@ -144,19 +186,22 @@ parse_inputs(KokkosKernels::Example::Parameters& params, int argc, char** argv)
         if(0 == strcasecmp(argv[ i ], "--threads"))
         {
             params.use_threads = atoi(argv[ ++i ]);
+            //std::cout << "use_threads = " << params.use_threads << std::endl;
         }
         else if(0 == strcasecmp(argv[ i ], "--serial"))
         {
             params.use_serial = atoi(argv[ ++i ]);
+            //std::cout << "use_serial = " << params.use_serial << std::endl;
         }
         else if(0 == strcasecmp(argv[ i ], "--openmp"))
         {
             params.use_openmp = atoi(argv[ ++i ]);
-            std::cout << "use_openmp = " << params.use_openmp << std::endl;
+            //std::cout << "use_openmp = " << params.use_openmp << std::endl;
         }
         else if(0 == strcasecmp(argv[ i ], "--cuda"))
         {
             params.use_cuda = 1;
+            //std::cout << "use_cuda = " << params.use_cuda << std::endl;
         }
         else if(0 == strcasecmp(argv[ i ], "--amtx"))
         {
@@ -254,17 +299,6 @@ parse_inputs(KokkosKernels::Example::Parameters& params, int argc, char** argv)
 }
 
 
-std::string
-getCurrentDateTimeStr()
-{
-    // Note: This could be replaced with `std::put_time(&tm, "%FT%T%z")` but std::put_time isn't
-    //       supported on the intel C++ compilers as of v. 17.0.x
-    time_t now = time(0);
-    char   output[ 100 ];
-    std::strftime(output, sizeof(output), "%FT%T%Z", std::localtime(&now));
-    return output;
-}
-
 
 template<typename ExecSpace,
          typename DataType,
@@ -286,11 +320,6 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
     using lno_type          = typename lno_nnz_view_type::non_const_value_type;
     using KernelHandle_type = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_type, kk_scalar_type, ExecSpace, TempMemSpace, PersistentMemSpace>;
 
-    // Get Date/Time stamps of start to use later when printing out summary data.
-
-    // Note: crsGraph.numRows() == number of vertices in the 'graph'
-    //       crsGraph.entries.extent(0) == number of edges in the 'graph'
-    std::cout << "Num verts: " << crsGraph.numRows() << std::endl << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
 
     // Create a kernel handle
     KernelHandle_type kh;
@@ -334,11 +363,7 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
             break;
     }
 
-    if(params.verbose_level > 0)
-    {
-        std::cout << std::endl << "Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
-    }
-
+    std::cout << std::endl << "Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
 
     // Call the distance-2 graph coloring routine
     graph_compute_distance2_color(&kh,
@@ -349,7 +374,7 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
                                   crsGraph.row_map,
                                   crsGraph.entries);
 
-
+    // Get some stats from the run
     total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
     total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();
 
@@ -431,13 +456,6 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
                                                                  false);
     }
 
-    double total_time                   = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time();
-    double total_time_color_greedy      = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase1();
-    double total_time_find_conflicts    = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase2();
-    double total_time_resolve_conflicts = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase3();
-    double total_time_matrix_squared    = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase4();
-    double total_time_matrix_squared_d1 = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase5();
-
     std::string mtx_bin_file = params.mtx_bin_file;
     mtx_bin_file             = mtx_bin_file.substr(mtx_bin_file.find_last_of("/\\") + 1);
 
@@ -457,33 +475,18 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
         perror("getlogin_r");
     }
 
-    std::string currentDateTimeStr = getCurrentDateTimeStr();
-
-    std::cout << std::endl
-              << "Summary" << std::endl
+    std::cout << "Summary" << std::endl
               << "-------" << std::endl
-              << "    Date/Time      : " << currentDateTimeStr << std::endl
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
               << "    Filename       : " << mtx_bin_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
               << "    Num Edges      : " << crsGraph.entries.extent(0) << std::endl
               << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
-              << "Overall Time/Stats" << std::endl
-              << "    Total Time     : " << total_time << std::endl
-              << "    Avg Time       : " << total_time << std::endl
-              << "VB Distance[1|2] Stats " << std::endl
-              << "    Avg Time CG    : " << total_time_color_greedy << std::endl
-              << "    Avg Time FC    : " << total_time_find_conflicts << std::endl
-              << "    Avg Time RC    : " << total_time_resolve_conflicts << std::endl
-              << "Matrix-Squared + D1 Stats" << std::endl
-              << "    Avg Time to M^2: " << total_time_matrix_squared << std::endl
-              << "    Avg Time to D1 : " << total_time_matrix_squared_d1 << std::endl
               << "Coloring Stats" << std::endl
-              << "    Avg colors     : " << total_colors << std::endl
-              << "    Avg Phases     : " << total_phases << std::endl
+              << "    Num colors     : " << total_colors << std::endl
+              << "    Num Phases     : " << total_phases << std::endl
               << "    Validation     : " << str_color_is_valid << std::endl
-              << std::endl
               << std::endl;
 
 }   // run_example()
@@ -537,8 +540,6 @@ main(int argc, char* argv[])
         std::cerr << "Provide a matrix file" << std::endl;
         return 0;
     }
-
-    std::cout << "Sizeof(kk_lno_type) : " << sizeof(kk_lno_type) << std::endl << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
     const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
     const int device_id   = 0;
