@@ -388,7 +388,9 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
         std::cout << std::endl;
     }
 
-    // Write out the results to a GraphViz file if enabled
+    // ------------------------------------------
+    // Save coloring to a GraphViz file
+    // ------------------------------------------
     if(params.output_graphviz && crsGraph.numRows() <= params.output_graphviz_vert_max)
     {
         auto colors = kh.get_distance2_graph_coloring_handle()->get_vertex_colors();
@@ -442,7 +444,7 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
     }
 
     // ------------------------------------------
-    // Print out the colors histogram
+    // Print out a histogram of the colors
     // ------------------------------------------
     if(0 != params.output_histogram)
     {
@@ -456,24 +458,11 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
                                                                  false);
     }
 
+    // ------------------------------------------
+    // Print out a summary 
+    // ------------------------------------------
     std::string mtx_bin_file = params.mtx_bin_file;
     mtx_bin_file             = mtx_bin_file.substr(mtx_bin_file.find_last_of("/\\") + 1);
-
-    int  result;
-    char hostname[ 100 ];
-    char username[ 100 ];
-
-    result = gethostname(hostname, 100);
-    if(result)
-    {
-        perror("gethostname");
-    }
-
-    result = getlogin_r(username, 100);
-    if(result)
-    {
-        perror("getlogin_r");
-    }
 
     std::cout << "Summary" << std::endl
               << "-------" << std::endl
