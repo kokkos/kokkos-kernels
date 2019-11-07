@@ -330,10 +330,9 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
         kh.set_verbose(true);
     }
 
-    // accumulators for average stats
-    size_t total_colors = 0;
-    size_t total_phases = 0;
-
+    // ------------------------------------------
+    // Set up the D2 coloring kernel handle
+    // ------------------------------------------
     std::string label_algorithm;
     switch(algorithm)
     {
@@ -365,7 +364,9 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
 
     std::cout << std::endl << "Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
 
+    // ------------------------------------------
     // Call the distance-2 graph coloring routine
+    // ------------------------------------------
     graph_compute_distance2_color(&kh,
                                   crsGraph.numRows(),
                                   num_cols,
@@ -374,9 +375,11 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
                                   crsGraph.row_map,
                                   crsGraph.entries);
 
-    // Get some stats from the run
-    total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
-    total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();
+    // ------------------------------------------
+    // Get the results
+    // ------------------------------------------
+    size_t num_colors = kh.get_distance2_graph_coloring_handle()->get_num_colors();
+    size_t num_phases = kh.get_distance2_graph_coloring_handle()->get_num_phases();
 
     if(params.verbose_level > 0)
     {
@@ -473,8 +476,8 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
               << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
               << "Coloring Stats" << std::endl
-              << "    Num colors     : " << total_colors << std::endl
-              << "    Num Phases     : " << total_phases << std::endl
+              << "    Num colors     : " << num_colors << std::endl
+              << "    Num Phases     : " << num_phases << std::endl
               << "    Validation     : " << str_color_is_valid << std::endl
               << std::endl;
 
@@ -486,25 +489,20 @@ template<typename size_type, typename lno_type, typename exec_space, typename hb
 void
 driver(Parameters params)
 {
-    using myExecSpace       = exec_space;
-    using myFastDevice      = Kokkos::Device<exec_space, hbm_mem_space>;
-    using fast_crstmat_type = typename KokkosSparse::CrsMatrix<double, lno_type, myFastDevice, void, size_type>;
-    using fast_graph_type   = typename fast_crstmat_type::StaticCrsGraphType;
-    using data_type         = typename fast_graph_type::data_type;
+    using myExecSpace  = exec_space;
+    using myFastDevice = Kokkos::Device<exec_space, hbm_mem_space>;
+    using crstmat_type = typename KokkosSparse::CrsMatrix<double, lno_type, myFastDevice, void, size_type>;
+    using graph_type   = typename crstmat_type::StaticCrsGraphType;
+    using data_type    = typename graph_type::data_type;
 
     char* mat_file = params.mtx_bin_file;
 
-    fast_graph_type fast_crsgraph;
+    crstmat_type crsmat   = KokkosKernels::Impl::read_kokkos_crst_matrix<crstmat_type>(mat_file);
+    graph_type   crsgraph = crsmat.graph;
+    data_type    num_cols = crsmat.numCols();
 
-    fast_crstmat_type fast_crsmat;
-
-    fast_crsmat            = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_type>(mat_file);
-    fast_crsgraph          = fast_crsmat.graph;
-
-    data_type num_cols  = fast_crsmat.numCols();
-
-    KokkosKernels::Example::run_example<myExecSpace, data_type, fast_graph_type, hbm_mem_space, hbm_mem_space>
-        (fast_crsgraph, num_cols, params);
+    KokkosKernels::Example::run_example<myExecSpace, data_type, graph_type, hbm_mem_space, hbm_mem_space>
+        (crsgraph, num_cols, params);
 
 } // driver()
 
