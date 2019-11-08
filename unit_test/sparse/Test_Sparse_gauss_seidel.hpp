@@ -357,7 +357,7 @@ void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
+void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
 {
   using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
@@ -412,7 +412,7 @@ void test_greedy_partition(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
     EXPECT_TRUE(vertClustersHost(i) < numClusters);
     uniqueClusterIDs.insert(vertClustersHost(i));
   }
-  EXPECT_TRUE(uniqueClusterIDs.size() == numClusters);
+  EXPECT_TRUE(uniqueClusterIDs.size() == static_cast<size_t>(numClusters));
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
@@ -422,8 +422,8 @@ TEST_F( TestCategory, sparse ## _ ## gauss_seidel ## _ ## SCALAR ## _ ## ORDINAL
 TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
 } \
-TEST_F( TestCategory, sparse ## _ ## greedy_partition ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_greedy_partition<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 100, 2000); \
+TEST_F( TestCategory, sparse ## _ ## balloon_clustering ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_balloon_clustering<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 100, 2000); \
 } \
 TEST_F( TestCategory, sparse ## _ ## cluster_sgs ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_cluster_sgs<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \

@@ -506,7 +506,7 @@ namespace KokkosSparse{
 
     //Constructor for cluster-coloring based GS and SGS
     ClusterGaussSeidelHandle(ClusteringAlgorithm cluster_algo_, nnz_lno_t cluster_size_)
-      : GSHandle(GS_CLUSTER), cluster_size(cluster_size_),
+      : GSHandle(GS_CLUSTER), cluster_algo(cluster_algo_), cluster_size(cluster_size_),
       inverse_diagonal(), cluster_xadj(), cluster_adj(), vert_clusters()
     {}
 
