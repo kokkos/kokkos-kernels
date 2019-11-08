@@ -65,10 +65,10 @@ void runGS(string matrixPath, string devName, bool symmetric)
   typedef typename device_t::memory_space mem_space;
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exec_space, mem_space, mem_space> KernelHandle;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type> crsmat_t;
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
+  //typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename crsmat_t::values_type::non_const_type scalar_view_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  //typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  //typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   crsmat_t A = KokkosKernels::Impl::read_kokkos_crst_matrix<crsmat_t>(matrixPath.c_str());
   lno_t nrows = A.numRows();
   lno_t ncols = A.numCols();
@@ -76,7 +76,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
   {
     throw std::runtime_error("Gauss_Seidel only works for square matrices"); 
   }
-  size_type nnz = A.nnz();
+  //size_type nnz = A.nnz();
   KernelHandle kh;
   //use a random RHS - uniformly distributed over (-5, 5)
   scalar_view_t b("b", nrows);

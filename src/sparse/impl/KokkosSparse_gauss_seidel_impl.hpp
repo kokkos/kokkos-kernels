@@ -120,7 +120,7 @@ namespace KokkosSparse{
       //Get the specialized PointGaussSeidel handle from the main handle
       typename HandleType::PointGaussSeidelHandleType* get_gs_handle()
       {
-        auto gsHandle = dynamic_cast<HandleType::PointGaussSeidelHandleType*>(this->handle->get_gs_handle());
+        auto gsHandle = dynamic_cast<typename HandleType::PointGaussSeidelHandleType*>(this->handle->get_gs_handle());
         if(!gsHandle)
         {
           throw std::runtime_error("PointGaussSeidel: GS handle has not been created, or is set up for Cluster GS.");
@@ -592,21 +592,17 @@ namespace KokkosSparse{
         have_diagonal_given(true),
         is_symmetric(is_symmetric_){}
 
-
-
       void initialize_symbolic()
       {
-        auto gsHandle = this->get_gs_handle();
+        auto gsHandle = get_gs_handle();
         typename HandleType::GraphColoringHandleType *gchandle = this->handle->get_graph_coloring_handle();
-
 
         if (gchandle == NULL)
         {
-            this->handle->create_graph_coloring_handle();
-            gsHandle->set_owner_of_coloring(true);
-            gchandle = this->handle->get_graph_coloring_handle();
+          this->handle->create_graph_coloring_handle();
+          gsHandle->set_owner_of_coloring(true);
+          gchandle = this->handle->get_graph_coloring_handle();
         }
-
 
         const_lno_row_view_t xadj = this->row_map;
         const_lno_nnz_view_t adj = this->entries;
@@ -617,9 +613,8 @@ namespace KokkosSparse{
 #endif
         typename HandleType::GraphColoringHandleType::color_view_t colors;
         color_t numColors;
-        if (!is_symmetric){
-
-          if (gchandle->get_coloring_algo_type() == KokkosGraph::COLORING_EB){
+        if (!is_symmetric) {
+          if (gchandle->get_coloring_algo_type() == KokkosGraph::COLORING_EB) {
 
             gchandle->symmetrize_and_calculate_lower_diagonal_edge_list(num_rows, xadj, adj);
             KokkosGraph::Experimental::graph_color_symbolic <HandleType, const_lno_row_view_t, const_lno_nnz_view_t>
@@ -659,13 +654,10 @@ namespace KokkosSparse{
         Kokkos::deep_copy(colors, h_colors);
 #endif
         nnz_lno_persistent_work_view_t color_xadj;
-
         nnz_lno_persistent_work_view_t color_adj;
-
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         timer.reset();
 #endif
-
         KokkosKernels::Impl::create_reverse_map
           <typename HandleType::GraphColoringHandleType::color_view_t,
            nnz_lno_persistent_work_view_t, MyExecSpace>
@@ -761,7 +753,7 @@ namespace KokkosSparse{
         timer.reset();
 #endif
 
-        nnz_lno_t block_size = this->get_gs_handle()->get_block_size();
+        nnz_lno_t block_size = get_gs_handle()->get_block_size();
 
         //MD: if block size is larger than 1;
         //the algorithm copies the vector entries into shared memory and reuses this small shared memory for vector entries.
@@ -862,9 +854,7 @@ namespace KokkosSparse{
           gsHandle->set_num_values_in_l1(num_values_in_l1);
           gsHandle->set_num_values_in_l2(num_values_in_l2);
           gsHandle->set_num_big_rows(num_big_rows);
-
         }
-
 
         gsHandle->set_color_xadj(h_color_xadj);
         gsHandle->set_color_adj(color_adj);
@@ -872,13 +862,13 @@ namespace KokkosSparse{
         gsHandle->set_new_xadj(permuted_xadj);
         gsHandle->set_new_adj(permuted_adj);
         gsHandle->set_old_to_new_map(old_to_new_map);
-        if (this->get_gs_handle()->is_owner_of_coloring()) {
+        if(gsHandle->is_owner_of_coloring()) {
           this->handle->destroy_graph_coloring_handle();
-          this->get_gs_handle()->set_owner_of_coloring(false);
+          gsHandle->set_owner_of_coloring(false);
         }
-        this->get_gs_handle()->set_call_symbolic(true);
+        gsHandle->set_call_symbolic(true);
 
-        this->get_gs_handle()->allocate_x_y_vectors(this->num_rows * block_size, this->num_cols * block_size);
+        gsHandle->allocate_x_y_vectors(this->num_rows * block_size, this->num_cols * block_size);
         //std::cout << "all end" << std::endl;
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "ALLOC:" << timer.seconds() << std::endl;
@@ -1366,7 +1356,7 @@ namespace KokkosSparse{
                        bool apply_backward = true,
                        bool update_y_vector = true){
 
-        typename HandleType::GaussSeidelHandleType *gsHandle = this->handle->get_gs_handle();
+        auto gsHandle = get_gs_handle();
         scalar_persistent_work_view_t Permuted_Yvector = gsHandle->get_permuted_y_vector();
         scalar_persistent_work_view_t Permuted_Xvector = gsHandle->get_permuted_x_vector();
 
@@ -1475,11 +1465,13 @@ namespace KokkosSparse{
                  nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
                  bool apply_forward = true,
                  bool apply_backward = true,
-                 bool update_y_vector = true){
-        if (this->handle->get_gs_handle()->is_numeric_called() == false){
+                 bool update_y_vector = true)
+      {
+        auto gsHandle = get_gs_handle();
+        if (gsHandle->is_numeric_called() == false){
           this->initialize_numeric();
         }
-        nnz_lno_t block_size = this->handle->get_gs_handle()->get_block_size();
+        nnz_lno_t block_size = gsHandle->get_block_size();
         if (block_size == 1){
           this->point_apply(
                             x_lhs_output_vec, y_rhs_input_vec,
@@ -1517,7 +1509,7 @@ namespace KokkosSparse{
         nnz_lno_t suggested_team_size = gs.suggested_team_size;
         nnz_lno_t team_row_chunk_size = gs.team_work_size;
         int vector_size = gs.vector_size;
-        nnz_lno_t block_size = this->handle->get_gs_handle()->get_block_size();
+        nnz_lno_t block_size = get_gs_handle()->get_block_size();
 
         /*
           size_type nnz = this->values.extent(0);

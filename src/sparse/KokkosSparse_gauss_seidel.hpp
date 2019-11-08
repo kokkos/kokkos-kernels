@@ -116,9 +116,9 @@ namespace KokkosSparse{
                                      typename KernelHandle::const_nnz_lno_t block_size,
                                      lno_row_view_t_ row_map,
                                      lno_nnz_view_t_ entries,
-                                     bool is_graph_symmetric = true){
-
-      auto gsHandle = handle->get_gs_handle();
+                                     bool is_graph_symmetric = true)
+    {
+      auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {
         throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
@@ -281,7 +281,7 @@ namespace KokkosSparse{
                                     scalar_nnz_view_t_ values,
                                     bool is_graph_symmetric = true
                                     ){
-      auto gsHandle = handle->get_gs_handle();
+      auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {
         throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
@@ -432,7 +432,7 @@ namespace KokkosSparse{
                                             bool update_y_vector = true,
                                             typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
                                             int numIter = 1){
-      auto gsHandle = handle->get_gs_handle();
+      auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {
         throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
@@ -588,7 +588,7 @@ namespace KokkosSparse{
                                                 bool update_y_vector = true,
                                                 typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
                                                 int numIter = 1){
-      auto gsHandle = handle->get_gs_handle();
+      auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {
         throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");
@@ -741,7 +741,7 @@ namespace KokkosSparse{
                                                  bool update_y_vector = true,
                                                  typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
                                                  int numIter = 1){
-      auto gsHandle = handle->get_gs_handle();
+      auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {
         throw std::runtime_error("Block versions of Gauss-Seidel are incompatible with algorithm GS_CLUSTER");

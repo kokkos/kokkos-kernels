@@ -1003,7 +1003,9 @@ void permute_block_vector(
 
 }
 
-
+//TODO BMK: clean this up by removing 1st argument. It is unused but
+//its name gives the impression that only num_elements of the vector are zeroed,
+//when really it's always the whole thing.
 template <typename value_array_type, typename MyExecSpace>
 void zero_vector(
     typename value_array_type::value_type num_elements,

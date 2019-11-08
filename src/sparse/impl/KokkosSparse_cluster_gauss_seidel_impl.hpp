@@ -115,7 +115,7 @@ namespace KokkosSparse{
       //Get the specialized ClusterGaussSeidel handle from the main handle
       typename HandleType::ClusterGaussSeidelHandleType* get_gs_handle()
       {
-        auto *gsHandle = dynamic_cast<HandleType::ClusterGaussSeidelHandleType*>(this->handle->get_gs_handle());
+        auto *gsHandle = dynamic_cast<typename HandleType::ClusterGaussSeidelHandleType*>(this->handle->get_gs_handle());
         if(!gsHandle)
         {
           throw std::runtime_error("ClusterGaussSeidel: GS handle has not been created, or is set up for Point GS.");
@@ -135,28 +135,28 @@ namespace KokkosSparse{
       bool is_symmetric;
 
     public:
+
+      template <typename x_value_array_type, typename y_value_array_type>
       struct PSGS
       {
         // CSR storage of the matrix.
-        row_lno_persistent_work_view_t _xadj;
-        nnz_lno_persistent_work_view_t _adj;     
-        scalar_persistent_work_view_t _adj_vals;
+        const_lno_row_view_t _xadj;
+        const_lno_nnz_view_t _adj;     
+        const_scalar_nnz_view_t _adj_vals;
 
         //Input/output vectors, as in Ax = y
-        scalar_persistent_work_view_t _Xvector;
-        scalar_persistent_work_view_t _Yvector;
+        x_value_array_type             _Xvector;
+        y_value_array_type             _Yvector;
+        nnz_lno_persistent_work_view_t _color_adj;
+        nnz_lno_persistent_work_view_t _cluster_offsets;
+        nnz_lno_persistent_work_view_t _cluster_verts;
+        scalar_persistent_work_view_t  _inverse_diagonal;
+        nnz_scalar_t                   _omega;
 
-        scalar_persistent_work_view_t _inverse_diagonal;
-
-        nnz_lno_persistent_work_view_t _clusterOffsets;
-        nnz_lno_persistent_work_view_t _clusterVerts;
-        nnz_lno_persistent_work_view_t _cluster_color_adj;
-
-        nnz_scalar_t omega;
-
-        PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
-             scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_, nnz_lno_persistent_work_view_t cluster_color_adj_,
-             nnz_lno_persistent_work_view_t clusterOffsets_, nnz_lno_persistent_work_view_t clusterVerts_, 
+        PSGS(const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_, const_scalar_nnz_view_t adj_vals_,
+             x_value_array_type Xvector_, y_value_array_type Yvector_,
+             nnz_lno_persistent_work_view_t color_adj_,
+             nnz_lno_persistent_work_view_t cluster_offsets_, nnz_lno_persistent_work_view_t cluster_verts_, 
              nnz_scalar_t omega_,
              scalar_persistent_work_view_t inverse_diagonal_):
           _xadj             (xadj_),
@@ -165,45 +165,53 @@ namespace KokkosSparse{
           _Xvector          (Xvector_),
           _Yvector          (Yvector_),
           _color_adj        (color_adj_),
-          _clusterOffsets   (clusterOffsets_),
-          _clusterVerts     (clusterVerts_),
+          _cluster_offsets  (cluster_offsets_),
+          _cluster_verts    (cluster_verts_),
           _inverse_diagonal (inverse_diagonal_),
-          omega             (omega_)
+          _omega            (omega_)
         {}
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const nnz_lno_t &ii) const {
           //color_adj(ii) is a cluster in the current color set.
           nnz_lno_t cluster = _color_adj(ii);
-          for(nnz_lno_t j = _clusterOffsets(cluster); j < _clusterOffsets(cluster + 1); j++)
+          for(nnz_lno_t j = _cluster_offsets(cluster); j < _cluster_offsets(cluster + 1); j++)
           {
-            nnz_lno_t row = _clusterVerts(j);
+            nnz_lno_t row = _cluster_verts(j);
             size_type row_begin = _xadj(row);
             size_type row_end = _xadj(row + 1);
-            nnz_scalar_t sum = _Yvector(row);
+            nnz_scalar_t dotprod = _Yvector(row);
             for (size_type adjind = row_begin; adjind < row_end; ++adjind)
             {
               nnz_lno_t col = _adj(adjind);
               nnz_scalar_t val = _adj_vals(adjind);
-              sum -= val * _Xvector(col);
+              dotprod -= val * _Xvector(col);
             }
-            _Xvector(row) += omega * sum * _inverse_diagonal(row);
+            _Xvector(row) += _omega * dotprod * _inverse_diagonal(row);
           }
         }
       };
 
+      template <typename x_value_array_type, typename y_value_array_type>
       struct Team_PSGS
       {
         //CSR storage of the matrix
-        row_lno_persistent_work_view_t _xadj;
-        nnz_lno_persistent_work_view_t _adj;
-        scalar_persistent_work_view_t _adj_vals;
+        const_lno_row_view_t _xadj;
+        const_lno_nnz_view_t _adj;
+        const_scalar_nnz_view_t _adj_vals;
 
         //X,Y vectors, as in Ax = y
-        scalar_persistent_work_view_t _Xvector;
-        scalar_persistent_work_view_t _Yvector;
+        x_value_array_type _Xvector;
+        y_value_array_type _Yvector;
         nnz_lno_t _color_set_begin;
         nnz_lno_t _color_set_end;
+        nnz_lno_persistent_work_view_t _color_adj;
+        nnz_lno_persistent_work_view_t _cluster_offsets;
+        nnz_lno_persistent_work_view_t _cluster_verts;
+
+        //_clusters_per_team tries to reach the same total work per
+        //team by dividing the handle's heuristic get_
+        nnz_lno_t _clusters_per_team;
 
         scalar_persistent_work_view_t _inverse_diagonal;
 
@@ -211,20 +219,27 @@ namespace KokkosSparse{
 
         nnz_scalar_t _omega;
 
-        Team_PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
-                  scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_,
-                  nnz_lno_t color_set_begin, nnz_lno_t color_set_end,
+        Team_PSGS(const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_, const_scalar_nnz_view_t adj_vals_,
+                  x_value_array_type Xvector_, y_value_array_type Yvector_,
+                  nnz_lno_t color_set_begin_, nnz_lno_t color_set_end_,
                   nnz_lno_persistent_work_view_t color_adj_,
+                  nnz_lno_persistent_work_view_t cluster_offsets_,
+                  nnz_lno_persistent_work_view_t cluster_verts_,
                   scalar_persistent_work_view_t inverse_diagonal_,
+                  nnz_lno_t clusters_per_team_,
                   nnz_lno_persistent_work_view_t clusterOffsets_, nnz_lno_persistent_work_view_t clusterVerts_, 
                   nnz_scalar_t omega_ = Kokkos::Details::ArithTraits<nnz_scalar_t>::one()) :
           _xadj( xadj_),
           _adj( adj_),
           _adj_vals( adj_vals_),
-          _Xvector( Xvector_),
-          _Yvector( Yvector_),
-          _color_set_begin(color_set_begin),
-          _color_set_end(color_set_end), _inverse_diagonal(inverse_diagonal_),
+          _Xvector(Xvector_),
+          _Yvector(Yvector_),
+          _color_set_begin(color_set_begin_),
+          _color_set_end(color_set_end_),
+          _cluster_offsets(cluster_offsets_),
+          _cluster_verts(cluster_verts_),
+          _clusters_per_team(clusters_per_team_),
+          _inverse_diagonal(inverse_diagonal_),
           _is_backward(false),
           _omega(omega_)
         {}
@@ -232,30 +247,33 @@ namespace KokkosSparse{
         KOKKOS_INLINE_FUNCTION
         void operator()(const team_member_t& teamMember) const
         {
-          //this thread sequentially processes workItem contiguous clusters in the color set.
-          nnz_lno_t ii = _color_set_begin + teamMember.team_size() * teamMember.league_rank() + teamMember.team_rank();
-          if (ii >= _color_set_end)
-            return;
-          nnz_lno_t cluster = _color_adj(ii);
-          for(nnz_lno_t j = _clusterOffsets(cluster); j < _clusterOffsets(cluster + 1); j++)
-          {
-            nnz_lno_t row = _clusterVerts(j);
-            size_type row_begin = _xadj(ii);
-            size_type row_end = _xadj(ii + 1);
-            nnz_scalar_t product = 0;
-            Kokkos::parallel_reduce(
-                                    Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
-                                    [&] (size_type i, nnz_scalar_t & valueToUpdate) {
-                                      size_type adjind = i + row_begin;
-                                      nnz_lno_t colIndex = _adj(adjind);
-                                      nnz_scalar_t val = _adj_vals(adjind);
-                                      valueToUpdate += val * _Xvector(colIndex);
-                                    },
-                                    product);
-            Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-                _Xvector(ii) += _omega * (_Yvector(ii) - product) * _inverse_diagonal(ii);
-              });
-          }
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, _clusters_per_team),
+            [&](const nnz_lno_t work)
+            {
+              nnz_lno_t ii = _color_set_begin + (teamMember.league_rank() * _clusters_per_team) + work;
+              if (ii >= _color_set_end)
+                return;
+              nnz_lno_t cluster = _color_adj(ii);
+              for(nnz_lno_t j = _cluster_offsets(cluster); j < _cluster_offsets(cluster + 1); j++)
+              {
+                nnz_lno_t row = _cluster_verts(j);
+                size_type row_begin = _xadj(row);
+                size_type row_end = _xadj(row + 1);
+                nnz_scalar_t dotprod = 0;
+                Kokkos::parallel_reduce(
+                  Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
+                  [&] (size_type i, nnz_scalar_t& lsum)
+                  {
+                    size_type adjind = i + row_begin;
+                    nnz_lno_t colIndex = _adj(adjind);
+                    nnz_scalar_t val = _adj_vals(adjind);
+                    lsum += val * _Xvector(colIndex);
+                  }, dotprod);
+                Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+                    _Xvector(row) += _omega * (_Yvector(row) - dotprod) * _inverse_diagonal(row);
+                  });
+              }
+            });
         }
       };
 
@@ -648,135 +666,148 @@ namespace KokkosSparse{
 
       void initialize_symbolic()
       {
-        typename HandleType::GraphColoringHandleType *gchandle = this->handle->get_graph_coloring_handle();
-
-        if (gchandle == NULL)
-        {
-            this->handle->create_graph_coloring_handle();
-            //this->handle->create_gs_handle();
-            this->handle->get_gs_handle()->set_owner_of_coloring();
-            gchandle = this->handle->get_graph_coloring_handle();
-        }
+        auto gsHandle = get_gs_handle();
 
         const_lno_row_view_t xadj = this->row_map;
         const_lno_nnz_view_t adj = this->entries;
-        size_type nnz = adj.extent(0);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         Kokkos::Impl::Timer timer;
 #endif
-        auto gsHandle = this->handle->get_gs_handle();
-        typename HandleType::GraphColoringHandleType::color_view_t colors;
-        color_t numColors;
-        typedef Kokkos::View<row_lno_t*, MyTempMemorySpace> rowmap_t;
-        typedef Kokkos::View<nnz_lno_t*, MyTempMemorySpace> colind_t;
-        typedef Kokkos::View<const row_lno_t*, MyTempMemorySpace> const_rowmap_t;
-        typedef Kokkos::View<const nnz_lno_t*, MyTempMemorySpace> const_colind_t;
-        rowmap_t tmp_xadj;
-        colind_t tmp_adj;
-        if(is_symmetric)
-        {
-          tmp_xadj = xadj;
-          tmp_adj = adj;
-        }
-        else
+        using nnz_view_t   = nnz_lno_persistent_work_view_t;
+        using in_rowmap_t  = const_lno_row_view_t;
+        using in_colinds_t = const_lno_nnz_view_t;
+        using rowmap_t     = Kokkos::View<row_lno_t*, MyTempMemorySpace>;
+        using colinds_t    = Kokkos::View<nnz_lno_t*, MyTempMemorySpace>;
+        //sym_xadj/sym_adj is only used here for clustering.
+        //Create them as non-const, unmanaged views to avoid
+        //duplicating a bunch of code between the
+        //symmetric and non-symmetric input cases.
+        rowmap_t sym_xadj;
+        colinds_t sym_adj;
+        if(this->is_symmetric)
         {
           KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
-            <const_rowmap_t, const_colind_t, rowmap_t, colind_t, MyExecSpace>
-            (num_rows, xadj, adj, tmp_xadj, tmp_adj);
-        }
+            <in_rowmap_t, in_colinds_t, rowmap_t, colinds_t, MyExecSpace>
+            (num_rows, xadj, adj, sym_xadj, sym_adj);
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        std::cout << "SYMMETRIZING TIME: " << timer.seconds() << std::endl;
-        timer.reset();
+          std::cout << "SYMMETRIZING TIME: " << timer.seconds() << std::endl;
+          timer.reset();
 #endif
-        typename HandleType::GaussSeidelHandleType *gsHandle = this->handle->get_gs_handle();
-        typedef nnz_lno_persistent_work_view_t nnz_view_t;
+        }
+        //Now that a symmetric graph is available, build the cluster graph (also symmetric)
+        nnz_view_t clusterRowmap;
+        nnz_view_t clusterEntries;
         nnz_lno_t clusterSize = gsHandle->get_cluster_size();
         nnz_lno_t numClusters = (num_rows + clusterSize - 1) / clusterSize;
-        bool onCuda = false;
-#ifdef KOKKOS_ENABLE_CUDA
-        onCuda = std::is_same<MyExecSpace, Kokkos::Cuda>::value;
-#endif
-        auto clusterAlgo = gsHandle->get_clustering_algo();
-        if(clusterAlgo == CLUSTER_DEFAULT)
         {
-          //Use CM if > 50 entries per row, otherwise balloon clustering.
-          //CM is quite fast on CPUs if the level sets fan out quickly, otherwise slow and non-scalable.
-          if(!onCuda && (adj.extent(0) / num_rows > 50))
-            clusterAlgo = CLUSTER_CUTHILL_MCKEE;
+          //Put these in an inner scope to guarantee they aren't left with dangling pointers.
+          using raw_rowmap_t = Kokkos::View<const row_lno_t*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+          using raw_colinds_t = Kokkos::View<const nnz_lno_t*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+          raw_rowmap_t raw_sym_xadj;
+          raw_colinds_t raw_sym_adj;
+          if(is_symmetric)
+          {
+            raw_sym_xadj = raw_rowmap_t(xadj.data(), xadj.extent(0));
+            raw_sym_adj = raw_colinds_t(adj.data(), adj.extent(0));
+          }
           else
-            clusterAlgo = CLUSTER_BALLOON;
-        }
-        switch(clusterAlgo)
-        {
-          case CLUSTER_CUTHILL_MCKEE:
           {
-            RCM<HandleType, rowmap_t, colinds_t> rcm(num_rows, xadj, adj);
-            nnz_view_t cmOrder = rcm.cuthill_mckee();
-            vertClusters = nnz_view_t("Cluster labels", num_rows);
-            Kokkos::parallel_for(my_exec_space(0, num_rows), ReorderedClusteringFunctor<nnz_view_t>(vertClusters, cmOrder, clusterSize));
-            break;
+            raw_sym_xadj = raw_rowmap_t(sym_xadj.data(), sym_xadj.extent(0));
+            raw_sym_adj = raw_colinds_t(sym_adj.data(), sym_adj.extent(0));
           }
-          case CLUSTER_BALLOON:
+          bool onCuda = false;
+  #ifdef KOKKOS_ENABLE_CUDA
+          onCuda = std::is_same<MyExecSpace, Kokkos::Cuda>::value;
+  #endif
+          nnz_view_t vertClusters;
+          auto clusterAlgo = gsHandle->get_clustering_algo();
+          if(clusterAlgo == CLUSTER_DEFAULT)
           {
-            BalloonClustering<HandleType, rowmap_t, colinds_t> balloon(num_rows, xadj, adj);
-            vertClusters = sssp.run(clusterSize);
-            break;
+            //Use CM if > 50 entries per row, otherwise balloon clustering.
+            //CM is quite fast on CPUs if the level sets fan out quickly, otherwise slow and non-scalable.
+            if(!onCuda && (adj.extent(0) / num_rows > 50))
+              clusterAlgo = CLUSTER_CUTHILL_MCKEE;
+            else
+              clusterAlgo = CLUSTER_BALLOON;
           }
-          case CLUSTER_DO_NOTHING:
+          switch(clusterAlgo)
           {
-            vertClusters = nnz_view_t("Cluster labels", num_rows);
-            Kokkos::parallel_for(my_exec_space(0, num_rows), NopVertClusteringFunctor<nnz_view_t>(vertClusters, clusterSize));
-            break;
-          }
-          default:
-            throw std::runtime_error("Clustering algo " + std::to_string((int) clusterAlgo) + " is not implemented");
-        }
-#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        std::cout << "Graph clustering: " << timer.seconds() << '\n';
-        timer.reset();
-#endif
-        //Construct the cluster offset and vertex array. These allow fast iteration over all vertices in a given cluster.
-        nnz_view_t clusterOffsets("Cluster offsets", numClusters + 1);
-        nnz_view_t clusterVerts("Cluster -> vertices", num_rows);
-        Kokkos::parallel_for(my_exec_space(0, num_rows), ClusterSizeFunctor<nnz_view_t>(clusterOffsets, vertClusters));
-        KokkosKernels::Impl::exclusive_parallel_prefix_sum<nnz_view_t, MyExecSpace>(numClusters + 1, clusterOffsets);
-        {
-          nnz_view_t tempInsertCounts("Temporary cluster insert counts", numClusters);
-          Kokkos::parallel_for(my_exec_space(0, num_rows), FillClusterVertsFunctor<nnz_view_t>(clusterOffsets, clusterVerts, vertClusters, tempInsertCounts));
-        }
-#if KOKKOSSPARSE_IMPL_PRINTDEBUG
-        {
-          auto clusterOffsetsHost = Kokkos::create_mirror_view(clusterOffsets);
-          auto clusterVertsHost = Kokkos::create_mirror_view(clusterVerts);
-          puts("Clusters (cluster #, and vertex #s):");
-          for(nnz_lno_t i = 0; i < numClusters; i++)
-          {
-            printf("%d: ", (int) i);
-            for(nnz_lno_t j = clusterOffsetsHost(i); j < clusterOffsetsHost(i + 1); j++)
+            case CLUSTER_CUTHILL_MCKEE:
             {
-              printf("%d ", (int) clusterVerts(j));
+              RCM<HandleType, raw_rowmap_t, raw_colinds_t> rcm(num_rows, raw_sym_xadj, raw_sym_adj);
+              nnz_view_t cmOrder = rcm.cuthill_mckee();
+              vertClusters = nnz_view_t("Cluster labels", num_rows);
+              Kokkos::parallel_for(my_exec_space(0, num_rows), ReorderedClusteringFunctor<nnz_view_t>(vertClusters, cmOrder, clusterSize));
+              break;
             }
-            putchar('\n');
+            case CLUSTER_BALLOON:
+            {
+              BalloonClustering<HandleType, raw_rowmap_t, raw_colinds_t> balloon(num_rows, raw_sym_xadj, raw_sym_adj);
+              vertClusters = balloon.run(clusterSize);
+              break;
+            }
+            case CLUSTER_DO_NOTHING:
+            {
+              vertClusters = nnz_view_t("Cluster labels", num_rows);
+              Kokkos::parallel_for(my_exec_space(0, num_rows), NopVertClusteringFunctor<nnz_view_t>(vertClusters, clusterSize));
+              break;
+            }
+            default:
+              throw std::runtime_error("Clustering algo " + std::to_string((int) clusterAlgo) + " is not implemented");
           }
-          printf("\n\n\n");
-        }
+  #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+          std::cout << "Graph clustering: " << timer.seconds() << '\n';
+          timer.reset();
+  #endif
+          //Construct the cluster offset and vertex array. These allow fast iteration over all vertices in a given cluster.
+          nnz_view_t clusterOffsets("Cluster offsets", numClusters + 1);
+          nnz_view_t clusterVerts("Cluster -> vertices", num_rows);
+          Kokkos::parallel_for(my_exec_space(0, num_rows), ClusterSizeFunctor<nnz_view_t>(clusterOffsets, vertClusters));
+          KokkosKernels::Impl::exclusive_parallel_prefix_sum<nnz_view_t, MyExecSpace>(numClusters + 1, clusterOffsets);
+          {
+            nnz_view_t tempInsertCounts("Temporary cluster insert counts", numClusters);
+            Kokkos::parallel_for(my_exec_space(0, num_rows), FillClusterVertsFunctor<nnz_view_t>(clusterOffsets, clusterVerts, vertClusters, tempInsertCounts));
+          }
+#if KOKKOSSPARSE_IMPL_PRINTDEBUG
+          {
+            auto clusterOffsetsHost = Kokkos::create_mirror_view(clusterOffsets);
+            auto clusterVertsHost = Kokkos::create_mirror_view(clusterVerts);
+            puts("Clusters (cluster #, and vertex #s):");
+            for(nnz_lno_t i = 0; i < numClusters; i++)
+            {
+              printf("%d: ", (int) i);
+              for(nnz_lno_t j = clusterOffsetsHost(i); j < clusterOffsetsHost(i + 1); j++)
+              {
+                printf("%d ", (int) clusterVerts(j));
+              }
+              putchar('\n');
+            }
+            printf("\n\n\n");
+          }
 #endif
-        //Determine the set of edges (in the point graph) that cross between two distinct clusters
-        int vectorSize = this->handle->get_suggested_vector_size(num_rows, adj.extent(0));
-        bitset_t crossClusterEdgeMask(adj.extent(0));
-        size_type numClusterEdges;
-        {
-          BuildCrossClusterMaskFunctor<rowmap_t, colinds_t, nnz_view_t>
-            buildEdgeMask(xadj, adj, clusterOffsets, clusterVerts, vertClusters, crossClusterEdgeMask);
-          int sharedPerTeam = buildEdgeMask.team_shmem_size(0);
-          int teamSize = KokkosKernels::Impl::get_suggested_team_size<team_policy_t>(buildEdgeMask, vectorSize, sharedPerTeam, 0);
-          Kokkos::parallel_for(team_policy_t(numClusters, teamSize, vectorSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam)), buildEdgeMask);
-          numClusterEdges = crossClusterEdgeMask.count();
+          //Determine the set of edges (in the point graph) that cross between two distinct clusters
+          int vectorSize = this->handle->get_suggested_vector_size(num_rows, adj.extent(0));
+          bitset_t crossClusterEdgeMask(adj.extent(0));
+          size_type numClusterEdges;
+          {
+            BuildCrossClusterMaskFunctor<raw_rowmap_t, raw_colinds_t, nnz_view_t>
+              buildEdgeMask(raw_sym_xadj, raw_sym_adj, clusterOffsets, clusterVerts, vertClusters, crossClusterEdgeMask);
+            int sharedPerTeam = buildEdgeMask.team_shmem_size(0); //using team-size = 0 for since no per-thread shared is used.
+            int teamSize = KokkosKernels::Impl::get_suggested_team_size<team_policy_t>(buildEdgeMask, vectorSize, sharedPerTeam, 0);
+            Kokkos::parallel_for(team_policy_t(numClusters, teamSize, vectorSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam)), buildEdgeMask);
+            numClusterEdges = crossClusterEdgeMask.count();
+          }
+          clusterRowmap = nnz_view_t("Cluster graph rowmap", numClusters + 1);
+          clusterEntries = nnz_view_t("Cluster graph colinds", numClusterEdges);
+          Kokkos::parallel_scan(my_exec_space(0, num_rows), FillClusterEntriesFunctor<raw_rowmap_t, raw_colinds_t, nnz_view_t>
+              (raw_sym_xadj, raw_sym_adj, clusterRowmap, clusterEntries, clusterOffsets, clusterVerts, vertClusters, crossClusterEdgeMask));
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+          std::cout << "Building explicit cluster graph: " << timer.seconds() << '\n';
+          timer.reset();
+#endif
+          //done with raw_sym_xadj/raw_sym_adj
         }
-        nnz_view_t clusterRowmap("Cluster graph rowmap", numClusters + 1);
-        nnz_view_t clusterEntries("Cluster graph colinds", numClusterEdges);
-        Kokkos::parallel_scan(my_exec_space(0, num_rows), FillClusterEntriesFunctor<rowmap_t, colinds_t, nnz_view_t>(xadj, adj, clusterRowmap, clusterEntries, clusterOffsets, clusterVerts, vertClusters, crossClusterEdgeMask));
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
           auto clusterRowmapHost = Kokkos::create_mirror_view(clusterRowmap);
@@ -794,6 +825,18 @@ namespace KokkosSparse{
           printf("\n\n\n");
         }
 #endif
+        //Get the coloring of the cluster graph.
+        typename HandleType::GraphColoringHandleType::color_view_t colors;
+        color_t numColors;
+#if KOKKOSSPARSE_IMPL_RUNSEQUENTIAL
+        numColors = numClusters;
+        std::cout << "SEQUENTIAL CGS: numColors = numClusters = " << numClusters << '\n';
+        typename HandleType::GraphColoringHandleType::color_view_t::HostMirror h_colors = Kokkos::create_mirror_view(colors);
+        for(int i = 0; i < numClusters; ++i){
+          h_colors(i) = i + 1;
+        }
+        Kokkos::deep_copy(colors, h_colors);
+#else
         //Create a handle that uses nnz_lno_t as the size_type, since the cluster graph should never be larger than 2^31 entries.
         KokkosKernels::Experimental::KokkosKernelsHandle<nnz_lno_t, nnz_lno_t, double, MyExecSpace, MyPersistentMemorySpace, MyPersistentMemorySpace> kh;
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
@@ -803,36 +846,37 @@ namespace KokkosSparse{
         colors = coloringHandle->get_vertex_colors();
         numColors = coloringHandle->get_num_colors();
         kh.destroy_graph_coloring_handle();
+#endif
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "Coloring: " << timer.seconds() << '\n';
         timer.reset();
 #endif
-
-#if KOKKOSSPARSE_IMPL_RUNSEQUENTIAL
-        numColors = numClusters;
-        KokkosKernels::Impl::print_1Dview(colors);
-        std::cout << "SEQUENTIAL CGS: numColors = numClusters = " << numClusters << '\n';
-        typename HandleType::GraphColoringHandleType::color_view_t::HostMirror  h_colors = Kokkos::create_mirror_view (colors);
-        for(int i = 0; i < numClusters; ++i){
-          h_colors(i) = i + 1;
-        }
-        Kokkos::deep_copy(colors, h_colors);
+        nnz_lno_persistent_work_view_t color_xadj;
+        nnz_lno_persistent_work_view_t color_adj;
+        KokkosKernels::Impl::create_reverse_map
+          <typename HandleType::GraphColoringHandleType::color_view_t,
+           nnz_lno_persistent_work_view_t, MyExecSpace>
+          (numClusters, numColors, colors, color_xadj, color_adj);
+        MyExecSpace().fence();
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+        std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
+        timer.reset();
 #endif
+        //Get the cluster color sets in CRS (xadj/adj) format.
         gsHandle->set_num_colors(numColors);
-        gsHandle->set_color_xadj(
-        gsHandle->set_cluster_xadj(
-        if (this->handle->get_gs_handle()->is_owner_of_coloring()){
-          this->handle->destroy_graph_coloring_handle();
-          this->handle->get_gs_handle()->set_owner_of_coloring(false);
-        }
-        this->handle->get_gs_handle()->set_call_symbolic(true);
+        //The color xadj (color set begins/ends) lives on host, since
+        //it is only used to determine the apply kernel range.
+        auto color_xadj_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), color_xadj);
+        gsHandle->set_color_xadj(color_xadj_host);
+        gsHandle->set_cluster_xadj(color_adj);
+        gsHandle->set_call_symbolic(true);
       }
 
       struct Get_Matrix_Diagonals
       {
-        row_lno_persistent_work_view_t _xadj;
-        nnz_lno_persistent_work_view_t _adj; // CSR storage of the graph.
-        scalar_persistent_work_view_t _adj_vals; // CSR storage of the graph.
+        const_lno_row_view_t _xadj;
+        const_lno_nnz_view_t _adj; // CSR storage of the graph.
+        const_scalar_nnz_view_t _adj_vals; // CSR storage of the graph.
         scalar_persistent_work_view_t _diagonals;
 
         nnz_lno_t num_total_rows;
@@ -841,15 +885,15 @@ namespace KokkosSparse{
         nnz_scalar_t one;
 
         Get_Matrix_Diagonals(
-                             row_lno_persistent_work_view_t xadj_,
-                             nnz_lno_persistent_work_view_t adj_,
-                             scalar_persistent_work_view_t adj_vals_,
+                             const_lno_row_view_t xadj_,
+                             const_lno_nnz_view_t adj_,
+                             const_scalar_nnz_view_t adj_vals_,
                              scalar_persistent_work_view_t diagonals_,
                              nnz_lno_t num_total_rows_,
                              nnz_lno_t rows_per_team_) :
-          _xadj( xadj_),
-          _adj( adj_),
-          _adj_vals( adj_vals_), _diagonals(diagonals_),
+          _xadj(xadj_),
+          _adj(adj_),
+          _adj_vals(adj_vals_), _diagonals(diagonals_),
           num_total_rows(num_total_rows_), rows_per_team(rows_per_team_),
           one(Kokkos::Details::ArithTraits<nnz_scalar_t>::one())
         {}
@@ -891,7 +935,8 @@ namespace KokkosSparse{
               nnz_lno_t column_id = _adj(val_index);
               if(column_id == row_id)
               {
-                _diagonals(row_id) = one / _adj_vals(_val_index);
+                _diagonals(row_id) = one / _adj_vals(val_index);
+                return;
               }
             });
           });
@@ -909,33 +954,34 @@ namespace KokkosSparse{
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         Kokkos::Impl::Timer timer;
 #endif
-        const_lno_row_view_t xadj = this->row_map;
-        const_lno_nnz_view_t adj = this->entries;
-        const_scalar_nnz_view_t adj_vals = this->values;
-
-        size_type nnz = adj_vals.extent(0);
+        size_type nnz = this->entries.extent(0);
 
         int suggested_vector_size = this->handle->get_suggested_vector_size(num_rows, nnz);
         int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
 
-        Get_Matrix_Diagonals gmd(
-            _xadj, _adj, _adj_vals, _inverse_diagonal,
-            this->num_rows,
-            rows_per_team, 1, 1);
+        scalar_persistent_work_view_t inverse_diagonal(Kokkos::ViewAllocateWithoutInitializing("Aii^-1"), num_rows);
+        nnz_lno_t rows_per_team = this->handle->get_team_work_size(suggested_team_size, MyExecSpace::concurrency(), num_rows);
 
-        if (this->handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA || block_size > 1)
-        {
-          Kokkos::parallel_for("KokkosSparse::GaussSeidel::team_get_matrix_diagonals",
-              team_policy_t((num_rows + rows_per_team - 1) / rows_per_team, suggested_team_size, suggested_vector_size),
-              gmd );
+        if(have_diagonal_given) {
+          Kokkos::deep_copy(inverse_diagonal, this->given_inverse_diagonal);
         }
-        else
-        {
-          Kokkos::parallel_for("KokkosSparse::GaussSeidel::get_matrix_diagonals",
-              my_exec_space(0, num_rows),
-              gmd);
+        else {
+          //extract inverse diagonal from matrix
+          Get_Matrix_Diagonals gmd(
+              this->row_map, this->entries, this->values,
+              inverse_diagonal,
+              num_rows, rows_per_team);
+          if(gsHandle->use_teams())
+          {
+            Kokkos::parallel_for("KokkosSparse::GaussSeidel::team_get_matrix_diagonals",
+                team_policy_t((num_rows + rows_per_team - 1) / rows_per_team, suggested_team_size, suggested_vector_size), gmd);
+          }
+          else
+          {
+            Kokkos::parallel_for("KokkosSparse::GaussSeidel::get_matrix_diagonals",
+                my_exec_space(0, num_rows), gmd);
+          }
         }
-
         gsHandle->set_inverse_diagonal(inverse_diagonal);
         gsHandle->set_call_numeric(true);
         MyExecSpace().fence();
@@ -955,95 +1001,97 @@ namespace KokkosSparse{
                        bool apply_backward = true,
                        bool update_y_vector = true)
       {
-        typename HandleType::GaussSeidelHandleType *gsHandle = this->handle->get_gs_handle();
+        auto gsHandle = get_gs_handle();
 
-        row_lno_persistent_work_view_t xadj_ = gsHandle->get_new_xadj();
-        nnz_lno_persistent_work_view_t adj_ = gsHandle->get_new_adj();
+        size_type nnz = entries.extent(0);
         nnz_lno_persistent_work_view_t color_adj = gsHandle->get_color_adj();
         nnz_lno_persistent_work_host_view_t h_color_xadj = gsHandle->get_color_xadj();
 
         color_t numColors = gsHandle->get_num_colors();
 
         if(init_zero_x_vector){
-          KokkosKernels::Impl::zero_vector<scalar_persistent_work_view_t, MyExecSpace>(num_cols, Permuted_Xvector);
+          KokkosKernels::Impl::zero_vector<x_value_array_type, MyExecSpace>(num_cols, x_lhs_output_vec);
         }
-        MyExecSpace().fence();
 
-        row_lno_persistent_work_view_t permuted_xadj = gsHandle->get_new_xadj();
-        nnz_lno_persistent_work_view_t permuted_adj = gsHandle->get_new_adj();
-        scalar_persistent_work_view_t permuted_adj_vals = gsHandle->get_new_adj_val();
-        scalar_persistent_work_view_t permuted_inverse_diagonal = gsHandle->get_permuted_inverse_diagonal();
-
-
-#if KOKKOSSPARSE_IMPL_PRINTDEBUG
-        std::cout << "--point Before X:";
-        KokkosKernels::Impl::print_1Dview(Permuted_Xvector,true);
-        std::cout << "--point Before Y:";
-        KokkosKernels::Impl::print_1Dview(Permuted_Yvector,true);
-#endif
+        scalar_persistent_work_view_t inverse_diagonal = gsHandle->get_inverse_diagonal();
 
         if(gsHandle->use_teams())
         {
-          Team_PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
-                       Permuted_Xvector, Permuted_Yvector,0,0, permuted_inverse_diagonal, m_space,0,0,omega);
+          int suggested_vector_size = this->handle->get_suggested_vector_size(num_rows, nnz);
+          int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
 
-          this->IterativePSGS(
-                              gs,
-                              numColors,
-                              h_color_xadj,
-                              numIter,
-                              apply_forward,
-                              apply_backward);
+          nnz_lno_t rows_per_team = this->handle->get_team_work_size(suggested_team_size, MyExecSpace::concurrency(), num_rows);
+          //Get clusters per team. Round down to favor finer granularity, since this is sensitive to load imbalance
+          nnz_lno_t clusters_per_team = rows_per_team / gsHandle->get_cluster_size();
+          if(clusters_per_team == 0)
+            clusters_per_team = 1;
+
+          Team_PSGS<x_value_array_type, y_value_array_type> gs(
+              this->row_map, this->entries, this->values,
+              x_lhs_output_vec, y_rhs_input_vec,
+              0, 0, //color set range is set right before launch for each color set
+              color_adj,
+              gsHandle->get_cluster_xadj(), gsHandle->get_cluster_adj(),
+              inverse_diagonal,
+              clusters_per_team,
+              gsHandle->get_cluster_xadj(),
+              gsHandle->get_cluster_adj(),
+              omega);
+
+          this->IterativeTeamPSGS(
+              gs,
+              numColors,
+              h_color_xadj,
+              suggested_team_size,
+              suggested_vector_size,
+              numIter,
+              apply_forward,
+              apply_backward);
         }
         else{
-          PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
-                  Permuted_Xvector, Permuted_Yvector, color_adj, omega, permuted_inverse_diagonal);
+          PSGS<x_value_array_type, y_value_array_type> gs(
+              this->row_map, this->entries, this->values,
+              x_lhs_output_vec, y_rhs_input_vec,
+              color_adj,
+              gsHandle->get_cluster_xadj(), gsHandle->get_cluster_adj(),
+              omega, inverse_diagonal);
 
           this->IterativePSGS(
-                              gs,
-                              numColors,
-                              h_color_xadj,
-                              numIter,
-                              apply_forward,
-                              apply_backward);
+              gs,
+              numColors,
+              h_color_xadj,
+              numIter,
+              apply_forward,
+              apply_backward);
         }
-
-        //Kokkos::parallel_for( my_exec_space(0,nr), PermuteVector(x_lhs_output_vec, Permuted_Xvector, color_adj));
-
-
-        KokkosKernels::Impl::permute_vector
-          <scalar_persistent_work_view_t,x_value_array_type,  nnz_lno_persistent_work_view_t, MyExecSpace>(
-                                                                                                           num_cols,
-                                                                                                           color_adj,
-                                                                                                           Permuted_Xvector,
-                                                                                                           x_lhs_output_vec
-                                                                                                           );
         MyExecSpace().fence();
       }
 
-      void IterativePSGS(
-          Team_PSGS &gs,
+      template<typename TPSGS>
+      void IterativeTeamPSGS(
+          TPSGS& gs,
           color_t numColors,
           nnz_lno_persistent_work_host_view_t h_color_xadj,
+          nnz_lno_t team_size,
+          nnz_lno_t vec_size,
           int num_iteration,
           bool apply_forward,
           bool apply_backward)
       {
         for (int i = 0; i < num_iteration; ++i)
-          this->DoPSGS(gs, numColors, h_color_xadj, apply_forward, apply_backward);
+          this->DoTeamPSGS(gs, numColors, h_color_xadj, team_size, vec_size, apply_forward, apply_backward);
       }
 
-      void DoPSGS(
-          Team_PSGS &gs, color_t numColors, nnz_lno_persistent_work_host_view_t h_color_xadj,
+      template<typename TPSGS>
+      void DoTeamPSGS(
+          TPSGS& gs, color_t numColors, nnz_lno_persistent_work_host_view_t h_color_xadj,
+          nnz_lno_t team_size, nnz_lno_t vec_size,
           bool apply_forward,
           bool apply_backward)
       {
-        nnz_lno_t suggested_team_size = gs.suggested_team_size;
-        int vector_size = gs.vector_size;
-
         if (apply_forward)
         {
-          gs.is_backward = false;
+          gs._is_backward = false;
           for (color_t i = 0; i < numColors; ++i){
             nnz_lno_t color_index_begin = h_color_xadj(i);
             nnz_lno_t color_index_end = h_color_xadj(i + 1);
@@ -1051,14 +1099,14 @@ namespace KokkosSparse{
             gs._color_set_begin = color_index_begin;
             gs._color_set_end = color_index_end;
             Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
-                                 team_policy_t((overall_work + 1) / suggested_team_size , suggested_team_size, vector_size),
+                                 team_policy_t((overall_work + 1) / team_size, team_size, vec_size),
                                  gs);
             MyExecSpace().fence();
           }
         }
         if (apply_backward)
         {
-          gs.is_backward = true;
+          gs._is_backward = true;
           if (numColors > 0)
             for (color_t i = numColors - 1; ; --i) {
               nnz_lno_t color_index_begin = h_color_xadj(i);
@@ -1067,7 +1115,7 @@ namespace KokkosSparse{
               gs._color_set_begin = color_index_begin;
               gs._color_set_end = color_index_end;
               Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
-                                   team_policy_t((overall_work + suggested_team_size - 1) / suggested_team_size, suggested_team_size, vector_size),
+                                   team_policy_t((overall_work + team_size - 1) / team_size, team_size, vec_size),
                                    gs);
               MyExecSpace().fence();
               if (i == 0){
@@ -1077,8 +1125,9 @@ namespace KokkosSparse{
         }
       }
 
+      template<typename PSGS>
       void IterativePSGS(
-          PSGS &gs,
+          PSGS& gs,
           color_t numColors,
           nnz_lno_persistent_work_host_view_t h_color_xadj,
           int num_iteration,
@@ -1091,6 +1140,7 @@ namespace KokkosSparse{
         }
       }
 
+      template<typename PSGS>
       void DoPSGS(
           PSGS &gs, color_t numColors, nnz_lno_persistent_work_host_view_t h_color_xadj,
           bool apply_forward,
@@ -1103,7 +1153,7 @@ namespace KokkosSparse{
             nnz_lno_t color_index_end = h_color_xadj(i + 1);
             //std::cout <<  "i:" << i << " color_index_begin:" << color_index_begin << " color_index_end:" << color_index_end << std::endl;
             Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::forward",
-                                  my_exec_space (color_index_begin, color_index_end) , gs);
+                                  my_exec_space (color_index_begin, color_index_end), gs);
             MyExecSpace().fence();
           }
         }
@@ -1112,7 +1162,7 @@ namespace KokkosSparse{
             nnz_lno_t color_index_begin = h_color_xadj(i);
             nnz_lno_t color_index_end = h_color_xadj(i + 1);
             Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::backward",
-                                  my_exec_space (color_index_begin, color_index_end) , gs);
+                                  my_exec_space (color_index_begin, color_index_end), gs);
             MyExecSpace().fence();
             if (i == 0){
               break;
