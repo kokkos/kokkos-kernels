@@ -172,7 +172,7 @@ namespace KokkosSparse{
         {}
 
         KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t &ii) const {
+        void operator()(const nnz_lno_t ii) const {
           //color_adj(ii) is a cluster in the current color set.
           nnz_lno_t cluster = _color_adj(ii);
           for(nnz_lno_t j = _cluster_offsets(cluster); j < _cluster_offsets(cluster + 1); j++)
@@ -666,30 +666,26 @@ namespace KokkosSparse{
 
       void initialize_symbolic()
       {
-        auto gsHandle = get_gs_handle();
-
-        const_lno_row_view_t xadj = this->row_map;
-        const_lno_nnz_view_t adj = this->entries;
-
-#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
-#endif
         using nnz_view_t   = nnz_lno_persistent_work_view_t;
         using in_rowmap_t  = const_lno_row_view_t;
         using in_colinds_t = const_lno_nnz_view_t;
         using rowmap_t     = Kokkos::View<row_lno_t*, MyTempMemorySpace>;
         using colinds_t    = Kokkos::View<nnz_lno_t*, MyTempMemorySpace>;
+        auto gsHandle = get_gs_handle();
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+        Kokkos::Impl::Timer timer;
+#endif
         //sym_xadj/sym_adj is only used here for clustering.
         //Create them as non-const, unmanaged views to avoid
         //duplicating a bunch of code between the
         //symmetric and non-symmetric input cases.
         rowmap_t sym_xadj;
         colinds_t sym_adj;
-        if(this->is_symmetric)
+        if(!this->is_symmetric)
         {
           KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
             <in_rowmap_t, in_colinds_t, rowmap_t, colinds_t, MyExecSpace>
-            (num_rows, xadj, adj, sym_xadj, sym_adj);
+            (num_rows, this->row_map, this->entries, sym_xadj, sym_adj);
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
           std::cout << "SYMMETRIZING TIME: " << timer.seconds() << std::endl;
           timer.reset();
@@ -706,10 +702,10 @@ namespace KokkosSparse{
           using raw_colinds_t = Kokkos::View<const nnz_lno_t*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
           raw_rowmap_t raw_sym_xadj;
           raw_colinds_t raw_sym_adj;
-          if(is_symmetric)
+          if(this->is_symmetric)
           {
-            raw_sym_xadj = raw_rowmap_t(xadj.data(), xadj.extent(0));
-            raw_sym_adj = raw_colinds_t(adj.data(), adj.extent(0));
+            raw_sym_xadj = raw_rowmap_t(this->row_map.data(), this->row_map.extent(0));
+            raw_sym_adj = raw_colinds_t(this->entries.data(), this->entries.extent(0));
           }
           else
           {
@@ -726,7 +722,7 @@ namespace KokkosSparse{
           {
             //Use CM if > 50 entries per row, otherwise balloon clustering.
             //CM is quite fast on CPUs if the level sets fan out quickly, otherwise slow and non-scalable.
-            if(!onCuda && (adj.extent(0) / num_rows > 50))
+            if(!onCuda && (raw_sym_adj.extent(0) / num_rows > 50))
               clusterAlgo = CLUSTER_CUTHILL_MCKEE;
             else
               clusterAlgo = CLUSTER_BALLOON;
@@ -751,6 +747,11 @@ namespace KokkosSparse{
             {
               vertClusters = nnz_view_t("Cluster labels", num_rows);
               Kokkos::parallel_for(my_exec_space(0, num_rows), NopVertClusteringFunctor<nnz_view_t>(vertClusters, clusterSize));
+              break;
+            }
+            case CLUSTER_DEFAULT:
+            {
+              throw std::logic_error("Logic to choose default clustering algorithm is incorrect");
               break;
             }
             default:
@@ -787,8 +788,8 @@ namespace KokkosSparse{
           }
 #endif
           //Determine the set of edges (in the point graph) that cross between two distinct clusters
-          int vectorSize = this->handle->get_suggested_vector_size(num_rows, adj.extent(0));
-          bitset_t crossClusterEdgeMask(adj.extent(0));
+          int vectorSize = this->handle->get_suggested_vector_size(num_rows, raw_sym_adj.extent(0));
+          bitset_t crossClusterEdgeMask(raw_sym_adj.extent(0));
           size_type numClusterEdges;
           {
             BuildCrossClusterMaskFunctor<raw_rowmap_t, raw_colinds_t, nnz_view_t>
@@ -868,7 +869,9 @@ namespace KokkosSparse{
         //it is only used to determine the apply kernel range.
         auto color_xadj_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), color_xadj);
         gsHandle->set_color_xadj(color_xadj_host);
-        gsHandle->set_cluster_xadj(color_adj);
+        gsHandle->set_color_adj(color_adj);
+        gsHandle->set_cluster_xadj(clusterRowmap);
+        gsHandle->set_cluster_adj(clusterEntries);
         gsHandle->set_call_symbolic(true);
       }
 
@@ -992,14 +995,14 @@ namespace KokkosSparse{
 
       template <typename x_value_array_type, typename y_value_array_type>
       void apply(
-                       x_value_array_type x_lhs_output_vec,
-                       y_value_array_type y_rhs_input_vec,
-                       bool init_zero_x_vector = false,
-                       int numIter = 1,
-                       nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
-                       bool apply_forward = true,
-                       bool apply_backward = true,
-                       bool update_y_vector = true)
+          x_value_array_type x_lhs_output_vec,
+          y_value_array_type y_rhs_input_vec,
+          bool init_zero_x_vector = false,
+          int numIter = 1,
+          nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
+          bool apply_forward = true,
+          bool apply_backward = true,
+          bool update_y_vector = true)
       {
         auto gsHandle = get_gs_handle();
 

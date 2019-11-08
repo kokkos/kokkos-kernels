@@ -500,8 +500,7 @@ public:
       throw std::runtime_error("GaussSeidelHandle exists but is not set up for cluster-coloring GS.");
     return cgs;
   }
-  void create_gs_handle(
-    KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT){
+  void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
     this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
@@ -520,8 +519,6 @@ public:
       this->gsHandle = NULL;
     }
   }
-
-
 
   SPADDHandleType *get_spadd_handle(){
     return this->spaddHandle;

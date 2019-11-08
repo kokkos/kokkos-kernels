@@ -692,6 +692,7 @@ struct BalloonClustering
       : vertClusters(vertClusters_), clusterCounts(clusterCounts_), distances(distances_), row_map(row_map_), col_inds(col_inds_), pressure(pressure_), clusterSize(clusterSize_), numRows(row_map.extent(0) - 1), vertLocks(numRows), randPool(randPool_)
     {
       numClusters = (numRows + clusterSize - 1) / clusterSize;
+      avgClusterSize = (double) numRows / numClusters;
       iter = 0;
     }
 
@@ -795,7 +796,7 @@ struct BalloonClustering
       if(distances(i) == 0)
       {
         //roots update sizeDeviation on behalf of the cluster
-        double deviation = clusterCounts(cluster) - clusterSize;
+        double deviation = clusterCounts(cluster) - avgClusterSize;
         sizeDeviation += deviation * deviation;
       }
     }
@@ -814,12 +815,20 @@ struct BalloonClustering
     nnz_lno_t iter;
     Kokkos::Bitset<MyExecSpace> vertLocks;
     RandPool randPool;
+    double avgClusterSize;
   };
 
   nnz_view_t run(nnz_lno_t clusterSize)
   {
-    nnz_lno_t numClusters = (numRows + clusterSize - 1) / clusterSize;
     nnz_view_t vertClusters("Vertex cluster labels", numRows);
+    //For the sake of completeness, handle the clusterSize = 1 case by generating a trivial (identity) clustering.
+    assert(clusterSize >= 1);
+    if(clusterSize == 1)
+    {
+      Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace>(0, numRows), IotaFunctor<nnz_view_t, nnz_lno_t>(vertClusters));
+      return vertClusters;
+    }
+    nnz_lno_t numClusters = (numRows + clusterSize - 1) / clusterSize;
     nnz_view_t distances("Root distances", numRows);
     nnz_view_t clusterCounts("Vertices per cluster", numClusters);
     float_view_t pressure("Cluster pressure", numRows);
@@ -831,32 +840,41 @@ struct BalloonClustering
     Kokkos::Impl::Timer timer;
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
+    MyExecSpace().fence();
     std::cout << "Creating roots: " << timer.seconds() << '\n';
     timer.reset();
-    //Best possible clustering has (numClusters - n) of size (clusterSize), and (n) of size (clusterSize - 1).
-    double optimalDeviation = numRows % clusterSize;
-    double deviation = 0;
+    double halfDeviation = (double) numClusters * (clusterSize / 2) * (clusterSize / 2);
+    double stoppingRMS = sqrt(numClusters * (0.05 * clusterSize) * (0.05 * clusterSize));
+    double deviation = (double) numClusters * (clusterSize - 1) * (clusterSize - 1);
+    int regressions = 0;
     while(true)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, UpdatePressureTag>(0, numRows), funct);
       double iterDeviation = 0;
       Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, BalloonTag>(0, numRows), funct, Kokkos::Sum<double>(iterDeviation));
-      if(funct.iter > 0)
+      if(iterDeviation <= stoppingRMS || iterDeviation == deviation)
       {
-        if(iterDeviation == optimalDeviation || iterDeviation >= deviation * 0.98)
+        //got within 5% RMS of optimal, or stagnated
+        deviation = iterDeviation;
+        break;
+      }
+      else if(iterDeviation >= deviation)
+      {
+        regressions++;
+        if(regressions == 3)
         {
-          //Case 1: clustering is optimal
-          //Case 2: failed to improve clustering last iteration by >2%, so assume further improvement is not worthwhile
+          deviation = iterDeviation;
           break;
         }
       }
       deviation = iterDeviation;
       funct.iter++;
     }
-    std::cout << "Final deviation: " << deviation << '\n';
-    std::cout << "Expanding clusters for " << funct.iter << "iterations: " << timer.seconds() << '\n';
+    MyExecSpace().fence();
+    std::cout << "Expanding clusters for " << funct.iter << " iterations: " << timer.seconds() << '\n';
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
+    MyExecSpace().fence();
     std::cout << "Randomly assigning clusters to remaining: " << timer.seconds() << '\n';
     std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
     return vertClusters;
