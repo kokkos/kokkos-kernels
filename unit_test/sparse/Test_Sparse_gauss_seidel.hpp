@@ -271,53 +271,61 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
     }
     Kokkos::deep_copy(b, bHost);
   }
-  //create solution vector (x), zero initial guess
-  //try a bunch of powers of 2 for cluster sizes, up to about the
-  //point where there are very few clusters (8)
-  std::vector<lno_t> clusterSizes;
-  for(lno_t i = 1; i <= numRows / 8; i <<= 1)
-    clusterSizes.push_back(i);
-  const int niters = 5;
-  for(size_t test = 0; test < clusterSizes.size(); test++)
+  for(int algo = 0; algo < (int) KokkosSparse::NUM_CLUSTERING_ALGORITHMS; algo++)
   {
-    //starting solution is zero vector
-    scalar_view_t x("x", numRows);
-    auto clusterSize = clusterSizes[test];
-#ifdef CLUSTER_VERBOSE
-    output << "Testing cluster size = " << clusterSize << '\n';
-#endif
-    KernelHandle kh;
-    if(clusterSize == 1)
-      kh.create_gs_handle(KokkosSparse::GS_DEFAULT);
-    else
-      kh.create_gs_handle(KokkosSparse::CLUSTER_BALLOON, clusterSize);
-    //only need to do G-S setup (symbolic/numeric) once
-    Kokkos::Impl::Timer timer;
-    KokkosSparse::Experimental::gauss_seidel_symbolic<KernelHandle, lno_view_t, lno_nnz_view_t>
-      (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, false);
-    KokkosSparse::Experimental::gauss_seidel_numeric<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t>
-      (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, false);
-#ifdef CLUSTER_VERBOSE
-    output << "Cluster size " << clusterSize << " setup time: " << timer.seconds() << " s\n";
-#endif
-    timer.reset();
-    typedef Kokkos::Details::ArithTraits<scalar_t> KAT;
-    scalar_t alpha = KAT::one();
-    scalar_t beta = -KAT::one();
-    KokkosSparse::Experimental::symmetric_gauss_seidel_apply
-      <KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
-      (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 0.6, niters);
-    scalar_view_t res("Ax-b", numRows);
-    Kokkos::deep_copy(res, b);
-    KokkosSparse::spmv<scalar_t, crsMat_t, scalar_view_t, scalar_t, scalar_view_t>
-      ("N", alpha, A, x, beta, res, KokkosSparse::RANK_ONE());
-#ifdef CLUSTER_VERBOSE
-    double norm = KokkosBlas::nrm2(res);
-    double bnorm = KokkosBlas::nrm2(b);
-    output << "Cluster size " << clusterSize << " apply time: " << timer.seconds() << " s\n";
-    output << "Cluster size " << clusterSize << " norm after " << niters << " sweeps: " << norm << '\n';
-    output << "Cluster size " << clusterSize << " proportion of residual eliminated: " << 1.0 - (norm / bnorm) << std::endl;
-#endif
+    //create solution vector (x), zero initial guess
+    //try a bunch of powers of 2 for cluster sizes, up to about the
+    //point where there are very few clusters (8), even though this
+    //is not the intended use case.
+    std::vector<lno_t> clusterSizes;
+    for(lno_t i = 1; i <= numRows / 8; i <<= 1)
+      clusterSizes.push_back(i);
+    const int niters = 100;
+    for(size_t test = 0; test < clusterSizes.size(); test++)
+    {
+      auto clusterSize = clusterSizes[test];
+  #ifdef CLUSTER_VERBOSE
+      output << "Testing cluster size = " << clusterSize << '\n';
+  #endif
+      KernelHandle kh;
+      if(clusterSize == 1)
+        kh.create_gs_handle(KokkosSparse::GS_DEFAULT);
+      else
+        kh.create_gs_handle((KokkosSparse::ClusteringAlgorithm) algo, clusterSize);
+      //only need to do G-S setup (symbolic/numeric) once
+      Kokkos::Impl::Timer timer;
+      KokkosSparse::Experimental::gauss_seidel_symbolic<KernelHandle, lno_view_t, lno_nnz_view_t>
+        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, false);
+      KokkosSparse::Experimental::gauss_seidel_numeric<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t>
+        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, false);
+  #ifdef CLUSTER_VERBOSE
+      output << "Cluster size " << clusterSize << " setup time: " << timer.seconds() << " s\n";
+  #endif
+      timer.reset();
+      typedef Kokkos::Details::ArithTraits<scalar_t> KAT;
+      scalar_t alpha = KAT::one();
+      scalar_t beta = -KAT::one();
+      //starting solution will be the zero vector, but make sure SGS can do that
+      scalar_view_t x(Kokkos::ViewAllocateWithoutInitializing("x"), numRows);
+      KokkosSparse::Experimental::symmetric_gauss_seidel_apply
+        <KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
+        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, true, false, 1.0, niters);
+      scalar_view_t res("Ax-b", numRows);
+      Kokkos::deep_copy(res, b);
+      KokkosSparse::spmv<scalar_t, crsMat_t, scalar_view_t, scalar_t, scalar_view_t>
+        ("N", alpha, A, x, beta, res, KokkosSparse::RANK_ONE());
+      double norm = KokkosBlas::nrm2(res);
+      double bnorm = KokkosBlas::nrm2(b);
+      //Sanity check the result - since the input matrix is strictly diagonally dominant,
+      //the residual norm should never be higher than where it started.
+      std::cout << "Residual norm: " << bnorm << " ----> " << norm << " (algo = " << algo << ", clustersize = " << clusterSize << ")\n";
+      EXPECT_TRUE(norm <= bnorm);
+  #ifdef CLUSTER_VERBOSE
+      output << "Cluster size " << clusterSize << " apply time: " << timer.seconds() << " s\n";
+      output << "Cluster size " << clusterSize << " norm after " << niters << " sweeps: " << norm << '\n';
+      output << "Cluster size " << clusterSize << " proportion of residual eliminated: " << 1.0 - (norm / bnorm) << std::endl;
+  #endif
+    }
   }
 }
 

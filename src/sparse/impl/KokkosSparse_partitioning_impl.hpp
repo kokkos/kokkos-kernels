@@ -840,9 +840,11 @@ struct BalloonClustering
     Kokkos::Impl::Timer timer;
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     MyExecSpace().fence();
     std::cout << "Creating roots: " << timer.seconds() << '\n';
     timer.reset();
+#endif
     double halfDeviation = (double) numClusters * (clusterSize / 2) * (clusterSize / 2);
     double stoppingRMS = sqrt(numClusters * (0.05 * clusterSize) * (0.05 * clusterSize));
     double deviation = (double) numClusters * (clusterSize - 1) * (clusterSize - 1);
@@ -870,13 +872,17 @@ struct BalloonClustering
       deviation = iterDeviation;
       funct.iter++;
     }
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     MyExecSpace().fence();
     std::cout << "Expanding clusters for " << funct.iter << " iterations: " << timer.seconds() << '\n';
     timer.reset();
+#endif
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, RandomFillTag>(0, numRows), funct);
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     MyExecSpace().fence();
     std::cout << "Randomly assigning clusters to remaining: " << timer.seconds() << '\n';
     std::cout << "Clustering total: " << globalTimer.seconds() << "\n\n";
+#endif
     return vertClusters;
   }
 };

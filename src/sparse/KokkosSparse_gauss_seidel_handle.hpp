@@ -51,7 +51,7 @@
 namespace KokkosSparse{
 
   enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER};
-  enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_BALLOON, CLUSTER_CUTHILL_MCKEE, CLUSTER_DO_NOTHING};
+  enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_BALLOON, CLUSTER_CUTHILL_MCKEE, CLUSTER_DO_NOTHING, NUM_CLUSTERING_ALGORITHMS};
 
   template <class size_type_, class lno_t_, class scalar_t_,
             class ExecutionSpace,
