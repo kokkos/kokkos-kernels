@@ -307,8 +307,8 @@ void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, i
 
 /* ========================================================================================= */
 template<typename scalar_t>
-int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, bool merge, bool invert_offdiag,
-                     int panel_size, int relax_size, int sup_size_unblocked, int sup_size_blocked, int loop) {
+int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename, bool metis, bool merge, bool invert_offdiag,
+                     bool u_in_csr, int panel_size, int relax_size, int sup_size_unblocked, int sup_size_blocked, int loop) {
 
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
   typedef int lno_t;
@@ -410,16 +410,25 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool metis, 
             //invert_offdiag = true;
             std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
-            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, false);
+            u_in_csr = false;
           } else {
             //invert_offdiag = true;
             std::cout << " > create handle for SUPERNODAL_SPMV" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, true);
-            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, false);
+            u_in_csr = false;
           }
+          // verbose (optional, default is false)
+          khU.set_sptrsv_verbose (verbose);
+          khL.set_sptrsv_verbose (verbose);
+
           // used to determine which kernels were used based on the block sizes, but not currently used
           //khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
           //khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
+
+          // specify if U is stored in CSR or CSC
+          khU.set_column_major (!u_in_csr);
 
           // specify wheather to merge supernodes (optional, default merge is false)
           khL.set_merge_supernodes (merge);
@@ -625,9 +634,13 @@ int main(int argc, char **argv)
   bool merge = false;
   // invert off-diagonal of L-factor
   bool invert_offdiag = false;
+  // store U in CSR, or CSC
+  bool u_in_csr = true;
   // parameters for SuperLU (only affects factorization)
   int panel_size = sp_ienv(1);
   int relax_size = sp_ienv(2);
+  // verbose
+  bool verbose = true;
 
   if(argc == 1)
   {
@@ -662,6 +675,10 @@ int main(int argc, char **argv)
       filename = argv[++i];
       continue;
     }
+    if((strcmp(argv[i],"--quiet")==0)) {
+      verbose = false;
+      continue;
+    }
     if((strcmp(argv[i],"--loop")==0)) {
       loop = atoi(argv[++i]);
       continue;
@@ -684,6 +701,10 @@ int main(int argc, char **argv)
     }
     if((strcmp(argv[i],"--invert-offdiag")==0)) {
       invert_offdiag = true;
+      continue;
+    }
+    if((strcmp(argv[i],"--u-in-csc")==0)) {
+      u_in_csr = false;
       continue;
     }
     if((strcmp(argv[i],"--panel-size")==0)) {
@@ -709,8 +730,8 @@ int main(int argc, char **argv)
   {
     std::cout << " > supernode_size_unblocked: " << sup_size_unblocked << std::endl;
     std::cout << " > supernode_size_blocked:   " << sup_size_blocked << std::endl;
-    int total_errors = test_sptrsv_perf<double>(tests, filename, metis, merge, invert_offdiag, panel_size,
-                                                relax_size, sup_size_unblocked, sup_size_blocked, loop);
+    int total_errors = test_sptrsv_perf<double>(tests, verbose, filename, metis, merge, invert_offdiag, u_in_csr,
+                                                panel_size, relax_size, sup_size_unblocked, sup_size_blocked, loop);
     if(total_errors == 0)
       std::cout << "Kokkos::SPTRSV Test: Passed" << std::endl << std::endl;
     else

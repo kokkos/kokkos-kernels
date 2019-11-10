@@ -86,6 +86,7 @@ graph_t read_superlu_graphL(bool cusparse, bool merge, SuperMatrix *L) {
 
 
 /* ========================================================================================= */
+// read SuperLU U factor into CSR
 template <typename graph_t>
 graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
@@ -136,6 +137,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
     }
 
     /* the off-diagonal blocks */
+    // TODO: should take unions of nonzero columns per block row
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
         int irow = rowindU[i];
@@ -164,7 +166,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
   cols_view_t column_view ("colmap_view", nnzA);
   host_cols_view_t hc = Kokkos::create_mirror_view (column_view);
 
-  int *sup = new int[nsuper];
+  int *sup  = new int[nsuper];
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
@@ -182,7 +184,154 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
     }
 
     /* the off-diagonal "sparse" blocks */
+    int nsup = 0;
     // let me first find off-diagonal supernodal blocks..
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ) {
+        int irow = rowindU[i];
+        if (check[map[irow]] == 0) {
+          check[map[irow]] = 1;
+          sup[nsup] = map[irow];
+          nsup ++;
+        }
+      }
+    }
+    if (nsup > 0) {
+      for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+        // move up all the row pointers for all the supernodal blocks
+        // (only nonzero columns)
+        // TODO: should take unions of nonzero columns per block row
+        for (int i = 0; i < nsup; i++) {
+          for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
+            hc(hr(ii)) = jcol;
+            hr(ii) ++;
+          }
+        }
+      }
+    }
+    // reset check
+    for (int i = 0; i < nsup; i++) {
+      check[sup[i]] = 0;
+    }
+  }
+  delete[] sup;
+  delete[] check;
+
+  // fix hr
+  for (int i = n; i >= 1; i--) {
+    hr(i) = hr(i-1);
+  }
+  hr(0) = 0;
+  std::cout << "    * Matrix size = " << n << std::endl;
+  std::cout << "    * Total nnz   = " << hr (n) << std::endl;
+  std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+
+  // deepcopy
+  Kokkos::deep_copy (rowmap_view, hr);
+  Kokkos::deep_copy (column_view, hc);
+
+  // create crsgraph
+  graph_t static_graph (column_view, rowmap_view);
+  return static_graph;
+}
+
+
+/* ========================================================================================= */
+// read SuperLU U factor into CSC
+template <typename graph_t>
+graph_t read_superlu_graphU_CSC(SuperMatrix *L,  SuperMatrix *U) {
+
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename cols_view_t::HostMirror            host_cols_view_t;
+
+  SCformat *Lstore = (SCformat*)(L->Store);
+  NCformat *Ustore = (NCformat*)(U->Store);
+
+  /* create a map from row id to supernode id */
+  int n = L->nrow;
+  int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
+  int *nb = Lstore->sup_to_col;
+  int *colptrU = Ustore->colptr;
+  int *rowindU = Ustore->rowind;
+
+  int *map = new int[n];
+  int supid = 0;
+  for (int k = 0; k < nsuper; k++) {
+    int j1 = nb[k];
+    int j2 = nb[k+1];
+    for (int j = j1; j < j2; j++) {
+        map[j] = supid;
+    }
+    supid ++;
+  }
+
+  /* count number of nonzeros in each row */
+  row_map_view_t rowmap_view ("rowmap_view", n+1);
+  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  for (int j = 0; j < n; j++) {
+    hr (j) = 0;
+  }
+
+  int *check = new int[nsuper];
+  int *sup = new int[nsuper];
+  for (int k = 0; k < nsuper; k++) {
+    check[k] = 0;
+  }
+  for (int k = nsuper-1; k >= 0; k--) {
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    /* the diagonal block */
+    for (int j = 0; j < nscol; j++) {
+      hr (j1+j + 1) += nscol;
+    }
+
+    /* the off-diagonal blocks */
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+        int irow = rowindU[i];
+        supid = map[irow];
+        if (check[supid] == 0) {
+          int nsrow = nb[supid+1] - nb[supid];
+          for (int jj = j1; jj < j1 + nscol; jj++) {
+            hr (jj + 1) += nsrow;
+          }
+          check[supid] = 1;
+        }
+      }
+    }
+    // reset check
+    for (int i = 0; i < nsuper; i++ ) {
+      check[i] = 0;
+    }
+  }
+
+  // convert to the offset for each row
+  for (int j = 1; j <= n; j++) {
+    hr (j) += hr (j-1);
+  }
+
+  /* Upper-triangular matrix */
+  int nnzA = hr (n);
+  cols_view_t column_view ("colmap_view", nnzA);
+  host_cols_view_t hc = Kokkos::create_mirror_view (column_view);
+
+  for (int k = 0; k < nsuper; k++) {
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    /* the diagonal "dense" block */
+    for (int j = 0; j < nscol; j++) {
+      for (int i = 0; i < nscol; i++) {
+        hc(hr(j1 + j) + i) = j1 + i;
+      }
+      hr (j1 + j) += nscol;
+    }
+
+    /* the off-diagonal "sparse" blocks */
+    // let me first find off-diagonal supernodal blocks..
+    // TODO: do we really need to do it by supernodal blocks? Or, just take union of non-empty rows?
     int nsup = 0;
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
@@ -198,8 +347,8 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
       // move up all the row pointers for all the supernodal blocks
       for (int i = 0; i < nsup; i++) {
         for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
-          hc(hr(ii)) = jcol;
-          hr(ii) ++;
+          hc(hr(jcol)) = ii;
+          hr(jcol) ++;
         }
       }
     }
@@ -212,8 +361,8 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
   delete[] check;
 
   // fix hr
-  for (int i = n; i >= 1; i--) {
-    hr(i) = hr(i-1);
+  for (int j = n; j >= 1; j--) {
+    hr(j) = hr(j-1);
   }
   hr(0) = 0;
   std::cout << "    * Matrix size = " << n << std::endl;
@@ -262,6 +411,7 @@ crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool 
 
 
 /* ========================================================================================= */
+// store numerical values of SuperLU U-factor into CSR
 template <typename crsmat_t, typename graph_t>
 crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
@@ -349,16 +499,20 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
         }
       }
     }
-    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
-      // add nonzeros in jcol-th column
-      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
-        int irow = rowindU[i];
-        hv(hr(irow)) = Uval[i];
-      }
-      // move up all the row pointers for all the supernodal blocks
-      for (int i = 0; i < nsup; i++) {
-        for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
-          hr(ii) ++;
+    if (nsup > 0) {
+      for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+        // add nonzeros in jcol-th column
+        // (only nonzero columns)
+        // TODO: should take unions of nonzero columns per block row
+        for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+          int irow = rowindU[i];
+          hv(hr(irow)) = Uval[i];
+        }
+        // move up all the row pointers for all the supernodal blocks
+        for (int i = 0; i < nsup; i++) {
+          for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
+            hr(ii) ++;
+          }
         }
       }
     }
@@ -367,6 +521,149 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
       check[sup[i]] = 0;
     }
   }
+  delete[] sup;
+  delete[] check;
+
+  // fix hr
+  for (int i = n; i >= 1; i--) {
+    hr(i) = hr(i-1);
+  }
+  hr(0) = 0;
+  std::cout << "    * Matrix size = " << n << std::endl;
+  std::cout << "    * Total nnz   = " << hr (n) << std::endl;
+  std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+
+  // deepcopy
+  Kokkos::deep_copy (values_view, hv);
+  // create crs
+  crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
+  return crsmat;
+}
+
+/* ========================================================================================= */
+// store numerical values of SuperLU U-factor into CSC
+template <typename crsmat_t, typename graph_t>
+crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
+                                  SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
+
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename crsmat_t::values_type::non_const_type values_view_t;
+
+  typedef typename values_view_t::value_type scalar_t;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+
+  SCformat *Lstore = (SCformat*)(L->Store);
+  scalar_t *Lx = (scalar_t*)(Lstore->nzval);
+
+  NCformat *Ustore = (NCformat*)(U->Store);
+  scalar_t *Uval = (scalar_t*)(Ustore->nzval);
+
+  int n = L->nrow;
+  int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
+  int *nb = Lstore->sup_to_col;
+  int *mb = Lstore->rowind_colptr;
+  int *colptrL = Lstore->nzval_colptr;
+  int *colptrU = Ustore->colptr;
+  int *rowindU = Ustore->rowind;
+
+  /* create a map from row id to supernode id */
+  int *map = new int[n];
+  int supid = 0;
+  for (int k = 0; k < nsuper; k++)
+  {
+    int j1 = nb[k];
+    int j2 = nb[k+1];
+    for (int j = j1; j < j2; j++) {
+        map[j] = supid;
+    }
+    supid ++;
+  }
+
+  auto rowmap_view = static_graph.row_map;
+  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  Kokkos::deep_copy (hr, rowmap_view);
+
+  /* Upper-triangular matrix */
+  int nnzA = hr (n);
+  values_view_t  values_view ("values_view", nnzA);
+  typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+  int *sup = new int[nsuper];
+  int *off = new int[nsuper];
+  int *check = new int[nsuper];
+  for (int k = 0; k < nsuper; k++) {
+    check[k] = 0;
+  }
+  for (int k = 0; k < nsuper; k++) {
+    int j1 = nb[k];
+    int nscol = nb[k+1] - j1;
+
+    int i1 = mb[j1];
+    int nsrow = mb[j1+1] - i1;
+
+    /* the diagonal "dense" block (!! first !!)*/
+    int psx = colptrL[j1];
+    if (invert_diag) {
+      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
+                     'U', 'N', nscol, &Lx[psx], nsrow);
+    }
+    int nnzD = hr(j1);
+    for (int j = 0; j < nscol; j++) {
+      for (int i = 0; i <= j; i++) {
+        hv(hr(j1 + j) + i) = Lx[psx + i + j*nsrow];
+      }
+      for (int i = j+1; i < nscol; i++) {
+        hv(hr(j1 + j) + i) = STS::zero ();
+      }
+      hr (j1 + j) += nscol;
+    }
+
+    /* the off-diagonal "sparse" blocks (!! second !!) */
+    // let me first find off-diagonal supernodal blocks..
+    // TODO: do we really need to do it by supernodal blocks? Or, just take union of non-empty rows?
+    int nsup = 0;
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+        int irow = rowindU[i];
+        if (check[map[irow]] == 0) {
+          check[map[irow]] = 1;
+          sup[nsup] = map[irow];
+          nsup ++;
+        }
+      }
+    }
+    int offset = 0;
+    for (int i = 0; i < nsup; i++) {
+      off[sup[i]] = offset;
+      offset += nb[sup[i]+1] - nb[sup[i]];
+    }
+    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
+      // add nonzeros in jcol-th column
+      for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
+        int irow = rowindU[i];
+        int id = map[irow];
+        int ioff = off[id] + (irow - nb[id]);
+        hv(hr(jcol) + ioff) = Uval[i];
+      }
+      // move up the pointers for all the supernodal blocks
+      hr(jcol) += offset;
+    }
+
+    if (invert_diag) {
+      if (offset > 0 && invert_offdiag) {
+        cblas_dtrmm (CblasColMajor,
+              CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
+              offset, nscol,
+              STS::one (), &hv(nnzD), nscol+offset,
+                           &hv(nnzD+nscol), nscol+offset);
+      }
+    }
+    // reset check
+    for (int i = 0; i < nsup; i++) {
+      check[sup[i]] = 0;
+    }
+  }
+  delete[] off;
   delete[] sup;
   delete[] check;
 

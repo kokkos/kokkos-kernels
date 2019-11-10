@@ -530,10 +530,17 @@ public:
     if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
         algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
       this->set_invert_offdiagonal (true);
+      if (!lower_tri) {
+        this->set_column_major (true);
+      }
     }
   }
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+  void set_sptrsv_verbose (bool verbose) {
+    this->sptrsvHandle->set_verbose (verbose);
+  }
+
   void set_supernodes (int nsuper, int *supercols, int *etree) {
     this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
   }
@@ -553,18 +560,47 @@ public:
 
   void set_invert_offdiagonal (bool flag) {
     KokkosSparse::Experimental::SPTRSVAlgorithm algm = this->sptrsvHandle->get_algorithm ();
-    if (flag == true || (algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV &&
-                         algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
-      this->sptrsvHandle->set_invert_offdiagonal (flag);
-    } else {
+    if (flag == false && (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                          algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
       std::cout << std::endl
                 << " ** need to invert offdiagonal for SpMV option **"
                 << std::endl << std::endl;
+      return;
     }
+    if (flag == true && (!(this->is_lower_tri ())) && (!(this->is_column_major ()))) {
+      std::cout << std::endl
+                << " ** cannot invert offdiagonal for U in CSR **"
+                << std::endl << std::endl;
+      return;
+    }
+
+    this->sptrsvHandle->set_invert_offdiagonal (flag);
   }
 
   void set_etree (int *etree) {
     this->sptrsvHandle->set_etree (etree);
+  }
+
+
+  void set_column_major (bool col_major) {
+    KokkosSparse::Experimental::SPTRSVAlgorithm algm = this->sptrsvHandle->get_algorithm ();
+    if (col_major == true ||
+       (algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV &&
+        algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
+      this->sptrsvHandle->set_column_major (col_major);
+    } else {
+      std::cout << std::endl
+                << " ** need to CSC for SpMV option **"
+                << std::endl << std::endl;
+    }
+  }
+
+  bool is_lower_tri () {
+    return this->sptrsvHandle->is_lower_tri ();
+  }
+
+  bool is_column_major () {
+    return this->sptrsvHandle->is_column_major ();
   }
 #endif
   void destroy_sptrsv_handle(){

@@ -559,7 +559,9 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
  else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
           thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
   typedef typename TriSolveHandle::size_type size_type;
 
   typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
@@ -640,7 +642,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       check[s] = 0;
     }
 
-    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG);
+    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                    thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
     if (use_dag) {
       for (size_type s = 0; s < nsuper; s++) {
         for (size_type e = 0; e < dag[s][0]; e++) {
@@ -791,17 +794,18 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       signed_integral_t avg_nscol = 0;
       signed_integral_t avg_nsrow = 0;
       for (signed_integral_t task = 0; task < num_leave; task++) {
-        signed_integral_t s = inverse_nodes_grouped_by_level (nsuper - num_done - 1);
+        //signed_integral_t s = inverse_nodes_grouped_by_level (nsuper - (num_done+task) - 1);
+        signed_integral_t s = inverse_nodes_grouped_by_level (nsuper - (num_done + num_leave-1 - task) - 1);
 
-        nodes_grouped_by_level (num_done) = s;
+        nodes_grouped_by_level (num_done+task) = s;
         level_list (s) = level;
-        //printf( " -> level=%d: %d->%d: s=%d\n",level, nsuper-num_done-1, num_done, s );
-        num_done ++;
+        //printf( " -> level=%d: %d->%d: s=%d\n",level, nsuper-(num_done+task)-1, num_done+task, s );
 
         size_type row = supercols[s];
         avg_nsrow += row_map (row+1) - row_map(row);
         avg_nscol += supercols[s+1] - supercols[s];
       }
+      num_done += num_leave;
 
       // average supernodal size at this level
       avg_nscol /= num_leave;
@@ -820,6 +824,10 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     thandle.set_num_levels (num_level);
   }
   // workspace size
+  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+      thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+    max_lwork = thandle.get_nrows ();
+  }
   thandle.set_workspace_size (max_lwork);
   // workspace offset initialized to be zero
   supercols_t work_offset = thandle.get_work_offset ();

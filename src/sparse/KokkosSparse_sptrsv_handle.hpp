@@ -141,6 +141,9 @@ private:
   int vector_size;
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+  // stored either in CSR or CSC
+  bool col_major;
+
   // number of supernodal columns
   signed_integral_t nsuper;
 
@@ -189,6 +192,9 @@ private:
   #if defined(KOKKOS_ENABLE_CUDA)
   cudaStream_t *cuda_streams;
   #endif
+
+  // verbose
+  bool verbose;
 #endif
 
 public:
@@ -211,8 +217,19 @@ public:
     , etree (NULL)
     , sup_size_unblocked (100)
     , sup_size_blocked (200)
+    , verbose (false)
 #endif
-  {}
+  {
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+    if (lower_tri) {
+      // upper-triangular is stored in CSC
+      col_major = true;
+    } else {
+      // upper-triangular is stored in CSR
+      col_major = false;
+    }
+#endif
+  }
 
 #if 0
   SPTRSVHandle ( SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, bool symbolic_complete_ = false ) :
@@ -443,6 +460,7 @@ public:
 
   // specify etree
   void set_etree(int *etree_) {
+    // NOTE: make a copy?
     this->etree = etree_;
   }
 
@@ -496,6 +514,15 @@ public:
     return this->graph;
   }
 
+  // set CSR or CSC format
+  void set_column_major(bool col_major_) {
+    this->col_major = col_major_;
+  }
+
+  bool is_column_major() {
+    return this->col_major;
+  }
+
   // crsmat
   void set_crsmat (crsmat_t crsmat_) {
     this->crsmat = crsmat_;
@@ -506,19 +533,22 @@ public:
   }
 
   // sub graph/matrix
-  void set_subgraphs(graph_t **subgraphs) {
+  void set_subgraphs (graph_t **subgraphs) {
     this->sub_graphs = subgraphs;
   }
 
-  void set_submatrices(crsmat_t **subcrsmats) {
+  void set_submatrices (crsmat_t **subcrsmats) {
     this->sub_crsmats = subcrsmats;
   }
 
-  crsmat_t* get_submatrix(int i) {
+  crsmat_t* get_submatrix (int i) {
     return this->sub_crsmats[i];
   }
 
-
+  // verbose
+  void set_verbose (bool verbose_) {
+    this->verbose = verbose_;
+  }
 
   #if defined(KOKKOS_ENABLE_CUDA)
   // streams
