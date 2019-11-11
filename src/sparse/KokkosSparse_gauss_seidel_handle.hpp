@@ -53,6 +53,24 @@ namespace KokkosSparse{
   enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER};
   enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_BALLOON, CLUSTER_CUTHILL_MCKEE, CLUSTER_DO_NOTHING, NUM_CLUSTERING_ALGORITHMS};
 
+  inline const char* getClusterAlgoName(ClusteringAlgorithm ca)
+  {
+    switch(ca)
+    {
+      case CLUSTER_DEFAULT:
+        return "Default";
+      case CLUSTER_BALLOON:
+        return "Balloon";
+      case CLUSTER_CUTHILL_MCKEE:
+        return "Cuthill-McKee";
+      case CLUSTER_DO_NOTHING:
+        return "No-op";
+      default:
+        throw std::invalid_argument("Invalid clustering algorithm, see enum above.");
+    }
+    return NULL;
+  }
+
   template <class size_type_, class lno_t_, class scalar_t_,
             class ExecutionSpace,
             class TemporaryMemorySpace,

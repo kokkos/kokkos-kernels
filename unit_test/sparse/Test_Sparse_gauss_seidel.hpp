@@ -257,9 +257,10 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename device::execution_space exec_space;
   typedef KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+      exec_space, typename device::memory_space,typename device::memory_space> KernelHandle;
   crsMat_t A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numRows,nnz,row_size_variance, bandwidth);
   //create a randomized RHS vector (b)
   scalar_view_t b("b", numRows);
@@ -271,8 +272,10 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
     }
     Kokkos::deep_copy(b, bHost);
   }
-  for(int algo = 0; algo < (int) KokkosSparse::NUM_CLUSTERING_ALGORITHMS; algo++)
+  const double bnorm = KokkosBlas::nrm2(b);
+  for(int algoCount = 0; algoCount < (int) KokkosSparse::NUM_CLUSTERING_ALGORITHMS; algoCount++)
   {
+    ClusteringAlgorithm algo = (ClusteringAlgorithm) algoCount;
     //create solution vector (x), zero initial guess
     //try a bunch of powers of 2 for cluster sizes, up to about the
     //point where there are very few clusters (8), even though this
@@ -280,13 +283,10 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
     std::vector<lno_t> clusterSizes;
     for(lno_t i = 1; i <= numRows / 8; i <<= 1)
       clusterSizes.push_back(i);
-    const int niters = 100;
+    const int niters = 1;
     for(size_t test = 0; test < clusterSizes.size(); test++)
     {
       auto clusterSize = clusterSizes[test];
-  #ifdef CLUSTER_VERBOSE
-      output << "Testing cluster size = " << clusterSize << '\n';
-  #endif
       KernelHandle kh;
       if(clusterSize == 1)
         kh.create_gs_handle(KokkosSparse::GS_DEFAULT);
@@ -309,22 +309,23 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
       scalar_view_t x(Kokkos::ViewAllocateWithoutInitializing("x"), numRows);
       KokkosSparse::Experimental::symmetric_gauss_seidel_apply
         <KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
-        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, true, false, 1.0, niters);
+        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, true, true, 1.0, niters);
       scalar_view_t res("Ax-b", numRows);
       Kokkos::deep_copy(res, b);
       KokkosSparse::spmv<scalar_t, crsMat_t, scalar_view_t, scalar_t, scalar_view_t>
         ("N", alpha, A, x, beta, res, KokkosSparse::RANK_ONE());
-      double norm = KokkosBlas::nrm2(res);
-      double bnorm = KokkosBlas::nrm2(b);
-      //Sanity check the result - since the input matrix is strictly diagonally dominant,
-      //the residual norm should never be higher than where it started.
-      std::cout << "Residual norm: " << bnorm << " ----> " << norm << " (algo = " << algo << ", clustersize = " << clusterSize << ")\n";
-      EXPECT_TRUE(norm <= bnorm);
+      double scaledNorm = KokkosBlas::nrm2(res) / bnorm;
+      //Sanity check the result. The input matrix is strictly diagonally dominant, so the scaled solution norm (after 1 iteration)
+      //should be nonnegative but also small.
+      EXPECT_TRUE(scaledNorm > 0);
+      EXPECT_TRUE(scaledNorm < 0.05);
   #ifdef CLUSTER_VERBOSE
+      std::cout << "Scaled residual norm: " << (norm / bnorm) << " (algo = " << KokkosSparse::getClusterAlgoName(algo) << ", clustersize = " << clusterSize << ")\n";
       output << "Cluster size " << clusterSize << " apply time: " << timer.seconds() << " s\n";
       output << "Cluster size " << clusterSize << " norm after " << niters << " sweeps: " << norm << '\n';
       output << "Cluster size " << clusterSize << " proportion of residual eliminated: " << 1.0 - (norm / bnorm) << std::endl;
   #endif
+      kh.destroy_gs_handle();
     }
   }
 }
@@ -519,7 +520,4 @@ TEST_F( TestCategory, sparse ## _ ## cluster_sgs ## _ ## SCALAR ## _ ## ORDINAL 
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
-
-
-
 
