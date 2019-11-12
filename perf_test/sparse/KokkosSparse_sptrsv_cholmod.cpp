@@ -448,7 +448,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           auto cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t, graph_t> (cusparse, invert_diag, L, &cm, graph);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
 
-          if (!check_cusparse(Mtx, cholmodMtx, cholmodMtx, perm, perm, tol, loop)) {
+          bool col_majorL = true;
+          bool col_majorU = false;
+          if (!check_cusparse(Mtx, col_majorL, cholmodMtx, col_majorU, cholmodMtx, perm, perm, tol, loop)) {
             num_failed ++;
           }
         }

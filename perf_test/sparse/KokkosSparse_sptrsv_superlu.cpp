@@ -573,7 +573,6 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           // read SuperLU factor on the host (and copy to default host/device)
           bool cusparse = true; // pad diagonal blocks with zeros
           bool invert_diag = false;
-          std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
           timer.reset();
           graph_t graphL;
           crsmat_t superluL;
@@ -584,12 +583,25 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           timer.reset();
           graph_t graphU;
           crsmat_t superluU;
-          graphU = read_superlu_graphU<graph_t> (&L, &U);
-          superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
+          if (u_in_csr) {
+            graphU = read_superlu_graphU<graph_t> (&L, &U);
+            superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
+          } else {
+            graphU = read_superlu_graphU_CSC<graph_t> (&L, &U);
+            superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (invert_diag, invert_offdiag, &L, &U, graphU);
+          }
           std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
           //print_factor_superlu<scalar_t> (nrows, &L, &U, perm_r, perm_c);
 
-          if (!check_cusparse(Mtx, superluL, superluU, perm_r, perm_c, tol, loop)) {
+          // remove zeros in L/U
+          std::cout << "   Compress L-factor: " << std::endl;
+          superluL = remove_zeros_crsmat(superluL);
+          std::cout << "   Compress U-factor: " << std::endl;
+          superluU = remove_zeros_crsmat(superluU);
+
+          bool col_majorL = true;
+          bool col_majorU = !u_in_csr;
+          if (!check_cusparse(Mtx, col_majorL, superluL, col_majorU, superluU, perm_r, perm_c, tol, loop)) {
             num_failed ++;
           }
         }

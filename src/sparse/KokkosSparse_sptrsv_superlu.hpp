@@ -106,8 +106,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
   int *map = new int[n];
   int supid = 0;
-  for (int k = 0; k < nsuper; k++)
-  {
+  for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int j2 = nb[k+1];
     for (int j = j1; j < j2; j++) {

@@ -312,7 +312,8 @@ namespace Experimental {
       for (int i = 0; i <= nsuper; i++) {
         supercols_merged[i] = supercols[i];
       }
-      check_supernode_sizes("Original structure", nrows, nsuper, supercols_merged, graphL_host);
+      check_supernode_sizes("Original L-structure", nrows, nsuper, supercols_merged, graphL_host);
+      check_supernode_sizes("Original U-structure", nrows, nsuper, supercols_merged, graphU_host);
       merge_supernodal_graph<host_graph_t> (nrows, &nsuper_merged, supercols_merged,
                                             col_majorL, graphL_host, col_majorU, graphU_host,
                                             etree_merged);
