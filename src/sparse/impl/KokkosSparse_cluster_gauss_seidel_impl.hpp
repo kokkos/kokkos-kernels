@@ -136,6 +136,9 @@ namespace KokkosSparse{
 
     public:
 
+      struct PSGS_ForwardTag {};
+      struct PSGS_BackwardTag {};
+
       template <typename x_value_array_type, typename y_value_array_type>
       struct PSGS
       {
@@ -153,12 +156,17 @@ namespace KokkosSparse{
         scalar_persistent_work_view_t  _inverse_diagonal;
         nnz_scalar_t                   _omega;
 
+        nnz_lno_t _color_set_begin;
+        nnz_lno_t _color_set_end;
+        bool _forward_direction;
+
         PSGS(const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_, const_scalar_nnz_view_t adj_vals_,
              x_value_array_type Xvector_, y_value_array_type Yvector_,
              nnz_lno_persistent_work_view_t color_adj_,
              nnz_lno_persistent_work_view_t cluster_offsets_, nnz_lno_persistent_work_view_t cluster_verts_, 
              nnz_scalar_t omega_,
-             scalar_persistent_work_view_t inverse_diagonal_):
+             scalar_persistent_work_view_t inverse_diagonal_)
+          :
           _xadj             (xadj_),
           _adj              (adj_),
           _adj_vals         (adj_vals_),
@@ -168,26 +176,46 @@ namespace KokkosSparse{
           _cluster_offsets  (cluster_offsets_),
           _cluster_verts    (cluster_verts_),
           _inverse_diagonal (inverse_diagonal_),
-          _omega            (omega_)
+          _omega            (omega_),
+          _color_set_begin  (0),
+          _color_set_end    (0),
+          _forward_direction(true)
         {}
 
+        KOKKOS_FORCEINLINE_FUNCTION
+        void rowApply(const nnz_lno_t row) const
+        {
+          size_type row_begin = _xadj(row);
+          size_type row_end = _xadj(row + 1);
+          nnz_scalar_t sum = _Yvector(row);
+          for (size_type adjind = row_begin; adjind < row_end; ++adjind)
+          {
+            nnz_lno_t col = _adj(adjind);
+            nnz_scalar_t val = _adj_vals(adjind);
+            sum -= val * _Xvector(col);
+          }
+          _Xvector(row) += _omega * sum * _inverse_diagonal(row);
+        }
+
         KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t ii) const {
+        void operator()(const PSGS_ForwardTag, const nnz_lno_t ii) const {
           //color_adj(ii) is a cluster in the current color set.
-          nnz_lno_t cluster = _color_adj(ii);
+          nnz_lno_t clusterColorsetIndex = _color_set_begin + ii;
+          nnz_lno_t cluster = _color_adj(clusterColorsetIndex);
           for(nnz_lno_t j = _cluster_offsets(cluster); j < _cluster_offsets(cluster + 1); j++)
           {
-            nnz_lno_t row = _cluster_verts(j);
-            size_type row_begin = _xadj(row);
-            size_type row_end = _xadj(row + 1);
-            nnz_scalar_t dotprod = _Yvector(row);
-            for (size_type adjind = row_begin; adjind < row_end; ++adjind)
-            {
-              nnz_lno_t col = _adj(adjind);
-              nnz_scalar_t val = _adj_vals(adjind);
-              dotprod -= val * _Xvector(col);
-            }
-            _Xvector(row) += _omega * dotprod * _inverse_diagonal(row);
+            rowApply(_cluster_verts(j));
+          }
+        }
+
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const PSGS_BackwardTag, const nnz_lno_t ii) const {
+          //color_adj(ii) is a cluster in the current color set.
+          nnz_lno_t clusterColorsetIndex =  _color_set_end - 1 - ii;
+          nnz_lno_t cluster = _color_adj(clusterColorsetIndex);
+          for(nnz_lno_t j = _cluster_offsets(cluster + 1); j > _cluster_offsets(cluster); j--)
+          {
+            rowApply(_cluster_verts(j - 1));
           }
         }
       };
@@ -227,7 +255,6 @@ namespace KokkosSparse{
                   nnz_lno_persistent_work_view_t cluster_verts_,
                   scalar_persistent_work_view_t inverse_diagonal_,
                   nnz_lno_t clusters_per_team_,
-                  nnz_lno_persistent_work_view_t clusterOffsets_, nnz_lno_persistent_work_view_t clusterVerts_, 
                   nnz_scalar_t omega_ = Kokkos::Details::ArithTraits<nnz_scalar_t>::one()) :
           _xadj( xadj_),
           _adj( adj_),
@@ -341,20 +368,6 @@ namespace KokkosSparse{
         have_diagonal_given(true),
         is_symmetric(is_symmetric_)
       {}
-
-      //Functors used for symbolic
-      struct OrderToPermFunctor
-      {
-        OrderToPermFunctor(nnz_lno_persistent_work_view_t& order_, nnz_lno_persistent_work_view_t& perm_)
-          : order(order_), perm(perm_)
-        {}
-        KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
-        {
-          perm[order[i]] = i;
-        }
-        nnz_lno_persistent_work_view_t order;
-        nnz_lno_persistent_work_view_t perm;
-      };
 
       //Functor to swap the numbers of two colors,
       //so that the last cluster has the last color.
@@ -768,8 +781,8 @@ namespace KokkosSparse{
         }
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
-          auto clusterOffsetsHost = Kokkos::create_mirror_view(clusterOffsets);
-          auto clusterVertsHost = Kokkos::create_mirror_view(clusterVerts);
+          auto clusterOffsetsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), clusterOffsets);
+          auto clusterVertsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), clusterVerts);
           puts("Clusters (cluster #, and vertex #s):");
           for(nnz_lno_t i = 0; i < numClusters; i++)
           {
@@ -805,15 +818,15 @@ namespace KokkosSparse{
 #endif
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
         {
-          auto clusterRowmapHost = Kokkos::create_mirror_view(clusterRowmap);
-          auto clusterEntriesHost = Kokkos::create_mirror_view(clusterEntries);
+          auto clusterRowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), clusterRowmap);
+          auto clusterEntriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), clusterEntries);
           puts("Cluster graph (cluster #, and neighbors):");
           for(nnz_lno_t i = 0; i < numClusters; i++)
           {
             printf("%d: ", (int) i);
             for(nnz_lno_t j = clusterRowmapHost(i); j < clusterRowmapHost(i + 1); j++)
             {
-              printf("%d ", (int) clusterEntries(j));
+              printf("%d ", (int) clusterEntriesHost(j));
             }
             putchar('\n');
           }
@@ -857,11 +870,8 @@ namespace KokkosSparse{
         std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
         timer.reset();
 #endif
-        //Get the cluster color sets in CRS (xadj/adj) format.
-        gsHandle->set_num_colors(numColors);
-        //The color xadj (color set begins/ends) lives on host, since
-        //it is only used to determine the apply kernel range.
         auto color_xadj_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), color_xadj);
+        gsHandle->set_num_colors(numColors);
         gsHandle->set_color_xadj(color_xadj_host);
         gsHandle->set_color_adj(color_adj);
         gsHandle->set_cluster_xadj(clusterOffsets);
@@ -896,17 +906,15 @@ namespace KokkosSparse{
         {}
 
         KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t & row_id) const {
+        void operator()(const nnz_lno_t row_id) const {
           size_type row_begin = _xadj(row_id);
           size_type row_end = _xadj(row_id + 1);
-          nnz_lno_t row_size = row_end - row_begin;
-          for(nnz_lno_t col_ind = 0; col_ind < row_size; ++col_ind)
+          for(size_type j = row_begin; j < row_end; j++)
           {
-            size_type nnz_ind = col_ind + row_begin;
-            nnz_lno_t column_id = _adj(nnz_ind);
+            nnz_lno_t column_id = _adj(j);
             if(column_id == row_id)
             {
-              nnz_scalar_t val = _adj_vals(nnz_ind);
+              nnz_scalar_t val = _adj_vals(j);
               _diagonals(row_id) = one / val;
               break;
             }
@@ -1031,8 +1039,6 @@ namespace KokkosSparse{
               gsHandle->get_cluster_xadj(), gsHandle->get_cluster_adj(),
               inverse_diagonal,
               clusters_per_team,
-              gsHandle->get_cluster_xadj(),
-              gsHandle->get_cluster_adj(),
               omega);
 
           this->IterativeTeamPSGS(
@@ -1143,14 +1149,36 @@ namespace KokkosSparse{
           bool apply_forward,
           bool apply_backward)
       {
+        /*
+        std::cout << "Running PSGS.\n";
+        std::cout << "Xvec (output):\n";
+        KokkosKernels::Impl::print_1Dview(gs._Xvector);
+        std::cout << "Yvec (input):\n";
+        KokkosKernels::Impl::print_1Dview(gs._Yvector);
+        std::cout << "Color xadj (host, mapping for clusters):\n";
+        KokkosKernels::Impl::print_1Dview(h_color_xadj);
+        std::cout << "Color adj (device, mapping for clusters):\n";
+        KokkosKernels::Impl::print_1Dview(gs._color_adj);
+        std::cout << "Cluster xadj (device, mapping for vertices):\n";
+        KokkosKernels::Impl::print_1Dview(gs._cluster_offsets);
+        std::cout << "Cluster adj (device, mapping for vertices):\n";
+        KokkosKernels::Impl::print_1Dview(gs._cluster_verts);
+        std::cout << "xadj (device)\n";
+        KokkosKernels::Impl::print_1Dview(gs._xadj);
+        std::cout << "adj (device)\n";
+        KokkosKernels::Impl::print_1Dview(gs._adj);
+        std::cout << "adjvals (device)\n";
+        KokkosKernels::Impl::print_1Dview(gs._adj_vals);
+        */
         if (apply_forward){
-          //std::cout <<  "numColors:" << numColors << std::endl;
           for (color_t i = 0; i < numColors; ++i){
             nnz_lno_t color_index_begin = h_color_xadj(i);
             nnz_lno_t color_index_end = h_color_xadj(i + 1);
-            //std::cout <<  "i:" << i << " color_index_begin:" << color_index_begin << " color_index_end:" << color_index_end << std::endl;
+            gs._color_set_begin = color_index_begin;
+            gs._color_set_end = color_index_end;
             Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::forward",
-                                  my_exec_space (color_index_begin, color_index_end), gs);
+                Kokkos::RangePolicy<MyExecSpace, PSGS_ForwardTag>
+                (0, color_index_end - color_index_begin), gs);
             MyExecSpace().fence();
           }
         }
@@ -1158,8 +1186,11 @@ namespace KokkosSparse{
           for (size_type i = numColors - 1; ; --i){
             nnz_lno_t color_index_begin = h_color_xadj(i);
             nnz_lno_t color_index_end = h_color_xadj(i + 1);
+            gs._color_set_begin = color_index_begin;
+            gs._color_set_end = color_index_end;
             Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::backward",
-                                  my_exec_space (color_index_begin, color_index_end), gs);
+                Kokkos::RangePolicy<MyExecSpace, PSGS_BackwardTag>
+                (0, color_index_end - color_index_begin), gs);
             MyExecSpace().fence();
             if (i == 0){
               break;

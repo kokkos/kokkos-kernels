@@ -309,10 +309,10 @@ namespace KokkosSparse{
                                       scalar_nnz_view_t_ values,
                                       x_scalar_view_t x_lhs_output_vec,
                                       y_scalar_view_t y_rhs_input_vec,
-                                      bool init_zero_x_vector = false,
-                                      bool update_y_vector = true,
-                                      typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                      int numIter = 1){
+                                      bool init_zero_x_vector,
+                                      bool update_y_vector,
+                                      typename KernelHandle::nnz_scalar_t omega,
+                                      int numIter){
 
       static_assert (std::is_same<typename KernelHandle::const_size_type,
                      typename lno_row_view_t_::const_value_type>::value,
@@ -428,10 +428,10 @@ namespace KokkosSparse{
                                             scalar_nnz_view_t_ values,
                                             x_scalar_view_t x_lhs_output_vec,
                                             y_scalar_view_t y_rhs_input_vec,
-                                            bool init_zero_x_vector = false,
-                                            bool update_y_vector = true,
-                                            typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                            int numIter = 1){
+                                            bool init_zero_x_vector,
+                                            bool update_y_vector,
+                                            typename KernelHandle::nnz_scalar_t omega,
+                                            int numIter){
       auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {
@@ -463,10 +463,10 @@ namespace KokkosSparse{
                                           scalar_nnz_view_t_ values,
                                           x_scalar_view_t x_lhs_output_vec,
                                           y_scalar_view_t y_rhs_input_vec,
-                                          bool init_zero_x_vector = false,
-                                          bool update_y_vector = true,
-                                          typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                          int numIter = 1){
+                                          bool init_zero_x_vector,
+                                          bool update_y_vector,
+                                          typename KernelHandle::nnz_scalar_t omega,
+                                          int numIter){
 
       static_assert (std::is_same<typename KernelHandle::const_size_type,
                      typename lno_row_view_t_::const_value_type>::value,
@@ -584,10 +584,10 @@ namespace KokkosSparse{
                                                 scalar_nnz_view_t_ values,
                                                 x_scalar_view_t x_lhs_output_vec,
                                                 y_scalar_view_t y_rhs_input_vec,
-                                                bool init_zero_x_vector = false,
-                                                bool update_y_vector = true,
-                                                typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                                int numIter = 1){
+                                                bool init_zero_x_vector,
+                                                bool update_y_vector,
+                                                typename KernelHandle::nnz_scalar_t omega,
+                                                int numIter){
       auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {
@@ -619,10 +619,10 @@ namespace KokkosSparse{
                                            scalar_nnz_view_t_ values,
                                            x_scalar_view_t x_lhs_output_vec,
                                            y_scalar_view_t y_rhs_input_vec,
-                                           bool init_zero_x_vector = false,
-                                           bool update_y_vector = true,
-                                           typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                           int numIter = 1){
+                                           bool init_zero_x_vector,
+                                           bool update_y_vector,
+                                           typename KernelHandle::nnz_scalar_t omega,
+                                           int numIter){
 
       static_assert (std::is_same<typename KernelHandle::const_size_type,
                      typename lno_row_view_t_::const_value_type>::value,
@@ -737,10 +737,10 @@ namespace KokkosSparse{
                                                  scalar_nnz_view_t_ values,
                                                  x_scalar_view_t x_lhs_output_vec,
                                                  y_scalar_view_t y_rhs_input_vec,
-                                                 bool init_zero_x_vector = false,
-                                                 bool update_y_vector = true,
-                                                 typename KernelHandle::nnz_scalar_t omega = Kokkos::Details::ArithTraits<typename KernelHandle::nnz_scalar_t>::one(),
-                                                 int numIter = 1){
+                                                 bool init_zero_x_vector,
+                                                 bool update_y_vector,
+                                                 typename KernelHandle::nnz_scalar_t omega,
+                                                 int numIter){
       auto gsHandle = handle->get_point_gs_handle();
       if(gsHandle->get_algorithm_type() == GS_CLUSTER)
       {

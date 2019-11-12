@@ -504,12 +504,6 @@ namespace KokkosSparse{
 
     scalar_persistent_work_view_t inverse_diagonal;
 
-    //This is the unchanged input matrix.
-    //It doesn't get passed to apply, so we have to keep a copy.
-    row_lno_persistent_work_view_t xadj;
-    nnz_lno_persistent_work_view_t adj;
-    scalar_persistent_work_view_t adj_vals;
-
     //cluster_xadj and cluster_adj encode the vertices in each cluster
     nnz_lno_persistent_work_view_t cluster_xadj;
     nnz_lno_persistent_work_view_t cluster_adj;
@@ -559,23 +553,13 @@ namespace KokkosSparse{
       return cluster_adj;
     }
 
-    row_lno_persistent_work_view_t get_xadj() const {
-      return this->xadj;
-    }
-    nnz_lno_persistent_work_view_t get_adj() const {
-      return this->adj;
-    }
-    scalar_persistent_work_view_t get_adj_val() const {
-      return this->adj_vals;
-    }
-
     void set_inverse_diagonal(scalar_persistent_work_view_t& inv_diag) {
       this->inverse_diagonal = inv_diag;
     }
 
     scalar_persistent_work_view_t get_inverse_diagonal() const {
       if(!this->is_symbolic_called())
-        throw std::runtime_error("cluster_adj does not exist until after numeric setup.");
+        throw std::runtime_error("inverse diagonal does not exist until after numeric setup.");
       return inverse_diagonal;
     }
     

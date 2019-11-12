@@ -164,7 +164,7 @@ namespace KokkosSparse{
           omega(omega_){}
 
         KOKKOS_INLINE_FUNCTION
-        void operator()(const nnz_lno_t &ii) const {
+        void operator()(const nnz_lno_t ii) const {
           size_type row_begin = _xadj(ii);
           size_type row_end = _xadj(ii + 1);
 
@@ -176,6 +176,7 @@ namespace KokkosSparse{
             sum -= val * _Xvector(colIndex);
           }
           nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
+          //std::cout << "Updating X(" << ii << ") by " << omega * sum * invDiagonalVal << '\n';
           _Xvector(ii) += omega * sum * invDiagonalVal;
         }
       };
@@ -279,7 +280,7 @@ namespace KokkosSparse{
           nnz_scalar_t *all_global_memory = NULL;
 
 
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& ii) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t ii) {
 
 
               Kokkos::parallel_for(
@@ -1459,7 +1460,8 @@ namespace KokkosSparse{
         else {
           this->block_apply(
                             x_lhs_output_vec, y_rhs_input_vec,
-                            init_zero_x_vector, numIter, omega,
+                            init_zero_x_vector, numIter,
+                            omega,
                             apply_forward, apply_backward,
                             update_y_vector);
         }
@@ -1579,8 +1581,24 @@ namespace KokkosSparse{
       void DoPSGS(PSGS &gs, color_t numColors, nnz_lno_persistent_work_host_view_t h_color_xadj,
                   bool apply_forward,
                   bool apply_backward){
+
+        /*
+        std::cout << "Running PSGS.\n";
+        std::cout << "Xvec (output):\n";
+        KokkosKernels::Impl::print_1Dview(gs._Xvector);
+        std::cout << "Yvec (input):\n";
+        KokkosKernels::Impl::print_1Dview(gs._Yvector);
+        std::cout << "Color xadj (host, mapping for clusters):\n";
+        KokkosKernels::Impl::print_1Dview(h_color_xadj);
+        std::cout << "xadj (device)\n";
+        KokkosKernels::Impl::print_1Dview(gs._xadj);
+        std::cout << "adj (device)\n";
+        KokkosKernels::Impl::print_1Dview(gs._adj);
+        std::cout << "adjvals (device)\n";
+        KokkosKernels::Impl::print_1Dview(gs._adj_vals);
+        */
+
         if (apply_forward){
-          //std::cout <<  "numColors:" << numColors << std::endl;
           for (color_t i = 0; i < numColors; ++i){
             nnz_lno_t color_index_begin = h_color_xadj(i);
             nnz_lno_t color_index_end = h_color_xadj(i + 1);

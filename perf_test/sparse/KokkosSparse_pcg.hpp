@@ -222,7 +222,7 @@ void block_pcgsolve(
       timer.reset();
       symmetric_block_gauss_seidel_apply
                   (&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(),block_size, _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
-                  		z, r, true, true, apply_count);
+                  		z, r, true, true, 1.0, apply_count);
       /*
 
       symmetric_gauss_seidel_apply(
@@ -256,7 +256,6 @@ void block_pcgsolve(
     std::cout << "\tprecond_beta:" << precond_beta <<  std::endl;
 
 #endif
-
 
     norm_res = sqrt( old_rdot = r_dot );
     precond_old_rdot = precond_r_dot;
@@ -299,8 +298,9 @@ void pcgsolve(
             ,  const size_t  maximum_iteration = 200
             ,  const double  tolerance = std::numeric_limits<double>::epsilon()
             ,  CGSolveResult * result = 0
-            ,  bool use_sgs = true) {
-
+            ,  bool use_sgs = true
+            ,  int clusterSize = 1)
+{
   using namespace KokkosSparse;
   using namespace KokkosSparse::Experimental;
   typedef typename KernelHandle_t::HandleExecSpace Space;
@@ -349,26 +349,33 @@ void pcgsolve(
   if (use_sgs){
     if (kh.get_gs_handle() == NULL){
       owner_handle = true;
-      kh.create_gs_handle();
+      if(clusterSize == 1)
+        kh.create_gs_handle();
+      else
+        kh.create_gs_handle(KokkosSparse::CLUSTER_BALLOON, clusterSize);
     }
 
     timer.reset();
     //kh.set_verbose(true);
 
+    std::cout << "Setting up preconditioner...";
     gauss_seidel_numeric
       (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);
 
     Space().fence();
+    std::cout << "Done (" << timer.seconds() << "s)\n";
 
     precond_init_time += timer.seconds();
     z = y_vector_t( "pcg::z" , count_total );
     Space().fence();
     timer.reset();
 
+    std::cout << "Applying preconditioner (" << apply_count << " iters) ...";
     symmetric_gauss_seidel_apply
-        (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, true, apply_count);
+        (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, true, 1.0, apply_count);
 
     Space().fence();
+    std::cout << "Done (" << timer.seconds() << "s)\n";
     precond_time += timer.seconds();
     precond_old_rdot = KokkosBlas::dot( r , z );
     Kokkos::deep_copy( p , z );
@@ -382,6 +389,7 @@ void pcgsolve(
 
 #endif
   while (tolerance < norm_res && iteration < maximum_iteration ) {
+    std::cout << "Running CG iteration " << iteration << ", current resnorm = " << norm_res << '\n';
 
 
     timer.reset();
@@ -422,8 +430,8 @@ void pcgsolve(
           count_total, count_total,
           crsMat.graph.row_map,
           crsMat.graph.entries,
-          crsMat.values, z, r, true,
-          apply_count);
+          crsMat.values, z, r, true, true,
+          1.0, apply_count);
 
       Space().fence();
       precond_time += timer.seconds();

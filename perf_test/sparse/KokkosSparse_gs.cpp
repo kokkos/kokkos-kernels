@@ -100,7 +100,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
   std::vector<double> symbolicTimes;
   std::vector<double> numericTimes;
   std::vector<double> applyTimes;
-  std::vector<double> residualEliminated;
+  std::vector<double> scaledRes;
   //the initial residual norm (for x = 0) is bnorm
   double bnorm = KokkosBlas::nrm2(b);
   Kokkos::Timer timer;
@@ -124,11 +124,10 @@ void runGS(string matrixPath, string devName, bool symmetric)
       std::cout << "\n\n***** RUNNING CLUSTER SGS, cluster size = " << clusterSize << "\n";
       //this constructor is for cluster (block) coloring
       //kh.create_gs_handle(KokkosSparse::CLUSTER_CUTHILL_MCKEE, clusterSize);
-      kh.create_gs_handle(KokkosSparse::CLUSTER_DEFAULT, clusterSize);
+      //kh.create_gs_handle(KokkosSparse::CLUSTER_DEFAULT, clusterSize);
       //kh.create_gs_handle(KokkosSparse::CLUSTER_DO_NOTHING, clusterSize);
+      kh.create_gs_handle(KokkosSparse::CLUSTER_BALLOON, clusterSize);
     }
-    //zero out LHS initially
-    KokkosBlas::fill(x, 0);
     timer.reset();
     KokkosSparse::Experimental::gauss_seidel_symbolic//<KernelHandle, lno_view_t, lno_nnz_view_t>
       (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, symmetric);
@@ -142,8 +141,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
     timer.reset();
     //Last two parameters are damping factor (should be 1) and sweeps
     KokkosSparse::Experimental::symmetric_gauss_seidel_apply
-      //<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, scalar_view_t, scalar_view_t>
-      (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, x, b, false, true, 1.0, 5);
+      (&kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values, x, b, true, true, 1.0, 1);
     applyTimes.push_back(timer.seconds());
     std::cout << "\n*** apply time: " << applyTimes.back() << '\n';
     //Now, compute the 2-norm of residual 
@@ -156,7 +154,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
       ("N", alpha, A, x, beta, res);
     double resnorm = KokkosBlas::nrm2(res);
     //note: this still works if the solution diverges
-    residualEliminated.push_back((bnorm - resnorm) / bnorm);
+    scaledRes.push_back(resnorm / bnorm);
     kh.destroy_gs_handle();
   }
   string csvName = "gs_perf_" + devName + ".csv";
@@ -166,7 +164,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
   for(size_t i = 0; i < clusterSizes.size(); i++)
   {
     fprintf(csvDump, "%d,%.5e,%.5e,%.5e,%.5e\n",
-        clusterSizes[i], symbolicTimes[i], numericTimes[i], applyTimes[i], residualEliminated[i]);
+        clusterSizes[i], symbolicTimes[i], numericTimes[i], applyTimes[i], scaledRes[i]);
   }
   fclose(csvDump);
 }
