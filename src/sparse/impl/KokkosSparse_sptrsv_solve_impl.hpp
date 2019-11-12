@@ -862,6 +862,7 @@ struct UpperTriTranSupernodalFunctor
         for (int ii = team_rank; ii < nscol; ii += team_size) {
           Y (ii) = Xj (ii);
         }
+        team.team_barrier();
         KokkosBatched::TeamGemv<member_type,
                                 KokkosBatched::Trans::NoTranspose,
                                 KokkosBatched::Algo::Gemv::Unblocked>
@@ -884,9 +885,10 @@ struct UpperTriTranSupernodalFunctor
       }
       /* scatter vector into Z */
       int ps2 = i1 + nscol;     // offset into rowind 
+      Kokkos::View<scalar_t*, memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::Atomic> > Xatomic(X.data(), X.extent(0));
       for (int ii = team_rank; ii < nsrow2 ; ii += team_size) {
         int i = rowind (ps2 + ii);
-        X (i) -= Z (ii);
+        Xatomic (i) -= Z (ii);
       }
       team.team_barrier();
     }
