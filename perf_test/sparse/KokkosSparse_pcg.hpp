@@ -77,7 +77,6 @@ struct CGSolveResult {
   double precond_init_time;
 };
 
-/*
 template< typename KernelHandle_t,
           typename crsMatrix_t,
           typename y_vector_t,
@@ -97,7 +96,6 @@ void block_pcgsolve(
   using namespace KokkosSparse;
   using namespace KokkosSparse::Experimental;
   typedef typename KernelHandle_t::HandleExecSpace Space;
-
 
   const size_t count_total = point_crsMat.numRows();
 
@@ -145,7 +143,9 @@ void block_pcgsolve(
 
   bool owner_handle = false;
 
-  KernelHandle_t block_kh; block_kh.create_gs_handle(); block_kh.get_gs_handle()->set_block_size(block_size);
+  KernelHandle_t block_kh;
+  block_kh.create_gs_handle();
+  block_kh.get_point_gs_handle()->set_block_size(block_size);
     //block_kh.set_shmem_size(8032);
   if (use_sgs){
     if (kh.get_gs_handle() == NULL){
@@ -172,7 +172,7 @@ void block_pcgsolve(
     timer.reset();
     symmetric_block_gauss_seidel_apply
             (&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(),block_size,  _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
-            		z, r, true, true, apply_count);
+            		z, r, true, true, 1.0, apply_count);
 
     //symmetric_gauss_seidel_apply
     //    (&kh, count_total, count_total, point_crsMat.graph.row_map, point_crsMat.graph.entries, point_crsMat.values, z, r, true, true, apply_count);
@@ -291,7 +291,6 @@ void block_pcgsolve(
     kh.destroy_gs_handle();
   }
 }
-*/
 
 template< typename KernelHandle_t,
           typename crsMatrix_t,
@@ -318,7 +317,7 @@ void pcgsolve(
   static_assert(std::is_same<double, typename KernelHandle_t::nnz_scalar_t>::value,
       "The PCG performance test only works with scalar = double.");
 
-  const int count_total = crsMat.numRows();
+  const nnz_lno_t count_total = crsMat.numRows();
 
   size_t  iteration = 0 ;
   double  iter_time = 0 ;
@@ -368,7 +367,7 @@ void pcgsolve(
     diagHost = Kokkos::View<double*, Kokkos::HostSpace>("Diag for Seq SOR", count_total);
     for(int i = 0; i < count_total; i++)
     {
-      for(size_t j = ptrHost(i); j < ptrHost(i + 1); j++)
+      for(size_type j = ptrHost(i); j < ptrHost(i + 1); j++)
       {
         if(indHost(j) == i)
           diagHost(i) = 1.0 / valHost(j);
