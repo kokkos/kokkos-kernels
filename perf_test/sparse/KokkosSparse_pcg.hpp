@@ -312,7 +312,11 @@ void pcgsolve(
 {
   using namespace KokkosSparse;
   using namespace KokkosSparse::Experimental;
-  typedef typename KernelHandle_t::HandleExecSpace Space;
+  using size_type = typename KernelHandle_t::size_type;
+  using nnz_lno_t = typename KernelHandle_t::nnz_lno_t;
+  using Space = typename KernelHandle_t::HandleExecSpace;
+  static_assert(std::is_same<double, typename KernelHandle_t::nnz_scalar_t>::value,
+      "The PCG performance test only works with scalar = double.");
 
   const int count_total = crsMat.numRows();
 
@@ -405,7 +409,7 @@ void pcgsolve(
       timer.reset();
       for(int sweep = 0; sweep < apply_count; sweep++)
       {
-        KokkosSparse::Impl::Sequential::gaussSeidel<int, size_t, double, double, double>
+        KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type, double, double, double>
           (count_total, // rows = cols of the matrix
            1,           // number of vectors in X and B
            ptrHost.data(), indHost.data(), valHost.data(),
@@ -414,7 +418,7 @@ void pcgsolve(
            diagHost.data(),
            1.0,
            "F");
-        KokkosSparse::Impl::Sequential::gaussSeidel<int, size_t, double, double, double>
+        KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type, double, double, double>
           (count_total, 1,
            ptrHost.data(), indHost.data(), valHost.data(), 
            rhost.data(), count_total,
@@ -495,7 +499,7 @@ void pcgsolve(
         //as with the par_sgs version, init unknown (here, zhost) to 0
         for(int sweep = 0; sweep < apply_count; sweep++)
         {
-          KokkosSparse::Impl::Sequential::gaussSeidel<int, size_t, double, double, double>
+          KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t, size_type, double, double, double>
             (count_total, 1,
              ptrHost.data(), indHost.data(), valHost.data(), 
              rhost.data(), count_total,
@@ -503,7 +507,7 @@ void pcgsolve(
              diagHost.data(),
              1.0,
              "F");
-          KokkosSparse::Impl::Sequential::gaussSeidel<int, size_t, double, double, double>
+          KokkosSparse::Impl::Sequential::gaussSeidel<nnz_lno_t , size_type, double, double, double>
             (count_total, 1,
              ptrHost.data(), indHost.data(), valHost.data(), 
              rhost.data(), count_total,
