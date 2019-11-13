@@ -32,3 +32,8 @@ TRIBITS_ADD_EXECUTABLE(
   sparse_gs
   SOURCES KokkosSparse_gs.cpp
   )
+
+TRIBITS_ADD_EXECUTABLE(
+  sparse_spiluk
+  SOURCES KokkosSparse_spiluk.cpp 
+  )

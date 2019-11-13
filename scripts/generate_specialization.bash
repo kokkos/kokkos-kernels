@@ -31,6 +31,9 @@ ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv 
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv KokkosSparse_spmv_struct KokkosSparse_spmv_struct_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spmv KokkosSparse_spmv_mv_struct KokkosSparse_spmv_struct_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 
+#spiluk
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spiluk_numeric KokkosSparse_spiluk_numeric KokkosSparse_spiluk_numeric_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
+${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function_sparse.bash spiluk_symbolic KokkosSparse_spiluk_symbolic KokkosSparse_spiluk_symbolic_spec.hpp KokkosSparse ${KOKKOSKERNELS_PATH}
 
 #abs
 ${KOKKOSKERNELS_PATH}/scripts/generate_specialization_function.bash abs KokkosBlas1_abs KokkosBlas1_abs_spec.hpp KokkosBlas ${KOKKOSKERNELS_PATH}
