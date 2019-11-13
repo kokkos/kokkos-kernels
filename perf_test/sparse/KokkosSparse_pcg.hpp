@@ -377,14 +377,6 @@ void pcgsolve(
   assert(!(use_par_sgs && use_sequential_sgs));
   assert(use_sgs == (use_par_sgs ^ use_sequential_sgs));
 
-  if(use_sgs)
-  {
-    if(use_par_sgs)
-      std::cout << "Using parallel SGS.\n";
-    if(use_sequential_sgs)
-      std::cout << "Using sequential SGS.\n";
-  }
-
   if(use_sgs) {
     timer.reset();
     z = y_vector_t( "pcg::z" , count_total );

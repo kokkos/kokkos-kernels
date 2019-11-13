@@ -845,8 +845,7 @@ struct BalloonClustering
     std::cout << "Creating roots: " << timer.seconds() << '\n';
     timer.reset();
 #endif
-    std::cout << "Running clustering.\n";
-    double stoppingRMS = sqrt(numClusters * (0.05 * clusterSize) * (0.05 * clusterSize));
+    double stoppingRMS = sqrt(numClusters * (0.02 * clusterSize) * (0.02 * clusterSize));
     double deviation = (double) numClusters * (clusterSize - 1) * (clusterSize - 1);
     int regressions = 0;
     while(true)
@@ -854,10 +853,9 @@ struct BalloonClustering
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, UpdatePressureTag>(0, numRows), funct);
       double iterDeviation = 0;
       Kokkos::parallel_reduce(Kokkos::RangePolicy<MyExecSpace, BalloonTag>(0, numRows), funct, Kokkos::Sum<double>(iterDeviation));
-      std::cout << "Iter " << funct.iter << " imbalance: " << iterDeviation << '\n';
       if(iterDeviation <= stoppingRMS || iterDeviation == deviation)
       {
-        //got within 5% RMS of optimal, or stagnated
+        //got within 2% RMS of optimal, or stagnated
         deviation = iterDeviation;
         break;
       }

@@ -1138,7 +1138,6 @@ namespace KokkosSparse{
           bool apply_backward)
       {
         for (int i = 0; i < num_iteration; ++i){
-          //std::cout << "ier:" << i << std::endl;
           this->DoPSGS(gs, numColors, h_color_xadj, apply_forward, apply_backward);
         }
       }
@@ -1149,27 +1148,6 @@ namespace KokkosSparse{
           bool apply_forward,
           bool apply_backward)
       {
-        /*
-        std::cout << "Running PSGS.\n";
-        std::cout << "Xvec (output):\n";
-        KokkosKernels::Impl::print_1Dview(gs._Xvector);
-        std::cout << "Yvec (input):\n";
-        KokkosKernels::Impl::print_1Dview(gs._Yvector);
-        std::cout << "Color xadj (host, mapping for clusters):\n";
-        KokkosKernels::Impl::print_1Dview(h_color_xadj);
-        std::cout << "Color adj (device, mapping for clusters):\n";
-        KokkosKernels::Impl::print_1Dview(gs._color_adj);
-        std::cout << "Cluster xadj (device, mapping for vertices):\n";
-        KokkosKernels::Impl::print_1Dview(gs._cluster_offsets);
-        std::cout << "Cluster adj (device, mapping for vertices):\n";
-        KokkosKernels::Impl::print_1Dview(gs._cluster_verts);
-        std::cout << "xadj (device)\n";
-        KokkosKernels::Impl::print_1Dview(gs._xadj);
-        std::cout << "adj (device)\n";
-        KokkosKernels::Impl::print_1Dview(gs._adj);
-        std::cout << "adjvals (device)\n";
-        KokkosKernels::Impl::print_1Dview(gs._adj_vals);
-        */
         if (apply_forward){
           for (color_t i = 0; i < numColors; ++i){
             nnz_lno_t color_index_begin = h_color_xadj(i);
