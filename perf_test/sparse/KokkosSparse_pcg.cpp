@@ -86,7 +86,8 @@ vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
 template <typename ExecSpace, typename crsMat_t>
 void run_experiment(
     crsMat_t crsmat,
-    int clusterSize)
+    int clusterSize,
+    bool useSequential)
 {
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
@@ -98,13 +99,10 @@ void run_experiment(
 
   INDEX_TYPE nv = crsmat.numRows();
   scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
-
-  KokkosKernels::Impl::print_1Dview(kok_x_original);
   scalar_view_t kok_b_vector = create_y_vector(crsmat, kok_x_original);
 
   //create X vector
   scalar_view_t kok_x_vector("kok_x_vector", nv);
-
 
   double solve_time = 0;
   const unsigned cg_iteration_limit = 100000;
@@ -135,13 +133,24 @@ void run_experiment(
       , & cg_result
       , true
       , clusterSize
+      , useSequential
   );
   Kokkos::fence();
 
   solve_time = timer1.seconds();
 
+  std::string algoSummary;
+  if(useSequential)
+    algoSummary = "SEQUENTIAL SGS";
+  else
+  {
+    if(clusterSize == 1)
+      algoSummary = "POINT-COLORING SGS";
+    else
+      algoSummary = "CLUSTER-COLORING SGS (CLUSTER SIZE " + std::to_string(clusterSize) + ")";
+  }
 
-  std::cout  << "DEFAULT SOLVE (CLUSTER SIZE = " << clusterSize << "):\n"
+  std::cout  << "DEFAULT SOLVE: " << algoSummary << " PRECONDITIONER"
       << "\n\t(P)CG_NUM_ITER              [" << cg_result.iteration << "]"
       << "\n\tMATVEC_TIME                 [" << cg_result.matvec_time << "]"
       << "\n\tCG_RESIDUAL                 [" << cg_result.norm_res << "]"
@@ -256,6 +265,7 @@ enum { CMD_USE_THREADS = 0
      , CMD_USE_CUDA_DEV
      , CMD_BIN_MTX
      , CMD_CLUSTER_SIZE
+     , CMD_USE_SEQUENTIAL_SGS
      , CMD_ERROR
      , CMD_COUNT };
 
@@ -287,6 +297,9 @@ int main (int argc, char ** argv){
     else if ( 0 == strcasecmp( argv[i] , "--cluster-size" ) ) {
       cmdline[CMD_CLUSTER_SIZE] = atoi(argv[++i]);
     }
+    else if ( 0 == strcasecmp( argv[i] , "--seq-gs" ) ) {
+      cmdline[CMD_USE_SEQUENTIAL_SGS] = 1;
+    }
 
     else if ( 0 == strcasecmp( argv[i] , "--mtx" ) ) {
       mtx_bin_file = argv[++i];
@@ -299,7 +312,7 @@ int main (int argc, char ** argv){
       return 0;
     }
   }
-  //default cluster size is 1 (for point coloring GS)
+  //default cluster size is always 1 (this runs point coloring GS)
   if(cmdline[CMD_CLUSTER_SIZE] == 0)
     cmdline[CMD_CLUSTER_SIZE] = 1;
 
@@ -357,7 +370,7 @@ int main (int argc, char ** argv){
         delete [] adj;
         delete [] ew;
 
-        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE]);
+        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE], cmdline[CMD_USE_SEQUENTIAL_SGS]);
       }
 
       Kokkos::finalize();
@@ -413,7 +426,7 @@ int main (int argc, char ** argv){
         delete [] adj;
         delete [] ew;
 
-        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE]);
+        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE], cmdline[CMD_USE_SEQUENTIAL_SGS]);
       }
       Kokkos::finalize();
     }
@@ -478,7 +491,7 @@ int main (int argc, char ** argv){
         delete [] adj;
         delete [] ew;
 
-        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE]);
+        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE], cmdline[CMD_USE_SEQUENTIAL_SGS]);
       }
       Kokkos::finalize();
     }
