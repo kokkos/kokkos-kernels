@@ -515,7 +515,7 @@ namespace KokkosSparse{
           unsigned h = xorshiftHash(nei);
           for(unsigned i = h; i < h + 2; i++)
           {
-            if(Kokkos::atomic_compare_exchange_strong(&table[i % tableSize()], cluster, nei))
+            if(Kokkos::atomic_compare_exchange_strong<int>(&table[i % tableSize()], cluster, nei))
               return true;
           }
           return false;
