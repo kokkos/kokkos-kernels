@@ -65,10 +65,9 @@ namespace KokkosSparse{
         return "Cuthill-McKee";
       case CLUSTER_DO_NOTHING:
         return "No-op";
-      default:
-        throw std::invalid_argument("Invalid clustering algorithm, see enum above.");
+      default:;
     }
-    return NULL;
+    return "INVALID CLUSTERING ALGORITHM";
   }
 
   template <class size_type_, class lno_t_, class scalar_t_,

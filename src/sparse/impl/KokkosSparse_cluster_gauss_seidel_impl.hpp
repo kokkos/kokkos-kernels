@@ -763,7 +763,6 @@ namespace KokkosSparse{
           case CLUSTER_DEFAULT:
           {
             throw std::logic_error("Logic to choose default clustering algorithm is incorrect");
-            break;
           }
           default:
             throw std::runtime_error("Clustering algo " + std::to_string((int) clusterAlgo) + " is not implemented");

@@ -377,14 +377,10 @@ void pcgsolve(
   auto xHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_vector);
   auto yHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y_vector);
   
-  assert(!(use_par_sgs && use_sequential_sgs));
-  assert(use_sgs == (use_par_sgs ^ use_sequential_sgs));
-
   if(use_sgs) {
     timer.reset();
     z = y_vector_t( "pcg::z" , count_total );
     if (use_par_sgs) {
-      assert(kh.get_gs_handle());
       gauss_seidel_numeric
         (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);
 
