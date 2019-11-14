@@ -270,7 +270,7 @@ IF (KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
   LIST(APPEND SCALAR_LIST "complex<double>")
 ENDIF()
 
-IF (KOKKOSKERNELS_INST_FLOAT)
+IF (KOKKOSKERNELS_INST_COMPLEX_FLOAT)
   LIST(APPEND SCALAR_LIST "complex<float>")
 ENDIF()
 
@@ -288,6 +288,14 @@ KOKKOSKERNELS_ADD_OPTION(
   BOOL
   "Whether to pre instantiate kernels for the view layout LayoutRight.  This option is KokkosKernels_INST_LAYOUTRIGHT=OFF by default.  Disabling this may increase build times."
   )
+
+IF (KOKKOSKERNELS_INST_LAYOUTLEFT)
+  LIST(APPEND LAYOUT_LIST "LayoutLeft")
+ENDIF()
+
+IF (KOKKOSKERNELS_INST_LAYOUTRIGHT)
+  LIST(APPEND LAYOUT_LIST "LayoutRight")
+ENDIF()
 
 # ==================================================================
 # Enable Ordinal Types for ETI
@@ -384,6 +392,7 @@ MESSAGE("   Devices:  ${DEVICE_LIST}")
 MESSAGE("   Scalars:  ${SCALAR_LIST}")
 MESSAGE("   Ordinals: ${ORDINAL_LIST}")
 MESSAGE("   Offsets:  ${OFFSET_LIST}")
+MESSAGE("   Layouts:  ${LAYOUT_LIST}")
 MESSAGE("")
 MESSAGE("KokkosKernels TPLs")
 MESSAGE("   ${TPL_LIST}")
