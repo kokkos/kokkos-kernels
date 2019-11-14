@@ -822,7 +822,6 @@ struct BalloonClustering
   {
     nnz_view_t vertClusters("Vertex cluster labels", numRows);
     //For the sake of completeness, handle the clusterSize = 1 case by generating a trivial (identity) clustering.
-    assert(clusterSize >= 1);
     if(clusterSize == 1)
     {
       Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace>(0, numRows), IotaFunctor<nnz_view_t, nnz_lno_t>(vertClusters));
