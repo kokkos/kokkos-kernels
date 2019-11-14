@@ -56,7 +56,7 @@ INCLUDE(cmake/kokkoskernels_tribits.cmake)
 
 #This will collect imported TPLs we need to export
 #in our config file
-GLOBAL_SET(KOKKOS_TPL_EXPORTS)
+GLOBAL_SET(KOKKOSKERNELS_TPL_EXPORTS)
 
 #
 # Define the package
@@ -395,7 +395,10 @@ MESSAGE("   Offsets:  ${OFFSET_LIST}")
 MESSAGE("   Layouts:  ${LAYOUT_LIST}")
 MESSAGE("")
 MESSAGE("KokkosKernels TPLs")
-MESSAGE("   ${TPL_LIST}")
+FOREACH(TPL ${KOKKOSKERNELS_TPL_LIST})
+  PAD_STRING("${TPL}:" TPL_PADDED 12)
+  MESSAGE("   ${TPL_PADDED} ${${TPL}_FOUND_INFO}")
+ENDFOREACH()
 MESSAGE("=======================")
 MESSAGE("")
 
