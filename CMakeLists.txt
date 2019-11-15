@@ -105,6 +105,28 @@ MACRO(CHECK_KOKKOS_BACKEND BE)
 ENDMACRO(CHECK_KOKKOS_BACKEND)
 
 
+SET(EXEC_SPACES
+  EXECSPACE_CUDA
+  EXECSPACE_OPENMP
+  EXECSPACE_PTHREAD
+  EXECSPACE_SERIAL
+)
+SET(EXECSPACE_CUDA_CPP_TYPE Kokkos::Cuda)
+SET(EXECSPACE_OPENMP_CPP_TYPE Kokkos::OpenMP)
+SET(EXECSPACE_PTHREAD_CPP_TYPE Kokkos::Threads)
+SET(EXECSPACE_SERIAL_CPP_TYPE Kokkos::Serial)
+
+SET(MEM_SPACES
+  MEMSPACE_CUDASPACE
+  MEMSPACE_CUDAUVMSPACE
+  MEMSPACE_HOSTSPACE
+  MEMSPACE_HBWSPACE
+)
+SET(MEMSPACE_CUDASPACE_CPP_TYPE    Kokkos::CudaSpace)
+SET(MEMSPACE_CUDAUVMSPACE_CPP_TYPE Kokkos::CudaUVMSpace)
+SET(MEMSPACE_HOSTSPACE_CPP_TYPE    Kokkos::HostSpace)
+SET(MEMSPACE_HBWSPACE_CPP_TYPE     Kokkos::HBWSpace)
+
 CHECK_KOKKOS_BACKEND(CUDA)
 CHECK_KOKKOS_BACKEND(OPENMP)
 CHECK_KOKKOS_BACKEND(PTHREAD)
@@ -150,6 +172,12 @@ KOKKOSKERNELS_ADD_OPTION(
  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times."
 )
 
+KOKKOSKERNELS_ADD_OPTION(
+ INST_MEMSPACE_HBWSPACE
+ OFF
+ BOOL
+ "Whether to pre instantiate kernels for the memory space Kokkos::HBWSpace."
+)
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_EXECSPACE_OPENMP
@@ -231,6 +259,15 @@ KOKKOSKERNELS_ADD_OPTION(
   "Whether to pre instantiate kernels for the scalar type float.  This option is KokkosKernels_INST_FLOAT=Trilinos_ENABLE_FLOAT by default.  Disabling this may increase build times."
   )
 
+SET(FLOATS
+  FLOAT
+  DOUBLE
+  COMPLEX_FLOAT
+  COMPLEX_DOUBLE)
+SET(DOUBLE_CPP_TYPE "double")
+SET(FLOAT_CPP_TYPE "float")
+SET(COMPLEX_FLOAT_CPP_TYPE "Kokkos::complex<float>")
+SET(COMPLEX_DOUBLE_CPP_TYPE "Kokkos::complex<double>")
 #Just leave the Trilinos logic here alone
 #Outside of Trilinos, let the defaults be always OFF
 IF (KOKKOSKERNELS_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE)
@@ -274,6 +311,11 @@ IF (KOKKOSKERNELS_INST_FLOAT)
   LIST(APPEND SCALAR_LIST "complex<float>")
 ENDIF()
 
+SET(LAYOUTS
+  LAYOUTLEFT
+  LAYOUTRIGHT)
+SET(LAYOUTLEFT_CPP_TYPE Kokkos::LayoutLeft)
+SET(LAYOUTRIGHT_CPP_TYPE Kokkos::LayoutRight)
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_LAYOUTLEFT
@@ -293,6 +335,12 @@ KOKKOSKERNELS_ADD_OPTION(
 # Enable Ordinal Types for ETI
 # ==================================================================
 
+SET(ORDINALS
+  INT
+  INT64_T
+)
+SET(INT_CPP_TYPE int)
+SET(INT64_T_CPP_TYPE int64_t)
 
 SET(KOKKOSKERNELS_INST_ORDINAL_INT_DEFAULT  ON)
 SET(KOKKOSKERNELS_INST_ORDINAL_INT64_T_DEFAULT  OFF)
@@ -326,6 +374,12 @@ ENDIF()
 # ==================================================================
 
 
+SET(OFFSETS
+  INT
+  SIZE_T
+)
+SET(INT_CPP_TYPE int)
+SET(SIZE_T_CPP_TYPE size_t)
 SET(KOKKOSKERNELS_INST_OFFSET_SIZE_T_DEFAULT  ON)
 SET(KOKKOSKERNELS_INST_OFFSET_INT_DEFAULT  ON)
 #GLOBAL_SET(KokkosKernels_INST_OFFSET_INT64_T_DEFAULT  OFF)
