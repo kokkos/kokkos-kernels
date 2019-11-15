@@ -263,6 +263,7 @@ namespace KokkosSparse{
           _Yvector(Yvector_),
           _color_set_begin(color_set_begin_),
           _color_set_end(color_set_end_),
+          _color_adj(color_adj_),
           _cluster_offsets(cluster_offsets_),
           _cluster_verts(cluster_verts_),
           _clusters_per_team(clusters_per_team_),
@@ -869,10 +870,11 @@ namespace KokkosSparse{
         std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
         timer.reset();
 #endif
-        auto color_xadj_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), color_xadj);
-        gsHandle->set_num_colors(numColors);
+        nnz_lno_persistent_work_host_view_t color_xadj_host(Kokkos::ViewAllocateWithoutInitializing("Color xadj"), color_xadj.extent(0));
+        Kokkos::deep_copy(color_xadj_host, color_xadj);
         gsHandle->set_color_xadj(color_xadj_host);
         gsHandle->set_color_adj(color_adj);
+        gsHandle->set_num_colors(numColors);
         gsHandle->set_cluster_xadj(clusterOffsets);
         gsHandle->set_cluster_adj(clusterVerts);
         gsHandle->set_call_symbolic(true);
@@ -1050,7 +1052,8 @@ namespace KokkosSparse{
               apply_forward,
               apply_backward);
         }
-        else{
+        else
+        {
           PSGS<x_value_array_type, y_value_array_type> gs(
               this->row_map, this->entries, this->values,
               x_lhs_output_vec, y_rhs_input_vec,
@@ -1101,7 +1104,7 @@ namespace KokkosSparse{
             gs._color_set_begin = color_index_begin;
             gs._color_set_end = color_index_end;
             Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
-                                 team_policy_t((overall_work + 1) / team_size, team_size, vec_size),
+                                 team_policy_t((overall_work + gs._clusters_per_team - 1) / gs._clusters_per_team, team_size, vec_size),
                                  gs);
             MyExecSpace().fence();
           }
@@ -1117,7 +1120,7 @@ namespace KokkosSparse{
               gs._color_set_begin = color_index_begin;
               gs._color_set_end = color_index_end;
               Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
-                                   team_policy_t((overall_work + team_size - 1) / team_size, team_size, vec_size),
+                                   team_policy_t((overall_work + gs._clusters_per_team - 1) / gs._clusters_per_team, team_size, vec_size),
                                    gs);
               MyExecSpace().fence();
               if (i == 0){
