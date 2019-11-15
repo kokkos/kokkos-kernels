@@ -187,14 +187,17 @@ namespace KokkosSparse{
         {
           size_type row_begin = _xadj(row);
           size_type row_end = _xadj(row + 1);
-          nnz_scalar_t sum = _Yvector(row);
-          for (size_type adjind = row_begin; adjind < row_end; ++adjind)
+          for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++)
           {
-            nnz_lno_t col = _adj(adjind);
-            nnz_scalar_t val = _adj_vals(adjind);
-            sum -= val * _Xvector(col);
+            nnz_scalar_t sum = _Yvector.access(row, vec);
+            for (size_type adjind = row_begin; adjind < row_end; ++adjind)
+            {
+              nnz_lno_t col = _adj(adjind);
+              nnz_scalar_t val = _adj_vals(adjind);
+              sum -= val * _Xvector.access(col, vec);
+            }
+            _Xvector.access(row, vec) += _omega * sum * _inverse_diagonal(row);
           }
-          _Xvector(row) += _omega * sum * _inverse_diagonal(row);
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -287,19 +290,22 @@ namespace KokkosSparse{
                 nnz_lno_t row = _cluster_verts(j);
                 size_type row_begin = _xadj(row);
                 size_type row_end = _xadj(row + 1);
-                nnz_scalar_t dotprod = 0;
-                Kokkos::parallel_reduce(
-                  Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
-                  [&] (size_type i, nnz_scalar_t& lsum)
-                  {
-                    size_type adjind = i + row_begin;
-                    nnz_lno_t colIndex = _adj(adjind);
-                    nnz_scalar_t val = _adj_vals(adjind);
-                    lsum += val * _Xvector(colIndex);
-                  }, dotprod);
-                Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-                    _Xvector(row) += _omega * (_Yvector(row) - dotprod) * _inverse_diagonal(row);
-                  });
+                for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++)
+                {
+                  nnz_scalar_t dotprod = 0;
+                  Kokkos::parallel_reduce(
+                    Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
+                    [&] (size_type i, nnz_scalar_t& lsum)
+                    {
+                      size_type adjind = i + row_begin;
+                      nnz_lno_t colIndex = _adj(adjind);
+                      nnz_scalar_t val = _adj_vals(adjind);
+                      lsum += val * _Xvector.access(colIndex, vec);
+                    }, dotprod);
+                  Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+                      _Xvector.access(row, vec) += _omega * (_Yvector.access(row, vec) - dotprod) * _inverse_diagonal(row);
+                    });
+                }
               }
             });
         }

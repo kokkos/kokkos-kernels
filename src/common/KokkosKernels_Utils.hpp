@@ -938,10 +938,12 @@ struct PermuteVector{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const idx &ii) const {
-
     idx mapping = ii;
-    if (ii < mapping_size) mapping = old_to_new_mapping[ii];
-    new_vector[mapping] = old_vector[ii];
+    if (ii < mapping_size)
+      mapping = old_to_new_mapping[ii];
+    for (idx j = 0; j < (idx) new_vector.extent(1); j++) {
+      new_vector.access(mapping, j) = old_vector.access(ii, j);
+    }
   }
 };
 
@@ -980,10 +982,12 @@ struct PermuteBlockVector{
   void operator()(const idx &ii) const {
 
     idx mapping = ii;
-    if (ii < mapping_size) mapping = old_to_new_mapping[ii];
-
-    for (int i = 0; i < block_size; ++i){
-    	new_vector[mapping*block_size + i] = old_vector[ii * block_size + i];
+    if (ii < mapping_size)
+      mapping = old_to_new_mapping[ii];
+    for (idx j = 0; j < (idx) new_vector.extent(1); j++) {
+      for (int i = 0; i < block_size; ++i){
+        new_vector.access(mapping*block_size + i, j) = old_vector.access(ii * block_size + i, j);
+      }
     }
   }
 };

@@ -56,6 +56,9 @@
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 
+//FOR DEBUGGING
+#include "KokkosBlas1_nrm2.hpp"
+
 namespace KokkosSparse{
   namespace Impl{
 
@@ -96,6 +99,7 @@ namespace KokkosSparse{
       typedef typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t; //Host view type
 
       typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
+      typedef typename HandleType::scalar_persistent_work_view2d_t scalar_persistent_work_view2d_t;
       typedef typename HandleType::scalar_persistent_work_view_t scalar_persistent_work_view_t;
 
       typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
@@ -145,15 +149,15 @@ namespace KokkosSparse{
         nnz_lno_persistent_work_view_t _adj; // CSR storage of the graph.
         scalar_persistent_work_view_t _adj_vals; // CSR storage of the graph.
 
-        scalar_persistent_work_view_t _Xvector /*output*/;
-        scalar_persistent_work_view_t _Yvector;
+        scalar_persistent_work_view2d_t _Xvector /*output*/;
+        scalar_persistent_work_view2d_t _Yvector;
 
         scalar_persistent_work_view_t _permuted_inverse_diagonal;
 
         nnz_scalar_t omega;
 
         PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
-             scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_, nnz_lno_persistent_work_view_t color_adj_,
+             scalar_persistent_work_view2d_t Xvector_, scalar_persistent_work_view2d_t Yvector_, nnz_lno_persistent_work_view_t color_adj_,
              nnz_scalar_t omega_,
              scalar_persistent_work_view_t permuted_inverse_diagonal_):
           _xadj( xadj_),
@@ -168,16 +172,17 @@ namespace KokkosSparse{
           size_type row_begin = _xadj(ii);
           size_type row_end = _xadj(ii + 1);
 
-          nnz_scalar_t sum = _Yvector(ii);
+          for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++){
+            nnz_scalar_t sum = _Yvector(ii, vec);
 
-          for (size_type adjind = row_begin; adjind < row_end; ++adjind){
-            nnz_lno_t colIndex = _adj(adjind);
-            nnz_scalar_t val = _adj_vals(adjind);
-            sum -= val * _Xvector(colIndex);
+            for (size_type adjind = row_begin; adjind < row_end; ++adjind){
+              nnz_lno_t colIndex = _adj(adjind);
+              nnz_scalar_t val = _adj_vals(adjind);
+              sum -= val * _Xvector(colIndex, vec);
+            }
+            nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
+            _Xvector(ii, vec) += omega * sum * invDiagonalVal;
           }
-          nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
-          //std::cout << "Updating X(" << ii << ") by " << omega * sum * invDiagonalVal << '\n';
-          _Xvector(ii) += omega * sum * invDiagonalVal;
         }
       };
 
@@ -187,8 +192,8 @@ namespace KokkosSparse{
         nnz_lno_persistent_work_view_t _adj; // CSR storage of the graph.
         scalar_persistent_work_view_t _adj_vals; // CSR storage of the graph.
 
-        scalar_persistent_work_view_t _Xvector /*output*/;
-        scalar_persistent_work_view_t _Yvector;
+        scalar_persistent_work_view2d_t _Xvector /*output*/;
+        scalar_persistent_work_view2d_t _Yvector;
         nnz_lno_t _color_set_begin;
         nnz_lno_t _color_set_end;
 
@@ -207,7 +212,7 @@ namespace KokkosSparse{
         nnz_scalar_t omega;
 
         Team_PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
-                  scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_,
+                  scalar_persistent_work_view2d_t Xvector_, scalar_persistent_work_view2d_t Yvector_,
                   nnz_lno_t color_set_begin, nnz_lno_t color_set_end,
                   scalar_persistent_work_view_t permuted_inverse_diagonal_,
                   pool_memory_space pms,
@@ -245,21 +250,22 @@ namespace KokkosSparse{
           size_type row_begin = _xadj(ii);
           size_type row_end = _xadj(ii + 1);
 
-          nnz_scalar_t product = 0;
-          Kokkos::parallel_reduce(
-                                  Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
-                                  [&] (size_type i, nnz_scalar_t & valueToUpdate) {
-                                    size_type adjind = i + row_begin;
-                                    nnz_lno_t colIndex = _adj(adjind);
-                                    nnz_scalar_t val = _adj_vals(adjind);
-                                    valueToUpdate += val * _Xvector(colIndex);
-                                  },
-                                  product);
+          for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++){
+            nnz_scalar_t product = 0;
+            Kokkos::parallel_reduce(
+                Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
+                [&] (size_type i, nnz_scalar_t & valueToUpdate) {
+                  size_type adjind = i + row_begin;
+                  nnz_lno_t colIndex = _adj(adjind);
+                  nnz_scalar_t val = _adj_vals(adjind);
+                  valueToUpdate += val * _Xvector(colIndex, vec);
+                }, product);
 
-          Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-              nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
-              _Xvector(ii) += omega * (_Yvector(ii) - product) * invDiagonalVal;
-            });
+            Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+                nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
+                _Xvector(ii, vec) += omega * (_Yvector(ii, vec) - product) * invDiagonalVal;
+              });
+          }
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -292,6 +298,7 @@ namespace KokkosSparse{
               size_type row_begin = _xadj(ii);
               size_type row_end = _xadj(ii + 1);
               nnz_lno_t row_size = row_end - row_begin;
+              nnz_lno_t scalar_row_begin = row_begin * block_size * block_size;
 
               nnz_lno_t l1_val_size = row_size * block_size, l2_val_size = 0;
               //if the current row size is larger than shared memory size,
@@ -307,107 +314,110 @@ namespace KokkosSparse{
                 l1_val_size = num_max_vals_in_l1 * block_size;
                 l2_val_size = (row_size * block_size - l1_val_size);
               }
-              //bring values to l1 vector
-              Kokkos::parallel_for(
-                                   Kokkos::ThreadVectorRange(teamMember, l1_val_size),
-                                   [&] (nnz_lno_t i) {
-                                     size_type adjind = i / block_size + row_begin;
-                                     nnz_lno_t colIndex = _adj[adjind];
+              for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++)
+              {
+                //bring values to l1 vector
+                Kokkos::parallel_for(
+                                     Kokkos::ThreadVectorRange(teamMember, l1_val_size),
+                                     [&] (nnz_lno_t i) {
+                                       size_type adjind = i / block_size + row_begin;
+                                       nnz_lno_t colIndex = _adj(adjind);
 
-                                     if (colIndex == ii){
-                                       diagonal_positions[i % block_size] = i;
-                                     }
-                                     all_shared_memory[i] = _Xvector(colIndex * block_size + i % block_size);
-                                   });
-              //bring values to l2 vector.
-              Kokkos::parallel_for(
-                                   Kokkos::ThreadVectorRange(teamMember, l2_val_size),
-                                   [&] (nnz_lno_t k) {
-                                     nnz_lno_t i = l1_val_size + k;
+                                       if (colIndex == ii){
+                                         diagonal_positions[i % block_size] = i;
+                                       }
+                                       all_shared_memory[i] = _Xvector(colIndex * block_size + i % block_size, vec);
+                                     });
+                //bring values to l2 vector.
+                Kokkos::parallel_for(
+                                     Kokkos::ThreadVectorRange(teamMember, l2_val_size),
+                                     [&] (nnz_lno_t k) {
+                                       nnz_lno_t i = l1_val_size + k;
 
-                                     size_type adjind = i / block_size + row_begin;
-                                     nnz_lno_t colIndex = _adj(adjind);
+                                       size_type adjind = i / block_size + row_begin;
+                                       nnz_lno_t colIndex = _adj(adjind);
 
-                                     if (colIndex == ii){
-                                       diagonal_positions[i % block_size] = i;
-                                     }
-                                     all_global_memory[k] = _Xvector(colIndex * block_size + i % block_size);
-                                   });
+                                       if (colIndex == ii){
+                                         diagonal_positions[i % block_size] = i;
+                                       }
+                                       all_global_memory[k] = _Xvector(colIndex * block_size + i % block_size, vec);
+                                     });
 
-              row_begin = row_begin * block_size * block_size;
-              //sequentially solve in the block.
-              //this respects backward and forward sweeps.
-              for (int m = 0; m < block_size; ++m ){
-                int i = m;
-                if (is_backward) i = block_size - m - 1;
-                size_type current_row_begin = row_begin + i * row_size * block_size;
-                //first reduce l1 dot product.
-                //MD: TODO: if thread dot product is implemented it should be called here.
-                nnz_scalar_t product = 0 ;
-                Kokkos::parallel_reduce(
-                                        Kokkos::ThreadVectorRange(teamMember, l1_val_size),
-                                        [&] (nnz_lno_t colind, nnz_scalar_t & valueToUpdate) {
+                //sequentially solve in the block.
+                //this respects backward and forward sweeps.
+                for (int m = 0; m < block_size; ++m )
+                {
+                  int i = m;
+                  if (is_backward) i = block_size - m - 1;
+                  size_type current_row_begin = scalar_row_begin + i * row_size * block_size;
+                  //first reduce l1 dot product.
+                  //MD: TODO: if thread dot product is implemented it should be called here.
+                  nnz_scalar_t product = 0 ;
+                  Kokkos::parallel_reduce(
+                                          Kokkos::ThreadVectorRange(teamMember, l1_val_size),
+                                          [&] (nnz_lno_t colind, nnz_scalar_t & valueToUpdate) {
+                                            valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
+                                          },
+                                          product);
+                  //l2 dot product.
+                  //MD: TODO: if thread dot product is implemented, it should be called here again.
+                  nnz_scalar_t product2 = 0 ;
+                  Kokkos::parallel_reduce(
+                                          Kokkos::ThreadVectorRange(teamMember, l2_val_size),
+                                          [&] (nnz_lno_t colind2, nnz_scalar_t & valueToUpdate) {
+                                            nnz_lno_t colind = colind2 + l1_val_size;
+                                            valueToUpdate += all_global_memory[colind2] * _adj_vals(current_row_begin + colind);
+                                          },
+                                          product2);
 
-                                          valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
+                  product += product2;
+                  //update the new vector entries.
+                  Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+                      nnz_lno_t block_row_index = ii * block_size + i;
+                      nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(block_row_index);
+                      _Xvector(block_row_index, vec) += omega * (_Yvector(block_row_index, vec) - product) * invDiagonalVal;
 
-                                        },
-                                        product);
-                //l2 dot product.
-                //MD: TODO: if thread dot product is implemented, it should be called here again.
-                nnz_scalar_t product2 = 0 ;
-                Kokkos::parallel_reduce(
-                                        Kokkos::ThreadVectorRange(teamMember, l2_val_size),
-                                        [&] (nnz_lno_t colind2, nnz_scalar_t & valueToUpdate) {
-                                          nnz_lno_t colind = colind2 + l1_val_size;
-                                          valueToUpdate += all_global_memory[colind2] * _adj_vals(current_row_begin + colind);
-                                        },
-                                        product2);
-
-                product += product2;
-                //update the new vector entries.
-                Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-                    nnz_lno_t block_row_index = ii * block_size + i;
-                    nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(block_row_index);
-                    _Xvector(block_row_index) += omega * (_Yvector(block_row_index) - product) * invDiagonalVal;
-
-                    //we need to update the values of the vector entries if they are already brought to shared memory to sync with global memory.
-                    if (diagonal_positions[i] != -1){
-                      if (diagonal_positions[i] < l1_val_size)
-                        all_shared_memory[diagonal_positions[i]] = _Xvector(block_row_index);
-                      else
-                        all_global_memory[diagonal_positions[i] - l1_val_size] = _Xvector(block_row_index);
-                    }
-                  });
-
-
+                      //we need to update the values of the vector entries if they are already brought to shared memory to sync with global memory.
+                      if (diagonal_positions[i] != -1){
+                        if (diagonal_positions[i] < l1_val_size)
+                          all_shared_memory[diagonal_positions[i]] = _Xvector(block_row_index, vec);
+                        else
+                          all_global_memory[diagonal_positions[i] - l1_val_size] = _Xvector(block_row_index, vec);
+                      }
+                    });
+                }
 
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
-                if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
+                if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2))
+                {
+                  std::cout << "In X/Y column " << vec << std::endl;
                   std::cout << "\n\n\nrow:" << ii * block_size + i;
                   std::cout << "\nneighbors:";
-                  for (int z = 0; z < int (row_size); ++z){
+                  for (int z = 0; z < int (row_size); ++z)
+                  {
                     std::cout << _adj(_xadj(ii) + z) << " ";
                   }
-
                   std::cout <<"\n\nrow-0:X -- all-shared-memory:";
-                  for (int z = 0; z < int (row_size * block_size); ++z){
+                  for (int z = 0; z < int (row_size * block_size); ++z)
+                  {
                     std::cout << all_shared_memory[z] << " ";
                   }
                   std::cout << std::endl << "product:" << product << std::endl;
                   std::cout << "diagonal" << _permuted_inverse_diagonal(ii * block_size + i) << std::endl;
-                  std::cout << "_Yvector" << _Yvector(ii * block_size + i) << std::endl;
-
-                  std::cout << std::endl << "block_row_index:" << ii * block_size + i <<  " _Xvector(block_row_index):" << _Xvector(ii * block_size + i) << std::endl;
+                  std::cout << "_Yvector: " << _Yvector(ii * block_size + i, vec) << std::endl;
+                  std::cout << "block_row_index:" << ii * block_size + i <<  " _Xvector(block_row_index): ";
+                  _Xvector(ii * block_size + i, vec) << ' ';
+                  std::cout << std::endl;
                 }
 #endif
               }
               if (row_size > num_max_vals_in_l1)
+              {
                 Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
                     pool.release_chunk(all_global_memory);
                   });
+              }
             });
-
-
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -421,11 +431,8 @@ namespace KokkosSparse{
 
           all_shared_memory += thread_shared_memory_scalar_size * teamMember.team_rank();
 
-
           nnz_lno_t *diagonal_positions = (nnz_lno_t *)all_shared_memory;
           all_shared_memory =  (nnz_scalar_t *) (((nnz_lno_t *)all_shared_memory) + ((block_size / 8) + 1) * 8);
-
-
 
           Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& ii) {
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
@@ -434,84 +441,94 @@ namespace KokkosSparse{
                 });
 #endif
 
-
               Kokkos::parallel_for(
                                    Kokkos::ThreadVectorRange(teamMember, block_size),
                                    [&] (nnz_lno_t i) {
                                      diagonal_positions[i] = -1;
                                    });
 
-              size_type row_begin = _xadj(ii);
-              size_type row_end = _xadj(ii + 1);
-              nnz_lno_t row_size = row_end - row_begin;
+              size_type block_row_begin = _xadj(ii);
+              size_type block_row_end = _xadj(ii + 1);
+              nnz_lno_t block_row_size = block_row_end - block_row_begin;
+              //offset in adj_vals of the first row in this block
+              nnz_lno_t scalar_row_begin = block_row_begin * block_size * block_size;
+              //number of scalars in each row of this block
+              nnz_lno_t scalar_row_size = block_row_size * block_size;
 
               Kokkos::parallel_for(
-                                   Kokkos::ThreadVectorRange(teamMember, row_size * block_size),
-                                   [&] (nnz_lno_t i) {
+                Kokkos::ThreadVectorRange(teamMember, scalar_row_size),
+                [&] (nnz_lno_t i)
+                {
+                  size_type adjind = i / block_size + block_row_begin;
+                  nnz_lno_t colIndex = _adj(adjind);
+                  if (colIndex == ii)
+                  {
+                    diagonal_positions[i % block_size] = i;
+                  }
+                });
 
+              for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++)
+              {
+                Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(teamMember, scalar_row_size),
+                  [&] (nnz_lno_t i)
+                  {
+                    size_type adjind = i / block_size + block_row_begin;
+                    nnz_lno_t colIndex = _adj(adjind);
+                    all_shared_memory[i] = _Xvector(colIndex * block_size + i % block_size, vec);
+                  });
 
-                                     size_type adjind = i / block_size + row_begin;
-                                     nnz_lno_t colIndex = _adj(adjind);
+                for (int m = 0; m < block_size; ++m )
+                {
+                  int i = m;
+                  if (is_backward)
+                  {
+                    i = block_size - m - 1;
+                  }
+                  size_type current_row_begin = scalar_row_begin + i * scalar_row_size;
+                  nnz_scalar_t product = 0;
+                  Kokkos::parallel_reduce(
+                    Kokkos::ThreadVectorRange(teamMember, scalar_row_size),
+                    [&] (nnz_lno_t colind, nnz_scalar_t & valueToUpdate)
+                    {
+                      valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
+                    }, product);
 
-                                     if (colIndex == ii){
-                                       diagonal_positions[i % block_size] = i;
-                                     }
-                                     all_shared_memory[i] = _Xvector(colIndex * block_size + i % block_size);
-
-                                   });
-
-              row_begin = row_begin * block_size * block_size;
-
-              for (int m = 0; m < block_size; ++m ){
-                int i = m;
-                if (is_backward) i = block_size - m - 1;
-                size_type current_row_begin = row_begin + i * row_size * block_size;
-
-                nnz_scalar_t product = 0 ;
-                Kokkos::parallel_reduce(
-                                        Kokkos::ThreadVectorRange(teamMember, row_size * block_size),
-                                        [&] (nnz_lno_t colind, nnz_scalar_t & valueToUpdate) {
-
-                                          valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
-
-                                        },
-                                        product);
-
-
-                Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+                  Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+                  {
                     nnz_lno_t block_row_index = ii * block_size + i;
                     nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(block_row_index);
-                    _Xvector(block_row_index) += omega * (_Yvector(block_row_index) - product) * invDiagonalVal;
+                    _Xvector(block_row_index, vec) += omega * (_Yvector(block_row_index, vec) - product) * invDiagonalVal;
 
-
-                    if (diagonal_positions[i] != -1){
-                      all_shared_memory[diagonal_positions[i]] = _Xvector(block_row_index);
+                    if (diagonal_positions[i] != -1)
+                    {
+                      all_shared_memory[diagonal_positions[i]] = _Xvector(block_row_index, vec);
                     }
-
                   });
 
 #if !defined(__CUDA_ARCH__)
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
-                if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
-                  std::cout << "\n\n\nrow:" << ii * block_size + i;
-                  std::cout << "\nneighbors:";
-                  for (int z = 0; z < int (row_size); ++z){
-                    std::cout << _adj(_xadj(ii) + z) << " ";
-                  }
+                  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
+                    std::cout << "\n\n\nrow:" << ii * block_size + i;
+                    std::cout << "\nneighbors:";
+                    for (nnz_lno_t z = 0; z < block_row_size; ++z){
+                      std::cout << _adj(_xadj(ii) + z) << " ";
+                    }
 
-                  std::cout <<"\n\nrow-0:X -- all-shared-memory:";
-                  for (int z = 0; z < int (row_size * block_size); ++z){
-                    std::cout << all_shared_memory[z] << " ";
-                  }
-                  std::cout << std::endl << "product:" << product << std::endl;
-                  std::cout << "diagonal" << _permuted_inverse_diagonal(ii * block_size + i) << std::endl;
-                  std::cout << "_Yvector" << _Yvector(ii * block_size + i) << std::endl;
+                    std::cout <<"\n\nrow-0:X -- all-shared-memory:";
+                    for (nnz_lno_t z = 0; z < scalar_row_size; ++z){
+                      std::cout << all_shared_memory[z] << " ";
+                    }
+                    std::cout << std::endl << "product:" << product << std::endl;
+                    std::cout << "diagonal" << _permuted_inverse_diagonal(ii * block_size + i) << std::endl;
+                    std::cout << "_Yvector" << _Yvector(ii * block_size + i, vec) << std::endl;
 
-                  std::cout << std::endl << "block_row_index:" << ii * block_size + i <<  " _Xvector(block_row_index):" << _Xvector(ii * block_size + i) << std::endl << std::endl<< std::endl;
+                    std::cout << std::endl << "block_row_index:" << ii * block_size + i <<  " _Xvector(block_row_index):" << _Xvector(ii * block_size + i, vec) << std::endl << std::endl<< std::endl;
+                  }
+#endif
+#endif
+                  //row_begin += row_size * block_size;
                 }
-#endif
-#endif
-                //row_begin += row_size * block_size;
               }
             });
         }
@@ -860,9 +877,6 @@ namespace KokkosSparse{
           gsHandle->set_owner_of_coloring(false);
         }
         gsHandle->set_call_symbolic(true);
-
-        gsHandle->allocate_x_y_vectors(this->num_rows * block_size, this->num_cols * block_size);
-        //std::cout << "all end" << std::endl;
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "ALLOC:" << timer.seconds() << std::endl;
 #endif
@@ -1051,8 +1065,6 @@ namespace KokkosSparse{
                       nnz_scalar_t val = _adj_vals[_val_index];
                       _diagonals[row_id * block_size + r] = one / val;
                       _val_index += row_size * block_size + 1;
-
-                      //std::cout << "row_id * block_size + r:" << row_id * block_size + r << " _diagonals[row_id * block_size + r]:" << _diagonals[row_id * block_size + r] << std::endl;
                     }
                   }
                 });
@@ -1075,12 +1087,12 @@ namespace KokkosSparse{
           const_lno_row_view_t xadj = this->row_map;
           const_lno_nnz_view_t adj = this->entries;
           const_scalar_nnz_view_t adj_vals = this->values;
-
+          
           size_type nnz = adj_vals.extent(0);
 
           row_lno_persistent_work_view_t newxadj_ = gsHandle->get_new_xadj();
-          nnz_lno_persistent_work_view_t old_to_new_map = gsHandle->get_old_to_new_map();
           nnz_lno_persistent_work_view_t newadj_ = gsHandle->get_new_adj();
+          nnz_lno_persistent_work_view_t old_to_new_map = gsHandle->get_old_to_new_map();
 
           nnz_lno_persistent_work_view_t color_adj = gsHandle->get_color_adj();
           scalar_persistent_work_view_t permuted_adj_vals (Kokkos::ViewAllocateWithoutInitializing("newvals_"), nnz );
@@ -1152,7 +1164,7 @@ namespace KokkosSparse{
 
             if (this->handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA || block_size > 1){
               Kokkos::parallel_for("KokkosSparse::GaussSeidel::team_get_matrix_diagonals",
-                                   team_policy_t(num_rows / rows_per_team + 1 , suggested_team_size, suggested_vector_size),
+                                   team_policy_t((num_rows + rows_per_team - 1) / rows_per_team, suggested_team_size, suggested_vector_size),
                                    gmd );
             }
             else {
@@ -1213,8 +1225,8 @@ namespace KokkosSparse{
         nnz_lno_t block_size = gsHandle->get_block_size();
         //nnz_lno_t block_matrix_size = block_size  * block_size ;
 
-        scalar_persistent_work_view_t Permuted_Yvector = gsHandle->get_permuted_y_vector();
-        scalar_persistent_work_view_t Permuted_Xvector = gsHandle->get_permuted_x_vector();
+        auto Permuted_Xvector = gsHandle->get_permuted_x_vector();
+        auto Permuted_Yvector = gsHandle->get_permuted_y_vector();
 
         row_lno_persistent_work_view_t newxadj = gsHandle->get_new_xadj();
         nnz_lno_persistent_work_view_t newadj = gsHandle->get_new_adj();
@@ -1228,7 +1240,7 @@ namespace KokkosSparse{
         if (update_y_vector) {
           KokkosKernels::Impl::permute_block_vector
             <y_value_array_type,
-             scalar_persistent_work_view_t,
+             scalar_persistent_work_view2d_t,
              nnz_lno_persistent_work_view_t, MyExecSpace>(
                                                           num_rows, block_size,
                                                           old_to_new_map,
@@ -1238,11 +1250,11 @@ namespace KokkosSparse{
         }
         MyExecSpace().fence();
         if(init_zero_x_vector) {
-          KokkosKernels::Impl::zero_vector<scalar_persistent_work_view_t, MyExecSpace>(num_cols * block_size, Permuted_Xvector);
+          KokkosKernels::Impl::zero_vector<scalar_persistent_work_view2d_t, MyExecSpace>(num_cols * block_size, Permuted_Xvector);
         }
         else{
           KokkosKernels::Impl::permute_block_vector
-            <x_value_array_type, scalar_persistent_work_view_t, nnz_lno_persistent_work_view_t, MyExecSpace>(
+            <x_value_array_type, scalar_persistent_work_view2d_t, nnz_lno_persistent_work_view_t, MyExecSpace>(
                 num_cols, block_size,
                 old_to_new_map,
                 x_lhs_output_vec,
@@ -1311,7 +1323,7 @@ namespace KokkosSparse{
 
 
         KokkosKernels::Impl::permute_block_vector
-          <scalar_persistent_work_view_t,x_value_array_type,  nnz_lno_persistent_work_view_t, MyExecSpace>(
+          <scalar_persistent_work_view2d_t,x_value_array_type,  nnz_lno_persistent_work_view_t, MyExecSpace>(
                                                                                                            num_cols, block_size,
                                                                                                            color_adj,
                                                                                                            Permuted_Xvector,
@@ -1341,8 +1353,9 @@ namespace KokkosSparse{
                        bool update_y_vector = true)
       {
         auto gsHandle = get_gs_handle();
-        scalar_persistent_work_view_t Permuted_Yvector = gsHandle->get_permuted_y_vector();
-        scalar_persistent_work_view_t Permuted_Xvector = gsHandle->get_permuted_x_vector();
+
+        auto Permuted_Xvector = gsHandle->get_permuted_x_vector();
+        auto Permuted_Yvector = gsHandle->get_permuted_y_vector();
 
         row_lno_persistent_work_view_t newxadj = gsHandle->get_new_xadj();
         nnz_lno_persistent_work_view_t newadj = gsHandle->get_new_adj();
@@ -1356,7 +1369,7 @@ namespace KokkosSparse{
         if (update_y_vector) {
           KokkosKernels::Impl::permute_vector
             <y_value_array_type,
-             scalar_persistent_work_view_t,
+             scalar_persistent_work_view2d_t,
              nnz_lno_persistent_work_view_t, MyExecSpace>(
                  num_rows,
                  old_to_new_map,
@@ -1366,11 +1379,11 @@ namespace KokkosSparse{
         }
         MyExecSpace().fence();
         if(init_zero_x_vector) {
-          KokkosKernels::Impl::zero_vector<scalar_persistent_work_view_t, MyExecSpace>(num_cols, Permuted_Xvector);
+          KokkosKernels::Impl::zero_vector<scalar_persistent_work_view2d_t, MyExecSpace>(num_cols, Permuted_Xvector);
         }
         else {
           KokkosKernels::Impl::permute_vector
-            <x_value_array_type, scalar_persistent_work_view_t, nnz_lno_persistent_work_view_t, MyExecSpace>(
+            <x_value_array_type, scalar_persistent_work_view2d_t, nnz_lno_persistent_work_view_t, MyExecSpace>(
                 num_cols,
                 old_to_new_map,
                 x_lhs_output_vec,
@@ -1417,7 +1430,7 @@ namespace KokkosSparse{
         //Kokkos::parallel_for( my_exec_space(0,nr), PermuteVector(x_lhs_output_vec, Permuted_Xvector, color_adj));
 
         KokkosKernels::Impl::permute_vector
-          <scalar_persistent_work_view_t,x_value_array_type, nnz_lno_persistent_work_view_t, MyExecSpace>(
+          <scalar_persistent_work_view2d_t, x_value_array_type, nnz_lno_persistent_work_view_t, MyExecSpace>(
               num_cols,
               color_adj,
               Permuted_Xvector,
@@ -1448,7 +1461,10 @@ namespace KokkosSparse{
         if (gsHandle->is_numeric_called() == false){
           this->initialize_numeric();
         }
+        //make sure x and y have been allocated with the correct dimensions
         nnz_lno_t block_size = gsHandle->get_block_size();
+        gsHandle->allocate_x_y_vectors(this->num_rows * block_size, this->num_cols * block_size,
+            x_lhs_output_vec.extent(1));
         if (block_size == 1){
           this->point_apply(
                             x_lhs_output_vec, y_rhs_input_vec,
@@ -1489,15 +1505,6 @@ namespace KokkosSparse{
         int vector_size = gs.vector_size;
         nnz_lno_t block_size = get_gs_handle()->get_block_size();
 
-        /*
-          size_type nnz = this->values.extent(0);
-          int suggested_vector_size = this->handle->get_suggested_vector_size(num_rows, nnz);
-          int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
-          nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,MyExecSpace::concurrency(), brows);
-          this->handle->get_gs_handle()->vector_team_size(max_allowed_team_size, vector_size, teamSizeMax, num_rows, nnz);
-        */
-
-
         if (apply_forward){
           gs.is_backward = false;
 
@@ -1513,13 +1520,11 @@ namespace KokkosSparse{
                                    team_policy_t(overall_work / team_row_chunk_size + 1 , suggested_team_size, vector_size),
                                    gs );
             } else if (gs.num_max_vals_in_l2 == 0){
-              //if (i == 0)std::cout << "block_team" << std::endl;
               Kokkos::parallel_for("KokkosSparse::GaussSeidel::BLOCK_Team_PSGS::forward",
                                    block_team_fill_policy_t(overall_work / team_row_chunk_size + 1 , suggested_team_size, vector_size),
                                    gs );
             }
             else {
-              //if (i == 0)    std::cout << "big block_team" << std::endl;
               Kokkos::parallel_for("KokkosSparse::GaussSeidel::BIGBLOCK_Team_PSGS::forward",
                                    bigblock_team_fill_policy_t(overall_work / team_row_chunk_size + 1 , suggested_team_size, vector_size),
                                    gs );
@@ -1543,15 +1548,11 @@ namespace KokkosSparse{
                                      gs );
               }
               else if ( gs.num_max_vals_in_l2 == 0){
-                //if (i == 0) std::cout << "block_team backward" << std::endl;
-
                 Kokkos::parallel_for("KokkosSparse::GaussSeidel::BLOCK_Team_PSGS::backward",
                                      block_team_fill_policy_t(numberOfTeams / team_row_chunk_size + 1 , suggested_team_size, vector_size),
                                      gs );
               }
               else {
-                //if (i == 0)               std::cout << "big block_team backward" << std::endl;
-
                 Kokkos::parallel_for("KokkosSparse::GaussSeidel::BIGBLOCK_Team_PSGS::backward",
                                      bigblock_team_fill_policy_t(numberOfTeams / team_row_chunk_size + 1 , suggested_team_size, vector_size),
                                      gs );
@@ -1573,7 +1574,6 @@ namespace KokkosSparse{
                          bool apply_backward){
 
         for (int i = 0; i < num_iteration; ++i){
-          //std::cout << "ier:" << i << std::endl;
           this->DoPSGS(gs, numColors, h_color_xadj, apply_forward, apply_backward);
         }
       }
@@ -1581,23 +1581,6 @@ namespace KokkosSparse{
       void DoPSGS(PSGS &gs, color_t numColors, nnz_lno_persistent_work_host_view_t h_color_xadj,
                   bool apply_forward,
                   bool apply_backward){
-
-        /*
-        std::cout << "Running PSGS.\n";
-        std::cout << "Xvec (output):\n";
-        KokkosKernels::Impl::print_1Dview(gs._Xvector);
-        std::cout << "Yvec (input):\n";
-        KokkosKernels::Impl::print_1Dview(gs._Yvector);
-        std::cout << "Color xadj (host, mapping for clusters):\n";
-        KokkosKernels::Impl::print_1Dview(h_color_xadj);
-        std::cout << "xadj (device)\n";
-        KokkosKernels::Impl::print_1Dview(gs._xadj);
-        std::cout << "adj (device)\n";
-        KokkosKernels::Impl::print_1Dview(gs._adj);
-        std::cout << "adjvals (device)\n";
-        KokkosKernels::Impl::print_1Dview(gs._adj_vals);
-        */
-
         if (apply_forward){
           for (color_t i = 0; i < numColors; ++i){
             nnz_lno_t color_index_begin = h_color_xadj(i);

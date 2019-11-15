@@ -41,7 +41,6 @@
 //@HEADER
 */
 
-
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
@@ -93,8 +92,6 @@ int run_gauss_seidel_1(
   typedef KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
-
-
 
   KernelHandle kh;
   kh.set_team_work_size(16);
@@ -162,8 +159,8 @@ scalar_view_t create_x_vector(size_t nv, double max_value = 10.0){
 }
 template <typename crsMat_t, typename vector_t>
 vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
-  vector_t y_vector ("Y VECTOR", crsMat.numRows());
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 1, y_vector);
+  vector_t y_vector ("Y VECTOR", x_vector.extent(0), x_vector.extent(1));
+  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
   return y_vector;
 }
 
@@ -228,7 +225,6 @@ void test_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
             Kokkos::Impl::Timer timer1;
-            //int res =
             run_gauss_seidel_1<crsMat_t, device>(input_mat, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, omega);
             //double gs = timer1.seconds();
 
@@ -312,8 +308,7 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
         (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, true, true, 1.0, niters);
       scalar_view_t res("Ax-b", numRows);
       Kokkos::deep_copy(res, b);
-      KokkosSparse::spmv<scalar_t, crsMat_t, scalar_view_t, scalar_t, scalar_view_t>
-        ("N", alpha, A, x, beta, res, KokkosSparse::RANK_ONE());
+      KokkosSparse::spmv("N", alpha, A, x, beta, res);
       double scaledNorm = KokkosBlas::nrm2(res) / bnorm;
       //Sanity check the result. The input matrix is strictly diagonally dominant, so the scaled solution norm (after 1 iteration)
       //should be nonnegative but also small.
@@ -325,6 +320,80 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
       output << "Cluster size " << clusterSize << " norm after " << niters << " sweeps: " << norm << '\n';
       output << "Cluster size " << clusterSize << " proportion of residual eliminated: " << 1.0 - (norm / bnorm) << std::endl;
   #endif
+      kh.destroy_gs_handle();
+    }
+  }
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_sgs_multiple_rhs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, lno_t numVecs)
+{
+  using namespace Test;
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename graph_t::row_map_type lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename device::execution_space exec_space;
+  typedef KokkosKernelsHandle
+      <size_type, lno_t, scalar_t,
+      exec_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+  crsMat_t A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numRows,nnz,row_size_variance, bandwidth);
+  typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, device> MultiVec;
+  //create a randomized solution (LHS) vector first, and keep a read-only copy of it
+  //will compare the solution to this.
+  MultiVec x(Kokkos::ViewAllocateWithoutInitializing("X (actual)"), numRows, numVecs);
+  auto xHost = Kokkos::create_mirror_view(x);
+  for(lno_t v = 0; v < numVecs; v++) {
+    for(lno_t i = 0; i < numRows; i++) {
+      x(i, v) = (double) rand() / RAND_MAX;
+    }
+  }
+  Kokkos::deep_copy(x, xHost);
+  MultiVec b = Test::create_y_vector(A, x);
+  typename MultiVec::HostMirror xgold(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), numRows, numVecs);
+  Kokkos::deep_copy(xgold, x);
+  for(int algoCount = 0; algoCount < (int) KokkosSparse::NUM_CLUSTERING_ALGORITHMS; algoCount++)
+  {
+    ClusteringAlgorithm algo = (ClusteringAlgorithm) algoCount;
+    //create solution vector (x), zero initial guess
+    //try a bunch of powers of 2 for cluster sizes, up to about the
+    //point where there are very few clusters (8), even though this
+    //is not the intended use case.
+    std::vector<lno_t> clusterSizes;
+    for(lno_t i = 1; i <= numRows / 8; i <<= 1)
+      clusterSizes.push_back(i);
+    const int niters = 1;
+    for(size_t test = 0; test < clusterSizes.size(); test++)
+    {
+      auto clusterSize = clusterSizes[test];
+      KernelHandle kh;
+      if(clusterSize == 1)
+        kh.create_gs_handle(KokkosSparse::GS_DEFAULT);
+      else
+        kh.create_gs_handle((KokkosSparse::ClusteringAlgorithm) algo, clusterSize);
+      //only need to do G-S setup (symbolic/numeric) once
+      KokkosSparse::Experimental::gauss_seidel_symbolic<KernelHandle, lno_view_t, lno_nnz_view_t>
+        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, false);
+      KokkosSparse::Experimental::gauss_seidel_numeric<KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t>
+        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, false);
+      //starting solution will always be the zero vector (arg init_zero_x_vector = true)
+      KokkosSparse::Experimental::symmetric_gauss_seidel_apply
+        <KernelHandle, lno_view_t, lno_nnz_view_t, scalar_view_t, MultiVec, MultiVec>
+        (&kh, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, true, true, 1.0, niters);
+      //compute <x, xgold> / <x, x> for each column - should each be very close to 1
+      Kokkos::deep_copy(xHost, x);
+      for(lno_t i = 0; i < numVecs; i++)
+      {
+        double xSq = 0;
+        double xDotGold = 0;
+        for(lno_t j = 0; j < numRows; j++)
+        {
+          xSq += xHost(j, i) * xHost(j, i);
+          xDotGold += xHost(j, i) * xgold(j, i);
+        }
+        EXPECT_GT(xDotGold / xSq, 0.99);
+      }
       kh.destroy_gs_handle();
     }
   }
@@ -422,6 +491,9 @@ TEST_F( TestCategory, sparse ## _ ## balloon_clustering ## _ ## SCALAR ## _ ## O
 } \
 TEST_F( TestCategory, sparse ## _ ## cluster_sgs ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_cluster_sgs<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
+} \
+TEST_F( TestCategory, sparse ## _ ## sgs_multiple_rhs ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_sgs_multiple_rhs<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 5000 * 30, 200, 10, 3); \
 }
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
