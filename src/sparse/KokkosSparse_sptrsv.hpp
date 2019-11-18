@@ -227,16 +227,24 @@ namespace Experimental {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
   // ---------------------------------------------------------------------
-  template <typename KernelHandle,
-            typename scalar_type,
-            typename host_graph_t,
-            typename graph_t>
+  template <typename scalar_type,
+            typename ordinal_type,
+            typename size_type,
+            typename KernelHandle,
+            typename execution_space      = Kokkos::DefaultExecutionSpace,
+            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
   void sptrsv_symbolic(
       KernelHandle *kernelHandleL,
       KernelHandle *kernelHandleU,
       SuperMatrix &L,
       SuperMatrix &U)
   {
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
+
+    typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
+    typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -410,18 +418,23 @@ namespace Experimental {
 
 
   // ---------------------------------------------------------------------
-  template <typename KernelHandle,
-            typename host_crsmat_t,
-            typename crsmat_t>
+  template <typename scalar_type,
+            typename ordinal_type,
+            typename size_type,
+            typename KernelHandle,
+            typename execution_space      = Kokkos::DefaultExecutionSpace,
+            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
   void sptrsv_compute(
       KernelHandle *kernelHandleL,
       KernelHandle *kernelHandleU,
       SuperMatrix &L,
       SuperMatrix &U)
   {
-    typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
-    typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
 
+    // ===================================================================
+    // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
     auto *handleU = kernelHandleU->get_sptrsv_handle ();
 
@@ -466,9 +479,9 @@ namespace Experimental {
       invert_diag = true;       // TODO: diagonals are always inverted
       bool lower = true;
       bool unit_diag = true;
-      superluL = read_merged_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuper, supercols,
-                                                                           lower, unit_diag, invert_diag, invert_offdiag,
-                                                                           superluL_host, graphL);
+      superluL = read_merged_supernodes<host_crsmat_t, crsmat_t> (nrows, nsuper, supercols,
+                                                                  lower, unit_diag, invert_diag, invert_offdiag,
+                                                                  superluL_host, graphL);
 
       // ========================================================
       // read in the numerical U-values into merged csr
@@ -476,18 +489,18 @@ namespace Experimental {
       invert_offdiag = handleU->get_invert_offdiagonal ();
       invert_diag = false;     // invert after merge
       if (UinCSC) {
-        superluU_host = read_superlu_valuesU_CSC<host_crsmat_t, host_graph_t> (invert_diag, invert_offdiag, &L, &U, graphU_host);
+        superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU_host);
       } else {
         // NOTE: invert-offdiag not supported in CSR format
-        superluU_host = read_superlu_valuesU<host_crsmat_t, host_graph_t> (invert_diag, &L, &U, graphU_host);
+        superluU_host = read_superlu_valuesU<host_crsmat_t> (invert_diag, &L, &U, graphU_host);
       }
       invert_diag = true;      // TODO: diagonals are always inverted
       // 2) re-load U into merged crs
       lower = (UinCSC ? false : true);
       unit_diag = false;
-      superluU = read_merged_supernodes<host_crsmat_t, graph_t, crsmat_t> (nrows, nsuper, supercols,
-                                                                           lower, unit_diag, invert_diag, invert_offdiag,
-                                                                           superluU_host, graphU);
+      superluU = read_merged_supernodes<host_crsmat_t, crsmat_t> (nrows, nsuper, supercols,
+                                                                  lower, unit_diag, invert_diag, invert_offdiag,
+                                                                  superluU_host, graphU);
     } else {
       // ========================================================
       // read in the numerical values into merged csc for L
@@ -498,9 +511,9 @@ namespace Experimental {
       // ========================================================
       // read in the numerical values into merged csc/csr for U
       if (UinCSC) {
-        superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (invert_diag, invert_offdiag, &L, &U, graphU);
+        superluU = read_superlu_valuesU_CSC<crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU);
       } else {
-        superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
+        superluU = read_superlu_valuesU<crsmat_t> (invert_diag, &L, &U, graphU);
       }
     }
 
@@ -510,7 +523,6 @@ namespace Experimental {
 
       // ----------------------------------------------------
       // split the matrix into submatrices for spmv at each level
-
       split_crsmat (kernelHandleL, superluL);
       split_crsmat (kernelHandleU, superluU);
     }
@@ -530,18 +542,28 @@ namespace Experimental {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
   // ---------------------------------------------------------------------
-  template <typename KernelHandle,
-            typename scalar_type,
-            typename host_graph_t,
-            typename graph_t>
+  template <typename scalar_type,
+            typename ordinal_type,
+            typename size_type,
+            typename KernelHandle,
+            typename execution_space      = Kokkos::DefaultExecutionSpace,
+            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
   void sptrsv_symbolic(
-      KernelHandle *handleL,
-      KernelHandle *handleU,
+      KernelHandle *kernelHandleL,
+      KernelHandle *kernelHandleU,
       cholmod_factor *L,
       cholmod_common *cm)
   {
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type>  crsmat_t;
+    typedef typename  crsmat_t::StaticCrsGraphType  graph_t;
+
+    // ===================================================================
+    // load sptrsv-handles
+    auto *handleL = kernelHandleL->get_sptrsv_handle ();
+    auto *handleU = kernelHandleU->get_sptrsv_handle ();
+
     // load options
-    int *etree = handleL->get_sptrsv_handle ()->get_etree ();
+    int *etree = handleL->get_etree ();
     if (etree == NULL) {
       std::cout << std::endl
                 << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
@@ -572,7 +594,7 @@ namespace Experimental {
     // ==============================================
     // symbolic for L-solve on the host
     timer.reset();
-    sptrsv_symbolic (handleL, row_map, entries);
+    sptrsv_symbolic (kernelHandleL, row_map, entries);
     std::cout << " > Lower-TRI: " << std::endl;
     std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
@@ -580,32 +602,43 @@ namespace Experimental {
     // symbolic for L^T-solve on the host
     timer.reset ();
     std::cout << " > Upper-TRI: " << std::endl;
-    sptrsv_symbolic (handleU, row_map, entries);
+    sptrsv_symbolic (kernelHandleU, row_map, entries);
     std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
 
     // ==============================================
     // save graphs
-    handleL->get_sptrsv_handle ()->set_graph (graph);
-    handleU->get_sptrsv_handle ()->set_graph (graph);
+    handleL->set_graph (graph);
+    handleU->set_graph (graph);
 
     // ===================================================================
-    handleU->get_sptrsv_handle ()->set_symbolic_complete ();
-    handleU->get_sptrsv_handle ()->set_symbolic_complete ();
+    handleU->set_symbolic_complete ();
+    handleU->set_symbolic_complete ();
   }
 
 
   // ---------------------------------------------------------------------
-  template <typename KernelHandle,
-            typename host_crsmat_t,
-            typename crsmat_t>
+  template <typename scalar_type,
+            typename ordinal_type,
+            typename size_type,
+            typename KernelHandle,
+            typename execution_space      = Kokkos::DefaultExecutionSpace,
+            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
   void sptrsv_compute(
-      KernelHandle *handleL,
-      KernelHandle *handleU,
+      KernelHandle *kernelHandleL,
+      KernelHandle *kernelHandleU,
       cholmod_factor *L,
       cholmod_common *cm)
   {
-    if (!(handleL->get_sptrsv_handle ()->is_symbolic_complete()) ||
-        !(handleU->get_sptrsv_handle ()->is_symbolic_complete())) {
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
+
+    // ===================================================================
+    // load sptrsv-handles
+    auto *handleL = kernelHandleL->get_sptrsv_handle ();
+    auto *handleU = kernelHandleU->get_sptrsv_handle ();
+
+    if (!(handleL->is_symbolic_complete()) ||
+        !(handleU->is_symbolic_complete())) {
       std::cout << std::endl
                 << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **"
                 << std::endl << std::endl;
@@ -614,26 +647,25 @@ namespace Experimental {
 
     // ==============================================
     // load crsGraph
-    typedef typename crsmat_t::StaticCrsGraphType graph_t;
-    auto graph = handleL->get_sptrsv_handle ()->get_graph ();
+    auto graph = handleL->get_graph ();
 
     // ==============================================
     // read numerical values of L from Cholmod
     bool invert_diag = true;
     bool cusparse = false; // pad diagonal blocks with zeros
-    auto cholmodL = read_cholmod_factor<crsmat_t, host_crsmat_t, graph_t> (cusparse, invert_diag, L, cm, graph);
+    auto cholmodL = read_cholmod_factor<crsmat_t, host_crsmat_t> (cusparse, invert_diag, L, cm, graph);
 
     // ==============================================
     // save crsmat
     bool invert_offdiag = false;
-    handleL->get_sptrsv_handle ()->set_invert_offdiagonal(invert_offdiag);
-    handleU->get_sptrsv_handle ()->set_invert_offdiagonal(invert_offdiag);
-    handleL->get_sptrsv_handle ()->set_crsmat (cholmodL);
-    handleU->get_sptrsv_handle ()->set_crsmat (cholmodL);
+    handleL->set_invert_offdiagonal(invert_offdiag);
+    handleU->set_invert_offdiagonal(invert_offdiag);
+    handleL->set_crsmat (cholmodL);
+    handleU->set_crsmat (cholmodL);
 
     // ===================================================================
-    handleL->get_sptrsv_handle ()->set_numeric_complete ();
-    handleU->get_sptrsv_handle ()->set_numeric_complete ();
+    handleL->set_numeric_complete ();
+    handleU->set_numeric_complete ();
   }
 #endif // KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 

@@ -86,12 +86,12 @@ enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_S
 
 
 /* ========================================================================================= */
-template <typename scalar_t>
+template <typename scalar_type>
 void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, int *perm_c) {
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
 
   SCformat *Lstore = (SCformat*)(L->Store);
-  scalar_t   *Lx = (scalar_t*)(Lstore->nzval);
+  scalar_type   *Lx = (scalar_type*)(Lstore->nzval);
 
   int *nb = Lstore->sup_to_col;
   int *mb = Lstore->rowind_colptr;
@@ -187,8 +187,8 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
 
 
 /* ========================================================================================= */
-template<typename scalar_t>
-void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, int *colind,
+template<typename scalar_type>
+void factor_superlu(bool metis, const int nrow, scalar_type *nzvals, int *rowptr, int *colind,
                     int panel_size, int relax_size, SuperMatrix &L, SuperMatrix &U,
                     int **perm_r, int **perm_c, int **parents) {
 
@@ -306,12 +306,12 @@ void factor_superlu(bool metis, const int nrow, scalar_t *nzvals, int *rowptr, i
 
 
 /* ========================================================================================= */
-template<typename scalar_t>
+template<typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename, bool metis, bool merge, bool invert_offdiag,
                      bool u_in_csr, int panel_size, int relax_size, int sup_size_unblocked, int sup_size_blocked, int loop) {
 
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-  typedef int lno_t;
+  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+  typedef int ordinal_type;
   typedef int size_type;
 
   // Default spaces
@@ -324,26 +324,26 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
   typedef typename host_execution_space::memory_space host_memory_space;
 
   //
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, scalar_type,
     execution_space, memory_space, memory_space > KernelHandle;
 
   //
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t,      execution_space, void, size_type> crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
 
   //
   typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
   typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
 
   //
-  typedef Kokkos::View< scalar_t*, host_memory_space > host_scalar_view_t;
-  typedef Kokkos::View< scalar_t*,      memory_space > scalar_view_t;
+  typedef Kokkos::View< scalar_type*, host_memory_space > host_scalar_view_t;
+  typedef Kokkos::View< scalar_type*,      memory_space > scalar_view_t;
 
-  scalar_t ZERO = scalar_t(0);
-  scalar_t ONE = scalar_t(1);
+  scalar_type ZERO = scalar_type(0);
+  scalar_type ONE = scalar_type(1);
 
   // tolerance
-  scalar_t tol = STS::epsilon();
+  scalar_type tol = STS::epsilon();
 
   int num_failed = 0;
   std::cout << std::endl;
@@ -375,7 +375,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
     // > call SuperLU
     Kokkos::Timer timer;
     std::cout << " > call SuperLU for factorization" << std::endl;
-    factor_superlu<scalar_t> (metis, nrows, values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
+    factor_superlu<scalar_type> (metis, nrows, values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                             panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
     std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
 
@@ -412,12 +412,14 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, false);
             u_in_csr = false;
+            invert_offdiag = true;
           } else {
             //invert_offdiag = true;
             std::cout << " > create handle for SUPERNODAL_SPMV" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, false);
             u_in_csr = false;
+            invert_offdiag = true;
           }
           // verbose (optional, default is false)
           khU.set_sptrsv_verbose (verbose);
@@ -446,12 +448,12 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           // ==============================================
           // do symbolic analysis (preprocssing, e.g., merging supernodes, inverting diagonal/offdiagonal blocks,
           // and scheduling based on graph/dag)
-          sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, L, U);
+          sptrsv_symbolic<scalar_type, ordinal_type, size_type> (&khL, &khU, L, U);
 
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
-          sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, L, U);
+          sptrsv_compute<scalar_type, ordinal_type, size_type> (&khL, &khU, L, U);
 
 
           // ==============================================
@@ -469,7 +471,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           // ==============================================
           // apply forward-pivot to rhs on the host
           host_scalar_view_t tmp_host ("temp", nrows);
-          forwardP_supernode<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+          forwardP_supernode<scalar_type> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
 
           // copy rhs to the default host/device
           scalar_view_t rhs ("rhs", nrows);
@@ -493,7 +495,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           // copy solution to host
           Kokkos::deep_copy(tmp_host, rhs);
           // apply backward-pivot
-          backwardP_supernode<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+          backwardP_supernode<scalar_type>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
 
           // ==============================================
@@ -508,7 +510,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           {
             Kokkos::deep_copy(sol_host, ONE);
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-            forwardP_supernode<scalar_t> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+            forwardP_supernode<scalar_type> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
 
             sptrsv_solve (&khL, rhs);
@@ -516,7 +518,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
 
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
-            backwardP_supernode<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+            backwardP_supernode<scalar_type>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
             if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
               num_failed ++;
@@ -591,7 +593,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
             superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (invert_diag, invert_offdiag, &L, &U, graphU);
           }
           std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
-          //print_factor_superlu<scalar_t> (nrows, &L, &U, perm_r, perm_c);
+          //print_factor_superlu<scalar_type> (nrows, &L, &U, perm_r, perm_c);
 
           // remove zeros in L/U
           std::cout << "   Compress L-factor: " << std::endl;

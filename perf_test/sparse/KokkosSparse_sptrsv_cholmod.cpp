@@ -83,10 +83,10 @@ enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 
 /* ========================================================================================= */
-template<typename scalar_t>
+template<typename scalar_type>
 void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
 
-  scalar_t *Lx;
+  scalar_type *Lx;
   int *mb, *colptr, *rowind, *nb;
   int nsuper, j1, j2, i1, i2, psx, nsrow, nscol, i, ii, jj, s,
       nsrow2, ps2;
@@ -100,7 +100,7 @@ void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
   nb = (int*)(L->super);
   colptr = (int*)(L->px);
   rowind = (int*)(L->s);               // rowind
-  Lx = (scalar_t*)(L->x);                // data
+  Lx = (scalar_type*)(L->x);                // data
 
   printf( " >> print factor(n=%ld, nsuper=%d) <<\n",L->n,nsuper );
   for (s = 0 ; s < nsuper ; s++) {
@@ -142,12 +142,12 @@ template <typename crsmat_t>
 void print_factor_cholmod(crsmat_t *L) {
   typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename crsmat_t::values_type::non_const_type values_view_t;
-  typedef typename values_view_t::value_type scalar_t;
+  typedef typename values_view_t::value_type scalar_type;
 
   graph_t  graph = L->graph;
   const int      *colptr = graph.row_map.data ();
   const int      *rowind = graph.entries.data ();
-  const scalar_t *Lx     = L->values.data ();
+  const scalar_type *Lx     = L->values.data ();
 
   printf( "\n -- print cholmod factor in crs (numCols = %d) --\n",L->numCols () );
   for (int j = 0; j < L->numCols (); j++) {
@@ -159,8 +159,8 @@ void print_factor_cholmod(crsmat_t *L) {
 
 
 /* ========================================================================================= */
-template<typename scalar_t>
-cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_t *nzvals, int *rowptr, int *colind, cholmod_common *Comm, int **etree) {
+template<typename scalar_type>
+cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_type *nzvals, int *rowptr, int *colind, cholmod_common *Comm, int **etree) {
 
   // Start Cholmod
   cholmod_common *cm = Comm;
@@ -207,7 +207,7 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_t *nzvals, 
     case CHOLMOD_METIS:   printf( "  > METIS ordering (%d)\n",   CHOLMOD_METIS   ); break;
     case CHOLMOD_NESDIS:  printf( "  > NESDIS ordering (%d)\n",  CHOLMOD_NESDIS  ); break;
   }
-  //print_factor_cholmod<scalar_t>(L, cm);
+  //print_factor_cholmod<scalar_type>(L, cm);
   compute_etree_cholmod(&A, cm, etree);
 
   return L;
@@ -216,11 +216,11 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_t *nzvals, 
 
 
 /* ========================================================================================= */
-template<typename scalar_t>
+template<typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-  typedef int lno_t;
+  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+  typedef int ordinal_type;
   typedef int size_type;
 
   // Default spaces
@@ -232,26 +232,26 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   typedef typename host_execution_space::memory_space host_memory_space;
 
   //
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t,      execution_space, void, size_type>      crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type>      crsmat_t;
 
   //
   typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
   typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
 
   //
-  typedef Kokkos::View< scalar_t*, host_memory_space > host_scalar_view_t;
-  typedef Kokkos::View< scalar_t*,      memory_space > scalar_view_t;
+  typedef Kokkos::View< scalar_type*, host_memory_space > host_scalar_view_t;
+  typedef Kokkos::View< scalar_type*,      memory_space > scalar_view_t;
 
   //
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, scalar_type,
     execution_space, memory_space, memory_space > KernelHandle;
 
-  scalar_t ZERO = scalar_t(0);
-  scalar_t ONE = scalar_t(1);
+  scalar_type ZERO = scalar_type(0);
+  scalar_type ONE = scalar_type(1);
 
   // tolerance
-  scalar_t tol = STS::epsilon();
+  scalar_type tol = STS::epsilon();
 
   int num_failed = 0;
   std::cout << std::endl;
@@ -279,7 +279,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
     int *etree;
     timer.reset();
     std::cout << " > call CHOLMOD for factorization" << std::endl;
-    L = factor_cholmod<scalar_t> (nrows, Mtx.nnz(), values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
+    L = factor_cholmod<scalar_type> (nrows, Mtx.nnz(), values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                                   &cm, &etree);
     std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
     int* iperm = (int*)(L->Perm);
@@ -317,11 +317,11 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
           // ==============================================
           // Do symbolic analysis
-          sptrsv_symbolic<KernelHandle, scalar_t, host_graph_t, graph_t> (&khL, &khU, L, &cm);
+          sptrsv_symbolic<scalar_type, ordinal_type, size_type> (&khL, &khU, L, &cm);
 
           // ==============================================
           // Do numerical compute
-          sptrsv_compute<KernelHandle, host_crsmat_t, crsmat_t> (&khL, &khU, L, &cm);
+          sptrsv_compute<scalar_type, ordinal_type, size_type> (&khL, &khU, L, &cm);
 
           // ==============================================
           // Create the known solution and set to all 1's ** on host **
@@ -337,7 +337,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // ==============================================
           // apply forward-pivot on the host
           host_scalar_view_t tmp_host ("temp", nrows);
-          forwardP_supernode<scalar_t> (nrows, perm, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+          forwardP_supernode<scalar_type> (nrows, perm, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
 
           // ==============================================
           // copy rhs to the default host/device
@@ -365,7 +365,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // apply backward-pivot
           // > copy solution to host
           Kokkos::deep_copy(tmp_host, rhs);
-          backwardP_supernode<scalar_t>(nrows, perm, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+          backwardP_supernode<scalar_type>(nrows, perm, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
 
           // ==============================================
@@ -379,13 +379,13 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           {
             Kokkos::deep_copy(sol_host, ONE);
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
-            forwardP_supernode<scalar_t> (nrows, perm, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
+            forwardP_supernode<scalar_type> (nrows, perm, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
              sptrsv_solve (&khL, rhs);
              sptrsv_solve (&khU, rhs);
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
-            backwardP_supernode<scalar_t>(nrows, perm, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+            backwardP_supernode<scalar_type>(nrows, perm, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
             if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
               num_failed ++;

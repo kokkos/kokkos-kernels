@@ -766,7 +766,7 @@ generate_merged_supernodal_graph(bool lower, int n,
 /* For numeric computation                                                                   */
 
 /* ========================================================================================= */
-template <typename host_crsmat_t, typename graph_t, typename crsmat_t>
+template <typename host_crsmat_t, typename crsmat_t, typename graph_t>
 crsmat_t
 read_merged_supernodes(int n, int nsuper, const int *nb,
                        bool lower, bool unit_diag, bool invert_diag, bool invert_offdiag,
@@ -1125,7 +1125,7 @@ void split_crsmat(KernelHandle *kernelHandleL, crsmat_t superluL) {
             nnzL ++;
           }
         }
-        hr(j+1) = nnzL;
+        hr (j+1) = nnzL;
       }
       j0 = j2; // update the last column of the processed supernode (not including this column)
     }
@@ -1135,6 +1135,45 @@ void split_crsmat(KernelHandle *kernelHandleL, crsmat_t superluL) {
       if (j > 0) {
         hr (j) = hr (j-1);
       }
+    }
+
+    // the matrix is stored in CSC, store it in CSR if not-transpose is requested
+    if (!handleL->transpose_spmv()) {
+      row_map_view_host_t hr2 = Kokkos::create_mirror_view (rowmap_view);
+      cols_view_host_t    hc2 = Kokkos::create_mirror_view (column_view);
+      values_view_host_t  hv2 = Kokkos::create_mirror_view (values_view);
+
+      // count nonzeros per row
+      for (int j = 0; j <= nrows; j++) {
+        hr2 (j) = 0;
+      }
+      for (int j = 0; j < nrows; j++) {
+        for (int k = hr (j); k < hr (j+1); k++) {
+          hr2 (hc (k)+1) ++;
+        }
+      }
+      for (int j = 0; j < nrows; j++) {
+        hr2 (j+1) += hr2 (j);
+      }
+      // insert nonzeros in row-major
+      for (int j = 0; j < nrows; j++) {
+        for (int k = hr (j); k < hr (j+1); k++) {
+          hv2 (hr2 (hc (k))) = hv (k);
+          hc2 (hr2 (hc (k))) = j;
+
+          hr2 (hc(k)) ++;
+        }
+      }
+      // fix pointers
+      for (int j = nrows; j > 0; j--) {
+        hr2 (j) = hr2 (j-1);
+      }
+      hr2 (0) = 0;
+
+      // submatrix in CSR
+      hr = hr2;
+      hc = hc2;
+      hv = hv2;
     }
 
     // create crs-graph

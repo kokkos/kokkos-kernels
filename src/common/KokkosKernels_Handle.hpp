@@ -529,10 +529,8 @@ public:
     // need to invert offdiagonal for SpMV option
     if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
         algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+      this->set_column_major (true);
       this->set_invert_offdiagonal (true);
-      if (!lower_tri) {
-        this->set_column_major (true);
-      }
     }
   }
 
@@ -590,7 +588,7 @@ public:
       this->sptrsvHandle->set_column_major (col_major);
     } else {
       std::cout << std::endl
-                << " ** need to CSC for SpMV option **"
+                << " ** need CSC for SpMV option **"
                 << std::endl << std::endl;
     }
   }

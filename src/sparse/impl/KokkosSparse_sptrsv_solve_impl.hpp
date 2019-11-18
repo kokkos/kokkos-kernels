@@ -1327,10 +1327,11 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
         // update with one spmv
         auto *submat = thandle.get_submatrix (lvl);
+        const char *tran = (thandle.transpose_spmv() ? "T" : "N");
         KokkosSparse::
-        spmv("T", one, *submat,
-                       work,
-                  one, lhs);
+        spmv(tran, one, *submat,
+                        work,
+                   one, lhs);
 
         // reinitialize workspace
         LowerTriSupernodalSpMVFunctor<LHSType, NGBLType> 
@@ -1614,10 +1615,11 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
         // update with one spmv
         auto *submat = thandle.get_submatrix (lvl);
+        const char *tran = (thandle.transpose_spmv() ? "T" : "N");
         KokkosSparse::
-        spmv("T", one, *submat,
-                       work,
-                  one, lhs);
+        spmv(tran, one, *submat,
+                        work,
+                   one, lhs);
 
         // reinitialize workspace
         LowerTriSupernodalSpMVFunctor<LHSType, NGBLType> 

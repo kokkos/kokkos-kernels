@@ -82,6 +82,7 @@
 template<typename AType, typename XType, typename YType>
 void kokkoskernels_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
   KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
+  //KokkosSparse::spmv (KokkosSparse::Transpose,1.0,A,x,0.0,y);
 }
 #endif
 

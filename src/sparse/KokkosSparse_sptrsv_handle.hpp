@@ -185,6 +185,7 @@ private:
   crsmat_t crsmat;
 
   // for supernodal spmv
+  bool spmv_trans;
   graph_t **sub_graphs;
   crsmat_t **sub_crsmats;
 
@@ -217,6 +218,7 @@ public:
     , etree (NULL)
     , sup_size_unblocked (100)
     , sup_size_blocked (200)
+    , spmv_trans (false)
     , verbose (false)
 #endif
   {
@@ -543,6 +545,14 @@ public:
 
   crsmat_t* get_submatrix (int i) {
     return this->sub_crsmats[i];
+  }
+
+  void set_transpose_spmv(bool spmv_trans_) {
+    this->spmv_trans = spmv_trans_;
+  }
+
+  bool transpose_spmv() {
+    return this->spmv_trans;
   }
 
   // verbose
