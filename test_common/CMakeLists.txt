@@ -4,5 +4,5 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 TRIBITS_ADD_EXECUTABLE(
   matrix_converter
-  SOURCES KokkosKernels_MatrixConverter.cpp   
+  SOURCES KokkosKernels_MatrixConverter.cpp
   )
