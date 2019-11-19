@@ -49,9 +49,7 @@ TARGETS =
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/example/hashmap_accumulator/*.hpp)
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/example/hashmap_accumulator/*.cpp) 
 
-TEST_HEADERS +=  $(wildcard $(KOKKOSKERNELS_SRC_PATH)/example/graph/*.hpp)
-EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/example/graph/*.cpp) 
-
+#EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/example/graph/PartitioningExample.cpp) 
 
 #=======================================================================
 #========================== TARGETS ====================================

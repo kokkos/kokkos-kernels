@@ -173,6 +173,14 @@ public:
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GaussSeidelHandleType;
 
+  //These are subclasses of GaussSeidelHandleType.
+  typedef typename KokkosSparse::
+    PointGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      PointGaussSeidelHandleType;
+  typedef typename KokkosSparse::
+    ClusterGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      ClusterGaussSeidelHandleType;
+
   typedef typename KokkosSparse::
     SPGEMMHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPGEMMHandleType;
@@ -489,14 +497,30 @@ public:
 
 
 
-  GaussSeidelHandleType *get_gs_handle(){
+  GaussSeidelHandleType *get_gs_handle() {
     return this->gsHandle;
   }
-  void create_gs_handle(
-    KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT){
+  PointGaussSeidelHandleType *get_point_gs_handle() {
+    auto pgs = dynamic_cast<PointGaussSeidelHandleType*>(this->gsHandle);
+    if(this->gsHandle && !pgs)
+      throw std::runtime_error("GaussSeidelHandle exists but is not set up for point-coloring GS.");
+    return pgs;
+  }
+  ClusterGaussSeidelHandleType *get_cluster_gs_handle() {
+    auto cgs = dynamic_cast<ClusterGaussSeidelHandleType*>(this->gsHandle);
+    if(this->gsHandle && !cgs)
+      throw std::runtime_error("GaussSeidelHandle exists but is not set up for cluster-coloring GS.");
+    return cgs;
+  }
+  void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new GaussSeidelHandleType(gs_algorithm);
+    this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
+  }
+  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
+    this->destroy_gs_handle();
+    this->is_owner_of_the_gs_handle = true;
+    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, verts_per_cluster);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){
@@ -507,8 +531,6 @@ public:
       this->gsHandle = NULL;
     }
   }
-
-
 
   SPADDHandleType *get_spadd_handle(){
     return this->spaddHandle;

@@ -7,6 +7,11 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_EXECUTABLE(
+  sparse_block_pcg
+  SOURCES KokkosSparse_block_pcg.cpp
+  )
+
+TRIBITS_ADD_EXECUTABLE(
   sparse_spgemm
   SOURCES KokkosSparse_spgemm.cpp
   )
@@ -26,6 +31,11 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_EXECUTABLE(
   sparse_sptrsv
   SOURCES KokkosSparse_sptrsv.cpp 
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  sparse_gs
+  SOURCES KokkosSparse_gs.cpp
   )
 
 TRIBITS_ADD_EXECUTABLE(
