@@ -328,7 +328,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
     {
       sum += solution_host(j, i) * solution_host(j, i);
     }
-    initial_norms[i] = Kokkos::Details::ArithTraits<mag_t>::sqrt( sum );
+    initial_norms[i] = Kokkos::Details::ArithTraits<mag_t>::sqrt(
+        Kokkos::Details::ArithTraits<scalar_t>::abs(sum));
   }
 #ifdef gauss_seidel_testmore
   GSAlgorithm gs_algorithms[] ={GS_DEFAULT, GS_TEAM, GS_PERMUTED};
@@ -377,7 +378,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
                 scalar_t diff = x_host(r, c) - solution_host(r, c);
                 sum += diff * diff;
               }
-              mag_t result_res = Kokkos::Details::ArithTraits<mag_t>::sqrt( sum );
+              mag_t result_res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
+                  Kokkos::Details::ArithTraits<scalar_t>::abs(sum));
               EXPECT_TRUE( result_res < initial_norms[c] );
             }
           }

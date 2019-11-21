@@ -254,6 +254,7 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename device::execution_space exec_space;
+  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
   typedef KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
       exec_space, typename device::memory_space,typename device::memory_space> KernelHandle;
@@ -264,11 +265,11 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
     Kokkos::View<scalar_t*, Kokkos::HostSpace> bHost("b (hosts)", numRows);
     for(lno_t i = 0; i < numRows; i++)
     {
-      bHost(i) = (double) rand() / RAND_MAX;
+      bHost(i) = scalar_t(10.0 * rand() / RAND_MAX);
     }
     Kokkos::deep_copy(b, bHost);
   }
-  const double bnorm = KokkosBlas::nrm2(b);
+  const mag_t bnorm = KokkosBlas::nrm2(b);
   for(int algoCount = 0; algoCount < (int) KokkosSparse::NUM_CLUSTERING_ALGORITHMS; algoCount++)
   {
     ClusteringAlgorithm algo = (ClusteringAlgorithm) algoCount;
@@ -309,7 +310,7 @@ void test_cluster_sgs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_s
       scalar_view_t res("Ax-b", numRows);
       Kokkos::deep_copy(res, b);
       KokkosSparse::spmv("N", alpha, A, x, beta, res);
-      double scaledNorm = KokkosBlas::nrm2(res) / bnorm;
+      mag_t scaledNorm = KokkosBlas::nrm2(res) / bnorm;
       //Sanity check the result. The input matrix is strictly diagonally dominant, so the scaled solution norm (after 1 iteration)
       //should be nonnegative but also small.
       EXPECT_TRUE(scaledNorm > 0);
@@ -335,6 +336,7 @@ void test_sgs_multiple_rhs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t 
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename device::execution_space exec_space;
+  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
   typedef KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
       exec_space, typename device::memory_space,typename device::memory_space> KernelHandle;
@@ -346,13 +348,12 @@ void test_sgs_multiple_rhs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t 
   auto xHost = Kokkos::create_mirror_view(x);
   for(lno_t v = 0; v < numVecs; v++) {
     for(lno_t i = 0; i < numRows; i++) {
-      x(i, v) = (double) rand() / RAND_MAX;
+      x(i, v) = scalar_t(10.0 * rand() / RAND_MAX);
     }
   }
   Kokkos::deep_copy(x, xHost);
   MultiVec b = Test::create_y_vector(A, x);
-  typename MultiVec::HostMirror xgold(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), numRows, numVecs);
-  Kokkos::deep_copy(xgold, x);
+  auto xgold = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
   for(int algoCount = 0; algoCount < (int) KokkosSparse::NUM_CLUSTERING_ALGORITHMS; algoCount++)
   {
     ClusteringAlgorithm algo = (ClusteringAlgorithm) algoCount;
@@ -385,14 +386,19 @@ void test_sgs_multiple_rhs(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t 
       Kokkos::deep_copy(xHost, x);
       for(lno_t i = 0; i < numVecs; i++)
       {
-        double xSq = 0;
-        double xDotGold = 0;
+        scalar_t diffDot = 0;
+        scalar_t xDot = 0;
         for(lno_t j = 0; j < numRows; j++)
         {
-          xSq += xHost(j, i) * xHost(j, i);
-          xDotGold += xHost(j, i) * xgold(j, i);
+          scalar_t diff = xHost(j, i) - xgold(j, i);
+          diffDot += diff * diff;
+          xDot += xHost(j, i) * xHost(j, i);
         }
-        EXPECT_GT(xDotGold / xSq, 0.99);
+        mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
+            Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
+        mag_t xnorm = Kokkos::Details::ArithTraits<mag_t>::sqrt(
+            Kokkos::Details::ArithTraits<scalar_t>::abs(xDot));
+        EXPECT_GT(xnorm * 0.001, res);
       }
       kh.destroy_gs_handle();
     }
