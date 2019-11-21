@@ -66,6 +66,7 @@ using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
+
 namespace Test {
 
 template <typename crsMat_t, typename vector_t, typename const_vector_t, typename device>
@@ -161,7 +162,6 @@ vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
   KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
   return y_vector;
 }
-
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
