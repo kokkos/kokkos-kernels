@@ -941,7 +941,7 @@ struct PermuteVector{
     idx mapping = ii;
     if (ii < mapping_size)
       mapping = old_to_new_mapping[ii];
-    for (idx j = 0; j < (idx) new_vector.extent(1); j++) {
+    for (idx j = 0; j < static_cast<idx>(new_vector.extent(1)); j++) {
       new_vector.access(mapping, j) = old_vector.access(ii, j);
     }
   }
@@ -984,7 +984,7 @@ struct PermuteBlockVector{
     idx mapping = ii;
     if (ii < mapping_size)
       mapping = old_to_new_mapping[ii];
-    for (idx j = 0; j < (idx) new_vector.extent(1); j++) {
+    for (idx j = 0; j < static_cast<idx>(new_vector.extent(1)); j++) {
       for (int i = 0; i < block_size; ++i){
         new_vector.access(mapping*block_size + i, j) = old_vector.access(ii * block_size + i, j);
       }
@@ -1896,8 +1896,56 @@ void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row
   MyExecSpace().fence();
 }
 
+//A sum-reduction scalar representing a fixed-size array.
+template<typename scalar_t, int N>
+struct array_sum_reduce
+{
+  using ValueType = array_sum_reduce<scalar_t, N>;
+
+  scalar_t data[N];
+  KOKKOS_INLINE_FUNCTION
+  array_sum_reduce()
+  { 
+    for(int i = 0; i < N; i++)
+      data[i] = scalar_t();
+  }
+  KOKKOS_INLINE_FUNCTION
+  array_sum_reduce(const ValueType& rhs)
+  { 
+    for(int i = 0; i < N; i++)
+      data[i] = rhs.data[i];
+  }
+  KOKKOS_INLINE_FUNCTION   // add operator
+  array_sum_reduce& operator+=(const ValueType& src)
+  {
+    for(int i = 0; i < N; i++)
+      data[i] += src.data[i];
+    return *this;
+  } 
+  KOKKOS_INLINE_FUNCTION   // volatile add operator 
+  void operator +=(const volatile ValueType& src) volatile
+  {
+    for(int i = 0; i < N; i++)
+      data[i] += src.data[i];
+  }
+};
 
 }
+}
+
+//Define the identity for array_sum_reduce
+namespace Kokkos
+{
+  template<typename scalar_t, int N>
+  struct reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>>
+  {
+    typedef KokkosKernels::Impl::array_sum_reduce<scalar_t, N> T;
+    KOKKOS_FORCEINLINE_FUNCTION static T sum()
+    {
+      //default constructor default-initializes each element (this should always be 0)
+      return T();
+    }
+  };
 }
 
 #endif

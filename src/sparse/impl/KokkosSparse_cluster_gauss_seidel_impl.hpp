@@ -134,6 +134,9 @@ namespace KokkosSparse{
       bool have_diagonal_given;
       bool is_symmetric;
 
+      static constexpr nnz_lno_t apply_batch_size = 16;
+      typedef typename KokkosKernels::Impl::array_sum_reduce<nnz_scalar_t, apply_batch_size> batch_sum;
+
     public:
 
       struct PSGS_ForwardTag {};
@@ -187,16 +190,26 @@ namespace KokkosSparse{
         {
           size_type row_begin = _xadj(row);
           size_type row_end = _xadj(row + 1);
-          for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++)
+          nnz_scalar_t sum[apply_batch_size] = {0};
+          nnz_lno_t num_vecs = _Xvector.extent(1);
+          for(nnz_lno_t batch_start = 0; batch_start < num_vecs; batch_start += apply_batch_size)
           {
-            nnz_scalar_t sum = _Yvector.access(row, vec);
-            for (size_type adjind = row_begin; adjind < row_end; ++adjind)
+            nnz_lno_t this_batch_size = apply_batch_size;
+            if(batch_start + this_batch_size >= num_vecs)
+              this_batch_size = num_vecs - batch_start;
+            //the current batch of columns given by: batch_start, this_batch_size
+            for(nnz_lno_t i = 0; i < this_batch_size; i++)
+              sum[i] = _Yvector(row, batch_start + i);
+            for(size_type adjind = row_begin; adjind < row_end; ++adjind)
             {
               nnz_lno_t col = _adj(adjind);
               nnz_scalar_t val = _adj_vals(adjind);
-              sum -= val * _Xvector.access(col, vec);
+              for(nnz_lno_t i = 0; i < this_batch_size; i++)
+                sum[i] -= val * _Xvector(col, batch_start + i);
             }
-            _Xvector.access(row, vec) += _omega * sum * _inverse_diagonal(row);
+            nnz_scalar_t invDiagonalVal = _inverse_diagonal(row);
+            for(nnz_lno_t i = 0; i < this_batch_size; i++)
+              _Xvector(row, batch_start + i) += _omega * sum[i] * invDiagonalVal;
           }
         }
 
@@ -290,21 +303,27 @@ namespace KokkosSparse{
                 nnz_lno_t row = _cluster_verts(j);
                 size_type row_begin = _xadj(row);
                 size_type row_end = _xadj(row + 1);
-                for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++)
+                nnz_lno_t num_vecs = _Xvector.extent(1);
+                for(nnz_lno_t batch_start = 0; batch_start < num_vecs; batch_start += apply_batch_size)
                 {
-                  nnz_scalar_t dotprod = 0;
+                  nnz_lno_t this_batch_size = apply_batch_size;
+                  if(batch_start + this_batch_size >= num_vecs)
+                    this_batch_size = num_vecs - batch_start;
+                  batch_sum sum;
                   Kokkos::parallel_reduce(
                     Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
-                    [&] (size_type i, nnz_scalar_t& lsum)
+                    [&] (size_type i, batch_sum& lsum)
                     {
                       size_type adjind = i + row_begin;
                       nnz_lno_t colIndex = _adj(adjind);
                       nnz_scalar_t val = _adj_vals(adjind);
-                      lsum += val * _Xvector.access(colIndex, vec);
-                    }, dotprod);
+                      for(nnz_lno_t k = 0; k < this_batch_size; k++)
+                        lsum.data[k] += val * _Xvector(colIndex, batch_start + k);
+                    }, sum);
                   Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-                      _Xvector.access(row, vec) += _omega * (_Yvector.access(row, vec) - dotprod) * _inverse_diagonal(row);
-                    });
+                    for(nnz_lno_t k = 0; k < this_batch_size; k++)
+                      _Xvector(row, batch_start + k) += _omega * (_Yvector(row, batch_start + k) - sum.data[k]) * _inverse_diagonal(row);
+                  });
                 }
               }
             });

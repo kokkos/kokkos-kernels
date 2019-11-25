@@ -142,6 +142,10 @@ namespace KokkosSparse{
 
       bool have_diagonal_given;
       bool is_symmetric;
+
+      //Batch size for column applies. Used as a stack array size, so must be a compile-time constant.
+      static constexpr nnz_lno_t apply_batch_size = 16;
+
     public:
 
       struct PSGS{
@@ -171,17 +175,25 @@ namespace KokkosSparse{
         void operator()(const nnz_lno_t ii) const {
           size_type row_begin = _xadj(ii);
           size_type row_end = _xadj(ii + 1);
-
-          for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++){
-            nnz_scalar_t sum = _Yvector(ii, vec);
-
+          nnz_scalar_t sum[apply_batch_size] = {0};
+          nnz_lno_t num_vecs = _Xvector.extent(1);
+          for(nnz_lno_t batch_start = 0; batch_start < num_vecs; batch_start += apply_batch_size)
+          {
+            nnz_lno_t this_batch_size = apply_batch_size;
+            if(batch_start + this_batch_size >= num_vecs)
+              this_batch_size = num_vecs - batch_start;
+            //the current batch of columns given by: batch_start, this_batch_size
+            for(nnz_lno_t i = 0; i < this_batch_size; i++)
+              sum[i] = _Yvector(ii, batch_start + i);
             for (size_type adjind = row_begin; adjind < row_end; ++adjind){
               nnz_lno_t colIndex = _adj(adjind);
               nnz_scalar_t val = _adj_vals(adjind);
-              sum -= val * _Xvector(colIndex, vec);
+              for(nnz_lno_t i = 0; i < this_batch_size; i++)
+                sum[i] -= val * _Xvector(colIndex, batch_start + i);
             }
             nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
-            _Xvector(ii, vec) += omega * sum * invDiagonalVal;
+            for(nnz_lno_t i = 0; i < this_batch_size; i++)
+              _Xvector(ii, batch_start + i) += omega * sum[i] * invDiagonalVal;
           }
         }
       };
@@ -210,6 +222,8 @@ namespace KokkosSparse{
         bool is_backward;
 
         nnz_scalar_t omega;
+
+        typedef typename KokkosKernels::Impl::array_sum_reduce<nnz_scalar_t, apply_batch_size> batch_sum;
 
         Team_PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
                   scalar_persistent_work_view2d_t Xvector_, scalar_persistent_work_view2d_t Yvector_,
@@ -246,31 +260,38 @@ namespace KokkosSparse{
           nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank() + _color_set_begin;
           if (ii >= _color_set_end)
             return;
-
           size_type row_begin = _xadj(ii);
           size_type row_end = _xadj(ii + 1);
-
-          for(nnz_lno_t vec = 0; vec < (nnz_lno_t) _Xvector.extent(1); vec++){
-            nnz_scalar_t product = 0;
+          nnz_lno_t num_vecs = _Xvector.extent(1);
+          for(nnz_lno_t batch_start = 0; batch_start < num_vecs; batch_start += apply_batch_size)
+          {
+            nnz_lno_t this_batch_size = apply_batch_size;
+            if(batch_start + this_batch_size >= num_vecs)
+              this_batch_size = num_vecs - batch_start;
+            //this type is an array_sum_reduce for summing up apply_batch_size vectors of scalar_t.
+            batch_sum sum;
+            //the current batch of columns given by: batch_start, this_batch_size
             Kokkos::parallel_reduce(
-                Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
-                [&] (size_type i, nnz_scalar_t & valueToUpdate) {
-                  size_type adjind = i + row_begin;
-                  nnz_lno_t colIndex = _adj(adjind);
-                  nnz_scalar_t val = _adj_vals(adjind);
-                  valueToUpdate += val * _Xvector(colIndex, vec);
-                }, product);
-
-            Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-                nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
-                _Xvector(ii, vec) += omega * (_Yvector(ii, vec) - product) * invDiagonalVal;
-              });
+              Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
+              [&] (size_type i, batch_sum& lsum)
+              {
+                size_type adjind = i + row_begin;
+                nnz_lno_t colIndex = _adj(adjind);
+                nnz_scalar_t val = _adj_vals(adjind);
+                for(nnz_lno_t j = 0; j < this_batch_size; j++)
+                  lsum.data[j] += val * _Xvector(colIndex, batch_start + j);
+              }, sum);
+            Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+            {
+              nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
+              for(nnz_lno_t i = 0; i < this_batch_size; i++)
+                _Xvector(ii, batch_start + i) += omega * (_Yvector(ii, batch_start + i) - sum.data[i]) * invDiagonalVal;
+            });
           }
         }
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const BigBlockTag&, const team_member_t & teamMember) const {
-
 
           const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size + _color_set_begin;
           const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, _color_set_end);
