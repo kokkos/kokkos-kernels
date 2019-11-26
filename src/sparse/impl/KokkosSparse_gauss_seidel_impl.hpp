@@ -255,38 +255,64 @@ namespace KokkosSparse{
           num_max_vals_in_l2(_num_max_vals_in_l2), is_backward(false),
           omega(omega_){}
 
+        //Do a Gauss-Seidel step on a single row, for X/Y columns colStart:colStart+N-1 (inclusive)
+        //Specializing this on the batch size allows the best reuse of matrix accesses, while also
+        //using the correct width array_sum_reduce.
+        template<int N>
+        KOKKOS_INLINE_FUNCTION void runColBatch(const team_member_t& teamMember, nnz_lno_t row, nnz_lno_t colStart) const
+        {
+          typedef KokkosKernels::Impl::array_sum_reduce<nnz_scalar_t, N> reducer; 
+          size_type row_begin = _xadj(row);
+          size_type row_end = _xadj(row + 1);
+          reducer sum;
+          Kokkos::parallel_reduce(
+            Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
+            [&] (size_type i, reducer& lsum)
+            {
+              size_type adjind = row_begin + i;
+              nnz_lno_t colIndex = _adj(adjind);
+              nnz_scalar_t val = _adj_vals(adjind);
+              for(int j = 0; j < N; j++)
+                lsum.data[j] += val * _Xvector(colIndex, colStart + j);
+            }, sum);
+          Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+          {
+            nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(row);
+            for(int i = 0; i < N; i++)
+            {
+              _Xvector(row, colStart + i) +=
+                omega * (_Yvector(row, colStart + i) - sum.data[i]) * invDiagonalVal;
+            }
+          });
+        }
+
         KOKKOS_INLINE_FUNCTION
         void operator()(const team_member_t & teamMember) const {
-          nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank() + _color_set_begin;
-          if (ii >= _color_set_end)
+          nnz_lno_t row = teamMember.league_rank() * teamMember.team_size() + teamMember.team_rank() + _color_set_begin;
+          if (row >= _color_set_end)
             return;
-          size_type row_begin = _xadj(ii);
-          size_type row_end = _xadj(ii + 1);
           nnz_lno_t num_vecs = _Xvector.extent(1);
-          for(nnz_lno_t batch_start = 0; batch_start < num_vecs; batch_start += apply_batch_size)
+          for(nnz_lno_t batch_start = 0; batch_start < num_vecs;)
           {
-            nnz_lno_t this_batch_size = apply_batch_size;
-            if(batch_start + this_batch_size >= num_vecs)
-              this_batch_size = num_vecs - batch_start;
-            //this type is an array_sum_reduce for summing up apply_batch_size vectors of scalar_t.
-            batch_sum sum;
-            //the current batch of columns given by: batch_start, this_batch_size
-            Kokkos::parallel_reduce(
-              Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
-              [&] (size_type i, batch_sum& lsum)
-              {
-                size_type adjind = i + row_begin;
-                nnz_lno_t colIndex = _adj(adjind);
-                nnz_scalar_t val = _adj_vals(adjind);
-                for(nnz_lno_t j = 0; j < this_batch_size; j++)
-                  lsum.data[j] += val * _Xvector(colIndex, batch_start + j);
-              }, sum);
-            Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+            switch(num_vecs - batch_start)
             {
-              nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(ii);
-              for(nnz_lno_t i = 0; i < this_batch_size; i++)
-                _Xvector(ii, batch_start + i) += omega * (_Yvector(ii, batch_start + i) - sum.data[i]) * invDiagonalVal;
-            });
+              #define COL_BATCH_CASE(n) \
+              case n: \
+                      runColBatch<n>(teamMember, row, batch_start); \
+                      batch_start += n; \
+                      break;
+              COL_BATCH_CASE(1)
+              COL_BATCH_CASE(2)
+              COL_BATCH_CASE(3)
+              COL_BATCH_CASE(4)
+              COL_BATCH_CASE(5)
+              COL_BATCH_CASE(6)
+              COL_BATCH_CASE(7)
+              #undef COL_BATCH_CASE
+              default:
+                runColBatch<8>(teamMember, row, batch_start);
+                batch_start += 8;
+            }
           }
         }
 
@@ -801,7 +827,6 @@ namespace KokkosSparse{
           int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
           int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
           size_t shmem_size_to_use = this->handle->get_shmem_size();
-          //nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,MyExecSpace::concurrency(), brows);
 
           //MD: now we calculate how much memory is needed for shared memory.
           //we have two-level vectors: as in spgemm hashmaps.
