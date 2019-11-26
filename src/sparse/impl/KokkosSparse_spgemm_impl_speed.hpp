@@ -297,10 +297,9 @@ struct KokkosSPGEMM
 
         unit_memory(sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) + sizeof (scalar_t)),
         suggested_team_size(suggested_team_size_),
-        thread_memory((shared_memory_size /8 / suggested_team_size_) * 8),
+        thread_memory((shared_memory_size /sizeof(scalar_t) / suggested_team_size_) * sizeof(scalar_t)),
         shmem_key_size(), shared_memory_hash_func(), shmem_hash_size(1)
         {
-
           shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 2) / unit_memory);
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<
@@ -313,6 +312,21 @@ struct KokkosSPGEMM
 
           shmem_key_size = shmem_key_size + ((shmem_key_size - shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(scalar_t));
           shmem_key_size = (shmem_key_size >> 1) << 1;
+
+          // Add check that memory is partitioned into aligned chunks
+          nnz_lno_t remainder_memory = thread_memory - sizeof(nnz_lno_t)*2 - shmem_hash_size*sizeof(nnz_lno_t);
+          // The remainder of memory is for vals, must be aligned into sizeof(scalar_t) chunks, and there must be at least as many entries as keys
+          nnz_lno_t val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
+
+          while (val_memory % sizeof(scalar_t) > 0)
+          {
+            if ((val_memory/sizeof(scalar_t) - shmem_key_size) / shmem_key_size > 1)
+              shmem_key_size += 1;
+            else
+              shmem_key_size -= 1;
+
+            val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
+          }
 
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << shmem_hash_size  << " shmem_key_size:" << shmem_key_size << std::endl;

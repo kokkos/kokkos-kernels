@@ -41,6 +41,7 @@
 //@HEADER
 */
 #define HASHSCALAR 107
+
 namespace KokkosSparse{
 
 namespace Impl{
@@ -148,7 +149,7 @@ struct KokkosSPGEMM
 
         unit_memory(sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) + sizeof (scalar_t)),
         suggested_team_size(suggested_team_size_),
-        thread_memory((shared_memory_size /8 / suggested_team_size_) * 8),
+        thread_memory((shared_memory_size /sizeof(scalar_t) / suggested_team_size_) * sizeof(scalar_t)),
         thread_shmem_key_size(),
 		thread_shared_memory_hash_func(),
 		thread_shmem_hash_size(1),
@@ -167,8 +168,8 @@ struct KokkosSPGEMM
 	team_shmem_key_size = ((shared_memory_size - sizeof(nnz_lno_t) * 4) / unit_memory);
     thread_shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 4) / unit_memory);
     if (KOKKOSKERNELS_VERBOSE_& 0 ){
-      std::cout << "\t\tNumericCMEM -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<" initial key size:" << thread_shmem_key_size << std::endl;
-      std::cout << "\t\tNumericCMEM -- team_memory:" << shared_memory_size  << " unit_memory:" << unit_memory <<" initial team key size:" << team_shmem_key_size << std::endl;
+      std::cout << "\t\tPortableNumericCHASH -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<" initial key size:" << thread_shmem_key_size << std::endl;
+      std::cout << "\t\tPortableNumericCHASH -- team_memory:" << shared_memory_size  << " unit_memory:" << unit_memory <<" initial team key size:" << team_shmem_key_size << std::endl;
     }
     while (thread_shmem_hash_size * 2 <=  thread_shmem_key_size){
       thread_shmem_hash_size = thread_shmem_hash_size * 2;
@@ -185,8 +186,10 @@ struct KokkosSPGEMM
     thread_shmem_key_size = (thread_shmem_key_size >> 1) << 1;
     max_first_level_hash_size = first_level_cut_off * team_cuckoo_key_size;
     if (KOKKOSKERNELS_VERBOSE_){
-      std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << thread_shmem_hash_size  << " shmem_key_size:" << thread_shmem_key_size << std::endl;
-      std::cout << "\t\tNumericCMEM -- adjusted team hashsize:" << team_shmem_hash_size  << " team_shmem_key_size:" << team_shmem_key_size << std::endl;
+      std::cout << "\t\tPortableNumericCHASH -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<" initial key size:" << thread_shmem_key_size << std::endl;
+      std::cout << "\t\tPortableNumericCHASH -- team_memory:" << shared_memory_size  << " unit_memory:" << unit_memory <<" initial team key size:" << team_shmem_key_size << std::endl;
+      std::cout << "\t\tPortableNumericCHASH -- adjusted hashsize:" << thread_shmem_hash_size  << " shmem_key_size:" << thread_shmem_key_size << std::endl;
+      std::cout << "\t\tPortableNumericCHASH -- adjusted team hashsize:" << team_shmem_hash_size  << " team_shmem_key_size:" << team_shmem_key_size << std::endl;
       std::cout << "\t\tteam_cuckoo_key_size:" << team_cuckoo_key_size << " team_cuckoo_hash_func:" << team_cuckoo_hash_func << " max_first_level_hash_size:" << max_first_level_hash_size << std::endl;
       std::cout << "\t\tpow2_hash_size:" << pow2_hash_size << " pow2_hash_func:" << pow2_hash_func << std::endl;
     }
@@ -1050,7 +1053,7 @@ struct KokkosSPGEMM
 			  for (nnz_lno_t trial = hash; trial < team_cuckoo_key_size; ){
 
 				  if (keys[trial] == my_b_col){
-					  Kokkos::atomic_add(vals + trial, my_b_val);
+            Kokkos::atomic_add(vals + trial, my_b_val);
 					  fail = 0;
 					  break;
 				  }
@@ -1162,8 +1165,8 @@ void
 
   nnz_lno_t thread_shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 4) / unit_memory);
   if (KOKKOSKERNELS_VERBOSE){
-	  std::cout << "\t\tinitial NumericCMEM -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<" initial key size:" << thread_shmem_key_size << std::endl;
-	  std::cout << "\t\tinitial NumericCMEM -- team_memory:" << shmem_size_to_use  << " unit_memory:" << unit_memory <<" initial team key size:" << team_shmem_key_size << std::endl;
+	  std::cout << "\t\tinitial PortableNumericCHASH -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<" initial key size:" << thread_shmem_key_size << std::endl;
+	  std::cout << "\t\tinitial PortableNumericCHASH -- team_memory:" << shmem_size_to_use  << " unit_memory:" << unit_memory <<" initial team key size:" << team_shmem_key_size << std::endl;
   }
   nnz_lno_t thread_shmem_hash_size = 1;
   while (thread_shmem_hash_size * 2 <=  thread_shmem_key_size){
@@ -1306,8 +1309,8 @@ void
   }
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
   if (KOKKOSKERNELS_VERBOSE){
-	  std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << thread_shmem_hash_size  << " shmem_key_size:" << thread_shmem_key_size << std::endl;
-	  std::cout << "\t\tNumericCMEM -- adjusted team hashsize:" << team_shmem_hash_size  << " team_shmem_key_size:" << team_shmem_key_size << std::endl;
+	  std::cout << "\t\tPortableNumericCHASH -- adjusted hashsize:" << thread_shmem_hash_size  << " shmem_key_size:" << thread_shmem_key_size << std::endl;
+	  std::cout << "\t\tPortableNumericCHASH -- adjusted team hashsize:" << team_shmem_hash_size  << " team_shmem_key_size:" << team_shmem_key_size << std::endl;
   }
   //END OF SHARED MEMORY SIZE CALCULATIONS
 
@@ -1352,6 +1355,11 @@ void
 	  chunksize = min_hash_size; //this is for used hash indices
 	  chunksize += min_hash_size ; //this is for the hash begins
 	  chunksize += max_nnz; //this is for hash nexts
+    // adjust for aligned accesses
+    while ((chunksize-2*min_hash_size) % sizeof(nnz_lno_t) != 0)
+    {
+      chunksize += 2;
+    }
   }
   int num_chunks = concurrency / suggested_vector_size;
 
