@@ -329,8 +329,6 @@ namespace KokkosSparse{
               for(nnz_lno_t j = _cluster_offsets(cluster); j < _cluster_offsets(cluster + 1); j++)
               {
                 nnz_lno_t row = _cluster_verts(j);
-                size_type row_begin = _xadj(row);
-                size_type row_end = _xadj(row + 1);
                 nnz_lno_t num_vecs = _Xvector.extent(1);
                 for(nnz_lno_t batch_start = 0; batch_start < num_vecs;)
                 {
