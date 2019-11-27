@@ -548,8 +548,6 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
   module load sems-cmake/3.12.2
   module load sems-gdb
 
-  module list
-
   SKIP_HWLOC=True
 
   BASE_MODULE_LIST="sems-env,sems-cmake/3.12.2,kokkos-env,kokkos-hwloc/1.10.1/base,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
@@ -770,8 +768,6 @@ setup_env() {
 
 # single_build_and_test <COMPILER> <BUILD> <BUILD_TYPE>
 single_build_and_test() {
-  echo "single_build_te 1"
-  cmake --version
   # Use sane var names.
   local compiler=$1; local build=$2; local build_type=$3;
 
@@ -780,9 +776,6 @@ single_build_and_test() {
   cd $ROOT_DIR/$compiler/"${build}-$build_type"
   local desc=$(echo "${compiler}-${build}-${build_type}" | sed 's:/:-:g')
   setup_env $compiler >& ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
-
-  echo "single_build_te 2"
-  cmake --version
 
   # Set up flags.
   local compiler_warning_flags=$(get_compiler_warning_flags $compiler)
@@ -838,7 +831,6 @@ single_build_and_test() {
     echo "kokkos options: ${KOKKOS_OPTIONS}"
     echo "kokkos devices: ${LOCAL_KOKKOS_DEVICES}"
     echo "kokkos cxx: ${cxxflags}"
-    cmake --version
     run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 48 all >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
@@ -887,8 +879,6 @@ run_in_background() {
   # fi
   wait_for_jobs $num_jobs
 
-  module list
-  cmake --version
   single_build_and_test $* &
 }
 
