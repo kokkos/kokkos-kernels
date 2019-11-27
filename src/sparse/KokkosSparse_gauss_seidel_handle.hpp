@@ -564,32 +564,33 @@ namespace KokkosSparse{
     
     bool use_teams() const
     {
+      bool return_value = false;
 #if defined( KOKKOS_ENABLE_SERIAL )
       if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value) {
-        return false;
+        return_value = false;
       }
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
       if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
-        return false;
+        return_value = false;
       }
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
       if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-        return false;
+        return_value = false;
       }
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
       if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-        return true;
+        return_value = true;
       }
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
       if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-        return false;
+        return_value = false;
       }
 #endif
-      return false;
+      return return_value;
     }
 
     ~ClusterGaussSeidelHandle() = default;
