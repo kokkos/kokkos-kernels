@@ -238,7 +238,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 /* ========================================================================================= */
 // read SuperLU U factor into CSC
 template <typename graph_t>
-graph_t read_superlu_graphU_CSC(SuperMatrix *L,  SuperMatrix *U) {
+graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
 
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
@@ -568,8 +568,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   /* create a map from row id to supernode id */
   int *map = new int[n];
   int supid = 0;
-  for (int k = 0; k < nsuper; k++)
-  {
+  for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int j2 = nb[k+1];
     for (int j = j1; j < j2; j++) {
@@ -584,7 +583,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
 
   /* Upper-triangular matrix */
   int nnzA = hr (n);
-  values_view_t  values_view ("values_view", nnzA);
+  values_view_t values_view ("values_view", nnzA);
   typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
 
   int *sup = new int[nsuper];

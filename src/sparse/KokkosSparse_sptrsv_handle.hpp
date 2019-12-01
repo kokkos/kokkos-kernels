@@ -107,8 +107,8 @@ public:
   typedef Kokkos::DefaultHostExecutionSpace                      supercols_host_execution_space;
   typedef typename supercols_host_execution_space::memory_space  supercols_host_memory_space;
 
-  typedef Kokkos::View<int*, supercols_memory_space>       supercols_t;
-  typedef Kokkos::View<int*, supercols_host_memory_space>  supercols_host_t;
+  typedef Kokkos::View<int*, supercols_memory_space>       integer_view_t;
+  typedef Kokkos::View<int*, supercols_host_memory_space>  integer_view_host_t;
 
   typedef typename Kokkos::View<nnz_scalar_t*, memory_space> workspace_t;
 
@@ -148,21 +148,21 @@ private:
   signed_integral_t nsuper;
 
   // etree, parent's id for each supernodal column
-  supercols_host_t etree_host;
+  integer_view_host_t etree_host;
 
   // dag
   int **dag_host;
 
   // map from supernode to column id, i.e., superdols[s] = the first column id of s-th supernode
-  supercols_host_t supercols_host; // on the host
-  supercols_t      supercols;      // on the default host/device
+  integer_view_host_t supercols_host; // on the host
+  integer_view_t      supercols;      // on the default host/device
 
   // workspace size
   signed_integral_t lwork;
   workspace_t work;
   // offset to workspace for each supernodal column
-  supercols_host_t work_offset_host;
-  supercols_t      work_offset;
+  integer_view_host_t work_offset_host;
+  integer_view_t      work_offset;
 
   // 
   bool merge_supernodes;
@@ -172,13 +172,18 @@ private:
   // type of kernels used at each level
   int sup_size_unblocked;
   int sup_size_blocked;
-  supercols_host_t diag_kernel_type_host;
-  supercols_t      diag_kernel_type;
-  supercols_host_t kernel_type_host;
-  supercols_t      kernel_type;
+  integer_view_host_t diag_kernel_type_host;
+  integer_view_t      diag_kernel_type;
+  integer_view_host_t kernel_type_host;
+  integer_view_t      kernel_type;
+
+  // permutation
+  bool perm_avail;
+  integer_view_t *perm;
 
   // graphs
-  host_graph_t graph_host;
+  host_graph_t original_graph_host; // graph on host before merge (only if merged)
+  host_graph_t graph_host; // mirror of graph on host
   graph_t graph;
 
   // crsmat
@@ -186,8 +191,8 @@ private:
 
   // for supernodal spmv
   bool spmv_trans;
-  graph_t **sub_graphs;
   crsmat_t **sub_crsmats;
+  crsmat_t **diag_blocks;
 
   int num_streams;
   #if defined(KOKKOS_ENABLE_CUDA)
@@ -218,13 +223,14 @@ public:
     , etree (NULL)
     , sup_size_unblocked (100)
     , sup_size_blocked (200)
+    , perm_avail (false)
     , spmv_trans (false)
     , verbose (false)
 #endif
   {
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
     if (lower_tri) {
-      // upper-triangular is stored in CSC
+      // lower-triangular is stored in CSC
       col_major = true;
     } else {
       // upper-triangular is stored in CSR
@@ -353,24 +359,24 @@ public:
     this->nsuper = nsuper_;
 
     // etree
-    this->etree_host = supercols_host_t (etree_, nsuper_);
+    this->etree_host = integer_view_host_t (etree_, nsuper_);
 
     // supercols
-    this->supercols_host = supercols_host_t (supercols_, 1+nsuper_);
-    this->supercols = supercols_t ("supercols", 1+nsuper_);
+    this->supercols_host = integer_view_host_t (supercols_, 1+nsuper_);
+    this->supercols = integer_view_t ("supercols", 1+nsuper_);
     Kokkos::deep_copy (this->supercols, this->supercols_host);
 
     // workspace offset
-    this->work_offset_host = supercols_host_t ("workoffset_host", nsuper_);
-    this->work_offset = supercols_t ("workoffset", nsuper_);
+    this->work_offset_host = integer_view_host_t ("workoffset_host", nsuper_);
+    this->work_offset = integer_view_t ("workoffset", nsuper_);
 
     // kernel type 
     this->sup_size_unblocked = sup_size_unblocked_;
     this->sup_size_blocked = sup_size_blocked_;
-    this->diag_kernel_type_host = supercols_host_t ("diag_kernel_type_host", nsuper_);
-    this->diag_kernel_type = supercols_t ("diag_kernel_type", nsuper_);
-    this->kernel_type_host = supercols_host_t ("kernel_type_host", nsuper_);
-    this->kernel_type = supercols_t ("kernel_type", nsuper_);
+    this->diag_kernel_type_host = integer_view_host_t ("diag_kernel_type_host", nsuper_);
+    this->diag_kernel_type = integer_view_t ("diag_kernel_type", nsuper_);
+    this->kernel_type_host = integer_view_host_t ("kernel_type_host", nsuper_);
+    this->kernel_type = integer_view_t ("kernel_type", nsuper_);
 
     // dag, set to be null
     this->dag_host = NULL;
@@ -425,11 +431,11 @@ public:
 
   // workspace
   KOKKOS_INLINE_FUNCTION
-  supercols_t get_work_offset() const { 
+  integer_view_t get_work_offset() const { 
     return this->work_offset;
   }
 
-  supercols_host_t get_work_offset_host() const { 
+  integer_view_host_t get_work_offset_host() const { 
     return this->work_offset_host;
   }
 
@@ -480,26 +486,52 @@ public:
   }
 
   // kernel type
-  supercols_host_t get_kernel_type_host () {
+  integer_view_host_t get_kernel_type_host () {
     return this->kernel_type_host;
   }
 
-  supercols_host_t get_diag_kernel_type_host () {
+  integer_view_host_t get_diag_kernel_type_host () {
     return this->diag_kernel_type_host;
   }
 
 
   KOKKOS_INLINE_FUNCTION
-  supercols_t get_kernel_type () {
+  integer_view_t get_kernel_type () {
     return this->kernel_type;
   }
 
   KOKKOS_INLINE_FUNCTION
-  supercols_t get_diag_kernel_type () {
+  integer_view_t get_diag_kernel_type () {
     return this->diag_kernel_type;
   }
 
-  // graphs
+  // permutation vector
+  void set_perm (int *perm_) {
+    this->perm = new integer_view_t("PermView", nrows);
+    auto perm_host = Kokkos::create_mirror_view (*(this->perm));
+
+    // copy perm to device
+    for (int i = 0; i < nrows; i++) {
+      perm_host[i] = perm_[i];
+    }
+    Kokkos::deep_copy (*(this->perm), perm_host);
+    this->perm_avail = true;
+  }
+
+  bool has_perm() {
+    return this->perm_avail;
+  }
+
+  // graph on host (before merge)
+  void set_original_graph_host (host_graph_t graph_host_) {
+    this->original_graph_host = graph_host_;
+  }
+
+  host_graph_t get_original_graph_host () {
+    return this->original_graph_host;
+  }
+
+  // graph on host
   void set_graph_host (host_graph_t graph_host_) {
     this->graph_host = graph_host_;
   }
@@ -508,6 +540,7 @@ public:
     return this->graph_host;
   }
 
+  // graph on device
   void set_graph (graph_t graph_) {
     this->graph = graph_;
   }
@@ -534,11 +567,7 @@ public:
     return this->crsmat;
   }
 
-  // sub graph/matrix
-  void set_subgraphs (graph_t **subgraphs) {
-    this->sub_graphs = subgraphs;
-  }
-
+  // submatrices
   void set_submatrices (crsmat_t **subcrsmats) {
     this->sub_crsmats = subcrsmats;
   }
@@ -547,6 +576,16 @@ public:
     return this->sub_crsmats[i];
   }
 
+  // diagonal subblocks
+  void set_diagblocks (crsmat_t **subcrsmats) {
+    this->diag_blocks = subcrsmats;
+  }
+
+  crsmat_t* get_diagblock (int i) {
+    return this->diag_blocks[i];
+  }
+
+  // spmv option
   void set_transpose_spmv(bool spmv_trans_) {
     this->spmv_trans = spmv_trans_;
   }

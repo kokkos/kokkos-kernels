@@ -51,6 +51,7 @@
 #include <unordered_map>
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Random.hpp"
 #include "matrix_market.hpp"
 
 #include "KokkosKernels_SparseUtils.hpp"
@@ -236,8 +237,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type>      crsmat_t;
 
   //
-  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
-  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
+  typedef typename crsmat_t::StaticCrsGraphType graph_t;
 
   //
   typedef Kokkos::View< scalar_type*, host_memory_space > host_scalar_view_t;
@@ -312,8 +312,13 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
           // ==============================================
           // set etree (required)
-          khL.set_etree (etree);
-          khU.set_etree (etree);
+          khL.set_sptrsv_etree (etree);
+          khU.set_sptrsv_etree (etree);
+
+          // ==============================================
+          // set permutation
+          khL.set_sptrsv_perm (perm);
+          khU.set_sptrsv_perm (perm);
 
           // ==============================================
           // Do symbolic analysis
@@ -326,7 +331,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // ==============================================
           // Create the known solution and set to all 1's ** on host **
           host_scalar_view_t sol_host("sol_host", nrows);
-          Kokkos::deep_copy(sol_host, ONE);
+          //Kokkos::deep_copy(sol_host, ONE);
+          Kokkos::Random_XorShift64_Pool<host_execution_space> random(13718);
+          Kokkos::fill_random(sol_host, random, scalar_type(1));
 
           // ==============================================
           // Create the rhs ** on host **
@@ -342,13 +349,14 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // ==============================================
           // copy rhs to the default host/device
           scalar_view_t rhs ("rhs", nrows);
+          scalar_view_t sol ("sol", nrows);
           Kokkos::deep_copy (rhs, tmp_host);
 
           // ==============================================
           // do L solve
          // numeric (only rhs is modified) on the default device/host space
           timer.reset();
-           sptrsv_solve (&khL, rhs);
+           sptrsv_solve (&khL, sol, rhs);
           Kokkos::fence();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
 
@@ -356,7 +364,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // do L^T solve
           // numeric (only rhs is modified) on the default device/host space
           timer.reset();
-           sptrsv_solve (&khU, rhs);
+           sptrsv_solve (&khU, rhs, sol);
           Kokkos::fence ();
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
  
@@ -381,8 +389,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
             KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
             forwardP_supernode<scalar_type> (nrows, perm, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
-             sptrsv_solve (&khL, rhs);
-             sptrsv_solve (&khU, rhs);
+             sptrsv_solve (&khL, sol, rhs);
+             sptrsv_solve (&khU, rhs, sol);
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
             backwardP_supernode<scalar_type>(nrows, perm, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
@@ -401,7 +409,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           Kokkos::fence();
           for(int i=0;i<loop;i++) {
             timer.reset();
-            sptrsv_solve (&khL, rhs);
+            sptrsv_solve (&khL, sol, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -421,7 +429,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           Kokkos::fence();
           for(int i=0;i<loop;i++) {
             timer.reset();
-            sptrsv_solve (&khU, rhs);
+            sptrsv_solve (&khU, rhs, sol);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -445,7 +453,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           bool cusparse = true;
           bool invert_diag = false;
           auto graph = read_cholmod_graphL<graph_t>(cusparse, L, &cm);
-          auto cholmodMtx = read_cholmod_factor<crsmat_t, host_crsmat_t, graph_t> (cusparse, invert_diag, L, &cm, graph);
+          auto cholmodMtx = read_cholmod_factor<crsmat_t, graph_t> (cusparse, invert_diag, L, &cm, graph);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
 
           bool col_majorL = true;

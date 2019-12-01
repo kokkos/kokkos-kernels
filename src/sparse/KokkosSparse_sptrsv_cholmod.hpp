@@ -105,7 +105,7 @@ void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
 /* For numeric computation                                                                   */
 
 /* ========================================================================================= */
-template <typename crsmat_t, typename host_crsmat_t, typename graph_t>
+template <typename crsmat_t, typename graph_t>
 crsmat_t read_cholmod_factor(bool cusparse, bool invert_diag, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
 
   typedef typename crsmat_t::values_type::non_const_type values_view_t;

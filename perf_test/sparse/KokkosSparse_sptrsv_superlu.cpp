@@ -53,6 +53,7 @@
 #include <algorithm>
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Random.hpp"
 #include "matrix_market.hpp"
 
 #include "KokkosKernels_IOUtils.hpp"
@@ -332,8 +333,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
   typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
 
   //
-  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
-  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+  typedef typename crsmat_t::StaticCrsGraphType graph_t;
 
   //
   typedef Kokkos::View< scalar_type*, host_memory_space > host_scalar_view_t;
@@ -407,19 +407,13 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
           } else if (test == SUPERNODAL_SPMV_DAG) {
-            //invert_offdiag = true;
             std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, false);
-            u_in_csr = false;
-            invert_offdiag = true;
           } else {
-            //invert_offdiag = true;
             std::cout << " > create handle for SUPERNODAL_SPMV" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, false);
-            u_in_csr = false;
-            invert_offdiag = true;
           }
           // verbose (optional, default is false)
           khU.set_sptrsv_verbose (verbose);
@@ -430,20 +424,23 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           //khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
 
           // specify if U is stored in CSR or CSC
-          khU.set_column_major (!u_in_csr);
+          khU.set_sptrsv_column_major (!u_in_csr);
 
           // specify wheather to merge supernodes (optional, default merge is false)
-          khL.set_merge_supernodes (merge);
-          khU.set_merge_supernodes (merge);
+          khL.set_sptrsv_merge_supernodes (merge);
+          khU.set_sptrsv_merge_supernodes (merge);
 
           // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
-          khL.set_invert_offdiagonal (invert_offdiag);
-          khU.set_invert_offdiagonal (invert_offdiag);
+          khL.set_sptrsv_invert_offdiagonal (invert_offdiag);
+          khU.set_sptrsv_invert_offdiagonal (invert_offdiag);
+          
+          // set etree (required if SUPERNODAL_ETREE)
+          khL.set_sptrsv_etree (etree);
+          khU.set_sptrsv_etree (etree);
 
-          // set etree (required)
-          khL.set_etree (etree);
-          khU.set_etree (etree);
-
+          // set permutation
+          khL.set_sptrsv_perm (perm_r);
+          khU.set_sptrsv_perm (perm_c);
 
           // ==============================================
           // do symbolic analysis (preprocssing, e.g., merging supernodes, inverting diagonal/offdiagonal blocks,
@@ -461,6 +458,8 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           //> create the known solution and set to all 1's ** on host **
           host_scalar_view_t sol_host("sol_host", nrows);
           Kokkos::deep_copy(sol_host, ONE);
+          //Kokkos::Random_XorShift64_Pool<host_execution_space> random(13718);
+          //Kokkos::fill_random(sol_host, random, scalar_type(1));
 
           // > create the rhs ** on host **
           // A*sol generates rhs: rhs is dense, use spmv
@@ -475,19 +474,20 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
 
           // copy rhs to the default host/device
           scalar_view_t rhs ("rhs", nrows);
+          scalar_view_t sol ("sol", nrows);
           Kokkos::deep_copy (rhs, tmp_host);
 
           // ==============================================
           // do L solve
           timer.reset();
-          sptrsv_solve (&khL, rhs);
+          sptrsv_solve (&khL, sol, rhs);
           Kokkos::fence();
           std::cout << " > Lower-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
 
           // ==============================================
           // do U solve
-          sptrsv_solve (&khU, rhs);
+          sptrsv_solve (&khU, rhs, sol);
           Kokkos::fence ();
           std::cout << " > Upper-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
@@ -513,8 +513,8 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
             forwardP_supernode<scalar_type> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
 
-            sptrsv_solve (&khL, rhs);
-            sptrsv_solve (&khU, rhs);
+            sptrsv_solve (&khL, sol, rhs);
+            sptrsv_solve (&khU, rhs, sol);
 
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);
@@ -534,7 +534,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           Kokkos::fence();
           for(int i = 0; i < loop; i++) {
             timer.reset();
-            sptrsv_solve (&khL, rhs);
+            sptrsv_solve (&khL, sol, rhs);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -554,7 +554,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           Kokkos::fence();
           for(int i = 0; i < loop; i++) {
             timer.reset();
-            sptrsv_solve (&khU, rhs);
+            sptrsv_solve (&khU, rhs, sol);
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
@@ -579,27 +579,35 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           graph_t graphL;
           crsmat_t superluL;
           graphL = read_superlu_graphL<graph_t> (cusparse, merge, &L);
+          double time = timer.seconds ();
+          timer.reset ();
           superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
-          std::cout << "   Conversion Time for L: " << timer.seconds() << std::endl;
+          std::cout << "   Conversion Time for L: " << time << " + " << timer.seconds() << std::endl;
 
           timer.reset();
           graph_t graphU;
           crsmat_t superluU;
           if (u_in_csr) {
             graphU = read_superlu_graphU<graph_t> (&L, &U);
+            time = timer.seconds ();
+            timer.reset ();
             superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
           } else {
             graphU = read_superlu_graphU_CSC<graph_t> (&L, &U);
+            time = timer.seconds ();
+            timer.reset ();
             superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (invert_diag, invert_offdiag, &L, &U, graphU);
           }
-          std::cout << "   Conversion Time for U: " << timer.seconds() << std::endl << std::endl;
+          std::cout << "   Conversion Time for U: " << time << " + " << timer.seconds() << std::endl;
           //print_factor_superlu<scalar_type> (nrows, &L, &U, perm_r, perm_c);
 
           // remove zeros in L/U
+          timer.reset();
           std::cout << "   Compress L-factor: " << std::endl;
           superluL = remove_zeros_crsmat(superluL);
           std::cout << "   Compress U-factor: " << std::endl;
           superluU = remove_zeros_crsmat(superluU);
+          std::cout << "   Compression Time: " << timer.seconds() << std::endl << std::endl;
 
           bool col_majorL = true;
           bool col_majorU = !u_in_csr;
@@ -632,8 +640,7 @@ void print_help_sptrsv() {
 }
 
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
   std::vector<int> tests;
   std::string filename;
@@ -759,7 +766,7 @@ int main(int argc, char **argv)
   return 0;
 }
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
-int main() {
+int main(int argc, char **argv) {
 #if !defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )
   std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
