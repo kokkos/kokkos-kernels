@@ -134,6 +134,8 @@ namespace KokkosSparse{
       bool have_diagonal_given;
       bool is_symmetric;
 
+      static constexpr nnz_lno_t apply_batch_size = 16;
+
     public:
 
       struct PSGS_ForwardTag {};
@@ -183,18 +185,30 @@ namespace KokkosSparse{
         {}
 
         KOKKOS_FORCEINLINE_FUNCTION
-        void rowApply(const nnz_lno_t row) const
+        void rowApply(nnz_scalar_t* sum, const nnz_lno_t row) const
         {
           size_type row_begin = _xadj(row);
           size_type row_end = _xadj(row + 1);
-          nnz_scalar_t sum = _Yvector(row);
-          for (size_type adjind = row_begin; adjind < row_end; ++adjind)
+          nnz_lno_t num_vecs = _Xvector.extent(1);
+          for(nnz_lno_t batch_start = 0; batch_start < num_vecs; batch_start += apply_batch_size)
           {
-            nnz_lno_t col = _adj(adjind);
-            nnz_scalar_t val = _adj_vals(adjind);
-            sum -= val * _Xvector(col);
+            nnz_lno_t this_batch_size = apply_batch_size;
+            if(batch_start + this_batch_size >= num_vecs)
+              this_batch_size = num_vecs - batch_start;
+            //the current batch of columns given by: batch_start, this_batch_size
+            for(nnz_lno_t i = 0; i < this_batch_size; i++)
+              sum[i] = _Yvector(row, batch_start + i);
+            for(size_type adjind = row_begin; adjind < row_end; ++adjind)
+            {
+              nnz_lno_t col = _adj(adjind);
+              nnz_scalar_t val = _adj_vals(adjind);
+              for(nnz_lno_t i = 0; i < this_batch_size; i++)
+                sum[i] -= val * _Xvector(col, batch_start + i);
+            }
+            nnz_scalar_t invDiagonalVal = _inverse_diagonal(row);
+            for(nnz_lno_t i = 0; i < this_batch_size; i++)
+              _Xvector(row, batch_start + i) += _omega * sum[i] * invDiagonalVal;
           }
-          _Xvector(row) += _omega * sum * _inverse_diagonal(row);
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -202,9 +216,10 @@ namespace KokkosSparse{
           //color_adj(ii) is a cluster in the current color set.
           nnz_lno_t clusterColorsetIndex = _color_set_begin + ii;
           nnz_lno_t cluster = _color_adj(clusterColorsetIndex);
+          nnz_scalar_t sum[apply_batch_size];
           for(nnz_lno_t j = _cluster_offsets(cluster); j < _cluster_offsets(cluster + 1); j++)
           {
-            rowApply(_cluster_verts(j));
+            rowApply(sum, _cluster_verts(j));
           }
         }
 
@@ -213,9 +228,10 @@ namespace KokkosSparse{
           //color_adj(ii) is a cluster in the current color set.
           nnz_lno_t clusterColorsetIndex =  _color_set_end - 1 - ii;
           nnz_lno_t cluster = _color_adj(clusterColorsetIndex);
+          nnz_scalar_t sum[apply_batch_size];
           for(nnz_lno_t j = _cluster_offsets(cluster + 1); j > _cluster_offsets(cluster); j--)
           {
-            rowApply(_cluster_verts(j - 1));
+            rowApply(sum, _cluster_verts(j - 1));
           }
         }
       };
@@ -272,6 +288,34 @@ namespace KokkosSparse{
           _omega(omega_)
         {}
 
+        template<int N>
+        KOKKOS_INLINE_FUNCTION void runColBatch(const team_member_t& teamMember, nnz_lno_t row, nnz_lno_t colStart) const
+        {
+          typedef KokkosKernels::Impl::array_sum_reduce<nnz_scalar_t, N> reducer; 
+          size_type row_begin = _xadj(row);
+          size_type row_end = _xadj(row + 1);
+          reducer sum;
+          Kokkos::parallel_reduce(
+            Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
+            [&] (size_type i, reducer& lsum)
+            {
+              size_type adjind = row_begin + i;
+              nnz_lno_t colIndex = _adj(adjind);
+              nnz_scalar_t val = _adj_vals(adjind);
+              for(int j = 0; j < N; j++)
+                lsum.data[j] += val * _Xvector(colIndex, colStart + j);
+            }, sum);
+          Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+          {
+            nnz_scalar_t invDiagonalVal = _inverse_diagonal(row);
+            for(int i = 0; i < N; i++)
+            {
+              _Xvector(row, colStart + i) +=
+                _omega * (_Yvector(row, colStart + i) - sum.data[i]) * invDiagonalVal;
+            }
+          });
+        }
+
         KOKKOS_INLINE_FUNCTION
         void operator()(const team_member_t& teamMember) const
         {
@@ -285,21 +329,29 @@ namespace KokkosSparse{
               for(nnz_lno_t j = _cluster_offsets(cluster); j < _cluster_offsets(cluster + 1); j++)
               {
                 nnz_lno_t row = _cluster_verts(j);
-                size_type row_begin = _xadj(row);
-                size_type row_end = _xadj(row + 1);
-                nnz_scalar_t dotprod = 0;
-                Kokkos::parallel_reduce(
-                  Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
-                  [&] (size_type i, nnz_scalar_t& lsum)
+                nnz_lno_t num_vecs = _Xvector.extent(1);
+                for(nnz_lno_t batch_start = 0; batch_start < num_vecs;)
+                {
+                  switch(num_vecs - batch_start)
                   {
-                    size_type adjind = i + row_begin;
-                    nnz_lno_t colIndex = _adj(adjind);
-                    nnz_scalar_t val = _adj_vals(adjind);
-                    lsum += val * _Xvector(colIndex);
-                  }, dotprod);
-                Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-                    _Xvector(row) += _omega * (_Yvector(row) - dotprod) * _inverse_diagonal(row);
-                  });
+                    #define COL_BATCH_CASE(n) \
+                    case n: \
+                            runColBatch<n>(teamMember, row, batch_start); \
+                            batch_start += n; \
+                            break;
+                    COL_BATCH_CASE(1)
+                    COL_BATCH_CASE(2)
+                    COL_BATCH_CASE(3)
+                    COL_BATCH_CASE(4)
+                    COL_BATCH_CASE(5)
+                    COL_BATCH_CASE(6)
+                    COL_BATCH_CASE(7)
+                    #undef COL_BATCH_CASE
+                    default:
+                      runColBatch<8>(teamMember, row, batch_start);
+                      batch_start += 8;
+                  }
+                }
               }
             });
         }

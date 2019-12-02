@@ -228,6 +228,7 @@ namespace KokkosSparse{
 
     typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
     typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
+    typedef typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
     typedef typename scalar_persistent_work_view_t::HostMirror scalar_persistent_work_host_view_t; //Host view type
 
     typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
@@ -240,8 +241,8 @@ namespace KokkosSparse{
     scalar_persistent_work_view_t permuted_adj_vals;
     nnz_lno_persistent_work_view_t old_to_new_map;
 
-    scalar_persistent_work_view_t permuted_y_vector;
-    scalar_persistent_work_view_t permuted_x_vector;
+    scalar_persistent_work_view2d_t permuted_y_vector;
+    scalar_persistent_work_view2d_t permuted_x_vector;
 
     scalar_persistent_work_view_t permuted_inverse_diagonal;
     nnz_lno_t block_size; //this is for block sgs
@@ -416,17 +417,18 @@ namespace KokkosSparse{
       this->max_nnz_input_row = num_result_nnz_;
     }
 
-    void allocate_x_y_vectors(nnz_lno_t num_rows, nnz_lno_t num_cols){
-      if(permuted_y_vector.extent(0) != size_t(num_rows)){
-        permuted_y_vector = scalar_persistent_work_view_t("PERMUTED Y VECTOR", num_rows);
+    void allocate_x_y_vectors(nnz_lno_t num_rows, nnz_lno_t num_cols, nnz_lno_t num_vecs){
+      if(permuted_y_vector.extent(0) != size_t(num_rows) || permuted_y_vector.extent(1) != size_t(num_vecs)){
+        permuted_y_vector = scalar_persistent_work_view2d_t("PERMUTED Y VECTOR", num_rows, num_vecs);
       }
-      if(permuted_x_vector.extent(0) != size_t(num_cols)){
-        permuted_x_vector = scalar_persistent_work_view_t("PERMUTED X VECTOR", num_cols);
+      if(permuted_x_vector.extent(0) != size_t(num_cols) || permuted_x_vector.extent(1) != size_t(num_vecs)){
+        permuted_x_vector = scalar_persistent_work_view2d_t("PERMUTED X VECTOR", num_cols, num_vecs);
       }
     }
 
-    scalar_persistent_work_view_t get_permuted_y_vector() const {return this->permuted_y_vector;}
-    scalar_persistent_work_view_t get_permuted_x_vector() const {return this->permuted_x_vector;}
+    scalar_persistent_work_view2d_t get_permuted_y_vector() const {return this->permuted_y_vector;}
+    scalar_persistent_work_view2d_t get_permuted_x_vector() const {return this->permuted_x_vector;}
+
     void vector_team_size(
                           int max_allowed_team_size,
                           int &suggested_vector_size_,
