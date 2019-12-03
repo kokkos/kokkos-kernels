@@ -314,10 +314,10 @@ struct KokkosSPGEMM
           shmem_key_size = (shmem_key_size >> 1) << 1;
 
           // thread_memory == 2*sizeof(nnz_lno_t) + shmem_hash_size*sizeof(nnz_lno_t) + 2*shmem_key_size*sizeof(nnz_lno_t) + rem_size*sizeof(scalar_t)
-          // Add check that memory is partitioned into aligned chunks
+          // check that memory is partitioned into aligned chunks
           nnz_lno_t remainder_memory = thread_memory - sizeof(nnz_lno_t)*2 - shmem_hash_size*sizeof(nnz_lno_t);
 
-          // The remainder of memory is for vals, must be aligned into sizeof(scalar_t) chunks, and there must be at least as many entries as keys
+          // The remainder of memory for vals must be aligned into sizeof(scalar_t) chunks, and there must be at least as many entries as keys
           nnz_lno_t val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
 
           nnz_lno_t val_unalign_mem = val_memory % sizeof(scalar_t);
