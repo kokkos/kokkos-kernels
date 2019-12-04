@@ -45,7 +45,7 @@
 #include <Kokkos_Core.hpp>
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
-#include "KokkosSparse_CrsMatrix.hpp"
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
 #include <iostream>
@@ -224,7 +224,7 @@ public:
     , sup_size_unblocked (100)
     , sup_size_blocked (200)
     , perm_avail (false)
-    , spmv_trans (false)
+    , spmv_trans (true)
     , verbose (false)
 #endif
   {

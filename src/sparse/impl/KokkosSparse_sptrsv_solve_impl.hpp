@@ -368,9 +368,16 @@ struct SparseTriSupernodalSpMVFunctor
     int j2 = supercols[s+1];
     int nscol = j2 - j1 ;       // number of columns in the s-th supernode column
     if (flag == -1) {
+      // copy work to X
       for (int j = team_rank; j < nscol; j += team_size) {
         //X (j1 + j) = STS::zero ();
         X (j1 + j) = work (j1 + j);
+      }
+    } else if (flag == -2) {
+      // copy X to work
+      for (int j = team_rank; j < nscol; j += team_size) {
+        //X (j1 + j) = STS::zero ();
+        work (j1 + j) = X (j1 + j);
       }
     } else if (flag == 1) {
       for (int j = team_rank; j < nscol; j += team_size) {
@@ -378,6 +385,7 @@ struct SparseTriSupernodalSpMVFunctor
         X (j1 + j) = STS::zero ();
       }
     } else {
+      // reinitialize work to zero
       for (int j = team_rank; j < nscol; j += team_size) {
         work (j1 + j) = STS::zero ();
       }
@@ -1336,9 +1344,12 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         // initialize input & output vectors
         typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
 
-        // update with one spmv
-        const char *tran = (thandle.transpose_spmv() ? "T" : "N");
+        // update with spmv (one or two SpMV)
+        bool transpose_spmv = ((!thandle.transpose_spmv() &&  thandle.is_column_major ()) ||
+                               ( thandle.transpose_spmv() && !thandle.is_column_major ()));
+        const char *tran = (transpose_spmv ? "T" : "N");
         if (!invert_offdiagonal) {
+          // solve with diagonals
           auto *digmat = thandle.get_diagblock (lvl);
           KokkosSparse::
           spmv(tran, one, *digmat,
@@ -1354,6 +1365,7 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
             sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
           Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
         }
+        // update off-diagonals (potentiall combined with solve with diagonals)
         auto *submat = thandle.get_submatrix (lvl);
         KokkosSparse::
         spmv(tran, one, *submat,
@@ -1649,30 +1661,58 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         // initialize input & output vectors
         typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
 
-        // update with one spmv
-        const char *tran = (thandle.transpose_spmv() ? "T" : "N");
-        if (!invert_offdiagonal) {
-          auto *digmat = thandle.get_diagblock (lvl);
+        // update with one, or two, spmv
+        bool transpose_spmv = ((!thandle.transpose_spmv() &&  thandle.is_column_major ()) ||
+                               ( thandle.transpose_spmv() && !thandle.is_column_major ()));
+        const char *tran = (transpose_spmv ? "T" : "N");
+        if (!transpose_spmv) { // U stored in CSR
+          if (!invert_offdiagonal) {
+            // solve with diagonals
+            auto *digmat = thandle.get_diagblock (lvl);
+            KokkosSparse::
+            spmv(tran, one, *digmat,
+                            lhs,
+                       one, work);
+            // copy from work to lhs corresponding to diagonal blocks
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+              sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, lhs, work);
+            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+          } else {
+            // zero out lhs corresponding to diagonal blocks in lhs, and copy to work
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+              sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
+            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+          }
+          // update with off-diagonals (potentiall combined with diagonal solves)
+          auto *submat = thandle.get_submatrix (lvl);
           KokkosSparse::
-          spmv(tran, one, *digmat,
-                          lhs,
-                     one, work);
-          // copy from work to lhs corresponding to diagonal blocks
-          SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-            sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, lhs, work);
-          Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+          spmv(tran, one, *submat,
+                          work,
+                     one, lhs);
         } else {
-          // zero out lhs corresponding to diagonal blocks in lhs, and copy to work
-          SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-            sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
-          Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
-        }
-        auto *submat = thandle.get_submatrix (lvl);
-        KokkosSparse::
-        spmv(tran, one, *submat,
-                        work,
-                   one, lhs);
+          if (!invert_offdiagonal) {
+            // zero out lhs corresponding to diagonal blocks in lhs, and copy to work
+            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+              sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
+            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
 
+            // update with off-diagonals
+            auto *submat = thandle.get_submatrix (lvl);
+            KokkosSparse::
+            spmv(tran, one, *submat,
+                            lhs,
+                       one, work);
+
+            // solve with diagonals
+            auto *digmat = thandle.get_diagblock (lvl);
+            KokkosSparse::
+            spmv(tran, one, *digmat,
+                            work,
+                       one, lhs);
+          } else {
+            printf( " ** invert_offdiag with U in CSR not supported **\n" );
+          }
+        }
         // reinitialize workspace
         SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
           sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, lhs, work);

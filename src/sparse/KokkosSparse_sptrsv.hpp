@@ -537,7 +537,11 @@ namespace Experimental {
       // read in the numerical values into merged csc/csr for U
       tic.reset ();
       if (useSpMV) {
+        if (UinCSC) {
           superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU_host);
+        } else {
+          superluU_host = read_superlu_valuesU<host_crsmat_t> (invert_diag, &L, &U, graphU_host);
+        }
       } else {
         if (UinCSC) {
           superluU = read_superlu_valuesU_CSC<crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU);
@@ -738,6 +742,25 @@ namespace Experimental {
       // apply backward pivoting
       Kokkos::deep_copy (x, b);
    }
+  }
+
+  // ---------------------------------------------------------------------
+  template <typename KernelHandle,
+            class XType>
+  void sptrsv_solve(
+      KernelHandle *handleL,
+      KernelHandle *handleU,
+      XType x,
+      XType b)
+  {
+    // Lower-triangular solve
+    sptrsv_solve(handleL, x, b);
+
+    // copy the solution to rhs
+    Kokkos::deep_copy (b, x);
+
+    // uper-triangular solve
+    sptrsv_solve(handleU, x, b);
   }
 #endif
 

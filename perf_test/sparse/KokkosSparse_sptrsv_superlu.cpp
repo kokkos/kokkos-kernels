@@ -513,8 +513,12 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
             forwardP_supernode<scalar_type> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
 
+            #if 1
+            sptrsv_solve (&khL, &khU, sol, rhs);
+            #else
             sptrsv_solve (&khL, sol, rhs);
             sptrsv_solve (&khU, rhs, sol);
+            #endif
 
             Kokkos::fence();
             Kokkos::deep_copy(tmp_host, rhs);

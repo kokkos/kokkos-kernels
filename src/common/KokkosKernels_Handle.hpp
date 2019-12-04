@@ -526,11 +526,13 @@ public:
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);
 
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
     // default SpMV option
     if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
         algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
       this->set_sptrsv_column_major (true);
     }
+#endif
   }
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
@@ -561,9 +563,9 @@ public:
   }
 
   void set_sptrsv_invert_offdiagonal (bool flag) {
-    if (flag == true && (!(this->is_sptrsv_lower_tri ())) && (!(this->is_sptrsv_column_major ()))) {
+    if (flag == true && !(this->is_sptrsv_column_major ())) {
       std::cout << std::endl
-                << " ** cannot invert offdiagonal for U in CSR **"
+                << " ** cannot invert offdiagonal in CSR **"
                 << std::endl << std::endl;
       return;
     }
@@ -577,16 +579,13 @@ public:
 
 
   void set_sptrsv_column_major (bool col_major) {
-    KokkosSparse::Experimental::SPTRSVAlgorithm algm = this->sptrsvHandle->get_algorithm ();
-    if (col_major == true ||
-       (algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV &&
-        algm != KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
-      this->sptrsvHandle->set_column_major (col_major);
-    } else {
+    if (col_major == false && this->sptrsvHandle->get_invert_offdiagonal ()) {
       std::cout << std::endl
-                << " ** need CSC for SpMV option **"
+                << " ** cannot use CSR for inverting offdiagonal **"
                 << std::endl << std::endl;
+      return;
     }
+    this->sptrsvHandle->set_column_major (col_major);
   }
 
   bool is_sptrsv_lower_tri () {

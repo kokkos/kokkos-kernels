@@ -817,8 +817,23 @@ read_merged_supernodes(int nsuper, const int *nb,
       char diag_char = (unit_diag ? 'U' : 'N');
 
       tic.reset ();
+#if 1
       LAPACKE_dtrtri(LAPACK_COL_MAJOR,
                      uplo_char, diag_char, nscol, &hv(nnzD), nsrow);
+#else
+      if ( std::is_same<scalar_t,double>::value == true ) {
+        LAPACKE_dtrtri(LAPACK_COL_MAJOR,
+                       uplo_char, diag_char, nscol, &hv(nnzD), nsrow);
+      }
+      else if ( std::is_same<scalar_t,std::complex<double>>::value == true || std::is_same<scalar_t,Kokkos::complex<double>::value == true ) {
+        LAPACKE_ztrtri(LAPACK_COL_MAJOR,
+                       uplo_char, diag_char, nscol, &hv(nnzD), nsrow);
+      }
+      else {
+        std::cout << "Unsupported scalar type: typeid(scalar_t) = " << typeid(scalar_t()).name() << std::endl;
+        throw std::runtime_error( "Unsupported scalar type");
+      }
+#endif
       time1 += tic.seconds ();
       if (nsrow > nscol && invert_offdiag) {
         CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
@@ -875,7 +890,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
   }
   auto rowmap_view = static_graph.row_map;
   auto column_view = static_graph.entries;
-  values_view_t  values_view ("values_view", nnzL);
+  values_view_t values_view ("values_view", nnzL);
 
   typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
   typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
@@ -1137,8 +1152,8 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
     // create subgraph
     hr (0) = 0;
     hrD (0) = 0;
-    if (!handleL->transpose_spmv()) {
-      // >> store submatrix in CSR <<
+    if (handleL->transpose_spmv()) { // NOTE: it always transpose, for now
+      // >> store submatrix with transpose (CSR -> CSC or CSC -> CSR) <<
       // count nnz / row
       for (int j = 0; j <= nrows; j++) {
         hr (j) = 0;
@@ -1228,7 +1243,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       hr (0) = 0;
       hrD (0) = 0;
     } else {
-      // >> store submatrix in CSC <<
+      // >> store submatrix without transpose (CSC -> CSC or CSR -> CSR) <<
       nnzL = 0;
       nnzD = 0;
       int j0 = 0; // end of previous supernode at this level (not including this column)
