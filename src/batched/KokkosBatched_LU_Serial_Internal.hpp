@@ -37,7 +37,8 @@ namespace KokkosBatched {
     const int k = (m < n ? m : n);
     if (k <= 0) return 0;
 
-    const auto       abs_tiny =  tiny > 0 ? tiny : -tiny;
+    using mst = typename MagnitudeScalarType<ValueType>::type;
+    const auto       abs_tiny =  tiny > 0 ? tiny : mst(-tiny);
     const auto minus_abs_tiny = -abs_tiny;
 
     for (int p=0;p<k;++p) {
