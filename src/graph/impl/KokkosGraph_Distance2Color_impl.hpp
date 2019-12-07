@@ -312,7 +312,7 @@ class GraphColorDistance2
                   this->xadj, this->adj, this->t_xadj, this->t_adj, colors_out, current_vertexList, current_vertexListLength);
             }
 
-            my_exec_space::fence();
+            my_exec_space().fence();
 
             if(this->_ticToc)
             {
@@ -345,7 +345,7 @@ class GraphColorDistance2
                                                next_iteration_recolorList,
                                                next_iteration_recolorListLength);
 
-            my_exec_space::fence();
+            my_exec_space().fence();
 
             if(_ticToc)
             {
@@ -393,7 +393,7 @@ class GraphColorDistance2
                                          current_vertexListLength);
         }
 
-        my_exec_space::fence();
+        my_exec_space().fence();
 
         if(_ticToc)
         {
@@ -482,10 +482,10 @@ class GraphColorDistance2
      */
     void compute_color_histogram(nnz_lno_temp_work_view_t& histogram)
     {
-        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_type, nnz_lno_temp_work_view_t, my_exec_space>(
-          this->nv, this->gc_handle->get_vertex_colors(), histogram);
+        KokkosKernels::Impl::kk_get_histogram<typename HandleType::color_view_type, nnz_lno_temp_work_view_t, my_exec_space>
+            (this->nv, this->gc_handle->get_vertex_colors(), histogram);
 
-        my_exec_space::fence();
+        my_exec_space().fence();
     }
 
 
@@ -505,7 +505,10 @@ class GraphColorDistance2
         Kokkos::deep_copy(h_histogram, histogram);
 
         size_t i = 0;
-        for(i = 1; i < h_histogram.extent(0) - 1; i++) { std::cout << h_histogram(i) << ","; }
+        for(i = 1; i < h_histogram.extent(0) - 1; i++)
+        {
+            std::cout << h_histogram(i) << ",";
+        }
         std::cout << h_histogram(i);
     }
 
@@ -519,9 +522,11 @@ class GraphColorDistance2
     {
         nnz_lno_type             num_colors = this->gc_handle->get_num_colors();
         nnz_lno_temp_work_view_t histogram("histogram", num_colors + 1);
+
         this->compute_color_histogram(histogram);
-        std::cout << "Distance-2 Color Histogram: " << std::endl;
-        KokkosKernels::Impl::kk_print_1Dview(histogram);
+        auto histogram_slice = Kokkos::subview(histogram, std::make_pair((size_t)1, histogram.extent(0)));
+        std::cout << "Distance-2 Color Histogram (1..N): " << std::endl;
+        KokkosKernels::Impl::kk_print_1Dview(histogram_slice);
         std::cout << std::endl;
     }
 

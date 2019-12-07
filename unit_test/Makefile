@@ -95,7 +95,8 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas1_axpy.o
   OBJ_OPENMP += Test_OpenMP_Blas1_team_axpy.o
   OBJ_OPENMP += Test_OpenMP_Blas1_dot.o
-  OBJ_OPENMP += Test_OpenMP_Blas1_team_dot.o  
+  OBJ_OPENMP += Test_OpenMP_Blas1_team_dot.o
+  OBJ_OPENMP += Test_OpenMP_Blas1_iamax.o  
   OBJ_OPENMP += Test_OpenMP_Blas1_mult.o
   OBJ_OPENMP += Test_OpenMP_Blas1_team_mult.o
   OBJ_OPENMP += Test_OpenMP_Blas1_nrm1.o
@@ -112,8 +113,11 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas2_gemv.o
   OBJ_OPENMP += Test_OpenMP_Blas2_team_gemv.o
   OBJ_OPENMP += Test_OpenMP_Blas3_gemm.o
+  OBJ_OPENMP += Test_OpenMP_Blas_gesv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spmv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_trsv.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_sptrsv.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_spiluk.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spgemm.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spadd.o
   OBJ_OPENMP += Test_OpenMP_Sparse_gauss_seidel.o
@@ -208,6 +212,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas1_team_axpy.o
   OBJ_CUDA += Test_Cuda_Blas1_dot.o
   OBJ_CUDA += Test_Cuda_Blas1_team_dot.o
+  OBJ_CUDA += Test_Cuda_Blas1_iamax.o
   OBJ_CUDA += Test_Cuda_Blas1_mult.o
   OBJ_CUDA += Test_Cuda_Blas1_team_mult.o
   OBJ_CUDA += Test_Cuda_Blas1_nrm1.o
@@ -224,8 +229,11 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas2_gemv.o
   OBJ_CUDA += Test_Cuda_Blas2_team_gemv.o
   OBJ_CUDA += Test_Cuda_Blas3_gemm.o #Not yet ready need to figure out how to handle CUBLAS
-  #OBJ_CUDA += Test_Cuda_Sparse_spmv.o
+  OBJ_CUDA += Test_Cuda_Blas_gesv.o
+  OBJ_CUDA += Test_Cuda_Sparse_spmv.o
   #OBJ_CUDA += Test_Cuda_Sparse_trsv.o #removing trsv from cuda unit test as it runs only sequential.
+  OBJ_CUDA += Test_Cuda_Sparse_sptrsv.o
+  OBJ_CUDA += Test_Cuda_Sparse_spiluk.o
   OBJ_CUDA += Test_Cuda_Sparse_spgemm.o
   OBJ_CUDA += Test_Cuda_Sparse_spadd.o
   OBJ_CUDA += Test_Cuda_Sparse_gauss_seidel.o
@@ -313,6 +321,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Blas1_team_axpy.o
   OBJ_SERIAL += Test_Serial_Blas1_dot.o
   OBJ_SERIAL += Test_Serial_Blas1_team_dot.o
+  OBJ_SERIAL += Test_Serial_Blas1_iamax.o
   OBJ_SERIAL += Test_Serial_Blas1_mult.o
   OBJ_SERIAL += Test_Serial_Blas1_team_mult.o
   OBJ_SERIAL += Test_Serial_Blas1_nrm1.o
@@ -329,8 +338,11 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Blas2_gemv.o
   OBJ_SERIAL += Test_Serial_Blas2_team_gemv.o
   OBJ_SERIAL += Test_Serial_Blas3_gemm.o
+  OBJ_SERIAL += Test_Serial_Blas_gesv.o
   OBJ_SERIAL += Test_Serial_Sparse_spmv.o
   OBJ_SERIAL += Test_Serial_Sparse_trsv.o
+  OBJ_SERIAL += Test_Serial_Sparse_sptrsv.o
+  OBJ_SERIAL += Test_Serial_Sparse_spiluk.o
   OBJ_SERIAL += Test_Serial_Sparse_spgemm.o
   OBJ_SERIAL += Test_Serial_Sparse_spadd.o
   OBJ_SERIAL += Test_Serial_Sparse_gauss_seidel.o
@@ -425,6 +437,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Blas1_team_axpy.o
   OBJ_THREADS += Test_Threads_Blas1_dot.o
   OBJ_THREADS += Test_Threads_Blas1_team_dot.o
+  OBJ_THREADS += Test_Threads_Blas1_iamax.o
   OBJ_THREADS += Test_Threads_Blas1_mult.o
   OBJ_THREADS += Test_Threads_Blas1_team_mult.o 
   OBJ_THREADS += Test_Threads_Blas1_nrm1.o
@@ -441,8 +454,11 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Blas2_gemv.o
   OBJ_THREADS += Test_Threads_Blas2_team_gemv.o
   OBJ_THREADS += Test_Threads_Blas3_gemm.o
+  OBJ_THREADS += Test_Threads_Blas_gesv.o
   OBJ_THREADS += Test_Threads_Sparse_spmv.o
   OBJ_THREADS += Test_Threads_Sparse_trsv.o
+  OBJ_THREADS += Test_Threads_Sparse_sptrsv.o
+  OBJ_THREADS += Test_Threads_Sparse_spiluk.o
   OBJ_THREADS += Test_Threads_Sparse_spgemm.o
   OBJ_THREADS += Test_Threads_Sparse_spadd.o
   OBJ_THREADS += Test_Threads_Sparse_gauss_seidel.o

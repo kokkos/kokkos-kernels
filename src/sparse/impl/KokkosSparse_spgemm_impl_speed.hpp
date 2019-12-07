@@ -297,10 +297,9 @@ struct KokkosSPGEMM
 
         unit_memory(sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) + sizeof (scalar_t)),
         suggested_team_size(suggested_team_size_),
-        thread_memory((shared_memory_size /8 / suggested_team_size_) * 8),
+        thread_memory((shared_memory_size /sizeof(scalar_t) / suggested_team_size_) * sizeof(scalar_t)),
         shmem_key_size(), shared_memory_hash_func(), shmem_hash_size(1)
         {
-
           shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 2) / unit_memory);
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- thread_memory:" << thread_memory  << " unit_memory:" << unit_memory <<
@@ -313,6 +312,35 @@ struct KokkosSPGEMM
 
           shmem_key_size = shmem_key_size + ((shmem_key_size - shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(scalar_t));
           shmem_key_size = (shmem_key_size >> 1) << 1;
+
+          // thread_memory == 2*sizeof(nnz_lno_t) + shmem_hash_size*sizeof(nnz_lno_t) + 2*shmem_key_size*sizeof(nnz_lno_t) + rem_size*sizeof(scalar_t)
+          // check that memory is partitioned into aligned chunks
+          nnz_lno_t remainder_memory = thread_memory - sizeof(nnz_lno_t)*2 - shmem_hash_size*sizeof(nnz_lno_t);
+
+          // The remainder of memory for vals must be aligned into sizeof(scalar_t) chunks, and there must be at least as many entries as keys
+          nnz_lno_t val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
+
+          nnz_lno_t val_unalign_mem = val_memory % sizeof(scalar_t);
+          if (val_unalign_mem > 0) {
+            // Redistributing between shmem_key_size and vals involves exchange of 2 "keys" (key+next) per val
+            nnz_lno_t realign_chunk_mem = 2 * sizeof(nnz_lno_t);
+
+            bool is_align_possible = (val_unalign_mem % realign_chunk_mem) == 0;
+            if(!is_align_possible)
+            {
+              throw std::runtime_error("NumericCMEM Ctor Error: unable to align memory for shared memory allocations. Modify your shared memory request");
+            }
+
+            nnz_lno_t realign_chunks = val_unalign_mem / realign_chunk_mem; 
+
+            shmem_key_size -= realign_chunks;
+            val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
+            val_unalign_mem = val_memory%sizeof(scalar_t);
+          }
+
+          if (val_unalign_mem > 0) {
+            throw std::runtime_error("NumericCMEM Ctor Error: shared memory realignment failed. Modify your shared memory request");
+          }
 
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << shmem_hash_size  << " shmem_key_size:" << shmem_key_size << std::endl;
@@ -531,7 +559,7 @@ void
         KOKKOSKERNELS_VERBOSE);
 
     Kokkos::Impl::Timer timer1;
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tGPU vector_size:" << suggested_vector_size
@@ -549,7 +577,7 @@ void
             suggested_team_size ,
             suggested_vector_size),
             sc);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tNumeric TIME:" << timer1.seconds() << std::endl;
@@ -569,7 +597,7 @@ void
     Kokkos::Impl::Timer timer1;
     pool_memory_space m_space
     (num_chunks, this->b_col_cnt + (this->b_col_cnt) / sizeof(scalar_t) + 1, 0,  my_pool_type);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tPool Alloc Time:" << timer1.seconds() << std::endl;
@@ -602,7 +630,7 @@ void
         my_exec_space_,
         team_row_chunk_size);
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tCPU vector_size:" << suggested_vector_size
           <<  " team_size:" << suggested_team_size
@@ -618,7 +646,7 @@ void
       Kokkos::parallel_for( "KokkosSparse::NumericCMEM_CPU::DENSE::STATIC", multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
 
-    MyExecSpace::fence();
+    MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tNumeric TIME:" << timer1.seconds() << std::endl;

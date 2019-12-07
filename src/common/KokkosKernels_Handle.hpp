@@ -46,6 +46,8 @@
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
 #include "KokkosSparse_spadd_handle.hpp"
+#include "KokkosSparse_sptrsv_handle.hpp"
+#include "KokkosSparse_spiluk_handle.hpp"
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
@@ -136,6 +138,9 @@ public:
     this->gsHandle = right_side_handle.get_gs_handle();
     this->spgemmHandle = right_side_handle.get_spgemm_handle();
 
+    this->sptrsvHandle = right_side_handle.get_sptrsv_handle();
+    this->spilukHandle = right_side_handle.get_spiluk_handle();
+
     this->team_work_size = right_side_handle.get_set_team_work_size();
     this->shared_memory_size = right_side_handle.get_shmem_size();
     this->suggested_team_size = right_side_handle.get_set_suggested_team_size();
@@ -150,6 +155,8 @@ public:
     is_owner_of_the_gs_handle = false;
     is_owner_of_the_spgemm_handle = false;
     is_owner_of_the_spadd_handle = false;
+    is_owner_of_the_sptrsv_handle = false;
+    is_owner_of_the_spiluk_handle = false;
     //return *this;
   }
 
@@ -166,6 +173,14 @@ public:
     GaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       GaussSeidelHandleType;
 
+  //These are subclasses of GaussSeidelHandleType.
+  typedef typename KokkosSparse::
+    PointGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      PointGaussSeidelHandleType;
+  typedef typename KokkosSparse::
+    ClusterGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      ClusterGaussSeidelHandleType;
+
   typedef typename KokkosSparse::
     SPGEMMHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPGEMMHandleType;
@@ -180,6 +195,7 @@ public:
   typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
+  typedef typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
@@ -190,6 +206,13 @@ public:
     typename KokkosSparse::SPADDHandle<row_lno_temp_work_view_t, nnz_lno_temp_work_view_t, scalar_temp_work_view_t, HandleExecSpace, HandleTempMemorySpace>
       SPADDHandleType;
 
+  typedef
+    typename KokkosSparse::Experimental::SPTRSVHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      SPTRSVHandleType;
+
+  typedef
+    typename KokkosSparse::Experimental::SPILUKHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      SPILUKHandleType;
 
 private:
 
@@ -199,6 +222,8 @@ private:
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
   SPADDHandleType *spaddHandle;
+  SPTRSVHandleType *sptrsvHandle;
+  SPILUKHandleType *spilukHandle;
 
   int team_work_size;
   size_t shared_memory_size;
@@ -214,6 +239,8 @@ private:
   bool is_owner_of_the_gs_handle;
   bool is_owner_of_the_spgemm_handle;
   bool is_owner_of_the_spadd_handle;
+  bool is_owner_of_the_sptrsv_handle;
+  bool is_owner_of_the_spiluk_handle;
 
 public:
 
@@ -223,6 +250,8 @@ public:
     , gsHandle(NULL)
     , spgemmHandle(NULL)
     , spaddHandle(NULL)
+    , sptrsvHandle(NULL)
+    , spilukHandle(NULL)
     , team_work_size(-1)
     , shared_memory_size(16128)
     , suggested_team_size(-1)
@@ -235,6 +264,8 @@ public:
     , is_owner_of_the_gs_handle(true)
     , is_owner_of_the_spgemm_handle(true)
     , is_owner_of_the_spadd_handle(true)
+    , is_owner_of_the_sptrsv_handle(true)
+    , is_owner_of_the_spiluk_handle(true)
   { }
 
   ~KokkosKernelsHandle(){
@@ -243,6 +274,8 @@ public:
     this->destroy_distance2_graph_coloring_handle();
     this->destroy_spgemm_handle();
     this->destroy_spadd_handle();
+    this->destroy_sptrsv_handle();
+    this->destroy_spiluk_handle();
   }
 
 
@@ -465,14 +498,30 @@ public:
 
 
 
-  GaussSeidelHandleType *get_gs_handle(){
+  GaussSeidelHandleType *get_gs_handle() {
     return this->gsHandle;
   }
-  void create_gs_handle(
-    KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT){
+  PointGaussSeidelHandleType *get_point_gs_handle() {
+    auto pgs = dynamic_cast<PointGaussSeidelHandleType*>(this->gsHandle);
+    if(this->gsHandle && !pgs)
+      throw std::runtime_error("GaussSeidelHandle exists but is not set up for point-coloring GS.");
+    return pgs;
+  }
+  ClusterGaussSeidelHandleType *get_cluster_gs_handle() {
+    auto cgs = dynamic_cast<ClusterGaussSeidelHandleType*>(this->gsHandle);
+    if(this->gsHandle && !cgs)
+      throw std::runtime_error("GaussSeidelHandle exists but is not set up for cluster-coloring GS.");
+    return cgs;
+  }
+  void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new GaussSeidelHandleType(gs_algorithm);
+    this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
+  }
+  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
+    this->destroy_gs_handle();
+    this->is_owner_of_the_gs_handle = true;
+    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, verts_per_cluster);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){
@@ -483,8 +532,6 @@ public:
       this->gsHandle = NULL;
     }
   }
-
-
 
   SPADDHandleType *get_spadd_handle(){
     return this->spaddHandle;
@@ -503,6 +550,46 @@ public:
   }
 
 
+
+  SPTRSVHandleType *get_sptrsv_handle(){
+    return this->sptrsvHandle;
+  }
+  void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri) {
+    this->destroy_sptrsv_handle();
+    this->is_owner_of_the_sptrsv_handle = true;
+    this->sptrsvHandle = new SPTRSVHandleType(algm, nrows, lower_tri);
+    this->sptrsvHandle->reset_handle(nrows);
+    this->sptrsvHandle->set_team_size(this->team_work_size);
+    this->sptrsvHandle->set_vector_size(this->vector_size);
+  }
+  void destroy_sptrsv_handle(){
+    if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)
+    {
+      delete this->sptrsvHandle;
+      this->sptrsvHandle = nullptr;
+    }
+  }
+
+
+  SPILUKHandleType *get_spiluk_handle(){
+    return this->spilukHandle;
+  }
+  void create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm algm, size_type nrows, size_type nnzL, size_type nnzU) {
+    this->destroy_spiluk_handle();
+    this->is_owner_of_the_spiluk_handle = true;
+    this->spilukHandle = new SPILUKHandleType(algm, nrows, nnzL, nnzU);
+    this->spilukHandle->reset_handle(nrows, nnzL, nnzU);
+    this->spilukHandle->set_team_size(this->team_work_size);
+    this->spilukHandle->set_vector_size(this->vector_size);
+  }
+  void destroy_spiluk_handle(){
+    if (is_owner_of_the_spiluk_handle && this->spilukHandle != nullptr)
+    {
+      delete this->spilukHandle;
+      this->spilukHandle = nullptr;
+    }
+  }
+  
 };    // end class KokkosKernelsHandle
 
 }

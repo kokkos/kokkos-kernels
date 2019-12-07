@@ -249,6 +249,23 @@ extern "C" {
                                      const std::complex<double>*,
                                      const std::complex<double>*, int*,
                                      /* */ std::complex<double>*, int* );
+
+  ///
+  /// Gesv
+  ///
+
+  void F77_BLAS_MANGLE(sgesv,SGESV)( int*, int*,
+                                     float*, int*, int*,
+                                     float*, int*, int* );
+  void F77_BLAS_MANGLE(dgesv,DGESV)( int*, int*,
+                                     double*, int*, int*,
+                                     double*, int*, int* );
+  void F77_BLAS_MANGLE(cgesv,CGESV)( int*, int*,
+                                     std::complex<float>*, int*, int*,
+                                     std::complex<float>*, int*, int* );
+  void F77_BLAS_MANGLE(zgesv,ZGESV)( int*, int*,
+                                     std::complex<double>*, int*, int*,
+                                     std::complex<double>*, int*, int* );
 }
 
 
@@ -322,6 +339,11 @@ extern "C" {
 #define F77_FUNC_DTRSM F77_BLAS_MANGLE(dtrsm,DTRSM)
 #define F77_FUNC_CTRSM F77_BLAS_MANGLE(ctrsm,CTRSM)
 #define F77_FUNC_ZTRSM F77_BLAS_MANGLE(ztrsm,ZTRSM)
+
+#define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv,SGESV)
+#define F77_FUNC_DGESV F77_BLAS_MANGLE(dgesv,DGESV)
+#define F77_FUNC_CGESV F77_BLAS_MANGLE(cgesv,CGESV)
+#define F77_FUNC_ZGESV F77_BLAS_MANGLE(zgesv,ZGESV)
 
 namespace KokkosBlas {
   namespace Impl {
@@ -443,6 +465,15 @@ namespace KokkosBlas {
                      a, &lda,
                      b, &ldb);
     }
+    template<>
+    void 
+    HostBlas<float>::gesv(int n, int rhs,
+                          float *a, int lda, int *ipiv,
+                          float *b, int ldb, int info) {
+      F77_FUNC_SGESV(&n, &rhs,
+                     a, &lda, ipiv,
+                     b, &ldb, &info);
+    }
 
     ///
     /// double
@@ -560,6 +591,15 @@ namespace KokkosBlas {
                      &alpha,
                      a, &lda,
                      b, &ldb);
+    }
+    template<>
+    void 
+    HostBlas<double>::gesv(int n, int rhs,
+                          double *a, int lda, int *ipiv,
+                          double *b, int ldb, int info) {
+      F77_FUNC_DGESV(&n, &rhs,
+                     a, &lda, ipiv,
+                     b, &ldb, &info);
     }
 
     /// 
@@ -686,6 +726,15 @@ namespace KokkosBlas {
                      (const std::complex<float>*)a, &lda,
                      (      std::complex<float>*)b, &ldb);
     }
+    template<>
+    void 
+    HostBlas<std::complex<float> >::gesv(int n, int rhs,
+                                         std::complex<float> *a, int lda, int *ipiv,
+                                         std::complex<float> *b, int ldb, int info) {
+      F77_FUNC_CGESV(&n, &rhs,
+                     a, &lda, ipiv,
+                     b, &ldb, &info);
+    }
     
     ///
     /// std::complex<double>
@@ -811,6 +860,15 @@ namespace KokkosBlas {
                      &alpha,
                      (const std::complex<double>*)a, &lda,
                      (      std::complex<double>*)b, &ldb);
+    }
+    template<>
+    void 
+    HostBlas<std::complex<double> >::gesv(int n, int rhs,
+                                         std::complex<double> *a, int lda, int *ipiv,
+                                         std::complex<double> *b, int ldb, int info) {
+      F77_FUNC_ZGESV(&n, &rhs,
+                     a, &lda, ipiv,
+                     b, &ldb, &info);
     }
 
   }

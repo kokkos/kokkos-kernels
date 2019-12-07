@@ -649,7 +649,7 @@ struct KokkosSPGEMM
       //if level-1 hash is full, it returns 1 (num_unsuccess=1)
       //a reduction is done to see whether any vector lanes failed.
       Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-          [&] (const int i, int &/* overall_num_unsuccess_ */) {
+          [&] (const int i, int &overall_num_unsuccess_) {
           n_set_index = result_keys[i];
           n_set = result_vals[i];
           nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
@@ -657,7 +657,7 @@ struct KokkosSPGEMM
           num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
                               teamMember, vector_size, hash,n_set_index,
 			      n_set, used_hash_sizes, shmem_hash_size);
-
+          overall_num_unsuccess_ += num_unsuccess;
       }, overall_num_unsuccess);
 
 #ifdef KOKKOSKERNELSMOREMEM
@@ -800,7 +800,7 @@ bool KokkosSPGEMM
     set_begins_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_begins_"), nnz);
     Kokkos::deep_copy (set_begins_, -1);
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
 #endif
 
   if (KOKKOSKERNELS_VERBOSE){
@@ -843,7 +843,7 @@ bool KokkosSPGEMM
 #ifndef KOKKOSKERNELSMOREMEM
     size_type max_row_nnz = 0;
     KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
 
     nnz_lno_t min_hash_size = 1;
@@ -890,7 +890,7 @@ bool KokkosSPGEMM
     }
     nnz_lno_t pool_init_val = -1;
     pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
-    MyExecSpace::fence();
+    MyExecSpace().fence();
     sszm_compressMatrix.memory_space = m_space;
 #endif
     Kokkos::parallel_for("KokkosSparse::SingleStepZipMatrix::GPUEXEC",  gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
@@ -903,7 +903,7 @@ bool KokkosSPGEMM
       {
         size_type max_row_nnz = 0;
         KokkosKernels::Impl::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
         KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 
         nnz_lno_t min_hash_size = 1;
@@ -929,7 +929,7 @@ bool KokkosSPGEMM
         }
         nnz_lno_t pool_init_val = -1;
         pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
-        MyExecSpace::fence();
+        MyExecSpace().fence();
         sszm_compressMatrix.memory_space = m_space;
       }
 
@@ -939,7 +939,7 @@ bool KokkosSPGEMM
       else
         Kokkos::parallel_for( "KokkosSparse::TwoStepZipMatrix::use_ordered_compress", team_count_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
 
-      MyExecSpace::fence();
+      MyExecSpace().fence();
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\t\tCompression Count Kernel:" <<  timer_count.seconds() << std::endl;
       }
@@ -999,7 +999,7 @@ bool KokkosSPGEMM
 
     }
   }
-  MyExecSpace::fence();
+  MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\t\tCompression Kernel time:" <<  timer1.seconds() << std::endl;
   }

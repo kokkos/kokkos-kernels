@@ -9,6 +9,7 @@
 #include<KokkosKernels_Utils.hpp>
 
 #include<algorithm>   //for std::random_shuffle
+#include<random>      // for std::default_random_engine
 #include<cstdlib>     //for rand
 #include<type_traits> //for std::is_same
 
@@ -55,13 +56,14 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxN
   lno_view_t entries("entries", nnz);
   typename lno_view_t::HostMirror h_entries = Kokkos::create_mirror_view(entries);
   std::vector<lno_t> indices(nrows);
+  auto re = std::default_random_engine(0);
   for(lno_t i = 0; i < nrows; i++)
   {
     for(lno_t j = 0; j < nrows; j++)
     {
       indices[j] = j;
     }
-    std::random_shuffle(indices.begin(), indices.end());
+    std::shuffle(indices.begin(), indices.end(), re);
     size_type rowStart = h_rowmap(i);
     size_type rowCount = h_rowmap(i + 1) - rowStart;
     if(sortRows)
