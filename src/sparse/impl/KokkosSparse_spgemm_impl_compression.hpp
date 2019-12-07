@@ -741,7 +741,7 @@ struct KokkosSPGEMM
 		    });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
 	  return shared_memory_size;
   }
 

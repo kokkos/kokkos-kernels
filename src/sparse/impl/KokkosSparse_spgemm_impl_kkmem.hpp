@@ -694,7 +694,7 @@ struct KokkosSPGEMM
     typedef typename std::remove_reference< decltype( *used_hash_sizes ) >::type atomic_incr_type;
     Kokkos::parallel_scan(
         Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
+        [&] (const int /* threadid */, int &update, const bool final) {
       if (final){
       	vector_rank = update;
       }
@@ -1000,7 +1000,7 @@ struct KokkosSPGEMM
     typedef typename std::remove_reference< decltype( *used_hash_sizes ) >::type atomic_incr_type;
     Kokkos::parallel_scan(
         Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
+        [&] (const int /* threadid */, int &update, const bool final) {
       if (final){
       	vector_rank = update;
       }
@@ -1169,7 +1169,7 @@ struct KokkosSPGEMM
   }
 
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
     return shared_memory_size;
   }
 };
