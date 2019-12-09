@@ -366,25 +366,22 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
   delete [] map;
   delete [] check;
 
-  //printf( " > supernodal graph:\n" );
-  //for (int s = 0; s < nsuper; s++) {
-  //  for (int i = hr(s); i < hr(s+1); i++) printf( "%d %d\n",s,hc(i) );
-  //}
-  //printf( "\n" );
   host_graph_t static_graph (hc, hr);
   return static_graph;
 }
 
 template <typename graph_t>
-int** generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
+graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
 
+  // graph_t is assumed to be on the host
   auto row_mapL = supL.row_map;
   auto entriesL = supL.entries;
   auto row_mapU = supU.row_map;
   auto entriesU = supU.entries;
 
+  int totedges = 0;
   int *edges = new int[nsuper];
-  int **dag = (int**)malloc(nsuper * sizeof(int*));
+  int **dag = new int* [nsuper];
   for (int s = 0; s < nsuper; s ++) {
     // count # of edges (search for first matching nonzero)
     int nedges = 0;
@@ -409,10 +406,30 @@ int** generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
     for (int k = 0; k < nedges; k++) {
       dag[s][1+k] = edges[k];
     }
+    totedges += nedges;
   }
   delete[] edges;
 
-  return dag;
+  // convert dag into graph
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type    cols_view_t;
+  row_map_view_t hr ("rowmap_view", nsuper+1);
+  cols_view_t    hc ("colmap_view", totedges);
+
+  hr (0) = 0;
+  totedges = 0;
+  for (int s = 0; s < nsuper; s ++) {
+    for (int k = 0; k < dag[s][0]; k++) {
+      hc (totedges)  = dag[s][k+1];
+      totedges ++;
+    }
+    hr (s+1) = totedges;
+    delete [] dag[s];
+  }
+  delete [] dag;
+
+  graph_t static_graph (hc, hr);
+  return static_graph;
 }
 
 
@@ -429,10 +446,6 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
   // ---------------------------------------------------------------
   // looking for supernodes to merge (i.e., dense diagonal blocks)
   int nsuper2 = 0;
-  // map the first supernode
-  int *map = new int[nsuper]; // map old to new supernodes
-  map[0] = 0;
-  #if 1
   auto supL = generate_supernodal_graph<input_graph_t, input_graph_t> (!col_majorL, graphL, nsuper, nb);
   auto supU = generate_supernodal_graph<input_graph_t, input_graph_t> ( col_majorU, graphU, nsuper, nb);
 
@@ -442,6 +455,9 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
   auto row_mapU = supU.row_map;
   auto entriesU = supU.entries;
 
+  // map the first supernode
+  int *map = new int[nsuper]; // map old to new supernodes
+  map[0] = 0;
   for (int s = 0; s < nsuper-1; s++) {
     int s2 = s;
     bool merged = false;
@@ -487,106 +503,50 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
     s = s2;
     nsuper2 ++;
   }
-  #else
-  // TODO: should be based on supernodal graph, instead of by column
-  auto row_mapL = graphL.row_map;
-  auto entriesL = graphL.entries;
-
-  auto row_mapU = graphU.row_map;
-  auto entriesU = graphU.entries;
-
-  double tol = 0.8;
-  for (int s = 0; s < nsuper-1; s++) {
-    //printf( " -- s = %d->%d --\n",s,nsuper2 );
-    // checking if the next supernode can be merged
-    int s2 = s;
-    bool merged = false;
-    do {
-      int nnzL = 0;
-      int nnzU = 0;
-
-      int nscol1 = nb[s2+1] - nb[s];    // size of the current merged supernode
-      int nscol2 = nb[s2+2] - nb[s2+1]; // size of the current supernode
-      int nssize = nscol1 * nscol2;
-      for (int t = s; t <= s2; t++ ) {
-        //int nscol = nb[s2+1] - nb[t];   // size of the current supernode
-        for (int j = nb[t]; j < nb[t+1]; j++) {
-          // counting nnzL
-          for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
-            if (entriesL[k] >= nb[s2+1]) {
-              if (entriesL[k] < nb[s2+2]) {
-                nnzL ++;
-              } else {
-                break;
-              }
-            }
-          }
-          // counting nnzU
-          for (int k = row_mapU[j]; k < row_mapU[j+1]; k++) {
-            if (entriesU[k] >= nb[s2+1]) {
-              if (entriesU[k] < nb[s2+2]) {
-                nnzU ++;
-              } else {
-                break;
-              }
-            }
-          }
-        }
-      }
-      merged = (nnzL > tol*nssize && nnzU > tol*nssize);
-      if (merged) {
-        //printf( "  >> merge s2+1=%d(%dx%d, row=%d:%d) with s=%d(%dx%d) (%dx%d: %d,%d, %.2e,%.2e) <<\n",
-        //              s2+1,nb[s2+2]-nb[s2+1],nb[s2+2]-nb[s2+1],nb[s2+1],nb[s2+2]-1, s,nb[s+1]-nb[s],nb[s+1]-nb[s],
-        //              nscol1,nscol2, nnzL,nnzU,((double)nnzL)/((double)nssize),((double)nnzU)/((double)nssize) );
-        map[s2+1] = nsuper2;
-        s2 ++;
-      } else {
-        //printf( "  -- not merge s2+1=%d(%dx%d, row=%d:%d) with s=%d(%dx%d) (%dx%d: %d,%d, %.2e,%.2e) --\n",
-        //           s2+1,nb[s2+2]-nb[s2+1],nb[s2+2]-nb[s2+1],nb[s2+1],nb[s2+2]-1, s,nb[s+1]-nb[s],nb[s+1]-nb[s],
-        //           nscol1,nscol2, nnzL,nnzU,((double)nnzL)/((double)nssize),((double)nnzU)/((double)nssize) );
-        map[s2+1] = nsuper2+1;
-      }
-    } while (merged && s2 < nsuper-1);
-    s = s2;
-    nsuper2 ++;
-  }
-  #endif
   nsuper2 = map[nsuper-1]+1;
   //printf( " nsuper2 = %d\n",nsuper2 );
   //printf( " map:\n" );
   //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map[s] );
+
   // ----------------------------------------------------------
   // make sure each of the merged supernodes has the same parent in the etree
   int nsuper3 = 0;
-  int *map2 = new int[nsuper]; // map old to new supernodes
-  for (int s2 = 0, s = 0; s2 < nsuper2; s2++) {
-    // look for parent of the first supernode
-    int s3 = s;
-    while (etree[s3] != -1 && map[etree[s3]] == map[s3]) {
-      s3 ++;
-    }
-    map2[s] = nsuper3;
-    int p = (etree[s3] == -1 ? -1 : map[etree[s3]]);
-
-    // go through the rest of the supernode in this merged supernode
-    s++;
-    while (s < nsuper && map[s] == s2) {
-      int q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
+  int *map2 = nullptr;
+  if (etree != nullptr) {
+    nsuper3 = 0;
+    map2 = new int[nsuper]; // map old to new supernodes
+    for (int s2 = 0, s = 0; s2 < nsuper2; s2++) {
+      // look for parent of the first supernode
+      int s3 = s;
       while (etree[s3] != -1 && map[etree[s3]] == map[s3]) {
         s3 ++;
-        q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
-      }
-
-      if (q != p) {
-        p = q;
-        nsuper3 ++;
       }
       map2[s] = nsuper3;
-      s ++;
+      int p = (etree[s3] == -1 ? -1 : map[etree[s3]]);
+
+      // go through the rest of the supernode in this merged supernode
+      s++;
+      while (s < nsuper && map[s] == s2) {
+        int q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
+        while (etree[s3] != -1 && map[etree[s3]] == map[s3]) {
+          s3 ++;
+          q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
+        }
+
+        if (q != p) {
+          p = q;
+          nsuper3 ++;
+        }
+        map2[s] = nsuper3;
+        s ++;
+      }
+      nsuper3 ++;
     }
-    nsuper3 ++;
+    delete[] map;
+  } else {
+    nsuper3 = nsuper2;
+    map2 = map;
   }
-  delete[] map;
   //printf( " nsuper3 = %d\n",nsuper3 );
   //printf( " map:\n" );
   //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map2[s] );
@@ -607,30 +567,33 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
   for (int s = 0; s < nsuper3; s++) {
     nb2[s+1] = nb2[s]+nb2[s+1];
   }
+  // copy nb
+  for (int s = 0; s <nsuper3; s++) {
+    nb[s+1] = nb2[s+1];
+  }
+  delete[] nb2;
 
   // ----------------------------------------------------------
   // construct new etree
-  int *etree2 = new int[nsuper3];
-  for (int s = 0; s < nsuper; s++) {
-    // etree
-    int s2 = map2[s];
-    int p = (etree[s] == -1 ? -1 : map2[etree[s]]);
-    if (p != s2) {
-      etree2[s2] = p;
+  if (etree != nullptr) {
+    int *etree2 = new int[nsuper3];
+    for (int s = 0; s < nsuper; s++) {
+      // etree
+      int s2 = map2[s];
+      int p = (etree[s] == -1 ? -1 : map2[etree[s]]);
+      if (p != s2) {
+        etree2[s2] = p;
+      }
     }
-  }
-
-  // ----------------------------------------------------------
-  // convert/copy nb, mb, and etree
-  for (int s = 0; s <nsuper3; s++) {
-    // copy supernode id to column id
-    nb[s+1] = nb2[s+1];
     // copy etree
-    etree[s] = etree2[s];
+    for (int s = 0; s <nsuper3; s++) {
+      etree[s] = etree2[s];
+    }
+    delete[] etree2;
   }
+  delete[] map2;
+
   *p_nsuper = nsuper3;
-  delete[] nb2;
-  delete[] etree2;
 }
 
 
@@ -900,7 +863,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
 
   // compute max nnz per row
   int max_nnz_per_row = 0;
-  for (int s = 0 ; s < nsuper ; s++) {
+  for (int s = 0; s < nsuper; s++) {
     int i1, i2;
     if (ptr_by_column) {
       int j1 = nb[s];
@@ -920,7 +883,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
 
   int *sorted_rowind = new int[max_nnz_per_row];
   // store L in csr
-  for (int s = 0 ; s < nsuper ; s++) {
+  for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     int j2 = nb[s+1];
     int nscol = j2 - j1;      // number of columns in the s-th supernode column
@@ -1080,8 +1043,8 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   // form crsgraph for each submatrix at each level
   int newNnz = 0;
   int oldNnz = row_mapL (nrows);
-  crsmat_t **sub_crsmats = new crsmat_t*[nlevels];
-  crsmat_t **diag_blocks = new crsmat_t*[nlevels];
+  std::vector <crsmat_t> sub_crsmats (nlevels);
+  std::vector <crsmat_t> diag_blocks (nlevels);
   for (int lvl = 0; lvl < nlevels; ++lvl) {
     timer.reset ();
     // > count nnz
@@ -1095,8 +1058,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       int j1 = supercols_host[s];
       int j2 = supercols_host[s+1];
       int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
-
-#if 1
       for (int j = j1; j < j2; j++) {
         for (int k = row_mapL (j); k < row_mapL (j+1); k++) {
           if (valuesL (k) != STS::zero ()) {
@@ -1107,30 +1068,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
             }
           }
         }
-        #ifdef ADD_IDENTITY_TO_SPMV
-        if (!invert_offdiag) {
-          // add one on diagonal
-          nnzL ++;
-        }
-        #endif
       }
-#else
-      // number of rows in this supernode
-      int i1 = row_mapL (j1);
-      int i2 = row_mapL (j1+1);
-
-      // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-      int nsrow = i2 - i1;
-      if (invert_offdiag) {
-        nnzL += (nscol*nsrow);
-      } else {
-        nnzD += (nscol * nscol);
-        nnzL += (nscol * (nsrow-nscol));
-        #ifdef ADD_IDENTITY_TO_SPMV
-        nnzL += nscol; // identity on diagonal
-        #endif
-      }
-#endif
     }
 
     // allocate subgraph
@@ -1178,12 +1116,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
               }
             }
           }
-#ifdef ADD_IDENTITY_TO_SPMV
-          if (!invert_offdiag) {
-            // add one on diagonal
-            hr (1 + j) ++;
-          }
-#endif
         }
       }
       for (int j = 0; j < nrows; j++) {
@@ -1215,14 +1147,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
               }
             }
           }
-#ifdef ADD_IDENTITY_TO_SPMV
-          if (!invert_offdiag) {
-            // add one on diagonal
-            hc (hr (j)) = j;
-            hv (hr (j)) = STS::one ();
-            hr (j) ++;
-          }
-#endif
 
           // off-diagonals
           for (int k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
@@ -1279,14 +1203,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
               }
             }
           }
-#ifdef ADD_IDENTITY_TO_SPMV
-          if (!invert_offdiag) {
-            // add one on diagonal
-            hc (hr (j)) = j;
-            hv (hr (j)) = STS::one ();
-            hr (j) ++;
-          }
-#endif
 
           // off-diagonals
           for (int k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
@@ -1318,13 +1234,13 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
     Kokkos::deep_copy (column_view, hc);
     Kokkos::deep_copy (values_view, hv);
     graph_t sub_graph(column_view, rowmap_view);
-    sub_crsmats[lvl] = new crsmat_t("CrsMatrix", nrows, values_view, sub_graph);
+    sub_crsmats[lvl] = crsmat_t("CrsMatrix", nrows, values_view, sub_graph);
     if (!invert_offdiag) {
       Kokkos::deep_copy (rowmapD_view, hrD);
       Kokkos::deep_copy (columnD_view, hcD);
       Kokkos::deep_copy (valuesD_view, hvD);
       graph_t diag_graph(columnD_view, rowmapD_view);
-      diag_blocks[lvl] = new crsmat_t("DiagMatrix", nrows, valuesD_view, diag_graph);
+      diag_blocks[lvl] = crsmat_t("DiagMatrix", nrows, valuesD_view, diag_graph);
     }
     time2 += timer.seconds ();
 
@@ -1363,7 +1279,6 @@ graph_t deep_copy_graph (host_graph_t &host_graph) {
   graph_t static_graph (column_view, rowmap_view);
   return static_graph;
 }
-
 
 } // namespace Experimental
 } // namespace KokkosSparse

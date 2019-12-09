@@ -61,8 +61,9 @@ namespace Experimental {
 template < class TriSolveHandle, class RowMapType, class EntriesType >
 void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, const EntriesType dentries) {
 
- if ( thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP ||
-      thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
+ using namespace KokkosSparse::Experimental;
+ if ( thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_RP ||
+      thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
 /*   || thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 )*/
  {
   // Scheduling currently compute on host - need host copy of all views
@@ -170,11 +171,11 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy(dlevel_list, level_list);
  }
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
- else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG   ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+ else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG   ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
   typedef typename TriSolveHandle::size_type size_type;
 
   typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
@@ -218,7 +219,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   // workspace
   signed_integral_t max_lwork = 0;
   integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
-  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
     // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
     // Set number of level equal to be the number of supernodal columns
     thandle.set_num_levels (nsuper);
@@ -254,19 +255,21 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     }
   } else {
     /* initialize the ready tasks with leaves */
-    int **dag = thandle.get_supernodal_dag ();
     const int *parents = thandle.get_etree_parents ();
     int *check = new int[nsuper];
     for (size_type s = 0; s < nsuper; s++) {
       check[s] = 0;
     }
 
-    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
-                    thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+    auto dag = thandle.get_supernodal_dag ();
+    auto dag_row_map = dag.row_map;
+    auto dag_entries = dag.entries;
+    bool use_dag = (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                    thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
     for (size_type s = 0; s < nsuper; s++) {
       if (use_dag) {
-        for (size_type e = 0; e < dag[s][0]; e++) {
-          check[dag[s][e+1]] ++;
+        for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+          check[dag_entries (e)] ++;
         }
       } else {
         if (parents[s] >= 0) {
@@ -397,8 +400,8 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
         check[s] = -1;
         //printf( " %d: check[%d]=%d ",level,s,check[s]);
         if (use_dag) {
-          for (size_type e = 0; e < dag[s][0]; e++) {
-            check[dag[s][e+1]] --;
+          for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+            check[dag_entries (e)] --;
           }
         } else {
           if (parents[s] >= 0) {
@@ -424,8 +427,8 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     delete[] check;
   }
   // workspace size
-  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
-      thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+      thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
     max_lwork = thandle.get_nrows ();
   }
   thandle.set_workspace_size (max_lwork);
@@ -455,8 +458,9 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 template < class TriSolveHandle, class RowMapType, class EntriesType >
 void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, const EntriesType dentries ) {
 
- if ( thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP ||
-      thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
+ using namespace KokkosSparse::Experimental;
+ if ( thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_RP ||
+      thandle.get_algorithm() == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
 /*   || thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 )*/
  {
   // Scheduling currently compute on host - need host copy of all views
@@ -564,11 +568,11 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy(dlevel_list, level_list);
  }
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
- else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-          thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+ else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
   typedef typename TriSolveHandle::size_type size_type;
 
   typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
@@ -611,7 +615,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   // workspace
   signed_integral_t max_lwork = 0;
   integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
-  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
     // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
     // Set number of level equal to be the number of supernodal columns
     thandle.set_num_levels (nsuper);
@@ -645,19 +649,21 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
      * then reverse it for U-solve                   */
 
     /* initialize the ready tasks with leaves */
-    int **dag = thandle.get_supernodal_dag ();
     const int *parents = thandle.get_etree_parents ();
     int *check = new int[nsuper];
     for (size_type s = 0; s < nsuper; s++) {
       check[s] = 0;
     }
 
-    bool use_dag = (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
-                    thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+    auto dag = thandle.get_supernodal_dag ();
+    auto dag_row_map = dag.row_map;
+    auto dag_entries = dag.entries;
+    bool use_dag = (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                    thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
     if (use_dag) {
       for (size_type s = 0; s < nsuper; s++) {
-        for (size_type e = 0; e < dag[s][0]; e++) {
-          check[dag[s][e+1]] ++;
+        for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+          check[dag_entries (e)] ++;
         }
       }
     } else {
@@ -769,8 +775,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
         check[s] = -1;
         //printf( " %d: check[%d]=%d ",level,s,check[s]);
        if (use_dag) {
-          for (size_type e = 0; e < dag[s][0]; e++) {
-            check[dag[s][e+1]] --;
+          for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+            check[dag_entries (e)] --;
           }
         } else {
           if (parents[s] >= 0) {
@@ -836,8 +842,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     thandle.set_num_levels (num_level);
   }
   // workspace size
-  if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
-      thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+      thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
     max_lwork = thandle.get_nrows ();
   }
   thandle.set_workspace_size (max_lwork);

@@ -373,12 +373,6 @@ struct SparseTriSupernodalSpMVFunctor
         //X (j1 + j) = STS::zero ();
         X (j1 + j) = work (j1 + j);
       }
-    } else if (flag == -2) {
-      // copy X to work
-      for (int j = team_rank; j < nscol; j += team_size) {
-        //X (j1 + j) = STS::zero ();
-        work (j1 + j) = X (j1 + j);
-      }
     } else if (flag == 1) {
       for (int j = team_rank; j < nscol; j += team_size) {
         work (j1 + j) = X (j1 + j);
@@ -1172,6 +1166,7 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+  using namespace KokkosSparse::Experimental;
   typedef typename TriSolveHandle::integer_view_t integer_view_t;
   typedef typename TriSolveHandle::integer_view_host_t integer_view_host_t;
 
@@ -1246,9 +1241,9 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
       } // end elseif
       */
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
-      else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
-               thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-               thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
+      else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
+               thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+               thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG) {
 
         //#define profile_supernodal_etree
         #ifdef profile_supernodal_etree
@@ -1330,8 +1325,8 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
       }
-      else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-               thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+      else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+               thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
 
         #ifdef profile_supernodal_etree
         Kokkos::Timer timer;
@@ -1350,9 +1345,9 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         const char *tran = (transpose_spmv ? "T" : "N");
         if (!invert_offdiagonal) {
           // solve with diagonals
-          auto *digmat = thandle.get_diagblock (lvl);
+          auto digmat = thandle.get_diagblock (lvl);
           KokkosSparse::
-          spmv(tran, one, *digmat,
+          spmv(tran, one, digmat,
                           lhs,
                      one, work);
           // copy from work to lhs corresponding to diagonal blocks
@@ -1366,9 +1361,9 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
           Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
         }
         // update off-diagonals (potentiall combined with solve with diagonals)
-        auto *submat = thandle.get_submatrix (lvl);
+        auto submat = thandle.get_submatrix (lvl);
         KokkosSparse::
-        spmv(tran, one, *submat,
+        spmv(tran, one, submat,
                         work,
                    one, lhs);
 
@@ -1415,6 +1410,7 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+  using namespace KokkosSparse::Experimental;
   typedef typename TriSolveHandle::integer_view_t integer_view_t;
   typedef typename TriSolveHandle::integer_view_host_t integer_view_host_t;
 
@@ -1491,9 +1487,9 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
       } // end elseif
       */
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
-      else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
-               thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE ||
-               thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG) {
+      else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
+               thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+               thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG) {
 
         #ifdef profile_supernodal_etree
         Kokkos::Timer timer;
@@ -1646,8 +1642,8 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
       }
-      else if (thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-               thandle.get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+      else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+               thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
 
         #ifdef profile_supernodal_etree
         Kokkos::Timer timer;
@@ -1668,9 +1664,9 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         if (!transpose_spmv) { // U stored in CSR
           if (!invert_offdiagonal) {
             // solve with diagonals
-            auto *digmat = thandle.get_diagblock (lvl);
+            auto digmat = thandle.get_diagblock (lvl);
             KokkosSparse::
-            spmv(tran, one, *digmat,
+            spmv(tran, one, digmat,
                             lhs,
                        one, work);
             // copy from work to lhs corresponding to diagonal blocks
@@ -1684,9 +1680,9 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
             Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
           }
           // update with off-diagonals (potentiall combined with diagonal solves)
-          auto *submat = thandle.get_submatrix (lvl);
+          auto submat = thandle.get_submatrix (lvl);
           KokkosSparse::
-          spmv(tran, one, *submat,
+          spmv(tran, one, submat,
                           work,
                      one, lhs);
         } else {
@@ -1697,16 +1693,16 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
             Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
 
             // update with off-diagonals
-            auto *submat = thandle.get_submatrix (lvl);
+            auto submat = thandle.get_submatrix (lvl);
             KokkosSparse::
-            spmv(tran, one, *submat,
+            spmv(tran, one, submat,
                             lhs,
                        one, work);
 
             // solve with diagonals
-            auto *digmat = thandle.get_diagblock (lvl);
+            auto digmat = thandle.get_diagblock (lvl);
             KokkosSparse::
-            spmv(tran, one, *digmat,
+            spmv(tran, one, digmat,
                             work,
                        one, lhs);
           } else {

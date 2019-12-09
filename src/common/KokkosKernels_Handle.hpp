@@ -197,6 +197,8 @@ public:
   typedef
     typename KokkosSparse::Experimental::SPTRSVHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPTRSVHandleType;
+  typedef
+    typename SPTRSVHandleType::integer_view_host_t integer_view_host_t;
 
 private:
 
@@ -545,7 +547,7 @@ public:
     this->sptrsvHandle->set_perm (perm);
   }
 
-  void set_sptrsv_supernodes (int nsuper, int *supercols, int *etree) {
+  void set_sptrsv_supernodes (int nsuper, integer_view_host_t supercols, int *etree) {
     this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
   }
 
@@ -556,10 +558,6 @@ public:
 
   void set_sptrsv_merge_supernodes (bool flag) {
     this->sptrsvHandle->set_merge_supernodes (flag);
-  }
-
-  void set_sptrsv_supernodal_dag (int** dag) {
-    this->sptrsvHandle->set_supernodal_dag (dag);
   }
 
   void set_sptrsv_invert_offdiagonal (bool flag) {

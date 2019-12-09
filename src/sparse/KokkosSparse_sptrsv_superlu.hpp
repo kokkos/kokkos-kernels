@@ -356,6 +356,7 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
       check[sup[i]] = 0;
     }
   }
+  delete[] map;
   delete[] sup;
   delete[] check;
 
@@ -661,6 +662,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
       check[sup[i]] = 0;
     }
   }
+  delete[] map;
   delete[] off;
   delete[] sup;
   delete[] check;

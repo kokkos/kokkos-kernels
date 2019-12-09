@@ -261,7 +261,9 @@ namespace Experimental {
     bool col_majorU = handleU->is_column_major ();
     bool merge = handleL->get_merge_supernodes ();
     bool UinCSC = handleU->is_column_major ();
-    if (etree == NULL) {
+    bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                      handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
+    if (needEtree && etree == nullptr) {
       std::cout << std::endl
                 << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
                 << std::endl << std::endl;
@@ -296,26 +298,23 @@ namespace Experimental {
     int nsuper = 1 + Lstore->nsuper;
     int *supercols = Lstore->sup_to_col;
 
+    // > make a copy of supercols (merge needs both original and merged supercols)
+    typename KernelHandle::SPTRSVHandleType::integer_view_host_t supercols_view ("supercols view", 1+nsuper);
+    int *supercols_merged = supercols_view.data ();
+    for (int i = 0; i <= nsuper; i++) {
+      supercols_merged[i] = supercols[i];
+    }
     if (merge) {
       // =================================================================
       // merge supernodes
       tic.reset ();
       int nsuper_merged = nsuper;
-      // > make a copy of etree
-      int *etree_merged = new int[nsuper];
-      for (int i = 0; i < nsuper; i++) {
-        etree_merged[i] = etree[i];
-      }
-      // > make a copy of supercols
-      int *supercols_merged = new int[1+nsuper];
-      for (int i = 0; i <= nsuper; i++) {
-        supercols_merged[i] = supercols[i];
-      }
       check_supernode_sizes("Original L-structure", nrows, nsuper, supercols_merged, graphL_host);
       check_supernode_sizes("Original U-structure", nrows, nsuper, supercols_merged, graphU_host);
+      // etree will be updated
       merge_supernodal_graph (&nsuper_merged, supercols_merged,
                               col_majorL, graphL_host, col_majorU, graphU_host,
-                              etree_merged);
+                              etree);
 
       // =================================================================
       // generate merged graph for L-solve
@@ -348,11 +347,11 @@ namespace Experimental {
       std::cout << "   Number of nonzeros   : " << nnzU << " -> " << nnzU_merged
                 << " : " << double(nnzU_merged) / double(nnzU) << "x" << std::endl;
 
-      // replace the supernodal info with the merged ones
+      // update the number of supernodes
       nsuper = nsuper_merged;
-      supercols = supercols_merged;
-      etree = etree_merged;
     }
+    // replace the supernodal info with the merged ones
+    supercols = supercols_merged;
 
     // ===================================================================
     // copy graph to device
@@ -361,17 +360,17 @@ namespace Experimental {
 
     // ===================================================================
     // save the supernodal info in the handles for L/U solves
-    handleL->set_supernodes (nsuper, supercols, etree);
-    handleU->set_supernodes (nsuper, supercols, etree);
+    handleL->set_supernodes (nsuper, supercols_view, etree);
+    handleU->set_supernodes (nsuper, supercols_view, etree);
 
-    if (handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG ||
-        handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+    if (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+        handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
       // generate supernodal graphs for DAG scheduling
       auto supL = generate_supernodal_graph<host_graph_t> (!col_majorL, graphL_host, nsuper, supercols);
       auto supU = generate_supernodal_graph<host_graph_t> ( col_majorU, graphU_host, nsuper, supercols);
 
-      int **dagL = generate_supernodal_dag<host_graph_t> (nsuper, supL, supU);
-      int **dagU = generate_supernodal_dag<host_graph_t> (nsuper, supU, supL);
+      auto dagL = generate_supernodal_dag<host_graph_t> (nsuper, supL, supU);
+      auto dagU = generate_supernodal_dag<host_graph_t> (nsuper, supU, supL);
       handleL->set_supernodal_dag (dagL);
       handleU->set_supernodal_dag (dagU);
     }
@@ -455,8 +454,8 @@ namespace Experimental {
     if (merge)          printf( " >> merge\n" );
     if (invert_offdiag) printf( " >> invert offdiag\n" );
     bool UinCSC = handleU->is_column_major ();
-    bool useSpMV = (handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-                    handleL->get_algorithm () == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+    bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                    handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
 
     // ===================================================================
     // load graphs
@@ -603,7 +602,9 @@ namespace Experimental {
 
     // load options
     int *etree = handleL->get_etree ();
-    if (etree == NULL) {
+    bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                      handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
+    if (needEtree && etree == nullptr) {
       std::cout << std::endl
                 << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
                 << std::endl << std::endl;
@@ -617,11 +618,6 @@ namespace Experimental {
     auto graph = read_cholmod_graphL<graph_t>(cusparse, L, cm);
     auto row_map = graph.row_map;
     auto entries = graph.entries;
-
-    // ==============================================
-    // extract etree from Cholmod
-    //int *etree;
-    //compute_etree_cholmod(L, cm, &etree);
 
     // ==============================================
     // setup supnodal info 

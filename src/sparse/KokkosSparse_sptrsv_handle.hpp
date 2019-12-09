@@ -119,6 +119,9 @@ public:
   //
   typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
   typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+
+  //
+  typedef typename std::vector <host_crsmat_t> host_crstmat_list_t;
 #endif
 
 private:
@@ -151,7 +154,7 @@ private:
   integer_view_host_t etree_host;
 
   // dag
-  int **dag_host;
+  host_graph_t dag_host;
 
   // map from supernode to column id, i.e., superdols[s] = the first column id of s-th supernode
   integer_view_host_t supercols_host; // on the host
@@ -179,7 +182,7 @@ private:
 
   // permutation
   bool perm_avail;
-  integer_view_t *perm;
+  integer_view_t perm;
 
   // graphs
   host_graph_t original_graph_host; // graph on host before merge (only if merged)
@@ -191,8 +194,8 @@ private:
 
   // for supernodal spmv
   bool spmv_trans;
-  crsmat_t **sub_crsmats;
-  crsmat_t **diag_blocks;
+  host_crstmat_list_t sub_crsmats;
+  host_crstmat_list_t diag_blocks;
 
   int num_streams;
   #if defined(KOKKOS_ENABLE_CUDA)
@@ -220,7 +223,7 @@ public:
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
     , merge_supernodes (false)
     , invert_offdiagonal (false)
-    , etree (NULL)
+    , etree (nullptr)
     , sup_size_unblocked (100)
     , sup_size_blocked (200)
     , perm_avail (false)
@@ -349,20 +352,26 @@ public:
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
-  void set_supernodes (signed_integral_t nsuper_, int* supercols_, int *etree_) {
+  void set_supernodes (signed_integral_t nsuper_, int *supercols_, int *etree_) {
+    integer_view_host_t supercols_view = integer_view_host_t (supercols_, 1+nsuper_);
+    set_supernodes (nsuper_, supercols_view, etree_);
+  }
+
+  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_, int *etree_) {
     int default_sup_size_unblocked_ = 100;
     int default_sup_size_blocked_ = 200;
     set_supernodes(nsuper_, supercols_, etree_, default_sup_size_unblocked_, default_sup_size_blocked_);
   }
 
-  void set_supernodes (signed_integral_t nsuper_, int* supercols_, int *etree_, int sup_size_unblocked_, int sup_size_blocked_) {
+  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_view, int *etree_,
+                       int sup_size_unblocked_, int sup_size_blocked_) {
     this->nsuper = nsuper_;
 
     // etree
     this->etree_host = integer_view_host_t (etree_, nsuper_);
 
     // supercols
-    this->supercols_host = integer_view_host_t (supercols_, 1+nsuper_);
+    this->supercols_host = supercols_view; //integer_view_host_t (supercols_, 1+nsuper_);
     this->supercols = integer_view_t ("supercols", 1+nsuper_);
     Kokkos::deep_copy (this->supercols, this->supercols_host);
 
@@ -378,15 +387,12 @@ public:
     this->kernel_type_host = integer_view_host_t ("kernel_type_host", nsuper_);
     this->kernel_type = integer_view_t ("kernel_type", nsuper_);
 
-    // dag, set to be null
-    this->dag_host = NULL;
-
     // number of streams
     this->num_streams = 0;
   }
 
   // set supernodal dag
-  void set_supernodal_dag (int** dag_) {
+  void set_supernodal_dag (host_graph_t dag_) {
     this->dag_host = dag_;
   }
 
@@ -410,7 +416,7 @@ public:
   }
 
   // return parents info in etree of supernodes
-  int** get_supernodal_dag () {
+  host_graph_t get_supernodal_dag () {
     return this->dag_host;
   }
 
@@ -507,14 +513,14 @@ public:
 
   // permutation vector
   void set_perm (int *perm_) {
-    this->perm = new integer_view_t("PermView", nrows);
-    auto perm_host = Kokkos::create_mirror_view (*(this->perm));
+    this->perm = integer_view_t("PermView", nrows);
+    auto perm_host = Kokkos::create_mirror_view (this->perm);
 
     // copy perm to device
     for (int i = 0; i < nrows; i++) {
       perm_host[i] = perm_[i];
     }
-    Kokkos::deep_copy (*(this->perm), perm_host);
+    Kokkos::deep_copy (this->perm, perm_host);
     this->perm_avail = true;
   }
 
@@ -568,21 +574,21 @@ public:
   }
 
   // submatrices
-  void set_submatrices (crsmat_t **subcrsmats) {
+  void set_submatrices (host_crstmat_list_t subcrsmats) {
     this->sub_crsmats = subcrsmats;
   }
 
-  crsmat_t* get_submatrix (int i) {
-    return this->sub_crsmats[i];
+  crsmat_t get_submatrix (int i) {
+    return this->sub_crsmats [i];
   }
 
   // diagonal subblocks
-  void set_diagblocks (crsmat_t **subcrsmats) {
+  void set_diagblocks (host_crstmat_list_t subcrsmats) {
     this->diag_blocks = subcrsmats;
   }
 
-  crsmat_t* get_diagblock (int i) {
-    return this->diag_blocks[i];
+  crsmat_t get_diagblock (int i) {
+    return this->diag_blocks [i];
   }
 
   // spmv option

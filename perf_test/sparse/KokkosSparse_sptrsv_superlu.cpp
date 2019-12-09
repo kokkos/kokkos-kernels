@@ -301,8 +301,23 @@ void factor_superlu(bool metis, const int nrow, scalar_type *nzvals, int *rowptr
         (*parents)[s] = Lstore->col_to_sup[etree[j]];
     }
   }
+  delete [] etree;
 
   return;
+}
+
+
+/* ========================================================================================= */
+template<typename scalar_type>
+void free_superlu(SuperMatrix &L, SuperMatrix &U,
+                  int *perm_r, int *perm_c, int *parents) {
+
+  Destroy_SuperNode_Matrix(&L);
+  Destroy_CompCol_Matrix(&U);
+
+  delete [] perm_r;
+  delete [] perm_c;
+  delete [] parents;
 }
 
 
@@ -355,9 +370,9 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
     // ==============================================
     // read the matrix ** on host **
     std::cout << " SuperLU Tester Begin: Read matrix filename " << filename << std::endl;
-    host_crsmat_t Mtx = KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t>(filename.c_str()); //in_matrix
+    host_crsmat_t Mtx = KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t> (filename.c_str());
 
-    const size_type nrows = Mtx.graph.numRows();
+    const size_type nrows = Mtx.graph.numRows ();
 
     auto  graph_host  = Mtx.graph; // in_graph
     auto row_map_host = graph_host.row_map;
@@ -376,7 +391,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
     Kokkos::Timer timer;
     std::cout << " > call SuperLU for factorization" << std::endl;
     factor_superlu<scalar_type> (metis, nrows, values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
-                            panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
+                                 panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
     std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
 
     // ==============================================
@@ -406,14 +421,14 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
             std::cout << " > create handle for SUPERNODAL_DAG" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
+          } if (test == SUPERNODAL_SPMV) {
+            std::cout << " > create handle for SUPERNODAL_SPMV" << std::endl << std::endl;
+            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, true);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, false);
           } else if (test == SUPERNODAL_SPMV_DAG) {
             std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, false);
-          } else {
-            std::cout << " > create handle for SUPERNODAL_SPMV" << std::endl << std::endl;
-            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, true);
-            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, false);
           }
           // verbose (optional, default is false)
           khU.set_sptrsv_verbose (verbose);
@@ -435,8 +450,10 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           khU.set_sptrsv_invert_offdiagonal (invert_offdiag);
           
           // set etree (required if SUPERNODAL_ETREE)
-          khL.set_sptrsv_etree (etree);
-          khU.set_sptrsv_etree (etree);
+          if (test == SUPERNODAL_ETREE || test == SUPERNODAL_SPMV) {
+            khL.set_sptrsv_etree (etree);
+            khU.set_sptrsv_etree (etree);
+          }
 
           // set permutation
           khL.set_sptrsv_perm (perm_r);
@@ -456,15 +473,15 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           // ==============================================
           // Preaparing for the first solve
           //> create the known solution and set to all 1's ** on host **
-          host_scalar_view_t sol_host("sol_host", nrows);
-          Kokkos::deep_copy(sol_host, ONE);
+          host_scalar_view_t sol_host ("sol_host", nrows);
+          Kokkos::deep_copy (sol_host, ONE);
           //Kokkos::Random_XorShift64_Pool<host_execution_space> random(13718);
           //Kokkos::fill_random(sol_host, random, scalar_type(1));
 
           // > create the rhs ** on host **
           // A*sol generates rhs: rhs is dense, use spmv
-          host_scalar_view_t rhs_host("rhs_host", nrows);
-          KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
+          host_scalar_view_t rhs_host ("rhs_host", nrows);
+          KokkosSparse::spmv ( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
 
 
           // ==============================================
@@ -493,23 +510,23 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
  
           // copy solution to host
-          Kokkos::deep_copy(tmp_host, rhs);
+          Kokkos::deep_copy (tmp_host, rhs);
           // apply backward-pivot
-          backwardP_supernode<scalar_type>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+          backwardP_supernode<scalar_type> (nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
 
           // ==============================================
           // Error Check ** on host **
-          Kokkos::fence();
+          Kokkos::fence ();
           std::cout << std::endl;
-          if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
+          if (!check_errors (tol, Mtx, rhs_host, sol_host)) {
             num_failed ++;
           }
 
           // try again?
           {
-            Kokkos::deep_copy(sol_host, ONE);
-            KokkosSparse::spmv( "N", ONE, Mtx, sol_host, ZERO, rhs_host);
+            Kokkos::deep_copy (sol_host, ONE);
+            KokkosSparse::spmv ("N", ONE, Mtx, sol_host, ZERO, rhs_host);
             forwardP_supernode<scalar_type> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
 
@@ -520,11 +537,11 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
             sptrsv_solve (&khU, rhs, sol);
             #endif
 
-            Kokkos::fence();
-            Kokkos::deep_copy(tmp_host, rhs);
-            backwardP_supernode<scalar_type>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
+            Kokkos::fence ();
+            Kokkos::deep_copy (tmp_host, rhs);
+            backwardP_supernode<scalar_type> (nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
 
-            if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
+            if (!check_errors (tol, Mtx, rhs_host, sol_host)) {
               num_failed ++;
             }
           }
@@ -535,12 +552,12 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           double min_time = 1.0e32;
           double max_time = 0.0;
           double ave_time = 0.0;
-          Kokkos::fence();
+          Kokkos::fence ();
           for(int i = 0; i < loop; i++) {
             timer.reset();
             sptrsv_solve (&khL, sol, rhs);
             Kokkos::fence();
-            double time = timer.seconds();
+            double time = timer.seconds ();
             ave_time += time;
             if(time > max_time) max_time = time;
             if(time < min_time) min_time = time;
@@ -555,12 +572,12 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           min_time = 1.0e32;
           max_time = 0.0;
           ave_time = 0.0;
-          Kokkos::fence();
+          Kokkos::fence ();
           for(int i = 0; i < loop; i++) {
             timer.reset();
             sptrsv_solve (&khU, rhs, sol);
             Kokkos::fence();
-            double time = timer.seconds();
+            double time = timer.seconds ();
             ave_time += time;
             if(time > max_time) max_time = time;
             if(time < min_time) min_time = time;
@@ -588,7 +605,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
           std::cout << "   Conversion Time for L: " << time << " + " << timer.seconds() << std::endl;
 
-          timer.reset();
+          timer.reset ();
           graph_t graphU;
           crsmat_t superluU;
           if (u_in_csr) {
@@ -615,7 +632,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
 
           bool col_majorL = true;
           bool col_majorU = !u_in_csr;
-          if (!check_cusparse(Mtx, col_majorL, superluL, col_majorU, superluU, perm_r, perm_c, tol, loop)) {
+          if (!check_cusparse (Mtx, col_majorL, superluL, col_majorU, superluU, perm_r, perm_c, tol, loop)) {
             num_failed ++;
           }
         }
@@ -623,9 +640,11 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
 
         default:
           std::cout << " > Invalid test ID < " << std::endl;
-          exit(0);
+          exit (0);
       }
     }
+    // free SuperLU data structures
+    free_superlu<scalar_type> (L, U, perm_r, perm_c, etree);
   }
   std::cout << std::endl << std::endl;
 
