@@ -537,9 +537,6 @@ TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## 
 TEST_F( TestCategory, sparse ## _ ## balloon_clustering ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_balloon_clustering<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 100, 2000); \
 } \
-TEST_F( TestCategory, sparse ## _ ## gauss_seidel ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
-} \
 TEST_F( TestCategory, sparse ## _ ## sequential_sor ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_sequential_sor<SCALAR,ORDINAL,OFFSET,DEVICE>(1000, 1000 * 15, 50, 10); \
 }
