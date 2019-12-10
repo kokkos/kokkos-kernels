@@ -425,7 +425,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   using vector_t = typename crsMat_t::values_type::non_const_type;
   //Create random x
   vector_t x("X", numRows);
-  vector_t x_host = Kokkos::create_mirror_view(x);
+  auto x_host = Kokkos::create_mirror_view(x);
   for(lno_t i = 0; i < numRows; i++)
   {
     x_host(i) = one * (10.0 * rand() / RAND_MAX);
