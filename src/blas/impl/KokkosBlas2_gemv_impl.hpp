@@ -479,6 +479,175 @@ singleLevelGemv (const char trans[],
   }
 }
 
+
+// ---------------------------------------------------------------------------------------------
+// Functor for a two-level parallel_reduce version of (conjugate)
+// transpose GEMV.  The functor uses parallel-for over the columns of the input
+// matrix A and each team uses parallel-reduce over the row of its column.
+// The output vector y is the reduction result.
+template<class AViewType,
+         class XViewType,
+         class YViewType,
+         const bool conj,
+         class IndexType = typename AViewType::size_type>
+struct TwoLevelTransposeGEMV {
+  typedef typename YViewType::non_const_value_type y_value_type;
+  typedef typename AViewType::non_const_value_type AlphaCoeffType;
+  typedef typename YViewType::non_const_value_type BetaCoeffType;
+
+
+  typedef typename AViewType::execution_space execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> policy_type;
+  typedef typename policy_type::member_type member_type;
+
+  TwoLevelTransposeGEMV (const AlphaCoeffType& alpha,
+                         const AViewType& A,
+                         const XViewType& x,
+                         const BetaCoeffType& beta,
+                         const YViewType& y) :
+    alpha_ (alpha), A_ (A), x_ (x), beta_ (beta), y_ (y)
+  {
+    static_assert (Kokkos::Impl::is_view<AViewType>::value,
+                   "AViewType must be a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XViewType>::value,
+                   "XViewType must be a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<YViewType>::value,
+                   "YViewType must be a Kokkos::View.");
+    static_assert (static_cast<int> (AViewType::rank) == 2,
+                   "AViewType must have rank 2.");
+    static_assert (static_cast<int> (XViewType::rank) == 1,
+                   "XViewType must have rank 1.");
+    static_assert (static_cast<int> (YViewType::rank) == 1,
+                   "YViewType must have rank 1.");
+    static_assert (std::is_integral<IndexType>::value,
+                   "IndexType must be an integer.");
+  }
+
+public:
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const member_type & team) const
+  {
+    using Kokkos::Details::ArithTraits;
+    typedef ArithTraits<typename AViewType::non_const_value_type> KAT;
+
+    const IndexType M = A_.extent(0);
+    const int j = team.league_rank(); // batch id
+
+    // parallel-reduce to compute val += A(:,j)' * x
+    y_value_type val = KAT:: zero();
+    Kokkos::parallel_reduce( Kokkos::TeamThreadRange( team, M ), [&] ( const int i, y_value_type &update ) {
+      const auto x_i = x_(i);
+      const auto A_ij = conj ? KAT::conj (A_(i,j)) : A_(i,j);
+      update += A_ij * x_i;
+    }, val);
+
+    // compute yj = beta*yj + alpha*val
+    if (team.team_rank() == 0) {
+      y_[j] = beta_*y_[j] + alpha_ * val;
+    }
+  }
+
+private:
+  AlphaCoeffType alpha_;
+  typename AViewType::const_type A_;
+  typename XViewType::const_type x_;
+  BetaCoeffType beta_;
+  YViewType y_;
+};
+
+// Two-level parallel version of GEMV.
+template<class AViewType,
+         class XViewType,
+         class YViewType,
+         class IndexType = typename AViewType::size_type>
+void
+twoLevelGemv (const char trans[],
+              typename AViewType::const_value_type& alpha,
+              const AViewType& A,
+              const XViewType& x,
+              typename YViewType::const_value_type& beta,
+              const YViewType& y)
+{
+  static_assert (Kokkos::Impl::is_view<AViewType>::value,
+                 "AViewType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XViewType>::value,
+                 "XViewType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YViewType>::value,
+                 "YViewType must be a Kokkos::View.");
+  static_assert (static_cast<int> (AViewType::rank) == 2,
+                 "AViewType must have rank 2.");
+  static_assert (static_cast<int> (XViewType::rank) == 1,
+                 "XViewType must have rank 1.");
+  static_assert (static_cast<int> (YViewType::rank) == 1,
+                 "YViewType must have rank 1.");
+  static_assert (std::is_integral<IndexType>::value,
+                 "IndexType must be an integer");
+
+  typedef typename YViewType::non_const_value_type y_value_type;
+  typedef typename AViewType::execution_space execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
+  typedef Kokkos::RangePolicy<execution_space, IndexType> range_policy_type;
+
+  typedef typename YViewType::non_const_value_type BetaCoeffType;
+
+  using Kokkos::Details::ArithTraits;
+  typedef ArithTraits<typename AViewType::non_const_value_type> KAT;
+
+  const char tr = trans[0];
+
+  // The transpose and conjugate transpose cases where A has zero rows
+  // need special handling.  These are equivalent to y := beta*y.  We
+  // could implement this using KokkosBlas::scal, but we don't want to
+  // depend on that or its implementation details.  Instead, we reuse
+  // an instantiation of the non-transpose case for alpha=0.
+  if (A.extent(0) == 0 && (tr != 'N' && tr != 'n')) {
+    if (beta == KAT::zero ()) {
+      Kokkos::deep_copy (y, KAT::zero ());
+    }
+    else if (beta != Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
+      // "Fake out" a scal() by using the non-transpose alpha=0,
+      // general beta case.  This assumes that the functor doesn't
+      // check dimensions.
+      typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
+        0, -1, IndexType> functor_type;
+      functor_type functor (alpha, A, x, beta, y);
+      Kokkos::parallel_for ("KokkosBlas::gemv[SingleLevel]",range_policy_type (0, A.extent(1)), functor);
+    }
+    return;
+  }
+
+  if (tr == 'N' || tr == 'n') {
+    // NOTE: not implemented, so just call single-level version
+    singleLevelGemv<AViewType, XViewType, YViewType, IndexType>
+         (trans, alpha, A, x, beta, y);
+  }
+  else {
+    if (alpha == KAT::zero () && beta == KAT::zero ()) {
+      // Fill y with zeros
+      Kokkos::deep_copy (y, Kokkos::Details::ArithTraits<y_value_type>::zero ());
+    }
+    else if (alpha == KAT::zero () && beta == KAT::one ()) {
+      // Do nothing (y := 1 * y)
+    }
+    else if (tr == 'T' || tr == 't') {
+      // transpose, and not conj transpose
+      team_policy_type  team (A.extent(1), Kokkos::AUTO);
+      typedef TwoLevelTransposeGEMV<AViewType, XViewType, YViewType,
+                                    false, IndexType> functor_type;
+      functor_type functor (alpha, A, x, beta, y);
+      Kokkos::parallel_for ("KokkosBlas::gemv[twoLevelTranspose]", team, functor);
+    }
+    else if (tr == 'C' || tr == 'c' || tr == 'H' || tr == 'h') {
+      // conjugate transpose
+      team_policy_type  team (A.extent(1), Kokkos::AUTO);
+      typedef TwoLevelTransposeGEMV<AViewType, XViewType, YViewType,
+                                    true, IndexType> functor_type;
+      functor_type functor (alpha, A, x, beta, y);
+      Kokkos::parallel_for ("KokkosBlas::gemv[twoLevelTranspose]", team, functor);
+    }
+  }
+}
+
 } // namespace Impl
 } // namespace KokkosBlas
 
