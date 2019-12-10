@@ -435,7 +435,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   vector_t xgold("X gold", numRows);
   Kokkos::deep_copy(xgold, x);
   vector_t y = Test::create_y_vector(input_mat, x);
-  vector_t y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
+  auto y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
   //initial solution is zero
   Kokkos::deep_copy(x_host, zero);
   //get the inverse diagonal (only needed on host)
