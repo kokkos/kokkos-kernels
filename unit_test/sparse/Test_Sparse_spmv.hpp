@@ -707,7 +707,6 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv_struct ## _ ## SCALAR ## _ ## ORDINA
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(float, int, size_t, TestExecSpace)
  EXECUTE_TEST_STRUCT(float, int, size_t, TestExecSpace)
- EXECUTE_TEST_STRUCT_3D(float, int, size_t, TestExecSpace)
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_FLOAT) \
