@@ -161,13 +161,13 @@ get_kernels_extra_linker_flags() {
   KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD="-DCMAKE_EXE_LINKER_FLAGS=${PARSE_EXTRA_LINKER_FLAGS_LIST} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD}"
 }
 
-
 display_help_text() {
 
       echo "KokkosKernels and Kokkos configure options:"
       echo ""
-      echo "--kokkoskernels-path=/Path/To/KokkosKernels:  Path to the KokkosKernels root directory."
       echo "--kokkos-path=/Path/To/Kokkos:                Path to the Kokkos root directory."
+      echo "--kokkos-prefix=/Install/PathToKokkos:        Path to the Kokkos install directory."
+      echo "--kokkoskernels-path=/Path/To/KokkosKernels:  Path to the KokkosKernels root directory."
       echo "--prefix=/Install/Path:                       Path to install the KokkosKernels library."
       echo ""
       echo "--with-cuda[=/Path/To/Cuda]:                  Enable Cuda and set path to Cuda Toolkit."
@@ -256,15 +256,20 @@ display_help_text() {
       echo "--extra-linker-flags=[FLAG]:  Extra linker flags to pass to CMAKE_EXE_LINKER_FLAGS."
       echo "                                Pass flags, separate by comma"
       echo "                                Example: \"-lgfortran,-lma,-Wall\""
-      echo "--with-hpx-options=[OPT]:     Additional options to HPX:"
-      echo "                                enable_async_dispatch"
+#      echo "--with-hpx-options=[OPT]:     Additional options to HPX:"
+#      echo "                                enable_async_dispatch"
       echo "--gcc-toolchain=/Path/To/GccRoot:  Set the gcc toolchain to use with clang (e.g. /usr)" 
       echo "--kokkos-make-j=[NUM]:        Set -j parallel level for kokkos install"
       echo "                                Default: j == 4"
 
 }
 
+KOKKOS_INSTALL_PATH=""
+
+KOKKOS_DO_TESTS=OFF
 KOKKOS_DO_EXAMPLES=OFF
+KOKKOSKERNELS_DO_TESTS=ON
+
 KOKKOS_MAKEINSTALL_J=4
 
 while [[ $# > 0 ]]
@@ -278,11 +283,14 @@ do
     --kokkos-path*)
       KOKKOS_PATH="${key#*=}"
       ;;
-    --hpx-path*)
-      HPX_PATH="${key#*=}"
-      ;;
     --prefix*)
       PREFIX="${key#*=}"
+      ;;
+    --kokkos-prefix*)
+      KOKKOS_INSTALL_PATH="${key#*=}"
+      ;;
+    --hpx-path*)
+      HPX_PATH="${key#*=}"
       ;;
     --with-cuda)
       update_kokkos_devices Cuda
@@ -355,8 +363,26 @@ do
       echo "${key} parallel level for kokkos install"
       KOKKOS_MAKEINSTALL_J="${key#*=}"
       ;;
-    --no-examples)
+    --enable-kokkos-tests)
+      KOKKOS_DO_TESTS=ON
+      ;;
+    --disable-kokkos-tests)
+      # This is the default
+      KOKKOS_DO_TESTS=OFF
+      ;;
+    --enable-kokkos-examples)
+      KOKKOS_DO_EXAMPLES=ON
+      ;;
+    --disable-kokkos-examples)
+      # This is the default
       KOKKOS_DO_EXAMPLES=OFF
+      ;;
+    --enable-tests)
+      # This is the default
+      KOKKOSKERNELS_DO_TESTS=ON
+      ;;
+    --disable-tests)
+      KOKKOSKERNELS_DO_TESTS=OFF
       ;;
     --compiler*)
       COMPILER="${key#*=}"
@@ -528,12 +554,14 @@ fi
 
 
 KOKKOS_INSTALL_DIRNAME="kokkos-install"
-KOKKOS_INSTALL_PATH=""
-if [ "${PREFIX}" == "" ]; then
+#if [ "${PREFIX}" == "" ]; then
+#fi
+if [ "${KOKKOS_INSTALL_PATH}" == "" ]; then
   KOKKOS_INSTALL_PATH="${PWD}/$KOKKOS_INSTALL_DIRNAME"
   echo "KOKKOS_INSTALL_PATH=$KOKKOS_INSTALL_PATH"
 else
-  KOKKOS_INSTALL_PATH="${PREFIX}/$KOKKOS_INSTALL_DIRNAME"
+#  User-provided install path
+#  KOKKOS_INSTALL_PATH="${PREFIX}/$KOKKOS_INSTALL_DIRNAME"
   echo "KOKKOS_INSTALL_PATH=$KOKKOS_INSTALL_PATH"
 fi
 
@@ -545,8 +573,8 @@ cd ${KOKKOS_INSTALL_PATH}
 
 #KOKKOS_INSTALL_PATH="${PWD}"
 
-echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=ON -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_DEBUG_CMD} ${KOKKOS_PATH} 
-cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=ON -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_DEBUG_CMD} ${KOKKOS_PATH} 
+echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_DEBUG_CMD} ${KOKKOS_PATH}
+cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_DEBUG_CMD} ${KOKKOS_PATH}
 
 # Install kokkos library
 make install -j $KOKKOS_MAKEINSTALL_J
@@ -569,6 +597,6 @@ fi
 
 cd $STORE_KOKKOSKERNELS_BUILD_PATH
 
-echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=ON ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_DEBUG_CMD} ${KOKKOSKERNELS_PATH}
-cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=ON ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_DEBUG_CMD} ${KOKKOSKERNELS_PATH}
+echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_DEBUG_CMD} ${KOKKOSKERNELS_PATH}
+cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_DEBUG_CMD} ${KOKKOSKERNELS_PATH}
 
