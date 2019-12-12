@@ -121,6 +121,17 @@ get_kernels_layouts_list() {
   done
 }
 
+get_kernels_spaces_list() {
+  echo "parsing KOKKOSKERNELS_SPACES=$KOKKOSKERNELS_SPACES"
+  KOKKOSKERNELS_SPACES_CMD=
+  PARSE_SPACES_LIST=$(echo $KOKKOSKERNELS_SPACES | tr "," "\n")
+  for SPACES_ in $PARSE_SPACES_LIST
+  do
+    UC_SPACES=$(echo $SPACES_ | tr "[:lower:]" "[:upper:]")
+    KOKKOSKERNELS_SPACES_CMD="-DKokkosKernels_INST_MEMSPACE_${UC_SPACES}=ON ${KOKKOSKERNELS_SPACES_CMD}"
+  done
+}
+
 get_kernels_tpls_list() {
   echo "parsing KOKKOSKERNELS_TPLS=$KOKKOSKERNELS_TPLS"
   KOKKOSKERNELS_TPLS_LIST_CMD=
@@ -213,7 +224,12 @@ display_help_text() {
       echo "                 Volta72         = NVIDIA Volta generation CC 7.2"
       echo ""
       echo "--compiler=/Path/To/Compiler  Set the compiler."
-      echo "--debug,-dbg:                 Enable Debugging."
+      echo ""
+      echo "--debug,-dbg:                 Enable KokkosKernels Debugging."
+      echo "--kokkos-debug,-kdbg:          Enable Kokkos Debugging."
+      echo "--release:                    Enable KokkosKernels Release Mode."
+      echo "--kokkos-release:             Enable Kokkos Release Mode."
+      echo ""
       echo "--cxxflags=[FLAGS]            Overwrite CXXFLAGS for library build and test"
       echo "                                build.  This will still set certain required"
       echo "                                flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
@@ -243,6 +259,8 @@ display_help_text() {
       echo "                                Options: int, size_t"
       echo "--with-layouts=[LAYOUTS]:     Set layouts to be instantiated."
       echo "                                Options: layoutleft, layoutright"
+      echo "--with-spaces=[SPACES]:       Set spaces to be instantiated."
+      echo "                                Options: hostspace, cudaspace, cudauvmspace"
       echo "--with-tpls=[TPLS]:           Set tpls to be instantiated (Proper support requies that appropriate compiler and device must be enabled)."
       echo "                              This may require providing paths and the library name if using custom installs not on a default path"
       echo "                              that CMake searches"
@@ -353,11 +371,17 @@ do
     --ldflags*)
       KOKKOS_LDFLAGS="${key#*=}"
       ;;
-    --kokkos-debug|-dbg)
+    --kokkos-debug|-kdbg)
       KOKKOS_DEBUG=yes
       ;;
     --debug|-dbg)
       KOKKOSKERNELS_DEBUG=yes
+      ;;
+    --kokkos-release)
+      KOKKOS_RELEASE=yes
+      ;;
+    --release)
+      KOKKOSKERNELS_RELEASE=yes
       ;;
     --kokkos-make-j*)
       echo "${key} parallel level for kokkos install"
@@ -418,12 +442,9 @@ do
     --with-layouts*)
       KOKKOSKERNELS_LAYOUTS="${key#*=}"
       ;;
-#    --with-options*)
-#      KOKKOSKERNELS_OPTIONS="${key#*=}"
-#      ;;
-#    --with-spaces*)
-#      KOKKOSKERNELS_SPACES="${key#*=}"
-#      ;;
+    --with-spaces*)
+      KOKKOSKERNELS_SPACES="${key#*=}"
+      ;;
     --with-tpls*)
       KOKKOSKERNELS_TPLS="${key#*=}"
       ;;
@@ -472,16 +493,22 @@ else
     COMPILER_CMD=-DCMAKE_CXX_COMPILER=$COMPILER
 fi
 
-if [ "$KOKKOS_DEBUG" == "" ]; then
-    KOKKOS_DEBUG_CMD=-DCMAKE_BUILD_TYPE=RELEASE
+echo "KOKKOS_DEBUG CHECK"
+if [ "$KOKKOS_DEBUG" == "yes" ]; then
+    KOKKOS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=DEBUG
+elif [ "$KOKKOS_RELEASE" == "yes" ]; then
+    KOKKOS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=RELEASE
 else
-    KOKKOS_DEBUG_CMD=-DCMAKE_BUILD_TYPE=DEBUG
+    KOKKOS_BUILDTYPE_CMD=
 fi
 
-if [ "$KOKKOSKERNELS_DEBUG" == "" ]; then
-    KOKKOSKERNELS_DEBUG_CMD=-DCMAKE_BUILD_TYPE=RELEASE
+echo "KOKKOSKERNELS_DEBUG CHECK"
+if [ "$KOKKOSKERNELS_DEBUG" == "yes" ]; then
+    KOKKOSKERNELS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=DEBUG
+elif [ "$KOKKOSKERNELS_RELEASE" == "yes" ]; then
+    KOKKOSKERNELS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=RELEASE
 else
-    KOKKOSKERNELS_DEBUG_CMD=-DCMAKE_BUILD_TYPE=DEBUG
+    KOKKOSKERNELS_BUILDTYPE_CMD=
 fi
 
 
@@ -532,6 +559,7 @@ get_kernels_scalar_list
 get_kernels_ordinals_list
 get_kernels_offsets_list
 get_kernels_layouts_list
+get_kernels_spaces_list
 get_kernels_tpls_list
 get_kernels_extra_linker_flags
 
@@ -573,8 +601,10 @@ cd ${KOKKOS_INSTALL_PATH}
 
 #KOKKOS_INSTALL_PATH="${PWD}"
 
-echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_DEBUG_CMD} ${KOKKOS_PATH}
-cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_DEBUG_CMD} ${KOKKOS_PATH}
+echo ""
+echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_PATH}
+echo ""
+cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_PATH}
 
 # Install kokkos library
 make install -j $KOKKOS_MAKEINSTALL_J
@@ -586,7 +616,7 @@ if [ -d ${KOKKOS_INSTALL_PATH}/lib/cmake/Kokkos ]; then
 elif [ -d ${KOKKOS_INSTALL_PATH}/lib64/cmake/Kokkos ]; then
   KOKKOS_FIND_PATH=${KOKKOS_INSTALL_PATH}/lib64/cmake/Kokkos
 else
-  echo "Error: Kokkos install did not yield kokkos-install/lib/cmake/Kokkos or kokkos-install/lib64/cmake/Kokkos"
+  echo "Error: Kokkos install did not yield <kokkos-install-path>/lib/cmake/Kokkos or <kokkos-install-path>/lib64/cmake/Kokkos"
   exit
 fi
 
@@ -597,6 +627,8 @@ fi
 
 cd $STORE_KOKKOSKERNELS_BUILD_PATH
 
-echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_DEBUG_CMD} ${KOKKOSKERNELS_PATH}
-cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_DEBUG_CMD} ${KOKKOSKERNELS_PATH}
+echo ""
+echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KOKKOSKERNELS_PATH}
+echo ""
+cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KOKKOSKERNELS_PATH}
 
