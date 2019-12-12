@@ -307,7 +307,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   scalar_view2d_t x_vector(Kokkos::ViewAllocateWithoutInitializing("X"), nv, numVecs);
   Kokkos::deep_copy(x_vector, solution_x);
   scalar_view2d_t y_vector = create_y_vector(input_mat, x_vector);
-  host_scalar_view2d_t x_host = Kokkos::create_mirror_view(x_vector);
+  auto x_host = Kokkos::create_mirror_view(x_vector);
   std::vector<mag_t> initial_norms(numVecs);
   for(lno_t i = 0; i < numVecs; i++)
   {
