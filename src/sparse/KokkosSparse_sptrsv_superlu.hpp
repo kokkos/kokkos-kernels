@@ -421,6 +421,8 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   typedef typename values_view_t::value_type scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
+  scalar_t zero = STS::zero ();
+
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
 
@@ -456,6 +458,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   int nnzA = hr (n);
   values_view_t  values_view ("values_view", nnzA);
   typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+  Kokkos::deep_copy (hv, zero);
 
   int *sup = new int[nsuper];
   int *check = new int[nsuper];
@@ -472,13 +475,22 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
     /* the diagonal "dense" block */
     int psx = colptrL[j1];
     if (invert_diag) {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'U', 'N', nscol, &Lx[psx], nsrow);
+      if (std::is_same<scalar_t, double>::value == true) {
+        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
+                        'U', 'N', nscol,
+                        reinterpret_cast <double*> (&Lx[psx]), nsrow);
+      } else {
+        LAPACKE_ztrtri(LAPACK_COL_MAJOR,
+                       'U', 'N', nscol,
+                       reinterpret_cast <lapack_complex_double*> (&Lx[psx]), nsrow);
+      }
     }
     for (int i = 0; i < nscol; i++) {
+      #if 0
       for (int j = 0; j < i; j++) {
         hv(hr(j1 + i) + j) = STS::zero ();
       }
+      #endif
 
       for (int j = i; j < nscol; j++) {
         hv(hr(j1 + i) + j) = Lx[psx + i + j*nsrow];
@@ -552,6 +564,9 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   typedef typename values_view_t::value_type scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
+  scalar_t one  = STS::one ();
+  scalar_t zero = STS::zero ();
+
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
 
@@ -586,6 +601,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   int nnzA = hr (n);
   values_view_t values_view ("values_view", nnzA);
   typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+  Kokkos::deep_copy (hv, zero);
 
   int *sup = new int[nsuper];
   int *off = new int[nsuper];
@@ -603,17 +619,27 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
     /* the diagonal "dense" block (!! first !!)*/
     int psx = colptrL[j1];
     if (invert_diag) {
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'U', 'N', nscol, &Lx[psx], nsrow);
+      if (std::is_same<scalar_t, double>::value == true) {
+        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
+                        'U', 'N', nscol,
+                        reinterpret_cast <double*> (&Lx[psx]), nsrow);
+      } else {
+        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
+                        'U', 'N', nscol,
+                        reinterpret_cast <lapack_complex_double*> (&Lx[psx]), nsrow);
+      }
     }
     int nnzD = hr(j1);
     for (int j = 0; j < nscol; j++) {
       for (int i = 0; i <= j; i++) {
         hv(hr(j1 + j) + i) = Lx[psx + i + j*nsrow];
       }
+#if 0
       for (int i = j+1; i < nscol; i++) {
-        hv(hr(j1 + j) + i) = STS::zero ();
+        hv(hr(j1 + j) + i) = zero;
+printf( "%d:%d %e+i*%e (%d)\n",j1+i,j1+j,reinterpret_cast <std::complex<double>*> (&hv(hr(j1 + j)))[0].real(), reinterpret_cast <std::complex<double>*> (&hv(hr(j1 + j)))[0].imag(),hr(j1 + j));
       }
+#endif
       hr (j1 + j) += nscol;
     }
 
@@ -650,12 +676,39 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
 
     if (invert_diag) {
       if (offset > 0 && invert_offdiag) {
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
-              offset, nscol,
-              STS::one (), &hv(nnzD), nscol+offset,
-                           &hv(nnzD+nscol), nscol+offset);
+/*printf( "k = %d (nnzD=%d/%d, %dx%d)\n",k,nnzD,nnzA,nscol+offset,nscol );
+printf( "U=[" );
+for (int ii=0; ii<nscol+offset; ii++) {
+  for (int jj=0; jj<nscol; jj++)
+    printf( " %e+i*%e ",reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nscol+offset)].real(), 
+                        reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nscol+offset)].imag());
+  printf("\n");
+}
+printf("];\n");*/
+        if (std::is_same<scalar_t, double>::value == true) {
+          cblas_dtrmm (CblasColMajor,
+                CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
+                offset, nscol,
+                1.0, reinterpret_cast <double*> (&hv(nnzD)), nscol+offset,
+                     reinterpret_cast <double*> (&hv(nnzD+nscol)), nscol+offset);
+        } else {
+          // NOTE: use double pointers
+          cblas_ztrmm (CblasColMajor,
+                CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
+                offset, nscol,
+                reinterpret_cast <double*> (&one), 
+                reinterpret_cast <double*> (&hv(nnzD)), nscol+offset,
+                reinterpret_cast <double*> (&hv(nnzD+nscol)), nscol+offset);
+        }
       }
+/*printf( "invU=[" );
+for (int ii=0; ii<nscol+offset; ii++) {
+  for (int jj=0; jj<nscol; jj++)
+    printf( " %e+i*%e ",reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nscol+offset)].real(), 
+                        reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nscol+offset)].imag());
+  printf("\n");
+}
+printf("];\n");*/
     }
     // reset check
     for (int i = 0; i < nsup; i++) {

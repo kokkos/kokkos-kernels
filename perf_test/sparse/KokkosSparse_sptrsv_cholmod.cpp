@@ -60,7 +60,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
-#if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
+#if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION )) && defined(KOKKOSKERNELS_INST_DOUBLE)
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 #include "cblas.h"
@@ -562,6 +562,9 @@ int main(int argc, char **argv)
 }
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 int main() {
+#if !defined(KOKKOSKERNELS_INST_DOUBLE)
+  std::cout << " Only supported with double precision" << std::endl;
+#endif
 #if !defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )
   std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
@@ -570,8 +573,8 @@ int main() {
   #if !defined(KOKKOS_ENABLE_CUDA_LAMBDA)
   std::cout << " KOKKOS_ENABLE_CUDA_LAMBDA not defined\n" << std::endl;
   #endif
-#endif
   std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
+#endif
   return 0;
 }
 #endif

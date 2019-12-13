@@ -562,6 +562,7 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
       s ++;
     }
   }
+
   // copy back the new supernodes "offsets"
   nb2[0] = 0;
   for (int s = 0; s < nsuper3; s++) {
@@ -724,6 +725,7 @@ read_merged_supernodes(int nsuper, const int *nb,
 
   typedef typename values_view_t::value_type scalar_t;
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  scalar_t zero = STS::zero ();
 
   // original matrix
   auto graphL = L.graph; // in_graph
@@ -749,7 +751,7 @@ read_merged_supernodes(int nsuper, const int *nb,
   int n = graphL.numRows ();
   scalar_t *dwork = new scalar_t[n];
   for (int i = 0; i < n; i++) {
-    dwork[i] = STS::zero ();
+    dwork[i] = zero;
   }
 
   int nnzA = hr (n);
@@ -767,7 +769,7 @@ read_merged_supernodes(int nsuper, const int *nb,
         hv(k) = dwork[hc(k)];
       }
       for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
-        dwork[entriesL[k]] = STS::zero ();
+        dwork[entriesL[k]] = zero;
       }
     }
 
@@ -780,36 +782,65 @@ read_merged_supernodes(int nsuper, const int *nb,
       char diag_char = (unit_diag ? 'U' : 'N');
 
       tic.reset ();
-#if 1
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     uplo_char, diag_char, nscol, &hv(nnzD), nsrow);
-#else
-      if ( std::is_same<scalar_t,double>::value == true ) {
-        LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                       uplo_char, diag_char, nscol, &hv(nnzD), nsrow);
+      if (std::is_same<scalar_t, double>::value == true) {
+        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
+                        uplo_char, diag_char, nscol,
+                        reinterpret_cast <double*> (&hv(nnzD)), nsrow);
       }
-      else if ( std::is_same<scalar_t,std::complex<double>>::value == true || std::is_same<scalar_t,Kokkos::complex<double>::value == true ) {
-        LAPACKE_ztrtri(LAPACK_COL_MAJOR,
-                       uplo_char, diag_char, nscol, &hv(nnzD), nsrow);
+      else if (std::is_same<scalar_t, std::complex<double>>::value == true ||
+               std::is_same<scalar_t, Kokkos::complex<double>>::value == true) {
+        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
+                        uplo_char, diag_char, nscol, 
+                        reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
       }
       else {
-        std::cout << "Unsupported scalar type: typeid(scalar_t) = " << typeid(scalar_t()).name() << std::endl;
-        throw std::runtime_error( "Unsupported scalar type");
+        throw std::runtime_error( "Unsupported scalar type for calling trtri");
       }
-#endif
+/*if (!lower) {
+printf( "k = %d (nnzD=%d/%d, %dx%d)\n",s2,nnzD,nnzA,nsrow,nscol );
+printf( "U=[" );
+for (int ii=0; ii<nsrow; ii++) {
+  for (int jj=0; jj<nscol; jj++)
+    printf( " %e+i*%e ",reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].real(),
+                        reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].imag());
+  printf("\n");
+}
+printf("];\n");
+}*/
       time1 += tic.seconds ();
       if (nsrow > nscol && invert_offdiag) {
         CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
         CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
 
         tic.reset ();
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-              nsrow-nscol, nscol,
-              STS::one (), &hv(nnzD), nsrow,
-                           &hv(nnzD+nscol), nsrow);
+        if (std::is_same<scalar_t, double>::value == true) {
+          cblas_dtrmm (CblasColMajor,
+                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
+                nsrow-nscol, nscol,
+                1.0, reinterpret_cast <double*> (&hv(nnzD)), nsrow,
+                     reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
+        } else {
+          // NOTE: use double pointers
+          scalar_t one = STS::one ();
+          cblas_ztrmm (CblasColMajor,
+                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
+                nsrow-nscol, nscol,
+                reinterpret_cast <double*> (&one),
+                reinterpret_cast <double*> (&hv(nnzD)), nsrow,
+                reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
+        }
         time2 += tic.seconds ();
       }
+/*if (!lower) {
+printf( "invU=[" );
+for (int ii=0; ii<nsrow; ii++) {
+  for (int jj=0; jj<nscol; jj++)
+    printf( " %e+i*%e ",reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].real(),
+                        reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].imag());
+  printf("\n");
+}
+printf("];\n");
+}*/
     }
   }
   delete[] dwork;
@@ -839,6 +870,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
   typedef typename crsmat_t::values_type::non_const_type values_view_t;
 
   typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  scalar_t zero =  STS::zero ();
 
   Kokkos::Timer tic;
   double time1 = 0.0; // time for trtri
@@ -860,6 +892,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
   typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hr, rowmap_view);
   Kokkos::deep_copy (hc, column_view);
+  Kokkos::deep_copy (hv, zero);
 
   // compute max nnz per row
   int max_nnz_per_row = 0;
@@ -913,28 +946,48 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
     if (invert_diag) {
       tic.reset ();
       char diag_char = (unit_diag ? 'U' : 'N');
-      LAPACKE_dtrtri(LAPACK_COL_MAJOR,
-                     'L', diag_char, nscol, &Lx[psx], nsrow);
+      if (std::is_same<scalar_t, double>::value == true) {
+        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
+                        'L', diag_char, nscol,
+                        reinterpret_cast <double*> (&Lx[psx]), nsrow);
+      } else {
+        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
+                        'L', diag_char, nscol,
+                        reinterpret_cast <lapack_complex_double*> (&Lx[psx]), nsrow);
+      }
       time1 += tic.seconds ();
 
       if (nsrow2 > 0 && invert_offdiag) {
         tic.reset ();
         CBLAS_DIAG diag_int = (unit_diag ? CblasUnit : CblasNonUnit);
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, CblasLower, CblasNoTrans, diag_int,
-              nsrow2, nscol,
-              1.0, &Lx[psx], nsrow,
-                   &Lx[psx+nscol], nsrow);
+        if (std::is_same<scalar_t, double>::value == true) {
+          cblas_dtrmm (CblasColMajor,
+                CblasRight, CblasLower, CblasNoTrans, diag_int,
+                nsrow2, nscol,
+                1.0, reinterpret_cast <double*> (&Lx[psx]), nsrow,
+                     reinterpret_cast <double*> (&Lx[psx+nscol]), nsrow);
+        } else {
+          // NOTE: use double pointers
+          scalar_t one = STS::one ();
+          cblas_ztrmm (CblasColMajor,
+                CblasRight, CblasLower, CblasNoTrans, diag_int,
+                nsrow2, nscol,
+                reinterpret_cast <double*> (&one),
+                reinterpret_cast <double*> (&Lx[psx]), nsrow,
+                reinterpret_cast <double*> (&Lx[psx+nscol]), nsrow);
+        }
         time2 += tic.seconds ();
       }
     }
     for (int jj = 0; jj < nscol; jj++) {
       if (!cusparse) {
         // explicitly store zeros in upper-part
+#if 0
         for (int ii = 0; ii < jj; ii++) {
-          hv(hr(j1+jj)) = STS::zero ();
-          hr(j1+jj) ++;
+          hv(hr(j1+jj) + ii) = zero;
         }
+#endif
+        hr(j1+jj) += jj;
       }
       // diagonal
       if (unit_diag) {
@@ -1002,8 +1055,8 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   using cols_view_host_t    = typename cols_view_t::HostMirror;
   using values_view_host_t  = typename values_view_t::HostMirror;
 
-  typedef typename KernelHandle::nnz_scalar_t scalar_type;
-  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+  typedef typename KernelHandle::nnz_scalar_t scalar_t;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
   // get sparse-triangular solve handle
   auto *handleL = kernelHandleL->get_sptrsv_handle ();

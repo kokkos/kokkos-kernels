@@ -121,7 +121,7 @@ public:
   typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
 
   //
-  typedef typename std::vector <host_crsmat_t> host_crstmat_list_t;
+  typedef typename std::vector<crsmat_t> crsmat_list_t;
 #endif
 
 private:
@@ -194,8 +194,8 @@ private:
 
   // for supernodal spmv
   bool spmv_trans;
-  host_crstmat_list_t sub_crsmats;
-  host_crstmat_list_t diag_blocks;
+  crsmat_list_t sub_crsmats;
+  crsmat_list_t diag_blocks;
 
   int num_streams;
   #if defined(KOKKOS_ENABLE_CUDA)
@@ -371,7 +371,10 @@ public:
     this->etree_host = integer_view_host_t (etree_, nsuper_);
 
     // supercols
-    this->supercols_host = supercols_view; //integer_view_host_t (supercols_, 1+nsuper_);
+    integer_view_host_t supercols_subview (supercols_view.data (), 1+nsuper_);
+    this->supercols_host = integer_view_host_t ("supercols_host", 1+nsuper_);
+    Kokkos::deep_copy (this->supercols_host, supercols_subview);
+
     this->supercols = integer_view_t ("supercols", 1+nsuper_);
     Kokkos::deep_copy (this->supercols, this->supercols_host);
 
@@ -574,7 +577,7 @@ public:
   }
 
   // submatrices
-  void set_submatrices (host_crstmat_list_t subcrsmats) {
+  void set_submatrices (crsmat_list_t subcrsmats) {
     this->sub_crsmats = subcrsmats;
   }
 
@@ -583,7 +586,7 @@ public:
   }
 
   // diagonal subblocks
-  void set_diagblocks (host_crstmat_list_t subcrsmats) {
+  void set_diagblocks (crsmat_list_t subcrsmats) {
     this->diag_blocks = subcrsmats;
   }
 

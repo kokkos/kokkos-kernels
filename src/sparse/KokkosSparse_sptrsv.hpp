@@ -219,7 +219,6 @@ namespace Experimental {
     BType_Internal b_i = b;
     XType_Internal x_i = x;
 
-    //printf( " calling sptrsv_solve from KokkosSparse_sptrsv.hpp\n" );
     KokkosSparse::Impl::SPTRSV_SOLVE<const_handle_type, RowMap_Internal, Entries_Internal, Values_Internal, BType_Internal, XType_Internal>::
       sptrsv_solve (&tmp_handle, rowmap_i, entries_i, values_i, b_i, x_i);
 

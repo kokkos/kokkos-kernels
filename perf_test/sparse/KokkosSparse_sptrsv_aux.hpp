@@ -50,8 +50,8 @@ void forwardP_supernode(int n, int *perm_r, int nrhs, scalar_t *B, int ldb, scal
 
   /* Permute right hand sides to form Pr*B */
   for (int j = 0; j < nrhs; j++) {
-    double *rhs_work = &B[j*ldb];
-    double *sol_work = &X[j*ldx];
+    scalar_t *rhs_work = &B[j*ldb];
+    scalar_t *sol_work = &X[j*ldx];
     for (int k = 0; k < n; k++) {
       sol_work[perm_r[k]] = rhs_work[k];
     }
@@ -63,8 +63,8 @@ void backwardP_supernode(int n, int *perm_c, int nrhs, scalar_t *B, int ldb, sca
 
   /* Compute the final solution X := Pc*X. */
   for (int j = 0; j < nrhs; j++) {
-    double *rhs_work = &B[j*ldb];
-    double *sol_work = &X[j*ldx];
+    scalar_t *rhs_work = &B[j*ldb];
+    scalar_t *sol_work = &X[j*ldx];
     for (int k = 0; k < n; k++) {
       sol_work[k] = rhs_work[perm_c[k]];
     }
@@ -73,48 +73,51 @@ void backwardP_supernode(int n, int *perm_c, int nrhs, scalar_t *B, int ldb, sca
 
 
 /* ========================================================================================= */
-template <typename scalar_t, typename crsmat_t, typename scalar_view_t>
-bool check_errors(scalar_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol) {
+template <typename mag_t, typename crsmat_t, typename scalar_view_t>
+bool check_errors(mag_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol) {
 
   typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::entries_type::non_const_type entries_view_t;
-  typedef typename entries_view_t::non_const_value_type lno_t;
+  typedef typename entries_view_t::non_const_value_type  lno_t;
+  typedef typename crsmat_t::values_type::non_const_type values_view_t;
+  typedef typename values_view_t::value_type scalar_t;
+  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
 
   typedef typename scalar_view_t::execution_space execution_space;
 
-  scalar_t ZERO = scalar_t(0);
+  mag_t ZERO = mag_t(0);
   scalar_t ONE = scalar_t(1);
 
   // normB
-  scalar_t normB = ZERO;
+  mag_t normB = ZERO;
   Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, rhs.extent(0)), 
-    KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-      tsum += rhs(i)*rhs(i);
+    KOKKOS_LAMBDA ( const lno_t i, mag_t &tsum ) {
+      tsum += STS::abs (rhs(i)) * STS::abs (rhs(i));
     }, normB);
   normB = sqrt(normB);
 
   // normA
-  scalar_t normA = ZERO;
+  mag_t normA = ZERO;
   Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, Mtx.nnz()), 
-    KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-      tsum += Mtx.values(i)*Mtx.values(i);
+    KOKKOS_LAMBDA ( const lno_t i, mag_t &tsum ) {
+      tsum += STS::abs (Mtx.values(i)) * STS::abs (Mtx.values(i));
     }, normA);
   normA = sqrt(normA);
 
   // normX
-  scalar_t normX = ZERO;
+  mag_t normX = ZERO;
   Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, sol.extent(0)), 
-    KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-      tsum += sol(i)*sol(i);
+    KOKKOS_LAMBDA ( const lno_t i, mag_t &tsum ) {
+      tsum += STS::abs (sol(i)) * STS::abs (sol(i));
     }, normX);
   normX = sqrt(normX);
 
   // normR = ||B - AX||
-  scalar_t normR = ZERO;
+  mag_t normR = ZERO;
   KokkosSparse::spmv( "N", -ONE, Mtx, sol, ONE, rhs);
   Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, sol.extent(0)), 
-    KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
-      tsum += rhs(i) * rhs(i);
+    KOKKOS_LAMBDA ( const lno_t i, mag_t &tsum ) {
+      tsum += STS::abs (rhs(i)) * STS::abs (rhs(i));
     }, normR);
   normR = sqrt(normR);
 
@@ -123,7 +126,7 @@ bool check_errors(scalar_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t 
             << normR/(normB + normA * normX) << std::endl;
 
   const int nrows = Mtx.graph.numRows();
-  return (normR/(scalar_t(nrows) * (normB + normA * normX)) <= tol);
+  return (normR/(mag_t(nrows) * (normB + normA * normX)) <= tol);
 }
 
 
@@ -293,9 +296,15 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   int pBufferSize;
   void *pBufferL = 0;
   cusparseOperation_t transL = (col_majorL ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
-  cusparseDcsrsv2_bufferSize (handle, transL, nrows, nnzL, descrL,
-                              valuesL.data(), row_mapL.data(), entriesL.data(), infoL,
-                              &pBufferSize);
+  if (std::is_same<scalar_t, double>::value == true) {
+    cusparseDcsrsv2_bufferSize (handle, transL, nrows, nnzL, descrL,
+                                reinterpret_cast <double*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                                &pBufferSize);
+  } else {
+    cusparseZcsrsv2_bufferSize (handle, transL, nrows, nnzL, descrL,
+                                reinterpret_cast <cuDoubleComplex*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                                &pBufferSize);
+  }
   cudaMalloc((void**)&pBufferL, pBufferSize);
 
   // ==============================================
@@ -303,9 +312,15 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   std::cout << "  Lower-Triangular" << std::endl;
   timer.reset ();
   const cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
-  status = cusparseDcsrsv2_analysis (handle, transL, nrows, nnzL, descrL,
-                                     valuesL.data(), row_mapL.data(), entriesL.data(),
-                                     infoL, policy, pBufferL);
+  if (std::is_same<scalar_t, double>::value == true) {
+    status = cusparseDcsrsv2_analysis (handle, transL, nrows, nnzL, descrL,
+                                       reinterpret_cast <double*> (valuesL.data()), row_mapL.data(), entriesL.data(),
+                                       infoL, policy, pBufferL);
+  } else {
+    status = cusparseZcsrsv2_analysis (handle, transL, nrows, nnzL, descrL,
+                                       reinterpret_cast <cuDoubleComplex*> (valuesL.data()), row_mapL.data(), entriesL.data(),
+                                       infoL, policy, pBufferL);
+  }
   std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << "analysis status error name " << (status) << std::endl;
@@ -343,10 +358,21 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   // step 2: solve L*y = x
   Kokkos::fence ();
   timer.reset ();
-  const double alpha = 1.;
-  status = cusparseDcsrsv2_solve (handle, transL, nrows, nnzL, &alpha, descrL,
-                                  valuesL.data(), row_mapL.data(), entriesL.data(), infoL,
-                                  rhs.data(), sol.data(), policy, pBufferL);
+  if (std::is_same<scalar_t, double>::value == true) {
+    const double alpha = 1.0;
+    status = cusparseDcsrsv2_solve (handle, transL, nrows, nnzL, &alpha, descrL,
+                                    reinterpret_cast <double*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                                    reinterpret_cast <double*> (rhs.data()),
+                                    reinterpret_cast <double*> (sol.data()),
+                                    policy, pBufferL);
+  } else {
+    const cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
+    status = cusparseZcsrsv2_solve (handle, transL, nrows, nnzL, &alpha, descrL,
+                                    reinterpret_cast <cuDoubleComplex*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                                    reinterpret_cast <cuDoubleComplex*> (rhs.data()),
+                                    reinterpret_cast <cuDoubleComplex*> (sol.data()),
+                                    policy, pBufferL);
+  }
   Kokkos::fence ();
   std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
@@ -400,18 +426,30 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
   void *pBufferU = 0;
   cusparseOperation_t transU = (col_majorU ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
-  cusparseDcsrsv2_bufferSize (handle, transU, nrows, nnzU, descrU,
-                              valuesU.data(), row_mapU.data(), entriesU.data(),
-                              infoU, &pBufferSize);
+  if (std::is_same<scalar_t, double>::value == true) {
+    cusparseDcsrsv2_bufferSize (handle, transU, nrows, nnzU, descrU,
+                                reinterpret_cast <double*> (valuesU.data()), row_mapU.data(), entriesU.data(),
+                                infoU, &pBufferSize);
+  } else {
+    cusparseZcsrsv2_bufferSize (handle, transU, nrows, nnzU, descrU,
+                                reinterpret_cast <cuDoubleComplex*> (valuesU.data()), row_mapU.data(), entriesU.data(),
+                                infoU, &pBufferSize);
+  }
   cudaMalloc((void**)&pBufferU, pBufferSize);
 
   // ==============================================
   // step 3: analysis
   std::cout << std::endl << "  Upper-Triangular" << std::endl;
   timer.reset();
-  status = cusparseDcsrsv2_analysis (handle, transU, nrows, nnzU, descrU,
-                                     valuesU.data(), row_mapU.data(), entriesU.data(),
-                                     infoU, policy, pBufferU);
+  if (std::is_same<scalar_t, double>::value == true) {
+    status = cusparseDcsrsv2_analysis (handle, transU, nrows, nnzU, descrU,
+                                       reinterpret_cast <double*> (valuesU.data()), row_mapU.data(), entriesU.data(),
+                                       infoU, policy, pBufferU);
+  } else {
+    status = cusparseZcsrsv2_analysis (handle, transU, nrows, nnzU, descrU,
+                                       reinterpret_cast <cuDoubleComplex*> (valuesU.data()), row_mapU.data(), entriesU.data(),
+                                       infoU, policy, pBufferU);
+  }
   std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << "analysis status error name " << (status) << std::endl;
@@ -424,9 +462,21 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   // ==============================================
   // step 1: solve U*y = x
   timer.reset();
-  status = cusparseDcsrsv2_solve (handle, transU, nrows, nnzU, &alpha, descrU,
-                                  valuesU.data(), row_mapU.data(), entriesU.data(), infoU,
-                                  sol.data(), rhs.data(), policy, pBufferU);
+  if (std::is_same<scalar_t, double>::value == true) {
+    const double alpha = 1.0;
+    status = cusparseDcsrsv2_solve (handle, transU, nrows, nnzU, &alpha, descrU,
+                                    reinterpret_cast <double*> (valuesU.data()), row_mapU.data(), entriesU.data(), infoU,
+                                    reinterpret_cast <double*> (sol.data()),
+                                    reinterpret_cast <double*> (rhs.data()),
+                                    policy, pBufferU);
+  } else {
+    const cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
+    status = cusparseZcsrsv2_solve (handle, transU, nrows, nnzU, &alpha, descrU,
+                                    reinterpret_cast <cuDoubleComplex*> (valuesU.data()), row_mapU.data(), entriesU.data(), infoU,
+                                    reinterpret_cast <cuDoubleComplex*> (sol.data()),
+                                    reinterpret_cast <cuDoubleComplex*> (rhs.data()),
+                                    policy, pBufferU);
+  }
   Kokkos::fence();
   std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
@@ -463,12 +513,31 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
 
     // copy & solve & copy back
     Kokkos::deep_copy (rhs, tmp_host);
-    cusparseDcsrsv2_solve (handle, transL, nrows, nnzL, &alpha, descrL,
-                           valuesL.data(), row_mapL.data(), entriesL.data(), infoL,
-                           rhs.data(), sol.data(), policy, pBufferL);
-    cusparseDcsrsv2_solve (handle, transU, nrows, nnzU, &alpha, descrU,
-                           valuesU.data(), row_mapU.data(), entriesU.data(), infoU,
-                           sol.data(), rhs.data(), policy, pBufferU);
+    if (std::is_same<scalar_t, double>::value == true) {
+      const double alpha = 1.0;
+      cusparseDcsrsv2_solve (handle, transL, nrows, nnzL, &alpha, descrL,
+                             reinterpret_cast <double*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                             reinterpret_cast <double*> (rhs.data()),
+                             reinterpret_cast <double*> (sol.data()),
+                             policy, pBufferL);
+      cusparseDcsrsv2_solve (handle, transU, nrows, nnzU, &alpha, descrU,
+                             reinterpret_cast <double*> (valuesU.data()), row_mapU.data(), entriesU.data(), infoU,
+                             reinterpret_cast <double*> (sol.data()),
+                             reinterpret_cast <double*> (rhs.data()),
+                             policy, pBufferU);
+    } else {
+      const cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
+      cusparseZcsrsv2_solve (handle, transL, nrows, nnzL, &alpha, descrL,
+                             reinterpret_cast <cuDoubleComplex*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                             reinterpret_cast <cuDoubleComplex*> (rhs.data()),
+                             reinterpret_cast <cuDoubleComplex*> (sol.data()),
+                             policy, pBufferL);
+      cusparseZcsrsv2_solve (handle, transU, nrows, nnzU, &alpha, descrU,
+                             reinterpret_cast <cuDoubleComplex*> (valuesU.data()), row_mapU.data(), entriesU.data(), infoU,
+                             reinterpret_cast <cuDoubleComplex*> (sol.data()),
+                             reinterpret_cast <cuDoubleComplex*> (rhs.data()),
+                             policy, pBufferU);
+    }
     Kokkos::deep_copy(tmp_host, rhs);
 
     // backward pivot and check
@@ -486,12 +555,28 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
     double ave_time = 0.0;
     Kokkos::fence();
     for(int i = 0; i < loop; i++) {
-      timer.reset();
-      cusparseDcsrsv2_solve(handle, transL, nrows, nnzL, &alpha, descrL,
-                            valuesL.data(), row_mapL.data(), entriesL.data(), infoL,
-                            rhs.data(), sol.data(), policy, pBufferL);
-      Kokkos::fence();
-      double time = timer.seconds();
+      double time;
+      if (std::is_same<scalar_t, double>::value == true) {
+        const double alpha = 1.0;
+        timer.reset();
+        cusparseDcsrsv2_solve(handle, transL, nrows, nnzL, &alpha, descrL,
+                              reinterpret_cast <double*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                              reinterpret_cast <double*> (rhs.data()),
+                              reinterpret_cast <double*> (sol.data()),
+                              policy, pBufferL);
+        Kokkos::fence();
+        time = timer.seconds();
+      } else {
+        const cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
+        timer.reset();
+        cusparseZcsrsv2_solve(handle, transL, nrows, nnzL, &alpha, descrL,
+                              reinterpret_cast <cuDoubleComplex*> (valuesL.data()), row_mapL.data(), entriesL.data(), infoL,
+                              reinterpret_cast <cuDoubleComplex*> (rhs.data()),
+                              reinterpret_cast <cuDoubleComplex*> (sol.data()),
+                              policy, pBufferL);
+        Kokkos::fence();
+        time = timer.seconds();
+      }
       ave_time += time;
       if(time > max_time) max_time = time;
       if(time < min_time) min_time = time;
@@ -507,12 +592,28 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
     ave_time = 0.0;
     Kokkos::fence();
     for(int i = 0; i < loop; i++) {
-      timer.reset();
-      cusparseDcsrsv2_solve(handle, transU, nrows, nnzU, &alpha, descrU,
-                            valuesU.data(), row_mapU.data(), entriesU.data(), infoU,
-                            sol.data(), rhs.data(), policy, pBufferU);
-      Kokkos::fence();
-      double time = timer.seconds();
+      double time;
+      if (std::is_same<scalar_t, double>::value == true) {
+        double alpha = 1.0;
+        timer.reset();
+        cusparseDcsrsv2_solve(handle, transU, nrows, nnzU, &alpha, descrU,
+                              reinterpret_cast <double*> (valuesU.data()), row_mapU.data(), entriesU.data(), infoU,
+                              reinterpret_cast <double*> (sol.data()),
+                              reinterpret_cast <double*> (rhs.data()),
+                              policy, pBufferU);
+        Kokkos::fence();
+        time = timer.seconds();
+      } else {
+        const cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
+        timer.reset();
+        cusparseZcsrsv2_solve(handle, transU, nrows, nnzU, &alpha, descrU,
+                              reinterpret_cast <cuDoubleComplex*> (valuesU.data()), row_mapU.data(), entriesU.data(), infoU,
+                              reinterpret_cast <cuDoubleComplex*> (sol.data()),
+                              reinterpret_cast <cuDoubleComplex*> (rhs.data()),
+                              policy, pBufferU);
+        Kokkos::fence();
+        time = timer.seconds();
+      }
       ave_time += time;
       if(time > max_time) max_time = time;
       if(time < min_time) min_time = time;
