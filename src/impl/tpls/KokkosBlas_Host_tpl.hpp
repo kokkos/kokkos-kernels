@@ -80,6 +80,13 @@ namespace KokkosBlas {
                 /* */ T *c, int ldc);
 
       static 
+      void trmm(const char side, const char uplo, const char transa, const char diag,
+                int m, int n, 
+                const T alpha, 
+                const T *a, int lda,
+                /* */ T *b, int ldb);
+
+      static 
       void trsm(const char side, const char uplo, const char transa, const char diag,
                 int m, int n, 
                 const T alpha, 
