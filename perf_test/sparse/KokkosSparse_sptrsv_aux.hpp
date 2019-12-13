@@ -384,10 +384,6 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   if (CUSPARSE_STATUS_ZERO_PIVOT == status){
     printf ("L(%d,%d) is zero\n", numerical_zero, numerical_zero);
   }
-  //Kokkos::deep_copy (tmp_host, sol);
-  //printf( "y=[" );
-  //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
-  //printf( "];\n" );
 
   // ==============================================
   // Preparing for U-solve
@@ -492,9 +488,6 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   Kokkos::deep_copy(tmp_host, rhs);
   // apply backward-pivot
   backwardP_supernode<scalar_t>(nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
-  //printf( "x=[" );
-  //for (int ii=0; ii<nrows; ii++) printf( " %d %.16e\n",ii,tmp_host(ii) );
-  //printf( "];\n" );
 
   // ==============================================
   // Error Check ** on host **

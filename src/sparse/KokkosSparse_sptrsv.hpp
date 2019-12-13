@@ -450,8 +450,8 @@ namespace Experimental {
     // load options
     bool merge = handleL->get_merge_supernodes ();
     bool invert_offdiag = handleL->get_invert_offdiagonal ();
-    if (merge)          printf( " >> merge\n" );
-    if (invert_offdiag) printf( " >> invert offdiag\n" );
+    if (merge)          std::cout << " >> merge\n" << std::endl;
+    if (invert_offdiag) std::cout << " >> invert offdiag\n" << std::endl;
     bool UinCSC = handleU->is_column_major ();
     bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                     handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);

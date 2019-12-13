@@ -78,7 +78,6 @@
 
 // auxiliary functions (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
-#include "KokkosSparse_sptrsv_superlu_aux.hpp"
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -486,12 +485,6 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           khU.set_sptrsv_verbose (verbose);
           khL.set_sptrsv_verbose (verbose);
 
-//#define DEBUG
-#if !defined(DEBUG)
-          // used to determine which kernels were used based on the block sizes, but not currently used
-          //khL.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
-          //khU.set_diag_supernode_sizes (sup_size_unblocked, sup_size_blocked);
-
           // specify if U is stored in CSR or CSC
           khU.set_sptrsv_column_major (!u_in_csr);
 
@@ -522,7 +515,6 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
           sptrsv_compute<scalar_type, ordinal_type, size_type> (&khL, &khU, L, U);
-#endif
 
 
           // ==============================================
@@ -549,7 +541,6 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           scalar_view_t sol ("sol", nrows);
           Kokkos::deep_copy (rhs, tmp_host);
 
-#if !defined(DEBUG)
           // ==============================================
           // do L solve
           timer.reset();
@@ -564,7 +555,6 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           Kokkos::fence ();
           std::cout << " > Upper-TRI: " << std::endl;
           std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
-#endif
  
           // copy solution to host
           Kokkos::deep_copy (tmp_host, rhs);
@@ -584,55 +574,11 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename
           {
             Kokkos::deep_copy (sol_host, ONE);
             KokkosSparse::spmv ("N", ONE, Mtx, sol_host, ZERO, rhs_host);
-#if defined(DEBUG)
-            Kokkos::deep_copy (rhs, rhs_host);
-#else
             forwardP_supernode<scalar_type> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
             Kokkos::deep_copy (rhs, tmp_host);
-#endif
 
             #if 1
-#if defined(DEBUG2)
-            {
-              #if 1
-              int info;
-              SuperMatrix B;
-              SuperLUStat_t stat;
-              trans_t trans = NOTRANS;
-              StatInit(&stat);
-              zCreate_Dense_Matrix(&B, nrows, 1, (doublecomplex*)(rhs.data ()), nrows, SLU_DN, SLU_Z, SLU_GE);
-              zgstrs(trans, &L, &U, perm_c, perm_r, &B, &stat, &info);
-              #else
-              forwardP_supernode<scalar_type> (nrows, perm_r, 1, rhs_host.data(), nrows, tmp_host.data(), nrows);
-              Kokkos::deep_copy (rhs, tmp_host);
-
-for (int i=0; i < nrows; i++) printf(" + %.2e %.2e\n",rhs.data()[i].real (), rhs.data()[i].imag () );
-printf( "\n" );
-              gstrsL(&L,     1, rhs.data (), nrows);
-for (int i=0; i < nrows; i++) printf(" - %.2e %.2e\n",rhs.data()[i].real (), rhs.data()[i].imag () );
-printf( "\n" );
-              gstrsU(&L, &U, 1, rhs.data (), nrows);
-for (int i=0; i < nrows; i++) printf(" x %.2e %.2e\n",rhs.data()[i].real (), rhs.data()[i].imag () );
-printf( "\n" );
-
-              Kokkos::deep_copy (tmp_host, rhs);
-              backwardP_supernode<scalar_type> (nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
-              #endif
-            }
-#else
-            //sptrsv_solve (&khL, &khU, sol, rhs);
-//Kokkos::deep_copy (tmp_host, rhs);
-//for (int i=0; i < nrows; i++) printf(" + %.2e %.2e\n",tmp_host.data()[i].real (), tmp_host.data()[i].imag () );
-//printf( "\n" );
-            sptrsv_solve (&khL, sol, rhs);
-//Kokkos::deep_copy (tmp_host, sol);
-//for (int i=0; i < nrows; i++) printf(" - %.2e %.2e\n",tmp_host.data()[i].real (), tmp_host.data()[i].imag () );
-//printf( "\n" );
-            sptrsv_solve (&khU, rhs, sol);
-//Kokkos::deep_copy (tmp_host, rhs);
-//for (int i=0; i < nrows; i++) printf(" x %.2e %.2e\n",tmp_host.data()[i].real (), tmp_host.data()[i].imag () );
-//printf( "\n" );
-#endif
+            sptrsv_solve (&khL, &khU, sol, rhs);
             #else
             sptrsv_solve (&khL, sol, rhs);
             sptrsv_solve (&khU, rhs, sol);
@@ -641,8 +587,6 @@ printf( "\n" );
             Kokkos::fence ();
             Kokkos::deep_copy (tmp_host, rhs);
             backwardP_supernode<scalar_type> (nrows, perm_c, 1, tmp_host.data(), nrows, sol_host.data(), nrows);
-//for (int i=0; i < nrows; i++) printf(" * %.2e %.2e\n",sol_host.data()[i].real (), sol_host.data()[i].imag () );
-//printf( "\n" );
 
             if (!check_errors (tol, Mtx, rhs_host, sol_host)) {
               num_failed ++;
@@ -880,8 +824,8 @@ int main(int argc, char **argv) {
 
   Kokkos::initialize(argc,argv);
   {
-    typedef double test_sptrsv_scalar_t;
-    //typedef Kokkos::complex<double> test_sptrsv_scalar_t;
+    //typedef double test_sptrsv_scalar_t;
+    typedef Kokkos::complex<double> test_sptrsv_scalar_t;
     std::cout << " > supernode_size_unblocked: " << sup_size_unblocked << std::endl;
     std::cout << " > supernode_size_blocked:   " << sup_size_blocked << std::endl;
     int total_errors = test_sptrsv_perf<test_sptrsv_scalar_t>(

@@ -796,17 +796,7 @@ read_merged_supernodes(int nsuper, const int *nb,
       else {
         throw std::runtime_error( "Unsupported scalar type for calling trtri");
       }
-/*if (!lower) {
-printf( "k = %d (nnzD=%d/%d, %dx%d)\n",s2,nnzD,nnzA,nsrow,nscol );
-printf( "U=[" );
-for (int ii=0; ii<nsrow; ii++) {
-  for (int jj=0; jj<nscol; jj++)
-    printf( " %e+i*%e ",reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].real(),
-                        reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].imag());
-  printf("\n");
-}
-printf("];\n");
-}*/
+
       time1 += tic.seconds ();
       if (nsrow > nscol && invert_offdiag) {
         CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
@@ -831,16 +821,6 @@ printf("];\n");
         }
         time2 += tic.seconds ();
       }
-/*if (!lower) {
-printf( "invU=[" );
-for (int ii=0; ii<nsrow; ii++) {
-  for (int jj=0; jj<nscol; jj++)
-    printf( " %e+i*%e ",reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].real(),
-                        reinterpret_cast <Kokkos::complex<double>*> (&hv(nnzD))[ii+jj*(nsrow)].imag());
-  printf("\n");
-}
-printf("];\n");
-}*/
     }
   }
   delete[] dwork;
@@ -892,7 +872,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
   typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hr, rowmap_view);
   Kokkos::deep_copy (hc, column_view);
-  Kokkos::deep_copy (hv, zero);
+  Kokkos::deep_copy (hv, zero); // seems to be needed (instead of zeroing out upper)
 
   // compute max nnz per row
   int max_nnz_per_row = 0;
