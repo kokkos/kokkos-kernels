@@ -184,9 +184,11 @@ read_supernodal_graphL(bool cusparse, bool merge,
   }
   hr(0) = 0;
 
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+  #endif
 
   // deepcopy
   Kokkos::deep_copy (rowmap_view, hr);
@@ -239,11 +241,15 @@ void check_supernode_sizes(const char *title, int n, int nsuper, int *nb, input_
       tot_nscol += nscol;
     }
   }
-  printf( "\n ------------------------------------- \n" );
-  printf( " %s:\n",title );
-  printf( "  + nsuper = %d\n",nsuper );
-  printf( "  > nsrow: min = %d, max = %d, avg = %d\n",min_nsrow,max_nsrow,tot_nsrow/nsuper );
-  printf( "  > nscol: min = %d, max = %d, avg = %d\n",min_nscol,max_nscol,tot_nscol/nsuper );
+  std::cout << std::endl
+            << " ------------------------------------- "
+            << std::endl << std::endl;
+  std::cout << " " << title << std::endl;
+  std::cout << "  + nsuper = " << nsuper << std::endl;
+  std::cout << "  > nsrow: min = " << min_nsrow << ", max = " << max_nsrow
+            << ", avg = " << tot_nsrow/nsuper << std::endl;
+  std::cout << "  > nscol: min = " <<  min_nscol << ", max = " << max_nscol
+            << ", avg = " << tot_nscol/nsuper << std::endl;
   std::cout << "    + Matrix size = " << n << std::endl;
   std::cout << "    + Total nnz   = " << hr(n) << std::endl;
   std::cout << "    + nnz / n     = " << hr(n)/n << std::endl;
@@ -806,9 +812,11 @@ read_merged_supernodes(int nsuper, const int *nb,
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "   read_merged_supernodes" << std::endl;
   std::cout << "   > Time for inversion::trtri : " << time1 << std::endl;
   std::cout << "   > Time for inversion::trmm  : " << time2 << std::endl;
+  #endif
 
   // create crs
   crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
@@ -985,6 +993,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
   }
   hr(0) = 0;
 
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    read_supernodal_valuesL" << std::endl;
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
@@ -992,6 +1001,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
 
   std::cout << "    > Time for trtri on diagonal    : " << time1 << std::endl;
   std::cout << "    > Time for trmm  on off-diagonal: " << time2 << std::endl;
+  #endif
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
@@ -1053,8 +1063,10 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   const int* supercols_host = handleL->get_supercols_host ();
 
   // form crsgraph for each submatrix at each level
-  int newNnz = 0;
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   int oldNnz = row_mapL (nrows);
+  #endif
+  int newNnz = 0;
   std::vector <crsmat_t> sub_crsmats (nlevels);
   std::vector <crsmat_t> diag_blocks (nlevels);
   for (int lvl = 0; lvl < nlevels; ++lvl) {
@@ -1263,11 +1275,13 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   if (!invert_offdiag) {
     handleL->set_diagblocks (diag_blocks);
   }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "   split_crsmat" << std::endl;
   std::cout << "   > Time to split to submatrices      : " << time1 << std::endl;
   std::cout << "   > Time to copy submatrices to device: " << time2 << std::endl;
   std::cout << "   > Total NNZ                         : " << oldNnz << " -> " << newNnz
             << std::endl << std::endl;
+  #endif
 }
 
 /* ========================================================================================= */

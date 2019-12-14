@@ -219,9 +219,11 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
     hr(i) = hr(i-1);
   }
   hr(0) = 0;
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+  #endif
 
   // deepcopy
   Kokkos::deep_copy (rowmap_view, hr);
@@ -361,9 +363,11 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
     hr(j) = hr(j-1);
   }
   hr(0) = 0;
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+  #endif
 
   // deepcopy
   Kokkos::deep_copy (rowmap_view, hr);
@@ -535,9 +539,11 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
     hr(i) = hr(i-1);
   }
   hr(0) = 0;
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+  #endif
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
@@ -696,9 +702,11 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
     hr(i) = hr(i-1);
   }
   hr(0) = 0;
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+  #endif
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);

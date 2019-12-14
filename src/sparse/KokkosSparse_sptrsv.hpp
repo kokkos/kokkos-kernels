@@ -271,10 +271,12 @@ namespace Experimental {
 
     // ===================================================================
     // read CrsGraph from SuperLU factor
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
     if (merge) {
       std::cout << " > Merge supernodes" << std::endl;
     }
+    #endif
     bool cusparse = false; // pad diagonal blocks with zeros
     host_graph_t graphL_host;
     host_graph_t graphU_host;
@@ -282,14 +284,15 @@ namespace Experimental {
     graph_t graphU;
 
     tic.reset();
-    int nrows = L.nrow;
     graphL_host = read_superlu_graphL<host_graph_t> (cusparse, merge, &L);
     if (UinCSC) {
       graphU_host = read_superlu_graphU_CSC<host_graph_t> (&L, &U); 
     } else {
       graphU_host = read_superlu_graphU<host_graph_t> (&L, &U); 
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << "   Conversion Time (from SuperLU to CSR): " << tic.seconds() << std::endl;
+    #endif
 
     // ===================================================================
     // setup supnodal info
@@ -308,8 +311,11 @@ namespace Experimental {
       // merge supernodes
       tic.reset ();
       int nsuper_merged = nsuper;
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+      int nrows = L.nrow;
       check_supernode_sizes("Original L-structure", nrows, nsuper, supercols_merged, graphL_host);
       check_supernode_sizes("Original U-structure", nrows, nsuper, supercols_merged, graphU_host);
+      #endif
       // etree will be updated
       merge_supernodal_graph (&nsuper_merged, supercols_merged,
                               col_majorL, graphL_host, col_majorU, graphU_host,
@@ -317,34 +323,42 @@ namespace Experimental {
 
       // =================================================================
       // generate merged graph for L-solve
-      int nnzL_merged;
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       int nnzL = graphL_host.row_map (nrows);
+      #endif
+      int nnzL_merged;
       bool lower = true;
       handleL->set_original_graph_host (graphL_host); // save graph before merge
       graphL_host = generate_merged_supernodal_graph<host_graph_t> (lower, nsuper, supercols,
                                                                     nsuper_merged, supercols_merged,
                                                                     graphL_host, &nnzL_merged);
-      check_supernode_sizes("After Merge", nrows, nsuper_merged, supercols_merged, graphL_host);
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+      check_supernode_sizes ("After Merge", nrows, nsuper_merged, supercols_merged, graphL_host);
       std::cout << " for L factor:" << std::endl;
       std::cout << "   Merge Supernodes Time: " << tic.seconds() << std::endl;
       std::cout << "   Number of nonzeros   : " << nnzL << " -> " << nnzL_merged
                 << " : " << double(nnzL_merged) / double(nnzL) << "x" << std::endl;
+      #endif
 
       // =================================================================
       // generate merged graph for U-solve
-      int nnzU_merged;
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       int nnzU = graphU_host.row_map (nrows);
+      #endif
+      int nnzU_merged;
       lower = (UinCSC ? false : true);
       tic.reset ();
       handleU->set_original_graph_host (graphU_host); // save graph before merge
       graphU_host = generate_merged_supernodal_graph<host_graph_t> (lower, nsuper, supercols,
                                                                     nsuper_merged, supercols_merged,
                                                                     graphU_host, &nnzU_merged);
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       check_supernode_sizes("After Merge", nrows, nsuper_merged, supercols_merged, graphU_host);
       std::cout << " for U factor:" << std::endl;
       std::cout << "   Merge Supernodes Time: " << tic.seconds() << std::endl;
       std::cout << "   Number of nonzeros   : " << nnzU << " -> " << nnzU_merged
                 << " : " << double(nnzU_merged) / double(nnzU) << "x" << std::endl;
+      #endif
 
       // update the number of supernodes
       nsuper = nsuper_merged;
@@ -379,10 +393,14 @@ namespace Experimental {
     auto row_mapL = graphL.row_map;
     auto entriesL = graphL.entries;
     tic.reset();
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << std::endl;
+    #endif
     sptrsv_symbolic (kernelHandleL, row_mapL, entriesL);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << " > Lower-TRI: " << std::endl;
     std::cout << "   Symbolic Time: " << tic.seconds() << std::endl;
+    #endif
 
     // ===================================================================
     // do symbolic for U solve on the host
@@ -390,8 +408,10 @@ namespace Experimental {
     auto entriesU = graphU.entries;
     tic.reset ();
     sptrsv_symbolic (kernelHandleU, row_mapU, entriesU);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << " > Upper-TRI: " << std::endl;
     std::cout << "   Symbolic Time: " << tic.seconds() << std::endl;
+    #endif
 
     // ===================================================================
     // save options
@@ -411,7 +431,9 @@ namespace Experimental {
     handleU->set_symbolic_complete ();
     handleL->set_etree (etree);
     handleU->set_etree (etree);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << "   Total Symbolic Time: " << timer.seconds() << std::endl << std::endl;
+    #endif
   }
 
 
@@ -450,11 +472,13 @@ namespace Experimental {
     // load options
     bool merge = handleL->get_merge_supernodes ();
     bool invert_offdiag = handleL->get_invert_offdiagonal ();
-    if (merge)          std::cout << " >> merge\n" << std::endl;
-    if (invert_offdiag) std::cout << " >> invert offdiag\n" << std::endl;
     bool UinCSC = handleU->is_column_major ();
     bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                     handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    if (merge)          std::cout << " >> merge\n" << std::endl;
+    if (invert_offdiag) std::cout << " >> invert offdiag\n" << std::endl;
+    #endif
 
     // ===================================================================
     // load graphs
@@ -517,7 +541,9 @@ namespace Experimental {
                                                      lower, unit_diag, invert_diag, invert_offdiag,
                                                      superluU_host, graphU);
       }
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       std::cout << "   Time to Merge and Copy to device: " << tic.seconds() << std::endl;
+      #endif
     } else {
       // ========================================================
       // read in the numerical values into merged csc for L
@@ -529,7 +555,9 @@ namespace Experimental {
       } else {
         superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
       }
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       double timeL = tic.seconds ();
+      #endif
 
       // ========================================================
       // read in the numerical values into merged csc/csr for U
@@ -547,10 +575,12 @@ namespace Experimental {
           superluU = read_superlu_valuesU<crsmat_t> (invert_diag, &L, &U, graphU);
         }
       }
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       double timeU = tic.seconds ();
       std::cout << "   Time to copy to device: " << tic.seconds() << std::endl;
       std::cout << "   > copy L to device: " << timeL << std::endl;
       std::cout << "   > copy U to device: " << timeU << std::endl;
+      #endif
     }
 
     // ===================================================================
@@ -560,7 +590,9 @@ namespace Experimental {
       tic.reset ();
       split_crsmat<crsmat_t> (kernelHandleL, superluL_host);
       split_crsmat<crsmat_t> (kernelHandleU, superluU_host);
+      #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       std::cout << "   Time to Split to submatrix: " << tic.seconds() << std::endl;
+      #endif
     }
 
 
@@ -572,7 +604,9 @@ namespace Experimental {
     // ===================================================================
     handleL->set_numeric_complete ();
     handleU->set_numeric_complete ();
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << "   Total Compute Time: " << timer.seconds() << std::endl << std::endl;
+    #endif
   } // sptrsv_compute
 #endif //KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 
@@ -629,15 +663,19 @@ namespace Experimental {
     // symbolic for L-solve on the host
     timer.reset();
     sptrsv_symbolic (kernelHandleL, row_map, entries);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     std::cout << " > Lower-TRI: " << std::endl;
     std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+    #endif
 
     // ==============================================
     // symbolic for L^T-solve on the host
     timer.reset ();
-    std::cout << " > Upper-TRI: " << std::endl;
     sptrsv_symbolic (kernelHandleU, row_map, entries);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    std::cout << " > Upper-TRI: " << std::endl;
     std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+    #endif
 
     // ==============================================
     // save graphs

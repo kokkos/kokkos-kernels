@@ -197,10 +197,10 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
 
 /* ========================================================================================= */
 template<typename scalar_type>
-void factor_superlu(bool symm_mode, bool metis,
-                    const int nrow, scalar_type *nzvals, int *rowptr, int *colind,
-                    int panel_size, int relax_size, SuperMatrix &L, SuperMatrix &U,
-                    int **perm_r, int **perm_c, int **parents) {
+void factor_superlu (bool symm_mode, bool metis,
+                     const int nrow, scalar_type *nzvals, int *rowptr, int *colind,
+                     int panel_size, int relax_size, SuperMatrix &L, SuperMatrix &U,
+                     int **perm_r, int **perm_c, int **parents) {
 
   // allocate permutation vectors for SuperLU
   *perm_c = new int[nrow];
@@ -279,9 +279,9 @@ void factor_superlu(bool symm_mode, bool metis,
   int *colind_tran = colind;
   if (std::is_same<scalar_type, double>::value == true) {
     if (!symm_mode) {
-      dCompRow_to_CompCol(nrow, nrow, nnz,
-                          reinterpret_cast <double*> (nzvals), colind, rowptr,
-                          reinterpret_cast <double**> (&nzvals_tran), &colind_tran, &rowptr_tran);
+      dCompRow_to_CompCol (nrow, nrow, nnz,
+                           reinterpret_cast <double*> (nzvals), colind, rowptr,
+                           reinterpret_cast <double**> (&nzvals_tran), &colind_tran, &rowptr_tran);
     }
     dCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
                             reinterpret_cast <double*> (nzvals_tran), colind_tran, rowptr_tran,
@@ -289,9 +289,9 @@ void factor_superlu(bool symm_mode, bool metis,
   } else if (std::is_same<scalar_type, std::complex<double>>::value == true ||
              std::is_same<scalar_type, Kokkos::complex<double>>::value == true) {
     if (!symm_mode) {
-      zCompRow_to_CompCol(nrow, nrow, nnz,
-                          reinterpret_cast <doublecomplex*> (nzvals), colind, rowptr,
-                          reinterpret_cast <doublecomplex**> (&nzvals_tran), &colind_tran, &rowptr_tran);
+      zCompRow_to_CompCol (nrow, nrow, nnz,
+                           reinterpret_cast <doublecomplex*> (nzvals), colind, rowptr,
+                           reinterpret_cast <doublecomplex**> (&nzvals_tran), &colind_tran, &rowptr_tran);
     }
     zCreate_CompCol_Matrix (&A, nrow, nrow, nnz,
                             reinterpret_cast <doublecomplex*> (nzvals_tran), colind_tran, rowptr_tran,
@@ -358,8 +358,8 @@ void factor_superlu(bool symm_mode, bool metis,
 
 /* ========================================================================================= */
 template<typename scalar_type>
-void free_superlu(SuperMatrix &L, SuperMatrix &U,
-                  int *perm_r, int *perm_c, int *parents) {
+void free_superlu (SuperMatrix &L, SuperMatrix &U,
+                   int *perm_r, int *perm_c, int *parents) {
 
   Destroy_SuperNode_Matrix(&L);
   Destroy_CompCol_Matrix(&U);
@@ -372,8 +372,8 @@ void free_superlu(SuperMatrix &L, SuperMatrix &U,
 
 /* ========================================================================================= */
 template<typename scalar_type>
-int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename, bool symm_mode, bool metis, bool merge, bool invert_offdiag,
-                     bool u_in_csr, int panel_size, int relax_size, int loop) {
+int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filename, bool symm_mode, bool metis, bool merge,
+                      bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int loop) {
 
   using ordinal_type = int;
   using size_type    = int;
