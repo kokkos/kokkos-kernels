@@ -108,8 +108,8 @@ void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
 template <typename crsmat_t, typename graph_t>
 crsmat_t read_cholmod_factor(bool cusparse, bool invert_diag, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
 
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-  typedef typename values_view_t::value_type scalar_t;
+  using values_view_t = typename crsmat_t::values_type::non_const_type;
+  using scalar_t      = typename values_view_t::value_type;
 
   /* ---------------------------------------------------------------------- */
   /* get inputs */

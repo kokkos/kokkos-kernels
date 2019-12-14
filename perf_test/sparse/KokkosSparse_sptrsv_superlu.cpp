@@ -115,7 +115,7 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
   printf( "];\n" );
 
 #if 0
-  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+  using STS = Kokkos::Details::ArithTraits<scalar_type>;
 
   int *colptr = Lstore->nzval_colptr;
   int *rowind = Lstore->rowind;
@@ -373,36 +373,36 @@ void free_superlu(SuperMatrix &L, SuperMatrix &U,
 /* ========================================================================================= */
 template<typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& filename, bool symm_mode, bool metis, bool merge, bool invert_offdiag,
-                     bool u_in_csr, int panel_size, int relax_size, int sup_size_unblocked, int sup_size_blocked, int loop) {
+                     bool u_in_csr, int panel_size, int relax_size, int loop) {
 
-  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
-  typedef typename STS::mag_type mag_type;
-  typedef int ordinal_type;
-  typedef int size_type;
+  using ordinal_type = int;
+  using size_type    = int;
+  using STS = Kokkos::Details::ArithTraits<scalar_type>;
+  using mag_type = typename STS::mag_type;
 
   // Default spaces
-  //typedef Kokkos::OpenMP execution_space;
-  typedef Kokkos::DefaultExecutionSpace execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  //using execution_space = Kokkos::OpenMP;
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = typename execution_space::memory_space;
 
   // Host spaces
-  typedef Kokkos::DefaultHostExecutionSpace host_execution_space;
-  typedef typename host_execution_space::memory_space host_memory_space;
+  using host_execution_space = Kokkos::DefaultHostExecutionSpace;
+  using host_memory_space = typename host_execution_space::memory_space;
 
   //
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, scalar_type,
-    execution_space, memory_space, memory_space > KernelHandle;
+  using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle
+                        <size_type, ordinal_type, scalar_type, execution_space, memory_space, memory_space >;
 
   //
-  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type>;
+  using      crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type>;
 
   //
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
+  using graph_t = typename crsmat_t::StaticCrsGraphType;
 
   //
-  typedef Kokkos::View< scalar_type*, host_memory_space > host_scalar_view_t;
-  typedef Kokkos::View< scalar_type*,      memory_space > scalar_view_t;
+  using host_scalar_view_t = Kokkos::View< scalar_type*, host_memory_space >;
+  using      scalar_view_t = Kokkos::View< scalar_type*,      memory_space >;
 
   scalar_type ZERO = scalar_type(0);
   scalar_type ONE = scalar_type(1);
@@ -715,9 +715,6 @@ int main(int argc, char **argv) {
   std::string filename;
 
   int loop = 1;
-  // parameters for sparse-triangular solve
-  int sup_size_unblocked = 100;
-  int sup_size_blocked = 200;
   // use symmetric mode for SuperLU
   bool symm_mode = false;
   // use METIS before SuperLU
@@ -775,14 +772,6 @@ int main(int argc, char **argv) {
       loop = atoi(argv[++i]);
       continue;
     }
-    if((strcmp(argv[i],"--sup-size-unblocked")==0)) {
-      sup_size_unblocked = atoi(argv[++i]);
-      continue;
-    }
-    if((strcmp(argv[i],"--sup-size-blocked")==0)) {
-      sup_size_blocked = atoi(argv[++i]);
-      continue;
-    }
     if((strcmp(argv[i],"--symm")==0)) {
       symm_mode = true;
       continue;
@@ -824,13 +813,10 @@ int main(int argc, char **argv) {
 
   Kokkos::initialize(argc,argv);
   {
-    //typedef double test_sptrsv_scalar_t;
-    typedef Kokkos::complex<double> test_sptrsv_scalar_t;
-    std::cout << " > supernode_size_unblocked: " << sup_size_unblocked << std::endl;
-    std::cout << " > supernode_size_blocked:   " << sup_size_blocked << std::endl;
-    int total_errors = test_sptrsv_perf<test_sptrsv_scalar_t>(
-                                                tests, verbose, filename, symm_mode, metis, merge, invert_offdiag, u_in_csr,
-                                                panel_size, relax_size, sup_size_unblocked, sup_size_blocked, loop);
+    using scalar_t = double;
+    //using scalar_t = Kokkos::complex<double>;
+    int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge, invert_offdiag, u_in_csr,
+                                                   panel_size, relax_size, loop);
     if(total_errors == 0)
       std::cout << "Kokkos::SPTRSV Test: Passed"
                 << std::endl << std::endl;

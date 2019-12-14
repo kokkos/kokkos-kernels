@@ -689,18 +689,10 @@ struct UpperTriSupernodalFunctor
       if (diag_kernel_type (level) != 3) {
         // not device-level GEMV-udpate
         auto Uij = Kokkos::subview (viewU, range_type (nscol, nsrow), Kokkos::ALL ());
-        //if (kernel_type (level) == 0) {
-          KokkosBatched::TeamGemv<member_type,
-                                  KokkosBatched::Trans::Transpose,
-                                  KokkosBatched::Algo::Gemv::Unblocked>
-            ::invoke(team, -one, Uij, Z, one, Xj);
-        /*} else {
-          KokkosBlas::Experimental::
-          gemv(team, 'T',
-              -one, Uij,
-                    Z,
-               one, Xj);
-        }*/
+        KokkosBatched::TeamGemv<member_type,
+                                KokkosBatched::Trans::Transpose,
+                                KokkosBatched::Algo::Gemv::Unblocked>
+          ::invoke(team, -one, Uij, Z, one, Xj);
         team.team_barrier();
       }
     }
@@ -713,45 +705,17 @@ struct UpperTriSupernodalFunctor
 
       // workspace
       auto Y = subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
-      /*if (nscol == 1) {
-        if (team_rank == 0) {
-          Xj (0) *= Ujj(0, 0);
-        }
-      } else {*/
-        for (int ii = team_rank; ii < nscol; ii += team_size) {
-          Y (ii) = Xj (ii);
-        }
-        team.team_barrier();
-        //if (diag_kernel_type (level) == 0) {
-          // caling team-level kernel in KokkosBatched on a small-size diagonal
-          KokkosBatched::TeamGemv<member_type,
-                                  KokkosBatched::Trans::Transpose,
-                                  KokkosBatched::Algo::Gemv::Unblocked>
-            ::invoke(team, one, Ujj, Y, zero, Xj);
-        /*} else {
-          // caling team-level kernel in KokkosBlas on a small-size diagonal
-          KokkosBlas::Experimental::
-          gemv(team, 'T',
-               one,  Ujj,
-                     Y,
-               zero, Xj);
-        }*/
-        team.team_barrier();
-/*printf( " - gemv(%d:%d)\n",level,s );
-for (int ii=0; ii<nscol; ii++) {
-  for (int jj=0; jj<nscol; jj++) {
-    std::complex<double> *ujj = reinterpret_cast <std::complex<double>*> (&Ujj(0,0));
-    printf( "(%.2e %.2e) ", ujj[ii+jj*nsrow].real(), ujj[ii+jj*nsrow].imag() );
-  }
-  printf("\n");
-}
-printf("\n");
-for (int ii=0; ii<nscol; ii++) {
-  std::complex<double> *x = reinterpret_cast <std::complex<double>*> (Xj.data());
-  std::complex<double> *y = reinterpret_cast <std::complex<double>*> (Y.data());
-  printf( "(%.2e %.2e) (%.2e %.2e)\n", x[ii].real(), x[ii].imag(), y[ii].real(),y[ii].imag() );
-}*/
-      //}
+      for (int ii = team_rank; ii < nscol; ii += team_size) {
+        Y (ii) = Xj (ii);
+      }
+      team.team_barrier();
+
+      // caling team-level kernel in KokkosBatched on a small-size diagonal
+      KokkosBatched::TeamGemv<member_type,
+                              KokkosBatched::Trans::Transpose,
+                              KokkosBatched::Algo::Gemv::Unblocked>
+        ::invoke(team, one, Ujj, Y, zero, Xj);
+      team.team_barrier();
     }
   }
 };
@@ -888,20 +852,6 @@ struct UpperTriTranSupernodalFunctor
                                 KokkosBatched::Trans::NoTranspose,
                                 KokkosBatched::Algo::Gemv::Unblocked>
           ::invoke(team, one, Ujj, Y, zero, Xj);
-/*printf( " - gemv(%d:%d)\n",level,s );
-for (int ii=0; ii<nscol; ii++) {
-  for (int jj=0; jj<nscol; jj++) {
-    std::complex<double> *ujj = reinterpret_cast <std::complex<double>*> (&Ujj(0,0));
-    printf( "(%.2e %.2e) ", ujj[ii+jj*nsrow].real(), ujj[ii+jj*nsrow].imag() );
-  }
-  printf("\n");
-}
-printf("\n");
-for (int ii=0; ii<nscol; ii++) {
-  std::complex<double> *x = reinterpret_cast <std::complex<double>*> (Xj.data());
-  std::complex<double> *y = reinterpret_cast <std::complex<double>*> (Y.data());
-  printf( "(%.2e %.2e) (%.2e %.2e)\n", x[ii].real(), x[ii].imag(), y[ii].real(),y[ii].imag() );
-}*/
       }
       team.team_barrier();
     }
@@ -1566,16 +1516,6 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
                 auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
                 Kokkos::deep_copy(Xj, Y);
-/*{
-  printf( " + gemv(%d:%d)\n",lvl,s );
-  auto zj = Kokkos::create_mirror_view (Z);
-  auto ej = Kokkos::create_mirror_view (entries);
-  Kokkos::deep_copy (ej, entries);
-  Kokkos::deep_copy (zj, Z);
-
-  Kokkos::complex<double>* zjj = reinterpret_cast <Kokkos::complex<double>*> (zj.data());
-  for (int ii=0; ii<nsrow; ii++) printf( " %d:%d: (%e %e)\n",ii,ej(i1+ii), zjj[ii].real(),zjj[ii].imag());
-}*/
               } else {
                 // extract part of the solution, corresponding to the diagonal block
                 auto Xj = Kokkos::subview (lhs, range_type(j1, j2));
@@ -1589,20 +1529,6 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
                 gemv("N", one,  Ujj,
                                 Y,
                           zero, Xj);
-/*printf( " + gemv(%d:%d)\n",lvl,s );
-for (int ii=0; ii<nscol; ii++) {
-  for (int jj=0; jj<nscol; jj++) {
-    std::complex<double> *ujj = reinterpret_cast <std::complex<double>*> (&Ujj(0,0));
-    printf( "(%.2e %.2e) ", ujj[ii+jj*nsrow].real(), ujj[ii+jj*nsrow].imag() );
-  }
-  printf("\n");
-}
-printf("\n");
-for (int ii=0; ii<nscol; ii++) {
-  std::complex<double> *x = reinterpret_cast <std::complex<double>*> (Xj.data());
-  std::complex<double> *y = reinterpret_cast <std::complex<double>*> (Y.data());
-  printf( "(%.2e %.2e) (%.2e %.2e)\n", x[ii].real(), x[ii].imag(), y[ii].real(),y[ii].imag() );
-}*/
 
                 // update off-diagonal blocks
                 if (nsrow2 > 0) {
@@ -1617,14 +1543,6 @@ for (int ii=0; ii<nscol; ii++) {
               }
             }
           }
-/*{
-  printf( "\n -- level = %d (kernel-type = %d, # of supernodes = %d -- \n",lvl,kernel_type_host (lvl),lvl_nodes );
-  typename LHSType::HostMirror LHS = Kokkos::create_mirror_view (lhs);
-  Kokkos::deep_copy(LHS, lhs);
-  Kokkos::complex<double>* B = reinterpret_cast <Kokkos::complex<double>*> (LHS.data());
-  for (int ii=0; ii<841; ii++) printf( "> %d (%e %e)\n",ii,B[ii].real(),B[ii].imag());
-  printf( "\n" );
-}*/
 
           // launching sparse-triangular solve functor
           UpperTriTranSupernodalFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
@@ -1693,20 +1611,6 @@ for (int ii=0; ii<nscol; ii++) {
               gemv("T", one,  Ujj,
                               Y,
                         zero, Xj);
-/*printf( " + gemv(%d:%d)\n",lvl,s );
-for (int ii=0; ii<nscol; ii++) {
-  for (int jj=0; jj<nscol; jj++) {
-    std::complex<double> *ujj = reinterpret_cast <std::complex<double>*> (&Ujj(0,0));
-    printf( "(%.2e %.2e) ", ujj[ii+jj*nsrow].real(), ujj[ii+jj*nsrow].imag() );
-  }
-  printf("\n");
-}
-printf("\n");
-for (int ii=0; ii<nscol; ii++) {
-  std::complex<double> *x = reinterpret_cast <std::complex<double>*> (Xj.data());
-  std::complex<double> *y = reinterpret_cast <std::complex<double>*> (Y.data());
-  printf( "(%.2e %.2e) (%.2e %.2e)\n", x[ii].real(), x[ii].imag(), y[ii].real(),y[ii].imag() );
-}*/
             }
           }
         }
@@ -1716,13 +1620,6 @@ for (int ii=0; ii<nscol; ii++) {
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
-/*{
-  printf( "\n -- level = %d (kernel-type = %d, # of supernodes = %d -- \n",lvl,kernel_type_host (lvl),lvl_nodes );
-  typename LHSType::HostMirror LHS = Kokkos::create_mirror_view (lhs);
-  Kokkos::deep_copy(LHS, lhs);
-  Kokkos::complex<double>* B = reinterpret_cast <Kokkos::complex<double>*> (LHS.data());
-  for (int ii=0; ii<841; ii++) printf( " %d (%e %e)\n",ii,B[ii].real(),B[ii].imag());
-}*/
       }
       else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {

@@ -73,8 +73,9 @@ read_supernodal_graphL(bool cusparse, bool merge,
                        int n, int nsuper, bool ptr_by_column, int *mb,
                        int *nb, int *colptr, int *rowind) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using cols_view_t    = typename graph_t::entries_type::non_const_type;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
   int nnzA;
   if (ptr_by_column) {
@@ -82,9 +83,9 @@ read_supernodal_graphL(bool cusparse, bool merge,
   } else {
     nnzA = colptr[nsuper] - colptr[0];
   }
+
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   cols_view_t    column_view ("colmap_view", nnzA);
-
   typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
   typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
 
@@ -120,7 +121,8 @@ read_supernodal_graphL(bool cusparse, bool merge,
     }
   }
 
-  int *sorted_rowind = new int[max_nnz_per_row];
+  integer_view_host_t sorted_rowind_view ("sorted_rowind", max_nnz_per_row);
+  int *sorted_rowind = sorted_rowind_view.data (); //new int[max_nnz_per_row];
   // store L in csr
   for (int s = 0 ; s < nsuper ; s++) {
     int j1 = nb[s];
@@ -175,7 +177,6 @@ read_supernodal_graphL(bool cusparse, bool merge,
       }
     }
   }
-  delete [] sorted_rowind;
 
   // fix hr
   for (int i = n; i >= 1; i--) {
@@ -201,9 +202,9 @@ read_supernodal_graphL(bool cusparse, bool merge,
 template <typename input_graph_t>
 void check_supernode_sizes(const char *title, int n, int nsuper, int *nb, input_graph_t &graph) {
 
-  auto rowmap_view = graph.row_map;
+  using row_map_view_t = typename input_graph_t::row_map_type::non_const_type;
 
-  typedef typename input_graph_t::row_map_type::non_const_type row_map_view_t;
+  auto rowmap_view = graph.row_map;
   typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
 
   Kokkos::deep_copy (hr, rowmap_view);
@@ -211,7 +212,6 @@ void check_supernode_sizes(const char *title, int n, int nsuper, int *nb, input_
   int min_nsrow = 0, max_nsrow = 0, tot_nsrow = 0;
   int min_nscol = 0, max_nscol = 0, tot_nscol = 0;
   for (int s = 0; s <nsuper; s++) {
-    //printf( " mb[%d]=%d, nb[%d]=%d, etree[%d]=%d (nrow=%d, ncol=%d)\n",s,mb[s],s,nb[s],s,etree[s],mb[s+1]-mb[s],nb[s+1]-nb[s] );
     int j1 = nb[s];
     int j2 = nb[s+1];
 
@@ -255,8 +255,11 @@ template <typename host_graph_t, typename graph_t>
 host_graph_t
 generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type    cols_view_t;
+  using cols_view_t         = typename graph_t::entries_type::non_const_type;
+  using cols_view_host_t    = typename host_graph_t::entries_type::non_const_type;
+  using row_map_view_t      = typename graph_t::row_map_type::non_const_type;
+  using row_map_view_host_t = typename host_graph_t::row_map_type::non_const_type;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
   int n = graph.numRows ();
   auto row_map = graph.row_map;
@@ -268,34 +271,33 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
   Kokkos::deep_copy (entries_host, entries);
 
   // map col/row to supernode
-  int *map = new int[n];
+  //int *map = new int[n];
+  integer_view_host_t map ("map", n);
   for (int s = 0; s < nsuper; s++) {
     for (int j = nb[s]; j < nb[s+1]; j++) {
-      map[j] = s;
+      map (j) = s;
     }
   }
 
   // count non-empty supernodal blocks
-  typedef typename host_graph_t::row_map_type::non_const_type row_map_view_host_t;
   row_map_view_host_t hr ("rowmap_view", nsuper+1);
   for (int s = 0; s < nsuper; s++ ) {
     hr (s) = 0;
   }
 
-  int *check = new int[nsuper];
-  for (int s = 0; s < nsuper; s++) {
-    check[s] = 0;
-  }
+  integer_view_host_t check ("check", nsuper);
+  Kokkos::deep_copy (check, 0);
+
   int nblocks = 0;
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
-      int s2 = map[entries_host (i)];
+      int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
       // so need to check by each row
       // (also rowids are not sorted)
-      if (check[s2] == 0) {
-        check[s2] = 1;
+      if (check (s2) == 0) {
+        check (s2) = 1;
         nblocks ++;
         // count blocks per row for col_major
         hr (s2+1) ++;
@@ -303,12 +305,9 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
       i ++;
     }
     // reset check
-    for (int s2 = 0; s2 < nsuper; s2++) {
-      check[s2] = 0;
-    }
+    Kokkos::deep_copy (check, 0);
   }
 
-  typedef typename host_graph_t::entries_type::non_const_type cols_view_host_t;
   cols_view_host_t hc ("colmap_view", nblocks);
   if (col_major) {
     // convert to offset
@@ -321,12 +320,12 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
-      int s2 = map[entries_host (i)];
+      int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
       // so need to check by each row
       // (also rowids are not sorted)
-      if (check[s2] == 0) {
-        check[s2] = 1;
+      if (check (s2) == 0) {
+        check (s2) = 1;
         if (col_major) {
           hc (hr (s2)) = s;
           hr (s2) ++;
@@ -343,13 +342,11 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
     // reset check
     if (!col_major) {
       for (int s2 = hr(s); s2 < hr(s+1); s2++) {
-        check[hc(s2)] = 0;
+        check (hc(s2)) = 0;
       }
     } else {
       // NOTE: nonzero supernodes in s-th col are not stored
-      for (int s2 = 0; s2 < nsuper; s2++) {
-        check[s2] = 0;
-      }
+      Kokkos::deep_copy (check, 0);
     }
   }
   // fix hr
@@ -363,8 +360,6 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
   for (int s = 0; s < nsuper; s++) {
     std::sort(&(hc (hr (s))), &(hc (hr (s+1))));
   }
-  delete [] map;
-  delete [] check;
 
   host_graph_t static_graph (hc, hr);
   return static_graph;
@@ -379,9 +374,14 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
   auto row_mapU = supU.row_map;
   auto entriesU = supU.entries;
 
+  // compute dag
   int totedges = 0;
-  int *edges = new int[nsuper];
-  int **dag = new int* [nsuper];
+  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using cols_view_t    = typename graph_t::entries_type::non_const_type;
+  row_map_view_t colptr ("rowind", nsuper+1);
+  cols_view_t rowind ("colptr", row_mapL (nsuper)); // over-estimate
+  cols_view_t edges ("edges", nsuper); // workspace
+  colptr (0) = totedges;
   for (int s = 0; s < nsuper; s ++) {
     // count # of edges (search for first matching nonzero)
     int nedges = 0;
@@ -393,7 +393,7 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
          k2 ++;
        }
        if (entriesL (k1) <= entriesU (k2)) {
-         edges[nedges] = entriesL (k1);
+         edges (nedges) = entriesL (k1);
          nedges ++;
          if (entriesL (k1) == entriesU (k2)) {
            break;
@@ -401,34 +401,20 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
       }
     }
     // store the edges
-    dag[s] = new int [1+nedges];
-    dag[s][0] = nedges;
     for (int k = 0; k < nedges; k++) {
-      dag[s][1+k] = edges[k];
-    }
-    totedges += nedges;
-  }
-  delete[] edges;
-
-  // convert dag into graph
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type    cols_view_t;
-  row_map_view_t hr ("rowmap_view", nsuper+1);
-  cols_view_t    hc ("colmap_view", totedges);
-
-  hr (0) = 0;
-  totedges = 0;
-  for (int s = 0; s < nsuper; s ++) {
-    for (int k = 0; k < dag[s][0]; k++) {
-      hc (totedges)  = dag[s][k+1];
+      rowind (totedges) = edges (k);
       totedges ++;
     }
-    hr (s+1) = totedges;
-    delete [] dag[s];
+    colptr (s+1) = totedges;
   }
-  delete [] dag;
 
-  graph_t static_graph (hc, hr);
+  // compress dag into graph
+  cols_view_t hc ("colmap_view", totedges);
+  for (int k = colptr (0); k < colptr (nsuper); k++) {
+    hc (k) = rowind (k);
+  }
+
+  graph_t static_graph (hc, colptr);
   return static_graph;
 }
 
@@ -456,8 +442,9 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
   auto entriesU = supU.entries;
 
   // map the first supernode
-  int *map = new int[nsuper]; // map old to new supernodes
-  map[0] = 0;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
+  integer_view_host_t map ("map", nsuper); // map old to new supernodes
+  map (0) = 0;
   for (int s = 0; s < nsuper-1; s++) {
     int s2 = s;
     bool merged = false;
@@ -491,108 +478,104 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
         //printf( "  >> merge s2+1=%d(%dx%d, row=%d:%d) with s=%d(%dx%d) <\n",
         //              s2+1,nb[s2+2]-nb[s2+1],nb[s2+2]-nb[s2+1], nb[s2+1],nb[s2+2]-1,
         //              s,nb[s+1]-nb[s],nb[s+1]-nb[s]);
-        map[s2+1] = nsuper2;
+        map (s2+1) = nsuper2;
         s2 ++;
       } else {
         //printf( "  -- not merge s2+1=%d(%dx%d, row=%d:%d) with s=%d(%dx%d) --\n",
         //           s2+1,nb[s2+2]-nb[s2+1],nb[s2+2]-nb[s2+1],nb[s2+1],nb[s2+2]-1,
         //           s,nb[s+1]-nb[s],nb[s+1]-nb[s]);
-        map[s2+1] = nsuper2+1;
+        map (s2+1) = nsuper2+1;
       }
     } while (merged && s2 < nsuper-1);
     s = s2;
     nsuper2 ++;
   }
-  nsuper2 = map[nsuper-1]+1;
+  nsuper2 = map (nsuper-1)+1;
   //printf( " nsuper2 = %d\n",nsuper2 );
   //printf( " map:\n" );
-  //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map[s] );
+  //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map (s) );
 
   // ----------------------------------------------------------
   // make sure each of the merged supernodes has the same parent in the etree
   int nsuper3 = 0;
-  int *map2 = nullptr;
+  integer_view_host_t map2;
   if (etree != nullptr) {
     nsuper3 = 0;
-    map2 = new int[nsuper]; // map old to new supernodes
+    map2 = integer_view_host_t ("map2", nsuper); // map old to new supernodes
     for (int s2 = 0, s = 0; s2 < nsuper2; s2++) {
       // look for parent of the first supernode
       int s3 = s;
-      while (etree[s3] != -1 && map[etree[s3]] == map[s3]) {
+      while (etree[s3] != -1 && map (etree[s3]) == map (s3)) {
         s3 ++;
       }
-      map2[s] = nsuper3;
-      int p = (etree[s3] == -1 ? -1 : map[etree[s3]]);
+      map2 (s) = nsuper3;
+      int p = (etree[s3] == -1 ? -1 : map (etree[s3]));
 
       // go through the rest of the supernode in this merged supernode
       s++;
-      while (s < nsuper && map[s] == s2) {
-        int q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
-        while (etree[s3] != -1 && map[etree[s3]] == map[s3]) {
+      while (s < nsuper && map (s) == s2) {
+        int q = (etree[s3] == -1 ? -1 : map (etree[s3]));
+        while (etree[s3] != -1 && map (etree[s3]) == map (s3)) {
           s3 ++;
-          q = (etree[s3] == -1 ? -1 : map[etree[s3]]);
+          q = (etree[s3] == -1 ? -1 : map (etree[s3]));
         }
 
         if (q != p) {
           p = q;
           nsuper3 ++;
         }
-        map2[s] = nsuper3;
+        map2 (s) = nsuper3;
         s ++;
       }
       nsuper3 ++;
     }
-    delete[] map;
   } else {
     nsuper3 = nsuper2;
     map2 = map;
   }
   //printf( " nsuper3 = %d\n",nsuper3 );
   //printf( " map:\n" );
-  //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map2[s] );
+  //for (int s = 0; s < nsuper; s++) printf( "   %d %d\n",s,map2 (s) );
 
   // ----------------------------------------------------------
   // construct new supernodes
-  int *nb2 = new int[1+nsuper3];
+  integer_view_host_t nb2 ("nb2", 1+nsuper3);
   for (int s2 = 0, s = 0; s2 < nsuper3; s2++) {
-    nb2[1+s2] = 0;
+    nb2 (1+s2) = 0;
     // merging supernodal rows
-    while(s < nsuper && map2[s] == s2) {
-      nb2[1+s2] += (nb[s+1]-nb[s]);
+    while(s < nsuper && map2 (s) == s2) {
+      nb2 (1+s2) += (nb[s+1]-nb[s]);
       s ++;
     }
   }
 
   // copy back the new supernodes "offsets"
-  nb2[0] = 0;
+  nb2 (0) = 0;
   for (int s = 0; s < nsuper3; s++) {
-    nb2[s+1] = nb2[s]+nb2[s+1];
+    nb2 (s+1) = nb2 (s) + nb2 (s+1);
   }
   // copy nb
   for (int s = 0; s <nsuper3; s++) {
-    nb[s+1] = nb2[s+1];
+    nb[s+1] = nb2 (s+1);
   }
-  delete[] nb2;
 
   // ----------------------------------------------------------
   // construct new etree
   if (etree != nullptr) {
-    int *etree2 = new int[nsuper3];
+    integer_view_host_t etree2 ("etree2", nsuper3);
     for (int s = 0; s < nsuper; s++) {
       // etree
-      int s2 = map2[s];
-      int p = (etree[s] == -1 ? -1 : map2[etree[s]]);
+      int s2 = map2 (s);
+      int p = (etree[s] == -1 ? -1 : map2 (etree[s]));
       if (p != s2) {
-        etree2[s2] = p;
+        etree2 (s2) = p;
       }
     }
     // copy etree
     for (int s = 0; s <nsuper3; s++) {
-      etree[s] = etree2[s];
+      etree[s] = etree2 (s);
     }
-    delete[] etree2;
   }
-  delete[] map2;
 
   *p_nsuper = nsuper3;
 }
@@ -606,6 +589,7 @@ generate_merged_supernodal_graph(bool lower,
                                  int nsuper2, int *nb2,
                                  input_graph_t &graph, int *nnz) {
 
+
   //auto graphL = L.graph; // in_graph
   auto row_map = graph.row_map;
   auto entries = graph.entries;
@@ -613,16 +597,20 @@ generate_merged_supernodal_graph(bool lower,
   // ----------------------------------------------------------
   // now let me find nsrow for the merged supernode
   int n = graph.numRows ();
-  int *mb2 = new int[nsuper2];
-  int *work1 = new int[n];
-  int *work2 = new int[n];
-  int **rowind = new int*[nsuper2];
-  for (int i = 0; i < n; i++) {
-    work1[i] = 0;
-  }
+
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
+  integer_view_host_t mb2 ("mb2", nsuper2);
+  integer_view_host_t work1 ("work1", n);
+  integer_view_host_t work2 ("work2", n);
+  Kokkos::deep_copy (work1, 0);
+
+  int nnzS = 0;
   int nnzA = 0;
+  integer_view_host_t rowind ("rowind", row_map(n)); // over-estimate
+  integer_view_host_t colptr ("colptr", nsuper2+1);
+  colptr (0) = nnzS;
   for (int s2 = 0, s = 0; s2 < nsuper2; s2++) {
-    mb2[s2] = 0;
+    mb2 (s2) = 0;
     // merging supernodal rows
     // NOTE: SuperLU may not fill zeros to fill the supernodes
     //       So, these rows may be just subset of the supernodal rows
@@ -630,51 +618,49 @@ generate_merged_supernodal_graph(bool lower,
       int j1 = nb[s];
       for (int k = row_map[j1]; k < row_map[j1+1]; k++) {
         // just taking union of rows
-        if(work1[entries[k]] == 0) {
-          work1[entries[k]] = 1;
-          work2[mb2[s2]] = entries[k];
-          mb2[s2] ++;
+        if (work1 (entries[k]) == 0) {
+          work1 (entries[k]) = 1;
+          work2 (mb2 (s2)) = entries[k];
+          mb2 (s2) ++;
         }
       }
       s++;
     }
     // sort such that diagonal come on the top
-    std::sort(work2, work2+mb2[s2]);
+    std::sort(work2.data (), work2.data() + mb2 (s2));
 
     // save nonzero row ids
-    rowind[s2] = new int [mb2[s2]];
     if (lower) {
       // lower in csc, diagonal come on top
-      for (int k = 0; k < mb2[s2]; k++) {
-        rowind[s2][k] = work2[k];
-        work1[work2[k]] = 0;
+      for (int k = 0; k < mb2 (s2); k++) {
+        rowind (nnzS) = work2 (k);
+        work1 (work2 (k)) = 0;
+        nnzS ++;
       }
     } else {
       // upper in csc, diagonal block is on bottom right now, but move it to top
       int nd = nb2[s2+1]-nb2[s2]; // size of diagonal block
-      int i = 0;
       // > diagonal block
-      for (int k = mb2[s2]-nd; k < mb2[s2]; k++) {
-        rowind[s2][i] = work2[k];
-        work1[work2[k]] = 0;
-        i ++;
+      for (int k = mb2 (s2) - nd; k < mb2 (s2); k++) {
+        rowind (nnzS) = work2 (k);
+        work1 (work2 (k)) = 0;
+        nnzS ++;
       }
       // > offdiagonal blocks
-      for (int k = 0; k < mb2[s2]-nd; k++) {
-        rowind[s2][i] = work2[k];
-        work1[work2[k]] = 0;
-        i ++;
+      for (int k = 0; k < mb2 (s2) - nd; k++) {
+        rowind (nnzS) = work2 (k);
+        work1 (work2 (k)) = 0;
+        nnzS ++;
       }
     }
-    nnzA += (nb2[s2+1]-nb2[s2]) * mb2[s2];
+    colptr (s2+1) = nnzS;
+    nnzA += (nb2[s2+1]-nb2[s2]) * mb2 (s2);
   }
-  delete[] work1;
-  delete[] work2;
 
   // ----------------------------------------------------------
   // now let's create crs graph
-  typedef typename output_graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename output_graph_t::entries_type::non_const_type    cols_view_t;
+  using row_map_view_t = typename output_graph_t::row_map_type::non_const_type;
+  using cols_view_t    = typename output_graph_t::entries_type::non_const_type;
 
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   cols_view_t    column_view ("colmap_view", nnzA);
@@ -685,18 +671,14 @@ generate_merged_supernodal_graph(bool lower,
   nnzA = 0;
   hr(0) = 0;
   for (int s2 = 0; s2 < nsuper2; s2++) {
-    int nsrow = mb2[s2];
     for (int j = nb2[s2]; j < nb2[s2+1]; j++) {
-      for (int k = 0; k < nsrow; k++) {
-        hc(nnzA) = rowind[s2][k];
+      for (int k = colptr (s2); k < colptr (s2+1); k++) {
+        hc(nnzA) = rowind (k);
         nnzA ++;
       }
       hr(j+1) = nnzA;
     }
-    delete[] rowind[s2];
   }
-  delete[] mb2;
-  delete[] rowind;
   *nnz = nnzA;
 
   // deepcopy
@@ -719,12 +701,13 @@ read_merged_supernodes(int nsuper, const int *nb,
                        bool lower, bool unit_diag, bool invert_diag, bool invert_offdiag,
                        input_crsmat_t &L, graph_t &static_graph) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type    cols_view_t;
-  typedef typename crsmat_t::values_type::non_const_type  values_view_t;
+  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using cols_view_t    = typename graph_t::entries_type::non_const_type;
+  using values_view_t  = typename crsmat_t::values_type::non_const_type;
 
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename values_view_t::value_type;
+  using scalar_view_host_t = Kokkos::View<scalar_t*, Kokkos::HostSpace>;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
   scalar_t zero = STS::zero ();
 
   // original matrix
@@ -749,13 +732,10 @@ read_merged_supernodes(int nsuper, const int *nb,
   // ----------------------------------------------------------
   // now let's copy numerical values
   int n = graphL.numRows ();
-  scalar_t *dwork = new scalar_t[n];
-  for (int i = 0; i < n; i++) {
-    dwork[i] = zero;
-  }
+  scalar_view_host_t dwork ("dwork", n);
+  Kokkos::deep_copy (dwork, zero);
 
   int nnzA = hr (n);
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
   values_view_t values_view ("values_view", nnzA);
 
   typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
@@ -763,13 +743,13 @@ read_merged_supernodes(int nsuper, const int *nb,
   for (int s2 = 0; s2 < nsuper; s2++) {
     for (int j = nb[s2]; j < nb[s2+1]; j++) {
       for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
-        dwork[entriesL[k]] = valuesL[k];
+        dwork (entriesL[k]) = valuesL[k];
       }
       for (int k = hr (j); k < hr (j+1); k++) {
-        hv(k) = dwork[hc(k)];
+        hv(k) = dwork (hc(k));
       }
       for (int k = row_mapL[j]; k < row_mapL[j+1]; k++) {
-        dwork[entriesL[k]] = zero;
+        dwork (entriesL[k]) = zero;
       }
     }
 
@@ -823,7 +803,6 @@ read_merged_supernodes(int nsuper, const int *nb,
       }
     }
   }
-  delete[] dwork;
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
@@ -845,11 +824,12 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
                         int *nb, int *colptr, int *rowind, scalar_t *Lx,
                         graph_t &static_graph) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
+  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using cols_view_t    = typename graph_t::entries_type::non_const_type;
+  using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
   scalar_t zero =  STS::zero ();
 
   Kokkos::Timer tic;
@@ -894,7 +874,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
     }
   }
 
-  int *sorted_rowind = new int[max_nnz_per_row];
+  integer_view_host_t sorted_rowind ("sorted_rowind", max_nnz_per_row);
   // store L in csr
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
@@ -986,19 +966,18 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
     if (merge) {
       // sort rowind (to merge supernodes)
       for (int ii = 0; ii < nsrow2; ii++) {
-        sorted_rowind[ii] = ii;
+        sorted_rowind (ii) = ii;
       }
-      std::sort(&(sorted_rowind[0]), &(sorted_rowind[nsrow2]), sort_indices(&rowind[ps2]));
+      std::sort(sorted_rowind.data (), sorted_rowind.data () + nsrow2, sort_indices(&rowind[ps2]));
     }
     for (int jj = 0; jj < nscol; jj++) {
       for (int kk = 0; kk < nsrow2; kk++) {
-      int ii = (merge ? sorted_rowind[kk] : kk); // sorted rowind
+      int ii = (merge ? sorted_rowind (kk) : kk); // sorted rowind
         hv(hr(j1+jj)) = Lx[psx + (nscol+ii + jj*nsrow)];
         hr(j1+jj) ++;
       }
     }
   }
-  delete [] sorted_rowind;
 
   // fix hr
   for (int i = n; i >= 1; i--) {
@@ -1035,8 +1014,8 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   using cols_view_host_t    = typename cols_view_t::HostMirror;
   using values_view_host_t  = typename values_view_t::HostMirror;
 
-  typedef typename KernelHandle::nnz_scalar_t scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename KernelHandle::nnz_scalar_t;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   // get sparse-triangular solve handle
   auto *handleL = kernelHandleL->get_sptrsv_handle ();

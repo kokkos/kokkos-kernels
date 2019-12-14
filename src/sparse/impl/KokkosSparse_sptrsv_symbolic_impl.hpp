@@ -256,10 +256,8 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   } else {
     /* initialize the ready tasks with leaves */
     const int *parents = thandle.get_etree_parents ();
-    int *check = new int[nsuper];
-    for (size_type s = 0; s < nsuper; s++) {
-      check[s] = 0;
-    }
+    integer_view_host_t check ("check", nsuper);
+    Kokkos::deep_copy (check, 0);
 
     auto dag = thandle.get_supernodal_dag ();
     auto dag_row_map = dag.row_map;
@@ -269,11 +267,11 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     for (size_type s = 0; s < nsuper; s++) {
       if (use_dag) {
         for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
-          check[dag_entries (e)] ++;
+          check (dag_entries (e)) ++;
         }
       } else {
         if (parents[s] >= 0) {
-          check[parents[s]] ++;
+          check (parents[s]) ++;
         }
       }
     }
@@ -304,7 +302,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       signed_integral_t avg_nscol = 0;
       signed_integral_t avg_nsrow = 0;
       for (size_type s = 0; s < nsuper; s++) {
-        if (check[s] == 0) {
+        if (check (s) == 0) {
           nodes_per_level (level) ++; 
           nodes_grouped_by_level (num_done + num_leave) = s;
           level_list (s) = level;
@@ -397,16 +395,16 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       // free the dependency
       for (signed_integral_t task = 0; task < num_leave; task++) {
         size_type s = nodes_grouped_by_level (num_done + task);
-        check[s] = -1;
+        check (s) = -1;
         //printf( " %d: check[%d]=%d ",level,s,check[s]);
         if (use_dag) {
           for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
-            check[dag_entries (e)] --;
+            check (dag_entries (e)) --;
           }
         } else {
           if (parents[s] >= 0) {
-            check[parents[s]] --;
-            //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+            check (parents[s]) --;
+            //printf( " -> check[%d]=%d",parents[s],check (parents[s]));
           }
         }
         //printf( "\n" );
@@ -424,7 +422,6 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     #endif
     // Set number of level equal to be the number of supernodal columns
     thandle.set_num_levels (level);
-    delete[] check;
   }
   // workspace size
   if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
@@ -650,10 +647,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
     /* initialize the ready tasks with leaves */
     const int *parents = thandle.get_etree_parents ();
-    int *check = new int[nsuper];
-    for (size_type s = 0; s < nsuper; s++) {
-      check[s] = 0;
-    }
+    integer_view_host_t check ("check", nsuper);
+    Kokkos::deep_copy (check, 0);
 
     auto dag = thandle.get_supernodal_dag ();
     auto dag_row_map = dag.row_map;
@@ -663,19 +658,19 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     if (use_dag) {
       for (size_type s = 0; s < nsuper; s++) {
         for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
-          check[dag_entries (e)] ++;
+          check (dag_entries (e)) ++;
         }
       }
     } else {
       for (size_type s = 0; s < nsuper; s++) {
         if (parents[s] >= 0) {
-          check[parents[s]] ++;
+          check (parents[s]) ++;
         }
       }
     }
 
     //printf( " Init:\n" );
-    //for (size_type s = 0; s <nsuper; s++) printf( " check[%d] = %d\n",s,check[s] );
+    //for (size_type s = 0; s <nsuper; s++) printf( " check[%d] = %d\n",s,check (s) );
 
     size_type nrows = thandle.get_nrows();
     HostEntriesType inverse_nodes_per_level ("nodes_per_level", nrows);
@@ -704,7 +699,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       signed_integral_t lwork = 0;
       signed_integral_t num_leave = 0;
       for (size_type s = 0; s < nsuper; s++) {
-        if (check[s] == 0) {
+        if (check (s) == 0) {
           inverse_nodes_per_level (level) ++; 
           inverse_nodes_grouped_by_level (num_done + num_leave) = s;
           //printf( " level=%d: %d/%d: s=%d\n",level, num_done+num_leave,nsuper, s );
@@ -772,16 +767,16 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       // free the dependency
       for (signed_integral_t task = 0; task < num_leave; task++) {
         size_type s = inverse_nodes_grouped_by_level (num_done + task);
-        check[s] = -1;
-        //printf( " %d: check[%d]=%d ",level,s,check[s]);
+        check (s) = -1;
+        //printf( " %d: check[%d]=%d ",level,s,check (s));
        if (use_dag) {
           for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
-            check[dag_entries (e)] --;
+            check (dag_entries (e)) --;
           }
         } else {
           if (parents[s] >= 0) {
-            check[parents[s]] --;
-            //printf( " -> check[%d]=%d",parents[s],check[parents[s]]);
+            check (parents[s]) --;
+            //printf( " -> check[%d]=%d",parents[s],check (parents[s]));
           }
         }
         //printf( "\n" );
@@ -790,7 +785,6 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
       //printf( " level=%d: num_done=%d / %d\n",level,num_done,nsuper );
       level ++;
     }
-    delete [] check;
     #ifdef profile_supernodal_etree
     std::cout << "   * number of supernodes = " << nsuper << std::endl;
     std::cout << "   * supernodal rows: min = " << min_nsrow  << "\t max = " << max_nsrow  << "\t avg = " << tot_nsrow/nsuper << std::endl;

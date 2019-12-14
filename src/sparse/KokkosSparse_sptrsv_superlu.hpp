@@ -90,9 +90,10 @@ graph_t read_superlu_graphL(bool cusparse, bool merge, SuperMatrix *L) {
 template <typename graph_t>
 graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename cols_view_t::HostMirror            host_cols_view_t;
+  using   row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using      cols_view_t = typename graph_t::entries_type::non_const_type;
+  using host_cols_view_t = typename cols_view_t::HostMirror;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
   SCformat *Lstore = (SCformat*)(L->Store);
   NCformat *Ustore = (NCformat*)(U->Store);
@@ -104,13 +105,13 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
   int *colptrU = Ustore->colptr;
   int *rowindU = Ustore->rowind;
 
-  int *map = new int[n];
+  integer_view_host_t map ("map", n);
   int supid = 0;
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int j2 = nb[k+1];
     for (int j = j1; j < j2; j++) {
-        map[j] = supid;
+        map (j) = supid;
     }
     supid ++;
   }
@@ -118,14 +119,11 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
   /* count number of nonzeros in each row */
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  for (int i = 0; i < n; i++) {
-    hr (i) = 0;
-  }
+  Kokkos::deep_copy (hr, 0);
 
-  int *check = new int[nsuper];
-  for (int k = 0; k < nsuper; k++) {
-    check[k] = 0;
-  }
+  integer_view_host_t sup ("sup", nsuper);
+  integer_view_host_t check ("check", nsuper);
+  Kokkos::deep_copy (check, 0);
   for (int k = nsuper-1; k >= 0; k--) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
@@ -137,21 +135,24 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
     /* the off-diagonal blocks */
     // TODO: should take unions of nonzero columns per block row
+    int nsup = 0;
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
         int irow = rowindU[i];
-        supid = map[irow];
-        if (check[supid] == 0) {
+        supid = map (irow);
+        if (check (supid) == 0) {
           for (int ii = nb[supid]; ii < nb[supid+1]; ii++) {
             hr (ii + 1) += nscol;
           }
-          check[supid] = 1;
+          check (supid) = 1;
+          sup (nsup) = supid;
+          nsup ++;
         }
       }
     }
     // reset check
-    for (int i = 0; i < nsuper; i++ ) {
-      check[i] = 0;
+    for (int i = 0; i < nsup; i++ ) {
+      check (sup (i)) = 0;
     }
   }
 
@@ -165,7 +166,6 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
   cols_view_t column_view ("colmap_view", nnzA);
   host_cols_view_t hc = Kokkos::create_mirror_view (column_view);
 
-  int *sup  = new int[nsuper];
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
@@ -188,9 +188,9 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ) {
         int irow = rowindU[i];
-        if (check[map[irow]] == 0) {
-          check[map[irow]] = 1;
-          sup[nsup] = map[irow];
+        if (check (map (irow)) == 0) {
+          check (map (irow)) = 1;
+          sup (nsup) = map (irow);
           nsup ++;
         }
       }
@@ -201,7 +201,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
         // (only nonzero columns)
         // TODO: should take unions of nonzero columns per block row
         for (int i = 0; i < nsup; i++) {
-          for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
+          for (int ii = nb[sup (i)]; ii < nb[sup (i) + 1]; ii++) {
             hc(hr(ii)) = jcol;
             hr(ii) ++;
           }
@@ -210,11 +210,9 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
     }
     // reset check
     for (int i = 0; i < nsup; i++) {
-      check[sup[i]] = 0;
+      check (sup (i)) = 0;
     }
   }
-  delete[] sup;
-  delete[] check;
 
   // fix hr
   for (int i = n; i >= 1; i--) {
@@ -240,9 +238,10 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 template <typename graph_t>
 graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-  typedef typename cols_view_t::HostMirror            host_cols_view_t;
+  using   row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using      cols_view_t = typename graph_t::entries_type::non_const_type;
+  using host_cols_view_t = typename cols_view_t::HostMirror;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
   SCformat *Lstore = (SCformat*)(L->Store);
   NCformat *Ustore = (NCformat*)(U->Store);
@@ -254,13 +253,13 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
   int *colptrU = Ustore->colptr;
   int *rowindU = Ustore->rowind;
 
-  int *map = new int[n];
+  integer_view_host_t map ("map", n);
   int supid = 0;
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int j2 = nb[k+1];
     for (int j = j1; j < j2; j++) {
-        map[j] = supid;
+        map (j) = supid;
     }
     supid ++;
   }
@@ -268,15 +267,11 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
   /* count number of nonzeros in each row */
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  for (int j = 0; j < n; j++) {
-    hr (j) = 0;
-  }
+  Kokkos::deep_copy (hr, 0);
 
-  int *check = new int[nsuper];
-  int *sup = new int[nsuper];
-  for (int k = 0; k < nsuper; k++) {
-    check[k] = 0;
-  }
+  integer_view_host_t sup ("sup", nsuper);
+  integer_view_host_t check ("check", nsuper);
+  Kokkos::deep_copy (check, 0);
   for (int k = nsuper-1; k >= 0; k--) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
@@ -287,22 +282,26 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
     }
 
     /* the off-diagonal blocks */
+    int nsup = 0;
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
         int irow = rowindU[i];
-        supid = map[irow];
-        if (check[supid] == 0) {
+        supid = map (irow);
+        if (check (supid) == 0) {
           int nsrow = nb[supid+1] - nb[supid];
           for (int jj = j1; jj < j1 + nscol; jj++) {
             hr (jj + 1) += nsrow;
           }
-          check[supid] = 1;
+          check (supid) = 1;
+          sup (nsup) = supid;
+          nsup ++;
         }
       }
     }
     // reset check
-    for (int i = 0; i < nsuper; i++ ) {
-      check[i] = 0;
+    //Kokkos::deep_copy (check, 0);
+    for (int i = 0; i < nsup; i++) {
+      check (sup (i)) = 0;
     }
   }
 
@@ -335,9 +334,9 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
         int irow = rowindU[i];
-        if (check[map[irow]] == 0) {
-          check[map[irow]] = 1;
-          sup[nsup] = map[irow];
+        if (check (map (irow)) == 0) {
+          check (map (irow)) = 1;
+          sup (nsup) = map (irow);
           nsup ++;
         }
       }
@@ -345,7 +344,7 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       // move up all the row pointers for all the supernodal blocks
       for (int i = 0; i < nsup; i++) {
-        for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
+        for (int ii = nb[sup (i)]; ii < nb[sup (i) + 1]; ii++) {
           hc(hr(jcol)) = ii;
           hr(jcol) ++;
         }
@@ -353,12 +352,9 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
     }
     // reset check
     for (int i = 0; i < nsup; i++) {
-      check[sup[i]] = 0;
+      check (sup (i)) = 0;
     }
   }
-  delete[] map;
-  delete[] sup;
-  delete[] check;
 
   // fix hr
   for (int j = n; j >= 1; j--) {
@@ -387,8 +383,8 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
 template <typename crsmat_t, typename graph_t>
 crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert_offdiag, SuperMatrix *L, graph_t &static_graph) {
 
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-  typedef typename values_view_t::value_type scalar_t;
+  using values_view_t = typename crsmat_t::values_type::non_const_type;
+  using scalar_t      = typename values_view_t::value_type;
 
   /* ---------------------------------------------------------------------- */
   /* get inputs */
@@ -416,11 +412,12 @@ crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool 
 template <typename crsmat_t, typename graph_t>
 crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
+  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename values_view_t::value_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   scalar_t zero = STS::zero ();
 
@@ -439,14 +436,14 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   int *rowindU = Ustore->rowind;
 
   /* create a map from row id to supernode id */
-  int *map = new int[n];
   int supid = 0;
+  integer_view_host_t map ("map", n);
   for (int k = 0; k < nsuper; k++)
   {
     int j1 = nb[k];
     int j2 = nb[k+1];
     for (int j = j1; j < j2; j++) {
-        map[j] = supid;
+        map (j) = supid;
     }
     supid ++;
   }
@@ -461,11 +458,9 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hv, zero);
 
-  int *sup = new int[nsuper];
-  int *check = new int[nsuper];
-  for (int k = 0; k < nsuper; k++) {
-    check[k] = 0;
-  }
+  integer_view_host_t sup  ("supernodes", nsuper);
+  integer_view_host_t check ("check", nsuper);
+  Kokkos::deep_copy (check, 0);
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
@@ -505,9 +500,9 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
         int irow = rowindU[i];
-        if (check[map[irow]] == 0) {
-          check[map[irow]] = 1;
-          sup[nsup] = map[irow];
+        if (check (map (irow)) == 0) {
+          check (map (irow)) = 1;
+          sup (nsup) = map (irow);
           nsup ++;
         }
       }
@@ -523,7 +518,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
         }
         // move up all the row pointers for all the supernodal blocks
         for (int i = 0; i < nsup; i++) {
-          for (int ii = nb[sup[i]]; ii < nb[sup[i]+1]; ii++) {
+          for (int ii = nb[sup (i)]; ii < nb[sup (i) + 1]; ii++) {
             hr(ii) ++;
           }
         }
@@ -531,11 +526,9 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
     }
     // reset check
     for (int i = 0; i < nsup; i++) {
-      check[sup[i]] = 0;
+      check (sup (i)) = 0;
     }
   }
-  delete[] sup;
-  delete[] check;
 
   // fix hr
   for (int i = n; i >= 1; i--) {
@@ -559,11 +552,12 @@ template <typename crsmat_t, typename graph_t>
 crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
                                   SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
-  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
+  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename values_view_t::value_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   scalar_t one  = STS::one ();
   scalar_t zero = STS::zero ();
@@ -583,13 +577,13 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   int *rowindU = Ustore->rowind;
 
   /* create a map from row id to supernode id */
-  int *map = new int[n];
+  integer_view_host_t map ("map", n);
   int supid = 0;
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int j2 = nb[k+1];
     for (int j = j1; j < j2; j++) {
-        map[j] = supid;
+        map (j) = supid;
     }
     supid ++;
   }
@@ -604,12 +598,10 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hv, zero); // seems to be needed in complex (instead of zeroing out lower-tri as below)
 
-  int *sup = new int[nsuper];
-  int *off = new int[nsuper];
-  int *check = new int[nsuper];
-  for (int k = 0; k < nsuper; k++) {
-    check[k] = 0;
-  }
+  integer_view_host_t sup ("sup", nsuper);
+  integer_view_host_t off ("off", nsuper);
+  integer_view_host_t check ("check", nsuper);
+  Kokkos::deep_copy (check, 0);
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
@@ -650,24 +642,24 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
         int irow = rowindU[i];
-        if (check[map[irow]] == 0) {
-          check[map[irow]] = 1;
-          sup[nsup] = map[irow];
+        if (check (map (irow)) == 0) {
+          check (map (irow)) = 1;
+          sup (nsup) = map (irow);
           nsup ++;
         }
       }
     }
     int offset = 0;
     for (int i = 0; i < nsup; i++) {
-      off[sup[i]] = offset;
-      offset += nb[sup[i]+1] - nb[sup[i]];
+      off (sup (i)) = offset;
+      offset += nb[sup (i) + 1] - nb[sup (i)];
     }
     for (int jcol = j1; jcol < j1 + nscol; jcol++) {
       // add nonzeros in jcol-th column
       for (int i = colptrU[jcol]; i < colptrU[jcol+1]; i++ ){
         int irow = rowindU[i];
-        int id = map[irow];
-        int ioff = off[id] + (irow - nb[id]);
+        int id = map (irow);
+        int ioff = off (id) + (irow - nb[id]);
         hv(hr(jcol) + ioff) = Uval[i];
       }
       // move up the pointers for all the supernodal blocks
@@ -695,13 +687,9 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
     }
     // reset check
     for (int i = 0; i < nsup; i++) {
-      check[sup[i]] = 0;
+      check (sup (i)) = 0;
     }
   }
-  delete[] map;
-  delete[] off;
-  delete[] sup;
-  delete[] check;
 
   // fix hr
   for (int i = n; i >= 1; i--) {
