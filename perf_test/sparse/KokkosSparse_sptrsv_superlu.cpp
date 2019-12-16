@@ -67,17 +67,14 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 #include "slu_ddefs.h"
 #include "slu_zdefs.h"
+// auxiliary functions from perf_test (e.g., pivoting, printing)
+#include "KokkosSparse_sptrsv_aux.hpp"
+
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
+// optionally, for matrix ordering before SuperLU
 #include "metis.h"
 #endif
-
-// headers from Kokkos-kernel
-#include "KokkosSparse_sptrsv_supernode.hpp"
-#include "KokkosSparse_sptrsv_superlu.hpp"
-
-// auxiliary functions (e.g., pivoting, printing)
-#include "KokkosSparse_sptrsv_aux.hpp"
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -696,7 +693,6 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
 
   return num_failed;
 }
-#endif //KOKKOSKERNELS_ENABLE_TPL_SUPERLU
 
 
 void print_help_sptrsv() {
@@ -710,7 +706,6 @@ void print_help_sptrsv() {
 
 
 int main(int argc, char **argv) {
-#ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
   std::vector<int> tests;
   std::string filename;
 
@@ -825,13 +820,18 @@ int main(int argc, char **argv) {
                 << std::endl << std::endl;
   }
   Kokkos::finalize();
-#else
-  std::cout << std::endl << " ** SUPERLU NOT ENABLED **" << std::endl << std::endl;
-  exit(0);
-#endif
   return 0;
 }
+#else // defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+int main(int argc, char **argv) {
+  std::cout << std::endl << " ** SUPERLU NOT ENABLED **" << std::endl << std::endl;
+  exit(0);
+  return 0;
+}
+#endif
+
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
+
 int main(int argc, char **argv) {
 #if !defined(KOKKOSKERNELS_INST_DOUBLE)
   std::cout << " Only supported with double precision" << std::endl;

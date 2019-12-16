@@ -63,16 +63,8 @@
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION )) && defined(KOKKOSKERNELS_INST_DOUBLE)
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
-#include "cblas.h"
-#include "lapacke.h"
 #include "cholmod.h"
-
-#define KOKKOSSPARSE_SPTRSV_CHOLMOD
-// headers from Kokkos-kernel
-#include "KokkosSparse_sptrsv_supernode.hpp"
-#include "KokkosSparse_sptrsv_cholmod.hpp"
-
-// auxiliary functions (e.g., pivoting, printing)
+// auxiliary functions in perf_test (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
 
 using namespace KokkosSparse;
@@ -474,7 +466,6 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
   return num_failed;
 }
-#endif //  KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 
 
 void print_help_sptrsv() {
@@ -494,7 +485,6 @@ void print_help_sptrsv() {
 
 int main(int argc, char **argv)
 {
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
   std::vector<int> tests;
   std::string filename;
 
@@ -554,12 +544,16 @@ int main(int argc, char **argv)
       std::cout << "Kokkos::SPTRSV Test: Failed" << std::endl << std::endl;
   }
   Kokkos::finalize();
-#else
-  std::cout << std::endl << "** CHOLMOD NOT ENABLED **" << std::endl << std::endl;
-  exit(0);
-#endif
+
   return 0;
 }
+#else // defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
+int main(int argc, char **argv)
+{
+  std::cout << std::endl << "** CHOLMOD NOT ENABLED **" << std::endl << std::endl;
+  return 0;
+}
+#endif
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 int main() {
 #if !defined(KOKKOSKERNELS_INST_DOUBLE)
