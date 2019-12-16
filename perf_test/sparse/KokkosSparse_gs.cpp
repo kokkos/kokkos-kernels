@@ -62,7 +62,7 @@ using std::string;
 #elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
   typedef int64_t default_lno_t;
 #else
-  #error "Expect INT and/or INT64_T to be enabled as ORDINAL (lno_t) types"
+  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
 #endif
   //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
 #if defined(KOKKOSKERNELS_INST_OFFSET_INT)
@@ -70,7 +70,7 @@ using std::string;
 #elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   typedef size_t default_size_type;
 #else
-  #error "Expect SIZE_T and/or INT to be enabled as OFFSET (size_type) types"
+  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
 #endif
 
 template<typename size_type, typename lno_t, typename device_t>
