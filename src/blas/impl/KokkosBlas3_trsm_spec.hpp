@@ -130,7 +130,7 @@ struct TRSM {
     std::ostringstream os;
     os << "KokkosBlas::trsm currently supports only TPL interface."
        << "Please enable Host BLAS or cuBLAS."
-       << "KokkosKernels implmentation will be added in future release.";
+       << "KokkosKernels implementation will be added in future release.";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 };
