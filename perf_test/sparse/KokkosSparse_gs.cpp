@@ -57,6 +57,22 @@
 using std::cout;
 using std::string;
 
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+  typedef int default_lno_t;
+#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
+  typedef int64_t default_lno_t;
+#else
+  #error "Expect INT and/or INT64_T to be enabled as ORDINAL (lno_t) types"
+#endif
+  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
+#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
+  typedef int default_size_type;
+#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
+  typedef size_t default_size_type;
+#else
+  #error "Expect SIZE_T and/or INT to be enabled as OFFSET (size_type) types"
+#endif
+
 template<typename size_type, typename lno_t, typename device_t>
 void runGS(string matrixPath, string devName, bool symmetric)
 {
@@ -223,28 +239,28 @@ int main(int argc, char** argv)
   #ifdef KOKKOS_ENABLE_SERIAL
   if(device == "serial")
   {
-    runGS<size_t, int, Kokkos::Serial>(matrixPath, device, sym);
+    runGS<default_size_type, default_lno_t, Kokkos::Serial>(matrixPath, device, sym);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_OPENMP
   if(device == "openmp")
   {
-    runGS<size_t, int, Kokkos::OpenMP>(matrixPath, device, sym);
+    runGS<default_size_type, default_lno_t, Kokkos::OpenMP>(matrixPath, device, sym);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_THREADS
   if(device == "threads")
   {
-    runGS<size_t, int, Kokkos::Threads>(matrixPath, device, sym);
+    runGS<default_size_type, default_lno_t, Kokkos::Threads>(matrixPath, device, sym);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_CUDA
   if(device == "cuda")
   {
-    runGS<size_t, int, Kokkos::Cuda>(matrixPath, device, sym);
+    runGS<default_size_type, default_lno_t, Kokkos::Cuda>(matrixPath, device, sym);
     run = true;
   }
   #endif
