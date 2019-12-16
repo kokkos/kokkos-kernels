@@ -54,7 +54,7 @@
 
 namespace KokkosBlas {
 namespace Impl {
-  //TODO: Add the implementation of KokkosBlas::trsm later
+  //Note: Add an implementation of KokkosBlas::trsm in a next PR.
 }
 }
 #endif // KOKKOSBLAS3_TRSM_IMPL_HPP_
