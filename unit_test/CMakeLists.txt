@@ -21,14 +21,14 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 #           the following relative path does not work or users should put kokkoskernels and kokkos
 #           at the same place
 SET(GTEST_SOURCE_DIR ${PACKAGE_SOURCE_DIR}/tpls/gtest)
-# Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
 
 KOKKOSKERNELS_ADD_TEST_LIBRARY(
   kokkoskernels_gtest
   HEADERS ${GTEST_SOURCE_DIR}/gtest/gtest.h
   SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
   )
-#this can be a raw call
+# Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
+TARGET_COMPILE_DEFINITIONS(kokkoskernels_gtest PUBLIC "-DGTEST_HAS_PTHREAD=0")
 TARGET_INCLUDE_DIRECTORIES(kokkoskernels_gtest PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
 
 

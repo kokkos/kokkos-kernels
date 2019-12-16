@@ -436,7 +436,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   auto x_host = Kokkos::create_mirror_view(x);
   for(lno_t i = 0; i < numRows; i++)
   {
-    x_host(i) = one * (10.0 * rand() / RAND_MAX);
+    x_host(i) = one * scalar_t(10.0 * rand() / RAND_MAX);
   }
   Kokkos::deep_copy(x, x_host);
   //record the correct solution, to compare against at the end
@@ -453,7 +453,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
     for(size_type j = rowmap(i); j < rowmap(i + 1); j++)
     {
       if(entries(j) == i)
-        invDiag(i) = 1.0 / values(j);
+        invDiag(i) = one / values(j);
     }
   }
   for(int i = 0; i < 1; i++)
