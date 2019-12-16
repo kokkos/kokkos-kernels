@@ -60,10 +60,20 @@
 enum {STRUCT, UNSTR};
 enum {AUTO, DYNAMIC, STATIC};
 
-#ifdef INT64
-typedef long long int LocalOrdinalType;
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+  typedef int default_lno_t;
+#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
+  typedef int64_t default_lno_t;
 #else
-typedef int LocalOrdinalType;
+  #error "Expect INT and/or INT64_T to be enabled as ORDINAL (lno_t) types"
+#endif
+  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
+#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
+  typedef int default_size_type;
+#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
+  typedef size_t default_size_type;
+#else
+  #error "Expect SIZE_T and/or INT to be enabled as OFFSET (size_type) types"
 #endif
 
 void print_help() {
@@ -140,18 +150,18 @@ int main(int argc, char **argv)
   }
 
   Kokkos::initialize(argc,argv);
-
   {
-
-    typedef KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int> matrix_type;
+    typedef default_lno_t lno_t;
+    typedef default_size_type size_type;
+    typedef KokkosSparse::CrsMatrix<Scalar,lno_t,Kokkos::DefaultExecutionSpace,void,size_type> matrix_type;
     typedef typename Kokkos::View<Scalar**,Kokkos::LayoutLeft> mv_type;
     // typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,Kokkos::MemoryRandomAccess > mv_random_read_type;
     typedef typename mv_type::HostMirror h_mv_type;
 
     int leftBC = 1, rightBC = 1, frontBC = 1, backBC = 1, bottomBC = 1, topBC = 1;
 
-    Kokkos::View<int*, Kokkos::HostSpace> structure("Spmv Structure", numDimensions);
-    Kokkos::View<int*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", numDimensions);
+    Kokkos::View<lno_t*, Kokkos::HostSpace> structure("Spmv Structure", numDimensions);
+    Kokkos::View<lno_t*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", numDimensions);
     if(numDimensions == 1) {
       structure(0) = nx;
       mat_structure(0, 0) = nx;
@@ -264,8 +274,8 @@ int main(int argc, char **argv)
 
       double problem_size = matrix_size+vector_size;
       printf("Type NNZ NumRows NumCols ProblemSize(MB) AveBandwidth(GB/s) MinBandwidth(GB/s) MaxBandwidth(GB/s) AveGFlop MinGFlop MaxGFlop aveTime(ms) maxTime(ms) minTime(ms)\n");
-      printf("Struct %i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %6.3lf %6.3lf %6.3lf )\n",
-	     A.nnz(), A.numRows(), A.numCols(), problem_size,
+      printf("Struct %zu %zu %zu %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %6.3lf %6.3lf %6.3lf )\n",
+	     (size_t) A.nnz(), (size_t) A.numRows(), (size_t) A.numCols(), problem_size,
 	     (matrix_size+vector_readwrite)/ave_time*loop/1024, (matrix_size+vector_readwrite)/max_time/1024, (matrix_size+vector_readwrite)/min_time/1024,
 	     2.0*A.nnz()*loop/ave_time/1e9, 2.0*A.nnz()/max_time/1e9, 2.0*A.nnz()/min_time/1e9,
 	     ave_time/loop*1000, max_time*1000, min_time*1000);
@@ -294,8 +304,8 @@ int main(int argc, char **argv)
       double vector_readwrite = (A.nnz() + A.numCols())*sizeof(Scalar)/1024/1024;
 
       double problem_size = matrix_size+vector_size;
-      printf("Unstr %i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %6.3lf %6.3lf %6.3lf )\n",
-	     A.nnz(), A.numRows(),A.numCols(), problem_size,
+      printf("Unstr %zu %zu %zu %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %6.3lf %6.3lf %6.3lf )\n",
+	     (size_t) A.nnz(), (size_t) A.numRows(), (size_t) A.numCols(), problem_size,
 	     (matrix_size+vector_readwrite)/ave_time*loop/1024, (matrix_size+vector_readwrite)/max_time/1024,(matrix_size+vector_readwrite)/min_time/1024,
 	     2.0*A.nnz()*loop/ave_time/1e9, 2.0*A.nnz()/max_time/1e9, 2.0*A.nnz()/min_time/1e9,
 	     ave_time/loop*1000, max_time*1000, min_time*1000);
