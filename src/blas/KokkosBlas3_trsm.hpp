@@ -45,9 +45,9 @@
 
 /// \file KokkosBlas3_trsm.hpp
 
-#include <KokkosKernels_Macros.hpp>
-#include <KokkosBlas3_trsm_spec.hpp>
-#include <KokkosKernels_helpers.hpp>
+#include "KokkosKernels_Macros.hpp"
+#include "KokkosBlas3_trsm_spec.hpp"
+#include "KokkosKernels_helpers.hpp"
 #include <sstream>
 #include <type_traits>
 
@@ -92,8 +92,8 @@ trsm (const char side[],
                  "BViewType must be a Kokkos::View.");
   static_assert (static_cast<int> (AViewType::rank) == 2,
                  "AViewType must have rank 2.");
-  static_assert (static_cast<int> (BViewType::rank) == 1 || static_cast<int> (BViewType::rank) == 2,
-                 "BViewType must have either rank 1 or rank 2.");
+  static_assert (static_cast<int> (BViewType::rank) == 2,
+                 "BViewType must have rank 2.");
 
   // Check validity of indicator argument
   bool valid_side  = (side[0] == 'L' ) || (side[0] == 'l' )||
@@ -167,16 +167,7 @@ trsm (const char side[],
                            typename BViewType::device_type,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  AVT A_i = A;
-  
-  if (BViewType::rank == 1) {
-    auto B_i = BVT(B.data(), B.extent(0), 1);
-    KokkosBlas::Impl::TRSM<AVT, BVT>::trsm (side, uplo, trans, diag, alpha, A_i, B_i);
-  }
-  else { //BViewType::rank == 2
-    auto B_i = BVT(B.data(), B.extent(0), B.extent(1));
-    KokkosBlas::Impl::TRSM<AVT, BVT>::trsm (side, uplo, trans, diag, alpha, A_i, B_i);
-  }
+  KokkosBlas::Impl::TRSM<AVT, BVT>::trsm (side, uplo, trans, diag, alpha, A, B);
 }
 
 } // namespace KokkosBlas
