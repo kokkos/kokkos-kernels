@@ -76,14 +76,14 @@ void backwardP_supernode(int n, int *perm_c, int nrhs, scalar_t *B, int ldb, sca
 template <typename mag_t, typename crsmat_t, typename scalar_view_t>
 bool check_errors(mag_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol) {
 
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::entries_type::non_const_type entries_view_t;
-  typedef typename entries_view_t::non_const_value_type  lno_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using graph_t        = typename crsmat_t::StaticCrsGraphType;
+  using entries_view_t = typename graph_t::entries_type::non_const_type;
+  using lno_t          = typename entries_view_t::non_const_value_type;
+  using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using scalar_t       = typename values_view_t::value_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
-  typedef typename scalar_view_t::execution_space execution_space;
+  using execution_space = typename scalar_view_t::execution_space;
 
   mag_t ZERO = mag_t(0);
   scalar_t ONE = scalar_t(1);
@@ -168,7 +168,7 @@ void print_graph(graph_t &graph) {
 /* ========================================================================================= */
 template <typename crsmat_t>
 crsmat_t remove_zeros_crsmat(crsmat_t &A) {
-  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+  using graph_t        = typename crsmat_t::StaticCrsGraphType;
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using cols_view_t    = typename graph_t::entries_type::non_const_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
@@ -176,10 +176,10 @@ crsmat_t remove_zeros_crsmat(crsmat_t &A) {
   using row_map_view_host_t = typename row_map_view_t::HostMirror;
   using cols_view_host_t    = typename cols_view_t::HostMirror;
   using values_view_host_t  = typename values_view_t::HostMirror;
+  using scalar_t = typename values_view_t::value_type;
 
-  typedef typename values_view_t::value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-  typedef Kokkos::pair<int,int> range_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
+  using range_type = Kokkos::pair<int, int>;
 
   auto graph = A.graph; // in_graph
   int n = graph.numRows ();
@@ -232,20 +232,20 @@ template <typename crsmat_t, typename host_crsmat_t>
 bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_majorU, crsmat_t &U,
                     int *perm_r, int *perm_c, double tol, int loop) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) 
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-  typedef typename values_view_t::value_type scalar_t;
+  using values_view_t = typename crsmat_t::values_type::non_const_type;
+  using scalar_t      = typename values_view_t::value_type;
 
-  typedef typename host_crsmat_t::values_type::non_const_type host_values_view_t;
-  typedef typename host_values_view_t::value_type host_scalar_t;
+  using host_values_view_t = typename host_crsmat_t::values_type::non_const_type;
+  using host_scalar_t      = typename host_values_view_t::value_type;
 
-  typedef typename values_view_t::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  using execution_space = typename values_view_t::execution_space;
+  using memory_space    = typename execution_space::memory_space;
 
-  typedef typename host_values_view_t::execution_space host_execution_space;
-  typedef typename host_execution_space::memory_space host_memory_space;
+  using host_execution_space = typename host_values_view_t::execution_space;
+  using host_memory_space    = typename host_execution_space::memory_space;
 
-  typedef Kokkos::View< scalar_t*, host_memory_space > host_scalar_view_t;
-  typedef Kokkos::View< scalar_t*,      memory_space > scalar_view_t;
+  using host_scalar_view_t = Kokkos::View< scalar_t*, host_memory_space >;
+  using      scalar_view_t = Kokkos::View< scalar_t*,      memory_space >;
 
   scalar_t ZERO = scalar_t (0);
   scalar_t ONE = scalar_t (1);

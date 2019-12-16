@@ -323,16 +323,16 @@ struct LowerTriLvlSchedTP2SolverFunctor
 template <class LHSType, class NGBLType>
 struct SparseTriSupernodalSpMVFunctor
 {
-  typedef typename LHSType::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  using execution_space = typename LHSType::execution_space;
+  using memory_space = typename execution_space::memory_space;
 
-  typedef Kokkos::TeamPolicy<execution_space> policy_type;
-  typedef typename policy_type::member_type member_type;
+  using policy_type = Kokkos::TeamPolicy<execution_space>;
+  using member_type = typename policy_type::member_type;
 
-  typedef typename LHSType::non_const_value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename LHSType::non_const_value_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
-  typedef typename Kokkos::View<scalar_t*, memory_space> WorkspaceType;
+  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
 
   int flag;
   long node_count;
@@ -341,7 +341,7 @@ struct SparseTriSupernodalSpMVFunctor
   const int *supercols;
 
   LHSType X;
-  WorkspaceType work;
+  work_view_t work;
 
   // constructor
   SparseTriSupernodalSpMVFunctor (int flag_,
@@ -349,7 +349,7 @@ struct SparseTriSupernodalSpMVFunctor
                                  const NGBLType &nodes_grouped_by_level_,
                                  const int *supercols_,
                                  LHSType &X_,
-                                 WorkspaceType work_) :
+                                 work_view_t work_) :
     flag(flag_), node_count(node_count_), nodes_grouped_by_level(nodes_grouped_by_level_), supercols(supercols_),
     X(X_), work(work_) {
   }
@@ -394,19 +394,19 @@ struct SparseTriSupernodalSpMVFunctor
 template <class ColptrView, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct LowerTriSupernodalFunctor
 {
-  typedef typename LHSType::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  using execution_space = typename LHSType::execution_space;
+  using memory_space = typename execution_space::memory_space;
 
-  typedef Kokkos::TeamPolicy<execution_space> policy_type;
-  typedef typename policy_type::member_type member_type;
+  using policy_type =  Kokkos::TeamPolicy<execution_space>;
+  using member_type = typename policy_type::member_type;
 
-  typedef typename ValuesType::non_const_value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename ValuesType::non_const_value_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
-  typedef Kokkos::View<int*, memory_space> integer_view_t;
-  typedef typename Kokkos::View<scalar_t*, memory_space> WorkspaceType;
+  using integer_view_t = Kokkos::View<int*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
 
-  typedef Kokkos::pair<int,int> range_type;
+  using range_type = Kokkos::pair<int, int>;
 
   bool invert_offdiagonal;
   const int *supercols;
@@ -420,7 +420,7 @@ struct LowerTriSupernodalFunctor
 
   LHSType X;
 
-  WorkspaceType work; // needed with gemv for update&scatter
+  work_view_t work; // needed with gemv for update&scatter
   integer_view_t work_offset;
 
   NGBLType nodes_grouped_by_level;
@@ -443,7 +443,7 @@ struct LowerTriSupernodalFunctor
                              // right-hand-side (input), solution (output)
                              LHSType &X_,
                              // workspace
-                             WorkspaceType work_,
+                             work_view_t work_,
                              integer_view_t &work_offset_,
                              //
                              const NGBLType &nodes_grouped_by_level_,
@@ -520,43 +520,20 @@ struct LowerTriSupernodalFunctor
             Y(ii) = Xj(ii);
           }
           team.team_barrier ();
-          //if (diag_kernel_type (level) == 0) {
-            // calling team-level "Unblocked" gemv on small-size diagonal in KokkosBatched
-            KokkosBatched::TeamGemv<member_type,
-                                    KokkosBatched::Trans::NoTranspose,
-                                    KokkosBatched::Algo::Gemv::Unblocked>
-              ::invoke(team, one, Ljj, Y, zero, Xj);
-          /*} else if (diag_kernel_type (level) == 1) {
-            // calling team-level "Blocked" gemv on small-size diagonal in KokkosBatched
-            KokkosBatched::TeamGemv<member_type,
-                                    KokkosBatched::Trans::NoTranspose,
-                                    KokkosBatched::Algo::Gemv::Blocked>
-              ::invoke(team, one, Ljj, Y, zero, Xj);
-          } else {
-            // calling team-based gemv on medium-size diagonal in KokkosBlas
-            KokkosBlas::Experimental::
-            gemv (team, 'N',
-                  one,  Ljj,
-                        Y,
-                  zero, Xj);
-          }*/
+          // calling team-level "Unblocked" gemv on small-size diagonal in KokkosBatched
+          KokkosBatched::TeamGemv<member_type,
+                                  KokkosBatched::Trans::NoTranspose,
+                                  KokkosBatched::Algo::Gemv::Unblocked>
+            ::invoke(team, one, Ljj, Y, zero, Xj);
         }
         team.team_barrier ();
 
         /* GEMM to update with off diagonal blocks */
         auto Lij = Kokkos::subview (viewL, range_type (nscol, nsrow), Kokkos::ALL ());
-        //if (kernel_type (level) == 0) {
-          KokkosBatched::TeamGemv<member_type,
-                                  KokkosBatched::Trans::NoTranspose,
-                                  KokkosBatched::Algo::Gemv::Unblocked>
-            ::invoke(team, one, Lij, Xj, zero, Z);
-        /*} else {
-          KokkosBlas::Experimental::
-          gemv(team, 'N',
-               -one, Lij,
-                     Xj,
-               zero, Z);
-        }*/
+        KokkosBatched::TeamGemv<member_type,
+                                KokkosBatched::Trans::NoTranspose,
+                                KokkosBatched::Algo::Gemv::Unblocked>
+          ::invoke(team, one, Lij, Xj, zero, Z);
         team.team_barrier();
       }
     }
@@ -578,22 +555,22 @@ struct LowerTriSupernodalFunctor
 template <class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct UpperTriSupernodalFunctor
 {
-  typedef typename LHSType::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  using execution_space = typename LHSType::execution_space;
+  using memory_space = typename execution_space::memory_space;
 
-  typedef Kokkos::TeamPolicy<execution_space> policy_type;
-  typedef typename policy_type::member_type member_type;
+  using policy_type = Kokkos::TeamPolicy<execution_space>;
+  using member_type = typename policy_type::member_type;
 
-  typedef typename ValuesType::non_const_value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename ValuesType::non_const_value_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
-  typedef Kokkos::View<int*, memory_space>  integer_view_t;
-  typedef typename Kokkos::View<scalar_t*, memory_space> WorkspaceType;
+  using integer_view_t = Kokkos::View<int*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
 
-  typedef typename Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged>
-    SupernodeView;
+  using SupernodeView = typename Kokkos::View<scalar_t**, Kokkos::LayoutLeft,
+                                              memory_space, Kokkos::MemoryUnmanaged>;
 
-  typedef Kokkos::pair<int,int> range_type;
+  using range_type = Kokkos::pair<int, int>;
 
   const int *supercols;
   ColptrType colptr;
@@ -606,7 +583,7 @@ struct UpperTriSupernodalFunctor
 
   LHSType X;
 
-  WorkspaceType work; // needed with gemv for update&scatter
+  work_view_t work; // needed with gemv for update&scatter
   integer_view_t work_offset;
 
   NGBLType nodes_grouped_by_level;
@@ -628,7 +605,7 @@ struct UpperTriSupernodalFunctor
                              // right-hand-side (input), solution (output)
                              LHSType &X_,
                              // workspace
-                             WorkspaceType &work_,
+                             work_view_t &work_,
                              integer_view_t &work_offset_,
                              //
                              const NGBLType &nodes_grouped_by_level_,
@@ -726,19 +703,19 @@ struct UpperTriSupernodalFunctor
 template <class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct UpperTriTranSupernodalFunctor
 {
-  typedef typename LHSType::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  using execution_space = typename LHSType::execution_space;
+  using memory_space = typename execution_space::memory_space;
 
-  typedef Kokkos::TeamPolicy<execution_space> policy_type;
-  typedef typename policy_type::member_type member_type;
+  using policy_type = Kokkos::TeamPolicy<execution_space>;
+  using member_type = typename policy_type::member_type;
 
-  typedef typename ValuesType::non_const_value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
+  using scalar_t = typename ValuesType::non_const_value_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
-  typedef Kokkos::View<int*, memory_space>  integer_view_t;
-  typedef typename Kokkos::View<scalar_t*, memory_space> WorkspaceType;
+  using integer_view_t = Kokkos::View<int*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
 
-  typedef Kokkos::pair<int,int> range_type;
+  using range_type =  Kokkos::pair<int, int>;
 
   const bool invert_offdiagonal;
   const int *supercols;
@@ -752,7 +729,7 @@ struct UpperTriTranSupernodalFunctor
 
   LHSType X;
 
-  WorkspaceType work; // needed with gemv for update&scatter
+  work_view_t work; // needed with gemv for update&scatter
   integer_view_t work_offset;
 
   NGBLType nodes_grouped_by_level;
@@ -775,7 +752,7 @@ struct UpperTriTranSupernodalFunctor
                                  // right-hand-side (input), solution (output)
                                  LHSType &X_,
                                  // workspace
-                                 WorkspaceType &work_,
+                                 work_view_t &work_,
                                  integer_view_t &work_offset_,
                                  //
                                  const NGBLType &nodes_grouped_by_level_,
@@ -1147,8 +1124,8 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
   using namespace KokkosSparse::Experimental;
-  typedef typename TriSolveHandle::integer_view_t integer_view_t;
-  typedef typename TriSolveHandle::integer_view_host_t integer_view_host_t;
+  using integer_view_t = typename TriSolveHandle::integer_view_t;
+  using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
 
   auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
@@ -1391,8 +1368,8 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
   using namespace KokkosSparse::Experimental;
-  typedef typename TriSolveHandle::integer_view_t integer_view_t;
-  typedef typename TriSolveHandle::integer_view_host_t integer_view_host_t;
+  using integer_view_t      = typename TriSolveHandle::integer_view_t;
+  using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
 
   auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);

@@ -111,14 +111,14 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
     int j1 = nb[k];
     int j2 = nb[k+1];
     for (int j = j1; j < j2; j++) {
-        map (j) = supid;
+      map (j) = supid;
     }
     supid ++;
   }
 
   /* count number of nonzeros in each row */
   row_map_view_t rowmap_view ("rowmap_view", n+1);
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
   Kokkos::deep_copy (hr, 0);
 
   integer_view_host_t sup ("sup", nsuper);
@@ -268,7 +268,7 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
 
   /* count number of nonzeros in each row */
   row_map_view_t rowmap_view ("rowmap_view", n+1);
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
   Kokkos::deep_copy (hr, 0);
 
   integer_view_host_t sup ("sup", nsuper);
@@ -416,11 +416,9 @@ crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool 
 template <typename crsmat_t, typename graph_t>
 crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
-  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using scalar_t       = typename values_view_t::value_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
-
-  using scalar_t = typename values_view_t::value_type;
   using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   scalar_t zero = STS::zero ();
@@ -453,13 +451,13 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   }
 
   auto rowmap_view = static_graph.row_map;
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
   Kokkos::deep_copy (hr, rowmap_view);
 
   /* Upper-triangular matrix */
   int nnzA = hr (n);
   values_view_t  values_view ("values_view", nnzA);
-  typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+  auto hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hv, zero);
 
   integer_view_host_t sup  ("supernodes", nsuper);
@@ -558,11 +556,9 @@ template <typename crsmat_t, typename graph_t>
 crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
                                   SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
-  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using       scalar_t = typename values_view_t::value_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
-
-  using scalar_t = typename values_view_t::value_type;
   using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   scalar_t one  = STS::one ();
@@ -595,13 +591,13 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   }
 
   auto rowmap_view = static_graph.row_map;
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
   Kokkos::deep_copy (hr, rowmap_view);
 
   /* Upper-triangular matrix */
   int nnzA = hr (n);
   values_view_t values_view ("values_view", nnzA);
-  typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+  auto hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hv, zero); // seems to be needed in complex (instead of zeroing out lower-tri as below)
 
   integer_view_host_t sup ("sup", nsuper);

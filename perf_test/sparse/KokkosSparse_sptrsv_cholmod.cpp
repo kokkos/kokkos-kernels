@@ -141,9 +141,9 @@ void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
 
 template <typename crsmat_t>
 void print_factor_cholmod(crsmat_t *L) {
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
-  typedef typename crsmat_t::values_type::non_const_type values_view_t;
-  typedef typename values_view_t::value_type scalar_type;
+  using graph_t       = typename crsmat_t::StaticCrsGraphType;
+  using values_view_t = typename crsmat_t::values_type::non_const_type;
+  using scalar_type   = typename values_view_t::value_type;
 
   graph_t  graph = L->graph;
   const int      *colptr = graph.row_map.data ();
@@ -220,32 +220,32 @@ cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_type *nzval
 template<typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
-  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
-  typedef int ordinal_type;
-  typedef int size_type;
+  using STS = Kokkos::Details::ArithTraits<scalar_type>;
+  using ordinal_type = int;
+  using size_type    = int;
 
   // Default spaces
-  typedef Kokkos::DefaultExecutionSpace execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = typename execution_space::memory_space;
 
   // Host spaces
-  typedef Kokkos::DefaultHostExecutionSpace host_execution_space;
-  typedef typename host_execution_space::memory_space host_memory_space;
+  using host_execution_space = Kokkos::DefaultHostExecutionSpace;
+  using host_memory_space = typename host_execution_space::memory_space;
 
   //
-  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type>      crsmat_t;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type>;
+  using      crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type>;
 
   //
-  typedef typename crsmat_t::StaticCrsGraphType graph_t;
+  using graph_t = typename crsmat_t::StaticCrsGraphType;
 
   //
-  typedef Kokkos::View< scalar_type*, host_memory_space > host_scalar_view_t;
-  typedef Kokkos::View< scalar_type*,      memory_space > scalar_view_t;
+  using host_scalar_view_t = Kokkos::View<scalar_type*, host_memory_space>;
+  using      scalar_view_t = Kokkos::View<scalar_type*,      memory_space>;
 
   //
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, scalar_type,
-    execution_space, memory_space, memory_space > KernelHandle;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, scalar_type,
+    execution_space, memory_space, memory_space >;
 
   scalar_type ZERO = scalar_type(0);
   scalar_type ONE = scalar_type(1);

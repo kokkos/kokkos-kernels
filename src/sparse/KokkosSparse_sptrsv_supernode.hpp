@@ -86,8 +86,8 @@ read_supernodal_graphL(bool cusparse, bool merge,
 
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   cols_view_t    column_view ("colmap_view", nnzA);
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hc = Kokkos::create_mirror_view (column_view);
 
   // compute offset for each row
   int j = 0;
@@ -96,7 +96,8 @@ read_supernodal_graphL(bool cusparse, bool merge,
   for (int s = 0 ; s < nsuper ; s++) {
     int j1 = nb[s];
     int j2 = nb[s+1];
-    int nscol = j2 - j1;      // number of columns in the s-th supernode column
+    // number of columns in the s-th supernode column
+    int nscol = j2 - j1;
 
     int i1, i2;
     if (ptr_by_column) {
@@ -106,7 +107,8 @@ read_supernodal_graphL(bool cusparse, bool merge,
       i1 = mb[s];
       i2 = mb[s+1];
     }
-    int nsrow = i2 - i1;      // "total" number of rows in all the supernodes (diagonal+off-diagonal)
+    // "total" number of rows in all the supernodes (diagonal+off-diagonal)
+    int nsrow = i2 - i1;
 
     for (int jj = 0; jj < nscol; jj++) {
       if (cusparse) {
@@ -122,7 +124,7 @@ read_supernodal_graphL(bool cusparse, bool merge,
   }
 
   integer_view_host_t sorted_rowind_view ("sorted_rowind", max_nnz_per_row);
-  int *sorted_rowind = sorted_rowind_view.data (); //new int[max_nnz_per_row];
+  int *sorted_rowind = sorted_rowind_view.data ();
   // store L in csr
   for (int s = 0 ; s < nsuper ; s++) {
     int j1 = nb[s];
@@ -204,11 +206,8 @@ read_supernodal_graphL(bool cusparse, bool merge,
 template <typename input_graph_t>
 void check_supernode_sizes(const char *title, int n, int nsuper, int *nb, input_graph_t &graph) {
 
-  using row_map_view_t = typename input_graph_t::row_map_type::non_const_type;
-
   auto rowmap_view = graph.row_map;
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
   Kokkos::deep_copy (hr, rowmap_view);
 
   int min_nsrow = 0, max_nsrow = 0, tot_nsrow = 0;
@@ -261,9 +260,7 @@ template <typename host_graph_t, typename graph_t>
 host_graph_t
 generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
 
-  using cols_view_t         = typename graph_t::entries_type::non_const_type;
   using cols_view_host_t    = typename host_graph_t::entries_type::non_const_type;
-  using row_map_view_t      = typename graph_t::row_map_type::non_const_type;
   using row_map_view_host_t = typename host_graph_t::row_map_type::non_const_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
@@ -271,8 +268,8 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
   auto row_map = graph.row_map;
   auto entries = graph.entries;
 
-  typename row_map_view_t::HostMirror row_map_host = Kokkos::create_mirror_view (row_map);
-  typename cols_view_t::HostMirror    entries_host = Kokkos::create_mirror_view (entries);
+  auto row_map_host = Kokkos::create_mirror_view (row_map);
+  auto entries_host = Kokkos::create_mirror_view (entries);
   Kokkos::deep_copy (row_map_host, row_map);
   Kokkos::deep_copy (entries_host, entries);
 
@@ -633,7 +630,7 @@ generate_merged_supernodal_graph(bool lower,
       s++;
     }
     // sort such that diagonal come on the top
-    std::sort(work2.data (), work2.data() + mb2 (s2));
+    std::sort(work2.data (), work2.data () + mb2 (s2));
 
     // save nonzero row ids
     if (lower) {
@@ -670,9 +667,8 @@ generate_merged_supernodal_graph(bool lower,
 
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   cols_view_t    column_view ("colmap_view", nnzA);
-
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hc = Kokkos::create_mirror_view (column_view);
 
   nnzA = 0;
   hr(0) = 0;
@@ -707,10 +703,7 @@ read_merged_supernodes(int nsuper, const int *nb,
                        bool lower, bool unit_diag, bool invert_diag, bool invert_offdiag,
                        input_crsmat_t &L, graph_t &static_graph) {
 
-  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
-  using cols_view_t    = typename graph_t::entries_type::non_const_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
-
   using scalar_t = typename values_view_t::value_type;
   using scalar_view_host_t = Kokkos::View<scalar_t*, Kokkos::HostSpace>;
   using STS = Kokkos::Details::ArithTraits<scalar_t>;
@@ -730,8 +723,8 @@ read_merged_supernodes(int nsuper, const int *nb,
   auto rowmap_view = static_graph.row_map;
   auto column_view = static_graph.entries;
 
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hc = Kokkos::create_mirror_view (column_view);
   Kokkos::deep_copy (hr, rowmap_view);
   Kokkos::deep_copy (hc, column_view);
 
@@ -743,8 +736,7 @@ read_merged_supernodes(int nsuper, const int *nb,
 
   int nnzA = hr (n);
   values_view_t values_view ("values_view", nnzA);
-
-  typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+  auto hv = Kokkos::create_mirror_view (values_view);
 
   for (int s2 = 0; s2 < nsuper; s2++) {
     for (int j = nb[s2]; j < nb[s2+1]; j++) {
@@ -832,11 +824,8 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
                         int *nb, int *colptr, int *rowind, scalar_t *Lx,
                         graph_t &static_graph) {
 
-  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
-  using cols_view_t    = typename graph_t::entries_type::non_const_type;
-  using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using  values_view_t = typename crsmat_t::values_type::non_const_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
-
   using STS = Kokkos::Details::ArithTraits<scalar_t>;
   scalar_t zero =  STS::zero ();
 
@@ -855,9 +844,9 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
   auto column_view = static_graph.entries;
   values_view_t values_view ("values_view", nnzL);
 
-  typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-  typename cols_view_t::HostMirror    hc = Kokkos::create_mirror_view (column_view);
-  typename values_view_t::HostMirror  hv = Kokkos::create_mirror_view (values_view);
+  auto hr = Kokkos::create_mirror_view (rowmap_view);
+  auto hc = Kokkos::create_mirror_view (column_view);
+  auto hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hr, rowmap_view);
   Kokkos::deep_copy (hc, column_view);
   Kokkos::deep_copy (hv, zero); // seems to be needed (instead of zeroing out upper)
@@ -1017,12 +1006,12 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 
   using graph_t        = typename crsmat_t::StaticCrsGraphType;
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
-  using cols_view_t    = typename graph_t::entries_type::non_const_type;
-  using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using    cols_view_t = typename graph_t::entries_type::non_const_type;
+  using  values_view_t = typename crsmat_t::values_type::non_const_type;
 
   using row_map_view_host_t = typename row_map_view_t::HostMirror;
-  using cols_view_host_t    = typename cols_view_t::HostMirror;
-  using values_view_host_t  = typename values_view_t::HostMirror;
+  using    cols_view_host_t = typename cols_view_t::HostMirror;
+  using  values_view_host_t = typename values_view_t::HostMirror;
 
   using scalar_t = typename KernelHandle::nnz_scalar_t;
   using STS = Kokkos::Details::ArithTraits<scalar_t>;
