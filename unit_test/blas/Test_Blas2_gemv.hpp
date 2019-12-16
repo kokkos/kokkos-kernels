@@ -134,7 +134,9 @@ int test_gemv(const char* mode) {
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,10,200);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,200,10);
   #endif
+  #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,0,1024);
+  #endif
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,13,1024);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,1024,1024);
   //Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,132231,1024);
@@ -144,7 +146,9 @@ int test_gemv(const char* mode) {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutRight, Device> view_type_b_lr;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutRight, Device> view_type_c_lr;
+  #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,0,1024);
+  #endif
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,13,1024);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,1024,1024);
   //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,132231,1024);
@@ -154,7 +158,9 @@ int test_gemv(const char* mode) {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device> view_type_b_ls;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device> view_type_c_ls;
+  #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,0,1024);
+  #endif
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,13,1024);
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,1024,1024);
   //Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,132231,1024);
