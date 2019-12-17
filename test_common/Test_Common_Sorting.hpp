@@ -83,13 +83,13 @@ size_t generateRandomOffsets(OrdView& randomCounts, OrdView& randomOffsets, size
 
 struct Coordinates
 {
-  Coordinates()
+  KOKKOS_INLINE_FUNCTION Coordinates()
   {
      x = 0;
      y = 0;
      z = 0;
   }
-  Coordinates(double x_, double y_, double z_)
+  KOKKOS_INLINE_FUNCTION Coordinates(double x_, double y_, double z_)
   {
      x = x_;
      y = y_;
