@@ -51,7 +51,7 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
-// TODO: need to protect them with TPL
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) & defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)
 #include "cblas.h"
 #include "lapacke.h"
 
@@ -1298,5 +1298,6 @@ graph_t deep_copy_graph (host_graph_t &host_graph) {
 } // namespace Experimental
 } // namespace KokkosSparse
 
+#endif // KOKKOSKERNELS_ENABLE_TPL_LAPACKE & KOKKOSKERNELS_ENABLE_TPL_CBLAS
 #endif // KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
