@@ -1,6 +1,7 @@
 #include<gtest/gtest.h>   
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
+#include<Kokkos_ArithTraits.hpp>
 
 #include<KokkosSparse_CrsMatrix.hpp>
 #include<KokkosSparse_spadd.hpp>
@@ -15,8 +16,6 @@
 
 typedef Kokkos::complex<double> kokkos_complex_double;
 typedef Kokkos::complex<float> kokkos_complex_float;
-
-namespace Test {
 
 //Create a random square matrix for testing mat-mat addition kernels
 template <typename crsMat_t, typename ordinal_type>
@@ -77,59 +76,6 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxN
   return crsMat_t("test matrix", nrows, nrows, nnz, values, rowmap, entries);
 }
 
-template <typename crsMat_t, typename ordinal_type>
-void checkSumRowCorrect(ordinal_type row, crsMat_t A, crsMat_t B, crsMat_t C)
-{
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type size_type_view_t;
-  typedef typename graph_t::entries_type lno_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename size_type_view_t::non_const_value_type size_type;  //rowptr type
-  typedef typename lno_view_t::non_const_value_type lno_t;            //colind type
-  static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
-  typedef typename scalar_view_t::non_const_value_type scalar_t;      //value type
-  auto Avalues = Kokkos::create_mirror_view(A.values);
-  auto Arowmap = Kokkos::create_mirror_view(A.graph.row_map);
-  auto Aentries = Kokkos::create_mirror_view(A.graph.entries);
-  auto Bvalues = Kokkos::create_mirror_view(B.values);
-  auto Browmap = Kokkos::create_mirror_view(B.graph.row_map);
-  auto Bentries = Kokkos::create_mirror_view(B.graph.entries);
-  auto Cvalues = Kokkos::create_mirror_view(C.values);
-  auto Crowmap = Kokkos::create_mirror_view(C.graph.row_map);
-  auto Centries = Kokkos::create_mirror_view(C.graph.entries);
-  lno_t nrows = Arowmap.extent(0) - 1;
-  //compute the correct row as a dense vector
-  std::vector<scalar_t> correct(nrows, 0);
-  std::vector<bool> nonzeros(nrows, false);
-  for(size_type i = Arowmap(row); i < Arowmap(row + 1); i++)
-  {
-    correct[Aentries(i)] += Avalues(i);
-    nonzeros[Aentries(i)] = true;
-  }
-  for(size_type i = Browmap(row); i < Browmap(row + 1); i++)
-  {
-    correct[Bentries(i)] += Bvalues(i);
-    nonzeros[Bentries(i)] = true;
-  }
-  size_type nz = 0;
-  for(lno_t i = 0; i < nrows; i++)
-  {
-    if(nonzeros[i])
-      nz++;
-  }
-  //make sure C has the right number of entries
-  auto actualNZ = Crowmap(row + 1) - Crowmap(row);
-  ASSERT_EQ(actualNZ, nz) << "A+B row " << row << " has " << actualNZ << " entries but should have " << nz;
-  //make sure C has the correct values
-  for(size_type i = Crowmap(row); i < Crowmap(row + 1); i++)
-  {
-    scalar_t Cval = Cvalues(i);
-    lno_t Ccol = Centries(i);
-    EXPECT_EQ(correct[Ccol], Cval) << "A+B row " << row << ", column " << Ccol << " has value " << Cval << " but should be " << correct[Ccol];
-  }
-}
-}
-
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows)
 {
@@ -144,8 +90,10 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
 
   KernelHandle handle;
   handle.create_spadd_handle(sortRows);
-  crsMat_t A = Test::randomMatrix<crsMat_t, lno_t>(numRows, minNNZ, maxNNZ, sortRows);
-  crsMat_t B = Test::randomMatrix<crsMat_t, lno_t>(numRows, minNNZ, maxNNZ, sortRows);
+  crsMat_t A = randomMatrix<crsMat_t, lno_t>(numRows, minNNZ, maxNNZ, sortRows);
+  crsMat_t B = randomMatrix<crsMat_t, lno_t>(numRows, minNNZ, maxNNZ, sortRows);
+  //Matrices from randomMatrix are always square
+  lno_t numCols = numRows;
   row_map_type c_row_map("C row map", numRows + 1);
   auto addHandle = handle.get_spadd_handle();
   KokkosSparse::Experimental::spadd_symbolic<
@@ -175,11 +123,55 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
   //create C using CRS arrays
   crsMat_t C("C", numRows, numRows, addHandle->get_max_result_nnz(), c_values, c_row_map, c_entries);
   handle.destroy_spadd_handle();
-
-  //check that C is correct
-  for(lno_t i = 0; i < numRows; i++)
+  auto Avalues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
+  auto Arowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+  auto Aentries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
+  auto Bvalues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), B.values);
+  auto Browmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), B.graph.row_map);
+  auto Bentries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), B.graph.entries);
+  auto Cvalues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C.values);
+  auto Crowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C.graph.row_map);
+  auto Centries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C.graph.entries);
+  using KAT = Kokkos::ArithTraits<scalar_t>;
+  auto zero = KAT::zero();
+  auto eps = KAT::epsilon();
+  //check that C is correct and sorted, row-by-row
+  for(lno_t row = 0; row < numRows; row++)
   {
-    Test::checkSumRowCorrect<crsMat_t, lno_t>(i, A, B, C);
+    std::vector<scalar_t> correct(numCols, zero);
+    std::vector<bool> nonzeros(numCols, false);
+    for(size_type i = Arowmap(row); i < Arowmap(row + 1); i++)
+    {
+      correct[Aentries(i)] += Avalues(i);
+      nonzeros[Aentries(i)] = true;
+    }
+    for(size_type i = Browmap(row); i < Browmap(row + 1); i++)
+    {
+      correct[Bentries(i)] += Bvalues(i);
+      nonzeros[Bentries(i)] = true;
+    }
+    size_type nz = 0;
+    for(lno_t i = 0; i < numCols; i++)
+    {
+      if(nonzeros[i])
+        nz++;
+    }
+    //make sure C has the right number of entries
+    auto actualNZ = Crowmap(row + 1) - Crowmap(row);
+    ASSERT_EQ(actualNZ, nz) << "A+B row " << row << " has " << actualNZ << " entries but should have " << nz;
+    //make sure C's indices are sorted
+    for(size_type i = Crowmap(row) + 1; i < Crowmap(row + 1); i++)
+    {
+      ASSERT_LE(Centries(i - 1), Centries(i)) << "C row " << row << " is not sorted";
+    }
+    //make sure C has the correct values
+    for(size_type i = Crowmap(row); i < Crowmap(row + 1); i++)
+    {
+      scalar_t Cval = Cvalues(i);
+      lno_t Ccol = Centries(i);
+      //Check that result is correct to 1 ULP
+      ASSERT_LE(KAT::abs(correct[Ccol] - Cval), KAT::abs(correct[Ccol] * eps)) << "A+B row " << row << ", column " << Ccol << " has value " << Cval << " but should be " << correct[Ccol];
+    }
   }
 }
 
