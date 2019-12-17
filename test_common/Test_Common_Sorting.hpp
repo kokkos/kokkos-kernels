@@ -538,7 +538,6 @@ TEST_F(TestCategory, common_serial_radix) {
 }
 
 TEST_F(TestCategory, common_serial_radix2) {
-  typedef TestExecSpace es;
   //Test serial radix over some contiguous small arrays
   //1st arg is #arrays, 2nd arg is max subarray size
   size_t numArrays = 100;
