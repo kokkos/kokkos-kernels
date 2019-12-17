@@ -395,11 +395,11 @@ TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember 
             if(elem2 < n)
             {
               //both elements in bounds, so compare them and swap if out of order
-              if(comp(values[elem2], values[elem2]))
+              if(comp(values[elem2], values[elem1]))
               {
-                ValueType temp = values[elem1];
+                ValueType temp1 = values[elem1];
                 values[elem1] = values[elem2];
-                values[elem2] = temp;
+                values[elem2] = temp1;
                 PermType temp2 = perm[elem1];
                 perm[elem1] = perm[elem2];
                 perm[elem2] = temp2;
@@ -414,9 +414,9 @@ TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember 
             {
               if(comp(values[elem2], values[elem1]))
               {
-                ValueType temp = values[elem1];
+                ValueType temp1 = values[elem1];
                 values[elem1] = values[elem2];
-                values[elem2] = temp;
+                values[elem2] = temp1;
                 PermType temp2 = perm[elem1];
                 perm[elem1] = perm[elem2];
                 perm[elem2] = temp2;
