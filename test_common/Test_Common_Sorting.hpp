@@ -145,8 +145,8 @@ struct TestSerialRadixFunctor
   }
   ValView values;
   ValView valuesAux;
-  OrdView offsets;
   OrdView counts;
+  OrdView offsets;
 };
 
 template<typename ExecSpace, typename Scalar>
@@ -155,7 +155,7 @@ void testSerialRadixSort()
   //Create a view of randomized data
   typedef typename ExecSpace::memory_space mem_space;
   typedef Kokkos::View<int*, mem_space> OrdView;
-  typedef Kokkos::View<int*, Kokkos::HostSpace> OrdViewHost;
+  //typedef Kokkos::View<int*, Kokkos::HostSpace> OrdViewHost;
   typedef Kokkos::View<Scalar*, mem_space> ValView;
   OrdView counts;
   OrdView offsets;
@@ -209,8 +209,8 @@ struct TestTeamBitonicFunctor
   }
 
   ValView values;
-  OrdView offsets;
   OrdView counts;
+  OrdView offsets;
 };
 
 template<typename ExecSpace, typename Scalar>
@@ -219,7 +219,7 @@ void testTeamBitonicSort()
   //Create a view of randomized data
   typedef typename ExecSpace::memory_space mem_space;
   typedef Kokkos::View<int*, mem_space> OrdView;
-  typedef Kokkos::View<int*, Kokkos::HostSpace> OrdViewHost;
+  //typedef Kokkos::View<int*, Kokkos::HostSpace> OrdViewHost;
   typedef Kokkos::View<Scalar*, mem_space> ValView;
   OrdView counts;
   OrdView offsets;

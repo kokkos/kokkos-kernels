@@ -132,10 +132,10 @@ IF(KOKKOS_ENABLE_CUDA)
    "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
    )
 
-  IF(KOKKOSKERNELS_INST_EXECSPACE_CUDA} AND KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE})
+  IF(KOKKOSKERNELS_INST_EXECSPACE_CUDA AND KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
     LIST(APPEND DEVICE_LIST "<Cuda,CudaSpace>")
   ENDIF()
-  IF(KOKKOSKERNELS_INST_EXECSPACE_CUDA} AND KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE})
+  IF(KOKKOSKERNELS_INST_EXECSPACE_CUDA AND KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
     LIST(APPEND DEVICE_LIST "<Cuda,CudaUVMSpace>")
   ENDIF()
 
@@ -173,6 +173,8 @@ KOKKOSKERNELS_ADD_OPTION(
   BOOL
   "Whether to build kernels for the execution space Kokkos::Threads.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_PTHREAD is enabled may increase build times."
 )
+#There continues to be name ambiguity with threads vs pthreads
+SET(KOKKOSKERNELS_INST_EXECSPACE_PTHREAD ${KOKKOSKERNELS_INST_EXECSPACE_THREADS})
 
 IF(KOKKOSKERNELS_INST_EXECSPACE_PTHREAD AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
   LIST(APPEND DEVICE_LIST "<Threads,HostSpace>")

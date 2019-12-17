@@ -65,6 +65,22 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+  typedef int default_lno_t;
+#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
+  typedef int64_t default_lno_t;
+#else
+  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
+#endif
+  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
+#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
+  typedef int default_size_type;
+#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
+  typedef size_t default_size_type;
+#else
+  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
+#endif
+
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -77,8 +93,8 @@ template<typename Scalar>
 int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
 
   typedef Scalar scalar_t;
-  typedef int lno_t;
-  typedef int size_type;
+  typedef default_lno_t lno_t;
+  typedef default_size_type size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef typename execution_space::memory_space memory_space;
 
@@ -111,6 +127,8 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
     const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(k) ;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    //cuSPARSE requires lno_t = size_type = int. For both, int is always used (if enabled)
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_OFFSET_INT)
     //std::cout << "  cusparse: create handle" << std::endl;
     cusparseStatus_t status;
     cusparseHandle_t handle = 0;
@@ -143,6 +161,9 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
               descr, A.values.data(), A.graph.row_map.data(), A.graph.entries.data(), info, &pBufferSize);
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
     cudaMalloc((void**)&pBuffer, pBufferSize);
+#else
+    std::cout << "Note: the cuSPARSE TPL is enabled, but either offset=int or ordinal=int is disabled, so it can't be used.\n";
+#endif
 #endif
 
     for ( auto test : tests ) {
@@ -496,6 +517,7 @@ int main(int argc, char **argv)
 }
 #else
 int main() {
+  std::cout << "The SPILUK perf_test requires CUDA >= 8.0\n";
   return 0;
 }
 #endif
