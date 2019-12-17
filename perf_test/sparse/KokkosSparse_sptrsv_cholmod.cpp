@@ -554,6 +554,7 @@ int main(int argc, char **argv)
   return 0;
 }
 #endif
+
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 int main() {
 #if !defined(KOKKOSKERNELS_INST_DOUBLE)
