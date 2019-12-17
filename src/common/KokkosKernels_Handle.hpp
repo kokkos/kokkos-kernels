@@ -209,8 +209,10 @@ public:
   typedef
     typename KokkosSparse::Experimental::SPTRSVHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPTRSVHandleType;
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
   typedef
     typename SPTRSVHandleType::integer_view_host_t integer_view_host_t;
+#endif
 
   typedef
     typename KokkosSparse::Experimental::SPILUKHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>

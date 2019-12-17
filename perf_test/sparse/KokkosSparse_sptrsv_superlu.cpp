@@ -64,7 +64,7 @@
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION )) && defined(KOKKOSKERNELS_INST_DOUBLE)
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
 #include "slu_ddefs.h"
 #include "slu_zdefs.h"
 // auxiliary functions from perf_test (e.g., pivoting, printing)
