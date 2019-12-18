@@ -199,7 +199,7 @@ struct KokkosSPGEMM
         marker [ind] = 0;
       }
     });
-
+    memory_space.release_chunk(dense_accum);
   }
 
 };

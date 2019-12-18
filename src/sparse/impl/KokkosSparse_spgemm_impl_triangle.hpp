@@ -297,7 +297,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -389,7 +389,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets2);
   }
 
 
@@ -469,7 +469,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -555,7 +555,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -715,7 +715,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -859,7 +859,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
 
 
