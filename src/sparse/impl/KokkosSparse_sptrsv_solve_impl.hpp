@@ -1104,15 +1104,9 @@ template < class TriSolveHandle, class RowMapType, class EntriesType, class Valu
 void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const EntriesType entries, const ValuesType values, const RHSType & rhs, LHSType &lhs) {
 
   typedef typename TriSolveHandle::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
 
   typedef typename TriSolveHandle::size_type size_type;
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
-
-  typedef typename ValuesType::non_const_value_type scalar_t;
-  typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-
-  typedef Kokkos::pair<int,int> range_type;
 
   auto nlevels = thandle.get_num_levels();
   // Keep this a host View, create device version and copy to back to host during scheduling
@@ -1124,8 +1118,13 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
   using namespace KokkosSparse::Experimental;
-  using integer_view_t = typename TriSolveHandle::integer_view_t;
+  using memory_space        = typename execution_space::memory_space;
+  using integer_view_t      = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
+  using scalar_t            = typename ValuesType::non_const_value_type;
+
+  using STS = Kokkos::Details::ArithTraits<scalar_t>;
+  using range_type = Kokkos::pair<int, int>;
 
   auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
@@ -1349,14 +1348,9 @@ template < class TriSolveHandle, class RowMapType, class EntriesType, class Valu
 void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const EntriesType entries, const ValuesType values, const RHSType & rhs, LHSType &lhs) {
 
   typedef typename TriSolveHandle::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
 
   typedef typename TriSolveHandle::size_type size_type;
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
-
-  typedef typename ValuesType::non_const_value_type scalar_t;
-
-  typedef Kokkos::pair<int,int> range_type;
 
   auto nlevels = thandle.get_num_levels();
   // Keep this a host View, create device version and copy to back to host during scheduling
@@ -1368,8 +1362,12 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
   using namespace KokkosSparse::Experimental;
+  using memory_space        = typename execution_space::memory_space;
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
+  using scalar_t            = typename ValuesType::non_const_value_type;
+
+  using range_type = Kokkos::pair<int, int>;
 
   auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
