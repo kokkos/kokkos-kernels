@@ -52,17 +52,15 @@
 #include <unordered_map>
 
 #ifdef HAVE_CUSPARSE
-#include <cusparse.h>
+#include <CuSparse_SPMV.hpp>
 #endif
 
 #include <Kokkos_Core.hpp>
 #include <matrix_market.hpp>
 
-#include <KokkosKernels_SPMV.hpp>
-#include <Kokkos_SPMV.hpp>
-#include <Kokkos_SPMV_Inspector.hpp>
-#include <CuSparse_SPMV.hpp>
+#ifdef HAVE_MKL
 #include <MKL_SPMV.hpp>
+#endif
 
 #ifdef _OPENMP
 #include <OpenMPStatic_SPMV.hpp>
@@ -70,22 +68,22 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
+#include "KokkosSparse_perftest_types.hpp"
+
 enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
 
-#ifdef INT64
-typedef long long int LocalOrdinalType;
-#else
-typedef int LocalOrdinalType;
-#endif
+typedef default_scalar scalar_t;
+typedef default_lno_t lno_t;
+typedef default_size_type size_type;
+typedef default_layout layout_t;
 
-
-template< typename ScalarType , typename OrdinalType>
-int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz, OrdinalType varianz_nel_row, OrdinalType width_row, ScalarType* &values, OrdinalType* &rowPtr, OrdinalType* &colInd)
+template< typename Scalar, typename Offset, typename Ordinal>
+int SparseMatrix_generate(Ordinal nrows, Ordinal ncols, Ordinal &nnz, Ordinal varianz_nel_row, Ordinal width_row, Scalar* &values, Offset* &rowPtr, Ordinal* &colInd)
 {
-  rowPtr = new OrdinalType[nrows+1];
+  rowPtr = new Offset[nrows+1];
 
-  OrdinalType elements_per_row = nnz/nrows;
+  Ordinal elements_per_row = nnz/nrows;
   srand(13721);
   rowPtr[0] = 0;
   for(int row=0;row<nrows;row++)
@@ -94,8 +92,8 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
     rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
   }
   nnz = rowPtr[nrows];
-  values = new ScalarType[nnz];
-  colInd = new OrdinalType[nnz];
+  values = new Scalar[nnz];
+  colInd = new Ordinal[nnz];
   for(int row=0;row<nrows;row++)
   {
          for(int k=rowPtr[row];k<rowPtr[row+1];k++)
@@ -132,45 +130,42 @@ void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int 
                   kk_inspector_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
                 break;
 
-#ifdef _OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
         case OMP_STATIC:
-                openmp_static_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
+                openmp_static_matvec<AType, XType, YType, size_type, lno_t, scalar_t>(A, x, y);
                 break;
         case OMP_DYNAMIC:
-                openmp_dynamic_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
+                openmp_dynamic_matvec<AType, XType, YType, size_type, lno_t, scalar_t>(A, x, y);
                 break;
         case OMP_INSP:
-                openmp_smart_static_matvec<AType, XType, YType, int, double>(A, x, y, rows_per_thread, team_size, vector_length);
+                openmp_smart_static_matvec<AType, XType, YType, size_type, lno_t, scalar_t>(A, x, y);
                 break;
 #endif
 
 #ifdef HAVE_MKL
         case MKL:
-                mkl_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+                mkl_matvec(A, x, y);
                 break;
 #endif
 #ifdef HAVE_CUSPARSE
         case CUSPARSE:
-                cusparse_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+                cusparse_matvec(A, x, y);
                 break;
 #endif
-#ifdef HAVE_KK_KERNELS
         case KK_KERNELS:
-                kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+                KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
                 break;
-  case KK_KERNELS_INSP:
-    if(A.graph.row_block_offsets.data()==NULL) {
-      printf("PTR: %p\n",A.graph.row_block_offsets.data());
-      A.graph.create_block_partitioning(AType::execution_space::concurrency());
-      printf("PTR2: %p\n",A.graph.row_block_offsets.data());
-    }
-    kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
-    break;
-#endif
+        case KK_KERNELS_INSP:
+          if(A.graph.row_block_offsets.data()==NULL) {
+            printf("PTR: %p\n",A.graph.row_block_offsets.data());
+            A.graph.create_block_partitioning(AType::execution_space::concurrency());
+            printf("PTR2: %p\n",A.graph.row_block_offsets.data());
+          }
+          kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
+          break;
         default:
-                fprintf(stderr, "Selected test is not available.\n");
-
-        }
+          fprintf(stderr, "Selected test is not available.\n");
+      }
 }
 
 template<typename Scalar>
@@ -407,3 +402,4 @@ int main(int argc, char **argv)
 
   Kokkos::finalize();
 }
+

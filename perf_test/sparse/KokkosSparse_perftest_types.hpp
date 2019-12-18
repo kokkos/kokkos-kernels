@@ -41,48 +41,43 @@
 //@HEADER
 */
 
-#ifndef KOKKOSKERNELS_SPMV_HPP_
-#define KOKKOSKERNELS_SPMV_HPP_
+#ifndef KOKKOSSPARSE_PERFTEST_TYPES_H
+#define KOKKOSSPARSE_PERFTEST_TYPES_H
 
-#ifdef MAKE_BUILD
-#ifdef KOKKOS_ENABLE_CUDA
-  #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
-        typedef Kokkos::Device<Kokkos::Cuda, Kokkos::Cuda::memory_space> Kokkos_Device0Kokkos_Cuda_Kokkos_CudaSpace0; \
-        typedef Kokkos::complex<double> Kokkos_complex0double0; \
-        typedef long long longlong;
+#include <Kokkos_Core.hpp>
+#include <KokkosKernels_config.h> //for all the ETI #cmakedefine macros
+
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+  typedef int default_lno_t;
+#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
+  typedef int64_t default_lno_t;
 #else
-  #ifdef KOKKOS_ENABLE_OPENMP
-    #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
-        typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::OpenMP::memory_space> Kokkos_Device0Kokkos_OpenMP_Kokkos_HostSpace0; \
-        typedef Kokkos::complex<double> Kokkos_complex0double0; \
-        typedef long long longlong;
-  #else
-    #ifdef KOKKOS_ENABLE_THREADS
-      #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
-        typedef Kokkos::Device<Kokkos::Threads, Kokkos::Threads::memory_space> Kokkos_Device0Kokkos_Threads_Kokkos_HostSpace0; \
-        typedef Kokkos::complex<double> Kokkos_complex0double0; \
-        typedef long long longlong;
-    #else
-      #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
-        typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> Kokkos_Device0Kokkos_OpenMP_Kokkos_HostSpace0; \
-        typedef Kokkos::complex<double> Kokkos_complex0double0; \
-        typedef long long longlong;
-    #endif
-  #endif
+  #error "Expect INT and/or INT64_T to be enabled as ORDINAL (lno_t) types"
+#endif
+  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
+#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
+  typedef int default_size_type;
+#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
+  typedef size_t default_size_type;
+#else
+  #error "Expect SIZE_T and/or INT to be enabled as OFFSET (size_type) types"
+#endif
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+  typedef Kokkos::LayoutLeft default_layout;
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+  typedef Kokkos::LayoutRight default_layout;
+#else
+  #error "Expect LAYOUTLEFT and/or LAYOUTRIGHT to be enabled as layout types"
+#endif
+
+#if defined(KOKKOSKERNELS_INST_DOUBLE)
+  typedef double default_scalar;
+#elif defined(KOKKOSKERNELS_INST_FLOAT)
+  typedef float default_scalar;
+#else
+  #error "Expect at least one real-valued scalar type (double or float) to be enabled"
 #endif
 
 #endif
 
-#include <KokkosBlas.hpp>
-#include <KokkosSparse_spmv.hpp>
-
-#ifdef HAVE_KK_KERNELS
-
-
-template<typename AType, typename XType, typename YType>
-void kokkoskernels_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
-  KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
-}
-#endif
-
-#endif /* KOKKOSKERNELS_SPMV_HPP_ */

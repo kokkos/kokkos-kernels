@@ -42,17 +42,13 @@
 */
 #include <iostream>
 #include "KokkosKernels_config.h"
-#if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
-    defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+#include "KokkosSparse_perftest_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
 
-
-#define SIZE_TYPE int
-#define INDEX_TYPE int
-#define SCALAR_TYPE double
-//double
+typedef default_size_type size_type;
+typedef default_lno_t lno_t;
+typedef default_scalar scalar_t;
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;
@@ -303,12 +299,12 @@ int main (int argc, char ** argv){
   if (params.use_openmp) {
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(
+    <size_type, lno_t, scalar_t, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(
         params
         );
 #else 
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
+    <size_type, lno_t, scalar_t, Kokkos::OpenMP, Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(
         params
         );
 #endif
@@ -319,45 +315,21 @@ int main (int argc, char ** argv){
   if (params.use_cuda) {
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
+    <size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::CudaHostPinnedSpace>(
         params
         );
 #else
     KokkosKernels::Experiment::run_multi_mem_spgemm
-    <SIZE_TYPE, INDEX_TYPE, SCALAR_TYPE, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
+    <size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space, Kokkos::Cuda::memory_space>(
         params
         );
 
 #endif
   }
-#else 
 #endif
 
   Kokkos::finalize(); 
 
   return 0;
 }
-
-
-#else
-int main() {
-#if !defined(KOKKOSKERNELS_INST_DOUBLE)
-std::cout  << " not defined KOKKOSKERNELS_INST_DOUBLE"  << std::endl;
-#endif
-
-#if !defined(KOKKOSKERNELS_INST_OFFSET_INT)
-std::cout  << " not defined KOKKOSKERNELS_INST_OFFSET_INT"  << std::endl;
-
-#endif
-
-#if !defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-std::cout  << " not defined KOKKOSKERNELS_INST_ORDINAL_INT"  << std::endl;
-
-#endif
-}
-#endif
-
-
-
-
 

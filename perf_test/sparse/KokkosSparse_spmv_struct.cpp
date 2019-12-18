@@ -56,25 +56,14 @@
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
 #include <KokkosSparse_spmv_struct_impl.hpp>
 #include <KokkosSparse_spmv_impl.hpp>
+#include "KokkosSparse_perftest_types.hpp"
 
 enum {STRUCT, UNSTR};
 enum {AUTO, DYNAMIC, STATIC};
 
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
-#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
-#else
-  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
-#endif
-  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
-#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
-#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
-#else
-  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
-#endif
+typedef default_scalar Scalar;
+typedef default_lno_t lno_t;
+typedef default_size_type size_type;
 
 void print_help() {
   printf("SPMV_struct benchmark code written by Luc Berger-Vergiat.\n");
@@ -94,8 +83,6 @@ void print_help() {
 
 int main(int argc, char **argv)
 {
-  typedef double Scalar;
-
   int  nx = 100;
   int  ny = 100;
   int  nz = 100;

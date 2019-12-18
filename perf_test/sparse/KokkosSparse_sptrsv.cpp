@@ -62,25 +62,10 @@
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_perftest_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 
 //#define INTERNAL_CUSPARSE
-
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
-#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
-#else
-  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
-#endif
-  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
-#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
-#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
-#else
-  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
-#endif
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 using namespace KokkosSparse;
@@ -131,10 +116,8 @@ void check_entries_sorted(const RowMapType drow_map, const EntriesType dentries)
 
 }
 
-template<typename Scalar>
 int test_sptrsv_perf(std::vector<int> tests, const std::string& lfilename, const std::string& ufilename, const int team_size, const int vector_length, const int idx_offset, const int loop, const int chain_threshold = 0, const float dense_row_percent = -1.0) {
-
-  typedef Scalar scalar_t;
+  typedef default_scalar scalar_t;
   typedef default_lno_t lno_t;
   typedef default_size_type size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;
@@ -1013,7 +996,11 @@ int main(int argc, char **argv)
 
  Kokkos::initialize(argc,argv);
  {
+<<<<<<< 6d0becda14a6248e88026e8eedaa4a18e7396ee4
    int total_errors = test_sptrsv_perf<double>(tests, lfilename, ufilename, team_size, vector_length, idx_offset, loop, chain_threshold, dense_row_percent);
+=======
+   int total_errors = test_sptrsv_perf(tests,lfilename,ufilename,team_size,vector_length,idx_offset,loop);
+>>>>>>> WIP: sparse perf-test cleanup and ETI fixes
 
    if(total_errors == 0)
    printf("Kokkos::SPTRSV Test: Passed\n");
