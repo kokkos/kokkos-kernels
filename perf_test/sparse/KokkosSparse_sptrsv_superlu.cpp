@@ -812,8 +812,8 @@ int main(int argc, char **argv) {
 
   Kokkos::initialize(argc,argv);
   {
-    //using scalar_t = double;
-    using scalar_t = Kokkos::complex<double>;
+    using scalar_t = double;
+    //using scalar_t = Kokkos::complex<double>;
     int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
                                                    invert_offdiag, u_in_csr, panel_size, relax_size, loop);
     if(total_errors == 0)
