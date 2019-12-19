@@ -364,7 +364,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
   //this one will be LP on CPUs
   KOKKOS_INLINE_FUNCTION
@@ -620,7 +620,9 @@ struct KokkosSPGEMM
         m_space.release_chunk(globally_used_hash_indices);
       });
     }
-    rowmapC(row_index) = num_elements;
+    Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+      rowmapC(row_index) = num_elements;
+    });
   }
 
   ////
@@ -880,7 +882,7 @@ struct KokkosSPGEMM
     }
     );
 
-    m_space.release_chunk(indices);
+    m_space.release_chunk(sets);
   }
 
 
@@ -1296,8 +1298,11 @@ struct KokkosSPGEMM
       });
       num_elements += num_global_elements;
     }
-
-    rowmapC(row_index) = num_elements;
+    Kokkos::single(Kokkos::PerThread(teamMember),
+      [&]()
+      {
+        rowmapC(row_index) = num_elements;
+      });
   }
 
   size_t team_shmem_size (int /* team_size */) const {
