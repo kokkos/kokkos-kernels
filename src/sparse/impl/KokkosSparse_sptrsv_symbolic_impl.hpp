@@ -43,9 +43,18 @@
 
 #ifndef KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
 #define KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
-
 /// \file Kokkos_Sparse_impl_sptrsv_symbolic.hpp
 /// \brief Implementation(s) of sparse triangular solve.
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
+   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
+
+ // Enable supernodal sptrsv
+ #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+
+#endif
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
@@ -170,7 +179,7 @@ void lower_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
   Kokkos::deep_copy(dlevel_list, level_list);
  }
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
  else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG   ||
@@ -564,7 +573,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
   Kokkos::deep_copy(dlevel_list, level_list);
  }
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
  else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||

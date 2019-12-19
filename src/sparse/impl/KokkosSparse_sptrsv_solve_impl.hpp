@@ -51,19 +51,26 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_sptrsv_handle.hpp>
 
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
-#include "KokkosBlas2_gemv.hpp"
-#include "KokkosBlas2_team_gemv.hpp"
-#include "KokkosSparse_spmv.hpp"
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
+   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
 
-#include "KokkosBatched_Util.hpp"
+ // Enable supernodal sptrsv
+ #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
-#include "KokkosBatched_Trsv_Decl.hpp"
-#include "KokkosBatched_Trsv_Serial_Impl.hpp"
+ #include "KokkosBlas2_gemv.hpp"
+ #include "KokkosBlas2_team_gemv.hpp"
+ #include "KokkosSparse_spmv.hpp"
 
-#include "KokkosBatched_Gemv_Decl.hpp"
-#include "KokkosBatched_Gemv_Team_Impl.hpp"
-#include "KokkosBatched_Gemv_Serial_Impl.hpp"
+ #include "KokkosBatched_Util.hpp"
+
+ #include "KokkosBatched_Trsv_Decl.hpp"
+ #include "KokkosBatched_Trsv_Serial_Impl.hpp"
+
+ #include "KokkosBatched_Gemv_Decl.hpp"
+ #include "KokkosBatched_Gemv_Team_Impl.hpp"
+ #include "KokkosBatched_Gemv_Serial_Impl.hpp"
 #endif
 
 
@@ -317,7 +324,7 @@ struct LowerTriLvlSchedTP2SolverFunctor
   }
 };
 
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 // -----------------------------------------------------------
 // Helper functors for Lower-triangular solve with SpMV 
 template <class LHSType, class NGBLType>
@@ -1116,7 +1123,7 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using namespace KokkosSparse::Experimental;
   using memory_space        = typename execution_space::memory_space;
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
@@ -1196,7 +1203,7 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type( (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size, vector_size ), tstf);
       } // end elseif
       */
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
       else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG) {
@@ -1360,7 +1367,7 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using namespace KokkosSparse::Experimental;
   using memory_space        = typename execution_space::memory_space;
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
@@ -1441,7 +1448,7 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type( (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size, vector_size ), tstf);
       } // end elseif
       */
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
       else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG) {

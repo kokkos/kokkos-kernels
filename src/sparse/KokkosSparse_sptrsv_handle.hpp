@@ -44,15 +44,22 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
-#include <KokkosSparse_CrsMatrix.hpp>
-#endif
-
 #include <iostream>
 #include <string>
 
 #ifndef _SPTRSVHANDLE_HPP
 #define _SPTRSVHANDLE_HPP
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
+   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
+
+ // Enable supernodal sptrsv
+ #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+ #include <KokkosSparse_CrsMatrix.hpp>
+
+#endif
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -101,7 +108,7 @@ public:
   typedef typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
   typedef Kokkos::View< signed_integral_t*, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type, typename nnz_row_view_t::memory_traits > signed_nnz_lno_view_t;
 
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   typedef typename execution_space::memory_space  supercols_memory_space;
 
   typedef Kokkos::DefaultHostExecutionSpace                      supercols_host_execution_space;
@@ -143,7 +150,7 @@ private:
   int team_size;
   int vector_size;
 
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   // stored either in CSR or CSC
   bool col_major;
 
@@ -220,7 +227,7 @@ public:
     algm(choice),
     team_size(-1),
     vector_size(-1)
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     , merge_supernodes (false)
     , invert_offdiagonal (false)
     , etree (nullptr)
@@ -231,7 +238,7 @@ public:
     , verbose (false)
 #endif
   {
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     if (lower_tri) {
       // lower-triangular is stored in CSC
       col_major = true;
@@ -350,7 +357,7 @@ public:
   void set_vector_size(const int vs) {this->vector_size = vs;}
   int get_vector_size() const {return this->vector_size;}
 
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
   void set_supernodes (signed_integral_t nsuper_, int *supercols_, int *etree_) {
     integer_view_host_t supercols_view = integer_view_host_t (supercols_, 1+nsuper_);

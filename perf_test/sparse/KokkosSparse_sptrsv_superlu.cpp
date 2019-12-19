@@ -62,9 +62,13 @@
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
-#if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION )) && defined(KOKKOSKERNELS_INST_DOUBLE)
+#if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )         && \
+  (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
+    defined(KOKKOSKERNELS_INST_DOUBLE)
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
+    defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "slu_ddefs.h"
 #include "slu_zdefs.h"
 // auxiliary functions from perf_test (e.g., pivoting, printing)
@@ -518,9 +522,9 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
           // Preaparing for the first solve
           //> create the known solution and set to all 1's ** on host **
           host_scalar_view_t sol_host ("sol_host", nrows);
-          Kokkos::deep_copy (sol_host, ONE);
-          //Kokkos::Random_XorShift64_Pool<host_execution_space> random(13718);
-          //Kokkos::fill_random(sol_host, random, scalar_type(1));
+          //Kokkos::deep_copy (sol_host, ONE);
+          Kokkos::Random_XorShift64_Pool<host_execution_space> random(13718);
+          Kokkos::fill_random(sol_host, random, scalar_type(1));
 
           // > create the rhs ** on host **
           // A*sol generates rhs: rhs is dense, use spmv

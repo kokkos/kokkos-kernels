@@ -48,8 +48,19 @@
 #include "KokkosSparse_spadd_handle.hpp"
 #include "KokkosSparse_sptrsv_handle.hpp"
 #include "KokkosSparse_spiluk_handle.hpp"
+
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
+   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
+
+ // Enable supernodal sptrsv
+ #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+
+#endif
 
 namespace KokkosKernels{
 
@@ -209,7 +220,7 @@ public:
   typedef
     typename KokkosSparse::Experimental::SPTRSVHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPTRSVHandleType;
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   typedef
     typename SPTRSVHandleType::integer_view_host_t integer_view_host_t;
 #endif
@@ -565,7 +576,7 @@ public:
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);
 
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     // default SpMV option
     if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
         algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
@@ -574,7 +585,7 @@ public:
 #endif
   }
 
-#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   void set_sptrsv_verbose (bool verbose) {
     this->sptrsvHandle->set_verbose (verbose);
   }

@@ -60,9 +60,13 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
-#if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION )) && defined(KOKKOSKERNELS_INST_DOUBLE)
+#if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )         && \
+  (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
+    defined(KOKKOSKERNELS_INST_DOUBLE)
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD) && defined(KOKKOSKERNELS_ENABLE_SUPERNODAL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD) && \
+    defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "cholmod.h"
 // auxiliary functions in perf_test (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
