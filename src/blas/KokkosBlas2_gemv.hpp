@@ -139,7 +139,16 @@ gemv (const char trans[],
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
   typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
-  impl_type::gemv (trans, alpha, A, x, beta, y);
+
+  if ((trans[0] == 'T' || trans[0] == 't') && A.extent(0) == 0) {
+    const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
+    typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
+    fallback_impl_type::gemv (trans, alpha, A, x, beta, y);
+  }
+  else {
+    impl_type::gemv (trans, alpha, A, x, beta, y);
+  }
+
 }
 
 } // namespace KokkosBlas
