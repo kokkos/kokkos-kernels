@@ -86,9 +86,7 @@ namespace Test {
                       int M, int N, typename ViewTypeA::value_type alpha) {
 
     using execution_space = typename ViewTypeA::device_type::execution_space;
-    using memory_space    = typename ViewTypeA::device_type::memory_space;
     using ScalarA         = typename ViewTypeA::value_type;
-    using ScalarB         = typename ViewTypeB::value_type;
     using APT             = Kokkos::Details::ArithTraits<ScalarA>;
     using mag_type        = typename APT::mag_type;
     
