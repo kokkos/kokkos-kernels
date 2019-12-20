@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include "KokkosBlas1_nrm2.hpp"
+
 #ifndef KOKKOSSPARSE_SPTRSV_AUX
 #define KOKKOSSPARSE_SPTRSV_AUX
 
@@ -92,14 +94,6 @@ bool check_errors(mag_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol
   mag_t ZERO = mag_t(0);
   scalar_t ONE = scalar_t(1);
 
-  // normB
-  mag_t normB = ZERO;
-  Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, rhs.extent(0)), 
-    KOKKOS_LAMBDA ( const lno_t i, mag_t &tsum ) {
-      tsum += STS::abs (rhs(i)) * STS::abs (rhs(i));
-    }, normB);
-  normB = sqrt(normB);
-
   // normA
   mag_t normA = ZERO;
   Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, Mtx.nnz()), 
@@ -108,22 +102,15 @@ bool check_errors(mag_t tol, crsmat_t &Mtx, scalar_view_t rhs, scalar_view_t sol
     }, normA);
   normA = sqrt(normA);
 
+  // normB
+  mag_t normB = KokkosBlas::nrm2 (rhs);
+
   // normX
-  mag_t normX = ZERO;
-  Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, sol.extent(0)), 
-    KOKKOS_LAMBDA ( const lno_t i, mag_t &tsum ) {
-      tsum += STS::abs (sol(i)) * STS::abs (sol(i));
-    }, normX);
-  normX = sqrt(normX);
+  mag_t normX = KokkosBlas::nrm2 (sol);
 
   // normR = ||B - AX||
-  mag_t normR = ZERO;
   KokkosSparse::spmv( "N", -ONE, Mtx, sol, ONE, rhs);
-  Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space>(0, sol.extent(0)), 
-    KOKKOS_LAMBDA ( const lno_t i, mag_t &tsum ) {
-      tsum += STS::abs (rhs(i)) * STS::abs (rhs(i));
-    }, normR);
-  normR = sqrt(normR);
+  mag_t normR = KokkosBlas::nrm2 (rhs);
 
   std::cout << " > check : ||B - AX||/(||B|| + ||A||*||X||) = "
             << normR << "/(" << normB << " + " << normA << " * " << normX << ") = "
@@ -180,7 +167,8 @@ crsmat_t remove_zeros_crsmat(crsmat_t &A) {
   using row_map_view_host_t = typename row_map_view_t::HostMirror;
   using cols_view_host_t    = typename cols_view_t::HostMirror;
   using values_view_host_t  = typename values_view_t::HostMirror;
-  using scalar_t = typename values_view_t::value_type;
+  using scalar_t  = typename values_view_t::value_type;
+  using size_type = typename crsmat_t::size_type;
 
   using STS = Kokkos::Details::ArithTraits<scalar_t>;
   using range_type = Kokkos::pair<int, int>;
@@ -200,10 +188,10 @@ crsmat_t remove_zeros_crsmat(crsmat_t &A) {
   Kokkos::deep_copy (hv, values);
 
   // compress
-  int nnzA0 = hr (n);
-  int nnzA = 0;
+  size_type nnzA0 = hr (n);
+  size_type nnzA = 0;
   for (int i = 0; i < n; i++) {
-    int nnz = nnzA;
+    size_type nnz = nnzA;
     for (int k = hr (i); k < hr (i+1); k++) {
       if (hv(k) != STS::zero ()) {
         hv (nnzA) = hv (k);
@@ -238,6 +226,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) 
   using values_view_t = typename crsmat_t::values_type::non_const_type;
   using scalar_t      = typename values_view_t::value_type;
+  using size_type     = typename crsmat_t::size_type;
 
   using host_values_view_t = typename host_crsmat_t::values_type::non_const_type;
   using host_scalar_t      = typename host_values_view_t::value_type;
@@ -277,7 +266,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   // ==============================================
   // Preparing for L-solve
   // step 1: create a descriptor
-  int nnzL = L.nnz ();
+  size_type nnzL = L.nnz ();
   auto graphL = L.graph; // in_graph
   auto row_mapL = graphL.row_map;
   auto entriesL = graphL.entries;
@@ -391,7 +380,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
 
   // ==============================================
   // Preparing for U-solve
-  int nnzU = U.nnz();
+  size_type nnzU = U.nnz();
   auto graphU = U.graph; // in_graph
   auto row_mapU = graphU.row_map;
   auto entriesU = graphU.entries;
