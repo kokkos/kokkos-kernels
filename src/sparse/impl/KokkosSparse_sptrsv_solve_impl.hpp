@@ -59,8 +59,7 @@
 //#define TRISOLVE_TIMERS
 //#define SERIAL_FOR_LOOP
 
-#define TRILVLSCHED
-#define CUDAGRAPHTEST
+#define KOKKOSKERNELS_SPTRSV_TRILVLSCHED
 
 //#define KOKKOSPSTRSV_SOLVE_IMPL_PROFILE 1
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSPSTRSV_SOLVE_IMPL_PROFILE)
@@ -1756,7 +1755,7 @@ struct TriLvlSchedTP1SingleBlockFunctorDiagValues
 };
 
 
-#if defined(CUDAGRAPHTEST) && defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
 template <class SpaceType>
 struct ReturnTeamPolicyType;
 
@@ -1874,6 +1873,9 @@ struct ReturnRangePolicyType<Kokkos::Cuda> {
 template < class TriSolveHandle, class RowMapType, class EntriesType, class ValuesType, class RHSType, class LHSType >
 void lower_tri_solve_cg( TriSolveHandle & thandle, const RowMapType row_map, const EntriesType entries, const ValuesType values, const RHSType & rhs, LHSType &lhs) {
 
+    typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
+    typedef typename TriSolveHandle::execution_space execution_space;
+    typedef typename TriSolveHandle::size_type size_type;
     typename TriSolveHandle::SPTRSVcudaGraphWrapperType* lcl_cudagraph = thandle.get_sptrsvCudaGraph();
 
     auto nlevels = thandle.get_num_levels();
@@ -1882,14 +1884,11 @@ void lower_tri_solve_cg( TriSolveHandle & thandle, const RowMapType row_map, con
     Kokkos::Cuda cuda1(stream1);
     auto graph = lcl_cudagraph->cudagraph;
 
-    Kokkos::parallel_for("Init", 1, EmptyFunctor());
+    Kokkos::parallel_for("Init", Kokkos::RangePolicy<execution_space>(0,1), EmptyFunctor());
     Kokkos::Cuda().fence();
     cudaStreamSynchronize(stream1);
     //Kokkos::fence();
 
-    typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
-    typedef typename TriSolveHandle::execution_space execution_space;
-    typedef typename TriSolveHandle::size_type size_type;
     auto hnodes_per_level = thandle.get_host_nodes_per_level();
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
@@ -1931,6 +1930,9 @@ void lower_tri_solve_cg( TriSolveHandle & thandle, const RowMapType row_map, con
 template < class TriSolveHandle, class RowMapType, class EntriesType, class ValuesType, class RHSType, class LHSType >
 void upper_tri_solve_cg( TriSolveHandle & thandle, const RowMapType row_map, const EntriesType entries, const ValuesType values, const RHSType & rhs, LHSType &lhs) {
 
+    typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
+    typedef typename TriSolveHandle::execution_space execution_space;
+    typedef typename TriSolveHandle::size_type size_type;
     typename TriSolveHandle::SPTRSVcudaGraphWrapperType* lcl_cudagraph = thandle.get_sptrsvCudaGraph();
 
     auto nlevels = thandle.get_num_levels();
@@ -1939,13 +1941,10 @@ void upper_tri_solve_cg( TriSolveHandle & thandle, const RowMapType row_map, con
     Kokkos::Cuda cuda1(stream1);
     auto graph = lcl_cudagraph->cudagraph;
 
-    Kokkos::parallel_for("Init", 1, EmptyFunctor());
+    Kokkos::parallel_for("Init", Kokkos::RangePolicy<execution_space>(0,1), EmptyFunctor());
     Kokkos::Cuda().fence();
     cudaStreamSynchronize(stream1);
 
-    typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
-    typedef typename TriSolveHandle::execution_space execution_space;
-    typedef typename TriSolveHandle::size_type size_type;
     auto hnodes_per_level = thandle.get_host_nodes_per_level();
     auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
 
@@ -2022,7 +2021,7 @@ cudaProfilerStart();
         typedef Kokkos::TeamPolicy<execution_space> policy_type;
         int team_size = thandle.get_team_size();
 
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
         TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, true, node_count);
 #else
         LowerTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
@@ -2052,7 +2051,7 @@ cudaProfilerStart();
         //const int node_groups = team_size;
         const int node_groups = vector_size;
 
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
         TriLvlSchedTP2SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, true, node_count, vector_size, 0);
 #else
         LowerTriLvlSchedTP2SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, node_groups);
@@ -2114,7 +2113,7 @@ cudaProfilerStart();
 
         int team_size = thandle.get_team_size();
 
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
         TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, false, node_count);
 #else
         UpperTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
@@ -2144,7 +2143,7 @@ cudaProfilerStart();
         //const int node_groups = team_size;
         const int node_groups = vector_size;
 
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
         TriLvlSchedTP2SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, false, node_count, vector_size, 0);
 #else
         UpperTriLvlSchedTP2SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count, node_groups);
@@ -2230,7 +2229,7 @@ cudaProfilerStop();
       if ( echain - schain == 1 ) {
 
         // if team_size is -1 (unset), get recommended size from Kokkos
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
         TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, true, node_count);
 #else
         LowerTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
@@ -2256,7 +2255,7 @@ cudaProfilerStop();
         }
 
         if (cutoff <= team_size_singleblock) {
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
           TriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain, true);
 #else
           LowerTriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain);
@@ -2265,7 +2264,7 @@ cudaProfilerStop();
         }
         else {
           // team_size_singleblock < cutoff => kernel must allow for a block-stride internally
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
           TriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain, true, 0, cutoff);
 #else
           LowerTriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain, cutoff);
@@ -2287,7 +2286,7 @@ cudaProfilerStop();
       if ( echain - schain == 1 ) {
 
         // if team_size is -1 (unset), get recommended size from Kokkos
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
         TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, is_lowertri, node_count);
 #else
         UpperTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, node_count);
@@ -2315,7 +2314,7 @@ cudaProfilerStop();
         }
 
         if (cutoff <= team_size_singleblock) {
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
           TriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain, is_lowertri);
 #else
           UpperTriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain);
@@ -2324,7 +2323,7 @@ cudaProfilerStop();
         }
         else {
           // team_size_singleblock < cutoff => kernel must allow for a block-stride internally
-#ifdef TRILVLSCHED
+#ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
           TriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain, is_lowertri, 0, cutoff);
 #else
           UpperTriLvlSchedTP1SingleBlockFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level, nodes_per_level, node_count, schain, echain, cutoff);

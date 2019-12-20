@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef _KOKKOSSPGEMMCUSPARSE_HPP
-#define _KOKKOSSPGEMMCUSPARSE_HPP
+#ifndef _KOKKOSSPTRSVCUSPARSE_HPP
+#define _KOKKOSSPTRSVCUSPARSE_HPP
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
@@ -289,9 +289,6 @@ namespace Impl{
 #endif
 
   }
-
-
-
 
 }
 }

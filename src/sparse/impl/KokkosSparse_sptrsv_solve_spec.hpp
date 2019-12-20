@@ -55,8 +55,6 @@
 #include <KokkosSparse_sptrsv_symbolic_impl.hpp>
 #endif
 
-#define CUDAGRAPHTEST
-
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
@@ -157,6 +155,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
                 XType x)
   {
     // Call specific algorithm type
+    using ExecSpace = typename RowMapType::memory_space::execution_space;
     auto sptrsv_handle = handle->get_sptrsv_handle();
 
     if ( sptrsv_handle->is_lower_tri() ) {
@@ -167,12 +166,12 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
         Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, true);
       }
       else {
-#if defined(CUDAGRAPHTEST) && defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
-        Experimental::lower_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
-#else
-        //Experimental::lower_tri_solve_ncg( *sptrsv_handle, row_map, entries, values, b, x);
-        Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+        if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
+          Experimental::lower_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
+        else
 #endif
+          Experimental::lower_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
       }
     }
     else {
@@ -183,11 +182,12 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
         Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, false);
       }
       else {
-#if defined(CUDAGRAPHTEST) && defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
-        Experimental::upper_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
-#else
-        Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+        if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
+          Experimental::upper_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
+        else
 #endif
+          Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
       }
     }
   }
