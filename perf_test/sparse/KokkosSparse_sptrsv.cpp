@@ -64,6 +64,22 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
+  typedef int default_lno_t;
+#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
+  typedef int64_t default_lno_t;
+#else
+  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
+#endif
+  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
+#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
+  typedef int default_size_type;
+#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
+  typedef size_t default_size_type;
+#else
+  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
+#endif
+
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -78,8 +94,8 @@ template<typename Scalar>
 int test_sptrsv_perf(std::vector<int> tests, std::string& lfilename, std::string& ufilename, int team_size, int vector_length, int idx_offset, int loop) {
 
   typedef Scalar scalar_t;
-  typedef int lno_t;
-  typedef int size_type;
+  typedef default_lno_t lno_t;
+  typedef default_size_type size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef typename execution_space::memory_space memory_space;
 
