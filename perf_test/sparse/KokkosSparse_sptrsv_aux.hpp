@@ -44,6 +44,10 @@
 #ifndef KOKKOSSPARSE_SPTRSV_AUX
 #define KOKKOSSPARSE_SPTRSV_AUX
 
+namespace KokkosSparse {
+namespace PerfTest {
+namespace Experimental {
+
 /* ========================================================================================= */
 template<typename scalar_t>
 void forwardP_supernode(int n, int *perm_r, int nrhs, scalar_t *B, int ldb, scalar_t *X, int ldx) {
@@ -623,4 +627,7 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
 #endif
 }
 
+} // namespace Experiment
+} // namespace PerfTest
+} // namespace KokkosKernels
 #endif

@@ -71,10 +71,11 @@
 // auxiliary functions in perf_test (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
 
-using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
+using namespace KokkosSparse;
+using namespace KokkosSparse::Experimental;
+using namespace KokkosSparse::PerfTest::Experimental;
 
 enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 

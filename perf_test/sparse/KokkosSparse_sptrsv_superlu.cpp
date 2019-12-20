@@ -80,10 +80,11 @@
 #include "metis.h"
 #endif
 
-using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
+using namespace KokkosSparse;
+using namespace KokkosSparse::Experimental;
+using namespace KokkosSparse::PerfTest::Experimental;
 
 enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_SPMV, SUPERNODAL_SPMV_DAG};
 
