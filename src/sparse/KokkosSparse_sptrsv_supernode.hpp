@@ -734,7 +734,7 @@ read_merged_supernodes(int nsuper, const int *nb,
   scalar_view_host_t dwork ("dwork", n);
   Kokkos::deep_copy (dwork, zero);
 
-  int nnzA = hr (n);
+  auto nnzA = hr (n);
   values_view_t values_view ("values_view", nnzA);
   auto hv = Kokkos::create_mirror_view (values_view);
 
@@ -755,7 +755,7 @@ read_merged_supernodes(int nsuper, const int *nb,
     int nsrow = hr(j1+1) - hr(j1);
     int nscol = nb[s2+1]-nb[s2];
     if (invert_diag) {
-      int nnzD = hr (j1);
+      auto nnzD = hr (j1);
       char uplo_char = (lower ? 'L' : 'U');
       char diag_char = (unit_diag ? 'U' : 'N');
 
@@ -1279,8 +1279,8 @@ graph_t deep_copy_graph (host_graph_t &host_graph) {
   // load graph on host
   auto row_map = host_graph.row_map;
   auto entries = host_graph.entries;
-  int nrows = host_graph.numRows ();
-  int nnz = row_map (nrows);
+  auto nrows = host_graph.numRows ();
+  auto nnz = row_map (nrows);
 
   // create graph on device
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;

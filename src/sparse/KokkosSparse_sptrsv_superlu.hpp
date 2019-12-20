@@ -162,7 +162,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
   }
 
   /* Upper-triangular matrix */
-  int nnzA = hr (n);
+  auto nnzA = hr (n);
   cols_view_t column_view ("colmap_view", nnzA);
   host_cols_view_t hc = Kokkos::create_mirror_view (column_view);
 
@@ -313,7 +313,7 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
   }
 
   /* Upper-triangular matrix */
-  int nnzA = hr (n);
+  auto nnzA = hr (n);
   cols_view_t column_view ("colmap_view", nnzA);
   host_cols_view_t hc = Kokkos::create_mirror_view (column_view);
 
@@ -455,7 +455,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   Kokkos::deep_copy (hr, rowmap_view);
 
   /* Upper-triangular matrix */
-  int nnzA = hr (n);
+  auto nnzA = hr (n);
   values_view_t  values_view ("values_view", nnzA);
   auto hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hv, zero);
@@ -595,7 +595,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   Kokkos::deep_copy (hr, rowmap_view);
 
   /* Upper-triangular matrix */
-  int nnzA = hr (n);
+  auto nnzA = hr (n);
   values_view_t values_view ("values_view", nnzA);
   auto hv = Kokkos::create_mirror_view (values_view);
   Kokkos::deep_copy (hv, zero); // seems to be needed in complex (instead of zeroing out lower-tri as below)
@@ -624,7 +624,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
                         reinterpret_cast <lapack_complex_double*> (&Lx[psx]), nsrow);
       }
     }
-    int nnzD = hr(j1);
+    auto nnzD = hr(j1);
     for (int j = 0; j < nscol; j++) {
       for (int i = 0; i <= j; i++) {
         hv(hr(j1 + j) + i) = Lx[psx + i + j*nsrow];
