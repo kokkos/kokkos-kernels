@@ -41,6 +41,8 @@ MACRO(kokkoskernels_create_imported_tpl NAME)
     SET(TPL_IMPORTED_NAME KokkosKernels::${NAME})
   ENDIF()
 
+  SET(TPL_${NAME}_IMPORTED_NAME ${TPL_IMPORTED_NAME})
+
   IF (KOKKOSKERNELS_HAS_TRILINOS)
     #TODO: we need to set a bunch of cache variables here
   ELSEIF (TPL_INTERFACE)
@@ -111,21 +113,21 @@ MACRO(kokkoskernels_find_header VAR_NAME HEADER TPL_NAME)
    "PATHS"
    ${ARGN})
 
-  SET(${HEADER}_FOUND FALSE)
+  SET(${VAR_NAME} "${HEADER}-NOTFOUND")
   SET(HAVE_CUSTOM_PATHS FALSE)
-  IF(NOT ${HEADER}_FOUND AND DEFINED ${TPL_NAME}_ROOT)
+  IF(NOT ${VAR_NAME} AND ${TPL_NAME}_ROOT)
     #ONLY look in the root directory
     FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${${TPL_NAME}_ROOT}/include NO_DEFAULT_PATH)
     SET(HAVE_CUSTOM_PATHS TRUE)
   ENDIF()
 
-  IF(NOT ${HEADER}_FOUND AND KOKKOSKERNELS_${TPL_NAME}_ROOT)
+  IF(NOT ${VAR_NAME} AND KOKKOSKERNELS_${TPL_NAME}_ROOT)
     #ONLY look in the root directory
     FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${KOKKOSKERNELS_${TPL_NAME}_ROOT}/include NO_DEFAULT_PATH)
     SET(HAVE_CUSTOM_PATHS TRUE)
   ENDIF()
 
-  IF (NOT ${HEADER}_FOUND AND TPL_PATHS)
+  IF (NOT ${VAR_NAME} AND TPL_PATHS)
     #we got custom paths
     #ONLY look in these paths and nowhere else
     FIND_PATH(${VAR_NAME} ${HEADER} PATHS ${TPL_PATHS} NO_DEFAULT_PATH)
@@ -134,44 +136,49 @@ MACRO(kokkoskernels_find_header VAR_NAME HEADER TPL_NAME)
 
   IF (NOT HAVE_CUSTOM_PATHS OR TPL_ALLOW_SYSTEM_PATH_FALLBACK)
     #Now go ahead and look in system paths
-    IF (NOT ${HEADER}_FOUND)
+    IF (NOT ${VAR_NAME})
       FIND_PATH(${VAR_NAME} ${HEADER})
     ENDIF()
   ENDIF()
 ENDMACRO()
 
-MACRO(kokkoskernels_find_library VAR_NAME LIB TPL_NAME)
+MACRO(kokkoskernels_find_library VAR_NAME TPL_NAME)
   CMAKE_PARSE_ARGUMENTS(TPL
    "ALLOW_SYSTEM_PATH_FALLBACK"
    ""
-   "PATHS"
+   "PATHS;LIBRARY_NAMES"
    ${ARGN})
 
-  SET(${LIB}_FOUND FALSE)
+  SET(${VAR_NAME} "${TPL_NAME}-NOTFOUND")
   SET(HAVE_CUSTOM_PATHS FALSE)
-  IF(NOT ${LIB}_FOUND AND DEFINED ${TPL_NAME}_ROOT)
-    FIND_LIBRARY(${VAR_NAME} ${LIB} PATHS ${${TPL_NAME}_ROOT}/lib ${${TPL_NAME}_ROOT}/lib64 NO_DEFAULT_PATH)
+  IF(NOT ${VAR_NAME} AND ${TPL_NAME}_ROOT)
+    FIND_LIBRARY(${VAR_NAME}
+      NAMES ${TPL_LIBRARY_NAMES}
+      PATHS ${${TPL_NAME}_ROOT}/lib ${${TPL_NAME}_ROOT}/lib64 NO_DEFAULT_PATH)
     SET(HAVE_CUSTOM_PATHS TRUE)
   ENDIF()
 
-  IF(NOT ${LIB}_FOUND AND KOKKOSKERNELS_${TPL_NAME}_ROOT)
+  IF(NOT ${VAR_NAME} AND KOKKOSKERNELS_${TPL_NAME}_ROOT)
     #we got root paths, only look in these paths and nowhere else
-    FIND_LIBRARY(${VAR_NAME} ${LIB} 
+    FIND_LIBRARY(${VAR_NAME}
+      NAMES ${TPL_LIBRARY_NAMES}
       PATHS ${KOKKOSKERNELS_${TPL_NAME}_ROOT}/lib ${KOKKOSKERNELS_${TPL_NAME}_ROOT}/lib64 NO_DEFAULT_PATH)
     SET(HAVE_CUSTOM_PATHS TRUE)
   ENDIF()
 
-  IF (NOT ${LIB}_FOUND AND TPL_PATHS)
+  IF (NOT ${VAR_NAME} AND TPL_PATHS)
     #we got custom paths, only look in these paths and nowhere else
-    FIND_LIBRARY(${VAR_NAME} ${LIB} PATHS ${TPL_PATHS} NO_DEFAULT_PATH)
+    FIND_LIBRARY(${VAR_NAME}
+      NAMES ${TPL_LIBRARY_NAMES}
+      PATHS ${TPL_PATHS} NO_DEFAULT_PATH)
     SET(HAVE_CUSTOM_PATHS TRUE)
   ENDIF()
 
 
   IF (NOT HAVE_CUSTOM_PATHS OR TPL_ALLOW_SYSTEM_PATH_FALLBACK)
-    IF (NOT ${LIB}_FOUND)
+    IF (NOT ${VAR_NAME})
       #Now go ahead and look in system paths
-      FIND_LIBRARY(${VAR_NAME} ${LIB})
+      FIND_LIBRARY(${VAR_NAME} NAMES ${TPL_LIBRARY_NAMES})
     ENDIF()
   ENDIF()
 
@@ -180,9 +187,11 @@ ENDMACRO()
 MACRO(kokkoskernels_find_imported NAME)
   CMAKE_PARSE_ARGUMENTS(TPL
    "INTERFACE;ALLOW_SYSTEM_PATH_FALLBACK"
-   "HEADER;LIBRARY;IMPORTED_NAME"
-   "HEADERS;LIBRARIES;HEADER_PATHS;LIBRARY_PATHS"
+   "HEADER;IMPORTED_NAME"
+   "LIBRARY;HEADERS;LIBRARIES;HEADER_PATHS;LIBRARY_PATHS"
    ${ARGN})
+  #LIBRARY can be a list of possible library names
+  #matching the NAMES keyword to CMake find_library
 
   IF(NOT TPL_MODULE_NAME)
     SET(TPL_MODULE_NAME TPL${NAME})
@@ -212,10 +221,13 @@ MACRO(kokkoskernels_find_imported NAME)
 
   SET(${NAME}_LIBRARY)
   IF(TPL_LIBRARY)
-    KOKKOSKERNELS_FIND_LIBRARY(${NAME}_LIBRARY ${TPL_LIBRARY} ${NAME} ${ALLOW_PATH_FALLBACK_OPT} PATHS ${TPL_LIBRARY_PATHS})
+    KOKKOSKERNELS_FIND_LIBRARY(${NAME}_LIBRARY ${NAME} ${ALLOW_PATH_FALLBACK_OPT}
+      LIBRARY_NAMES ${TPL_LIBRARY}
+      PATHS ${TPL_LIBRARY_PATHS})
   ENDIF()
 
   SET(${NAME}_FOUND_LIBRARIES)
+  #We must find every library in this list
   FOREACH(LIB ${TPL_LIBRARIES})
     #we want the actual name, not the name -lblas, etc
     SET(LIB_CLEAN ${LIB})
@@ -224,7 +236,9 @@ MACRO(kokkoskernels_find_imported NAME)
       STRING(SUBSTRING ${LIB} 2 -1 LIB_CLEAN)
     ENDIF()
 
-    KOKKOSKERNELS_FIND_LIBRARY(${LIB}_LOCATION ${LIB_CLEAN} ${NAME} ${ALLOW_PATH_FALLBACK_OPT} PATHS ${TPL_LIBRARY_PATHS})
+    KOKKOSKERNELS_FIND_LIBRARY(${LIB}_LOCATION ${NAME} ${ALLOW_PATH_FALLBACK_OPT}
+      LIBRARY_NAMES ${LIB_CLEAN}
+      PATHS ${TPL_LIBRARY_PATHS})
     IF(${LIB}_LOCATION)
       LIST(APPEND ${NAME}_FOUND_LIBRARIES ${${LIB}_LOCATION})
     ELSE()
@@ -239,6 +253,9 @@ MACRO(kokkoskernels_find_imported NAME)
     LIST(APPEND TPL_VARS_NEEDED ${NAME}_LIBRARY)
   ENDIF()
   IF(TPL_HEADER)
+    LIST(APPEND TPL_VARS_NEEDED ${NAME}_INCLUDE_DIRS)
+  ENDIF()
+  IF(TPL_HEADERS)
     LIST(APPEND TPL_VARS_NEEDED ${NAME}_INCLUDE_DIRS)
   ENDIF()
   IF(TPL_LIBRARIES)
@@ -258,6 +275,8 @@ MACRO(kokkoskernels_find_imported NAME)
       LIBRARY  "${${NAME}_LIBRARY}"
       LINK_LIBRARIES "${${NAME}_FOUND_LIBRARIES}")
   ENDIF()
+  #This is a macro, clear variables we don't to escape
+  SET(TPL_MODULE_NAME)
 ENDMACRO()
 
 MACRO(kokkoskernels_export_imported_tpl NAME)
@@ -323,17 +342,13 @@ ENDMACRO()
 MACRO(kokkoskernels_import_tpl NAME)
   SET(${NAME}_LIBRARIES "" CACHE STRING "Optional override for the libraries that comprise TPL ${NAME}. Default: None. Default common library names will be searched")
   SET(${NAME}_LIBRARY_DIRS "" CACHE STRING "Optional override for the library directories that comprise TPL ${NAME}. Default: None. Default common library locations will be searched")
+  SET(${NAME}_INCLUDE_DIRS "" CACHE STRING "Optional override for the header directories that comprise TPL ${NAME}. Default: None. Default common header locations will be searched")
 
   CMAKE_PARSE_ARGUMENTS(TPL
-   "NO_EXPORT;INTERFACE"
+   "NO_EXPORT"
    ""
    ""
    ${ARGN})
-  IF (TPL_INTERFACE)
-    SET(TPL_IMPORTED_NAME ${NAME})
-  ELSE()
-    SET(TPL_IMPORTED_NAME KokkosKernels::${NAME})
-  ENDIF()
 
   # Even though this policy gets set in the top-level CMakeLists.txt,
   # I have still been getting errors about ROOT variables being ignored
@@ -346,11 +361,15 @@ MACRO(kokkoskernels_import_tpl NAME)
   IF (KOKKOSKERNELS_ENABLE_TPL_${NAME})
     #Tack on a TPL here to make sure we avoid using anyone else's find
     FIND_PACKAGE(TPL${NAME} REQUIRED MODULE)
-    IF(NOT TARGET ${TPL_IMPORTED_NAME})
-      MESSAGE(FATAL_ERROR "Find module succeeded for ${NAME}, but did not produce valid target ${TPL_IMPORTED_NAME}")
+    IF (NOT TPL_${NAME}_IMPORTED_NAME)
+      MESSAGE(FATAL_ERROR "Find module did not produce valid IMPORTED_NAME for ${NAME}")
+    ENDIF()
+
+    IF(NOT TARGET ${TPL_${NAME}_IMPORTED_NAME})
+      MESSAGE(FATAL_ERROR "Find module succeeded for ${NAME}, but did not produce valid target ${TPL_${NAME}_IMPORTED_NAME}")
     ENDIF()
     IF(NOT TPL_NO_EXPORT)
-      KOKKOSKERNELS_EXPORT_IMPORTED_TPL(${NAME} IMPORTED_NAME ${TPL_IMPORTED_NAME})
+      KOKKOSKERNELS_EXPORT_IMPORTED_TPL(${NAME} IMPORTED_NAME ${TPL_${NAME}_IMPORTED_NAME})
     ENDIF()
   ENDIF()
 ENDMACRO(kokkoskernels_import_tpl)
@@ -399,6 +418,8 @@ KOKKOSKERNELS_ADD_TPL_OPTION(LAPACK ${KokkosKernels_ENABLE_TPL_BLAS} "Whether to
   DEFAULT_DOCSTRING "ON if BLAS is enabled, otherwise OFF")
 KOKKOSKERNELS_ADD_TPL_OPTION(MKL  OFF "Whether to enable MKL")
 KOKKOSKERNELS_ADD_TPL_OPTION(MAGMA    OFF "Whether to enable MAGMA")
+KOKKOSKERNELS_ADD_TPL_OPTION(CBLAS OFF "Whether to enable CBLAS")
+KOKKOSKERNELS_ADD_TPL_OPTION(LAPACKE OFF "Whether to enable LAPACKE")
 
 # Set F77_BLAS_MANGLE macro based on Fortran-C interface (unless already set
 # by Trilinos or user)
@@ -444,13 +465,20 @@ IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
   LIST(APPEND TPL_LIST "MAGMA")
 ENDIF()
 
+KOKKOSKERNELS_ADD_TPL_OPTION(CHOLMOD OFF  "Whether to enable CHOLMOD")
+KOKKOSKERNELS_ADD_TPL_OPTION(SUPERLU OFF  "Whether to enable SUPERLU")
+
 # We need to do all the import work
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
-  KOKKOSKERNELS_IMPORT_TPL(BLAS INTERFACE)
-  KOKKOSKERNELS_IMPORT_TPL(LAPACK INTERFACE)
-  KOKKOSKERNELS_IMPORT_TPL(MKL INTERFACE)
-  KOKKOSKERNELS_IMPORT_TPL(CUBLAS INTERFACE)
+  KOKKOSKERNELS_IMPORT_TPL(BLAS)
+  KOKKOSKERNELS_IMPORT_TPL(LAPACK)
+  KOKKOSKERNELS_IMPORT_TPL(MKL)
+  KOKKOSKERNELS_IMPORT_TPL(CUBLAS)
   KOKKOSKERNELS_IMPORT_TPL(CUSPARSE)
+  KOKKOSKERNELS_IMPORT_TPL(CBLAS)
+  KOKKOSKERNELS_IMPORT_TPL(LAPACKE)
+  KOKKOSKERNELS_IMPORT_TPL(CHOLMOD)
+  KOKKOSKERNELS_IMPORT_TPL(SUPERLU)
 ENDIF()
 
 #Convert list to newlines (which CMake doesn't always like in cache variables)
