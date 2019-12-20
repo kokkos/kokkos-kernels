@@ -53,7 +53,7 @@
 #include "cusparse.h"
 #endif
 
-#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && defined(KOKKOSKERNELS_ENABLE_EXP_CUDAGRAPH)
 #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
 #endif
 
@@ -61,7 +61,7 @@ namespace KokkosSparse {
 namespace Experimental {
 
 // TODO TP2 algorithm had issues with some offset-ordinal combo to be addressed when compiled in Trilinos...
-enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1, SEQLVLSCHED_TP2, SEQLVLSCHD_TP1CHAIN, SPTRSV_CUSPARSE };
+enum class SPTRSVAlgorithm { SEQLVLSCHD_RP, SEQLVLSCHD_TP1, /*SEQLVLSCHED_TP2,*/ SEQLVLSCHD_TP1CHAIN, SPTRSV_CUSPARSE };
 
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
@@ -247,7 +247,7 @@ private:
   void set_if_algm_require_symb_lvlsched () {
     if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP
         || algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1
-        || algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2
+        /*|| algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
         || algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN
        )
     {
@@ -536,12 +536,12 @@ public:
 
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
       std::cout << "SEQLVLSCHD_TP1" << std::endl;;
-
+/*
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
       std::cout << "SEQLVLSCHED_TP2" << std::endl;;
       std::cout << "WARNING: With CUDA this is currently only reliable with int-int ordinal-offset pair" << std::endl;
     }
-
+*/
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN )
       std::cout << "SEQLVLSCHD_TP1CHAIN" << std::endl;;
 
@@ -558,10 +558,10 @@ public:
 
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 )
       ret_string = "SEQLVLSCHD_TP1";
-
+/*
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 )
       ret_string = "SEQLVLSCHED_TP2";
-
+*/
     if ( algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN )
       ret_string = "SEQLVLSCHD_TP1CHAIN";
 
@@ -576,7 +576,7 @@ public:
     if(name=="SPTRSV_DEFAULT")                return SPTRSVAlgorithm::SEQLVLSCHD_RP;
     else if(name=="SPTRSV_RANGEPOLICY")       return SPTRSVAlgorithm::SEQLVLSCHD_RP;
     else if(name=="SPTRSV_TEAMPOLICY1")       return SPTRSVAlgorithm::SEQLVLSCHD_TP1;
-    else if(name=="SPTRSV_TEAMPOLICY2")       return SPTRSVAlgorithm::SEQLVLSCHED_TP2;
+    /*else if(name=="SPTRSV_TEAMPOLICY2")       return SPTRSVAlgorithm::SEQLVLSCHED_TP2;*/
     else if(name=="SPTRSV_TEAMPOLICY1CHAIN")  return SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN;
     else if(name=="SPTRSV_CUSPARSE")          return SPTRSVAlgorithm::SPTRSV_CUSPARSE;
     else

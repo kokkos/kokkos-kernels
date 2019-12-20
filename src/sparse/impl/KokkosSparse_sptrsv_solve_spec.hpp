@@ -102,6 +102,10 @@ struct sptrsv_solve_eti_spec_avail {
 namespace KokkosSparse {
 namespace Impl {
 
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && defined(KOKKOSKERNELS_ENABLE_EXP_CUDAGRAPH)
+  #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
+#endif
+
 // Unification layer
 /// \brief Implementation of KokkosSparse::sptrsv_solve
 
@@ -166,7 +170,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
         Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, true);
       }
       else {
-#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+#ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
           Experimental::lower_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
         else
@@ -182,7 +186,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
         Experimental::tri_solve_chain( *sptrsv_handle, row_map, entries, values, b, x, false);
       }
       else {
-#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+#ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
         if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
           Experimental::upper_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
         else

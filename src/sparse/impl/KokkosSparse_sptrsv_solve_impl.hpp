@@ -70,10 +70,8 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-#if defined(KOKKOS_ENABLED_CUDA)
-  #if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && defined(KOKKOSKERNELS_ENABLE_EXP_CUDAGRAPH)
   #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
-  #endif
 #endif
 
 struct UnsortedTag {};
@@ -1755,7 +1753,7 @@ struct TriLvlSchedTP1SingleBlockFunctorDiagValues
 };
 
 
-#if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION
+#ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
 template <class SpaceType>
 struct ReturnTeamPolicyType;
 
@@ -2032,6 +2030,7 @@ cudaProfilerStart();
           Kokkos::parallel_for("parfor_l_team", policy_type( lvl_nodes , team_size ), tstf);
       }
       // TP2 algorithm has issues with some offset-ordinal combo to be addressed
+      /*
       else if ( thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
         typedef Kokkos::TeamPolicy<execution_space> tvt_policy_type;
 
@@ -2058,6 +2057,7 @@ cudaProfilerStart();
 #endif
         Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type( (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size, vector_size ), tstf);
       } // end elseif
+      */
 
       node_count += lvl_nodes;
 
@@ -2124,6 +2124,7 @@ cudaProfilerStart();
           Kokkos::parallel_for("parfor_u_team", policy_type( lvl_nodes , team_size ), tstf);
       }
       // TP2 algorithm has issues with some offset-ordinal combo to be addressed
+      /*
       else if ( thandle.get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
         typedef Kokkos::TeamPolicy<execution_space> tvt_policy_type;
 
@@ -2151,6 +2152,7 @@ cudaProfilerStart();
 
         Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type( (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size, vector_size ), tstf);
       } // end elseif
+      */
 
       node_count += lvl_nodes;
 
