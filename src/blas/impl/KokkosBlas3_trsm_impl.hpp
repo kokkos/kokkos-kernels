@@ -67,8 +67,8 @@ int
 SerialTrsmInternalLeftLowerConj(const bool use_unit_diag,
                                 const int m, const int n,
                                 const ScalarType alpha,
-                                const ValueType *__restrict__ A, const int as0, const int as1,
-                                /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
+                                const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
+                                /**/  ValueType* KOKKOS_RESTRICT B, const int bs0, const int bs1) {
 
   typedef Kokkos::Details::ArithTraits<ValueType> AT;
   
@@ -83,11 +83,11 @@ SerialTrsmInternalLeftLowerConj(const bool use_unit_diag,
       const int iend = m-p-1, jend = n;
         
       const ValueType
-        *__restrict__ a21 = iend ? A+(p+1)*as0+p*as1 : NULL;
+        *KOKKOS_RESTRICT a21 = iend ? A+(p+1)*as0+p*as1 : NULL;
           
       ValueType
-        *__restrict__ b1t =        B+p*bs0,
-        *__restrict__ B2  = iend ? B+(p+1)*bs0 : NULL;
+        *KOKKOS_RESTRICT b1t =        B+p*bs0,
+        *KOKKOS_RESTRICT B2  = iend ? B+(p+1)*bs0 : NULL;
         
       if (!use_unit_diag) {
         const ValueType alpha11 = AT::conj(A[p*as0+p*as1]);
@@ -109,8 +109,8 @@ int
 SerialTrsmInternalLeftUpperConj(const bool use_unit_diag,
                                 const int m, const int n,
                                 const ScalarType alpha,
-                                const ValueType *__restrict__ A, const int as0, const int as1,
-                                /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
+                                const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
+                                /**/  ValueType* KOKKOS_RESTRICT B, const int bs0, const int bs1) {
 
   typedef Kokkos::Details::ArithTraits<ValueType> AT;
 
@@ -121,12 +121,12 @@ SerialTrsmInternalLeftUpperConj(const bool use_unit_diag,
     if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
       
-    ValueType *__restrict__ B0 = B;
+    ValueType *KOKKOS_RESTRICT B0 = B;
     for (int p=(m-1);p>=0;--p) {
       const int iend = p, jend = n;
 
-      const ValueType *__restrict__ a01 = A+p*as1;
-      ValueType *__restrict__ b1t = B+p*bs0;
+      const ValueType* KOKKOS_RESTRICT a01 = A+p*as1;
+      ValueType* KOKKOS_RESTRICT b1t = B+p*bs0;
 
       if (!use_unit_diag) {
         const ValueType alpha11 = AT::conj(A[p*as0+p*as1]);
