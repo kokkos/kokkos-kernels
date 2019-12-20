@@ -90,7 +90,7 @@ using namespace KokkosKernels::Experimental;
 enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/};
 
 template<typename Scalar>
-int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
+int test_spiluk_perf(std::vector<int> tests, std::string afilename, int K, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
 
   typedef Scalar scalar_t;
   typedef default_lno_t lno_t;
@@ -119,12 +119,12 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
 
   std::cout << "\n\n" << std::endl;
   if (!afilename.empty()) {
-    std::cout << "ILU(k) Begin: Read matrix filename " << afilename << std::endl;
+    std::cout << "ILU(K) Begin: Read matrix filename " << afilename << std::endl;
     crsmat_t A    = KokkosKernels::Impl::read_kokkos_crst_matrix<crsmat_t>(afilename.c_str()); //in_matrix
     graph_t graph = A.graph; // in_graph
     const size_type nrows = graph.numRows();
     const int       nnz   = A.nnz();
-    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(k) ;
+    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(K) ;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     //cuSPARSE requires lno_t = size_type = int. For both, int is always used (if enabled)
