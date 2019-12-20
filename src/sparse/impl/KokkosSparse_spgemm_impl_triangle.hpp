@@ -238,7 +238,7 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
 
     //dense accumulators
-    nnz_lno_t *indices = NULL;
+    //nnz_lno_t *indices = NULL;
     nnz_lno_t *sets = NULL;
 
     volatile nnz_lno_t * tmp = NULL;
@@ -480,7 +480,7 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
 
     //dense accumulators
-    nnz_lno_t *indices = NULL;
+    //nnz_lno_t *indices = NULL;
     nnz_lno_t *sets = NULL;
 
     volatile nnz_lno_t * tmp = NULL;
