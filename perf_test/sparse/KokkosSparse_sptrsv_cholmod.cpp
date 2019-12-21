@@ -40,25 +40,10 @@
 //@HEADER
 */
 
-#include <cstdio>
-
-#include <ctime>
-#include <cstring>
-#include <cstdlib>
-#include <limits>
-#include <limits.h>
-#include <cmath>
-#include <unordered_map>
-
-#include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
-#include "matrix_market.hpp"
-
-#include "KokkosKernels_SparseUtils.hpp"
-#include "KokkosSparse_sptrsv.hpp"
-#include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_spmv.hpp"
+#include "KokkosSparse_sptrsv.hpp"
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )         && \
   (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \

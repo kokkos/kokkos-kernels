@@ -42,6 +42,7 @@
 */
 
 #include "KokkosBlas1_nrm2.hpp"
+#include "KokkosSparse_spmv.hpp"
 
 #ifndef KOKKOSSPARSE_SPTRSV_AUX
 #define KOKKOSSPARSE_SPTRSV_AUX
