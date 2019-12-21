@@ -159,7 +159,6 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
                 XType x)
   {
     // Call specific algorithm type
-    using ExecSpace = typename RowMapType::memory_space::execution_space;
     auto sptrsv_handle = handle->get_sptrsv_handle();
 
     if ( sptrsv_handle->is_lower_tri() ) {
@@ -171,6 +170,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
       }
       else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
+        using ExecSpace = typename RowMapType::memory_space::execution_space;
         if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
           Experimental::lower_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
         else
@@ -187,6 +187,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
       }
       else {
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
+        using ExecSpace = typename RowMapType::memory_space::execution_space;
         if ( std::is_same<ExecSpace, Kokkos::Cuda>::value)
           Experimental::upper_tri_solve_cg( *sptrsv_handle, row_map, entries, values, b, x);
         else
