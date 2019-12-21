@@ -337,7 +337,6 @@ struct SparseTriSupernodalSpMVFunctor
   using member_type = typename policy_type::member_type;
 
   using scalar_t = typename LHSType::non_const_value_type;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
 
@@ -367,6 +366,8 @@ struct SparseTriSupernodalSpMVFunctor
     const int league_rank = team.league_rank(); // batch id
     const int team_size = team.team_size ();
     const int team_rank = team.team_rank ();
+    const scalar_t zero (0.0);
+
     auto s = nodes_grouped_by_level (node_count + league_rank);
 
     // copy vector elements for the diagonal to input vector (work)
@@ -377,18 +378,17 @@ struct SparseTriSupernodalSpMVFunctor
     if (flag == -1) {
       // copy work to X
       for (int j = team_rank; j < nscol; j += team_size) {
-        //X (j1 + j) = STS::zero ();
         X (j1 + j) = work (j1 + j);
       }
     } else if (flag == 1) {
       for (int j = team_rank; j < nscol; j += team_size) {
         work (j1 + j) = X (j1 + j);
-        X (j1 + j) = STS::zero ();
+        X (j1 + j) = zero;
       }
     } else {
       // reinitialize work to zero
       for (int j = team_rank; j < nscol; j += team_size) {
-        work (j1 + j) = STS::zero ();
+        work (j1 + j) = zero;
       }
     }
     team.team_barrier ();
@@ -408,7 +408,6 @@ struct LowerTriSupernodalFunctor
   using member_type = typename policy_type::member_type;
 
   using scalar_t = typename ValuesType::non_const_value_type;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
   using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
@@ -472,8 +471,8 @@ struct LowerTriSupernodalFunctor
     const int league_rank = team.league_rank(); // batch id
     const int team_size = team.team_size ();
     const int team_rank = team.team_rank ();
-    scalar_t zero = STS::zero ();
-    scalar_t one  = STS::one ();
+    const scalar_t zero (0.0);
+    const scalar_t one (1.0);
 
     auto s = nodes_grouped_by_level (node_count + league_rank);
 
@@ -569,7 +568,6 @@ struct UpperTriSupernodalFunctor
   using member_type = typename policy_type::member_type;
 
   using scalar_t = typename ValuesType::non_const_value_type;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
   using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
@@ -635,9 +633,8 @@ struct UpperTriSupernodalFunctor
     const int league_rank = team.league_rank(); // batch id
     const int team_size = team.team_size ();
     const int team_rank = team.team_rank ();
-
-    scalar_t zero = STS::zero ();
-    scalar_t one = STS::one ();
+    const scalar_t zero (0.0);
+    const scalar_t one (1.0);
 
     auto s = nodes_grouped_by_level (node_count + league_rank);
 
@@ -717,7 +714,6 @@ struct UpperTriTranSupernodalFunctor
   using member_type = typename policy_type::member_type;
 
   using scalar_t = typename ValuesType::non_const_value_type;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
   using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
@@ -782,9 +778,8 @@ struct UpperTriTranSupernodalFunctor
     const int league_rank = team.league_rank(); // batch id
     const int team_size = team.team_size ();
     const int team_rank = team.team_rank ();
-
-    scalar_t zero = STS::zero ();
-    scalar_t one = STS::one ();
+    const scalar_t zero (0.0);
+    const scalar_t one (1.0);
 
     auto s = nodes_grouped_by_level (node_count + league_rank);
 
@@ -1129,9 +1124,10 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
   using scalar_t            = typename ValuesType::non_const_value_type;
-
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
   using range_type = Kokkos::pair<int, int>;
+
+  const scalar_t zero (0.0);
+  const scalar_t one (1.0);
 
   auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
@@ -1216,9 +1212,6 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
         if (diag_kernel_type_host (lvl) == 3) {
           // using device-level kernels (functor is called to scatter the results)
-          scalar_t zero = STS::zero ();
-          scalar_t one = STS::one ();
-
           scalar_t *dataL = const_cast<scalar_t*> (values.data ());
 
           for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
@@ -1296,9 +1289,6 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         timer.reset();
         #endif
 
-        scalar_t zero = STS::zero ();
-        scalar_t one = STS::one ();
-
         // initialize input & output vectors
         typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
 
@@ -1375,6 +1365,9 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
   using scalar_t            = typename ValuesType::non_const_value_type;
 
   using range_type = Kokkos::pair<int, int>;
+
+  const scalar_t zero (0.0);
+  const scalar_t one (1.0);
 
   auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
@@ -1461,10 +1454,6 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         if (thandle.is_column_major ()) { // U stored in CSC
           if (diag_kernel_type_host (lvl) == 3) {
             // using device-level kernels (functor is called to gather the input into workspace)
-            typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-            scalar_t zero = STS::zero ();
-            scalar_t one = STS::one ();
-
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
             for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
@@ -1544,10 +1533,6 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
           if (diag_kernel_type_host (lvl) == 3) {
             // using device-level kernels (functor is called to gather the input into workspace)
-            typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-            scalar_t zero = STS::zero ();
-            scalar_t one = STS::one ();
-
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
             for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
@@ -1610,10 +1595,6 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         Kokkos::Timer timer;
         timer.reset();
         #endif
-
-        typedef Kokkos::Details::ArithTraits<scalar_t> STS;
-        scalar_t zero = STS::zero ();
-        scalar_t one = STS::one ();
 
         // initialize input & output vectors
         typedef Kokkos::TeamPolicy<execution_space> team_policy_type;

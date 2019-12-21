@@ -419,9 +419,8 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t       = typename values_view_t::value_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
-  scalar_t zero = STS::zero ();
+  const scalar_t zero (0.0);
 
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
@@ -473,7 +472,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
     /* the diagonal "dense" block */
     int psx = colptrL[j1];
     if (invert_diag) {
-      if (std::is_same<scalar_t, double>::value == true) {
+      if (std::is_same<scalar_t, double>::value) {
         LAPACKE_dtrtri (LAPACK_COL_MAJOR,
                         'U', 'N', nscol,
                         reinterpret_cast <double*> (&Lx[psx]), nsrow);
@@ -486,7 +485,7 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
     for (int i = 0; i < nscol; i++) {
       #if 0
       for (int j = 0; j < i; j++) {
-        hv(hr(j1 + i) + j) = STS::zero ();
+        hv(hr(j1 + i) + j) = zero;
       }
       #endif
 
@@ -559,10 +558,9 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using       scalar_t = typename values_view_t::value_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
 
-  scalar_t one  = STS::one ();
-  scalar_t zero = STS::zero ();
+  const scalar_t zero (0.0);
+  const scalar_t one (1.0);
 
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
@@ -614,7 +612,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
     /* the diagonal "dense" block (!! first !!)*/
     int psx = colptrL[j1];
     if (invert_diag) {
-      if (std::is_same<scalar_t, double>::value == true) {
+      if (std::is_same<scalar_t, double>::value) {
         LAPACKE_dtrtri (LAPACK_COL_MAJOR,
                         'U', 'N', nscol,
                         reinterpret_cast <double*> (&Lx[psx]), nsrow);
@@ -670,7 +668,7 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
 
     if (invert_diag) {
       if (offset > 0 && invert_offdiag) {
-        if (std::is_same<scalar_t, double>::value == true) {
+        if (std::is_same<scalar_t, double>::value) {
           cblas_dtrmm (CblasColMajor,
                 CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
                 offset, nscol,
@@ -678,10 +676,11 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
                      reinterpret_cast <double*> (&hv(nnzD+nscol)), nscol+offset);
         } else {
           // NOTE: use double pointers
+          scalar_t alpha = one;
           cblas_ztrmm (CblasColMajor,
                 CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
                 offset, nscol,
-                reinterpret_cast <double*> (&one), 
+                reinterpret_cast <double*> (&alpha), 
                 reinterpret_cast <double*> (&hv(nnzD)), nscol+offset,
                 reinterpret_cast <double*> (&hv(nnzD+nscol)), nscol+offset);
         }

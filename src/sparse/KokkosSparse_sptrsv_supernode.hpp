@@ -706,8 +706,9 @@ read_merged_supernodes(int nsuper, const int *nb,
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t = typename values_view_t::value_type;
   using scalar_view_host_t = Kokkos::View<scalar_t*, Kokkos::HostSpace>;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
-  scalar_t zero = STS::zero ();
+
+  const scalar_t zero (0.0);
+  const scalar_t one (1.0);
 
   // original matrix
   auto graphL = L.graph; // in_graph
@@ -760,13 +761,13 @@ read_merged_supernodes(int nsuper, const int *nb,
       char diag_char = (unit_diag ? 'U' : 'N');
 
       tic.reset ();
-      if (std::is_same<scalar_t, double>::value == true) {
+      if (std::is_same<scalar_t, double>::value) {
         LAPACKE_dtrtri (LAPACK_COL_MAJOR,
                         uplo_char, diag_char, nscol,
                         reinterpret_cast <double*> (&hv(nnzD)), nsrow);
       }
-      else if (std::is_same<scalar_t, std::complex<double>>::value == true ||
-               std::is_same<scalar_t, Kokkos::complex<double>>::value == true) {
+      else if (std::is_same<scalar_t, std::complex<double>>::value ||
+               std::is_same<scalar_t, Kokkos::complex<double>>::value) {
         LAPACKE_ztrtri (LAPACK_COL_MAJOR,
                         uplo_char, diag_char, nscol, 
                         reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
@@ -781,7 +782,7 @@ read_merged_supernodes(int nsuper, const int *nb,
         CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
 
         tic.reset ();
-        if (std::is_same<scalar_t, double>::value == true) {
+        if (std::is_same<scalar_t, double>::value) {
           cblas_dtrmm (CblasColMajor,
                 CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
                 nsrow-nscol, nscol,
@@ -789,11 +790,11 @@ read_merged_supernodes(int nsuper, const int *nb,
                      reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
         } else {
           // NOTE: use double pointers
-          scalar_t one = STS::one ();
+          scalar_t alpha = one;
           cblas_ztrmm (CblasColMajor,
                 CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
                 nsrow-nscol, nscol,
-                reinterpret_cast <double*> (&one),
+                reinterpret_cast <double*> (&alpha),
                 reinterpret_cast <double*> (&hv(nnzD)), nsrow,
                 reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
         }
@@ -826,8 +827,9 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
 
   using  values_view_t = typename crsmat_t::values_type::non_const_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
-  scalar_t zero =  STS::zero ();
+
+  const scalar_t zero (0.0);
+  const scalar_t one (1.0);
 
   Kokkos::Timer tic;
   double time1 = 0.0; // time for trtri
@@ -903,7 +905,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
     if (invert_diag) {
       tic.reset ();
       char diag_char = (unit_diag ? 'U' : 'N');
-      if (std::is_same<scalar_t, double>::value == true) {
+      if (std::is_same<scalar_t, double>::value) {
         LAPACKE_dtrtri (LAPACK_COL_MAJOR,
                         'L', diag_char, nscol,
                         reinterpret_cast <double*> (&Lx[psx]), nsrow);
@@ -917,7 +919,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
       if (nsrow2 > 0 && invert_offdiag) {
         tic.reset ();
         CBLAS_DIAG diag_int = (unit_diag ? CblasUnit : CblasNonUnit);
-        if (std::is_same<scalar_t, double>::value == true) {
+        if (std::is_same<scalar_t, double>::value) {
           cblas_dtrmm (CblasColMajor,
                 CblasRight, CblasLower, CblasNoTrans, diag_int,
                 nsrow2, nscol,
@@ -925,11 +927,11 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
                      reinterpret_cast <double*> (&Lx[psx+nscol]), nsrow);
         } else {
           // NOTE: use double pointers
-          scalar_t one = STS::one ();
+          scalar_t alpha = one;
           cblas_ztrmm (CblasColMajor,
                 CblasRight, CblasLower, CblasNoTrans, diag_int,
                 nsrow2, nscol,
-                reinterpret_cast <double*> (&one),
+                reinterpret_cast <double*> (&alpha),
                 reinterpret_cast <double*> (&Lx[psx]), nsrow,
                 reinterpret_cast <double*> (&Lx[psx+nscol]), nsrow);
         }
@@ -948,7 +950,7 @@ read_supernodal_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert
       }
       // diagonal
       if (unit_diag) {
-        hv(hr(j1+jj)) = STS::one ();
+        hv(hr(j1+jj)) = one;
       } else {
         hv(hr(j1+jj)) = Lx[psx + (jj + jj*nsrow)];
       }
@@ -1014,7 +1016,8 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   using  values_view_host_t = typename values_view_t::HostMirror;
 
   using scalar_t = typename KernelHandle::nnz_scalar_t;
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
+
+  const scalar_t zero (0.0);
 
   // get sparse-triangular solve handle
   auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -1073,7 +1076,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
       for (int j = j1; j < j2; j++) {
         for (int k = row_mapL (j); k < row_mapL (j+1); k++) {
-          if (valuesL (k) != STS::zero ()) {
+          if (valuesL (k) != zero) {
             if (invert_offdiag || k >= row_mapL (j) + nscol) {
               nnzL ++;
             } else {
@@ -1119,7 +1122,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
         int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
         for (int j = j1; j < j2; j++) {
           for (int k = row_mapL (j); k < row_mapL (j+1); k++) {
-            if (valuesL (k) != STS::zero ()) {
+            if (valuesL (k) != zero) {
               if (invert_offdiag || k >= row_mapL (j) + nscol) {
                 hr (1 + entriesL (k)) ++;
                 nnzL ++;
@@ -1148,7 +1151,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
           // diagonals
           for (int k = row_mapL (j); k < row_mapL (j) + nscol; k++) {
             // remove zeros
-            if (valuesL (k) != STS::zero ()) {
+            if (valuesL (k) != zero) {
               if (invert_offdiag) {
                 hc (hr (entriesL (k))) = j;
                 hv (hr (entriesL (k))) = valuesL (k);
@@ -1164,7 +1167,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
           // off-diagonals
           for (int k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
             // remove zeros, and minus for updating off-diagonal elements with Spmv
-            if (valuesL (k) != STS::zero ()) {
+            if (valuesL (k) != zero) {
               hc (hr (entriesL (k))) = j;
               hv (hr (entriesL (k))) = -valuesL (k);
               hr (entriesL (k)) ++;
@@ -1204,7 +1207,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
           // diagonals
           for (int k = row_mapL (j); k < row_mapL (j) + nscol; k++) {
             // remove zeros
-            if (valuesL (k) != STS::zero ()) {
+            if (valuesL (k) != zero) {
               if (invert_offdiag) {
                 hc (nnzL) = entriesL (k);
                 hv (nnzL) = valuesL (k);
@@ -1220,7 +1223,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
           // off-diagonals
           for (int k = row_mapL (j) + nscol; k < row_mapL (j+1); k++) {
             // remove zeros, and minus for updating off-diagonal elements with Spmv
-            if (valuesL (k) != STS::zero ()) {
+            if (valuesL (k) != zero) {
               hc (nnzL) =  entriesL (k);
               hv (nnzL) = -valuesL (k);
               nnzL ++;

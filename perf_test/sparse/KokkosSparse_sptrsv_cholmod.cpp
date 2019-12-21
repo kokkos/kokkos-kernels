@@ -244,8 +244,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, scalar_type,
     execution_space, memory_space, memory_space >;
 
-  scalar_type ZERO = scalar_type(0);
-  scalar_type ONE = scalar_type(1);
+  const scalar_type ZERO (0.0);
+  const scalar_type ONE (1.0);
 
   // tolerance
   scalar_type tol = STS::epsilon();

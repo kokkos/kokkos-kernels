@@ -42,7 +42,6 @@
 */
 
 #include <cstdio>
-
 #include <ctime>
 #include <cstring>
 #include <cstdlib>
@@ -406,8 +405,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
   using host_scalar_view_t = Kokkos::View< scalar_type*, host_memory_space >;
   using      scalar_view_t = Kokkos::View< scalar_type*,      memory_space >;
 
-  scalar_type ZERO = scalar_type(0);
-  scalar_type ONE = scalar_type(1);
+  const scalar_type ZERO (0.0);
+  const scalar_type ONE (1.0);
 
   // tolerance
   mag_type tol = STS::epsilon();
@@ -813,8 +812,8 @@ int main(int argc, char **argv) {
 
   Kokkos::initialize(argc,argv);
   {
-    using scalar_t = double;
-    //using scalar_t = Kokkos::complex<double>;
+    //using scalar_t = double;
+    using scalar_t = Kokkos::complex<double>;
     int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
                                                    invert_offdiag, u_in_csr, panel_size, relax_size, loop);
     if(total_errors == 0)
