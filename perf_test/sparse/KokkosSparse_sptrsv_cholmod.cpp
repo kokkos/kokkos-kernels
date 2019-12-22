@@ -520,20 +520,18 @@ int main(int argc, char **argv)
     std::cout << "tests[" << i << "] = " << tests[i] << std::endl;
   }
 
-  Kokkos::initialize(argc,argv);
   {
     // Cholmod may not support single, yet
     //int total_errors = test_sptrsv_perf<float>(tests, filename, loop);
     // Kokkos::IO may not read complex?
     //int total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, loop);
-
+    Kokkos::ScopeGuard kokkosScope (argc, argv);
     int total_errors = test_sptrsv_perf<double>(tests, filename, loop);
     if(total_errors == 0)
       std::cout << "Kokkos::SPTRSV Test: Passed" << std::endl << std::endl;
     else
       std::cout << "Kokkos::SPTRSV Test: Failed" << std::endl << std::endl;
   }
-  Kokkos::finalize();
 
   return 0;
 }

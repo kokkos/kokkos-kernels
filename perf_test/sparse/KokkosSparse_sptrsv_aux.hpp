@@ -41,6 +41,10 @@
 //@HEADER
 */
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#include <cusparse_v2.h>
+#endif
+
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_spmv.hpp"
 
@@ -223,6 +227,27 @@ crsmat_t remove_zeros_crsmat(crsmat_t &A) {
 
 
 /* ========================================================================================= */
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) 
+std::string getCuSparseErrorString(cusparseStatus_t status) {
+  #if 0
+  return cusparseGetErrorString (status);
+  #else
+  switch(status)
+  {
+    case CUSPARSE_STATUS_SUCCESS                  : return "CUSPARSE_STATUS_SUCCESS";
+    case CUSPARSE_STATUS_NOT_INITIALIZED          : return "CUSPARSE_STATUS_NOT_INITIALIZED";
+    case CUSPARSE_STATUS_ALLOC_FAILED             : return "CUSPARSE_STATUS_ALLOC_FAILED";
+    case CUSPARSE_STATUS_INVALID_VALUE            : return "CUSPARSE_STATUS_INVALID_VALUE";
+    case CUSPARSE_STATUS_ARCH_MISMATCH            : return "CUSPARSE_STATUS_ARCH_MISMATCH";
+    case CUSPARSE_STATUS_EXECUTION_FAILED         : return "USPARSE_STATUS_EXECUTION_FAILED";
+    case CUSPARSE_STATUS_INTERNAL_ERROR           : return "CUSPARSE_STATUS_INTERNAL_ERROR";
+    default                                       : return "un-handled error code";
+  }
+  #endif
+}
+#endif
+
+/* ========================================================================================= */
 template <typename crsmat_t, typename host_crsmat_t>
 bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_majorU, crsmat_t &U,
                     int *perm_r, int *perm_c, double tol, int loop) {
@@ -255,7 +280,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   cusparseHandle_t handle = 0; 
   status = cusparseCreate (&handle);
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "handle create status error name " << (status) << std::endl;
+    std::cout << " ** cusparseCreate failed with " 
+              << getCuSparseErrorString (status)
+              << " ** " << std::endl;
   }
   cusparseSetPointerMode (handle, CUSPARSE_POINTER_MODE_HOST); // scalars are passed by reference on host
 
@@ -263,7 +290,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   csrsv2Info_t infoL = 0; 
   status = cusparseCreateCsrsv2Info (&infoL);
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "csrsv2info create status error name " << (status) << std::endl;
+    std::cout << " ** cusparseCreateCsrsv2Info failed with "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
 
   // ==============================================
@@ -279,7 +308,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   cusparseMatDescr_t descrL = 0;
   status = cusparseCreateMatDescr (&descrL);
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "matdescr create status error name " << (status) << std::endl;
+    std::cout << " ** cusparseCreateMatDescr failed with "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
   cusparseSetMatIndexBase (descrL, CUSPARSE_INDEX_BASE_ZERO);
   cusparseSetMatFillMode (descrL, CUSPARSE_FILL_MODE_UPPER);
@@ -319,7 +350,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   }
   std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "analysis status error name " << (status) << std::endl;
+    std::cout << " ** cusparseZcsrsv2_analysis failed with "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
   // L has unit diagonal, so no structural zero is reported.
 
@@ -372,7 +405,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   Kokkos::fence ();
   std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "solve status error name " << (status) << std::endl;
+    std::cout << " ** cusparseZcsrsv2_solve failed with "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
   // L has unit diagonal, so no numerical zero is reported.
   int numerical_zero;
@@ -393,7 +428,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   csrsv2Info_t infoU = 0; 
   status = cusparseCreateCsrsv2Info (&infoU);
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "csrsv2info create status error name " << (status) << std::endl;
+    std::cout << " ** cusparseCreateCsrsv2Info failed with "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
 
   // ==============================================
@@ -401,7 +438,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   cusparseMatDescr_t descrU = 0;
   status = cusparseCreateMatDescr (&descrU);
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "matdescr create status error name " << (status) << std::endl;
+    std::cout << " ** cusparseCreateMatDescr create status error name "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
   // NOTE: if CSR, UPPER+NO-TRANSPOSE, else LOWER+Trans
   cusparseSetMatIndexBase (descrU, CUSPARSE_INDEX_BASE_ZERO);
@@ -444,7 +483,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   }
   std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "analysis status error name " << (status) << std::endl;
+    std::cout << " ** cusparseDcsrsv2_analysis failed with "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
   status = cusparseXcsrsv2_zeroPivot(handle, infoU, &structural_zero);
   if (CUSPARSE_STATUS_ZERO_PIVOT == status){
@@ -472,7 +513,9 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
   Kokkos::fence();
   std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
-    std::cout << "solve status error name " << (status) << std::endl;
+    std::cout << " ** usparseDcsrsv2_solve failed with "
+              << getCuSparseErrorString (status) 
+              << " ** " << std::endl;
   }
   status = cusparseXcsrsv2_zeroPivot (handle, infoU, &numerical_zero);
   if (CUSPARSE_STATUS_ZERO_PIVOT == status){

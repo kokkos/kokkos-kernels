@@ -795,10 +795,10 @@ int main(int argc, char **argv) {
     std::cout << "tests[" << i << "] = " << tests[i] << std::endl;
   }
 
-  Kokkos::initialize(argc,argv);
   {
-    using scalar_t = double;
-    //using scalar_t = Kokkos::complex<double>;
+    //using scalar_t = double;
+    using scalar_t = Kokkos::complex<double>;
+    Kokkos::ScopeGuard kokkosScope (argc, argv);
     int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
                                                    invert_offdiag, u_in_csr, panel_size, relax_size, loop);
     if(total_errors == 0)
@@ -808,7 +808,6 @@ int main(int argc, char **argv) {
       std::cout << "Kokkos::SPTRSV Test: Failed (" << total_errors << " / " << 2*tests.size() << " failed)"
                 << std::endl << std::endl;
   }
-  Kokkos::finalize();
   return 0;
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
