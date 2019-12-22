@@ -348,7 +348,8 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
                                        reinterpret_cast <cuDoubleComplex*> (valuesL.data()), row_mapL.data(), entriesL.data(),
                                        infoL, policy, pBufferL);
   }
-  std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
+  double time_symbolic = timer.seconds ();
+  std::cout << "  Cusparse Symbolic Time: " << time_symbolic << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseZcsrsv2_analysis failed with "
               << getCuSparseErrorString (status) 
@@ -403,7 +404,8 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
                                     policy, pBufferL);
   }
   Kokkos::fence ();
-  std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
+  double time_solve = timer.seconds ();
+  std::cout << "  Cusparse Solve Time   : " << time_solve << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseZcsrsv2_solve failed with "
               << getCuSparseErrorString (status) 
@@ -481,7 +483,8 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
                                        reinterpret_cast <cuDoubleComplex*> (valuesU.data()), row_mapU.data(), entriesU.data(),
                                        infoU, policy, pBufferU);
   }
-  std::cout << "  Cusparse Symbolic Time: " << timer.seconds() << std::endl;
+  time_symbolic = timer.seconds ();
+  std::cout << "  Cusparse Symbolic Time: " << time_symbolic << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** cusparseDcsrsv2_analysis failed with "
               << getCuSparseErrorString (status) 
@@ -511,7 +514,8 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
                                     policy, pBufferU);
   }
   Kokkos::fence();
-  std::cout << "  Cusparse Solve Time   : " << timer.seconds() << std::endl;
+  time_solve = timer.seconds ();
+  std::cout << "  Cusparse Solve Time   : " << time_solve << std::endl;
   if (CUSPARSE_STATUS_SUCCESS != status) {
     std::cout << " ** usparseDcsrsv2_solve failed with "
               << getCuSparseErrorString (status) 

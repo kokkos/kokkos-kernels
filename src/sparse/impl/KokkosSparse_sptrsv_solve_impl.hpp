@@ -1276,7 +1276,8 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
-        std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << timer.seconds()
+        double time_seconds = timer.seconds ();
+        std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << time_seconds
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
@@ -1327,7 +1328,8 @@ void lower_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
-        std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << timer.seconds()
+        double time_seconds = timer.seconds ();
+        std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << time_seconds
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
@@ -1583,7 +1585,8 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
         }
         #ifdef profile_supernodal_etree
         Kokkos::fence();
-        std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << timer.seconds()
+        double time_seconds = timer.seconds ();
+        std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << time_seconds
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
@@ -1658,7 +1661,8 @@ void upper_tri_solve( TriSolveHandle & thandle, const RowMapType row_map, const 
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
-        std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << timer.seconds()
+        double time_seconds = timer.seconds ();
+        std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << time_seconds
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif

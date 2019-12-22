@@ -291,7 +291,8 @@ namespace Experimental {
       graphU_host = read_superlu_graphU<host_graph_t> (&L, &U); 
     }
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-    std::cout << "   Conversion Time (from SuperLU to CSR): " << tic.seconds() << std::endl;
+    double time_seconds = tic.seconds ();
+    std::cout << "   Conversion Time (from SuperLU to CSR): " << time_seconds << std::endl;
     #endif
 
     // ===================================================================
@@ -333,9 +334,10 @@ namespace Experimental {
                                                                     nsuper_merged, supercols_merged,
                                                                     graphL_host, &nnzL_merged);
       #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+      time_seconds = tic.seconds ();
       check_supernode_sizes ("After Merge", nrows, nsuper_merged, supercols_merged, graphL_host);
       std::cout << " for L factor:" << std::endl;
-      std::cout << "   Merge Supernodes Time: " << tic.seconds() << std::endl;
+      std::cout << "   Merge Supernodes Time: " << time_seconds << std::endl;
       std::cout << "   Number of nonzeros   : " << nnzL << " -> " << nnzL_merged
                 << " : " << double(nnzL_merged) / double(nnzL) << "x" << std::endl;
       #endif
@@ -353,9 +355,10 @@ namespace Experimental {
                                                                     nsuper_merged, supercols_merged,
                                                                     graphU_host, &nnzU_merged);
       #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+      time_seconds = tic.seconds ();
       check_supernode_sizes("After Merge", nrows, nsuper_merged, supercols_merged, graphU_host);
       std::cout << " for U factor:" << std::endl;
-      std::cout << "   Merge Supernodes Time: " << tic.seconds() << std::endl;
+      std::cout << "   Merge Supernodes Time: " << time_seconds << std::endl;
       std::cout << "   Number of nonzeros   : " << nnzU << " -> " << nnzU_merged
                 << " : " << double(nnzU_merged) / double(nnzU) << "x" << std::endl;
       #endif
@@ -398,8 +401,9 @@ namespace Experimental {
     #endif
     sptrsv_symbolic (kernelHandleL, row_mapL, entriesL);
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
     std::cout << " > Lower-TRI: " << std::endl;
-    std::cout << "   Symbolic Time: " << tic.seconds() << std::endl;
+    std::cout << "   Symbolic Time: " << time_seconds << std::endl;
     #endif
 
     // ===================================================================
@@ -409,8 +413,9 @@ namespace Experimental {
     tic.reset ();
     sptrsv_symbolic (kernelHandleU, row_mapU, entriesU);
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
     std::cout << " > Upper-TRI: " << std::endl;
-    std::cout << "   Symbolic Time: " << tic.seconds() << std::endl;
+    std::cout << "   Symbolic Time: " << time_seconds << std::endl;
     #endif
 
     // ===================================================================
@@ -432,7 +437,8 @@ namespace Experimental {
     handleL->set_etree (etree);
     handleU->set_etree (etree);
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-    std::cout << "   Total Symbolic Time: " << timer.seconds() << std::endl << std::endl;
+    time_seconds = tic.seconds ();
+    std::cout << "   Total Symbolic Time: " << time_seconds << std::endl << std::endl;
     #endif
   }
 
@@ -476,6 +482,7 @@ namespace Experimental {
     bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                     handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    double time_seconds = 0.0;
     if (merge)          std::cout << " >> merge\n" << std::endl;
     if (invert_offdiag) std::cout << " >> invert offdiag\n" << std::endl;
     #endif
@@ -542,7 +549,8 @@ namespace Experimental {
                                                      superluU_host, graphU);
       }
       #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-      std::cout << "   Time to Merge and Copy to device: " << tic.seconds() << std::endl;
+      time_seconds = tic.seconds ();
+      std::cout << "   Time to Merge and Copy to device: " << time_seconds << std::endl;
       #endif
     } else {
       // ========================================================
@@ -577,7 +585,7 @@ namespace Experimental {
       }
       #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       double timeU = tic.seconds ();
-      std::cout << "   Time to copy to device: " << tic.seconds() << std::endl;
+      std::cout << "   Time to copy to device: " << std::endl;
       std::cout << "   > copy L to device: " << timeL << std::endl;
       std::cout << "   > copy U to device: " << timeU << std::endl;
       #endif
@@ -591,7 +599,8 @@ namespace Experimental {
       split_crsmat<crsmat_t> (kernelHandleL, superluL_host);
       split_crsmat<crsmat_t> (kernelHandleU, superluU_host);
       #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-      std::cout << "   Time to Split to submatrix: " << tic.seconds() << std::endl;
+      time_seconds = tic.seconds ();
+      std::cout << "   Time to Split to submatrix: " << time_seconds << std::endl;
       #endif
     }
 
@@ -605,7 +614,8 @@ namespace Experimental {
     handleL->set_numeric_complete ();
     handleU->set_numeric_complete ();
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-    std::cout << "   Total Compute Time: " << timer.seconds() << std::endl << std::endl;
+    time_seconds = timer.seconds ();
+    std::cout << "   Total Compute Time: " << time_seconds << std::endl << std::endl;
     #endif
   } // sptrsv_compute
 #endif //KOKKOSKERNELS_ENABLE_TPL_SUPERLU
@@ -664,8 +674,9 @@ namespace Experimental {
     timer.reset();
     sptrsv_symbolic (kernelHandleL, row_map, entries);
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    double timeL = timer.seconds ();
     std::cout << " > Lower-TRI: " << std::endl;
-    std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+    std::cout << "   Symbolic Time: " << timeL << std::endl;
     #endif
 
     // ==============================================
@@ -673,8 +684,9 @@ namespace Experimental {
     timer.reset ();
     sptrsv_symbolic (kernelHandleU, row_map, entries);
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    double timeU = timer.seconds ();
     std::cout << " > Upper-TRI: " << std::endl;
-    std::cout << "   Symbolic Time: " << timer.seconds() << std::endl;
+    std::cout << "   Symbolic Time: " << timeU << std::endl;
     #endif
 
     // ==============================================
