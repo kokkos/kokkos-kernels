@@ -528,16 +528,16 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_asymmetric_rank1 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10, false); \
+  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, false); \
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_asymmetric_rank2 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 5000 * 20, 200, 10, 3, false); \
+  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, 3, false); \
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_symmetric_rank1 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10, true); \
+  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, true); \
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_symmetric_rank2 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 5000 * 20, 200, 10, 3, true); \
+  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, 3, true); \
 } \
 TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \

@@ -15,16 +15,18 @@
 
 namespace Test {
 
-template < class VectorType0, class VectorType1, class AT_Type >
+template < class VectorType0, class VectorType1 >
 struct fSPMV {
-  typedef int value_type;
-  typedef Kokkos::Details::ArithTraits<typename AT_Type::non_const_value_type> AT;
+  using value_type = int;
+  using AT         = Kokkos::ArithTraits<typename VectorType1::non_const_value_type>;
+  using ATM        = Kokkos::ArithTraits<typename AT::mag_type>;
+  using mag_type   = typename AT::mag_type;
 
   VectorType0 expected_y;
   VectorType1 y;
-  double eps;
+  mag_type    eps;
 
-  fSPMV(const VectorType0 & _ex_y, const VectorType1 & _y, const double _eps)
+  fSPMV(const VectorType0 & _ex_y, const VectorType1 & _y, const mag_type _eps)
   : expected_y(_ex_y)
   , y(_y)
   , eps(_eps)
@@ -32,7 +34,11 @@ struct fSPMV {
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const int i, value_type& err ) const {
-    if(AT::abs(expected_y(i)-y(i))>eps) {
+
+    const mag_type error = AT::abs(expected_y(i)-y(i))
+      / (AT::abs(expected_y(i)) > ATM::zero() ? AT::abs(expected_y(i)) : ATM::one());
+
+    if(error > eps) {
       err++;
       printf("expected_y(%d)=%f, y(%d)=%f\n", i, AT::abs(expected_y(i)), i, AT::abs(y(i)));
     }
@@ -42,16 +48,17 @@ struct fSPMV {
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
-    typename y_vector_type::non_const_value_type alpha, typename y_vector_type::non_const_value_type beta){
+                     typename y_vector_type::non_const_value_type alpha,
+                     typename y_vector_type::non_const_value_type beta){
 
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type size_type_view_t;
-  typedef typename graph_t::entries_type lno_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  using graph_t          = typename crsMat_t::StaticCrsGraphType;
+  using size_type_view_t = typename graph_t::row_map_type;
+  using lno_view_t       = typename graph_t::entries_type;
+  using scalar_view_t    = typename crsMat_t::values_type::non_const_type;
 
-  typedef typename size_type_view_t::non_const_value_type size_type;
-  typedef typename lno_view_t::non_const_value_type lno_t;
-  typedef typename scalar_view_t::non_const_value_type scalar_t;
+  using size_type = typename size_type_view_t::non_const_value_type;
+  using lno_t     = typename lno_view_t::non_const_value_type;
+  using scalar_t  = typename scalar_view_t::non_const_value_type;
 
 
   typename scalar_view_t::HostMirror h_values = Kokkos::create_mirror_view(input_mat.values);
@@ -73,7 +80,6 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   KokkosKernels::Impl::safe_device_to_host_deep_copy (y.extent(0), y, h_y);
   Kokkos::fence();
 
-
   lno_t nr = input_mat.numRows();
 
   for (lno_t i = 0; i < nr; ++i){
@@ -93,15 +99,20 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
-    typename y_vector_type::non_const_value_type alpha, typename y_vector_type::non_const_value_type beta){
+                typename y_vector_type::non_const_value_type alpha,
+                typename y_vector_type::non_const_value_type beta) {
   //typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename crsMat_t::execution_space ExecSpace;
-  typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
+  using ExecSpace = typename crsMat_t::execution_space;
+  using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
+  using y_value_type     = typename y_vector_type::non_const_value_type;
+  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_mag_type = typename y_value_trait::mag_type;
 
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename scalar_view_t::value_type ScalarA;
-  double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
-  size_t nr = input_mat.numRows();
+  // y is the quantity being tested here,
+  // so let us use y_value_type to determine
+  // the appropriate tolerance precision.
+  const y_value_mag_type eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
+  const size_t nr = input_mat.numRows();
   y_vector_type expected_y("expected", nr);
   Kokkos::deep_copy(expected_y, y);
   Kokkos::fence();
@@ -110,27 +121,31 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   //KokkosKernels::Impl::print_1Dview(expected_y);
   KokkosSparse::spmv("N", alpha, input_mat, x, beta, y);
   //KokkosKernels::Impl::print_1Dview(y);
-  typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
   int num_errors = 0;
-  Kokkos::parallel_reduce("KokkosSparse::Test::spmv"
-                         ,my_exec_space(0, y.extent(0))
-                         ,fSPMV<y_vector_type, y_vector_type, y_vector_type>(expected_y,y,eps)
-                         ,num_errors);
+  Kokkos::parallel_reduce("KokkosSparse::Test::spmv",
+                          my_exec_space(0, y.extent(0)),
+                          fSPMV<y_vector_type, y_vector_type>(expected_y, y, eps),
+                          num_errors);
   if(num_errors>0) printf("KokkosSparse::Test::spmv: %i errors of %i with params: %lf %lf\n",
-      num_errors,y.extent_int(0),AT::abs(alpha),AT::abs(beta));
+                          num_errors, y.extent_int(0),
+                          y_value_trait::abs(alpha), y_value_trait::abs(beta));
   EXPECT_TRUE(num_errors==0);
 }
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vector_type expected_y,
-    typename y_vector_type::non_const_value_type alpha,
-    typename y_vector_type::non_const_value_type beta, int numMV){
-  typedef typename crsMat_t::execution_space ExecSpace;
-  typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
+                   typename y_vector_type::non_const_value_type alpha,
+                   typename y_vector_type::non_const_value_type beta, int numMV) {
+  using ExecSpace = typename crsMat_t::execution_space;
+  using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
+  using y_value_type     = typename y_vector_type::non_const_value_type;
+  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_mag_type = typename y_value_trait::mag_type;
 
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename scalar_view_t::value_type ScalarA;
-  double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
+  // y is the quantity being tested here,
+  // so let us use y_value_type to determine
+  // the appropriate tolerance precision.
+  const y_value_mag_type eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
 
   Kokkos::deep_copy(expected_y, y);
 
@@ -149,12 +164,12 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
     int num_errors = 0;
-    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv"
-                           ,my_exec_space(0,y_i.extent(0))
-                           ,fSPMV<decltype(y_i), decltype(y_spmv), y_vector_type>(y_i, y_spmv, eps)
-                           ,num_errors);
+    Kokkos::parallel_reduce("KokkosSparse::Test::spmv_mv",
+                            my_exec_space(0,y_i.extent(0)),
+                            fSPMV<decltype(y_i), decltype(y_spmv)>(y_i, y_spmv, eps),
+                            num_errors);
     if(num_errors>0) printf("KokkosSparse::Test::spmv_mv: %i errors of %i for mv %i\n",
-        num_errors,y_i.extent_int(0),i);
+                            num_errors, y_i.extent_int(0), i);
     EXPECT_TRUE(num_errors==0);
   }
 }
@@ -170,12 +185,16 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
                          typename y_vector_type::non_const_value_type alpha,
                          typename y_vector_type::non_const_value_type beta) {
     using ExecSpace     = typename crsMat_t::execution_space;
-    using scalar_view_t = typename crsMat_t::values_type::non_const_type;
-    using ScalarA       = typename scalar_view_t::value_type;
     using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
+    using y_value_type     = typename y_vector_type::non_const_value_type;
+    using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+    using y_value_mag_type = typename y_value_trait::mag_type;
 
-    double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
-    size_t nr = input_mat.numRows();
+    // y is the quantity being tested here,
+    // so let us use y_value_type to determine
+    // the appropriate tolerance precision.
+    const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
+    const size_t nr = input_mat.numRows();
     y_vector_type expected_y("expected", nr);
     Kokkos::deep_copy(expected_y, y);
     Kokkos::fence();
@@ -187,11 +206,11 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
     int num_errors = 0;
     Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_struct",
                             my_exec_space(0, y.extent(0)),
-                            fSPMV<y_vector_type, y_vector_type, y_vector_type>(expected_y,y,eps),
+                            fSPMV<y_vector_type, y_vector_type>(expected_y,y,eps),
                             num_errors);
-    typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
     if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_struct: %i errors of %i with params: %d %lf %lf\n",
-                            num_errors, y.extent_int(0), stencil_type, AT::abs(alpha), AT::abs(beta));
+                            num_errors, y.extent_int(0), stencil_type,
+                            y_value_trait::abs(alpha), y_value_trait::abs(beta));
     EXPECT_TRUE(num_errors==0);
   }
 
@@ -208,11 +227,15 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
                             typename y_vector_type::non_const_value_type beta,
                             int numMV) {
     typedef typename crsMat_t::execution_space ExecSpace;
-    typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-    typedef typename scalar_view_t::value_type ScalarA;
     typedef Kokkos::RangePolicy<ExecSpace> my_exec_space;
+    using y_value_type     = typename y_vector_type::non_const_value_type;
+    using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+    using y_value_mag_type = typename y_value_trait::mag_type;
 
-    double eps = std::is_same<ScalarA,float>::value?2*1e-3:1e-7;
+    // y is the quantity being tested here,
+    // so let us use y_value_type to determine
+    // the appropriate tolerance precision.
+    const double eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
     Kokkos::deep_copy(expected_y, y);
     Kokkos::fence();
 
@@ -230,11 +253,11 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
       int num_errors = 0;
       Kokkos::parallel_reduce("KokkosKernels::UnitTests::spmv_mv_struct",
                               my_exec_space(0, y.extent(0)),
-                              fSPMV<decltype(y_i), decltype(y_spmv), y_vector_type>(y_i,y_spmv,eps),
+                              fSPMV<decltype(y_i), decltype(y_spmv)>(y_i,y_spmv,eps),
                               num_errors);
-      typedef Kokkos::Details::ArithTraits<typename y_vector_type::non_const_value_type> AT;
       if(num_errors>0) printf("KokkosKernels::UnitTests::spmv_mv_struct: %i errors of %i with params: %d %lf %lf, in vector %i\n",
-                              num_errors, y.extent_int(0), stencil_type, AT::abs(alpha), AT::abs(beta), vectorIdx);
+                              num_errors, y.extent_int(0), stencil_type,
+                              y_value_trait::abs(alpha), y_value_trait::abs(beta), vectorIdx);
       EXPECT_TRUE(num_errors==0);
     }
   }
