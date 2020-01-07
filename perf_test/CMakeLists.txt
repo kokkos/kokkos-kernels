@@ -10,6 +10,7 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 # build correctly with or without MPI, but only run them with a single
 # MPI process.
 
+ADD_SUBDIRECTORY(batched)
 ADD_SUBDIRECTORY(graph)
 ADD_SUBDIRECTORY(sparse)
 ADD_SUBDIRECTORY(performance)

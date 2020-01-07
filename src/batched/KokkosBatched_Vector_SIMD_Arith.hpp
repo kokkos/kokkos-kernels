@@ -54,6 +54,28 @@ namespace KokkosBatched {
   template<typename T, int l>
   KOKKOS_FORCEINLINE_FUNCTION 
   static
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    operator + (const Vector<SIMD<Kokkos::complex<T> >,l> &a,  const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
+    for (int i=0;i<l;++i) {
+      r_val[i].real() = a[i].real() + b[i].real();
+      r_val[i].imag() = a[i].imag() + b[i].imag();
+    }
+    return r_val;
+  }
+
+  template<typename T, int l>
+  KOKKOS_FORCEINLINE_FUNCTION 
+  static
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator + (const Vector<SIMD<T>,l> &a,  const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
@@ -270,6 +292,28 @@ namespace KokkosBatched {
   template<typename T, int l>
   KOKKOS_FORCEINLINE_FUNCTION
   static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
+    for (int i=0;i<l;++i) {
+      r_val[i].real() = a[i].real() - b[i].real();
+      r_val[i].imag() = a[i].imag() - b[i].imag();
+    }
+    return r_val;
+  }
+
+  template<typename T, int l>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
@@ -329,6 +373,28 @@ namespace KokkosBatched {
     return r_val;
   }
 #endif
+
+  template<typename T, int l>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    operator - (const Vector<SIMD<Kokkos::complex<T> >,l> &a) {
+    Vector<SIMD<Kokkos::complex<T> >,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
+    for (int i=0;i<l;++i) {
+      r_val[i].real() = -a[i].real();
+      r_val[i].imag() = -a[i].imag();
+    }
+    return r_val;
+  }
 
   template<typename T, int l>
   KOKKOS_FORCEINLINE_FUNCTION
@@ -526,6 +592,28 @@ namespace KokkosBatched {
 
 #endif
 #endif
+
+  template<typename T, int l>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    operator * (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
+    for (int i=0;i<l;++i) {
+      r_val[i].real() = a[i].real() * b[i].real() - a[i].imag() * b[i].imag();
+      r_val[i].imag() = a[i].real() * b[i].imag() + a[i].imag() * b[i].real();
+    }
+    return r_val;
+  }
 
   template<typename T, int l>
   KOKKOS_FORCEINLINE_FUNCTION
@@ -811,6 +899,29 @@ namespace KokkosBatched {
 
 #endif
 #endif
+
+  template<typename T, int l>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static 
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(Kokkos::complex<T>,l)
+    operator / (const Vector<SIMD<Kokkos::complex<T> >,l> &a, const Vector<SIMD<Kokkos::complex<T> >,l> &b) {
+    Vector<SIMD<Kokkos::complex<T> >,l> r_val;
+#if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
+#pragma ivdep
+#endif
+#if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
+#pragma vector always
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#pragma omp simd
+#endif
+    for (int i=0;i<l;++i) {
+      const auto b_square = b[i].real()*b[i].real() + b[i].imag()*b[i].imag();
+      r_val[i].real() = (a[i].real() * b[i].real() + a[i].imag() * b[i].imag()) / b_square;
+      r_val[i].imag() = (a[i].imag() * b[i].real() - a[i].real() * b[i].imag()) / b_square;
+    }
+    return r_val;
+  }
 
   template<typename T, int l>
   KOKKOS_FORCEINLINE_FUNCTION
