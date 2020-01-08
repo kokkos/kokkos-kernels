@@ -158,6 +158,14 @@ vec_t create_x_vector(vec_t& kok_x, double max_value = 10.0) {
 template <typename crsMat_t, typename vector_t>
 vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
   vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+      crsMat.numRows());
+  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+  return y_vector;
+}
+
+template <typename crsMat_t, typename vector_t>
+vector_t create_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
+  vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
       crsMat.numRows(), x_vector.extent(1));
   KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
   return y_vector;
@@ -318,7 +326,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 
   scalar_view2d_t solution_x("X", nv, numVecs);
   create_x_vector(solution_x);
-  scalar_view2d_t y_vector = create_y_vector(crsmat2, solution_x);
+  scalar_view2d_t y_vector = create_y_vector_mv(crsmat2, solution_x);
   auto solution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), solution_x);
   std::vector<mag_t> initial_norms(numVecs);
   for(lno_t i = 0; i < numVecs; i++)
@@ -393,10 +401,10 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## block_gauss_seidel_rank1 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-	test_block_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10); \
+	test_block_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 15, 200, 10); \
 } \
 TEST_F( TestCategory, sparse ## _ ## block_gauss_seidel_rank2 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-	test_block_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 5000 * 20, 200, 10); \
+	test_block_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 15, 200, 10); \
 }
 
 

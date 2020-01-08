@@ -345,7 +345,8 @@ namespace Impl {
 
 struct TagZero{};   // The init tag for beta=0 
 struct TagInit{};   // The init tag for beta!=0 and beta !=1 
-struct TagMult{};   // The multiplication tag 
+struct TagMult{};   // The multiplication tag for transposed A
+struct TagMultCT{};   // The multiplication tag for conjugate-transposed A 
 template<class ExecSpace, class AV, class BV, class CV>
 struct DotBasedGEMM{
 
@@ -357,6 +358,7 @@ struct DotBasedGEMM{
   using size_A = typename AV::size_type;
   using scalar_C = typename CV::non_const_value_type;
   using size_C = typename CV::size_type;
+  using AVT = Kokkos::Details::ArithTraits<scalar_A>;
   using CVT = Kokkos::Details::ArithTraits<scalar_C>;
 
   const scalar_A alpha;
@@ -369,14 +371,14 @@ struct DotBasedGEMM{
   size_C numDivPerDot;   // number of teams collectively performing a dot product
   size_C numTeams;       // total number of teams
   
-  const size_A dotSize;        // the length of the vectors in the dot products
+  const size_A dotSize;  // the length of the vectors in the dot products
   size_A chunkSize;      // the local length of each team's share on the dot product  
   
 
   DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_):A(A_),B(B_),C(C_),alpha(alpha_),beta(beta_),numCrows(C.extent(0)),numCcols(C.extent(1)),dotSize(A.extent(0))
   { }
 
-  void run() {
+  void run(bool conjugateTranspose) {
 
     constexpr size_C workPerTeam = 4096;                   // Amount of work per team
     const size_C ndots = numCrows * numCcols;              // Number of dot products
@@ -412,34 +414,34 @@ struct DotBasedGEMM{
 
     // Initialize C matrix if beta != 1
     if(beta == CVT::zero()) {
-      Kokkos::RangePolicy<TagZero, ExecSpace> policyInit(0, ndots);
+      Kokkos::MDRangePolicy<TagZero, ExecSpace, Kokkos::Rank<2>> policyInit({0,0}, {numCrows, numCcols});
       Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
     }
     else if(beta != CVT::one()) {
-      Kokkos::RangePolicy<TagInit, ExecSpace> policyInit(0, ndots);
+      Kokkos::MDRangePolicy<TagInit, ExecSpace, Kokkos::Rank<2>> policyInit({0,0}, {numCrows, numCcols});
       Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
     }
     
     // Multiply alpha*A^TB and add it to beta*C
-    Kokkos::TeamPolicy<TagMult, ExecSpace> policy2(numTeams, Kokkos::AUTO);
-    Kokkos::parallel_for("Perform Dot Product Based GEMM", policy2, *this);
-
+    if(conjugateTranspose) {
+      Kokkos::TeamPolicy<TagMultCT, ExecSpace> policyMult(numTeams, Kokkos::AUTO);
+      Kokkos::parallel_for("Perform Dot Product Based GEMM", policyMult, *this);
+    }
+    else{
+      Kokkos::TeamPolicy<TagMult, ExecSpace> policyMult(numTeams, Kokkos::AUTO);
+      Kokkos::parallel_for("Perform Dot Product Based GEMM", policyMult, *this);
+    }
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const TagZero&, const size_C &i) const {
-    const size_C rowId = i / numCcols;
-    const size_C colId = i % numCcols;
+  void operator() (const TagZero&, const size_C &rowId, const size_C &colId ) const {
     C(rowId, colId) = CVT::zero(); 
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const TagInit&, const size_C &i) const {
-    const size_C rowId = i / numCcols;
-    const size_C colId = i % numCcols;
+  void operator() (const TagInit&, const size_C &rowId, const size_C &colId ) const {
     C(rowId, colId) = beta * C(rowId, colId);
   }
-
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const TagMult&, const typename Kokkos::TeamPolicy<>::member_type& teamMember) const {
@@ -450,11 +452,32 @@ struct DotBasedGEMM{
     const size_C rowId = i / numCcols;
     const size_C colId = i % numCcols;
     
-    scalar_C result = 0;
+    scalar_C result = CVT::zero();
     const size_A baseInd = chunkSize*localRank; 
     Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
 	if(baseInd + k < dotSize)
 	  update += alpha * A(baseInd+k, rowId) * B(baseInd+k, colId);
+      }, result );
+
+    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () { 
+      Kokkos::atomic_add(&C(rowId, colId), result);
+      });
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const TagMultCT&, const typename Kokkos::TeamPolicy<>::member_type& teamMember) const {
+
+    const size_C globalRank = teamMember.league_rank();
+    const size_C localRank = globalRank % numDivPerDot;
+    const size_C i = globalRank / numDivPerDot;
+    const size_C rowId = i / numCcols;
+    const size_C colId = i % numCcols;
+    
+    scalar_C result = CVT::zero();
+    const size_A baseInd = chunkSize*localRank; 
+    Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
+	if(baseInd + k < dotSize)
+	  update += alpha * AVT::conj(A(baseInd+k, rowId)) * B(baseInd+k, colId);
       }, result );
 
     Kokkos::single(Kokkos::PerTeam(teamMember), [&] () { 
@@ -520,16 +543,12 @@ struct GEMM< \
     else \
       transb = CUBLAS_OP_C; \
     \
-    bool useDotBasedGemm = false; \
     constexpr int numDotsLayoutLeftThreshold = 1600; \
     constexpr int numDotsLayoutRightThreshold = 100; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
-      useDotBasedGemm = true; \
-    \
-    if(useDotBasedGemm) { \
+    if(   (!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(); \
+      gemm.run(false); \
     } \
     else { \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
@@ -597,16 +616,12 @@ struct GEMM< \
     else \
       transb = CUBLAS_OP_C; \
     \
-    bool useDotBasedGemm = false; \
     constexpr int numDotsLayoutLeftThreshold = 1600; \
     constexpr int numDotsLayoutRightThreshold = 100; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
-      useDotBasedGemm = true; \
-    \
-    if(useDotBasedGemm) { \
+    if(   (!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(); \
+      gemm.run(false); \
     } \
     else { \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
@@ -674,16 +689,12 @@ struct GEMM< \
     else \
       transb = CUBLAS_OP_C; \
     \
-    bool useDotBasedGemm = false; \
     constexpr int numDotsLayoutLeftThreshold = 1600; \
     constexpr int numDotsLayoutRightThreshold = 100; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
-      useDotBasedGemm = true; \
-    \
-    if(useDotBasedGemm) { \
+    if(   (!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(); \
+      gemm.run(transa == CUBLAS_OP_C ? true : false);  \
     } \
     else { \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
@@ -751,16 +762,12 @@ struct GEMM< \
     else \
       transb = CUBLAS_OP_C; \
     \
-    bool useDotBasedGemm = false; \
     constexpr int numDotsLayoutLeftThreshold = 1600; \
     constexpr int numDotsLayoutRightThreshold = 100; \
-    if(   (!A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
-       || ( A_is_lr && A_t & transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) \
-      useDotBasedGemm = true; \
-    \
-    if(useDotBasedGemm) { \
+    if(   (!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutLeftThreshold) \
+       || ( A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(); \
+      gemm.run(transa == CUBLAS_OP_C ? true : false);  \
     } \
     else { \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \

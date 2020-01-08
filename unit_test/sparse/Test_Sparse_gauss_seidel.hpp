@@ -58,6 +58,7 @@
 #include <vector>
 #include "KokkosSparse_gauss_seidel.hpp"
 #include "KokkosSparse_partitioning_impl.hpp"
+#include "impl/KokkosSparse_sor_sequential_impl.hpp"
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
@@ -153,6 +154,14 @@ vec_t create_x_vector(vec_t& kok_x, double max_value = 10.0) {
 
 template <typename crsMat_t, typename vector_t>
 vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
+  vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+      crsMat.numRows());
+  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+  return y_vector;
+}
+
+template <typename crsMat_t, typename vector_t>
+vector_t create_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
   vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
       crsMat.numRows(), x_vector.extent(1));
   KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
@@ -305,8 +314,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   create_x_vector(solution_x);
   scalar_view2d_t x_vector(Kokkos::ViewAllocateWithoutInitializing("X"), nv, numVecs);
   Kokkos::deep_copy(x_vector, solution_x);
-  scalar_view2d_t y_vector = create_y_vector(input_mat, x_vector);
-  host_scalar_view2d_t x_host = Kokkos::create_mirror_view(x_vector);
+  scalar_view2d_t y_vector = create_y_vector_mv(input_mat, x_vector);
+  auto x_host = Kokkos::create_mirror_view(x_vector);
   std::vector<mag_t> initial_norms(numVecs);
   for(lno_t i = 0; i < numVecs; i++)
   {
@@ -407,7 +416,72 @@ void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
     std::cerr << "Only got back " << rowSet.size() << " unique row IDs!\n";
     return;
   }
-  //make a new CRS graph based on permuting the rows and columns of mat
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
+  const scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero();
+  const scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one();
+  srand(245);
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
+  lno_t numCols = numRows;
+  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
+  auto rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), input_mat.graph.row_map);
+  auto entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), input_mat.graph.entries);
+  auto values = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), input_mat.values);
+  //create raw x (unkown), y (rhs) vectors
+  using vector_t = typename crsMat_t::values_type::non_const_type;
+  //Create random x
+  vector_t x("X", numRows);
+  auto x_host = Kokkos::create_mirror_view(x);
+  for(lno_t i = 0; i < numRows; i++)
+  {
+    x_host(i) = one * scalar_t(10.0 * rand() / RAND_MAX);
+  }
+  Kokkos::deep_copy(x, x_host);
+  //record the correct solution, to compare against at the end
+  vector_t xgold("X gold", numRows);
+  Kokkos::deep_copy(xgold, x);
+  vector_t y = Test::create_y_vector(input_mat, x);
+  auto y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
+  //initial solution is zero
+  Kokkos::deep_copy(x_host, zero);
+  //get the inverse diagonal (only needed on host)
+  Kokkos::View<scalar_t*, Kokkos::HostSpace> invDiag("diag^-1", numRows);
+  for(lno_t i = 0; i < numRows; i++)
+  {
+    for(size_type j = rowmap(i); j < rowmap(i + 1); j++)
+    {
+      if(entries(j) == i)
+        invDiag(i) = one / values(j);
+    }
+  }
+  for(int i = 0; i < 1; i++)
+  {
+    KokkosSparse::Impl::Sequential::gaussSeidel
+      <lno_t, size_type, scalar_t, scalar_t, scalar_t>
+      (numRows, 1, rowmap.data(), entries.data(), values.data(),
+       y_host.data(), numRows,
+       x_host.data(), numRows,
+       invDiag.data(),
+       one, //omega
+       "F");
+    KokkosSparse::Impl::Sequential::gaussSeidel
+      <lno_t, size_type, scalar_t, scalar_t, scalar_t>
+      (numRows, 1, rowmap.data(), entries.data(), values.data(),
+       y_host.data(), numRows,
+       x_host.data(), numRows,
+       invDiag.data(),
+       one, //omega
+       "B");
+  }
+  //Copy solution back
+  Kokkos::deep_copy(x, x_host);
+  //Check against gold solution
+  scalar_t xSq = KokkosBlas::dot(x, x);
+  scalar_t solnDot = KokkosBlas::dot(x, xgold);
+  double scaledSolutionDot = Kokkos::Details::ArithTraits<scalar_t>::abs(solnDot / xSq);
+  EXPECT_TRUE(0.99 < scaledSolutionDot);
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -454,22 +528,25 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_asymmetric_rank1 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10, false); \
+  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, false); \
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_asymmetric_rank2 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 5000 * 20, 200, 10, 3, false); \
+  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, 3, false); \
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_symmetric_rank1 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 200, 10, true); \
+  test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, true); \
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_symmetric_rank2 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 5000 * 20, 200, 10, 3, true); \
+  test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, 3, true); \
 } \
 TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
 } \
 TEST_F( TestCategory, sparse ## _ ## balloon_clustering ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_balloon_clustering<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 100, 2000); \
+} \
+TEST_F( TestCategory, sparse ## _ ## sequential_sor ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_sequential_sor<SCALAR,ORDINAL,OFFSET,DEVICE>(1000, 1000 * 15, 50, 10); \
 }
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
