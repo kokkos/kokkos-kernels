@@ -98,7 +98,12 @@ struct Coordinates
   double z;
 };
 
-//Generate random integer, up to RAND_MAX
+/*
+getRandom generates a random object for sorting.
+the general version just produces integers - below
+are some specializations
+*/
+
 template<typename T>
 T getRandom()
 {
@@ -165,20 +170,23 @@ void fillRandom(KeyView k, ValView v)
   Kokkos::deep_copy(v, vhost);
 }
 
-template<typename ValView, typename OrdView>
+template<typename KeyView, typename OrdView>
 struct TestSerialRadixFunctor
 {
-  typedef typename ValView::value_type Value;
+  using Key = typename KeyView::value_type;
+  using UnsignedKey = typename std::make_unsigned<Key>::type;
 
-  TestSerialRadixFunctor(ValView& values_, ValView& valuesAux_, OrdView& counts_, OrdView& offsets_)
-    : values(values_), valuesAux(valuesAux_), counts(counts_), offsets(offsets_)
+  TestSerialRadixFunctor(KeyView& keys_, KeyView& keysAux_, OrdView& counts_, OrdView& offsets_)
+    : keys(keys_), keysAux(keysAux_), counts(counts_), offsets(offsets_)
   {}
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
-    KokkosKernels::Impl::SerialRadixSort<int, Value>(values.data() + offsets(i), valuesAux.data() + offsets(i), counts(i));
+    int off = offsets(i);
+    KokkosKernels::Impl::SerialRadixSort<int, UnsignedKey>(
+        (UnsignedKey*) keys.data() + off, (UnsignedKey*) keysAux.data() + off, counts(i));
   }
-  ValView values;
-  ValView valuesAux;
+  KeyView keys;
+  KeyView keysAux;
   OrdView counts;
   OrdView offsets;
 };
@@ -187,8 +195,9 @@ template<typename KeyView, typename ValView, typename OrdView>
 struct TestSerialRadix2Functor
 {
   //Sort by keys, while permuting values
-  typedef typename KeyView::value_type Key;
-  typedef typename ValView::value_type Value;
+  using Key = typename KeyView::value_type;
+  using UnsignedKey = typename std::make_unsigned<Key>::type;
+  using Value = typename ValView::value_type;
 
   TestSerialRadix2Functor(KeyView& keys_, KeyView& keysAux_, ValView& values_, ValView& valuesAux_, OrdView& counts_, OrdView& offsets_)
     : keys(keys_), keysAux(keysAux_), values(values_), valuesAux(valuesAux_), counts(counts_), offsets(offsets_)
@@ -196,7 +205,9 @@ struct TestSerialRadix2Functor
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
     int off = offsets(i);
-    KokkosKernels::Impl::SerialRadixSort2<int, Key, Value>(keys.data() + off, keysAux.data() + off, values.data() + off, valuesAux.data() + off, counts(i));
+    KokkosKernels::Impl::SerialRadixSort2<int, UnsignedKey, Value>(
+        (UnsignedKey*) keys.data() + off, (UnsignedKey*) keysAux.data() + off,
+        values.data() + off, valuesAux.data() + off, counts(i));
   }
   KeyView keys;
   KeyView keysAux;
