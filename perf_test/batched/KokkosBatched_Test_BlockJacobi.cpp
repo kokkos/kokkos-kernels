@@ -76,40 +76,67 @@ typedef value_type internal_vector_type;
 #endif
 
 template<typename ActiveMemorySpace>
-struct FactorizeModeAndAlgo;
+struct MatrixModeAndAlgo;
 
 template<>
-struct FactorizeModeAndAlgo<Kokkos::HostSpace> {
+struct MatrixModeAndAlgo<Kokkos::HostSpace> {
   typedef Mode::Serial mode_type;
   typedef Algo::Level3::Blocked algo_type;   
 };
 
 #if defined(KOKKOS_ENABLE_CUDA)
 template<>
-struct FactorizeModeAndAlgo<Kokkos::CudaSpace> {
+struct MatrixModeAndAlgo<Kokkos::CudaSpace> {
   typedef Mode::Team mode_type;
   typedef Algo::Level3::Unblocked algo_type;   
 };
 #endif
-template<typename ActiveMemorySpace>
-using SolveMultipleModeAndAlgo = FactorizeModeAndAlgo<ActiveMemorySpace>;
 
 template<typename ActiveMemorySpace>
-struct SolveSingleModeAndAlgo;
+struct VectorModeAndAlgo;
 
 template<>
-struct SolveSingleModeAndAlgo<Kokkos::HostSpace> {
+struct VectorModeAndAlgo<Kokkos::HostSpace> {
   typedef Mode::Serial mode_type;
   typedef Algo::Level2::Blocked algo_type;   
 };
 
 #if defined(KOKKOS_ENABLE_CUDA)
 template<>
-struct SolveSingleModeAndAlgo<Kokkos::CudaSpace> {
+struct VectorModeAndAlgo<Kokkos::CudaSpace> {
   typedef Mode::Team mode_type;
   typedef Algo::Level2::Unblocked algo_type;   
 };
 #endif
+
+template<typename ActiveMemorySpace>
+using CopyModeAndAlgo = MatrixModeAndAlgo<ActiveMemorySpace>;
+
+template<typename ActiveMemorySpace>
+using FactorizeModeAndAlgo = MatrixModeAndAlgo<ActiveMemorySpace>;
+
+template<typename ActiveMemorySpace>
+using SolveMultipleModeAndAlgo = MatrixModeAndAlgo<ActiveMemorySpace>;
+
+template<typename ActiveMemorySpace>
+using SolveSingleModeAndAlgo = VectorModeAndAlgo<ActiveMemorySpace>;
+
+/// 
+/// This is an example of block diagonal jacobi solver. This code uses non-trivial data
+/// compact data format to increase efficiency of vectorization. Thus, it requires packing
+/// if uses want to use traditional matrix format i.e., array of blocks for block jacobi 
+/// preconditioner and multi-vector for right hand side. As this code is for demonstration
+/// of the block jacobi solver, we do not fuse packing with other solver components. However,
+/// a realistic application would fuse the packing code with other parts of the solver e.g., 
+/// residual computing (sparse matvec) and compute inverse block jacobi to amortize the cost 
+/// of packing.
+///
+/// For a demonstration purpose, this code has three phases:
+/// 1) user data preparation and packing into vector-friendly format,
+/// 2) construct inverse jacobi,
+/// 3) apply the preconditioner in an interative sense.
+/// At the end, the code perform validation by computing its residual.
+///
 
 int main(int argc, char* argv[]) {
   Kokkos::initialize(argc, argv);
@@ -138,32 +165,57 @@ int main(int argc, char* argv[]) {
       if (token == std::string("-S")) S = std::atoi(argv[++i]);
       if (token == std::string("-Niter")) niter = std::atoi(argv[++i]);
     }
-
+    {
+      /// input check
+      if (N%vector_length) {
+        printf("Error: given N(%d) is not a multiplication of the pack size (%d)\n", N, vector_length);
+        printf("  In general, this is not a requirement but this code is for demonstration and it requires N to be multiplication of the pack size.\n");
+        return -1;
+      }
+    }
     printf(" :::: Testing (N = %d, Blk = %d, vl = %d, vi = %d, niter = %d)\n", 
            N, Blk, vector_length, internal_vector_length, niter);
 
+    ///
+    /// expected traditional interface from users
+    ///
+    Kokkos::View<value_type***,exec_space> A_given("A given block matrices",
+                                                   N, Blk, Blk);
+    Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> b_given("B given block right hand side multi vector",
+                                                                     N*Blk, Nvec);
+    Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> x_solution("X solution in the standard multi vector",
+                                                                        N*Blk, Nvec);
+    Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> r_residual("R residual for validation",
+                                                                        N*Blk, Nvec);
+    
+    /// randomize input scalar view
+    Kokkos::Random_XorShift64_Pool<exec_space> random(13245);
+    Kokkos::fill_random(A_given, random, value_type(1.0));
+    Kokkos::fill_random(b_given, random, value_type(1.0));
 
     ///
-    /// problem container
+    /// packed container
     ///
 
-    /// double 16
+    /// double 16 vector packed
     Kokkos::View<vector_type***,Kokkos::LayoutRight,exec_space> Av("A",
                                                                    N/vector_length, Blk, Blk);
-
-    /// double
-    Kokkos::View<value_type****,Kokkos::LayoutRight,exec_space> As((value_type*)Av.data(),
-                                                                   Av.extent(0),
-                                                                   Av.extent(1),
-                                                                   Av.extent(2),
-                                                                   vector_length);
-
-    /// double 2
+    
+    /// double 2 internal vector interpretation for GPUs
+    /// for CPUs, the internal_vector_type is double
     Kokkos::View<internal_vector_type****,Kokkos::LayoutRight,exec_space> Ai((internal_vector_type*)Av.data(),
                                                                              Av.extent(0),
                                                                              Av.extent(1),
                                                                              Av.extent(2),
                                                                              vector_length/internal_vector_length);
+    
+    /// double
+    Kokkos::View<value_type****,Kokkos::LayoutRight,exec_space> As((value_type*)Av.data(),
+                                                                   Av.extent(0),
+                                                                   Av.extent(1),
+                                                                   Av.extent(2),
+                                                                   vector_length);    
+
     /// double 16
     Kokkos::View<vector_type***,Kokkos::LayoutRight,exec_space> xv("x",
                                                                    N/vector_length, Blk, Nvec);
@@ -198,21 +250,7 @@ int main(int argc, char* argv[]) {
                                                                              bv.extent(0),
                                                                              bv.extent(1),
                                                                              bv.extent(2),
-                                                                             vector_length/internal_vector_length);
-    
-
-    /// double copy of A
-    Kokkos::View<value_type****,Kokkos::LayoutRight,exec_space> Acopy("Acopy",
-                                                                      As.extent(0),
-                                                                      As.extent(1),
-                                                                      As.extent(2),
-                                                                      As.extent(3));
-
-    Kokkos::View<value_type****,Kokkos::LayoutRight,exec_space> rs("rs",
-                                                                   bs.extent(0), 
-                                                                   bs.extent(1), 
-                                                                   bs.extent(2),
-                                                                   bs.extent(3));
+                                                                             vector_length/internal_vector_length);   
     
 #if defined(KOKKOSBATCHED_USE_128BIT_MEMORY_INST)
     auto AA = Ai;
@@ -224,13 +262,51 @@ int main(int argc, char* argv[]) {
     auto xx = xs;
 #endif
 
-    /// randomize input scalar view
-    Kokkos::Random_XorShift64_Pool<exec_space> random(13245);
-    Kokkos::fill_random(As, random, value_type(1.0));
-    Kokkos::fill_random(bs, random, value_type(1.0));
+    /// kokkos parallel policy 
+    using policy_type = Kokkos::TeamPolicy<exec_space>;
+    using member_type = typename policy_type::member_type;
+    int thread_team_size = 0;
 
-    /// to verify the result, prepare for a copy of A
-    Kokkos::deep_copy(Acopy, As);
+    /// packing
+    if (1) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
+      cudaProfilerStart();
+#endif
+      timer.reset();
+      if        (Blk < 8)  { thread_team_size =  32; 
+      } else if (Blk < 12) { thread_team_size =  64;
+      } else               { thread_team_size = 128; }
+      const int team_size = std::is_same<memory_space,typename host_space::memory_space>::value ? 1 : thread_team_size/vector_length;
+      const int vector_size = std::is_same<memory_space,typename host_space::memory_space>::value ? 1 : vector_length;
+      policy_type policy(As.extent(0), team_size, vector_size);
+      Kokkos::parallel_for
+        ("copy from the user blocks",
+         policy,
+         KOKKOS_LAMBDA(const member_type &member) {
+	  typedef CopyModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
+	  typedef default_mode_and_algo_type::mode_type mode_type; 
+
+          const int i = member.league_rank();
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_length),[&](const int &v) {
+              const int offset = i*vector_length+v;
+
+              auto A     = Kokkos::subview(A_given, offset,     Kokkos::ALL(), Kokkos::ALL());
+              auto b     = Kokkos::subview(b_given, Kokkos::pair<int,int>(offset*Blk,(offset+1)*Blk), Kokkos::ALL());
+
+              auto Apack = Kokkos::subview(As, i, Kokkos::ALL(), Kokkos::ALL(), v);
+              auto bpack = Kokkos::subview(bs, i, Kokkos::ALL(), Kokkos::ALL(), v);
+
+              Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, A, Apack);
+              Copy<member_type,Trans::NoTranspose,mode_type>::invoke(member, b, bpack);
+            });
+        });
+      Kokkos::fence();
+      const double t = timer.seconds();
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
+      cudaProfilerStop();
+#endif
+      printf("packing time = %f\n", t);
+    }
 
     ///
     /// inverse blocks 
@@ -240,9 +316,6 @@ int main(int argc, char* argv[]) {
       cudaProfilerStart();
 #endif
       timer.reset();
-      using policy_type = Kokkos::TeamPolicy<exec_space>;
-      using member_type = typename policy_type::member_type;
-      int thread_team_size = 0;
       if        (Blk < 8)  { thread_team_size =  32; 
       } else if (Blk < 12) { thread_team_size =  64;
       } else               { thread_team_size = 128; }
@@ -286,9 +359,6 @@ int main(int argc, char* argv[]) {
       cudaProfilerStart();
 #endif
       timer.reset();
-      using policy_type = Kokkos::TeamPolicy<exec_space>;
-      using member_type = typename policy_type::member_type;
-      int thread_team_size = 0;
       if        (Blk < 8)  { thread_team_size =  32; 
       } else if (Blk < 12) { thread_team_size =  64;
       } else               { thread_team_size = 128; }
@@ -339,54 +409,55 @@ int main(int argc, char* argv[]) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
       cudaProfilerStop();
 #endif
-      printf("solve time = %f , # of solves per min = %f\n", t, 1.0/t*60*niter);
+      printf("solve time = %f , # of solves per min = %f\n", t/double(niter), 1.0/t*60*niter);
     }
     
     ///
-    /// compute residual
+    /// unpacking and compute residual
     ///
     if (1) {
       typedef KokkosBatched::Algo::Level2::Unblocked algo_type;
-      using policy_type = Kokkos::TeamPolicy<exec_space>;
-      using member_type = typename policy_type::member_type;
-      policy_type policy(Acopy.extent(0), Kokkos::AUTO(), Acopy.extent(5));
+      policy_type policy(As.extent(0), Kokkos::AUTO());
       Kokkos::parallel_for
         ("compute residual",
          policy, KOKKOS_LAMBDA(const member_type &member) {
           const int i = member.league_rank();
           
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, Acopy.extent(5)),[&](const int &v) {
-              auto A = Kokkos::subview(Acopy, i, Kokkos::ALL(), Kokkos::ALL(), v);
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_length),[&](const int &v) {
+              const int ii = i*vector_length + v;
+              auto A = Kokkos::subview(A_given, ii, Kokkos::ALL(), Kokkos::ALL());
               for (int jvec=0;jvec<Nvec;++jvec) {
-                auto x = Kokkos::subview(xs, i, Kokkos::ALL(), jvec, v);
-                auto b = Kokkos::subview(bs, i, Kokkos::ALL(), jvec, v);
-                auto r = Kokkos::subview(rs, i, Kokkos::ALL(), jvec, v);
-                TeamCopy<member_type,
-                         Trans::NoTranspose>
-                  ::invoke(member, b, r);
-                TeamGemv<member_type,
-                         Trans::NoTranspose,algo_type>
-                  ::invoke(member, -1.0, A, x, 1.0, r);
+                const int offset = ii*Blk;
+                const auto block_vector_range = Kokkos::pair<int,int>(offset,offset+Blk);
+
+                auto xp  = Kokkos::subview(xs, i, Kokkos::ALL(), jvec, v);
+                auto x = Kokkos::subview(x_solution, block_vector_range, jvec);
+                auto b = Kokkos::subview(b_given,    block_vector_range, jvec);
+                auto r = Kokkos::subview(r_residual, block_vector_range, jvec);
+                /// solution unpack
+                TeamCopy<member_type,Trans::NoTranspose>          ::invoke(member, xp, x);
+                /// residual
+                TeamCopy<member_type,Trans::NoTranspose>          ::invoke(member, b, r);
+                TeamGemv<member_type,Trans::NoTranspose,algo_type>::invoke(member, -1.0, A, x, 1.0, r);
               }
             });
         });
       Kokkos::fence();
-      auto rs_host = Kokkos::create_mirror_view(rs);
-      auto bs_host = Kokkos::create_mirror_view(bs);
-      Kokkos::deep_copy(rs_host, rs);
-      Kokkos::deep_copy(bs_host, bs);
+      auto r_host = Kokkos::create_mirror_view(r_residual);
+      auto b_host = Kokkos::create_mirror_view(b_given);
+      Kokkos::deep_copy(r_host, r_residual);
+      Kokkos::deep_copy(b_host, b_given);
       Kokkos::fence();
       {
         double norm2 = 0, diff2 = 0;
-        for (int i0=0,i0end=rs.extent(0);i0<i0end;++i0) // N/vector_length
-          for (int i1=0,i1end=rs.extent(1);i1<i1end;++i1) // Blk
-            for (int i2=0,i2end=rs.extent(2);i2<i2end;++i2) // Nvec
-              for (int i3=0,i3end=rs.extent(3);i3<i3end;++i3) {// vector_length
-                const auto val = bs_host(i0,i1,i2,i3);
-                const auto res = rs_host(i0,i1,i2,i3);
-                norm2 += val*val;
-                diff2 += res*res;
-              }
+        for (int i0=0,i0end=r_host.extent(0);i0<i0end;++i0) // N*Blk
+          for (int i1=0,i1end=r_host.extent(1);i1<i1end;++i1) { // Nvec
+            const auto val = b_host(i0,i1);
+            const auto res = r_host(i0,i1);
+            norm2 += val*val;
+            diff2 += res*res;
+            ///printf("val %e, res %e\n", val, res);
+          }
         printf("rel error = %e\n", diff2/norm2);
       }
     }
