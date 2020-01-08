@@ -225,11 +225,11 @@ public:
   typedef Kokkos::View<int*, supercols_memory_space>       integer_view_t;
   typedef Kokkos::View<int*, supercols_host_memory_space>  integer_view_host_t;
 
-  typedef typename Kokkos::View<nnz_scalar_t*, memory_space> workspace_t;
+  typedef typename Kokkos::View<scalar_t*, memory_space> workspace_t;
 
   //
-  typedef KokkosSparse::CrsMatrix<nnz_scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<nnz_scalar_t, nnz_lno_t,                execution_space, void, size_type> crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type> host_crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type> crsmat_t;
 
   //
   typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
@@ -275,14 +275,22 @@ private:
   signed_integral_t chain_threshold;
 
   bool symbolic_complete;
+  bool numeric_complete;
   bool require_symbolic_lvlsched_phase;
   bool require_symbolic_chain_phase;
 
   void set_if_algm_require_symb_lvlsched () {
-    if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP
-        || algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1
-        /*|| algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
-        || algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_RP
+        || algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1
+      /*|| algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
+        || algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+        || algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE
+        || algm == SPTRSVAlgorithm::SUPERNODAL_ETREE
+        || algm == SPTRSVAlgorithm::SUPERNODAL_DAG
+        || algm == SPTRSVAlgorithm::SUPERNODAL_SPMV
+        || algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG
+#endif
        )
     {
       require_symbolic_lvlsched_phase = true;
@@ -374,7 +382,7 @@ private:
 
 public:
 
-  SPTRSVHandle(SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, bool symbolic_complete_ = false) :
+  SPTRSVHandle(SPTRSVAlgorithm choice, const size_type nrows_, bool lower_tri_, bool symbolic_complete_ = false, bool numeric_complete_ = false) :
 #ifdef KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
     cudagraphCreated(false),
     sptrsvCudaGraph(nullptr),
@@ -399,6 +407,7 @@ public:
     num_chain_entries(0),
     chain_threshold(-1),
     symbolic_complete(symbolic_complete_),
+    numeric_complete( numeric_complete_ ),
     require_symbolic_lvlsched_phase(false),
     require_symbolic_chain_phase(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
@@ -900,6 +909,7 @@ public:
   bool is_upper_tri() const { return !lower_tri; }
 
   bool is_symbolic_complete() const { return symbolic_complete; }
+  bool is_numeric_complete() const { return numeric_complete; }
 
   bool is_stored_diagonal() const { return stored_diagonal; }
 
@@ -910,6 +920,9 @@ public:
 
   void set_symbolic_complete() { this->symbolic_complete = true; }
   void set_symbolic_incomplete() { this->symbolic_complete = false; }
+
+  void set_numeric_complete() { this->numeric_complete = true; }
+  void set_numeric_incomplete() { this->numeric_complete = false; }
 
   KOKKOS_INLINE_FUNCTION
   int get_team_size() const {return this->team_size;}

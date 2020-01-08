@@ -177,7 +177,12 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_lowertri_total;
 #endif
- if ( thandle.algm_requires_symb_lvlsched() )
+
+ using namespace KokkosSparse::Experimental;
+ if (thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_RP  ||
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1 ||
+   /*thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN)
  {
   // Scheduling currently computes on host - need host copy of all views
 
@@ -331,18 +336,19 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG   ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
-  typedef typename TriSolveHandle::size_type size_type;
 
-  typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
-  typedef typename TriSolveHandle::nnz_lno_view_t::HostMirror HostEntriesType;
+  using size_type = typename TriSolveHandle::size_type;
 
-  typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
-  typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror HostSignedEntriesType;
+  using DeviceEntriesType = typename TriSolveHandle::nnz_lno_view_t;
+  using HostEntriesType = typename DeviceEntriesType::HostMirror;
 
-  typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
+  using DeviceSignedEntriesType = typename TriSolveHandle::signed_nnz_lno_view_t;
+  using HostSignedEntriesType = typename DeviceSignedEntriesType::HostMirror;
 
-  typedef typename TriSolveHandle::integer_view_t             integer_view_t;
-  typedef typename TriSolveHandle::integer_view_t::HostMirror integer_view_host_t;
+  using signed_integral_t = typename TriSolveHandle::signed_integral_t;
+
+  using integer_view_t = typename TriSolveHandle::integer_view_t;
+  using integer_view_host_t = typename integer_view_t::HostMirror;
 
 
   // rowptr: pointer to begining of each row (CRS)
@@ -351,11 +357,11 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
 
   // # of nodes per level
   DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
-  HostEntriesType nodes_per_level = Kokkos::create_mirror_view (dnodes_per_level);
+  HostEntriesType nodes_per_level = thandle.get_host_nodes_per_level ();
 
   // node ids in each level
   DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
-  HostEntriesType nodes_grouped_by_level = Kokkos::create_mirror_view (dnodes_grouped_by_level);
+  HostEntriesType nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
 
   // map node id to level that this node belongs to
   DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
@@ -617,7 +623,11 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::Timer timer_sym_uppertri_total;
 #endif
 
- if ( thandle.algm_requires_symb_lvlsched() )
+ using namespace KokkosSparse::Experimental;
+ if (thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_RP  ||
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1 ||
+   /*thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN)
  {
   // Scheduling currently compute on host - need host copy of all views
 
@@ -766,18 +776,19 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
           thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
-  typedef typename TriSolveHandle::size_type size_type;
 
-  typedef typename TriSolveHandle::nnz_lno_view_t  DeviceEntriesType;
-  typedef typename TriSolveHandle::nnz_lno_view_t::HostMirror HostEntriesType;
+  using size_type = typename TriSolveHandle::size_type;
 
-  typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
-  typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror HostSignedEntriesType;
+  using DeviceEntriesType = typename TriSolveHandle::nnz_lno_view_t;
+  using HostEntriesType = typename DeviceEntriesType::HostMirror;
 
-  typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
+  using DeviceSignedEntriesType = typename TriSolveHandle::signed_nnz_lno_view_t;
+  using HostSignedEntriesType = typename DeviceSignedEntriesType::HostMirror;
 
-  typedef typename TriSolveHandle::integer_view_t             integer_view_t;
-  typedef typename TriSolveHandle::integer_view_t::HostMirror integer_view_host_t;
+  using signed_integral_t = typename TriSolveHandle::signed_integral_t;
+
+  using integer_view_t = typename TriSolveHandle::integer_view_t;
+  using integer_view_host_t = typename integer_view_t::HostMirror;
 
 
   // rowptr: pointer to begining of each row (CRS)
@@ -786,11 +797,11 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
   // # of nodes per level
   DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
-  HostEntriesType nodes_per_level = Kokkos::create_mirror_view (dnodes_per_level);
+  HostEntriesType nodes_per_level = thandle.get_host_nodes_per_level ();
 
   // node ids in each level
   DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
-  HostEntriesType nodes_grouped_by_level = Kokkos::create_mirror_view (dnodes_grouped_by_level);
+  HostEntriesType nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
 
   // type of kernels used at each level
   int size_unblocked = thandle.get_supernode_size_unblocked();

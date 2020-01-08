@@ -175,7 +175,6 @@ crsmat_t remove_zeros_crsmat(crsmat_t &A) {
   using scalar_t  = typename values_view_t::value_type;
   using size_type = typename crsmat_t::size_type;
 
-  using STS = Kokkos::Details::ArithTraits<scalar_t>;
   using range_type = Kokkos::pair<int, int>;
 
   const scalar_t zero (0.0);
