@@ -798,21 +798,15 @@ struct LowerTriSupernodalFunctor
         auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
         // workspace
         auto Y = subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
-        /*if (nscol == 1) {
-          if (team_rank == 0) {
-            Xj(0) *= Ljj(0, 0);
-          }
-        } else */{
-          for (int ii = team_rank; ii < nscol; ii += team_size) {
-            Y(ii) = Xj(ii);
-          }
-          team.team_barrier ();
-          // calling team-level "Unblocked" gemv on small-size diagonal in KokkosBatched
-          KokkosBatched::TeamGemv<member_type,
-                                  KokkosBatched::Trans::NoTranspose,
-                                  KokkosBatched::Algo::Gemv::Unblocked>
-            ::invoke(team, one, Ljj, Y, zero, Xj);
+        for (int ii = team_rank; ii < nscol; ii += team_size) {
+          Y(ii) = Xj(ii);
         }
+        team.team_barrier ();
+        // calling team-level "Unblocked" gemv on small-size diagonal in KokkosBatched
+        KokkosBatched::TeamGemv<member_type,
+                                KokkosBatched::Trans::NoTranspose,
+                                KokkosBatched::Algo::Gemv::Unblocked>
+          ::invoke(team, one, Ljj, Y, zero, Xj);
         team.team_barrier ();
 
         /* GEMM to update with off diagonal blocks */
