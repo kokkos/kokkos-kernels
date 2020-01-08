@@ -21,4 +21,9 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosBatched_Test_BlockTridiagJacobi.cpp
   )
 
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  kokkosbatched_test_block_jacobi.x
+  SOURCES KokkosBatched_Test_BlockJacobi.cpp
+  )
+
 
