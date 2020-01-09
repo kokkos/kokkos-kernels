@@ -51,7 +51,6 @@ namespace KokkosBatched {
     invoke(const MemberType &member, 
            const AViewType &A,
            const BViewType &B) {
-      int r_val[2] = {};
       /// the scalar value cannot be derived from the view either A or B. 
       /// this is because A and B can have non trivial data type in it. 
       const double one(1.0);
@@ -87,13 +86,12 @@ namespace KokkosBatched {
     invoke(const MemberType &member, 
            const AViewType &A,
            const BViewType &B) {
-      int r_val = 0;
       if (std::is_same<ArgMode,Mode::Serial>::value) {
-        r_val = SerialSolveLU<ArgTrans,ArgAlgo>::invoke(A, B);
+        SerialSolveLU<ArgTrans,ArgAlgo>::invoke(A, B);
       } else if (std::is_same<ArgMode,Mode::Team>::value) {
-        r_val = TeamSolveLU<MemberType,ArgTrans,ArgAlgo>::invoke(member, A, B);
+        TeamSolveLU<MemberType,ArgTrans,ArgAlgo>::invoke(member, A, B);
       } 
-      return r_val;
+      return 0;
     }
   };           
     

@@ -334,7 +334,7 @@ int main(int argc, char* argv[]) {
           const int i = member.league_rank();
           Kokkos::View<internal_vector_type***,Kokkos::LayoutRight,exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>
             SS(member.team_scratch(0), Blk, Blk, vector_loop_size);
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(3)),[&](const int &v) {
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
               auto A = Kokkos::subview(AA, i, Kokkos::ALL(), Kokkos::ALL(), v);
               auto B = Kokkos::subview(SS,    Kokkos::ALL(), Kokkos::ALL(), v);
               SetIdentity<member_type,mode_type>::invoke(member, B);
@@ -374,7 +374,7 @@ int main(int argc, char* argv[]) {
               typedef default_mode_and_algo_type::algo_type algo_type;
               
               const int i = member.league_rank();
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
                   auto Ainv = Kokkos::subview(AA, i, Kokkos::ALL(), Kokkos::ALL(), v);
                   auto x    = Kokkos::subview(xx, i, Kokkos::ALL(),             0, v);
                   auto b    = Kokkos::subview(bb, i, Kokkos::ALL(),             0, v);
@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
               typedef default_mode_and_algo_type::algo_type algo_type;
               
               const int i = member.league_rank();
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, AA.extent(5)),[&](const int &v) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
                   auto Ainv = Kokkos::subview(AA, i, Kokkos::ALL(), Kokkos::ALL(), v);
                   auto X    = Kokkos::subview(xx, i, Kokkos::ALL(), Kokkos::ALL(), v);
                   auto B    = Kokkos::subview(bb, i, Kokkos::ALL(), Kokkos::ALL(), v);
