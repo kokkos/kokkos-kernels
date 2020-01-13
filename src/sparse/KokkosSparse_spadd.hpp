@@ -202,8 +202,11 @@ namespace Experimental {
       size_type rowStart = Crowptrs(i);
       size_type rowEnd = Crowptrs(i + 1);
       size_type rowNum = rowEnd - rowStart;
-      KokkosKernels::Impl::SerialRadixSort2<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type>
-        (Ccolinds.data() + rowStart, CcolindsAux.data() + rowStart, ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum);
+      using lno_t = typename CcolindsT::non_const_value_type;
+      using unsigned_lno_t = typename std::make_unsigned<lno_t>::type;
+      KokkosKernels::Impl::SerialRadixSort2<size_type, unsigned_lno_t, lno_t>
+        ((unsigned_lno_t*) Ccolinds.data() + rowStart, (unsigned_lno_t*) CcolindsAux.data() + rowStart,
+         ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum);
     }
     CrowptrsT Crowptrs;
     CcolindsT Ccolinds;
