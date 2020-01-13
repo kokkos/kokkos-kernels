@@ -160,7 +160,6 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
   {
     // Call specific algorithm type
     auto sptrsv_handle = handle->get_sptrsv_handle();
-
     if ( sptrsv_handle->is_lower_tri() ) {
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::lower_tri_symbolic(*sptrsv_handle, row_map, entries);
