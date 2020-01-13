@@ -222,7 +222,7 @@ struct CudaGraphWrapper
   bool recording = false;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA) && 10000 <= CUDA_VERSION
+#if defined(KOKKOS_ENABLE_CUDA) && 10010 <= CUDA_VERSION
 #define HAVE_CUDAGRAPHS
 
 //Dummy parallel call that makes compiler generate some declarations/initializations
