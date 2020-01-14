@@ -144,6 +144,10 @@ void get_suggested_vector_team_size(
 
     suggested_team_size_ = max_allowed_team_size / suggested_vector_size_;
   }
+#else
+  (void)max_allowed_team_size;
+  (void)nr;
+  (void)nnz;
 #endif
 
 #if defined( KOKKOS_ENABLE_QTHREAD)
@@ -233,6 +237,22 @@ int get_suggested_team_size(Functor& f, int vector_size)
 
 #endif //ifdef KOKKOS_ENABLE_DEPRECATED_CODE ... else
 
+template<typename team_policy_t, typename Functor, typename ParallelTag = Kokkos::ParallelForTag>
+int get_suggested_team_size(Functor& f, int vector_size, size_t sharedPerTeam, size_t sharedPerThread)
+{
+#ifdef KOKKOS_ENABLE_CUDA
+  if(std::is_same<typename team_policy_t::traits::execution_space, Kokkos::Cuda>::value)
+  {
+    team_policy_t temp = team_policy_t(1, 1, vector_size).
+      set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam), Kokkos::PerThread(sharedPerThread));
+    return temp.team_size_recommended(f, ParallelTag());
+  }
+  else
+#endif
+  {
+    return 1;
+  }
+}
 
 template <typename idx_array_type,
           typename idx_edge_array_type,
@@ -372,7 +392,7 @@ struct FillSymmetricLowerEdgesHashMap{
     in_lno_nnz_view_t adj_,
     hashmap_t hashmap_,
     out_lno_row_view_t pre_pps_,
-    bool lower_only_ = false
+    bool /* lower_only_ */ = false
     ):num_rows(num_rows_),nnz(adj_.extent(0)), xadj(xadj_), adj(adj_),
         umap(hashmap_), pre_pps(pre_pps_){}
 
@@ -922,10 +942,12 @@ struct PermuteVector{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const idx &ii) const {
-
     idx mapping = ii;
-    if (ii < mapping_size) mapping = old_to_new_mapping[ii];
-    new_vector[mapping] = old_vector[ii];
+    if (ii < mapping_size)
+      mapping = old_to_new_mapping[ii];
+    for (idx j = 0; j < static_cast<idx>(new_vector.extent(1)); j++) {
+      new_vector.access(mapping, j) = old_vector.access(ii, j);
+    }
   }
 };
 
@@ -964,10 +986,12 @@ struct PermuteBlockVector{
   void operator()(const idx &ii) const {
 
     idx mapping = ii;
-    if (ii < mapping_size) mapping = old_to_new_mapping[ii];
-
-    for (int i = 0; i < block_size; ++i){
-    	new_vector[mapping*block_size + i] = old_vector[ii * block_size + i];
+    if (ii < mapping_size)
+      mapping = old_to_new_mapping[ii];
+    for (idx j = 0; j < static_cast<idx>(new_vector.extent(1)); j++) {
+      for (int i = 0; i < block_size; ++i){
+        new_vector.access(mapping*block_size + i, j) = old_vector.access(ii * block_size + i, j);
+      }
     }
   }
 };
@@ -987,10 +1011,12 @@ void permute_block_vector(
 
 }
 
-
+//TODO BMK: clean this up by removing 1st argument. It is unused but
+//its name gives the impression that only num_elements of the vector are zeroed,
+//when really it's always the whole thing.
 template <typename value_array_type, typename MyExecSpace>
 void zero_vector(
-    typename value_array_type::value_type num_elements,
+    typename value_array_type::value_type /* num_elements */,
     value_array_type &vector
     ){
   typedef typename value_array_type::non_const_value_type val_type;
@@ -1874,8 +1900,56 @@ void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row
   MyExecSpace().fence();
 }
 
+//A sum-reduction scalar representing a fixed-size array.
+template<typename scalar_t, int N>
+struct array_sum_reduce
+{
+  using ValueType = array_sum_reduce<scalar_t, N>;
+
+  scalar_t data[N];
+  KOKKOS_INLINE_FUNCTION
+  array_sum_reduce()
+  { 
+    for(int i = 0; i < N; i++)
+      data[i] = scalar_t();
+  }
+  KOKKOS_INLINE_FUNCTION
+  array_sum_reduce(const ValueType& rhs)
+  { 
+    for(int i = 0; i < N; i++)
+      data[i] = rhs.data[i];
+  }
+  KOKKOS_INLINE_FUNCTION   // add operator
+  array_sum_reduce& operator+=(const ValueType& src)
+  {
+    for(int i = 0; i < N; i++)
+      data[i] += src.data[i];
+    return *this;
+  } 
+  KOKKOS_INLINE_FUNCTION   // volatile add operator 
+  void operator +=(const volatile ValueType& src) volatile
+  {
+    for(int i = 0; i < N; i++)
+      data[i] += src.data[i];
+  }
+};
 
 }
+}
+
+//Define the identity for array_sum_reduce
+namespace Kokkos
+{
+  template<typename scalar_t, int N>
+  struct reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>>
+  {
+    typedef KokkosKernels::Impl::array_sum_reduce<scalar_t, N> T;
+    KOKKOS_FORCEINLINE_FUNCTION static T sum()
+    {
+      //default constructor default-initializes each element (this should always be 0)
+      return T();
+    }
+  };
 }
 
 #endif

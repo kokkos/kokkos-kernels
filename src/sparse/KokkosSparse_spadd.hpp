@@ -45,6 +45,7 @@
 #define _KOKKOS_SPADD_HPP
 
 #include "KokkosKernels_Handle.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -182,107 +183,7 @@ namespace Experimental {
     CcolindsT ABperm;
   };
 
-  template<typename size_type, typename KeyType, typename ValueType, typename IndexType>
-  KOKKOS_INLINE_FUNCTION void
-  radixSortKeysAndValues(KeyType* keys, KeyType* keysAux, ValueType* values, ValueType* valuesAux, IndexType n)
-  {
-    if(n <= 1)
-      return;
-    //sort 4 bits at a time
-    KeyType mask = 0xF;
-    bool inAux = false;
-    //maskPos counts the low bit index of mask (0, 4, 8, ...)
-    IndexType maskPos = 0;
-    IndexType sortBits = 0;
-    KeyType minKey = keys[0];
-    KeyType maxKey = keys[0];
-    for(size_type i = 0; i < n; i++)
-    {
-      if(keys[i] < minKey)
-        minKey = keys[i];
-      if(keys[i] > maxKey)
-        maxKey = keys[i];
-    }
-    //subtract a bias of minKey so that key range starts at 0
-    for(size_type i = 0; i < n; i++)
-    {
-      keys[i] -= minKey;
-    }
-    KeyType upperBound = maxKey - minKey;
-    while(upperBound)
-    {
-      upperBound >>= 1;
-      sortBits++;
-    }
-    for(size_type s = 0; s < (sortBits + 3) / 4; s++)
-    {
-      //Count the number of elements in each bucket
-      IndexType count[16] = {0};
-      IndexType offset[17] = {0};
-      if(!inAux)
-      {
-        for(IndexType i = 0; i < n; i++)
-        {
-          count[(keys[i] & mask) >> maskPos]++;
-        }
-      }
-      else
-      {
-        for(IndexType i = 0; i < n; i++)
-        {
-          count[(keysAux[i] & mask) >> maskPos]++;
-        }
-      }
-      //get offset as the prefix sum for count
-      for(IndexType i = 0; i < 16; i++)
-      {
-        offset[i + 1] = offset[i] + count[i];
-      }
-      //now for each element in [lo, hi), move it to its offset in the other buffer
-      //this branch should be ok because whichBuf is the same on all threads
-      if(!inAux)
-      {
-        //copy from *Over to *Aux
-        for(IndexType i = 0; i < n; i++)
-        {
-          IndexType bucket = (keys[i] & mask) >> maskPos;
-          keysAux[offset[bucket + 1] - count[bucket]] = keys[i];
-          valuesAux[offset[bucket + 1] - count[bucket]] = values[i];
-          count[bucket]--;
-        }
-      }
-      else
-      {
-        //copy from *Aux to *Over
-        for(IndexType i = 0; i < n; i++)
-        {
-          IndexType bucket = (keysAux[i] & mask) >> maskPos;
-          keys[offset[bucket + 1] - count[bucket]] = keysAux[i];
-          values[offset[bucket + 1] - count[bucket]] = valuesAux[i];
-          count[bucket]--;
-        }
-      }
-      inAux = !inAux;
-      mask = mask << 4;
-      maskPos += 4;
-    }
-    if(inAux)
-    {
-      //need to deep copy from aux arrays to main
-      for(IndexType i = 0; i < n; i++)
-      {
-        keys[i] = keysAux[i];
-        values[i] = valuesAux[i];
-      }
-    }
-    //remove the bias
-    for(size_type i = 0; i < n; i++)
-    {
-      keys[i] += minKey;
-    }
-  }
-
-  template<typename size_type, typename CrowptrsT, typename CcolindsT>
+  template<typename ExecSpace, typename size_type, typename CrowptrsT, typename CcolindsT>
   struct SortEntriesFunctor
   {
     SortEntriesFunctor(const CrowptrsT Crowptrs_, CcolindsT Ccolinds_, CcolindsT ABperm_) :
@@ -292,16 +193,17 @@ namespace Experimental {
       ABperm(ABperm_),
       ABpermAux("AB perm aux", ABperm_.extent(0))
     {}
-    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
+    typedef typename Kokkos::TeamPolicy<ExecSpace>::member_type TeamMember;
+    KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
     {
       //3: Sort each row's colinds (permuting values at same time), then count unique colinds (write that to Crowptr(i))
       //CrowptrTemp tells how many entries in each oversized row
+      size_type i = t.league_rank();
       size_type rowStart = Crowptrs(i);
       size_type rowEnd = Crowptrs(i + 1);
       size_type rowNum = rowEnd - rowStart;
-      radixSortKeysAndValues<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type>
-        (Ccolinds.data() + rowStart, CcolindsAux.data() + rowStart,
-         ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum);
+      KokkosKernels::Impl::SerialRadixSort2<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type>
+        (Ccolinds.data() + rowStart, CcolindsAux.data() + rowStart, ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum);
     }
     CrowptrsT Crowptrs;
     CcolindsT Ccolinds;
@@ -309,6 +211,33 @@ namespace Experimental {
     CcolindsT ABperm;
     CcolindsT ABpermAux;
   };
+
+  #ifdef KOKKOS_ENABLE_CUDA
+  template<typename size_type, typename CrowptrsT, typename CcolindsT>
+  struct SortEntriesFunctor<Kokkos::Cuda, size_type, CrowptrsT, CcolindsT>
+  {
+    SortEntriesFunctor(const CrowptrsT Crowptrs_, CcolindsT Ccolinds_, CcolindsT ABperm_) :
+      Crowptrs(Crowptrs_),
+      Ccolinds(Ccolinds_),
+      ABperm(ABperm_)
+    {}
+    typedef typename Kokkos::TeamPolicy<Kokkos::Cuda>::member_type TeamMember;
+    KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
+    {
+      //3: Sort each row's colinds (permuting values at same time), then count unique colinds (write that to Crowptr(i))
+      //CrowptrTemp tells how many entries in each oversized row
+      size_type i = t.league_rank();
+      size_type rowStart = Crowptrs(i);
+      size_type rowEnd = Crowptrs(i + 1);
+      size_type rowNum = rowEnd - rowStart;
+      KokkosKernels::Impl::TeamBitonicSort2<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type, TeamMember>
+        (Ccolinds.data() + rowStart, ABperm.data() + rowStart, rowNum, t);
+    }
+    CrowptrsT Crowptrs;
+    CcolindsT Ccolinds;
+    CcolindsT ABperm;
+  };
+  #endif
 
   template<typename size_type, typename ordinal_type, typename ArowptrsT, typename BrowptrsT, typename CrowptrsT, typename CcolindsT>
   struct MergeEntriesFunctor
@@ -447,9 +376,10 @@ namespace Experimental {
       Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::UnmergedSum", range_type(0, nrows), unmergedSum);
       execution_space().fence();
       //sort the unmerged sum
-      SortEntriesFunctor<size_type, clno_row_view_t_, clno_nnz_view_t_>
+      SortEntriesFunctor<execution_space, size_type, clno_row_view_t_, clno_nnz_view_t_>
         sortEntries(c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
-      Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::SortEntries", range_type(0, nrows), sortEntries);
+      Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::SortEntries",
+          Kokkos::TeamPolicy<execution_space>(nrows, Kokkos::AUTO()), sortEntries);
       execution_space().fence();
       clno_nnz_view_t_ a_pos("A entry positions", a_entries.extent(0));
       clno_nnz_view_t_ b_pos("B entry positions", b_entries.extent(0));

@@ -226,6 +226,31 @@ extern "C" {
                                      /* */ std::complex<double>*, int* );
 
   ///
+  /// Trmm
+  ///
+
+  void F77_BLAS_MANGLE(strmm,STRMM)( const char*, const char*, const char*, const char*,
+                                     int*, int*,
+                                     const float*,
+                                     const float*, int*,
+                                     /* */ float*, int* );
+  void F77_BLAS_MANGLE(dtrmm,DTRMM)( const char*, const char*, const char*, const char*,
+                                     int*, int*,
+                                     const double*,
+                                     const double*, int*,
+                                     /* */ double*, int* );
+  void F77_BLAS_MANGLE(ctrmm,CTRMM)( const char*, const char*, const char*, const char*,
+                                     int*, int*,
+                                     const std::complex<float>*,
+                                     const std::complex<float>*, int*,
+                                     /* */ std::complex<float>*, int* );
+  void F77_BLAS_MANGLE(ztrmm,ZTRMM)( const char*, const char*, const char*, const char*,
+                                     int*, int*,
+                                     const std::complex<double>*,
+                                     const std::complex<double>*, int*,
+                                     /* */ std::complex<double>*, int* );
+
+  ///
   /// Trsm
   ///
 
@@ -334,6 +359,11 @@ extern "C" {
 #define F77_FUNC_DSYRK F77_BLAS_MANGLE(dsyrk,DSYRK)
 #define F77_FUNC_CHERK F77_BLAS_MANGLE(cherk,CHERK)
 #define F77_FUNC_ZHERK F77_BLAS_MANGLE(zherk,ZHERK)
+
+#define F77_FUNC_STRMM F77_BLAS_MANGLE(strmm,STRMM)
+#define F77_FUNC_DTRMM F77_BLAS_MANGLE(dtrmm,DTRMM)
+#define F77_FUNC_CTRMM F77_BLAS_MANGLE(ctrmm,CTRMM)
+#define F77_FUNC_ZTRMM F77_BLAS_MANGLE(ztrmm,ZTRMM)
 
 #define F77_FUNC_STRSM F77_BLAS_MANGLE(strsm,STRSM)
 #define F77_FUNC_DTRSM F77_BLAS_MANGLE(dtrsm,DTRSM)
@@ -451,6 +481,19 @@ namespace KokkosBlas {
                      a, &lda,
                      &beta,
                      c, &ldc);
+    }
+    template<>
+    void 
+    HostBlas<float>::trmm(const char side, const char uplo, const char transa, const char diag,
+                      int m, int n, 
+                      const float alpha, 
+                      const float *a, int lda,
+                      /* */ float *b, int ldb) {
+      F77_FUNC_STRMM(&side, &uplo, &transa, &diag,
+                     &m, &n,
+                     &alpha,
+                     a, &lda,
+                     b, &ldb);
     }
     template<>
     void 
@@ -578,6 +621,19 @@ namespace KokkosBlas {
                      a, &lda,
                      &beta,
                      c, &ldc);
+    }
+    template<>
+    void 
+    HostBlas<double>::trmm(const char side, const char uplo, const char transa, const char diag,
+                       int m, int n, 
+                       const double alpha, 
+                       const double *a, int lda,
+                       /* */ double *b, int ldb) {
+      F77_FUNC_DTRMM(&side, &uplo, &transa, &diag,
+                     &m, &n,
+                     &alpha,
+                     a, &lda,
+                     b, &ldb);
     }
     template<>
     void 
@@ -715,6 +771,19 @@ namespace KokkosBlas {
     }
     template<>
     void 
+    HostBlas<std::complex<float> >::trmm(const char side, const char uplo, const char transa, const char diag,
+                                        int m, int n, 
+                                        const std::complex<float> alpha, 
+                                        const std::complex<float> *a, int lda,
+                                        /* */ std::complex<float> *b, int ldb) {
+      F77_FUNC_CTRMM(&side, &uplo, &transa, &diag,
+                     &m, &n,
+                     &alpha,
+                     (const std::complex<float>*)a, &lda,
+                     (      std::complex<float>*)b, &ldb);
+    }
+    template<>
+    void 
     HostBlas<std::complex<float> >::trsm(const char side, const char uplo, const char transa, const char diag,
                                         int m, int n, 
                                         const std::complex<float> alpha, 
@@ -847,6 +916,19 @@ namespace KokkosBlas {
                      (const std::complex<double>*)a, &lda,
                      &beta,
                      (      std::complex<double>*)c, &ldc);
+    }
+    template<>
+    void 
+    HostBlas<std::complex<double> >::trmm(const char side, const char uplo, const char transa, const char diag,
+                                         int m, int n, 
+                                         const std::complex<double> alpha, 
+                                         const std::complex<double> *a, int lda,
+                                         /* */ std::complex<double> *b, int ldb) {
+      F77_FUNC_ZTRMM(&side, &uplo, &transa, &diag,
+                     &m, &n,
+                     &alpha,
+                     (const std::complex<double>*)a, &lda,
+                     (      std::complex<double>*)b, &ldb);
     }
     template<>
     void 

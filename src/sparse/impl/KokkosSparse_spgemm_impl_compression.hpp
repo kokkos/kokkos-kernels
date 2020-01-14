@@ -302,6 +302,7 @@ struct KokkosSPGEMM
       hm2.hash_begins[globally_used_hash_indices[i]] = -1;
     }
     });
+    memory_space.release_chunk(globally_used_hash_indices);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -388,6 +389,7 @@ struct KokkosSPGEMM
     //++used_size;
     }
     });
+    memory_space.release_chunk(globally_used_hash_indices);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const FillTag&, const team_member_t & teamMember) const {
@@ -741,7 +743,7 @@ struct KokkosSPGEMM
 		    });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
 	  return shared_memory_size;
   }
 

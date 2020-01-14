@@ -823,6 +823,29 @@ namespace MM
   }
 }
 
+template <typename lno_t, typename size_type, typename scalar_t>
+void write_matrix_mtx(lno_t nrows, lno_t ncols, size_type nentries, const size_type *xadj, const lno_t *adj, const scalar_t *vals, const char *filename) {
+  std::ofstream myFile (filename);
+  myFile  << "%%MatrixMarket matrix coordinate ";
+  if(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
+      std::is_same<scalar_t, Kokkos::complex<double>>::value)
+    myFile << "complex";
+  else
+    myFile << "real";
+  myFile << " general\n";
+  myFile << nrows << " " << ncols << " " << nentries << '\n';
+  myFile << std::setprecision(17) << std::scientific;
+  for (lno_t i = 0; i < nrows; ++i) {
+    size_type b = xadj[i];
+    size_type e = xadj[i + 1];
+    for (size_type j = b; j < e; ++j) {
+      myFile  << i + 1 << " " << adj[j] + 1 << " ";
+      MM::writeScalar<scalar_t>(myFile, vals[j]);
+      myFile << '\n';
+    }
+  }
+  myFile.close();
+}
 
 template <typename lno_t, typename size_type, typename scalar_t>
 void write_graph_mtx(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
@@ -931,8 +954,6 @@ inline bool endswith (std::string const &fullString, std::string const &ending) 
 
 template <typename crs_matrix_t>
 void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
-
-
   typedef typename crs_matrix_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type     row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type     cols_view_t;
@@ -954,11 +975,17 @@ void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
 
   std::string strfilename(filename);
   if (endswith(strfilename, ".mtx") || endswith(strfilename, ".mm")){
-    write_graph_mtx<lno_t, offset_t, scalar_t>(a_crsmat.numRows(),
-        nnz, a_rowmap, a_entries, a_values, filename);
+    write_matrix_mtx<lno_t, offset_t, scalar_t>(
+        a_crsmat.numRows(), a_crsmat.numCols(), a_crsmat.nnz(),
+        a_rowmap, a_entries, a_values, filename);
+    return;
   }
-
-  else if (endswith(strfilename, ".bin")){
+  else if(a_crsmat.numRows() != a_crsmat.numCols())
+  {
+    throw std::runtime_error("For formats other than MatrixMarket (suffix .mm or .mtx),\n"
+        "write_kokkos_crst_matrix only supports square matrices");
+  }
+  if (endswith(strfilename, ".bin")){
     write_graph_bin<lno_t, offset_t, scalar_t>(a_crsmat.numRows(),
         nnz, a_rowmap, a_entries, a_values, filename);
   }
@@ -971,7 +998,8 @@ void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
         nnz, a_rowmap, a_entries, a_values, filename);
   }
   else {
-    throw std::runtime_error ("Writer is not available\n");
+    std::string errMsg = std::string("write_kokkos_crst_matrix: File extension on ") + filename + " does not correspond to a known format";
+    throw std::runtime_error(errMsg);
   }
 }
 
@@ -1023,18 +1051,21 @@ int read_mtx (
   {
     if(!std::is_floating_point<scalar_t>::value)
       throw std::runtime_error("scalar_t in read_mtx() incompatible with float or double typed MatrixMarket file.");
-    mtx_field = REAL;
+    else
+      mtx_field = REAL;
   }
   else if (fline.find("complex") != std::string::npos){
     if(!(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
           std::is_same<scalar_t, Kokkos::complex<double>>::value))
       throw std::runtime_error("scalar_t in read_mtx() incompatible with complex-typed MatrixMarket file.");
-    mtx_field = COMPLEX;
+    else
+      mtx_field = COMPLEX;
   }
   else if (fline.find("integer") != std::string::npos){
-    if(!std::is_integral<scalar_t>::value)
+    if(std::is_integral<scalar_t>::value)
+      mtx_field = INTEGER;
+    else
       throw std::runtime_error("scalar_t in read_mtx() incompatible with integer-typed MatrixMarket file.");
-    mtx_field = INTEGER;
   }
   else if (fline.find("pattern") != std::string::npos){
     mtx_field = PATTERN;
