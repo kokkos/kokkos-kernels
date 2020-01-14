@@ -48,8 +48,19 @@
 #include "KokkosSparse_spadd_handle.hpp"
 #include "KokkosSparse_sptrsv_handle.hpp"
 #include "KokkosSparse_spiluk_handle.hpp"
+
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
+   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
+
+ // Enable supernodal sptrsv
+ #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+
+#endif
 
 namespace KokkosKernels{
 
@@ -209,6 +220,9 @@ public:
   typedef
     typename KokkosSparse::Experimental::SPTRSVHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPTRSVHandleType;
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+  using integer_view_host_t = typename SPTRSVHandleType::integer_view_host_t;
+#endif
 
   typedef
     typename KokkosSparse::Experimental::SPILUKHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
@@ -549,11 +563,10 @@ public:
     }
   }
 
-
-
   SPTRSVHandleType *get_sptrsv_handle(){
     return this->sptrsvHandle;
   }
+
   void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri) {
     this->destroy_sptrsv_handle();
     this->is_owner_of_the_sptrsv_handle = true;
@@ -561,7 +574,73 @@ public:
 //    this->sptrsvHandle->init_handle(nrows);
     this->sptrsvHandle->set_team_size(this->team_work_size);
     this->sptrsvHandle->set_vector_size(this->vector_size);
+
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+    // default SpMV option
+    if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+        algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+      this->set_sptrsv_column_major (true);
+    }
+#endif
   }
+
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+  void set_sptrsv_verbose (bool verbose) {
+    this->sptrsvHandle->set_verbose (verbose);
+  }
+
+
+  void set_sptrsv_perm (int *perm) {
+    this->sptrsvHandle->set_perm (perm);
+  }
+
+  void set_sptrsv_supernodes (int nsuper, integer_view_host_t supercols, int *etree) {
+    this->sptrsvHandle->set_supernodes (nsuper, supercols, etree);
+  }
+
+  void set_sptrsv_diag_supernode_sizes (int unblocked, int blocked) {
+    this->sptrsvHandle->set_supernode_size_unblocked(unblocked);
+    this->sptrsvHandle->set_supernode_size_blocked(blocked);
+  }
+
+  void set_sptrsv_merge_supernodes (bool flag) {
+    this->sptrsvHandle->set_merge_supernodes (flag);
+  }
+
+  void set_sptrsv_invert_offdiagonal (bool flag) {
+    if (flag == true && !(this->is_sptrsv_column_major ())) {
+      std::cout << std::endl
+                << " ** cannot invert offdiagonal in CSR **"
+                << std::endl << std::endl;
+      return;
+    }
+
+    this->sptrsvHandle->set_invert_offdiagonal (flag);
+  }
+
+  void set_sptrsv_etree (int *etree) {
+    this->sptrsvHandle->set_etree (etree);
+  }
+
+
+  void set_sptrsv_column_major (bool col_major) {
+    if (col_major == false && this->sptrsvHandle->get_invert_offdiagonal ()) {
+      std::cout << std::endl
+                << " ** cannot use CSR for inverting offdiagonal **"
+                << std::endl << std::endl;
+      return;
+    }
+    this->sptrsvHandle->set_column_major (col_major);
+  }
+
+  bool is_sptrsv_lower_tri () {
+    return this->sptrsvHandle->is_lower_tri ();
+  }
+
+  bool is_sptrsv_column_major () {
+    return this->sptrsvHandle->is_column_major ();
+  }
+#endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)
     {

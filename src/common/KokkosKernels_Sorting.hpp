@@ -58,35 +58,22 @@ template<typename Ordinal, typename ValueType>
 KOKKOS_INLINE_FUNCTION void
 SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n)
 {
-  //printf("Sorting %d elems at %p.\n", int(n), values);
-  static_assert(std::is_integral<ValueType>::value, "radixSort can only be run on integers.");
+  static_assert(std::is_integral<ValueType>::value && std::is_unsigned<ValueType>::value,
+      "radixSort can only be run on unsigned integers.");
   if(n <= 1)
     return;
-  ValueType minVal = Kokkos::ArithTraits<ValueType>::max();
   ValueType maxVal = 0;
   for(Ordinal i = 0; i < n; i++)
   {
-    if(minVal > values[i])
-      minVal = values[i];
     if(maxVal < values[i])
       maxVal = values[i];
   }
-  //apply a bias so that key range always starts at 0
-  //also invert key values here for a descending sort
-  if(minVal != 0)
-  {
-    for(Ordinal i = 0; i < n; i++)
-    {
-      values[i] -= minVal;
-    }
-  }
   //determine how many significant bits the data has
-  Ordinal sortBits = 0;
-  ValueType upperBound = maxVal - minVal;
-  while(upperBound)
+  int passes = 0;
+  while(maxVal)
   {
-    upperBound >>= 1;
-    sortBits++;
+    maxVal >>= 4;
+    passes++;
   }
   //Is the data currently held in values (false) or valuesAux (true)?
   bool inAux = false;
@@ -94,7 +81,7 @@ SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n)
   ValueType mask = 0xF;
   //maskPos counts the low bit index of mask (0, 4, 8, ...)
   Ordinal maskPos = 0;
-  for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
+  for(int p = 0; p < passes; p++)
   {
     //Count the number of elements in each bucket
     Ordinal count[16] = {0};
@@ -123,7 +110,6 @@ SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n)
     //this branch should be ok because whichBuf is the same on all threads
     if(!inAux)
     {
-      //copy from *Over to *Aux
       for(Ordinal i = 0; i < n; i++)
       {
         Ordinal bucket = (values[i] & mask) >> maskPos;
@@ -133,7 +119,6 @@ SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n)
     }
     else
     {
-      //copy from *Aux to *Over
       for(Ordinal i = 0; i < n; i++)
       {
         Ordinal bucket = (valuesAux[i] & mask) >> maskPos;
@@ -147,19 +132,11 @@ SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n)
   }
   //Move values back into main array if they are currently in aux.
   //This is the case if an odd number of rounds were done.
-  if(((sortBits + 3) / 4) % 2 == 1)
+  if(inAux)
   {
     for(Ordinal i = 0; i < n; i++)
     {
       values[i] = valuesAux[i];
-    }
-  }
-  //remove bias to restore original values
-  if(minVal != 0)
-  {
-    for(Ordinal i = 0; i < n; i++)
-    {
-      values[i] += minVal;
     }
   }
 }
@@ -172,33 +149,21 @@ template<typename Ordinal, typename ValueType, typename PermType>
 KOKKOS_INLINE_FUNCTION void
 SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermType* permAux, Ordinal n)
 {
-  static_assert(std::is_integral<ValueType>::value, "radixSort can only be run on integers.");
+  static_assert(std::is_integral<ValueType>::value && std::is_unsigned<ValueType>::value,
+      "radixSort can only be run on unsigned integers.");
   if(n <= 1)
     return;
-  ValueType minVal = Kokkos::ArithTraits<ValueType>::max();
   ValueType maxVal = 0;
   for(Ordinal i = 0; i < n; i++)
   {
-    if(minVal > values[i])
-      minVal = values[i];
     if(maxVal < values[i])
       maxVal = values[i];
   }
-  //apply a bias so that key range always starts at 0
-  //also invert key values here for a descending sort
-  if(minVal != 0)
+  int passes = 0;
+  while(maxVal)
   {
-    for(Ordinal i = 0; i < n; i++)
-    {
-      values[i] -= minVal;
-    }
-  }
-  Ordinal sortBits = 0;
-  ValueType upperBound = maxVal - minVal;
-  while(upperBound)
-  {
-    upperBound >>= 1;
-    sortBits++;
+    maxVal >>= 4;
+    passes++;
   }
   //Is the data currently held in values (false) or valuesAux (true)?
   bool inAux = false;
@@ -206,7 +171,7 @@ SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermTy
   ValueType mask = 0xF;
   //maskPos counts the low bit index of mask (0, 4, 8, ...)
   Ordinal maskPos = 0;
-  for(Ordinal s = 0; s < (sortBits + 3) / 4; s++)
+  for(int p = 0; p < passes; p++)
   {
     //Count the number of elements in each bucket
     Ordinal count[16] = {0};
@@ -235,7 +200,6 @@ SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermTy
     //this branch should be ok because whichBuf is the same on all threads
     if(!inAux)
     {
-      //copy from *Over to *Aux
       for(Ordinal i = 0; i < n; i++)
       {
         Ordinal bucket = (values[i] & mask) >> maskPos;
@@ -246,7 +210,6 @@ SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermTy
     }
     else
     {
-      //copy from *Aux to *Over
       for(Ordinal i = 0; i < n; i++)
       {
         Ordinal bucket = (valuesAux[i] & mask) >> maskPos;
@@ -261,20 +224,12 @@ SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermTy
   }
   //Move values back into main array if they are currently in aux.
   //This is the case if an odd number of rounds were done.
-  if(((sortBits + 3) / 4) % 2 == 1)
+  if(inAux)
   {
     for(Ordinal i = 0; i < n; i++)
     {
       values[i] = valuesAux[i];
       perm[i] = permAux[i];
-    }
-  }
-  if(minVal != 0)
-  {
-    //remove bias to restore original values
-    for(Ordinal i = 0; i < n; i++)
-    {
-      values[i] += minVal;
     }
   }
 }

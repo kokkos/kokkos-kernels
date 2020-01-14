@@ -43,9 +43,18 @@
 
 #ifndef KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
 #define KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
-
 /// \file Kokkos_Sparse_impl_sptrsv_symbolic.hpp
 /// \brief Implementation(s) of sparse triangular solve.
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
+   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
+
+ // Enable supernodal sptrsv
+ #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+
+#endif
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
@@ -168,7 +177,12 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_lowertri_total;
 #endif
- if ( thandle.algm_requires_symb_lvlsched() )
+
+ using namespace KokkosSparse::Experimental;
+ if (thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_RP  ||
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1 ||
+   /*thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN)
  {
   // Scheduling currently computes on host - need host copy of all views
 
@@ -316,6 +330,286 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
   }
 #endif
  }
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+ else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG   ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+
+  using size_type = typename TriSolveHandle::size_type;
+
+  using DeviceEntriesType = typename TriSolveHandle::nnz_lno_view_t;
+  using HostEntriesType = typename DeviceEntriesType::HostMirror;
+
+  using DeviceSignedEntriesType = typename TriSolveHandle::signed_nnz_lno_view_t;
+  using HostSignedEntriesType = typename DeviceSignedEntriesType::HostMirror;
+
+  using signed_integral_t = typename TriSolveHandle::signed_integral_t;
+
+  using integer_view_t = typename TriSolveHandle::integer_view_t;
+  using integer_view_host_t = typename integer_view_t::HostMirror;
+
+
+  // rowptr: pointer to begining of each row (CRS)
+  auto row_map = Kokkos::create_mirror_view(drow_map);
+  Kokkos::deep_copy(row_map, drow_map);
+
+  // # of nodes per level
+  DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
+  HostEntriesType nodes_per_level = thandle.get_host_nodes_per_level ();
+
+  // node ids in each level
+  DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
+  HostEntriesType nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
+
+  // map node id to level that this node belongs to
+  DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
+  HostSignedEntriesType level_list = Kokkos::create_mirror_view (dlevel_list);
+
+  // type of kernels used at each level
+  int size_unblocked = thandle.get_supernode_size_unblocked();
+  //int size_blocked = thandle.get_supernode_size_blocked();
+  integer_view_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
+  integer_view_host_t diag_kernel_type_by_level = thandle.get_diag_kernel_type_host ();
+
+  // # of supernodal columns
+  size_type nsuper = thandle.get_num_supernodes ();
+  const int* supercols = thandle.get_supercols_host ();
+
+  // workspace
+  signed_integral_t max_lwork = 0;
+  integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
+    // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
+    // Set number of level equal to be the number of supernodal columns
+    thandle.set_num_levels (nsuper);
+
+    // Set up level sets: going through supernodal column one at a time from 1 to nsuper
+    for (size_type s = 0; s < nsuper; s++) {
+      nodes_per_level (s) = 1;           // # of nodes per level
+      nodes_grouped_by_level (s) = s;    // only one task per level (task id)
+      level_list (s) = s;                // map task id to level
+
+      // local/max workspace size
+      size_type row = supercols[s];
+      signed_integral_t lwork = row_map (row+1) - row_map(row);
+      if (max_lwork < lwork) {
+        max_lwork = lwork;
+      }
+
+      // kernel type
+      if (lwork < size_unblocked) {
+        // batched unblocked
+        kernel_type_by_level (s) = 0;
+        diag_kernel_type_by_level (s) = 0;
+      //} else if (lwork < size_blocked) {
+      //  // batched blocked
+      //  kernel_type_by_level (s) = 1;
+      //  diag_kernel_type_by_level (s) = 1;
+      } else {
+        // device
+        kernel_type_by_level (s) = 3;
+        diag_kernel_type_by_level (s) = 3;
+      }
+      work_offset_host (s) = 0;
+    }
+  } else {
+    /* initialize the ready tasks with leaves */
+    const int *parents = thandle.get_etree_parents ();
+    integer_view_host_t check ("check", nsuper);
+    Kokkos::deep_copy (check, 0);
+
+    auto dag = thandle.get_supernodal_dag ();
+    auto dag_row_map = dag.row_map;
+    auto dag_entries = dag.entries;
+    bool use_dag = (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                    thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+    for (size_type s = 0; s < nsuper; s++) {
+      if (use_dag) {
+        for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+          check (dag_entries (e)) ++;
+        }
+      } else {
+        if (parents[s] >= 0) {
+          check (parents[s]) ++;
+        }
+      }
+    }
+
+    signed_integral_t num_done = 0;
+    signed_integral_t level = 0;
+    //#define profile_supernodal_etree
+    #ifdef profile_supernodal_etree
+    // min, max, tot size of supernodes
+    signed_integral_t max_nsrow = 0;
+    signed_integral_t min_nsrow = 0;
+    signed_integral_t tot_nsrow = 0;
+
+    signed_integral_t max_nscol = 0;
+    signed_integral_t min_nscol = 0;
+    signed_integral_t tot_nscol = 0;
+
+    // min, max, tot num of leaves
+    signed_integral_t max_nleave = 0;
+    signed_integral_t min_nleave = 0;
+    signed_integral_t tot_nleave = 0;
+    #endif
+    while (num_done < nsuper) {
+      nodes_per_level (level) = 0; 
+      // look for ready-tasks
+      signed_integral_t lwork = 0;
+      signed_integral_t num_leave = 0;
+      signed_integral_t avg_nscol = 0;
+      signed_integral_t avg_nsrow = 0;
+      for (size_type s = 0; s < nsuper; s++) {
+        if (check (s) == 0) {
+          nodes_per_level (level) ++; 
+          nodes_grouped_by_level (num_done + num_leave) = s;
+          level_list (s) = level;
+
+          // work offset
+          work_offset_host (s) = lwork;
+ 
+          // update workspace size
+          size_type row = supercols[s];
+          signed_integral_t nsrow = row_map (row+1) - row_map(row);
+          lwork += nsrow;
+          //printf( " %d %d %d %d %d\n",num_done+num_leave, level, nsrow, supercols[s+1]-supercols[s],s );
+          //for (int i = supercols[s]; i < supercols[s+1]; i++) printf("%d %d %d\n",i,s,level );  // permute matrix based on scheduling
+
+          // total supernode size
+          avg_nsrow += row_map (row+1) - row_map(row);
+          avg_nscol += supercols[s+1] - supercols[s];
+
+          #ifdef profile_supernodal_etree
+          // gather static if requested
+          signed_integral_t nscol = supercols[s+1] - supercols[s];
+          if (tot_nscol == 0) {
+            max_nscol = nscol;
+            min_nscol = nscol;
+
+            max_nsrow = nsrow;
+            min_nsrow = nsrow;
+          } else {
+            if (max_nscol < nscol) {
+              max_nscol = nscol;
+            }
+            if (min_nscol > nscol) {
+              min_nscol = nscol;
+            }
+
+            if (max_nsrow < nsrow) {
+              max_nsrow = nsrow;
+            }
+            if (min_nsrow > nsrow) {
+              min_nsrow = nsrow;
+            }
+          }
+          tot_nsrow += nsrow;
+          tot_nscol += nscol;
+          #endif
+
+          num_leave ++;
+        }
+      }
+      if (lwork > max_lwork) {
+        max_lwork = lwork;
+      }
+
+      // average supernode size at this level
+      avg_nsrow /= num_leave;
+      avg_nscol /= num_leave;
+      // kernel type
+      if (avg_nscol < size_unblocked) {
+        // batched unblocked
+        kernel_type_by_level (level) = 0;
+        diag_kernel_type_by_level (level) = 0;
+      //} else if (avg_nscol < size_blocked) {
+      //  // batched blocked
+      //  kernel_type_by_level (level) = 1;
+      //  diag_kernel_type_by_level (level) = 1;
+      } else {
+        // device
+        kernel_type_by_level (level) = 3;
+        diag_kernel_type_by_level (level) = 3;
+      }
+      #ifdef profile_supernodal_etree
+      std::cout << level <<  " : num_leave="
+                << num_leave << ", avg_nsrow=" << avg_nsrow << ", avg_nscol=" << avg_nscol 
+                << ", kernel_type=" << diag_kernel_type_by_level (level)
+                << "(" << size_unblocked << "," << thandle.get_supernode_size_blocked() << ")" << std::endl;
+      if (level == 0) {
+        max_nleave = num_leave;
+        min_nleave = num_leave;
+      } else {
+        if (max_nleave < num_leave) {
+          max_nleave = num_leave;
+        }
+        if (min_nleave > num_leave) {
+          min_nleave = num_leave;
+        }
+      }
+      tot_nleave += num_leave;
+      #endif
+
+      // free the dependency
+      for (signed_integral_t task = 0; task < num_leave; task++) {
+        size_type s = nodes_grouped_by_level (num_done + task);
+        check (s) = -1;
+        //printf( " %d: check[%d]=%d ",level,s,check[s]);
+        if (use_dag) {
+          for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+            check (dag_entries (e)) --;
+          }
+        } else {
+          if (parents[s] >= 0) {
+            check (parents[s]) --;
+            //printf( " -> check[%d]=%d",parents[s],check (parents[s]));
+          }
+        }
+        //printf( "\n" );
+      }
+      num_done += num_leave;
+      //printf( " level=%d: num_done=%d / %d\n",level,num_done,nsuper );
+      level ++;
+    }
+    #ifdef profile_supernodal_etree
+    std::cout << "   * number of supernodes = " << nsuper << std::endl;
+    std::cout << "   * supernodal rows: min = " << min_nsrow  << "\t max = " << max_nsrow  << "\t avg = " << tot_nsrow/nsuper << std::endl;
+    std::cout << "   * supernodal cols: min = " << min_nscol  << "\t max = " << max_nscol  << "\t avg = " << tot_nscol/nsuper << std::endl;
+    std::cout << "   * numer of leaves: min = " << min_nleave << "\t max = " << max_nleave << "\t avg = " << tot_nleave/level << std::endl;
+    std::cout << "   * level = " << level << std::endl;
+    #endif
+    // Set number of level equal to be the number of supernodal columns
+    thandle.set_num_levels (level);
+  }
+  // workspace size
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+      thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+    max_lwork = thandle.get_nrows ();
+  }
+  thandle.set_workspace_size (max_lwork);
+  // workspace offset initialized to be zero
+  integer_view_t work_offset = thandle.get_work_offset ();
+  Kokkos::deep_copy (work_offset, work_offset_host);
+
+  // kernel types
+  // > off-diagonal
+  integer_view_t dkernel_type_by_level = thandle.get_kernel_type ();
+  Kokkos::deep_copy (dkernel_type_by_level, kernel_type_by_level);
+  // > diagonal
+  integer_view_t ddiag_kernel_type_by_level = thandle.get_diag_kernel_type ();
+  Kokkos::deep_copy (ddiag_kernel_type_by_level, diag_kernel_type_by_level);
+
+  // deep copy to device (of scheduling info)
+  Kokkos::deep_copy (dnodes_grouped_by_level, nodes_grouped_by_level);
+  Kokkos::deep_copy (dnodes_per_level, nodes_per_level);
+  Kokkos::deep_copy (dlevel_list, level_list);
+
+  thandle.set_symbolic_complete();
+ }
+#endif
 
 #ifdef TRISOLVE_SYMB_TIMERS
  std::cout << "  Symbolic (lower tri) Total Time: " << timer_sym_lowertri_total.seconds() << std::endl;;
@@ -329,7 +623,11 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::Timer timer_sym_uppertri_total;
 #endif
 
- if ( thandle.algm_requires_symb_lvlsched() )
+ using namespace KokkosSparse::Experimental;
+ if (thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_RP  ||
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1 ||
+   /*thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHED_TP2*/
+     thandle.get_algorithm () == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN)
  {
   // Scheduling currently compute on host - need host copy of all views
 
@@ -471,8 +769,305 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   std::cout << "  devicecheck_count= " << check_count << std::endl;
   }
 #endif
-
  }
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+ else if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+          thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+
+  using size_type = typename TriSolveHandle::size_type;
+
+  using DeviceEntriesType = typename TriSolveHandle::nnz_lno_view_t;
+  using HostEntriesType = typename DeviceEntriesType::HostMirror;
+
+  using DeviceSignedEntriesType = typename TriSolveHandle::signed_nnz_lno_view_t;
+  using HostSignedEntriesType = typename DeviceSignedEntriesType::HostMirror;
+
+  using signed_integral_t = typename TriSolveHandle::signed_integral_t;
+
+  using integer_view_t = typename TriSolveHandle::integer_view_t;
+  using integer_view_host_t = typename integer_view_t::HostMirror;
+
+
+  // rowptr: pointer to begining of each row (CRS)
+  auto row_map = Kokkos::create_mirror_view(drow_map);
+  Kokkos::deep_copy(row_map, drow_map);
+
+  // # of nodes per level
+  DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level ();
+  HostEntriesType nodes_per_level = thandle.get_host_nodes_per_level ();
+
+  // node ids in each level
+  DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level ();
+  HostEntriesType nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
+
+  // type of kernels used at each level
+  int size_unblocked = thandle.get_supernode_size_unblocked();
+  integer_view_host_t kernel_type_by_level = thandle.get_kernel_type_host ();
+  integer_view_host_t diag_kernel_type_by_level = thandle.get_diag_kernel_type_host ();
+
+  // map node id to level that this node belongs to
+  DeviceSignedEntriesType dlevel_list = thandle.get_level_list ();
+  HostSignedEntriesType level_list = Kokkos::create_mirror_view (dlevel_list);
+
+  // # of supernodal columns
+  size_type nsuper = thandle.get_num_supernodes ();
+  const int* supercols = thandle.get_supercols_host ();
+
+  // workspace
+  signed_integral_t max_lwork = 0;
+  integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_NAIVE) {
+    // >> Naive (sequential) version: going through supernodal column one at a time from 1 to nsuper
+    // Set number of level equal to be the number of supernodal columns
+    thandle.set_num_levels (nsuper);
+
+    // Set up level sets: going through supernodal column one at a time from 1 to nsuper
+    for (size_type s = 0; s < nsuper; s++) {
+      nodes_per_level (s) = 1;                  // # of nodes per level
+      nodes_grouped_by_level (s) = nsuper-1-s;  // only one task per level (task id)
+      level_list (nsuper-1-s) = s;              // map task id to level
+
+      size_type row = supercols[s];
+      signed_integral_t lwork = row_map (row+1) - row_map(row);
+      if (max_lwork < lwork) {
+        max_lwork = lwork;
+      }
+      work_offset_host (s) = 0;
+
+      if (lwork < size_unblocked) {
+        // batched unblocked
+        kernel_type_by_level (s) = 0;
+        diag_kernel_type_by_level (s) = 0;
+      } else {
+        // device
+        kernel_type_by_level (s) = 3;
+        diag_kernel_type_by_level (s) = 3;
+      }
+    }
+  }
+  else {
+    /* schduling from bottom to top (as for L-solve) *
+     * then reverse it for U-solve                   */
+
+    /* initialize the ready tasks with leaves */
+    const int *parents = thandle.get_etree_parents ();
+    integer_view_host_t check ("check", nsuper);
+    Kokkos::deep_copy (check, 0);
+
+    auto dag = thandle.get_supernodal_dag ();
+    auto dag_row_map = dag.row_map;
+    auto dag_entries = dag.entries;
+    bool use_dag = (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                    thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+    if (use_dag) {
+      for (size_type s = 0; s < nsuper; s++) {
+        for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+          check (dag_entries (e)) ++;
+        }
+      }
+    } else {
+      for (size_type s = 0; s < nsuper; s++) {
+        if (parents[s] >= 0) {
+          check (parents[s]) ++;
+        }
+      }
+    }
+
+    //printf( " Init:\n" );
+    //for (size_type s = 0; s <nsuper; s++) printf( " check[%d] = %d\n",s,check (s) );
+
+    size_type nrows = thandle.get_nrows();
+    HostEntriesType inverse_nodes_per_level ("nodes_per_level", nrows);
+    HostEntriesType inverse_nodes_grouped_by_level ("nodes_grouped_by_level", nrows);
+
+    signed_integral_t num_done = 0;
+    signed_integral_t level = 0;
+    #ifdef profile_supernodal_etree
+    // min, max, tot size of supernodes
+    signed_integral_t max_nsrow = 0;
+    signed_integral_t min_nsrow = 0;
+    signed_integral_t tot_nsrow = 0;
+
+    signed_integral_t max_nscol = 0;
+    signed_integral_t min_nscol = 0;
+    signed_integral_t tot_nscol = 0;
+
+    // min, max, tot num of leaves
+    signed_integral_t max_nleave = 0;
+    signed_integral_t min_nleave = 0;
+    signed_integral_t tot_nleave = 0;
+    #endif
+    while (num_done < nsuper) {
+      nodes_per_level (level) = 0; 
+      // look for ready-tasks
+      signed_integral_t lwork = 0;
+      signed_integral_t num_leave = 0;
+      for (size_type s = 0; s < nsuper; s++) {
+        if (check (s) == 0) {
+          inverse_nodes_per_level (level) ++; 
+          inverse_nodes_grouped_by_level (num_done + num_leave) = s;
+          //printf( " level=%d: %d/%d: s=%d\n",level, num_done+num_leave,nsuper, s );
+
+          // work offset
+          work_offset_host (s) = lwork;
+ 
+          // update workspace size
+          size_type row = supercols[s];
+          signed_integral_t nsrow = row_map (row+1) - row_map(row);
+          //printf( " %d %d %d %d %d\n",num_done+num_leave, level, nsrow, supercols[s+1]-supercols[s],s );
+          //for (int i = supercols[s]; i < supercols[s+1]; i++) printf("%d %d %d\n",i,s,level );  // permute matrix based on scheduling
+          lwork += nsrow;
+
+          #ifdef profile_supernodal_etree
+          // gather static if requested
+          signed_integral_t nscol = supercols[s+1] - supercols[s];
+          if (tot_nscol == 0) {
+            max_nscol = nscol;
+            min_nscol = nscol;
+
+            max_nsrow = nsrow;
+            min_nsrow = nsrow;
+          } else {
+            if (max_nscol < nscol) {
+              max_nscol = nscol;
+            }
+            if (min_nscol > nscol) {
+              min_nscol = nscol;
+            }
+
+            if (max_nsrow < nsrow) {
+              max_nsrow = nsrow;
+            }
+            if (min_nsrow > nsrow) {
+              min_nsrow = nsrow;
+            }
+          }
+          tot_nsrow += nsrow;
+          tot_nscol += nscol;
+          #endif
+
+          num_leave ++;
+        }
+      }
+      //printf( " lwork = %d\n",lwork );
+      if (lwork > max_lwork) {
+        max_lwork = lwork;
+      }
+      #ifdef profile_supernodal_etree
+      if (level == 0) {
+        max_nleave = num_leave;
+        min_nleave = num_leave;
+      } else {
+        if (max_nleave < num_leave) {
+          max_nleave = num_leave;
+        }
+        if (min_nleave > num_leave) {
+          min_nleave = num_leave;
+        }
+      }
+      tot_nleave += num_leave;
+      #endif
+
+      // free the dependency
+      for (signed_integral_t task = 0; task < num_leave; task++) {
+        size_type s = inverse_nodes_grouped_by_level (num_done + task);
+        check (s) = -1;
+        //printf( " %d: check[%d]=%d ",level,s,check (s));
+       if (use_dag) {
+          for (size_type e = dag_row_map (s); e < dag_row_map (s+1); e++) {
+            check (dag_entries (e)) --;
+          }
+        } else {
+          if (parents[s] >= 0) {
+            check (parents[s]) --;
+            //printf( " -> check[%d]=%d",parents[s],check (parents[s]));
+          }
+        }
+        //printf( "\n" );
+      }
+      num_done += num_leave;
+      //printf( " level=%d: num_done=%d / %d\n",level,num_done,nsuper );
+      level ++;
+    }
+    #ifdef profile_supernodal_etree
+    std::cout << "   * number of supernodes = " << nsuper << std::endl;
+    std::cout << "   * supernodal rows: min = " << min_nsrow  << "\t max = " << max_nsrow  << "\t avg = " << tot_nsrow/nsuper << std::endl;
+    std::cout << "   * supernodal cols: min = " << min_nscol  << "\t max = " << max_nscol  << "\t avg = " << tot_nscol/nsuper << std::endl;
+    std::cout << "   * numer of leaves: min = " << min_nleave << "\t max = " << max_nleave << "\t avg = " << tot_nleave/level << std::endl;
+    std::cout << "   * level = " << level << std::endl;
+    #endif
+
+    // now invert the lists
+    num_done = 0;
+    signed_integral_t num_level = level;
+    for (level = 0; level < num_level; level ++) {
+      signed_integral_t num_leave = inverse_nodes_per_level (num_level - level - 1);
+      nodes_per_level (level) = num_leave;
+      //printf( " -> nodes_per_level(%d -> %d) = %d\n",num_level-level-1, level, num_leave );
+
+      signed_integral_t avg_nscol = 0;
+      signed_integral_t avg_nsrow = 0;
+      for (signed_integral_t task = 0; task < num_leave; task++) {
+        //signed_integral_t s = inverse_nodes_grouped_by_level (nsuper - (num_done+task) - 1);
+        signed_integral_t s = inverse_nodes_grouped_by_level (nsuper - (num_done + num_leave-1 - task) - 1);
+
+        nodes_grouped_by_level (num_done+task) = s;
+        level_list (s) = level;
+        //printf( " -> level=%d: %d->%d: s=%d\n",level, nsuper-(num_done+task)-1, num_done+task, s );
+
+        size_type row = supercols[s];
+        avg_nsrow += row_map (row+1) - row_map(row);
+        avg_nscol += supercols[s+1] - supercols[s];
+      }
+      num_done += num_leave;
+
+      // average supernodal size at this level
+      avg_nscol /= num_leave;
+      avg_nsrow /= num_leave;
+      // kernel type
+      if (avg_nscol < size_unblocked) {
+        // batched unblocked
+        kernel_type_by_level (level) = 0;
+        diag_kernel_type_by_level (level) = 0;
+      } else {
+        // device
+        kernel_type_by_level (level) = 3;
+        diag_kernel_type_by_level (level) = 3;
+      }
+    }
+
+    // Set number of levels
+    thandle.set_num_levels (num_level);
+  }
+  // workspace size
+  if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
+      thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+    max_lwork = thandle.get_nrows ();
+  }
+  thandle.set_workspace_size (max_lwork);
+  // workspace offset initialized to be zero
+  integer_view_t work_offset = thandle.get_work_offset ();
+  Kokkos::deep_copy (work_offset, work_offset_host);
+
+  // kernel type
+  // > off-diagonal
+  integer_view_t dkernel_type_by_level = thandle.get_kernel_type ();
+  Kokkos::deep_copy (dkernel_type_by_level, kernel_type_by_level);
+  // > diagonal
+  integer_view_t ddiag_kernel_type_by_level = thandle.get_diag_kernel_type ();
+  Kokkos::deep_copy (ddiag_kernel_type_by_level, diag_kernel_type_by_level);
+
+  // deep copy to device (info about scheduling)
+  Kokkos::deep_copy (dnodes_grouped_by_level, nodes_grouped_by_level);
+  Kokkos::deep_copy (dnodes_per_level, nodes_per_level);
+  Kokkos::deep_copy (dlevel_list, level_list);
+
+  thandle.set_symbolic_complete ();
+ }
+#endif
 
 #ifdef TRISOLVE_SYMB_TIMERS
  std::cout << "  Symbolic (upper tri) Total Time: " << timer_sym_uppertri_total.seconds() << std::endl;;

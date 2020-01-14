@@ -220,11 +220,11 @@ namespace Impl{
     const scalar_type* bv = rhs.data();
     scalar_type* xv = lhs.data();
 
-    const scalar_type alpha = scalar_type(1);
 
     if (std::is_same<scalar_type,double>::value) {
 
       if (h->pBuffer == nullptr) { std::cout << "  pBuffer invalid" << std::endl; }
+      const double alpha = double(1);
 
       status = cusparseDcsrsv2_solve(
         h->handle, 
