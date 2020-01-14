@@ -24,8 +24,6 @@
 
 #include "KokkosKernels_config.h"
 
-namespace KokkosBatched {
-
   // TPL macros
 #if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
 #define __KOKKOSBATCHED_INTEL_MKL__ 1
@@ -45,6 +43,8 @@ namespace KokkosBatched {
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A,B) A B
+
+namespace KokkosBatched {
 
   void print_compiler_info();
 

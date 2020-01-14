@@ -26,4 +26,10 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosBatched_Test_BlockJacobi.cpp
   )
 
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  kokkosbatched_test_eigensolver.x
+  SOURCES KokkosBatched_Test_EigenSolver.cpp
+  )
 
+FILE(COPY data
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
