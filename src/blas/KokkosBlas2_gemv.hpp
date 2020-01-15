@@ -139,7 +139,7 @@ gemv (const char trans[],
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
 
-  if ((trans[0] == 'T' || trans[0] == 't' || trans[0] == 'C' || trans[0] == 'c' || trans[0] == 'H' || trans[0] == 'h'))
+  if ((trans[0] == 'T' || trans[0] == 't' || trans[0] == 'C' || trans[0] == 'c') && A.extent(0) == 0)
   {
     const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
     typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
