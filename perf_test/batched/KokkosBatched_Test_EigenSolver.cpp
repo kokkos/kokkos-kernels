@@ -12,26 +12,36 @@
 #if defined(KOKKOSBATCHED_TEST_EIGENSOLVER)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Eigendecomposition_Decl.hpp"
+#include "KokkosBatched_Eigendecomposition_Serial_Impl.hpp"
 
 #define KOKKOSBATCHED_PROFILE 1
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSBATCHED_PROFILE)
 #include "cuda_profiler_api.h"
 #endif
 
-typedef Kokkos::DefaultExecutionSpace exec_space;
-typedef typename exec_space::memory_space memory_space;
-typedef Kokkos::DefaultHostExecutionSpace host_space;
-typedef typename host_space::memory_space host_memory_space;
+using exec_space = Kokkos::DefaultExecutionSpace;
+using memory_space = typename exec_space::memory_space;
+using host_space = Kokkos::DefaultHostExecutionSpace;
+using host_memory_space = typename host_space::memory_space;
 
-typedef Kokkos::LayoutRight layout_right;
-typedef double value_type;
+using value_type = double;
+using layout_right = Kokkos::LayoutRight;
 
-//using namespace KokkosBatched;
+using value_type_2d_view_exec = Kokkos::View<value_type**,  layout_right,exec_space>;
+using value_type_3d_view_exec = Kokkos::View<value_type***, layout_right,exec_space>;
+using value_type_4d_view_exec = Kokkos::View<value_type****,layout_right,exec_space>;
+
+using value_type_2d_view_host = Kokkos::View<value_type**,  layout_right,host_space>;
+using value_type_3d_view_host = Kokkos::View<value_type***, layout_right,host_space>;
+using value_type_4d_view_host = Kokkos::View<value_type****,layout_right,host_space>;
+
+using complex_value_type_2d_view_host = Kokkos::View<std::complex<value_type>**  ,layout_right,host_space>;
+using complex_value_type_3d_view_host = Kokkos::View<std::complex<value_type>*** ,layout_right,host_space>;
+using complex_value_type_4d_view_host = Kokkos::View<std::complex<value_type>****,layout_right,host_space>;
 
 namespace PerfTest {
   struct Problem {
-    using value_type_3d_view_exec = Kokkos::View<value_type***,             exec_space>;
-    using value_type_3d_view_host = Kokkos::View<value_type***,layout_right,host_space>;
 
     int _N, _Blk;
 
@@ -70,7 +80,9 @@ namespace PerfTest {
       } else {
         _N = N < 0 ? 1 : N;
         infile >> _Blk;
-        _A_host = value_type_3d_view_host("A_host", _N, _Blk, _Blk);
+        _A_kokkos = value_type_3d_view_exec("A_exec", _N, _Blk, _Blk);
+        _A_host   = value_type_3d_view_host("A_host", _N, _Blk, _Blk);
+
         for (int i=0;i<_Blk;++i)
           for (int j=0;j<_Blk;++j)
             infile >> _A_host(0, i, j);
@@ -99,16 +111,13 @@ namespace PerfTest {
 
 #if defined(__KOKKOSBATCHED_INTEL_MKL__)
   struct TestMKL {
-    using value_type_2d_view = Kokkos::View<value_type**,   layout_right,host_space>;
-    using value_type_3d_view = Kokkos::View<value_type***,  layout_right,host_space>;
-    using value_type_4d_view = Kokkos::View<value_type****, layout_right,host_space>;
 
     int _N, _Blk;
 
-    value_type_3d_view _A; /// N, Blk, Blk
-    value_type_3d_view _E; /// N, 2, Blk
-    value_type_4d_view _V; /// N, 2, Blk, Blk
-    value_type_2d_view _W; /// N, getWorkSpaceSize
+    value_type_3d_view_host _A; /// N, Blk, Blk
+    value_type_3d_view_host _E; /// N, 2, Blk
+    value_type_4d_view_host _V; /// N, 2, Blk, Blk
+    value_type_2d_view_host _W; /// N, getWorkSpaceSize
 
     int getWorkSpaceSize() {
       int lwork_mkl = -1;
@@ -172,26 +181,74 @@ namespace PerfTest {
   };
 #endif
 
-  struct TestCheck {
-    using value_type_3d_view = Kokkos::View<value_type***, layout_right,host_space>;
-    using value_type_4d_view = Kokkos::View<value_type****,layout_right,host_space>;
+  struct TestKokkos {
+    int _N, _Blk;
 
-    using complex_value_type_2d_view = Kokkos::View<std::complex<value_type>**  ,layout_right,host_space>;
-    using complex_value_type_3d_view = Kokkos::View<std::complex<value_type>*** ,layout_right,host_space>;
-    using complex_value_type_4d_view = Kokkos::View<std::complex<value_type>****,layout_right,host_space>;
+    value_type_3d_view_exec _A; /// N, Blk, Blk
+    value_type_3d_view_exec _E; /// N, 2, Blk
+    value_type_4d_view_exec _V; /// N, 2, Blk, Blk
+    value_type_2d_view_exec _W; /// N, getWorkSpaceSize
+
+    int getWorkSpaceSize() {
+      return 2*_Blk*_Blk + _Blk*5;
+    }
+
+    template<typename ArgViewType>
+    void setProblem(const ArgViewType &A) {
+      const value_type zero(0);
+      Kokkos::deep_copy(_A, A);
+      Kokkos::deep_copy(_E, zero);
+      Kokkos::deep_copy(_V, zero);
+      Kokkos::deep_copy(_W, zero);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int &i) const {
+      const int r_val = KokkosBatched::
+        SerialEigendecompositionInternal::invoke(_Blk,
+                                                 &_A(i,0,0),   int(_A.stride(1)), int(_A.stride(2)),
+                                                 &_E(i,0,0),   int(_E.stride(2)),
+                                                 &_E(i,1,0),   int(_E.stride(2)),
+                                                 &_V(i,0,0,0), int(_V.stride(2)), int(_V.stride(3)),
+                                                 &_V(i,1,0,0), int(_V.stride(2)), int(_V.stride(3)),
+                                                 &_W(i,0),     int(_W.extent(1)));
+    }
+
+    double runTest() {
+      Kokkos::Impl::Timer timer;
+      timer.reset();
+      {
+        const Kokkos::RangePolicy<exec_space> policy(0, _N);
+        Kokkos::parallel_for(policy, *this);
+        Kokkos::fence();
+      }
+      const double t = timer.seconds();
+      return t;
+    }
+
+    TestKokkos(const int N, const int Blk)
+      : _N(N),
+        _Blk(Blk),
+        _A("A_kk", N, Blk, Blk),
+        _E("E_kk", N, 2, Blk),
+        _V("V_kk", N, 2, Blk, Blk),
+        _W("W_kk", N, getWorkSpaceSize()) {}
+  };
+
+  struct TestCheck {
 
     std::string _name;
 
     int _N, _Blk;
     bool _vl_stores_col_vectors;
 
-    value_type_3d_view _A_problem;
-    value_type_3d_view _E;
-    value_type_4d_view _V;
+    value_type_3d_view_host _A_problem;
+    value_type_3d_view_host _E;
+    value_type_4d_view_host _V;
 
-    complex_value_type_2d_view _Ec;
-    complex_value_type_4d_view _Vc;
-    complex_value_type_3d_view _Ac;
+    complex_value_type_2d_view_host _Ec;
+    complex_value_type_4d_view_host _Vc;
+    complex_value_type_3d_view_host _Ac;
 
     struct ConvertToComplexTag {};
     struct CheckLeftEigenvectorTag {};
@@ -244,6 +301,36 @@ namespace PerfTest {
           l += 2;
         }
       }
+#if 0
+      if (i == 0) {
+        printf("e \n");                                                                                                                                                                                 
+        auto e = Kokkos::subview(_Ec, i, Kokkos::ALL());
+        for (int k0=0;k0<_Blk;++k0) {                                                                                                                                                                   
+          const auto val = e(k0);                                                                                                                                                                       
+          printf(" %e+%ei \n", std::real(val), std::imag(val));                                                                                                                                         
+        }                                                                                                                                                                                               
+        
+        printf("VL \n");                                                                                                                                                                                
+        auto vl = Kokkos::subview(_Vc, i, 0, Kokkos::ALL(), Kokkos::ALL());
+        for (int k0=0;k0<_Blk;++k0) {                                                                                                                                                                   
+          for (int k1=0;k1<_Blk;++k1) {                                                                                                                                                                 
+            const auto val = vl(k0,k1);                                                                                                                                                                 
+            printf(" %e+%ei ", std::real(val), std::imag(val));                                                                                                                                         
+          }                                                                                                                                                                                             
+          printf("\n");                                                                                                                                                                                 
+        }                                                                                                                                                                                               
+        
+        printf("Vr \n");       
+        auto vr = Kokkos::subview(_Vc, i, 1, Kokkos::ALL(), Kokkos::ALL());          
+        for (int k0=0;k0<_Blk;++k0) {                                                                                                                                                                   
+          for (int k1=0;k1<_Blk;++k1) {                                                                                                                                                                 
+            const auto val = vr(k0,k1);                                                                                                                                                                 
+            printf(" %e+%ei ", std::real(val), std::imag(val));                                                                                                                                         
+          }                                                                                                                                                                                             
+          printf("\n");                                                                                                                                                                                 
+        } 
+      }
+#endif
     }
 
     inline
@@ -427,7 +514,34 @@ int main(int argc, char* argv[]) {
       printf("MKL           Eigensolver Time: %e seconds , %e seconds per problem , %e problems per second\n", t_mkl, t_mkl_per_problem, n_mkl_problems_per_second);
     }
 #endif
+    
+    ///
+    /// KokkosBatched Eigen solver testing
+    ///
+    {
+      PerfTest::TestKokkos eig_kk(problem._N, problem._Blk);
+      double t_kk(0);
+      for (int iter=niter_beg;iter<niter_end;++iter) {
+        eig_kk.setProblem(problem._A_kokkos);
+        const double t = eig_kk.runTest();
+        t_kk += (iter >= 0)*t;
+      }
+      
+      PerfTest::TestCheck check("Kokkos",
+                                problem._N,
+                                problem._Blk,
+                                problem._A_kokkos,
+                                eig_kk._E,
+                                eig_kk._V,
+                                false);
+      const auto pass = check.checkTest(tol);
+      printf("KokkosBatched Eigensolver left  test %s with a tol %e\n", (pass.first  ? "passed" : "fail"), tol);
+      printf("KokkosBatched Eigensolver right test %s with a tol %e\n", (pass.second ? "passed" : "fail"), tol);
 
+      const double t_kk_per_problem = (t_kk/double(niter_end*problem._N));
+      const double n_kk_problems_per_second = 1.0/t_kk_per_problem;                                                                                                                                   
+      printf("KokkosBatched Eigensolver Time: %e seconds , %e seconds per problem , %e problems per second\n", t_kk, t_kk_per_problem, n_kk_problems_per_second); 
+    }
   }
   Kokkos::finalize();
 

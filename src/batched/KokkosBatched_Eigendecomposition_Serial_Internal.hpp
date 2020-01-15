@@ -79,45 +79,6 @@ namespace KokkosBatched {
 
       /// step 1: Hessenberg reduction A = Q H Q^H
       ///         Q is stored in QZ
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-      {
-        real_type *t  = w_now; w_now += m; wlen_now -= m;
-        assert( (wlen_now >= 0) && "Eigendecomposition: Hessenberg reduction workspace t allocation fail");
-          
-        if (as0 == 1 || as1 == 1) { /// if mkl can be interfaced, use it 
-          const auto matrix_layout = ( as1 == 1 ? LAPACK_ROW_MAJOR : LAPACK_COL_MAJOR );            
-          LAPACKE_dgehrd(matrix_layout, m, 1, m, A, m, t);
-            
-          ///SerialCopyInternal::invoke(m, m, QZ, qzs0, qzs1);          
-          LAPACKE_dorghr(matrix_layout, m, 1, m, QZ, m, t);
-        } else { /// for arbitrary strides, there is no choice to use tpls
-          real_type *ww = w_now; w_now += m; wlen_now -= m;
-          assert( (wlen_now >= 0) && "Eigendecomposition: Hessenberg reduction workspace ww allocation fail");
-
-          SerialHessenbergInternal::invoke(m, m,
-                                           A, as0, as1,
-                                           t, 1,
-                                           ww);
-            
-          SerialSetIdentityInternal::invoke(m, QZ, qzs0, qzs1);          
-          SerialApplyQ_LeftNoTransForwardInternal::invoke(m-1, m-1, m-1,
-                                                          A+as0, as0, as1,
-                                                          t, 1,
-                                                          QZ+qzs, qzs0, qzs1,
-                                                          ww);
-          /// recovery of workspace for ww
-          w_now -= m; wlen_now += m;
-        }
-        /// recovery of workspace for t
-        w_now -= m; wlen_now += m;
-
-        /// clean up H
-        SerialSetLowerTriangularInternal::invoke(m, m,
-                                                 2,
-                                                 zero,
-                                                 A, as0, as1);
-      }
-#else
       {
         real_type *t  = w_now; w_now += m; wlen_now -= m;
         real_type *ww = w_now; w_now += m; wlen_now -= m;
@@ -144,7 +105,7 @@ namespace KokkosBatched {
         /// recover workspace
         w_now -= (2*m); wlen_now += (2*m);
       }
-#endif   
+
       /// step 2: Schur decomposition H = Z T Z^H
       ///         Z is applied to QZ
       {
