@@ -139,11 +139,7 @@ gemv (const char trans[],
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
 
-  if ((trans[0] == 'T' || trans[0] == 't') && A.extent(0) == 0
-#ifdef KOKKOS_ENABLE_CUDA
-      && !std::is_same<typename AViewType::device_type::execution_space, Kokkos::Cuda>::value
-#endif
-    )
+  if ((trans[0] == 'T' || trans[0] == 't' || trans[0] == 'C' || trans[0] == 'c' || trans[0] == 'H' || trans[0] == 'h'))
   {
     const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
     typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
