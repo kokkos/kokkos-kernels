@@ -52,6 +52,8 @@
 #include <sstream>
 #include <type_traits> // requires C++11, but so does Kokkos
 
+#include <KokkosBlas1_scal.hpp>
+
 namespace KokkosBlas {
 
 /// \brief Dense matrix-vector multiply: y = beta*y + alpha*A*x.
@@ -139,15 +141,9 @@ gemv (const char trans[],
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
 
-  if ((trans[0] == 'T' || trans[0] == 't') && A.extent(0) == 0
-#ifdef KOKKOS_ENABLE_CUDA
-      && !std::is_same<typename AViewType::device_type::execution_space, Kokkos::Cuda>::value
-#endif
-    )
+  if (A.extent(0) == 0 || A.extent(1) == 0)
   {
-    const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
-    typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
-    fallback_impl_type::gemv (trans, alpha, A, x, beta, y);
+    KokkosBlas::scal(y, beta, y);
   }
   else 
   {
