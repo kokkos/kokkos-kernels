@@ -789,7 +789,7 @@ protected:
 
   bool _serialConflictResolution; //if true use serial conflict resolution
   bool _ticToc; //if true print info in each step
-  char _conflictlist; //0 for no conflictlist, 1 for atomic, 2 for pps
+  ConflictList _conflict_scheme; //Enum: COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS
 
   double _pps_ratio; //the minimum number of reduction on the size of the conflictlist to create a new conflictlist
   nnz_lno_t _min_vertex_cut_off; //minimum number of vertices to reduce the conflictlist further.
@@ -819,7 +819,7 @@ public:
     GraphColor<HandleType,lno_row_view_t_,lno_nnz_view_t_>(nv_, ne_, row_map, entries, coloring_handle),
     _serialConflictResolution(coloring_handle->get_serial_conflict_resolution()),
     _ticToc(coloring_handle->get_tictoc()),
-    _conflictlist(),
+    _conflict_scheme(coloring_handle->get_conflict_list_type()),
     _pps_ratio(coloring_handle->get_min_reduction_for_conflictlist()),
     _min_vertex_cut_off(coloring_handle->get_min_elements_for_conflictlist()),
     _edge_filtering(coloring_handle->get_vb_edge_filtering()),
@@ -840,19 +840,6 @@ public:
       default: //cannnot get in here.
         this->_use_color_set = 0;
         break;
-
-      }
-
-      switch (coloring_handle->get_conflict_list_type()){
-      case COLORING_NOCONFLICT:
-        this->_conflictlist = 0;
-        break;
-      case COLORING_ATOMIC:
-        this->_conflictlist = 1;
-        break;
-      case COLORING_PPS:
-        this->_conflictlist = 2;
-        break;
       }
     }
 
@@ -872,7 +859,7 @@ public:
     if (this->_ticToc) {
       std::cout
           << "\tVB params:" << std::endl
-          << "\tuseConflictList:" << int (this->_conflictlist) << std::endl
+          << "\tuseConflictList:" << int (this->_conflict_scheme) << std::endl
           << "\talgorithm:" << (int)this->_use_color_set << std::endl
           << "\tserialConflictResolution:"  << (int) this->_serialConflictResolution << std::endl
           << "\tticToc:" << (int) this->_ticToc << std::endl
@@ -921,11 +908,11 @@ public:
     nnz_lno_temp_work_view_t pps_work_view;
 
     // if a conflictlist is used
-    if (this->_conflictlist > 0){
+    if (this->_conflict_scheme!= COLORING_NOCONFLICT){
       // Vertices to recolor. Will swap with vertexList.
       next_iteration_recolorList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
       next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
-      if (this->_conflictlist == 2) {
+      if (this->_conflict_scheme == COLORING_PPS) {
         pps_work_view = nnz_lno_temp_work_view_t("pps_view", this->nv);
       }
     }
@@ -1011,7 +998,7 @@ public:
       }
 
       if (this->_serialConflictResolution) break; // Break after first iteration.
-      if (this->_conflictlist && swap_work_arrays && (iter + 1< this->_max_num_iterations)){
+      if (this->_conflict_scheme != COLORING_NOCONFLICT && swap_work_arrays && (iter + 1< this->_max_num_iterations)){
         // Swap recolorList and vertexList
         nnz_lno_temp_work_view_t temp = current_vertexList;
         current_vertexList = next_iteration_recolorList;
@@ -1216,7 +1203,7 @@ private:
 
     swap_work_arrays = true;
     nnz_lno_t numUncolored = 0;
-    if (this->_conflictlist == 0){
+    if (this->_conflict_scheme == COLORING_NOCONFLICT){
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         functorFindConflicts_No_Conflist<adj_view_t> conf( this->nv, xadj_, adj_, vertex_colors_);
         Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflicts::CaseA", my_exec_space(0, current_vertexListLength_), conf, numUncolored);
@@ -1226,7 +1213,7 @@ private:
         Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflicts::CaseB", my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
     }
-    else if (this->_conflictlist == 2){ //IF PPS
+    else if (this->_conflict_scheme == COLORING_PPS){ //IF PPS
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         // Check for conflicts. Compute numUncolored == numConflicts.
         functorFindConflicts_PPS<adj_view_t> conf(this->nv, xadj_, adj_,vertex_colors_,current_vertexList_,next_iteration_recolorList_);
@@ -1309,7 +1296,7 @@ private:
     nnz_lno_t end = _nv;
     typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
 
-    if (this->_conflictlist){
+    if (this->_conflict_scheme != COLORING_NOCONFLICT){
       end = current_vertexListLength_;
       h_recolor_list = Kokkos::create_mirror_view (current_vertexList_);
       Kokkos::deep_copy (h_recolor_list, current_vertexList_);
@@ -1324,7 +1311,7 @@ private:
     Kokkos::deep_copy (h_adj, adj_);
 
     for (nnz_lno_t k=0; k <end; k++){
-      if (this->_conflictlist){
+      if (this->_conflict_scheme != COLORING_NOCONFLICT){
         i = h_recolor_list(k);
       }
       else {
