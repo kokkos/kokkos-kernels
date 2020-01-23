@@ -2838,9 +2838,6 @@ public:
     size_type_temp_work_view_t new_edge_conflict_indices
     (Kokkos::ViewAllocateWithoutInitializing("new_edge_conflict_indices"), num_work_edges);
 
-    size_type_temp_work_view_t
-    pps(Kokkos::ViewAllocateWithoutInitializing("prefix_sum"), num_work_edges);
-
     char_temp_work_view_type edge_conflict_marker
     (Kokkos::ViewAllocateWithoutInitializing("edge_conflict_marker"), num_work_edges);
 
