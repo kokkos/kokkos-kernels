@@ -2257,10 +2257,10 @@ public:
     view_type _recolorList;
 
     ppsWorklistFunctorVB(
-        nnz_lno_t nv,
+        nnz_lno_t nv_,
         const view_type& vertexList,
         const view_type& recolorList)
-      : _nv(nv), _vertexList(vertexList), _recolorList(recolorList)
+      : _nv(nv_), _vertexList(vertexList), _recolorList(recolorList)
     {}
 
     KOKKOS_INLINE_FUNCTION
