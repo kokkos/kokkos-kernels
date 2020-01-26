@@ -62,6 +62,7 @@ enum ColoringAlgorithm { COLORING_DEFAULT,
                          COLORING_VBDBIT,                     // Vertex Based Deterministic Coloring with bit array
                          COLORING_EB,                         // Edge Based Coloring
                          COLORING_SERIAL2,                    // Serial Distance-2 Graph Coloring (kept here for backwards compatibility for SPGEMM and other use cases)
+                         COLORING_BALANCED
                        };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
@@ -620,6 +621,7 @@ private:
     case COLORING_VBD:
     case COLORING_VBDBIT:
     case COLORING_SERIAL:
+    case COLORING_BALANCED:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;

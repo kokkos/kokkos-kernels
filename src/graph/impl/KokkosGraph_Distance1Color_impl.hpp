@@ -47,6 +47,7 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <vector>
 #include "KokkosGraph_Distance1ColorHandle.hpp"
+#include "KokkosKernels_BitUtils.hpp" //for least_set_bit
 
 #include <bitset>
 
@@ -741,7 +742,7 @@ template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t
 class GraphColor_VB:public GraphColor <HandleType,lno_row_view_t_,lno_nnz_view_t_>{
 public:
 
-  typedef long long int ban_type;
+  typedef uint64_t ban_type;
 
   typedef lno_row_view_t_ in_lno_row_view_t;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
@@ -763,6 +764,7 @@ public:
   typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
   //typedef typename Kokkos::View<row_index_type, Kokkos::MemoryUnmanaged> um_array_type;
   typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type; //Host view type
+  typedef Kokkos::View<int*, MyPersistentMemorySpace> int_view_t;
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
@@ -801,6 +803,7 @@ protected:
                         // 2: for VBBIT
 
   int _max_num_iterations;
+  bool _balanced;     //true for randomized recoloring after the normal first-fit coloring
 
 public:
   /**
@@ -825,12 +828,16 @@ public:
     _edge_filtering(coloring_handle->get_vb_edge_filtering()),
     _chunkSize(coloring_handle->get_vb_chunk_size()),
     _use_color_set(),
-    _max_num_iterations(coloring_handle->get_max_number_of_iterations())
+    _max_num_iterations(coloring_handle->get_max_number_of_iterations()),
+    _balanced(false)
     {
       switch (coloring_handle->get_coloring_algo_type()){
       case COLORING_VB:
         this->_use_color_set = 0;
         break;
+      case COLORING_BALANCED:
+        //Balanced will use VBBIT, and also add a randomization pass after coloring.
+        this->_balanced = true;
       case COLORING_VBBIT:
         this->_use_color_set = 2;
         break;
@@ -1058,6 +1065,14 @@ public:
     		std::cout << "\tTime serial conflict resolution: " << t << std::endl;
     	}
     }
+
+    if(this->_balanced)
+    {
+      //colorBalanced does a single recoloring pass
+      //it uses the current coloring as independent sets, so it never introduces conflicts
+      this->colorBalanced(this->xadj, this->adj, colors);
+    }
+
     num_loops = iter;
 
     this->cp->add_to_overall_coloring_time_phase1(total_time_greedy_phase);
@@ -1096,8 +1111,7 @@ private:
           vertex_colors_,  current_vertexList_,
           current_vertexListLength_, chunkSize_);
       Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor_IMPLOG",
-          my_exec_space(0, current_vertexListLength_/chunkSize_+1), gc);
-
+          my_exec_space(0, (current_vertexListLength_ + chunkSize_ - 1) / chunkSize_), gc);
     }
     // VBCS algorithm
     else if (this->_use_color_set == 1){
@@ -1126,6 +1140,50 @@ private:
     }
   }      // colorGreedy (end)
 
+/** \brief Performs balanced recoloring. For each vertex, compute forbidden colors and
+      choose new color randomly from those.
+   *  \param xadj_: row map of the graph
+   *  \param adj_: entries, columns of the graph
+   *  \param vertex_colors_: colors corresponding to each vertex
+   */
+
+  void colorBalanced(
+      const_lno_row_view_t xadj_,
+      const_lno_nnz_view_t adj_,
+      color_view_type vertex_colors_)
+  {
+    //Compute explicit color sets now
+    //Color sets are independent sets, so they can be 
+    color_t num_colors = 0;
+    KokkosKernels::Impl::kk_view_reduce_max<color_view_type, MyExecSpace>(this->nv, vertex_colors_, num_colors);
+    nnz_lno_persistent_work_view_t color_xadj;
+    nnz_lno_persistent_work_view_t color_adj;
+    KokkosKernels::Impl::create_reverse_map
+      <color_view_type,
+       nnz_lno_persistent_work_view_t, MyExecSpace>
+      (this->nv, num_colors, vertex_colors_, color_xadj, color_adj);
+    //Count the number of vertices to add to each color set ("demand")
+    //Is positive for uncommon colors, negative for common.
+    nnz_lno_t target_size = (double) this->nv / num_colors;
+    int_view_t color_demands(Kokkos::ViewAllocateWithoutInitializing("Color demands"), num_colors);
+    Kokkos::deep_copy(color_demands, target_size);
+    Kokkos::parallel_for(my_exec_space(0, this->nv), BalanceTargetFunctor(color_demands, vertex_colors_));
+    //Recolor individual color sets in parallel to less common colors
+    auto host_color_xadj = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), color_xadj);
+    for(color_t colorToReplace = 0; colorToReplace < num_colors; colorToReplace++)
+    {
+      nnz_lno_t colorSetBegin = host_color_xadj(colorToReplace);
+      nnz_lno_t colorSetEnd = host_color_xadj(colorToReplace + 1);
+      Kokkos::parallel_for("KokkosGraph::GraphColoring::GreedyColor",
+          my_exec_space(colorSetBegin, colorSetEnd),
+          functorBalancedColor(
+            this->nv,
+            xadj_, adj_,
+            vertex_colors_,
+            color_demands,
+            color_adj));
+    }
+  }
 
 
   /** \brief Performs speculative coloring based on the given colorings.
@@ -1534,7 +1592,125 @@ public:
         }
       }
     }
+  };
 
+  struct BalanceTargetFunctor
+  {
+    BalanceTargetFunctor(const int_view_t& demand_, const color_view_type& colors_)
+      : demand(demand_), colors(colors_)
+    {}
+
+    KOKKOS_INLINE_FUNCTION void operator()(nnz_lno_t i) const
+    {
+      Kokkos::atomic_decrement(&demand(colors(i) - 1));
+    }
+
+    int_view_t demand;
+    color_view_type colors;
+  };
+
+  struct functorBalancedColor {
+    nnz_lno_t nv;
+    color_t numColors;
+    const_lno_row_view_t _idx;
+    const_lno_nnz_view_t _adj;
+    color_view_type _colors;
+    int_view_t _demands;
+    nnz_lno_persistent_work_view_t color_adj;
+
+    functorBalancedColor(
+      nnz_lno_t nv_,
+      const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_,
+      color_view_type colors_,
+      int_view_t demands_,
+      nnz_lno_persistent_work_view_t color_adj_)
+      : nv(nv_), numColors(demands_.extent(0)),
+      _idx(xadj_), _adj(adj_), _colors(colors_), _demands(demands_),
+        color_adj(color_adj_)
+    {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const nnz_lno_t workItem) const
+    {
+      //Get vertex from color set
+      nnz_lno_t i = color_adj(workItem);
+      size_type rowBegin = _idx(i);
+      size_type rowEnd = _idx(i + 1);
+      //Don't recolor if color already has positive demand
+      //Note: current color doesn't necessarily match that of the original color set
+      color_t curColor = _colors(i);
+      color_t offset = 1;
+      color_t batchSize = 64;
+      while(offset <= numColors)
+      {
+        if(offset + 64 > numColors)
+          batchSize = numColors - offset;
+        // Forbidden colors corresponding to offset...offset+batchSize-1 inclusive
+        ban_type forbidden = 0;
+        for(size_type j = rowBegin; j < rowEnd; j++)
+        {
+          nnz_lno_t nei = _adj(j);
+          if(nei == i || nei >= nv)
+            continue; // Skip self-loops and remote neighbors
+          color_t c = _colors(nei);
+          color_t color_offset = c - offset;
+          //if color is in the current range
+          //convert it to binary and add it to forbidden
+          if(c >= offset && color_offset < 64)
+          {
+            forbidden |= ban_type(1) << color_offset;
+            if(~forbidden == 0)
+            {
+              //all bits set, can't color with this offset
+              break;
+            }
+          }
+        }
+        //Find the non-forbidden color with the highest demand
+        color_t bestBit = 0;
+        int highestDemand = 0;
+        while(~forbidden)
+        {
+          //Extract an allowed color
+          color_t bit = KokkosKernels::Impl::least_set_bit(~forbidden) - 1;
+          if(bit > batchSize)
+            break;
+          color_t cand = offset + bit;
+          int candDemand = _demands(cand - 1);
+          if(candDemand > highestDemand)
+          {
+            highestDemand = candDemand;
+            bestBit = bit;
+          }
+          else
+          {
+            //Set bit in forbidden after checking it,
+            //so subsequent least_set_bit() calls return something else
+            forbidden |= ban_type(1) << bit;
+          }
+        }
+        if(highestDemand > 0)
+        {
+          color_t cand = offset + bestBit;
+          int profit =
+            Kokkos::atomic_fetch_add(&_demands(cand - 1), -1) -
+            Kokkos::atomic_fetch_add(&_demands(curColor - 1), 1);
+          if(profit >= -1)
+          {
+            //recoloring is profitable
+            _colors(i) = cand;
+            return;
+          }
+          else
+          {
+            //recoloring is not profitable, abort
+            Kokkos::atomic_increment(&_demands(cand - 1));
+            Kokkos::atomic_decrement(&_demands(curColor - 1));
+          }
+        }
+        offset += 64;
+      }
+    }
   };
 
   /**
@@ -2395,7 +2571,7 @@ template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t
 class GraphColor_VBD:public GraphColor <HandleType,lno_row_view_t_,lno_nnz_view_t_>{
 public:
 
-  typedef long long int ban_type;
+  typedef uint64_t ban_type;
 
   typedef lno_row_view_t_ in_lno_row_view_t;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
@@ -2737,7 +2913,7 @@ public:
       typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       size_type frontierNode = frontier_(frontierIdx);
       // Initialize bit array to all bits = 0
-      unsigned long long bannedColors = 0;
+      uint64_t bannedColors = 0;
       color_t myColor = 0, colorOffset = 0;
 
       while(myColor == 0) {
@@ -2792,7 +2968,7 @@ template <typename HandleType, typename in_row_index_view_type_, typename in_non
 class GraphColor_EB:public GraphColor <HandleType,in_row_index_view_type_,in_nonzero_index_view_type_>{
 public:
 
-  typedef long long int ban_type;
+  typedef uint64_t ban_type;
 
   typedef in_row_index_view_type_ in_row_index_view_type;
   typedef in_nonzero_index_view_type_ in_nonzero_index_view_type;

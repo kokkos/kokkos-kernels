@@ -652,63 +652,52 @@ namespace KokkosSparse{
       void initialize_symbolic()
       {
         auto gsHandle = get_gs_handle();
-        typename HandleType::GraphColoringHandleType *gchandle = this->handle->get_graph_coloring_handle();
-
-        if (gchandle == NULL)
-        {
-          this->handle->create_graph_coloring_handle();
-          gsHandle->set_owner_of_coloring(true);
-          gchandle = this->handle->get_graph_coloring_handle();
-        }
-
         const_lno_row_view_t xadj = this->row_map;
         const_lno_nnz_view_t adj = this->entries;
         size_type nnz = adj.extent(0);
-
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         Kokkos::Impl::Timer timer;
 #endif
         typename HandleType::GraphColoringHandleType::color_view_t colors;
         color_t numColors;
-        if (!is_symmetric) {
-          if (gchandle->get_coloring_algo_type() == KokkosGraph::COLORING_EB) {
-
-            gchandle->symmetrize_and_calculate_lower_diagonal_edge_list(num_rows, xadj, adj);
-            KokkosGraph::Experimental::graph_color_symbolic <HandleType, const_lno_row_view_t, const_lno_nnz_view_t>
-              (this->handle, num_rows, num_rows, xadj, adj);
-          }
-          else {
-            row_lno_temp_work_view_t tmp_xadj;
-            nnz_lno_temp_work_view_t tmp_adj;
-            KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
-              < const_lno_row_view_t, const_lno_nnz_view_t,
-                row_lno_temp_work_view_t, nnz_lno_temp_work_view_t,
-                MyExecSpace>
-              (num_rows, xadj, adj, tmp_xadj, tmp_adj);
-            KokkosGraph::Experimental::graph_color_symbolic <HandleType, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
-              (this->handle, num_rows, num_rows, tmp_xadj, tmp_adj);
-          }
-        }
-        else {
-          KokkosGraph::Experimental::graph_color_symbolic <HandleType, const_lno_row_view_t, const_lno_nnz_view_t>
-            (this->handle, num_rows, num_rows, xadj, adj);
-        }
-        colors =  gchandle->get_vertex_colors();
-        numColors = gchandle->get_num_colors();
-#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        std::cout << "COLORING_TIME:" << timer.seconds() << std::endl;
-        timer.reset();
-#endif
-
 #if KOKKOSSPARSE_IMPL_RUNSEQUENTIAL
         numColors = num_rows;
         KokkosKernels::Impl::print_1Dview(colors);
         std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.extent(0) <<  std::endl;
-        typename HandleType::GraphColoringHandleType::color_view_t::HostMirror  h_colors = Kokkos::create_mirror_view (colors);
+        auto h_colors = Kokkos::create_mirror_view (colors);
         for(int i = 0; i < num_rows; ++i){
           h_colors(i) = i + 1;
         }
         Kokkos::deep_copy(colors, h_colors);
+#else
+        //Create a new handle just for coloring (doesn't hurt symbolic re-use, as the color_xadj/color_adj get stored in the GS handle)
+        HandleType kh_coloring;
+        kh_coloring.create_graph_coloring_handle(KokkosGraph::COLORING_BALANCED);
+        auto gcHandle = kh_coloring.get_graph_coloring_handle();
+        if (!is_symmetric) {
+          row_lno_temp_work_view_t tmp_xadj;
+          nnz_lno_temp_work_view_t tmp_adj;
+          KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
+            < const_lno_row_view_t, const_lno_nnz_view_t,
+              row_lno_temp_work_view_t, nnz_lno_temp_work_view_t,
+              MyExecSpace>
+            (num_rows, xadj, adj, tmp_xadj, tmp_adj);
+          KokkosGraph::Experimental::graph_color_symbolic <HandleType, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>
+            (&kh_coloring, num_rows, num_rows, tmp_xadj, tmp_adj);
+        }
+        else {
+          KokkosGraph::Experimental::graph_color_symbolic <HandleType, const_lno_row_view_t, const_lno_nnz_view_t>
+            (&kh_coloring, num_rows, num_rows, xadj, adj);
+        }
+        //Get the coloring, and the number of colors used
+        colors = gcHandle->get_vertex_colors();
+        numColors = gcHandle->get_num_colors();
+        //Done with that handle now
+        kh_coloring.destroy_graph_coloring_handle();
+#endif
+#ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+        std::cout << "COLORING_TIME:" << timer.seconds() << std::endl;
+        timer.reset();
 #endif
         nnz_lno_persistent_work_view_t color_xadj;
         nnz_lno_persistent_work_view_t color_adj;

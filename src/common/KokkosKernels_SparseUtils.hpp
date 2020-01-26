@@ -765,7 +765,6 @@ struct ColorChecker{
     size_t nf = 0;
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const lno_t& row_index, size_t &team_num_conf)
     {
-
       color_t my_color = color_view(row_index);
       const size_type col_begin = xadj[row_index];
       const size_type col_end = xadj[row_index + 1];
@@ -823,7 +822,7 @@ inline size_t kk_is_d1_coloring_valid(
 
   struct ColorChecker <in_row_view_t, in_nnz_view_t, in_color_view_t, team_member_t>  cc(num_rows, xadj, adj, v_colors, team_work_chunk_size);
   size_t num_conf = 0;
-  Kokkos::parallel_reduce( "KokkosKernels::Common::IsD1ColoringValie", dynamic_team_policy(num_rows / team_work_chunk_size + 1 ,
+  Kokkos::parallel_reduce( "KokkosKernels::Common::IsD1ColoringValid", dynamic_team_policy((num_rows + team_work_chunk_size - 1) / team_work_chunk_size,
       suggested_team_size, vector_size), cc, num_conf);
 
   MyExecSpace().fence();

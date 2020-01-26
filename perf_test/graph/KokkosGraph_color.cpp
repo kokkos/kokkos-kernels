@@ -80,6 +80,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "                 COLORING_EB       - Use edge based method." << std::endl
        << spaces << "                 COLORING_VBD      - Use the vertex-based deterministic method." << std::endl
        << spaces << "                 COLORING_VBDBIT   - Use the vertex-based deterministic with bit vectors method." << std::endl
+       << spaces << "                 COLORING_BALANCED - VBBIT, modified to create a balanced (flat histogram) coloring." << std::endl
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
        << spaces << "      --chunksize <N>     Set the chunk size." << std::endl
@@ -165,6 +166,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "COLORING_VBDBIT" ) ) {
         params.algorithm = 8;
       }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_BALANCED" ) ) {
+        params.algorithm = 9;
+      }
       else if ( 0 == strcasecmp( argv[i], "--help") || 0 == strcasecmp(argv[i], "-h") )
       {
         print_options(std::cout, argv[0]);
@@ -240,6 +244,10 @@ void run_experiment(
       <size_type,lno_t, lno_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 
+  using GCHandle = typename KernelHandle::GraphColoringHandleType;
+  using color_view_t = typename GCHandle::color_view_t;
+  using color_t = typename GCHandle::color_t;
+
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
   kh.set_shmem_size(shmemsize);
@@ -290,6 +298,10 @@ void run_experiment(
       kh.create_graph_coloring_handle(COLORING_VBDBIT);
       break;
 
+    case 9:
+      kh.create_graph_coloring_handle(COLORING_BALANCED);
+      break;
+
     default:
       kh.create_graph_coloring_handle(COLORING_DEFAULT);
 
@@ -301,11 +313,25 @@ void run_experiment(
         "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
         "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "
         "Num Phases:" << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
+    std::cout << "Vertex Colors:\n";
     std::cout << "\t"; KokkosKernels::Impl::print_1Dview(kh.get_graph_coloring_handle()->get_vertex_colors());
+
+    auto colors = kh.get_graph_coloring_handle()->get_vertex_colors();
 
     if( params.coloring_output_file != NULL ) {
       std::ofstream os(params.coloring_output_file, std::ofstream::out);
-      KokkosKernels::Impl::print_1Dview(os, kh.get_graph_coloring_handle()->get_vertex_colors(), true, "\n"); 
+      KokkosKernels::Impl::print_1Dview(os, colors, true, "\n"); 
+    }
+
+    if(verbose) {
+      //For this algorithm, the color histogram is of interest
+      color_t numColors = kh.get_graph_coloring_handle()->get_num_colors();
+      //note: get_histogram uses 0-based numbering
+      lno_nnz_view_t histogram("Color histogram", numColors + 1);
+      KokkosKernels::Impl::get_histogram<color_view_t, lno_nnz_view_t, ExecSpace>
+        (colors.extent(0), colors, histogram);
+      std::cout << "Color histogram:\n";
+      KokkosKernels::Impl::print_1Dview(Kokkos::subview(histogram, std::make_pair(color_t(1), numColors + 1)), true);
     }
   }
 }

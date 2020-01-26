@@ -46,9 +46,11 @@
 
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosKernels_Handle.hpp"
+#include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
-#include "KokkosKernels_Handle.hpp"
+#include "KokkosKernels_PrintUtils.hpp"
 
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
@@ -57,25 +59,27 @@ using namespace KokkosGraph;
 using namespace KokkosGraph::Experimental;
 
 namespace Test {
-template <typename crsMat_t, typename device>
+template <typename crsMat_t, typename color_t, typename device>
 int run_graphcolor(
     crsMat_t input_mat,
     ColoringAlgorithm coloring_algorithm,
-    size_t &num_colors,
+    color_t& num_colors,
     typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type & vertex_colors){
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
-  typedef typename graph_t::entries_type   lno_nnz_view_t;
+  typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  typedef typename lno_view_t::value_type size_type;
-  typedef typename lno_nnz_view_t::value_type lno_t;
-  typedef typename scalar_view_t::value_type scalar_t;
+  typedef typename lno_view_t::non_const_value_type size_type;
+  typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+  typedef typename scalar_view_t::non_const_value_type scalar_t;
 
-
-  typedef KokkosKernelsHandle
+  using exec_space = typename device::execution_space;
+  using KernelHandle = KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
+      exec_space, typename device::memory_space,typename device::memory_space >;
+  using color_view_t = typename KernelHandle::GraphColoringHandleType::color_view_t;
+
 
   KernelHandle kh;
   kh.set_team_work_size(16);
@@ -83,16 +87,16 @@ int run_graphcolor(
 
   kh.create_graph_coloring_handle(coloring_algorithm);
 
-
-  const size_t num_rows_1 = input_mat.numRows();
-  const size_t num_cols_1 = input_mat.numCols();
+  const size_t num_rows = input_mat.numRows();
+  const size_t num_cols = input_mat.numCols();
 
   graph_color
-    <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,num_rows_1, num_cols_1,
+    <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,num_rows, num_cols,
         input_mat.graph.row_map, input_mat.graph.entries);
 
   num_colors = kh.get_graph_coloring_handle()->get_num_colors();
   vertex_colors = kh.get_graph_coloring_handle()->get_vertex_colors();
+
   kh.destroy_graph_coloring_handle();
   return 0;
 }
@@ -106,7 +110,9 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type lno_nnz_view_t;
-  typedef typename graph_t::entries_type::non_const_type   color_view_t;
+  typedef typename graph_t::entries_type::non_const_type color_view_t;
+  typedef typename color_view_t::non_const_value_type    color_t;
+
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   //typedef typename lno_view_t::non_const_value_type size_type;
 
@@ -130,6 +136,7 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
                                                        , COLORING_VBBIT 
                                                        , COLORING_VBCS 
                                                        , COLORING_EB
+                                                       , COLORING_BALANCED
                                                        };
 
   #ifdef KOKKOS_ENABLE_CUDA
@@ -143,13 +150,13 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
 
   for (size_t ii = 0; ii < coloring_algorithms.size(); ++ii) {
     ColoringAlgorithm coloring_algorithm = coloring_algorithms[ii];
-    color_view_t vector_colors;
-    size_t num_colors;
+    color_view_t vertex_colors;
+    color_t num_colors;
 
 
     Kokkos::Impl::Timer timer1;
     crsMat_t output_mat;
-    int res = run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
+    int res = run_graphcolor<crsMat_t, color_t, device>(input_mat, coloring_algorithm, num_colors, vertex_colors);
     //double coloring_time = timer1.seconds();
     EXPECT_TRUE( (res == 0));
 
@@ -158,17 +165,17 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
     const lno_t num_cols_1 = input_mat.numCols();
     lno_t num_conflict = KokkosKernels::Impl::kk_is_d1_coloring_valid
         <lno_view_t,lno_nnz_view_t, color_view_t, typename device::execution_space>
-    (num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, vector_colors);
+    (num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, vertex_colors);
 
     lno_t conf = 0;
     {
       //also check the correctness of the validation code :)
       typename lno_view_t::HostMirror hrm = Kokkos::create_mirror_view (input_mat.graph.row_map);
       typename lno_nnz_view_t::HostMirror hentries = Kokkos::create_mirror_view (input_mat.graph.entries);
-      typename color_view_t::HostMirror hcolor = Kokkos::create_mirror_view (vector_colors);
+      typename color_view_t::HostMirror hcolor = Kokkos::create_mirror_view (vertex_colors);
       Kokkos::deep_copy (hrm , input_mat.graph.row_map);
       Kokkos::deep_copy (hentries , input_mat.graph.entries);
-      Kokkos::deep_copy (hcolor , vector_colors);
+      Kokkos::deep_copy (hcolor , vertex_colors);
 
       for (lno_t i = 0; i < num_rows_1; ++i){
         const size_type b = hrm(i);

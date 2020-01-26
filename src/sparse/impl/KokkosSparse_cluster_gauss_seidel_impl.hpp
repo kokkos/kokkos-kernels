@@ -899,7 +899,7 @@ namespace KokkosSparse{
 #else
         //Create a handle that uses nnz_lno_t as the size_type, since the cluster graph should never be larger than 2^31 entries.
         KokkosKernels::Experimental::KokkosKernelsHandle<nnz_lno_t, nnz_lno_t, double, MyExecSpace, MyPersistentMemorySpace, MyPersistentMemorySpace> kh;
-        kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
+        kh.create_graph_coloring_handle(KokkosGraph::COLORING_BALANCED);
         KokkosGraph::Experimental::graph_color_symbolic(&kh, numClusters, numClusters, clusterRowmap, clusterEntries);
         //retrieve colors
         auto coloringHandle = kh.get_graph_coloring_handle();

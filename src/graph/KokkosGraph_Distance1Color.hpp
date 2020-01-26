@@ -80,6 +80,9 @@ void graph_color_symbolic(
   typedef typename Impl::GraphColor
       <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
   BaseGraphColoring *gc = NULL;
+  typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
+  typedef typename Impl::GraphColor_VBD <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBDGraphColoring;
+  typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
 
   switch (algorithm){
   case COLORING_SERIAL:
@@ -87,20 +90,18 @@ void graph_color_symbolic(
     break;
 
   case COLORING_VB:
+  case COLORING_BALANCED:
   case COLORING_VBBIT:
   case COLORING_VBCS:
-    typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
     gc = new VBGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
     break;
 
   case COLORING_VBD:
   case COLORING_VBDBIT:
-    typedef typename Impl::GraphColor_VBD <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBDGraphColoring;
     gc = new VBDGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
     break;
 
   case COLORING_EB:
-    typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
     gc = new EBGraphColoring(num_rows, entries.extent(0),row_map, entries, gch);
     break;
 
