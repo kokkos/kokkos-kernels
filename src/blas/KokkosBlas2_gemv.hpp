@@ -52,8 +52,6 @@
 #include <sstream>
 #include <type_traits> // requires C++11, but so does Kokkos
 
-#include <KokkosBlas1_scal.hpp>
-
 namespace KokkosBlas {
 
 /// \brief Dense matrix-vector multiply: y = beta*y + alpha*A*x.
@@ -141,9 +139,13 @@ gemv (const char trans[],
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
 
+  // Degenerate case is essentially same as scal - use fallback impl 
+  // to avoid potential (unlikely?) circular dependence issues by including other KokkosBlas headers
   if (A.extent(0) == 0 || A.extent(1) == 0)
   {
-    KokkosBlas::scal(y, beta, y);
+    const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
+    typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
+    fallback_impl_type::gemv (trans, alpha, A, x, beta, y);
   }
   else 
   {
