@@ -526,6 +526,47 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth
   }
 }
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_sgs_zero_rows()
+{
+  using namespace Test;
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_type;
+  typedef typename graph_t::entries_type::non_const_type entries_type;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef KokkosKernelsHandle
+      <size_type, lno_t, scalar_t,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+  //The rowmap of a zero-row matrix can be length 0 or 1, so Gauss-Seidel should work with both
+  //(the setup and apply are essentially no-ops but they shouldn't crash or throw exceptions)
+  //For this test, create size-0 and size-1 rowmaps separately, and make sure each work with both point and cluster
+  for(int doingCluster = 0; doingCluster < 2; doingCluster++)
+  {
+    for(int rowmapLen = 0; rowmapLen < 2; rowmapLen++)
+    {
+      KernelHandle kh;
+      if(doingCluster)
+        kh.create_gs_handle(CLUSTER_DEFAULT, 10);
+      else
+        kh.create_gs_handle(GS_DEFAULT);
+      //initialized to 0
+      row_map_type rowmap("Rowmap", rowmapLen);
+      entries_type entries("Entries", 0);
+      scalar_view_t values("Values", 0);
+      //also, make sure graph symmetrization doesn't crash on zero rows
+      gauss_seidel_symbolic(&kh, 0, 0, rowmap, entries, false);
+      gauss_seidel_numeric(&kh, 0, 0, rowmap, entries, values, false);
+      scalar_view_t x("X", 0);
+      scalar_view_t y("Y", 0);
+      scalar_t omega(0.9);
+      symmetric_gauss_seidel_apply
+        (&kh, 0, 0, rowmap, entries, values, x, y, false, true, omega, 3);
+      kh.destroy_gs_handle();
+    }
+  }
+}
+
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_asymmetric_rank1 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, false); \
@@ -538,6 +579,9 @@ TEST_F( TestCategory, sparse ## _ ## gauss_seidel_symmetric_rank1 ## _ ## SCALAR
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_symmetric_rank2 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 20, 200, 10, 3, true); \
+} \
+TEST_F( TestCategory, sparse ## _ ## gauss_seidel_zero_rows ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_sgs_zero_rows<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
 } \
 TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
