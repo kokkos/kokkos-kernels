@@ -78,7 +78,6 @@ int run_graphcolor(
   using KernelHandle = KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       exec_space, typename device::memory_space,typename device::memory_space >;
-  using color_view_t = typename KernelHandle::GraphColoringHandleType::color_view_t;
 
 
   KernelHandle kh;
