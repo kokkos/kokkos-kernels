@@ -68,8 +68,15 @@ namespace Impl{
   typedef typename KernelHandle::nnz_lno_t idx_type;
   typedef typename KernelHandle::size_type  size_type;
   typedef typename KernelHandle::scalar_t  scalar_type;
+  typedef typename KernelHandle::memory_space  memory_space;
 
-  if (std::is_same<idx_type, int>::value) {
+  const bool is_cuda_space = std::is_same<memory_space, Kokkos::CudaSpace>::value || std::is_same<memory_space, Kokkos::CudaUVMSpace>::value || std::is_same<memory_space, Kokkos::CudaHostPinnedSpace>::value;
+
+  if (!is_cuda_space) {
+    throw std::runtime_error ("KokkosKernels sptrsvcuSPARSE_symbolic: MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
+  }
+  else if (std::is_same<idx_type, int>::value) {
+
     bool is_lower = sptrsv_handle->is_lower_tri();
     sptrsv_handle->create_cuSPARSE_Handle(trans, is_lower);
 

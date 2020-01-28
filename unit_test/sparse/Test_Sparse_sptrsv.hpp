@@ -483,7 +483,7 @@ void run_test_sptrsv() {
     }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value)
+    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
     {
       Kokkos::deep_copy(lhs, 0);
       KernelHandle kh;
@@ -646,7 +646,7 @@ void run_test_sptrsv() {
     }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value)
+    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
     {
       Kokkos::deep_copy(lhs, 0);
       KernelHandle kh;
