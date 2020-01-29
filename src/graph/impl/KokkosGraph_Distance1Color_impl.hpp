@@ -789,7 +789,7 @@ protected:
 
   bool _serialConflictResolution; //if true use serial conflict resolution
   bool _ticToc; //if true print info in each step
-  char _conflictlist; //0 for no conflictlist, 1 for atomic, 2 for pps
+  ConflictList _conflict_scheme; //Enum: COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS
 
   double _pps_ratio; //the minimum number of reduction on the size of the conflictlist to create a new conflictlist
   nnz_lno_t _min_vertex_cut_off; //minimum number of vertices to reduce the conflictlist further.
@@ -819,7 +819,7 @@ public:
     GraphColor<HandleType,lno_row_view_t_,lno_nnz_view_t_>(nv_, ne_, row_map, entries, coloring_handle),
     _serialConflictResolution(coloring_handle->get_serial_conflict_resolution()),
     _ticToc(coloring_handle->get_tictoc()),
-    _conflictlist(),
+    _conflict_scheme(coloring_handle->get_conflict_list_type()),
     _pps_ratio(coloring_handle->get_min_reduction_for_conflictlist()),
     _min_vertex_cut_off(coloring_handle->get_min_elements_for_conflictlist()),
     _edge_filtering(coloring_handle->get_vb_edge_filtering()),
@@ -840,19 +840,6 @@ public:
       default: //cannnot get in here.
         this->_use_color_set = 0;
         break;
-
-      }
-
-      switch (coloring_handle->get_conflict_list_type()){
-      case COLORING_NOCONFLICT:
-        this->_conflictlist = 0;
-        break;
-      case COLORING_ATOMIC:
-        this->_conflictlist = 1;
-        break;
-      case COLORING_PPS:
-        this->_conflictlist = 2;
-        break;
       }
     }
 
@@ -872,7 +859,7 @@ public:
     if (this->_ticToc) {
       std::cout
           << "\tVB params:" << std::endl
-          << "\tuseConflictList:" << int (this->_conflictlist) << std::endl
+          << "\tuseConflictList:" << int (this->_conflict_scheme) << std::endl
           << "\talgorithm:" << (int)this->_use_color_set << std::endl
           << "\tserialConflictResolution:"  << (int) this->_serialConflictResolution << std::endl
           << "\tticToc:" << (int) this->_ticToc << std::endl
@@ -916,18 +903,12 @@ public:
 
     //the size of the next iteration's conflictlist
     single_dim_index_view_type next_iteration_recolorListLength;
-    //if parallel prefix sum is selected instead of atomic operations,
-    //we need one more work array to do the prefix sum.
-    nnz_lno_temp_work_view_t pps_work_view;
 
     // if a conflictlist is used
-    if (this->_conflictlist > 0){
+    if (this->_conflict_scheme!= COLORING_NOCONFLICT){
       // Vertices to recolor. Will swap with vertexList.
       next_iteration_recolorList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
       next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
-      if (this->_conflictlist == 2) {
-        pps_work_view = nnz_lno_temp_work_view_t("pps_view", this->nv);
-      }
     }
 
     nnz_lno_t numUncolored = this->nv;
@@ -987,8 +968,7 @@ public:
           this->xadj, adj_copy,
           colors, vertex_color_set,
           current_vertexList, current_vertexListLength,
-          next_iteration_recolorList, next_iteration_recolorListLength,
-          pps_work_view);
+          next_iteration_recolorList, next_iteration_recolorListLength);
       }
       else {
         numUncolored = this->findConflicts(
@@ -996,8 +976,7 @@ public:
             this->xadj, this->adj,
             colors, vertex_color_set,
             current_vertexList, current_vertexListLength,
-            next_iteration_recolorList, next_iteration_recolorListLength,
-            pps_work_view);
+            next_iteration_recolorList, next_iteration_recolorListLength);
       }
 
       MyExecSpace().fence();
@@ -1011,7 +990,7 @@ public:
       }
 
       if (this->_serialConflictResolution) break; // Break after first iteration.
-      if (this->_conflictlist && swap_work_arrays && (iter + 1< this->_max_num_iterations)){
+      if (this->_conflict_scheme != COLORING_NOCONFLICT && swap_work_arrays && (iter + 1< this->_max_num_iterations)){
         // Swap recolorList and vertexList
         nnz_lno_temp_work_view_t temp = current_vertexList;
         current_vertexList = next_iteration_recolorList;
@@ -1197,9 +1176,8 @@ private:
    *  \param vertex_color_set: if VBCS is used, color set of each vertex
    *  \param current_vertexList_: current conflictlist
    *  \param current_vertexListLength_: size of current conflictlist
-   *  \param next_iteration_recolorList_: current conflictlist
-   *  \param next_iteration_recolorListLength_: size of current conflictlist
-   *  \param pps_work_view: size of current conflictlist
+   *  \param next_iteration_recolorList_: next conflictlist
+   *  \param next_iteration_recolorListLength_: size of next conflictlist
    */
   template <typename adj_view_t>
   nnz_lno_t findConflicts(
@@ -1211,12 +1189,11 @@ private:
       nnz_lno_temp_work_view_t current_vertexList_,
       nnz_lno_t current_vertexListLength_,
       nnz_lno_temp_work_view_t next_iteration_recolorList_,
-      single_dim_index_view_type next_iteration_recolorListLength_,
-      nnz_lno_temp_work_view_t pps_work_view) {
+      single_dim_index_view_type next_iteration_recolorListLength_) {
 
     swap_work_arrays = true;
     nnz_lno_t numUncolored = 0;
-    if (this->_conflictlist == 0){
+    if (this->_conflict_scheme == COLORING_NOCONFLICT){
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         functorFindConflicts_No_Conflist<adj_view_t> conf( this->nv, xadj_, adj_, vertex_colors_);
         Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflicts::CaseA", my_exec_space(0, current_vertexListLength_), conf, numUncolored);
@@ -1226,19 +1203,17 @@ private:
         Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflicts::CaseB", my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
     }
-    else if (this->_conflictlist == 2){ //IF PPS
+    else if (this->_conflict_scheme == COLORING_PPS){
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         // Check for conflicts. Compute numUncolored == numConflicts.
-        functorFindConflicts_PPS<adj_view_t> conf(this->nv, xadj_, adj_,vertex_colors_,current_vertexList_,next_iteration_recolorList_);
+        functorFindConflicts_PPS<adj_view_t> conf(this->nv, xadj_, adj_,vertex_colors_,current_vertexList_);
         Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflicts::CaseC", my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
-        functorFindConflicts_PPS_IMP<adj_view_t> conf(this->nv,
-            xadj_, adj_,vertex_colors_, vertex_color_set_,
-            current_vertexList_,next_iteration_recolorList_);
+        functorFindConflicts_PPS_IMP<adj_view_t> conf(
+            this->nv, xadj_, adj_,vertex_colors_, vertex_color_set_, current_vertexList_);
         Kokkos::parallel_reduce("KokkosGraph::GraphColoring::FindConflicts::CaseD", my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
-
 
       if( numUncolored && (current_vertexListLength_ >= this->_min_vertex_cut_off) &&
           (double (numUncolored) / current_vertexListLength_  <  (1.0 - this->_pps_ratio))){
@@ -1248,23 +1223,15 @@ private:
         }
         single_dim_index_host_view_type h_numUncolored(&numUncolored);
         Kokkos::deep_copy (next_iteration_recolorListLength_, h_numUncolored);
-
-        MyExecSpace().fence();
-
         Kokkos::parallel_scan ("KokkosGraph::GraphColoring::PrefixSum",
             my_exec_space(0, current_vertexListLength_),
-            parallel_prefix_sum<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
-
-        MyExecSpace().fence();
-        Kokkos::parallel_for ("KokkosGraph::GraphColoring::CreateNewWorkArray",
-            my_exec_space(0, current_vertexListLength_),
-            create_new_work_array<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
+            ppsWorklistFunctorVB<nnz_lno_temp_work_view_t>(this->nv, current_vertexList_, next_iteration_recolorList_));
       }
       else {
         swap_work_arrays = false;
       }
     }
-    else { //IF ATOMIC
+    else { // worklist scheme COLORING_ATOMIC
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         // Check for conflicts. Compute numUncolored == numConflicts.
         functorFindConflicts_Atomic<adj_view_t> conf(this->nv,
@@ -1309,7 +1276,7 @@ private:
     nnz_lno_t end = _nv;
     typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
 
-    if (this->_conflictlist){
+    if (this->_conflict_scheme != COLORING_NOCONFLICT){
       end = current_vertexListLength_;
       h_recolor_list = Kokkos::create_mirror_view (current_vertexList_);
       Kokkos::deep_copy (h_recolor_list, current_vertexList_);
@@ -1324,7 +1291,7 @@ private:
     Kokkos::deep_copy (h_adj, adj_);
 
     for (nnz_lno_t k=0; k <end; k++){
-      if (this->_conflictlist){
+      if (this->_conflict_scheme != COLORING_NOCONFLICT){
         i = h_recolor_list(k);
       }
       else {
@@ -1954,27 +1921,20 @@ public:
     adj_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _vertexList;
-    nnz_lno_temp_work_view_t _recolorList;
-
-
 
     functorFindConflicts_PPS(
         nnz_lno_t nv_,
-        const_lno_row_view_t xadj_,
-		adj_view_t adj_,
+        const_lno_row_view_t xadj_, adj_view_t adj_,
         color_view_type colors,
-        nnz_lno_temp_work_view_t vertexList,
-        nnz_lno_temp_work_view_t recolorList) :
+        nnz_lno_temp_work_view_t vertexList) :
           nv (nv_),
           _idx(xadj_), _adj(adj_), _colors(colors),
-          _vertexList(vertexList),
-          _recolorList(recolorList){}
+          _vertexList(vertexList) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
       nnz_lno_t i = _vertexList(ii);
       color_t my_color = _colors(i);
-      _recolorList(i) = 0;
       // check vertex i conflicts
 
       size_type xadjend = _idx(i+1);
@@ -1995,7 +1955,7 @@ public:
 #endif
         ) {
           _colors(i) = 0; // Uncolor vertex i
-          _recolorList(i) = 1;
+          _vertexList(ii) += nv;
           numConflicts += 1;
           break; // Once i is uncolored and marked conflict
         }
@@ -2144,7 +2104,6 @@ public:
     color_view_type _colors;
     nnz_lno_temp_work_view_t _color_sets;
     nnz_lno_temp_work_view_t _vertexList;
-    nnz_lno_temp_work_view_t _recolorList;
 
     functorFindConflicts_PPS_IMP(
         nnz_lno_t nv_,
@@ -2152,20 +2111,18 @@ public:
 		adj_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_sets,
-        nnz_lno_temp_work_view_t vertexList,
-        nnz_lno_temp_work_view_t recolorList
+        nnz_lno_temp_work_view_t vertexList
     ) : nv (nv_),
       _xadj(xadj_), _adj(adj_), _colors(colors), _color_sets(color_sets),
-      _vertexList(vertexList),
-      _recolorList(recolorList){}
+      _vertexList(vertexList) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
+      //go through vertices, marking in _vertexList those which are uncolored or in conflict.
       nnz_lno_t i = _vertexList(ii);
-      _recolorList(i) = 0;
       color_t my_color = _colors(i);
       if (my_color == 0){
-        _recolorList(i) = 1;
+        _vertexList(ii) += nv;
         numConflicts++;
       }
       else {
@@ -2191,7 +2148,7 @@ public:
           ) {
             _colors(i) = 0; // Uncolor vertex i
             _color_sets(i) = 0;
-            _recolorList(i) = 1;
+            _vertexList(ii) += nv;
             numConflicts++;
             break; // Once i is uncolored and marked conflict
           }
@@ -2293,62 +2250,31 @@ public:
   };
 
 
-  /**
-   * Functor for parallel prefix sum
-   */
   template <typename view_type>
-  struct parallel_prefix_sum{
+  struct ppsWorklistFunctorVB {
+    nnz_lno_t _nv;
     view_type _vertexList;
     view_type _recolorList;
-    view_type _pps_view;
 
-    parallel_prefix_sum(
-        view_type vertexList,
-        view_type recolorList,
-        view_type pps_view):
-          _vertexList(vertexList),_recolorList(recolorList),_pps_view(pps_view){}
+    ppsWorklistFunctorVB(
+        nnz_lno_t nv_,
+        const view_type& vertexList,
+        const view_type& recolorList)
+      : _nv(nv_), _vertexList(vertexList), _recolorList(recolorList)
+    {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const typename view_type::non_const_value_type ii, size_t& update, const bool final) const {
-      typename view_type::non_const_value_type w = _vertexList(ii);
-      update += _recolorList(w);
-      if (final) {
-        _pps_view(w) = (update);
+    void operator()(nnz_lno_t i, nnz_lno_t& update, const bool final) const
+    {
+      nnz_lno_t w = _vertexList(i);
+      if(w >= _nv)
+      {
+        if(final)
+          _recolorList(update) = w - _nv;
+        update++;
       }
     }
   };
-
-
-  /**
-   * Functor for creating new worklist using pps
-   */
-  template <typename view_type>
-  struct create_new_work_array{
-    view_type _vertexList;
-    view_type _recolorList;
-    view_type _pps_view;
-
-    create_new_work_array(
-        view_type vertexList,
-        view_type recolorList,
-        view_type pps_view):
-          _vertexList(vertexList),_recolorList(recolorList),_pps_view(pps_view){}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const typename view_type::non_const_value_type ii) const {
-      typename view_type::non_const_value_type w = _vertexList(ii);
-      typename view_type::non_const_value_type left_work = 0;
-      if (ii > 0){
-        left_work = _pps_view(_vertexList(ii - 1));
-      }
-      typename view_type::non_const_value_type pps_current = _pps_view(w);
-      if(pps_current != left_work){
-        typename view_type::non_const_value_type future_index = pps_current;
-        _recolorList(future_index - 1) = w;
-      }
-    }
-  };
-
 
   /**
    * Converting VBCS colors to final colors.
@@ -2912,9 +2838,6 @@ public:
     size_type_temp_work_view_t new_edge_conflict_indices
     (Kokkos::ViewAllocateWithoutInitializing("new_edge_conflict_indices"), num_work_edges);
 
-    size_type_temp_work_view_t
-    pps(Kokkos::ViewAllocateWithoutInitializing("prefix_sum"), num_work_edges);
-
     char_temp_work_view_type edge_conflict_marker
     (Kokkos::ViewAllocateWithoutInitializing("edge_conflict_marker"), num_work_edges);
 
@@ -3014,18 +2937,9 @@ public:
       {
         //use_pps = false;
         if (use_pps){
-          //calculate new positions of the edges in new worklist
           Kokkos::parallel_scan ("KokkosGraph::GraphColoring::CalcEdgePositions",
               my_exec_space(0, num_work_edges),
-              parallel_prefix_sum(edge_conflict_indices, edge_conflict_marker, pps)
-          );
-          MyExecSpace().fence();
-
-          //write the edge indices to new worklist.
-          Kokkos::parallel_for ("KokkosGraph::GraphColoring::CreateNewWorkArray",
-              my_exec_space(0, num_work_edges),
-              create_new_work_array(edge_conflict_indices, edge_conflict_marker, pps, new_edge_conflict_indices));
-          MyExecSpace().fence();
+              ppsWorklistFunctorEB(edge_conflict_indices, new_edge_conflict_indices, edge_conflict_marker));
         }
         else {
           //create new worklist
@@ -3287,62 +3201,36 @@ public:
     }
   };
 
-
   /**
-   * \brief Functor to perform parallel prefix sum for edges so that the position
-   * on the next conflictlist is calculated.
+   * \brief Functor to create the new work array with a parallel prefix sum.
    */
-  struct parallel_prefix_sum{
-    size_type_temp_work_view_t _edge_conflict_indices;
-    char_temp_work_view_type _edge_conflict_marker;
-    size_type_temp_work_view_t _pps_view;
+  struct ppsWorklistFunctorEB {
+    using edge_view = size_type_temp_work_view_t ;
+    using char_view = char_temp_work_view_type;
+    edge_view _oldlist;
+    edge_view _newlist;
+    char_view _markers; //_markers(e) != 0 iff e has a conflict
 
-    parallel_prefix_sum(
-        size_type_temp_work_view_t edge_conflict_indices,
-        char_temp_work_view_type edge_conflict_marker,
-        size_type_temp_work_view_t pps_view):
-          _edge_conflict_indices(edge_conflict_indices),
-          _edge_conflict_marker(edge_conflict_marker),
-          _pps_view(pps_view){}
+    ppsWorklistFunctorEB(
+        const edge_view& oldlist,
+        const edge_view& newlist,
+        const char_view& markers) :
+          _oldlist(oldlist), _newlist(newlist), _markers(markers)
+    {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const size_type ii, size_t& update, const bool final) const {
-      size_type w = _edge_conflict_indices(ii);
-      if (final) {
-        _pps_view(w) =  size_type(update);
-      }
-      update += _edge_conflict_marker(w);
-    }
-  };
-
-  /**
-   * \brief Functor to create the new work array.
-   */
-  struct create_new_work_array{
-    size_type_temp_work_view_t _edge_conflict_indices;
-    char_temp_work_view_type _edge_conflict_marker;
-    size_type_temp_work_view_t _pps_view;
-    size_type_temp_work_view_t _new_edge_conflict_indices;
-
-    create_new_work_array(
-        size_type_temp_work_view_t edge_conflict_indices,
-        char_temp_work_view_type edge_conflict_marker,
-        size_type_temp_work_view_t pps_view,
-        size_type_temp_work_view_t new_edge_conflict_indices):
-          _edge_conflict_indices(edge_conflict_indices),
-          _edge_conflict_marker(edge_conflict_marker),
-          _pps_view(pps_view),
-          _new_edge_conflict_indices(new_edge_conflict_indices){}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const size_type ii) const {
-      size_type w = _edge_conflict_indices(ii);
-      if(_edge_conflict_marker(w)){
-        size_type future_index = _pps_view(w);
-        _new_edge_conflict_indices(future_index) = w;
+    void operator()(nnz_lno_t i, size_type& update, const bool final) const
+    {
+      size_type edge = _oldlist(i);
+      if(_markers(edge))
+      {
+        if(final)
+          _newlist(update) = edge;
+        update++;
       }
     }
   };
+
 
   /**
    * \brief Functor to create the new work array with atomic operations.
