@@ -55,7 +55,8 @@ template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-  NumericCMEM_CPU{
+  NumericCMEM_CPU
+{
   nnz_lno_t numrows;
   nnz_lno_t numcols;
 
@@ -217,7 +218,8 @@ template <typename a_row_view_t__, typename a_nnz_view_t__, typename a_scalar_vi
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-  NumericCMEM{
+  NumericCMEM
+{
   nnz_lno_t numrows;
 
   a_row_view_t__ row_mapA;
@@ -297,7 +299,7 @@ struct KokkosSPGEMM
 
         unit_memory(sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) + sizeof (scalar_t)),
         suggested_team_size(suggested_team_size_),
-        thread_memory((shared_memory_size /sizeof(scalar_t) / suggested_team_size_) * sizeof(scalar_t)),
+        thread_memory((shared_memory_size /8 / suggested_team_size_) * 8),
         shmem_key_size(), shared_memory_hash_func(), shmem_hash_size(1)
         {
           shmem_key_size = ((thread_memory - sizeof(nnz_lno_t) * 2) / unit_memory);
@@ -313,14 +315,20 @@ struct KokkosSPGEMM
           shmem_key_size = shmem_key_size + ((shmem_key_size - shmem_hash_size) * sizeof(nnz_lno_t)) / (sizeof (nnz_lno_t) * 2 + sizeof(scalar_t));
           shmem_key_size = (shmem_key_size >> 1) << 1;
 
+// This guard will help ensure behavior is consistent within Trilinos
+#ifdef KOKKOS_ENABLE_COMPLEX_ALIGN
+          {
+          // GPUTag
+          // shmem allocation will be partitioned as below for hash map accumulator
           // thread_memory == 2*sizeof(nnz_lno_t) + shmem_hash_size*sizeof(nnz_lno_t) + 2*shmem_key_size*sizeof(nnz_lno_t) + rem_size*sizeof(scalar_t)
+
           // check that memory is partitioned into aligned chunks
           nnz_lno_t remainder_memory = thread_memory - sizeof(nnz_lno_t)*2 - shmem_hash_size*sizeof(nnz_lno_t);
 
           // The remainder of memory for vals must be aligned into sizeof(scalar_t) chunks, and there must be at least as many entries as keys
           nnz_lno_t val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
 
-          nnz_lno_t val_unalign_mem = val_memory % sizeof(scalar_t);
+          nnz_lno_t val_unalign_mem = val_memory % alignof(scalar_t);
           if (val_unalign_mem > 0) {
             // Redistributing between shmem_key_size and vals involves exchange of 2 "keys" (key+next) per val
             nnz_lno_t realign_chunk_mem = 2 * sizeof(nnz_lno_t);
@@ -328,19 +336,24 @@ struct KokkosSPGEMM
             bool is_align_possible = (val_unalign_mem % realign_chunk_mem) == 0;
             if(!is_align_possible)
             {
-              throw std::runtime_error("NumericCMEM Ctor Error: unable to align memory for shared memory allocations. Modify your shared memory request");
+              //throw std::runtime_error("NumericCMEM Ctor Error: unable to align memory for shared memory allocations. Modify your shared memory request");
+              std::cout << "NumericCMEM Ctor WARNING: unable to align memory for shared memory allocations. Modify your shared memory request" << std::endl;
             }
 
             nnz_lno_t realign_chunks = val_unalign_mem / realign_chunk_mem; 
 
             shmem_key_size -= realign_chunks;
             val_memory = remainder_memory - 2*shmem_key_size*sizeof(nnz_lno_t);
-            val_unalign_mem = val_memory%sizeof(scalar_t);
+            val_unalign_mem = val_memory%alignof(scalar_t);
           }
 
           if (val_unalign_mem > 0) {
-            throw std::runtime_error("NumericCMEM Ctor Error: shared memory realignment failed. Modify your shared memory request");
+            //throw std::runtime_error("NumericCMEM Ctor Error: shared memory realignment failed. Modify your shared memory request");
+            std::cout << "NumericCMEM Ctor WARNING: shared memory realignment failed. Modify your shared memory request" << std::endl;
           }
+
+          }
+#endif
 
           if (KOKKOSKERNELS_VERBOSE_){
             std::cout << "\t\tNumericCMEM -- adjusted hashsize:" << shmem_hash_size  << " shmem_key_size:" << shmem_key_size << std::endl;
@@ -496,6 +509,34 @@ struct KokkosSPGEMM
   }
 };
 
+
+//
+// * Notes on KokkosSPGEMM_numeric_speed *
+//
+// Prior to this routine, KokkosSPGEMM_numeric(...) was called
+//
+//   KokkosSPGEMM_numeric(...) :
+//     if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm) :
+//       call KokkosSPGEMM_numeric_speed(...)
+//     else:
+//       call  KokkosSPGEMM_numeric_hash(...)
+//
+//
+// KokkosSPGEMM_numeric_speed:
+//
+// Algorithm selection as follows and matching to kernel Tag:
+//
+//  Policy typedefs with tags found in: KokkosSparse_spgemm_impl.hpp
+//
+//  if Cuda enabled :
+//    "KokkosSparse::NumericCMEM::KKSPEED::GPU" : gpu_team_policy_t,  i.e. GPUTag
+//
+//  else :
+//    "KokkosSparse::NumericCMEM_CPU::DENSE::DYNAMIC" : dynamic_multicore_team_policy_t,  i.e. MultiCoreTag
+//    "KokkosSparse::NumericCMEM_CPU::DENSE::STATIC" :  multicore_team_policy_t,  i.e. MultiCoreTag
+//
+
+
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
@@ -504,11 +545,12 @@ void
   KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
-    KokkosSPGEMM_numeric_speed(
+  KokkosSPGEMM_numeric_speed(
     c_row_view_t rowmapC_,
     c_lno_nnz_view_t entriesC_,
     c_scalar_nnz_view_t valuesC_,
-    KokkosKernels::Impl::ExecSpaceType my_exec_space_){
+    KokkosKernels::Impl::ExecSpaceType my_exec_space_)
+{
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tSPEED MODE" << std::endl;
