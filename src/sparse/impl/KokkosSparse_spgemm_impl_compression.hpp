@@ -302,6 +302,7 @@ struct KokkosSPGEMM
       hm2.hash_begins[globally_used_hash_indices[i]] = -1;
     }
     });
+    memory_space.release_chunk(globally_used_hash_indices);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -388,6 +389,7 @@ struct KokkosSPGEMM
     //++used_size;
     }
     });
+    memory_space.release_chunk(globally_used_hash_indices);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const FillTag&, const team_member_t & teamMember) const {
@@ -657,7 +659,7 @@ struct KokkosSPGEMM
           num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
                               teamMember, vector_size, hash,n_set_index,
 			      n_set, used_hash_sizes, shmem_hash_size);
-
+          overall_num_unsuccess_ += num_unsuccess;
       }, overall_num_unsuccess);
 
 #ifdef KOKKOSKERNELSMOREMEM
@@ -741,7 +743,7 @@ struct KokkosSPGEMM
 		    });
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /* team_size */) const {
 	  return shared_memory_size;
   }
 
