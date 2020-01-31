@@ -314,11 +314,11 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
       is_expected_to_fail = true;
 #endif
       //MKL requires scalar to be either float or double
-      if (!(Kokkos::Impl::is_same<float,scalar_t>::value || Kokkos::Impl::is_same<double,scalar_t>::value)){
+      if (!(std::is_same<float,scalar_t>::value || std::is_same<double,scalar_t>::value)){
         is_expected_to_fail = true;
       }
       //mkl requires local ordinals to be int.
-      if (!(Kokkos::Impl::is_same<int,lno_t>::value)){
+      if (!(std::is_same<int,lno_t>::value)){
         is_expected_to_fail = true;
       }
       //if size_type is larger than int, mkl casts it to int.
