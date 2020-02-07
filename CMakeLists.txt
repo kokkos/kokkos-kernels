@@ -78,7 +78,7 @@ KOKKOSKERNELS_ADD_DEBUG_OPTION()
 KOKKOSKERNELS_ADD_OPTION_AND_DEFINE(
   LINALG_OPT_LEVEL
   KOKKOSLINALG_OPT_LEVEL
-  "Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems."
+  "Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems. Default: 1"
   "1")
 
 
@@ -88,7 +88,7 @@ KOKKOSKERNELS_ADD_OPTION_AND_DEFINE(
 KOKKOSKERNELS_ADD_OPTION_AND_DEFINE(
   ENABLE_EXPERIMENTAL
   HAVE_KOKKOSKERNELS_EXPERIMENTAL
-  "Enable building and installation of experimental KokkosKernels features."
+  "Enable building and installation of experimental KokkosKernels features. Default: OFF"
   OFF)
 
 # Define what execution spaces KokkosKernels enables.
@@ -117,19 +117,19 @@ IF(KOKKOS_ENABLE_CUDA)
    INST_EXECSPACE_CUDA
    ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
    BOOL
-   "Whether to pre instantiate kernels for the execution space Kokkos::Cuda. Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
+   "Whether to pre instantiate kernels for the execution space Kokkos::Cuda. Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDAUVMSPACE
    ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
    BOOL
-   "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
+   "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDASPACE
    ${KOKKOSKERNELS_INST_EXECSPACE_CUDA_DEFAULT}
    BOOL
-   "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times."
+   "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
 
   IF(KOKKOSKERNELS_INST_EXECSPACE_CUDA AND KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
@@ -149,7 +149,7 @@ KOKKOSKERNELS_ADD_OPTION(
  INST_MEMSPACE_HOSTSPACE
  ON
  BOOL
- "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times."
+ "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON"
 )
 
 
@@ -157,7 +157,7 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_EXECSPACE_OPENMP
   ${KOKKOSKERNELS_INST_EXECSPACE_OPENMP_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times."
+  "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times. Default: ON if Kokkos is OpenMP-enabled, OFF otherwise."
 )
 IF(KOKKOSKERNELS_INST_EXECSPACE_OPENMP AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
   LIST(APPEND DEVICE_LIST "<OpenMP,HostSpace>")
@@ -171,7 +171,7 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_EXECSPACE_THREADS
   ${KOKKOSKERNELS_INST_EXECSPACE_PTHREAD_DEFAULT}
   BOOL
-  "Whether to build kernels for the execution space Kokkos::Threads.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_PTHREAD is enabled may increase build times."
+  "Whether to build kernels for the execution space Kokkos::Threads.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_PTHREAD is enabled may increase build times. Default: ON if Kokkos is Threads-enabled, OFF otherwise."
 )
 #There continues to be name ambiguity with threads vs pthreads
 SET(KOKKOSKERNELS_INST_EXECSPACE_PTHREAD ${KOKKOSKERNELS_INST_EXECSPACE_THREADS})
@@ -187,7 +187,7 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_EXECSPACE_SERIAL
   ${KOKKOSKERNELS_INST_EXECSPACE_SERIAL_DEFAULT}
   BOOL
-  "Whether to build kernels for the execution space Kokkos::Serial.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_SERIAL is enabled may increase build times."
+  "Whether to build kernels for the execution space Kokkos::Serial.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_SERIAL is enabled may increase build times. Default: ON when Kokkos is Serial-enabled, OFF otherwise."
 )
 
 IF(KOKKOSKERNELS_INST_EXECSPACE_SERIAL AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
@@ -205,21 +205,21 @@ KOKKOSKERNELS_ADD_OPTION(
   ETI_ONLY
   OFF
   BOOL
-  "Whether to restrict availability of kernels to ETI types only. This is off by default, i.e. any type combination can be instantiated. Turning this on guarantees that kernels are never build inside of object files which simply call KokkosKernels functions."
+  "Whether to restrict availability of kernels to ETI types only. Turning this on guarantees that kernels are never built inside of object files which simply call KokkosKernels functions. Default: OFF"
   )
 
 KOKKOSKERNELS_ADD_OPTION(
   TEST_ETI_ONLY
   ON
   BOOL
-  "Whether to restrict testing to ETI types."
+  "Whether to restrict testing to ETI types. Default: ON"
   )
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_DOUBLE
   ON
   BOOL
-  "Whether to pre instantiate kernels for the scalar type double.  This option is KokkosKernels_INST_DOUBLE=ON by default.  Disabling this may increase build times."
+  "Whether to pre instantiate kernels for the scalar type double.  This option is KokkosKernels_INST_DOUBLE=ON by default.  Disabling this may increase build times. Default: ON"
   )
 
 IF (Trilinos_ENABLE_FLOAT)
@@ -232,7 +232,7 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_FLOAT
   ${KOKKOSKERNELS_INST_FLOAT_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the scalar type float.  This option is KokkosKernels_INST_FLOAT=Trilinos_ENABLE_FLOAT by default.  Disabling this may increase build times."
+  "Whether to pre instantiate kernels for the scalar type float.  Disabling this may increase build times. Default: OFF or unless enabled during a Trilinos build with Trilinos_ENABLE_FLOAT."
   )
 
 #Just leave the Trilinos logic here alone
@@ -252,14 +252,14 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_COMPLEX_DOUBLE
   ${KOKKOSKERNELS_INST_COMPLEX_DOUBLE_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the scalar type complex<double>.  Disabling this may increase build times."
+  "Whether to pre instantiate kernels for the scalar type complex<double>.  Disabling this may increase build times. Default: OFF or unless enabled during a Trilinos build with Trilinos_ENABLE_COMPLEX_DOUBLE."
   )
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_COMPLEX_FLOAT
   ${KOKKOSKERNELS_INST_COMPLEX_FLOAT_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the scalar type complex<float>.  Disabling this may increase build times."
+  "Whether to pre instantiate kernels for the scalar type complex<float>.  Disabling this may increase build times. Default: OFF or unless enabled during a Trilinos build with Trilinos_ENABLE_COMPLEX_FLOAT."
   )
 
 IF (KOKKOSKERNELS_INST_DOUBLE)
@@ -283,14 +283,14 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_LAYOUTLEFT
   ON
   BOOL
-  "Whether to pre instantiate kernels for the view layout LayoutLeft.  This option is KokkosKernels_INST_LAYOUTLEFT=ON by default.  Disabling this may increase build times."
+  "Whether to pre instantiate kernels for the view layout LayoutLeft.  This option is KokkosKernels_INST_LAYOUTLEFT=ON by default.  Disabling this may increase build times. Default: ON"
   )
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_LAYOUTRIGHT
   OFF
   BOOL
-  "Whether to pre instantiate kernels for the view layout LayoutRight.  This option is KokkosKernels_INST_LAYOUTRIGHT=OFF by default.  Disabling this may increase build times."
+  "Whether to pre instantiate kernels for the view layout LayoutRight.  This option is KokkosKernels_INST_LAYOUTRIGHT=OFF by default.  Disabling this may increase build times. Default: OFF"
   )
 
 IF (KOKKOSKERNELS_INST_LAYOUTLEFT)
@@ -314,14 +314,14 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_ORDINAL_INT
   ${KOKKOSKERNELS_INST_ORDINAL_INT_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the ordinal type int.  This option is KokkosKernels_INST_ORDINAL_INT=ON by default."
+  "Whether to pre instantiate kernels for the ordinal type int.  This option is KokkosKernels_INST_ORDINAL_INT=ON by default. Default: ON"
   )
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_ORDINAL_INT64_T
   ${KOKKOSKERNELS_INST_ORDINAL_INT64_T_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the ordinal type int64_t.  This option is KokkosKernels_INST_ORDINAL_INT64_T=OFF by default."
+  "Whether to pre instantiate kernels for the ordinal type int64_t.  This option is KokkosKernels_INST_ORDINAL_INT64_T=OFF by default. Default: OFF"
   )
 
 IF (KOKKOSKERNELS_INST_ORDINAL_INT)
@@ -347,14 +347,14 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_OFFSET_INT
   ${KOKKOSKERNELS_INST_OFFSET_INT_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the offset type int.  This option is KokkosKernels_INST_OFFSET_INT=ON by default."
+  "Whether to pre instantiate kernels for the offset type int.  This option is KokkosKernels_INST_OFFSET_INT=ON by default. Default: ON"
   )
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_OFFSET_SIZE_T
   ${KOKKOSKERNELS_INST_OFFSET_SIZE_T_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the offset type size_t.  This option is KokkosKernels_INST_OFFSET_SIZE_T=OFF by default."
+  "Whether to pre instantiate kernels for the offset type size_t.  This option is KokkosKernels_INST_OFFSET_SIZE_T=OFF by default. Default: ON"
   )
 
 IF (KOKKOSKERNELS_INST_OFFSET_INT)
@@ -371,6 +371,18 @@ ENDIF()
 
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+  KOKKOSKERNELS_ADD_OPTION(
+    "ENABLE_EXAMPLES"
+    OFF
+    BOOL
+    "Whether to build examples. Default: OFF"
+  )
+  KOKKOSKERNELS_ADD_OPTION(
+    "ENABLE_TESTS"
+    OFF
+    BOOL
+    "Whether to build tests. Default: OFF"
+  )
 ENDIF()
 INCLUDE(cmake/kokkoskernels_tpls.cmake)
 
