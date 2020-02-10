@@ -1935,6 +1935,16 @@ struct array_sum_reduce
   }
 };
 
+template<typename InPtr, typename T>
+KOKKOS_INLINE_FUNCTION T* alignPtr(InPtr p)
+{
+  //ugly but computationally free and the "right" way to do this in C++
+  std::uintptr_t ptrVal = reinterpret_cast<std::uintptr_t>(p);
+  //ptrVal + (align - 1) lands inside the next valid aligned scalar_t,
+  //and the mask produces the start of that scalar_t.
+  return reinterpret_cast<T*>((ptrVal + alignof(T) - 1) & (~(alignof(T) - 1)));
+}
+
 }
 }
 

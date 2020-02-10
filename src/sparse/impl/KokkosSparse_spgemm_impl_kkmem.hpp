@@ -40,7 +40,10 @@
 // ************************************************************************
 //@HEADER
 */
+
 #define HASHSCALAR 107
+
+#include "KokkosKernels_Utils.hpp"
 
 namespace KokkosSparse{
 
@@ -58,7 +61,6 @@ struct KokkosSPGEMM
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
   PortableNumericCHASH
 {
-
   nnz_lno_t numrows;
 
   a_row_view_t row_mapA;
@@ -207,16 +209,6 @@ struct KokkosSPGEMM
     }
   }
 
-  template<typename InPtr, typename T>
-  KOKKOS_FORCEINLINE_FUNCTION static T* alignPtr(InPtr p)
-  {
-    //ugly but computationally free and the "right" way to do this in C++
-    std::uintptr_t ptrVal = reinterpret_cast<std::uintptr_t>(p);
-    //ptrVal + (align - 1) lands inside the next valid aligned scalar_t,
-    //and the mask produces the start of that scalar_t.
-    return (T*) ((ptrVal + alignof(T) - 1) & (~(alignof(T) - 1)));
-  }
-
   KOKKOS_INLINE_FUNCTION
   size_t get_thread_id(const size_t row_index) const{
     switch (my_exec_space){
@@ -271,7 +263,8 @@ struct KokkosSPGEMM
     tmp += max_nnz;
     nnz_lno_t *hash_ids = (nnz_lno_t *) (tmp);
     tmp += pow2_hash_size;
-    scalar_t *hash_values = alignPtr<volatile nnz_lno_t*, scalar_t>(tmp);
+
+    scalar_t *hash_values = KokkosKernels::Impl::alignPtr<volatile nnz_lno_t*, scalar_t>(tmp);
 
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
@@ -419,7 +412,7 @@ struct KokkosSPGEMM
 
     hm2.keys = (nnz_lno_t *) (tmp);
     tmp += max_nnz;
-    hm2.values = alignPtr<volatile nnz_lno_t*, scalar_t>(tmp);
+    hm2.values = KokkosKernels::Impl::alignPtr<volatile nnz_lno_t*, scalar_t>(tmp);
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
       nnz_lno_t globally_used_hash_count = 0;
@@ -505,7 +498,7 @@ struct KokkosSPGEMM
     nnz_lno_t * keys = (nnz_lno_t *) (all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * thread_shmem_key_size;
     // remainder of shmem allocation for vals
-    scalar_t * vals = alignPtr<char*, scalar_t>(all_shared_memory);
+    scalar_t * vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
     hm(thread_shmem_hash_size, thread_shmem_key_size, begins, nexts, keys, vals);
@@ -646,7 +639,7 @@ struct KokkosSPGEMM
     //holds the keys
     nnz_lno_t * keys = (nnz_lno_t *) (all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * team_cuckoo_key_size;
-    scalar_t * vals = alignPtr<char*, scalar_t>(all_shared_memory);
+    scalar_t * vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
     int thread_rank =  teamMember.team_rank();
 
@@ -685,7 +678,7 @@ struct KokkosSPGEMM
     			  }, tmp);
     		  }
     		  global_acc_row_keys = (nnz_lno_t *) (tmp);
-    		  global_acc_row_vals = alignPtr<volatile nnz_lno_t*, scalar_t>(tmp + pow2_hash_size);
+    		  global_acc_row_vals = KokkosKernels::Impl::alignPtr<volatile nnz_lno_t*, scalar_t>(tmp + pow2_hash_size);
     	  }
           //initialize begins.
           {
@@ -952,7 +945,7 @@ struct KokkosSPGEMM
     //holds the keys
     nnz_lno_t * keys = (nnz_lno_t *) (all_shared_memory);
     all_shared_memory += sizeof(nnz_lno_t) * team_cuckoo_key_size;
-    scalar_t * vals = alignPtr<char*, scalar_t>(all_shared_memory);
+    scalar_t * vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
     int thread_rank =  teamMember.team_rank();
 
