@@ -56,7 +56,6 @@
 #endif
 
 #include <Kokkos_Core.hpp>
-#include <matrix_market.hpp>
 
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_sptrsv.hpp"

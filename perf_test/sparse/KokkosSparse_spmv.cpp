@@ -51,12 +51,12 @@
 #include <cmath>
 #include <unordered_map>
 
+#include <Kokkos_Core.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
+
 #ifdef HAVE_CUSPARSE
 #include <CuSparse_SPMV.hpp>
 #endif
-
-#include <Kokkos_Core.hpp>
-#include <matrix_market.hpp>
 
 #ifdef HAVE_MKL
 #include <MKL_SPMV.hpp>
@@ -73,43 +73,13 @@
 enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
 
-typedef default_scalar scalar_t;
-typedef default_lno_t lno_t;
-typedef default_size_type size_type;
-typedef default_layout layout_t;
-
-template< typename Scalar, typename Offset, typename Ordinal>
-int SparseMatrix_generate(Ordinal nrows, Ordinal ncols, Ordinal &nnz, Ordinal varianz_nel_row, Ordinal width_row, Scalar* &values, Offset* &rowPtr, Ordinal* &colInd)
-{
-  rowPtr = new Offset[nrows+1];
-
-  Ordinal elements_per_row = nnz/nrows;
-  srand(13721);
-  rowPtr[0] = 0;
-  for(int row=0;row<nrows;row++)
-  {
-    int varianz = (1.0*rand()/INT_MAX-0.5)*varianz_nel_row;
-    rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
-  }
-  nnz = rowPtr[nrows];
-  values = new Scalar[nnz];
-  colInd = new Ordinal[nnz];
-  for(int row=0;row<nrows;row++)
-  {
-         for(int k=rowPtr[row];k<rowPtr[row+1];k++)
-         {
-                int pos = (1.0*rand()/INT_MAX-0.5)*width_row+row;
-                if(pos<0) pos+=ncols;
-                if(pos>=ncols) pos-=ncols;
-                colInd[k]= pos;
-                values[k] = 100.0*rand()/INT_MAX-50.0;
-         }
-  }
-  return nnz;
-}
+typedef default_scalar Scalar;
+typedef default_lno_t Ordinal;
+typedef default_size_type Offset;
+typedef default_layout Layout;
 
 template<typename AType, typename XType, typename YType>
-void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int vector_length, int test, int schedule) {
+void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, int vector_length, int test, int schedule) {
 
         switch(test) {
 
@@ -168,31 +138,22 @@ void matvec(AType& A, XType x, YType y, int rows_per_thread, int team_size, int 
       }
 }
 
-template<typename Scalar>
-int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile, int rows_per_thread, int team_size, int vector_length,int idx_offset, int schedule, int loop) {
-  typedef KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int> matrix_type ;
-  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft> mv_type;
-  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,Kokkos::MemoryRandomAccess > mv_random_read_type;
+int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const char* filename, Ordinal rows_per_thread, int team_size, int vector_length, int schedule, int loop) {
+  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset> matrix_type;
+  typedef typename Kokkos::View<Scalar*, Layout> mv_type;
   typedef typename mv_type::HostMirror h_mv_type;
 
-  Scalar* val = NULL;
-  int* row = NULL;
-  int* col = NULL;
-
   srand(17312837);
-  if(filename==NULL)
-    nnz = SparseMatrix_generate<Scalar,int>(numRows,numCols,nnz,nnz/numRows*0.2,numRows*0.01,val,row,col);
+  matrix_type A;
+  if(filename)
+    A = KokkosKernels::Impl::read_kokkos_crst_matrix(filename);
   else
-    if(!binaryfile)
-      nnz = SparseMatrix_MatrixMarket_read<Scalar,int>(filename,numRows,numCols,nnz,val,row,col,false,idx_offset);
-    else
-      nnz = SparseMatrix_ReadBinaryFormat<Scalar,int>(filename,numRows,numCols,nnz,val,row,col);
-
-  matrix_type A("CRS::A",numRows,numCols,nnz,val,row,col,false);
-
-  mv_type x("X",numCols);
-  mv_random_read_type t_x(x);
-  mv_type y("Y",numRows);
+    A = KokkosKernels::Impl::kk_generate_sparse_matrix<matrix_type>(numRows, numCols, 10 * numRows, 0, numCols);
+  numRows = A.numRows();
+  numCols = A.numCols();
+  Offset nnz = A.nnz();
+  mv_type x("X", numCols);
+  mv_type y("Y", numRows);
   h_mv_type h_x = Kokkos::create_mirror_view(x);
   h_mv_type h_y = Kokkos::create_mirror_view(y);
   h_mv_type h_y_compare = Kokkos::create_mirror(y);
@@ -227,9 +188,9 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   Kokkos::deep_copy(y,h_y);
   Kokkos::deep_copy(A.graph.entries,h_graph.entries);
   Kokkos::deep_copy(A.values,h_values);
-  typename KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int>::values_type x1("X1",numCols);
+  mv_type x1("X1",numCols);
   Kokkos::deep_copy(x1,h_x);
-  typename KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int>::values_type y1("Y1",numRows);
+  mv_type y1("Y1",numRows);
 
   //int nnz_per_row = A.nnz()/A.numRows();
   matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
@@ -239,6 +200,7 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   Scalar error = 0;
   Scalar sum = 0;
   for(int i=0;i<numRows;i++) {
+
     error += (h_y_compare(i)-h_y(i))*(h_y_compare(i)-h_y(i));
     sum += h_y_compare(i)*h_y_compare(i);
   }
@@ -265,7 +227,7 @@ int test_crs_matrix_singlevec(int numRows, int numCols, int nnz, int test, const
   }
 
   // Performance Output
-  double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
+  double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(Ordinal)) + numRows*sizeof(Offset)))/1024/1024;
   double vector_size = 2.0*numRows*sizeof(Scalar)/1024/1024;
   double vector_readwrite = (nnz+numCols)*sizeof(Scalar)/1024/1024;
 
@@ -319,7 +281,6 @@ int main(int argc, char **argv)
  int rows_per_thread = -1;
  int vector_length = -1;
  int team_size = -1;
- int idx_offset = 0;
  int schedule=AUTO;
  int loop = 100;
 
@@ -358,11 +319,10 @@ int main(int argc, char **argv)
   }
   //if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-f")==0)) {filename = argv[++i]; continue;}
-  if((strcmp(argv[i],"-fb")==0)) {filename = argv[++i]; binaryfile = true; continue;}
+  if((strcmp(argv[i],"-fb")==0)) {filename = argv[++i]; continue;}
   if((strcmp(argv[i],"-rpt")==0)) {rows_per_thread=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-ts")==0)) {team_size=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-vl")==0)) {vector_length=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"--offset")==0)) {idx_offset=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--write-binary")==0)) {write_binary=true;}
   if((strcmp(argv[i],"-l")==0)) {loop=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--schedule")==0)) {
@@ -381,18 +341,9 @@ int main(int argc, char **argv)
   }
  }
 
- if(write_binary) {
-   double* val = NULL;
-   int* row = NULL;
-   int* col = NULL;
-   int numRows,numCols,nnz;
-   SparseMatrix_WriteBinaryFormat<double,int>(filename,numRows,numCols,nnz,val,row,col,true,idx_offset);
-   return 0;
- }
-
  Kokkos::initialize(argc,argv);
 
- int total_errors = test_crs_matrix_singlevec<double>(size,size,size*10,test,filename,binaryfile,rows_per_thread,team_size,vector_length,idx_offset,schedule,loop);
+ int total_errors = test_crs_matrix_singlevec(size,size,test,filename,rows_per_thread,team_size,vector_length,schedule,loop);
 
  if(total_errors == 0)
    printf("Kokkos::MultiVector Test: Passed\n");

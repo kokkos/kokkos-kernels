@@ -83,7 +83,7 @@ void kk_sparseMatrix_generate(
   rowPtr[0] = 0;
   for(int row=0;row<nrows;row++)
   {
-    int varianz = (1.0*rand()/INT_MAX-0.5)*row_size_variance;
+    int varianz = (1.0*rand()/RAND_MAX-0.5)*row_size_variance;
     rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
   }
   nnz = rowPtr[nrows];
@@ -96,7 +96,7 @@ void kk_sparseMatrix_generate(
     {
 
       while (true){
-        OrdinalType pos = (1.0*rand()/INT_MAX-0.5)*bandwidth+row;
+        OrdinalType pos = (1.0*rand()/RAND_MAX-0.5)*bandwidth+row;
         if(pos<0) pos+=ncols;
         if(pos>=ncols) pos-=ncols;
 
@@ -110,7 +110,7 @@ void kk_sparseMatrix_generate(
         if (!is_already_in_the_row) {
 
           colInd[k]= pos;
-          values[k] = 100.0*rand()/INT_MAX-50.0;
+          values[k] = 100.0*rand()/RAND_MAX-50.0;
           break;
         }
       }
@@ -139,7 +139,6 @@ void kk_sparseMatrix_generate_lower_upper_triangle(
   rowPtr[0] = 0;
   for(int row=0;row<nrows;row++)
   {
-    //int varianz = (1.0*rand()/INT_MAX-0.5)*row_size_variance;
     if (uplo =='L')
       rowPtr[row+1] = rowPtr[row] + row + 1;
     else
@@ -179,7 +178,7 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   rowPtr[0] = 0;
   for(int row=0;row<nrows;row++)
   {
-    int varianz = (1.0*rand()/INT_MAX-0.5)*row_size_variance;
+    int varianz = (1.0*rand()/RAND_MAX-0.5)*row_size_variance;
     rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
   }
   nnz = rowPtr[nrows];
@@ -193,13 +192,13 @@ void kk_diagonally_dominant_sparseMatrix_generate(
     {
       OrdinalType pos = row;
       while (pos == row){
-        pos = ((1.0*rand())/INT_MAX-0.5)*bandwidth+row;
+        pos = ((1.0*rand())/RAND_MAX-0.5)*bandwidth+row;
       }
       if(pos<0) pos+=ncols;
 
       if(pos>=ncols) pos-=ncols;
       colInd[k]= pos;
-      values[k] = 100.0*rand()/INT_MAX-50.0;
+      values[k] = 100.0*rand()/RAND_MAX-50.0;
       total_values += Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
     }
 
