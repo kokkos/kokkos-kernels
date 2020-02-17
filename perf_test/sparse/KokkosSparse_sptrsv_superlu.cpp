@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#include "KokkosKernels_config.h"
+
 #include "Kokkos_Random.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
@@ -100,7 +102,7 @@ void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, in
   }
   printf( "];\n" );
 
-#if 0
+#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
   using STS = Kokkos::Details::ArithTraits<scalar_type>;
 
   int *colptr = Lstore->nzval_colptr;
@@ -726,21 +728,19 @@ int main(int argc, char **argv) {
       i++;
       if((strcmp(argv[i],"superlu-naive")==0)) {
         tests.push_back( SUPERNODAL_NAIVE );
-      }
-      if((strcmp(argv[i],"superlu-etree")==0)) {
+      } else if((strcmp(argv[i],"superlu-etree")==0)) {
         tests.push_back( SUPERNODAL_ETREE );
-      }
-      if((strcmp(argv[i],"superlu-dag")==0)) {
+      } else if((strcmp(argv[i],"superlu-dag")==0)) {
         tests.push_back( SUPERNODAL_DAG );
-      }
-      if((strcmp(argv[i],"superlu-spmv")==0)) {
+      } else if((strcmp(argv[i],"superlu-spmv")==0)) {
         tests.push_back( SUPERNODAL_SPMV );
-      }
-      if((strcmp(argv[i],"superlu-spmv-dag")==0)) {
+      } else if((strcmp(argv[i],"superlu-spmv-dag")==0)) {
         tests.push_back( SUPERNODAL_SPMV_DAG );
-      }
-      if((strcmp(argv[i],"cusparse")==0)) {
+      } else if((strcmp(argv[i],"cusparse")==0)) {
         tests.push_back( CUSPARSE );
+      } else {
+        std::cerr << "Invalid --tests option: \"" << argv[i] << "\"" << std::endl;
+        return -EINVAL;
       }
       continue;
     }
@@ -796,8 +796,8 @@ int main(int argc, char **argv) {
   }
 
   {
-    using scalar_t = double;
-    //using scalar_t = Kokkos::complex<double>;
+    //using scalar_t = double;
+    using scalar_t = Kokkos::complex<double>;
     Kokkos::ScopeGuard kokkosScope (argc, argv);
     int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
                                                    invert_offdiag, u_in_csr, panel_size, relax_size, loop);

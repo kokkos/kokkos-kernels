@@ -40,6 +40,8 @@
 //@HEADER
 */
 
+#include "KokkosKernels_config.h"
+
 #include "Kokkos_Random.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
