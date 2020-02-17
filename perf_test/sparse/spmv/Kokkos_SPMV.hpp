@@ -165,7 +165,7 @@ void kokkos_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size
   typedef typename AType::execution_space execution_space;
   typedef typename AType::non_const_size_type size_type;
   typedef typename AType::non_const_ordinal_type lno_t;
-  typedef typename AType::non_const_scalar_type scalar_t;
+  typedef typename AType::non_const_value_type scalar_t;
   typedef KokkosSparse::CrsMatrix<const scalar_t,lno_t,execution_space,void,size_type> matrix_type ;
 
   int rows_per_team = launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);

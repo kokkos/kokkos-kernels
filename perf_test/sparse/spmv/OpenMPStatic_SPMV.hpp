@@ -45,7 +45,7 @@
 #define OPENMP_STATIC_SPMV_HPP_
 
 template<typename AType, typename XType, typename YType, typename Offset, typename Ordinal, typename Scalar>
-void openmp_static_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
+void openmp_static_matvec(AType A, XType x, YType y) {
 
   #define OMP_BENCH_RESTRICT __restrict__
 
@@ -68,7 +68,7 @@ void openmp_static_matvec(AType A, XType x, YType y, int rows_per_thread, int te
     Scalar sum = 0.0;
 
     for(Offset i = rowStart; i < rowEnd; ++i) {
-      const Oridnal x_entry = matrixCols[i];
+      const Ordinal x_entry = matrixCols[i];
       const Scalar alpha_MC = s_a * matrixCoeffs[i];
       sum += alpha_MC * x_ptr[x_entry];
     }

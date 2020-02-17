@@ -45,7 +45,7 @@
 #define OPENMP_DYNAMIC_SPMV_HPP_
 
 template<typename AType, typename XType, typename YType, typename Offset, typename Ordinal, typename Scalar>
-void openmp_dynamic_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
+void openmp_dynamic_matvec(AType A, XType x, YType y) {
 
   #define OMP_BENCH_RESTRICT __restrict__
 
@@ -60,7 +60,7 @@ void openmp_dynamic_matvec(AType A, XType x, YType y, int rows_per_thread, int t
   const Offset* OMP_BENCH_RESTRICT matrixRowOffsets = A.graph.row_map.data();
 
   #pragma omp parallel for schedule(dynamic)
-  for(Ordinal lrow = 0; row < rowCount; ++row) {
+  for(Ordinal row = 0; row < rowCount; ++row) {
     const Offset rowStart = matrixRowOffsets[row];
     const Offset rowEnd   = matrixRowOffsets[row + 1];
 

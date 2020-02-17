@@ -120,16 +120,14 @@ struct SPMV_Inspector_Functor {
 };
 
 template<typename AType, typename XType, typename YType,class Schedule>
-void kk_inspector_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
+void kk_inspector_matvec(AType A, XType x, YType y, int team_size, int vector_length) {
 
   typedef typename AType::execution_space execution_space;
   typedef typename AType::device_type::memory_space memory_space;
   typedef typename AType::non_const_size_type size_type;
   typedef typename AType::non_const_ordinal_type lno_t;
-  typedef typename AType::non_const_scalar_type scalar_t;
+  typedef typename AType::non_const_value_type scalar_t;
 
-  //int rows_per_team = launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
-  //static int worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
   static int worksets = std::is_same<Schedule,Kokkos::Static>::value ?
                         team_size>0?execution_space::concurrency()/team_size:execution_space::concurrency() : //static
                         team_size>0?execution_space::concurrency()*32/team_size:execution_space::concurrency()*32 ; //dynamic
@@ -152,8 +150,8 @@ void kk_inspector_matvec(AType A, XType x, YType y, int rows_per_thread, int tea
     printf("Worksets: %i %i\n",worksets,ws);
     worksets = ws;
   }
-  Scalar s_a(1.0);
-  Scalar s_b(0.0);
+  scalar_t s_a(1.0);
+  scalar_t s_b(0.0);
   SPMV_Inspector_Functor<AType, XType, YType, 0 ,false> func(s_a, A, x, workset_offsets, s_b, y);
 
   Kokkos::TeamPolicy<Kokkos::Schedule<Schedule> > policy(1,1);

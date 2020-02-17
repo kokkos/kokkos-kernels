@@ -53,6 +53,10 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
+#include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_spmv.hpp>
+#include <spmv/Kokkos_SPMV.hpp>
+#include <spmv/Kokkos_SPMV_Inspector.hpp>
 
 #ifdef HAVE_CUSPARSE
 #include <CuSparse_SPMV.hpp>
@@ -62,7 +66,7 @@
 #include <MKL_SPMV.hpp>
 #endif
 
-#ifdef _OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #include <OpenMPStatic_SPMV.hpp>
 #include <OpenMPDynamic_SPMV.hpp>
 #include <OpenMPSmartStatic_SPMV.hpp>
@@ -87,28 +91,28 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, 
                 if(schedule == AUTO)
                   schedule = A.nnz()>10000000?DYNAMIC:STATIC;
                 if(schedule == STATIC)
-                  kk_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
+                  kokkos_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
                 if(schedule == DYNAMIC)
-                  kk_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
+                  kokkos_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
                 break;
         case KK_INSP:
                 if(schedule == AUTO)
                   schedule = A.nnz()>10000000?DYNAMIC:STATIC;
                 if(schedule == STATIC)
-                  kk_inspector_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
+                  kk_inspector_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, team_size, vector_length);
                 if(schedule == DYNAMIC)
-                  kk_inspector_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
+                  kk_inspector_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, team_size, vector_length);
                 break;
 
 #ifdef KOKKOS_ENABLE_OPENMP
         case OMP_STATIC:
-                openmp_static_matvec<AType, XType, YType, size_type, lno_t, scalar_t>(A, x, y);
+                openmp_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x, y);
                 break;
         case OMP_DYNAMIC:
-                openmp_dynamic_matvec<AType, XType, YType, size_type, lno_t, scalar_t>(A, x, y);
+                openmp_dynamic_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x, y);
                 break;
         case OMP_INSP:
-                openmp_smart_static_matvec<AType, XType, YType, size_type, lno_t, scalar_t>(A, x, y);
+                openmp_smart_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x, y);
                 break;
 #endif
 
@@ -126,13 +130,13 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, 
                 KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
                 break;
         case KK_KERNELS_INSP:
-          if(A.graph.row_block_offsets.data()==NULL) {
-            printf("PTR: %p\n",A.graph.row_block_offsets.data());
-            A.graph.create_block_partitioning(AType::execution_space::concurrency());
-            printf("PTR2: %p\n",A.graph.row_block_offsets.data());
-          }
-          kokkoskernels_matvec(A, x, y, rows_per_thread, team_size, vector_length);
-          break;
+                if(A.graph.row_block_offsets.data()==NULL) {
+                  printf("PTR: %p\n",A.graph.row_block_offsets.data());
+                  A.graph.create_block_partitioning(AType::execution_space::concurrency());
+                  printf("PTR2: %p\n",A.graph.row_block_offsets.data());
+                }
+                KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
+                break;
         default:
           fprintf(stderr, "Selected test is not available.\n");
       }
@@ -146,9 +150,13 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   srand(17312837);
   matrix_type A;
   if(filename)
-    A = KokkosKernels::Impl::read_kokkos_crst_matrix(filename);
+    A = KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type>(filename);
   else
-    A = KokkosKernels::Impl::kk_generate_sparse_matrix<matrix_type>(numRows, numCols, 10 * numRows, 0, numCols);
+  {
+    Offset nnz = 10 * numRows;
+    //note: the help text says the bandwidth is fixed at 0.01 * numRows
+    A = KokkosKernels::Impl::kk_generate_sparse_matrix<matrix_type>(numRows, numCols, nnz, 0, 0.01 * numRows);
+  }
   numRows = A.numRows();
   numCols = A.numCols();
   Offset nnz = A.nnz();
@@ -251,7 +259,7 @@ void print_help() {
   printf("                    Options:\n");
   printf("                      kk,kk-kernels          (Kokkos/Trilinos)\n");
   printf("                      kk-insp                (Kokkos Structure Inspection)\n");
-#ifdef _OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   printf("                      omp-dynamic,omp-static (Standard OpenMP)\n");
   printf("                      omp-insp               (OpenMP Structure Inspection)\n");
 #endif
@@ -275,8 +283,6 @@ int main(int argc, char **argv)
  int test=KOKKOS;
  //int type=-1;
  char* filename = NULL;
- bool binaryfile = false;
- bool write_binary = false;
 
  int rows_per_thread = -1;
  int vector_length = -1;
@@ -295,6 +301,11 @@ int main(int argc, char **argv)
   //if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--test")==0)) {
     i++;
+    if(i == argc)
+    {
+      std::cerr << "Must pass algorithm name after '--test'";
+      exit(1);
+    }
     if((strcmp(argv[i],"mkl")==0))
       test = MKL;
     if((strcmp(argv[i],"kk")==0))
@@ -307,7 +318,7 @@ int main(int argc, char **argv)
       test = KK_KERNELS_INSP;
     if((strcmp(argv[i],"kk-insp")==0))
       test = KK_INSP;
-#ifdef _OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if((strcmp(argv[i],"omp-static") == 0))
       test = OMP_STATIC;
     if((strcmp(argv[i], "omp-dynamic") == 0))
@@ -323,7 +334,6 @@ int main(int argc, char **argv)
   if((strcmp(argv[i],"-rpt")==0)) {rows_per_thread=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-ts")==0)) {team_size=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-vl")==0)) {vector_length=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"--write-binary")==0)) {write_binary=true;}
   if((strcmp(argv[i],"-l")==0)) {loop=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--schedule")==0)) {
     i++;
