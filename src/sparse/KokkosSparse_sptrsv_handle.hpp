@@ -441,22 +441,22 @@ public:
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
   void set_supernodes (signed_integral_t nsuper_, int *supercols_, int *etree_) {
+    // set etree
+    this->etree_host = integer_view_host_t (etree_, nsuper_);
+    // set supernodes
     integer_view_host_t supercols_view = integer_view_host_t (supercols_, 1+nsuper_);
     set_supernodes (nsuper_, supercols_view, etree_);
   }
 
   void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_, int *etree_) {
-    int default_sup_size_unblocked_ = 100;
-    int default_sup_size_blocked_ = 200;
-    set_supernodes(nsuper_, supercols_, etree_, default_sup_size_unblocked_, default_sup_size_blocked_);
+    // set etree
+    this->etree_host = integer_view_host_t (etree_, nsuper_);
+    // set supernodes
+    set_supernodes(nsuper_, supercols_);
   }
 
-  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_view, int *etree_,
-                       int sup_size_unblocked_, int sup_size_blocked_) {
+  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_view) {
     this->nsuper = nsuper_;
-
-    // etree
-    this->etree_host = integer_view_host_t (etree_, nsuper_);
 
     // supercols
     integer_view_host_t supercols_subview (supercols_view.data (), 1+nsuper_);
@@ -471,8 +471,6 @@ public:
     this->work_offset = integer_view_t ("workoffset", nsuper_);
 
     // kernel type 
-    this->sup_size_unblocked = sup_size_unblocked_;
-    this->sup_size_blocked = sup_size_blocked_;
     this->diag_kernel_type_host = integer_view_host_t ("diag_kernel_type_host", nsuper_);
     this->diag_kernel_type = integer_view_t ("diag_kernel_type", nsuper_);
     this->kernel_type_host = integer_view_host_t ("kernel_type_host", nsuper_);

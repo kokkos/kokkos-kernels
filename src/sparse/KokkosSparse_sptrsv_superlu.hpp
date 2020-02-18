@@ -61,7 +61,7 @@ namespace Experimental {
 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-/* For symbolic analysis                                                                     */
+/* Auxiliary function for symbolic analysis                                                  */
 
 /* ========================================================================================= */
 template <typename graph_t>
@@ -379,9 +379,88 @@ graph_t read_superlu_graphU_CSC(SuperMatrix *L, SuperMatrix *U) {
 }
 
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* Symbolic analysis                                                                         */
+template <typename scalar_type,
+          typename ordinal_type,
+          typename size_type,
+          typename KernelHandle,
+          typename execution_space      = Kokkos::DefaultExecutionSpace,
+          typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+void sptrsv_symbolic(
+    KernelHandle *kernelHandleL,
+    KernelHandle *kernelHandleU,
+    SuperMatrix &L,
+    SuperMatrix &U)
+{
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
+
+  Kokkos::Timer timer;
+  Kokkos::Timer tic;
+  timer.reset();
+
+  // ===================================================================
+  // load sptrsv-handles
+  auto *handleL = kernelHandleL->get_sptrsv_handle ();
+  auto *handleU = kernelHandleU->get_sptrsv_handle ();
+  int *etree = handleL->get_etree ();
+
+  // ===================================================================
+  // load options
+  bool merge = handleL->get_merge_supernodes ();
+  bool UinCSC = handleU->is_column_major ();
+  bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                    handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
+  if (needEtree && etree == nullptr) {
+    std::cout << std::endl
+              << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
+              << std::endl << std::endl;
+    return;
+  }
+
+  // ===================================================================
+  // read CrsGraph from SuperLU factor
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
+  if (merge) {
+    std::cout << " > Merge supernodes" << std::endl;
+  }
+  #endif
+  bool cusparse = false; // pad diagonal blocks with zeros
+  host_graph_t graphL_host;
+  host_graph_t graphU_host;
+
+  tic.reset();
+  graphL_host = read_superlu_graphL<host_graph_t> (cusparse, merge, &L);
+  if (UinCSC) {
+    graphU_host = read_superlu_graphU_CSC<host_graph_t> (&L, &U);
+  } else {
+    graphU_host = read_superlu_graphU<host_graph_t> (&L, &U);
+  }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_seconds = tic.seconds ();
+  std::cout << "   Conversion Time (from SuperLU to CSR): " << time_seconds << std::endl;
+  #endif
+
+  // ===================================================================
+  // setup supnodal info
+  SCformat *Lstore = (SCformat*)(L.Store);
+  int nsuper = 1 + Lstore->nsuper;
+  int *supercols = Lstore->sup_to_col;
+
+  // ===================================================================
+  // call supnodal symbolic
+  handleL->set_graph_host (graphL_host);
+  handleU->set_graph_host (graphU_host);
+  handleL->set_supernodes (nsuper, supercols, etree);
+  handleU->set_supernodes (nsuper, supercols, etree);
+  sptrsv_supernodal_symbolic<scalar_type, ordinal_type, size_type> (kernelHandleL, kernelHandleU);
+}
+
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-/* For numeric computation                                                                   */
+/* Auxiliary functions for numeric computation                                               */
 
 /* ========================================================================================= */
 template <typename crsmat_t, typename graph_t>
@@ -627,11 +706,6 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
       for (int i = 0; i <= j; i++) {
         hv(hr(j1 + j) + i) = Lx[psx + i + j*nsrow];
       }
-#if 0
-      for (int i = j+1; i < nscol; i++) {
-        hv(hr(j1 + j) + i) = zero;
-      }
-#endif
       hr (j1 + j) += nscol;
     }
 
@@ -709,6 +783,185 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
   crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
   return crsmat;
 }
+
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* For numeric computation                                                                   */
+template <typename scalar_type,
+          typename ordinal_type,
+          typename size_type,
+          typename KernelHandle,
+          typename execution_space      = Kokkos::DefaultExecutionSpace,
+          typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+void sptrsv_compute(
+    KernelHandle *kernelHandleL,
+    KernelHandle *kernelHandleU,
+    SuperMatrix &L,
+    SuperMatrix &U)
+{
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
+
+  Kokkos::Timer tic;
+  Kokkos::Timer timer;
+  // ===================================================================
+  // load sptrsv-handles
+  auto *handleL = kernelHandleL->get_sptrsv_handle ();
+  auto *handleU = kernelHandleU->get_sptrsv_handle ();
+
+  if (!(handleL->is_symbolic_complete()) ||
+      !(handleU->is_symbolic_complete())) {
+    std::cout << std::endl
+            << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **"
+           << std::endl << std::endl;
+    return;
+  }
+
+  // ===================================================================
+  // load options
+  bool merge = handleL->get_merge_supernodes ();
+  bool invert_offdiag = handleL->get_invert_offdiagonal ();
+  bool UinCSC = handleU->is_column_major ();
+  bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                  handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_seconds = 0.0;
+  if (merge)          std::cout << " >> merge\n" << std::endl;
+  if (invert_offdiag) std::cout << " >> invert offdiag\n" << std::endl;
+  #endif
+
+  // ===================================================================
+  // load graphs
+  auto graphL = handleL->get_graph ();
+  auto graphL_host = handleL->get_graph_host ();
+
+  auto graphU = handleU->get_graph ();
+  auto graphU_host = handleU->get_graph_host ();
+
+  int nsuper = handleL->get_num_supernodes ();
+  const int* supercols = handleL->get_supercols_host ();
+  crsmat_t superluL, superluU;
+  host_crsmat_t superluL_host, superluU_host;
+  if (merge) {
+    tic.reset ();
+    // ========================================================
+    // read in the numerical L-values into merged csc
+    // NOTE: we first load into CRS, and then merge (should be combined)
+    bool cusparse = false;
+    bool invert_diag = false; // invert after merge
+    // 1) load L into crs (offdiagonal not inverted, unless invert diag)
+    auto original_graphL_host = handleL->get_original_graph_host ();
+    superluL_host = read_superlu_valuesL<host_crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, original_graphL_host);
+    // 2) re-load L into merged crs
+    invert_diag = true;       // TODO: diagonals are always inverted
+    bool lower = true;
+    bool unit_diag = true;
+    if (useSpMV) {
+      superluL_host = read_merged_supernodes<host_crsmat_t> (nsuper, supercols,
+                                                             lower, unit_diag, invert_diag, invert_offdiag,
+                                                             superluL_host, graphL_host);
+    } else {
+      superluL = read_merged_supernodes<crsmat_t> (nsuper, supercols,
+                                                   lower, unit_diag, invert_diag, invert_offdiag,
+                                                   superluL_host, graphL);
+    }
+
+    // ========================================================
+    // read in the numerical U-values into merged csr
+    // 1) load U into crs
+    invert_offdiag = handleU->get_invert_offdiagonal ();
+    invert_diag = false;     // invert after merge
+    auto original_graphU_host = handleU->get_original_graph_host ();
+    if (UinCSC) {
+      superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (invert_diag, invert_offdiag, &L, &U, original_graphU_host);
+    } else {
+      // NOTE: invert-offdiag not supported in CSR format
+      superluU_host = read_superlu_valuesU<host_crsmat_t> (invert_diag, &L, &U, original_graphU_host);
+    }
+    invert_diag = true;      // TODO: diagonals are always inverted
+    // 2) re-load U into merged crs
+    lower = (UinCSC ? false : true);
+    unit_diag = false;
+    if (useSpMV) {
+      superluU_host = read_merged_supernodes<host_crsmat_t> (nsuper, supercols,
+                                                             lower, unit_diag, invert_diag, invert_offdiag,
+                                                             superluU_host, graphU_host);
+    } else {
+      superluU = read_merged_supernodes<crsmat_t> (nsuper, supercols,
+                                                   lower, unit_diag, invert_diag, invert_offdiag,
+                                                   superluU_host, graphU);
+    }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
+    std::cout << "   Time to Merge and Copy to device: " << time_seconds << std::endl;
+    #endif
+  } else {
+    // ========================================================
+    // read in the numerical values into merged csc for L
+    bool cusparse = false;
+    bool invert_diag = true; // only, invert diag is supported for now
+    tic.reset ();
+    if (useSpMV) {
+      superluL_host = read_superlu_valuesL<host_crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL_host);
+    } else {
+      superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
+    }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    double timeL = tic.seconds ();
+    #endif
+
+    // ========================================================
+    // read in the numerical values into merged csc/csr for U
+    tic.reset ();
+    if (useSpMV) {
+      if (UinCSC) {
+        superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU_host);
+      } else {
+        superluU_host = read_superlu_valuesU<host_crsmat_t> (invert_diag, &L, &U, graphU_host);
+      }
+    } else {
+      if (UinCSC) {
+        superluU = read_superlu_valuesU_CSC<crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU);
+      } else {
+        superluU = read_superlu_valuesU<crsmat_t> (invert_diag, &L, &U, graphU);
+      }
+    }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    double timeU = tic.seconds ();
+    std::cout << "   Time to copy to device: " << std::endl;
+    std::cout << "   > copy L to device: " << timeL << std::endl;
+    std::cout << "   > copy U to device: " << timeU << std::endl;
+    #endif
+  }
+
+  // ===================================================================
+  if (useSpMV) {
+    // ----------------------------------------------------
+    // split the matrix into submatrices for spmv at each level
+    tic.reset ();
+    split_crsmat<crsmat_t> (kernelHandleL, superluL_host);
+    split_crsmat<crsmat_t> (kernelHandleU, superluU_host);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
+    std::cout << "   Time to Split to submatrix: " << time_seconds << std::endl;
+    #endif
+  }
+
+
+  // ==============================================
+  // save crsmat
+  handleL->set_crsmat (superluL);
+  handleU->set_crsmat (superluU);
+
+  // ===================================================================
+  handleL->set_numeric_complete ();
+  handleU->set_numeric_complete ();
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = timer.seconds ();
+  std::cout << "   Total Compute Time: " << time_seconds << std::endl << std::endl;
+  #endif
+} // sptrsv_compute
+
 
 } // namespace Experimental
 } // namespace KokkosSparse

@@ -44,6 +44,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_sptrsv.hpp"
+#include "KokkosSparse_sptrsv_cholmod.hpp"
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )         && \
   (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \

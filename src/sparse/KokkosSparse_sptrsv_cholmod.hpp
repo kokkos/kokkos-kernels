@@ -60,76 +60,205 @@ namespace Experimental {
 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* Auxiliary functions for symbolic analysis                                                 */
+
+  /* ========================================================================================= */
+  template <typename graph_t>
+  graph_t read_cholmod_graphL(bool cusparse, cholmod_factor *L, cholmod_common *cm) {
+
+    /* ---------------------------------------------------------------------- */
+    /* get inputs */
+    /* ---------------------------------------------------------------------- */
+    int n = L->n;
+    int nsuper = L->nsuper;     // # of supernodal columns
+    int *mb = (int*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
+    int *nb = (int*)(L->super);
+    int *colptr = (int*)(L->px);      // colptr
+    int *rowind = (int*)(L->s);       // rowind
+
+    bool merge = false;
+    bool ptr_by_column = false;
+
+    return read_supernodal_graphL<graph_t> (cusparse, merge,
+                                            n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
+  }
+
+
+  /* ========================================================================================= */
+  void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
+    cholmod_factor *L;
+    L = cholmod_analyze (A, cm);
+
+    int n = L->n;
+    int nsuper = L->nsuper;      // # of supernodal columns
+    int *Iwork = (int*)(cm->Iwork);
+    int *Parent = Iwork + (2*((size_t) n)); /* size nfsuper <= n [ */
+
+    *etree = new int [nsuper];
+    for (int ii = 0 ; ii < nsuper; ii++) (*etree)[ii] = Parent[ii];
+  }
+
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For symbolic analysis                                                                     */
+  template <typename scalar_type,
+            typename ordinal_type,
+            typename size_type,
+            typename KernelHandle,
+            typename execution_space      = Kokkos::DefaultExecutionSpace,
+            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+  void sptrsv_symbolic(
+      KernelHandle *kernelHandleL,
+      KernelHandle *kernelHandleU,
+      cholmod_factor *L,
+      cholmod_common *cm)
+  {
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type>  crsmat_t;
+    typedef typename  crsmat_t::StaticCrsGraphType  graph_t;
 
-/* ========================================================================================= */
-template <typename graph_t>
-graph_t read_cholmod_graphL(bool cusparse, cholmod_factor *L, cholmod_common *cm) {
+    // ===================================================================
+    // load sptrsv-handles
+    auto *handleL = kernelHandleL->get_sptrsv_handle ();
+    auto *handleU = kernelHandleU->get_sptrsv_handle ();
 
-  /* ---------------------------------------------------------------------- */
-  /* get inputs */
-  /* ---------------------------------------------------------------------- */
-  int n = L->n;
-  int nsuper = L->nsuper;     // # of supernodal columns
-  int *mb = (int*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
-  int *nb = (int*)(L->super);
-  int *colptr = (int*)(L->px);      // colptr
-  int *rowind = (int*)(L->s);       // rowind
+    // load options
+    int *etree = handleL->get_etree ();
+    bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                      handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
+    if (needEtree && etree == nullptr) {
+      std::cout << std::endl
+                << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
+                << std::endl << std::endl;
+      return;
+    }
 
-  bool merge = false;
-  bool ptr_by_column = false;
+    Kokkos::Timer timer;
+    // ==============================================
+    // extract CrsGraph from Cholmod
+    bool cusparse = false; // pad diagonal blocks with zeros
+    auto graph = read_cholmod_graphL<graph_t>(cusparse, L, cm);
+    auto row_map = graph.row_map;
+    auto entries = graph.entries;
 
-  return read_supernodal_graphL<graph_t> (cusparse, merge,
-                                          n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
-}
+    // ==============================================
+    // setup supnodal info 
+    int nsuper = (int)(L->nsuper);
+    int *supercols = (int*)(L->super);
+    handleL->set_supernodes (nsuper, supercols, etree);
+    handleU->set_supernodes (nsuper, supercols, etree);
+
+    // ==============================================
+    // symbolic for L-solve on the host
+    timer.reset();
+    sptrsv_symbolic (kernelHandleL, row_map, entries);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    double timeL = timer.seconds ();
+    std::cout << " > Lower-TRI: " << std::endl;
+    std::cout << "   Symbolic Time: " << timeL << std::endl;
+    #endif
+
+    // ==============================================
+    // symbolic for L^T-solve on the host
+    timer.reset ();
+    sptrsv_symbolic (kernelHandleU, row_map, entries);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    double timeU = timer.seconds ();
+    std::cout << " > Upper-TRI: " << std::endl;
+    std::cout << "   Symbolic Time: " << timeU << std::endl;
+    #endif
+
+    // ==============================================
+    // save graphs
+    handleL->set_graph (graph);
+    handleU->set_graph (graph);
+
+    // ===================================================================
+    handleU->set_symbolic_complete ();
+    handleU->set_symbolic_complete ();
+  }
 
 
-/* ========================================================================================= */
-void compute_etree_cholmod(cholmod_sparse *A, cholmod_common *cm, int **etree) {
-  cholmod_factor *L;
-  L = cholmod_analyze (A, cm);
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* Auxiliary functions for numeric computation                                               */
 
-  int n = L->n;
-  int nsuper = L->nsuper;      // # of supernodal columns
-  int *Iwork = (int*)(cm->Iwork);
-  int *Parent = Iwork + (2*((size_t) n)); /* size nfsuper <= n [ */
+  /* ========================================================================================= */
+  template <typename crsmat_t, typename graph_t>
+  crsmat_t read_cholmod_factor(bool cusparse, bool invert_diag, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
 
-  *etree = new int [nsuper];
-  for (int ii = 0 ; ii < nsuper; ii++) (*etree)[ii] = Parent[ii];
-}
+    using values_view_t = typename crsmat_t::values_type::non_const_type;
+    using scalar_t      = typename values_view_t::value_type;
 
+    /* ---------------------------------------------------------------------- */
+    /* get inputs */
+    /* ---------------------------------------------------------------------- */
+    int n = L->n;
+    int nsuper = L->nsuper;     // # of supernodal columns
+    int *mb = (int*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
+    int *nb = (int*)(L->super);
+    int *colptr = (int*)(L->px);      // colptr
+    int *rowind = (int*)(L->s);       // rowind
+    scalar_t *Lx = (scalar_t*)(L->x); // data
 
+    bool merge = false;
+    bool invert_offdiag = false;
+    bool unit_diag = false;
+    bool ptr_by_column = false;
+    return read_supernodal_valuesL<crsmat_t, graph_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
+                                                                 unit_diag, n, nsuper, ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
+  }
 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For numeric computation                                                                   */
+  template <typename scalar_type,
+            typename ordinal_type,
+            typename size_type,
+            typename KernelHandle,
+            typename execution_space      = Kokkos::DefaultExecutionSpace,
+            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+  void sptrsv_compute(
+      KernelHandle *kernelHandleL,
+      KernelHandle *kernelHandleU,
+      cholmod_factor *L,
+      cholmod_common *cm)
+  {
+    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type> crsmat_t;
 
-/* ========================================================================================= */
-template <typename crsmat_t, typename graph_t>
-crsmat_t read_cholmod_factor(bool cusparse, bool invert_diag, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
+    // ===================================================================
+    // load sptrsv-handles
+    auto *handleL = kernelHandleL->get_sptrsv_handle ();
+    auto *handleU = kernelHandleU->get_sptrsv_handle ();
 
-  using values_view_t = typename crsmat_t::values_type::non_const_type;
-  using scalar_t      = typename values_view_t::value_type;
+    if (!(handleL->is_symbolic_complete()) ||
+        !(handleU->is_symbolic_complete())) {
+      std::cout << std::endl
+                << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **"
+                << std::endl << std::endl;
+      return;
+    }
 
-  /* ---------------------------------------------------------------------- */
-  /* get inputs */
-  /* ---------------------------------------------------------------------- */
-  int n = L->n;
-  int nsuper = L->nsuper;     // # of supernodal columns
-  int *mb = (int*)(L->pi);    // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
-  int *nb = (int*)(L->super);
-  int *colptr = (int*)(L->px);      // colptr
-  int *rowind = (int*)(L->s);       // rowind
-  scalar_t *Lx = (scalar_t*)(L->x); // data
+    // ==============================================
+    // load crsGraph
+    auto graph = handleL->get_graph ();
 
-  bool merge = false;
-  bool invert_offdiag = false;
-  bool unit_diag = false;
-  bool ptr_by_column = false;
-  return read_supernodal_valuesL<crsmat_t, graph_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
-                                                               unit_diag, n, nsuper, ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
-}
+    // ==============================================
+    // read numerical values of L from Cholmod
+    bool invert_diag = true;
+    bool cusparse = false; // pad diagonal blocks with zeros
+    auto cholmodL = read_cholmod_factor<crsmat_t> (cusparse, invert_diag, L, cm, graph);
 
+    // ==============================================
+    // save crsmat
+    bool invert_offdiag = false;
+    handleL->set_invert_offdiagonal(invert_offdiag);
+    handleU->set_invert_offdiagonal(invert_offdiag);
+    handleL->set_crsmat (cholmodL);
+    handleU->set_crsmat (cholmodL);
+
+    // ===================================================================
+    handleL->set_numeric_complete ();
+    handleU->set_numeric_complete ();
+  }
 
 } // namespace Experimental
 } // namespace KokkosSparse

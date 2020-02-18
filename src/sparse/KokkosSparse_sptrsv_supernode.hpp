@@ -51,6 +51,8 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
+#include "KokkosSparse_sptrsv.hpp"
+
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)
 #include "cblas.h"
 #include "lapacke.h"
@@ -65,6 +67,28 @@ class sort_indices {
    private:
      int* rowinds_; // rowindices
 };
+
+/* ========================================================================================= */
+template <typename host_graph_t, typename graph_t>
+graph_t deep_copy_graph (host_graph_t &host_graph) {
+  // load graph on host
+  auto row_map = host_graph.row_map;
+  auto entries = host_graph.entries;
+  auto nrows = host_graph.numRows ();
+  auto nnz = row_map (nrows);
+
+  // create graph on device
+  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
+  using cols_view_t    = typename graph_t::entries_type::non_const_type;
+  row_map_view_t rowmap_view ("rowmap_view", nrows+1);
+  cols_view_t    column_view ("colmap_view", nnz);
+
+  // copy graph to device
+  Kokkos::deep_copy (rowmap_view, row_map);
+  Kokkos::deep_copy (column_view, entries);
+  graph_t static_graph (column_view, rowmap_view);
+  return static_graph;
+}
 
 /* ========================================================================================= */
 template <typename graph_t>
@@ -258,7 +282,7 @@ void check_supernode_sizes(const char *title, int n, int nsuper, int *nb, input_
 /* ========================================================================================= */
 template <typename host_graph_t, typename graph_t>
 host_graph_t
-generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, int *nb) {
+generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int *nb) {
 
   using cols_view_host_t    = typename host_graph_t::entries_type::non_const_type;
   using row_map_view_host_t = typename host_graph_t::row_map_type::non_const_type;
@@ -588,7 +612,7 @@ void merge_supernodal_graph(int *p_nsuper, int *nb,
 template <typename output_graph_t, typename input_graph_t>
 output_graph_t
 generate_merged_supernodal_graph(bool lower, 
-                                 int nsuper, int *nb,
+                                 int nsuper, const int *nb,
                                  int nsuper2, int *nb2,
                                  input_graph_t &graph, int *nnz) {
 
@@ -691,6 +715,206 @@ generate_merged_supernodal_graph(bool lower,
   output_graph_t static_graph (column_view, rowmap_view);
   return static_graph;
 }
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* symbolic                                                                                  */
+template <typename scalar_type,
+          typename ordinal_type,
+          typename size_type,
+          typename KernelHandle,
+          typename execution_space      = Kokkos::DefaultExecutionSpace,
+          typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+void sptrsv_supernodal_symbolic(
+    KernelHandle *kernelHandleL,
+    KernelHandle *kernelHandleU) {
+
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
+  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
+
+  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
+  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_seconds = 0.0;
+  Kokkos::Timer timer;
+  Kokkos::Timer tic;
+  timer.reset ();
+  #endif
+
+  // ===================================================================
+  // load sptrsv-handles
+  auto *handleL = kernelHandleL->get_sptrsv_handle ();
+  auto *handleU = kernelHandleU->get_sptrsv_handle ();
+  int *etree = handleL->get_etree ();
+
+  // ===================================================================
+  // load options
+  bool col_majorL = handleL->is_column_major ();
+  bool col_majorU = handleU->is_column_major ();
+  bool merge = handleL->get_merge_supernodes ();
+  bool UinCSC = handleU->is_column_major ();
+  bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                    handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
+  if (needEtree && etree == nullptr) {
+    std::cout << std::endl
+              << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
+              << std::endl << std::endl;
+    return;
+  }
+
+  // ===================================================================
+  // load graphs
+  graph_t graphL;
+  graph_t graphU;
+  auto graphL_host = handleL->get_graph_host ();
+  auto graphU_host = handleU->get_graph_host ();
+
+  // ===================================================================
+  // load supernodes
+  int nsuper = handleL->get_num_supernodes ();
+  const int *supercols = handleL->get_supercols_host ();
+
+  // > make a copy of supercols (merge needs both original and merged supercols)
+  typename KernelHandle::SPTRSVHandleType::integer_view_host_t supercols_view ("supercols view", 1+nsuper);
+  int *supercols_merged = supercols_view.data ();
+  for (int i = 0; i <= nsuper; i++) {
+    supercols_merged[i] = supercols[i];
+  }
+  if (merge) {
+    // =================================================================
+    // merge supernodes
+    int nsuper_merged = nsuper;
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    tic.reset ();
+    int nrows = graphL_host.numRows ();
+    check_supernode_sizes("Original L-structure", nrows, nsuper, supercols_merged, graphL_host);
+    check_supernode_sizes("Original U-structure", nrows, nsuper, supercols_merged, graphU_host);
+    #endif
+    // etree will be updated
+    merge_supernodal_graph (&nsuper_merged, supercols_merged,
+                            col_majorL, graphL_host, col_majorU, graphU_host,
+                            etree);
+
+    // =================================================================
+    // generate merged graph for L-solve
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    int nnzL = graphL_host.row_map (nrows);
+    #endif
+    int nnzL_merged;
+    bool lower = true;
+    handleL->set_original_graph_host (graphL_host); // save graph before merge
+    graphL_host = generate_merged_supernodal_graph<host_graph_t> (lower, nsuper, supercols,
+                                                                  nsuper_merged, supercols_merged,
+                                                                  graphL_host, &nnzL_merged);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
+    check_supernode_sizes ("After Merge", nrows, nsuper_merged, supercols_merged, graphL_host);
+    std::cout << " for L factor:" << std::endl;
+    std::cout << "   Merge Supernodes Time: " << time_seconds << std::endl;
+    std::cout << "   Number of nonzeros   : " << nnzL << " -> " << nnzL_merged
+              << " : " << double(nnzL_merged) / double(nnzL) << "x" << std::endl;
+    #endif
+
+    // =================================================================
+    // generate merged graph for U-solve
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    tic.reset ();
+    int nnzU = graphU_host.row_map (nrows);
+    #endif
+    int nnzU_merged;
+    lower = (UinCSC ? false : true);
+    handleU->set_original_graph_host (graphU_host); // save graph before merge
+    graphU_host = generate_merged_supernodal_graph<host_graph_t> (lower, nsuper, supercols,
+                                                                  nsuper_merged, supercols_merged,
+                                                                  graphU_host, &nnzU_merged);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
+    check_supernode_sizes("After Merge", nrows, nsuper_merged, supercols_merged, graphU_host);
+    std::cout << " for U factor:" << std::endl;
+    std::cout << "   Merge Supernodes Time: " << time_seconds << std::endl;
+    std::cout << "   Number of nonzeros   : " << nnzU << " -> " << nnzU_merged
+              << " : " << double(nnzU_merged) / double(nnzU) << "x" << std::endl;
+    #endif
+
+    // update the number of supernodes
+    nsuper = nsuper_merged;
+  }
+  // replace the supernodal info with the merged ones
+  supercols = supercols_merged;
+
+  // ===================================================================
+  // copy graph to device
+  graphL = deep_copy_graph<host_graph_t, graph_t> (graphL_host);
+  graphU = deep_copy_graph<host_graph_t, graph_t> (graphU_host);
+
+  // ===================================================================
+  // save the supernodal info in the handles for L/U solves
+  handleL->set_supernodes (nsuper, supercols_view, etree);
+  handleU->set_supernodes (nsuper, supercols_view, etree);
+
+  if (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+      handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+    // generate supernodal graphs for DAG scheduling
+    auto supL = generate_supernodal_graph<host_graph_t> (!col_majorL, graphL_host, nsuper, supercols);
+    auto supU = generate_supernodal_graph<host_graph_t> ( col_majorU, graphU_host, nsuper, supercols);
+
+    auto dagL = generate_supernodal_dag<host_graph_t> (nsuper, supL, supU);
+    auto dagU = generate_supernodal_dag<host_graph_t> (nsuper, supU, supL);
+    handleL->set_supernodal_dag (dagL);
+    handleU->set_supernodal_dag (dagU);
+  }
+
+  // ===================================================================
+  // do symbolic for L solve on the host
+  auto row_mapL = graphL.row_map;
+  auto entriesL = graphL.entries;
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  tic.reset();
+  std::cout << std::endl;
+  #endif
+  sptrsv_symbolic (kernelHandleL, row_mapL, entriesL);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = tic.seconds ();
+  std::cout << " > Lower-TRI: " << std::endl;
+  std::cout << "   Symbolic Time: " << time_seconds << std::endl;
+  tic.reset ();
+  #endif
+
+  // ===================================================================
+  // do symbolic for U solve on the host
+  auto row_mapU = graphU.row_map;
+  auto entriesU = graphU.entries;
+  sptrsv_symbolic (kernelHandleU, row_mapU, entriesU);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = tic.seconds ();
+  std::cout << " > Upper-TRI: " << std::endl;
+  std::cout << "   Symbolic Time: " << time_seconds << std::endl;
+  #endif
+
+  // ===================================================================
+  // save options
+  handleL->set_merge_supernodes (merge);
+  handleU->set_merge_supernodes (merge);
+
+  // ===================================================================
+  // save graphs
+  handleL->set_graph (graphL);
+  handleU->set_graph (graphU);
+  // graph on host (merged)
+  handleL->set_graph_host (graphL_host);
+  handleU->set_graph_host (graphU_host);
+
+  // ===================================================================
+  handleL->set_symbolic_complete ();
+  handleU->set_symbolic_complete ();
+  handleL->set_etree (etree);
+  handleU->set_etree (etree);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = timer.seconds ();
+  std::cout << "   Total Symbolic Time: " << time_seconds << std::endl << std::endl;
+  #endif
+}
+
 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -1274,28 +1498,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   std::cout << "   > Total NNZ                         : " << oldNnz << " -> " << newNnz
             << std::endl << std::endl;
   #endif
-}
-
-/* ========================================================================================= */
-template <typename host_graph_t, typename graph_t>
-graph_t deep_copy_graph (host_graph_t &host_graph) {
-  // load graph on host
-  auto row_map = host_graph.row_map;
-  auto entries = host_graph.entries;
-  auto nrows = host_graph.numRows ();
-  auto nnz = row_map (nrows);
-
-  // create graph on device
-  using row_map_view_t = typename graph_t::row_map_type::non_const_type;
-  using cols_view_t    = typename graph_t::entries_type::non_const_type;
-  row_map_view_t rowmap_view ("rowmap_view", nrows+1);
-  cols_view_t    column_view ("colmap_view", nnz);
-
-  // copy graph to device
-  Kokkos::deep_copy (rowmap_view, row_map);
-  Kokkos::deep_copy (column_view, entries);
-  graph_t static_graph (column_view, rowmap_view);
-  return static_graph;
 }
 
 } // namespace Experimental
