@@ -995,11 +995,7 @@ int main(int argc, char **argv)
 
  Kokkos::initialize(argc,argv);
  {
-<<<<<<< 6d0becda14a6248e88026e8eedaa4a18e7396ee4
-   int total_errors = test_sptrsv_perf<double>(tests, lfilename, ufilename, team_size, vector_length, idx_offset, loop, chain_threshold, dense_row_percent);
-=======
-   int total_errors = test_sptrsv_perf(tests,lfilename,ufilename,team_size,vector_length,idx_offset,loop);
->>>>>>> WIP: sparse perf-test cleanup and ETI fixes
+   int total_errors = test_sptrsv_perf(tests, lfilename, ufilename, team_size, vector_length, idx_offset, loop, chain_threshold, dense_row_percent);
 
    if(total_errors == 0)
    printf("Kokkos::SPTRSV Test: Passed\n");
