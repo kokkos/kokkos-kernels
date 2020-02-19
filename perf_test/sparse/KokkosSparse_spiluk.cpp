@@ -106,7 +106,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
     graph_t graph = A.graph; // in_graph
     const size_type nrows = graph.numRows();
     const int       nnz   = A.nnz();
-    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(K) ;
+    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(k);
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     //cuSPARSE requires lno_t = size_type = int. For both, int is always used (if enabled)
