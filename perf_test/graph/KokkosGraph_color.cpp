@@ -210,7 +210,7 @@ namespace Experiment{
 
 template <typename ExecSpace, typename crsGraph_t, typename crsGraph_t2 , typename crsGraph_t3 , typename TempMemSpace , typename PersistentMemSpace >
 void run_experiment(
-    crsGraph_t crsGraph, Parameters params){
+    crsGraph_t crsGraph, int num_cols, Parameters params){
   //using namespace KokkosSparse;
   using namespace KokkosGraph;
   using namespace KokkosGraph::Experimental;
@@ -230,8 +230,6 @@ void run_experiment(
 
   typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
   typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
-
-
 
   typedef typename lno_view_t::non_const_value_type size_type;
   typedef typename lno_nnz_view_t::non_const_value_type lno_t;
@@ -295,7 +293,7 @@ void run_experiment(
 
     }
 
-    graph_color_symbolic(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries);
+    graph_color_symbolic(&kh,crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries);
 
     std::cout << std::endl <<
         "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
@@ -341,21 +339,21 @@ void run_multi_mem_experiment(Parameters params){
   slow_graph_t a_slow_crsgraph, /*b_slow_crsgraph,*/ c_slow_crsgraph;
   fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
 
-
+  int num_cols = 0;
 
   //read a and b matrices and store them on slow or fast memory.
   if (params.a_mem_space == 1){
     fast_crstmat_t a_fast_crsmat;
     a_fast_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
     a_fast_crsgraph = a_fast_crsmat.graph;
-    a_fast_crsgraph.num_cols = a_fast_crsmat.numCols();
+    num_cols = a_fast_crsmat.numCols();
 
   }
   else {
     slow_crstmat_t a_slow_crsmat;
     a_slow_crsmat = KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
     a_slow_crsgraph = a_slow_crsmat.graph;
-    a_slow_crsgraph.num_cols = a_slow_crsmat.numCols();
+    num_cols = a_slow_crsmat.numCols();
   }
 
 
@@ -366,13 +364,13 @@ void run_multi_mem_experiment(Parameters params){
            /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,fast_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
         else {
           /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,fast_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
 
       }
@@ -382,13 +380,13 @@ void run_multi_mem_experiment(Parameters params){
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
         else {
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,fast_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
       }
     }
@@ -399,13 +397,13 @@ void run_multi_mem_experiment(Parameters params){
           /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,slow_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
         else {
           /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,slow_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
 
       }
@@ -415,13 +413,13 @@ void run_multi_mem_experiment(Parameters params){
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,slow_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
         else {
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, fast_graph_t,slow_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_fast_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_fast_crsgraph, num_cols, params);
         }
       }
 
@@ -435,13 +433,13 @@ void run_multi_mem_experiment(Parameters params){
           /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,fast_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
         else {
           /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,fast_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
 
       }
@@ -451,13 +449,13 @@ void run_multi_mem_experiment(Parameters params){
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,fast_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
         else {
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,fast_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_slow_crsgraph, /*b_fast_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
       }
     }
@@ -468,13 +466,13 @@ void run_multi_mem_experiment(Parameters params){
           /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,slow_graph_t,fast_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
         else {
           /* c_fast_crsgraph = */
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,slow_graph_t,fast_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
 
       }
@@ -484,13 +482,13 @@ void run_multi_mem_experiment(Parameters params){
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,slow_graph_t,slow_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
         else {
           /*c_slow_crsgraph =*/
               KokkosKernels::Experiment::run_experiment
                 <myExecSpace, slow_graph_t,slow_graph_t,slow_graph_t, sbm_mem_space, sbm_mem_space>
-                (a_slow_crsgraph, /*b_slow_crsgraph,*/ params);
+                (a_slow_crsgraph, num_cols, params);
         }
       }
 

@@ -177,19 +177,21 @@ crsMat_t3 run_experiment(
   int check_output = params.check_output;
   int mkl_keep_output = params.mkl_keep_output;
   //spgemm_step++;
-  typedef typename crsMat_t3::values_type::non_const_type scalar_view_t;
-  typedef typename crsMat_t3::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
-  typedef typename crsMat_t3::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
-
-  lno_view_t row_mapC;
-  lno_nnz_view_t entriesC;
-  scalar_view_t valuesC;
-
-
+  typedef typename crsMat_t3::values_type::non_const_type  scalar_view_t;
+  typedef typename crsMat_t3::row_map_type::non_const_type lno_view_t;
+  typedef typename crsMat_t3::index_type::non_const_type   lno_nnz_view_t;
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename lno_view_t::value_type size_type;
   typedef typename scalar_view_t::value_type scalar_t;
 
+  typedef CrsMatrix<scalar_t, lno_t, Kokkos::Serial, void, size_type> crsMatHost_t;
+  typedef typename crsMatHost_t::values_type::non_const_type  host_scalar_view_t;
+  typedef typename crsMatHost_t::row_map_type::non_const_type host_lno_view_t;
+  typedef typename crsMatHost_t::index_type::non_const_type   host_lno_nnz_view_t;
+
+  lno_view_t row_mapC;
+  lno_nnz_view_t entriesC;
+  scalar_view_t valuesC;
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
@@ -221,16 +223,15 @@ crsMat_t3 run_experiment(
     exit(1);
   }
 
-  typename lno_view_t::HostMirror row_mapC_ref;
-  typename lno_nnz_view_t::HostMirror entriesC_ref;
-  typename scalar_view_t::HostMirror valuesC_ref;
-  typename crsMat_t3::HostMirror Ccrsmat_ref;
+  host_lno_view_t     row_mapC_ref;
+  host_lno_nnz_view_t entriesC_ref;
+  host_scalar_view_t  valuesC_ref;
+  crsMatHost_t        Ccrsmat_ref;
   if (check_output)
   {
-	  if (verbose) std::cout << "Running a reference algorithm" << std::endl;
-    row_mapC_ref = typename lno_view_t::HostMirror ("non_const_lnow_row", m + 1);
-    entriesC_ref = typename lno_nnz_view_t::HostMirror ("");
-    valuesC_ref = typename scalar_view_t::HostMirror ("");
+    if (verbose)
+      std::cout << "Running a reference algorithm" << std::endl;
+    row_mapC_ref = host_lno_view_t("non_const_lnow_row", m + 1);
     KernelHandle sequential_kh;
     sequential_kh.set_team_work_size(chunk_size);
     sequential_kh.set_shmem_size(shmemsize);
@@ -260,10 +261,8 @@ crsMat_t3 run_experiment(
 
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size){
-      entriesC_ref = typename lno_nnz_view_t::HostMirror (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC_ref = typename scalar_view_t::HostMirror (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
+    entriesC_ref = host_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+    valuesC_ref =  host_scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
 
     spgemm_numeric(
         &sequential_kh,
@@ -285,132 +284,116 @@ crsMat_t3 run_experiment(
     );
     ExecSpace().fence();
 
-    typename crsMat_t3::HostMirror::StaticCrsGraphType static_graph (entriesC_ref, row_mapC_ref);
-    typename crsMat_t3::HostMirror Ccrsmat("CrsMatrixC", k, valuesC_ref, static_graph);
-    Ccrsmat_ref = Ccrsmat;
+    Ccrsmat_ref = crsMatHost_t("CorrectC", m, k, valuesC_ref.extent(0), valuesC_ref, row_mapC_ref, entriesC_ref);
   }
 
-  for (int i = 0; i < repeat; ++i){
-	  kh.create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm(algorithm));
+  for (int i = 0; i < repeat; ++i) {
+    kh.create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm(algorithm));
 
-	  kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
-          kh.get_spgemm_handle()->set_mkl_sort_option(params.mkl_sort_option);
+    kh.get_spgemm_handle()->mkl_keep_output = mkl_keep_output;
+    kh.get_spgemm_handle()->set_mkl_sort_option(params.mkl_sort_option);
 
-	  //if mkl2 input needs to be converted to 1base.
-	  kh.get_spgemm_handle()->mkl_convert_to_1base = true;
+    //if mkl2 input needs to be converted to 1base.
+    kh.get_spgemm_handle()->mkl_convert_to_1base = true;
 
-	  //250000 default. if cache-mode is used on KNL can increase to 1M.
-	  kh.get_spgemm_handle()->MaxColDenseAcc = params.MaxColDenseAcc;
+    //250000 default. if cache-mode is used on KNL can increase to 1M.
+    kh.get_spgemm_handle()->MaxColDenseAcc = params.MaxColDenseAcc;
 
-	  if (i == 0){
-		  kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
-	  }
-	  //do the compression whether in 2 step, or 1 step.
-	  kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
-	  //whether to scale the hash more. default is 1, so no scale.
-	  kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
-	  //max occupancy in 1-level LP hashes. LL hashes can be 100%
-	  kh.get_spgemm_handle()->set_first_level_hash_cut_off(params.first_level_hash_cut_off);
-	  //min reduction on FLOPs to run compression
-	  kh.get_spgemm_handle()->set_compression_cut_off(params.compression_cut_off);
+    if (i == 0){
+      kh.get_spgemm_handle()->set_read_write_cost_calc (calculate_read_write_cost);
+    }
+    //do the compression whether in 2 step, or 1 step.
+    kh.get_spgemm_handle()->set_compression_steps(!params.compression2step);
+    //whether to scale the hash more. default is 1, so no scale.
+    kh.get_spgemm_handle()->set_min_hash_size_scale(params.minhashscale);
+    //max occupancy in 1-level LP hashes. LL hashes can be 100%
+    kh.get_spgemm_handle()->set_first_level_hash_cut_off(params.first_level_hash_cut_off);
+    //min reduction on FLOPs to run compression
+    kh.get_spgemm_handle()->set_compression_cut_off(params.compression_cut_off);
 
+    row_mapC = lno_view_t
+      ("non_const_lnow_row",
+       m + 1);
+    entriesC = lno_nnz_view_t ("entriesC (empty)", 0);
+    valuesC = scalar_view_t ("valuesC (empty)", 0);
 
+    Kokkos::Impl::Timer timer1;
+    spgemm_symbolic (
+        &kh,
+        m,
+        n,
+        k,
+        crsMat.graph.row_map,
+        crsMat.graph.entries,
+        TRANPOSEFIRST,
+        crsMat2.graph.row_map,
+        crsMat2.graph.entries,
+        TRANPOSESECOND,
+        row_mapC
+        );
 
-	  row_mapC = lno_view_t
-			  ("non_const_lnow_row",
-					  m + 1);
-	  entriesC = lno_nnz_view_t ("entriesC (empty)", 0);
-	  valuesC = scalar_view_t ("valuesC (empty)", 0);
+    ExecSpace().fence();
+    double symbolic_time = timer1.seconds();
 
+    Kokkos::Impl::Timer timer3;
+    size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (verbose)  std::cout << "C SIZE:" << c_nnz_size << std::endl;
+    if (c_nnz_size){
+      entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
 
-	  Kokkos::Impl::Timer timer1;
-	  spgemm_symbolic (
-			  &kh,
-			  m,
-			  n,
-			  k,
-			  crsMat.graph.row_map,
-			  crsMat.graph.entries,
-			  TRANPOSEFIRST,
-			  crsMat2.graph.row_map,
-			  crsMat2.graph.entries,
-			  TRANPOSESECOND,
-			  row_mapC
-	  );
+    spgemm_numeric(
+        &kh,
+        m,
+        n,
+        k,
+        crsMat.graph.row_map,
+        crsMat.graph.entries,
+        crsMat.values,
+        TRANPOSEFIRST,
 
-	  ExecSpace().fence();
-	  double symbolic_time = timer1.seconds();
+        crsMat2.graph.row_map,
+        crsMat2.graph.entries,
+        crsMat2.values,
+        TRANPOSESECOND,
+        row_mapC,
+        entriesC,
+        valuesC
+        );
+    ExecSpace().fence();
+    double numeric_time = timer3.seconds();
 
-	  Kokkos::Impl::Timer timer3;
-	  size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-	  if (verbose)  std::cout << "C SIZE:" << c_nnz_size << std::endl;
-	  if (c_nnz_size){
-		  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-		  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-	  }
-
-	  spgemm_numeric(
-			  &kh,
-			  m,
-			  n,
-			  k,
-			  crsMat.graph.row_map,
-			  crsMat.graph.entries,
-			  crsMat.values,
-			  TRANPOSEFIRST,
-
-			  crsMat2.graph.row_map,
-			  crsMat2.graph.entries,
-			  crsMat2.values,
-			  TRANPOSESECOND,
-			  row_mapC,
-			  entriesC,
-			  valuesC
-	  );
-	  ExecSpace().fence();
-	  double numeric_time = timer3.seconds();
-
-	  std::cout
-	  << "mm_time:" << symbolic_time + numeric_time
-	  << " symbolic_time:" << symbolic_time
-	  << " numeric_time:" << numeric_time << std::endl;
+    std::cout
+      << "mm_time:" << symbolic_time + numeric_time
+      << " symbolic_time:" << symbolic_time
+      << " numeric_time:" << numeric_time << std::endl;
   }
   if (verbose) {
-	  std::cout << "row_mapC:" << row_mapC.extent(0) << std::endl;
-	  std::cout << "entriesC:" << entriesC.extent(0) << std::endl;
-	  std::cout << "valuesC:" << valuesC.extent(0) << std::endl;
-	  KokkosKernels::Impl::print_1Dview(valuesC);
-	  KokkosKernels::Impl::print_1Dview(entriesC);
-	  KokkosKernels::Impl::print_1Dview(row_mapC);
+    std::cout << "row_mapC:" << row_mapC.extent(0) << std::endl;
+    std::cout << "entriesC:" << entriesC.extent(0) << std::endl;
+    std::cout << "valuesC:" << valuesC.extent(0) << std::endl;
+    KokkosKernels::Impl::print_1Dview(valuesC);
+    KokkosKernels::Impl::print_1Dview(entriesC);
+    KokkosKernels::Impl::print_1Dview(row_mapC);
   }
 
 
   if (check_output){
+    auto row_mapC_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), row_mapC);
+    auto entriesC_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entriesC);
+    auto valuesC_host  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), valuesC);
 
-	  typename lno_view_t::HostMirror row_mapC_host = Kokkos::create_mirror_view (row_mapC);
-	  typename lno_nnz_view_t::HostMirror entriesC_host = Kokkos::create_mirror_view (entriesC);
-	  typename scalar_view_t::HostMirror valuesC_host = Kokkos::create_mirror_view (valuesC);
-
-	    Kokkos::deep_copy (row_mapC_host, row_mapC);
-
-	    Kokkos::deep_copy (entriesC_host, entriesC);
-	    Kokkos::deep_copy (valuesC_host, valuesC);
-
-	typename crsMat_t3::HostMirror::StaticCrsGraphType static_graph (entriesC_host, row_mapC_host);
-	typename crsMat_t3::HostMirror Ccrsmathost("CrsMatrixC", k, valuesC_host, static_graph);
-
-    bool is_identical = is_same_matrix<typename crsMat_t3::HostMirror, typename crsMat_t3::HostMirror::device_type>(Ccrsmat_ref, Ccrsmathost);
+    crsMatHost_t Ccrsmathost(
+        "CHost", m, k, valuesC_host.extent(0), valuesC_host, row_mapC_host, entriesC_host);
+    bool is_identical = is_same_matrix<crsMatHost_t, Kokkos::Serial>(Ccrsmat_ref, Ccrsmathost);
     if (!is_identical){
       std::cerr << "Result differs. If values are differing, might be floating point order error." << std::endl;
       exit(1);
     }
   }
 
-
-  typename crsMat_t3::StaticCrsGraphType static_graph (entriesC, row_mapC);
-  crsMat_t3 Ccrsmat("CrsMatrixC", k, valuesC, static_graph);
-  return Ccrsmat;
-
+  return crsMat_t3("CrsMatrixC", m, k, valuesC.extent(0), valuesC, row_mapC, entriesC);
 }
 
 
