@@ -33,7 +33,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_spmv_struct_tuning.cpp
   )
 
-TRIBITS_ADD_EXECUTABLE(
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
   SOURCES KokkosSparse_spmv.cpp
   )

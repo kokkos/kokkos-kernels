@@ -562,7 +562,7 @@ struct SPMV_Struct_Functor {
 
     const size_type rowOffset = m_A.graph.row_map(rowIdx);
     const ordinal_type row_length = static_cast<ordinal_type> (m_A.graph.row_map(rowIdx + 1) - rowOffset);
-    y_value_type_ sum = 0;
+    y_value_type sum = 0.0;
     for(ordinal_type idx = 0; idx < row_length; ++idx) {
       sum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx)) : m_A.values(rowOffset + idx))
               *m_x(m_A.graph.entries(rowOffset + idx));
