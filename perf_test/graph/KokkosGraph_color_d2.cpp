@@ -61,7 +61,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <KokkosKernels_IOUtils.hpp>
-#include <KokkosKernels_MyCRSMatrix.hpp>
+#include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
 
@@ -602,7 +602,7 @@ void experiment_driver(Parameters params)
 {
     using myExecSpace     = exec_space;
     using myFastDevice    = Kokkos::Device<exec_space, hbm_mem_space>;
-    using fast_crstmat_t  = typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type>;
+    using fast_crstmat_t  = typename KokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type>;
     using fast_graph_t    = typename fast_crstmat_t::StaticCrsGraphType;
 
     char *a_mat_file = params.a_mtx_bin_file;
