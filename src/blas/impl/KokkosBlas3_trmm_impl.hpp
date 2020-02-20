@@ -44,17 +44,18 @@
 #ifndef KOKKOSBLAS3_TRSM_IMPL_HPP_
 #define KOKKOSBLAS3_TRSM_IMPL_HPP_
 
-/// \file KokkosBlas3_trsm_impl.hpp
+/// \file KokkosBlas3_trmm_impl.hpp
 /// \brief Implementation(s) of triangular linear system solve (with multiple RHSs)
 /// \brief Sequential fall-back implementation calls the exisiting serial batched TRSM.
 /// \brief Two sequential fall-back implementations for conjugate transpose case are
 /// \brief also based on the exisiting serial batched TRSM.
 
+#if 0
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
-#include "KokkosBatched_Trsm_Decl.hpp"
-#include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Trmm_Decl.hpp"
+#include "KokkosBatched_Trmm_Serial_Impl.hpp"
 
 using namespace KokkosBatched;
 
@@ -64,7 +65,7 @@ namespace Impl {
 template<typename ScalarType,
          typename ValueType>
 int
-SerialTrsmInternalLeftLowerConj(const bool use_unit_diag,
+SerialTrmmInternalLeftLowerConj(const bool use_unit_diag,
                                 const int m, const int n,
                                 const ScalarType alpha,
                                 const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
@@ -106,7 +107,7 @@ SerialTrsmInternalLeftLowerConj(const bool use_unit_diag,
 template<typename ScalarType,
          typename ValueType>
 int
-SerialTrsmInternalLeftUpperConj(const bool use_unit_diag,
+SerialTrmmInternalLeftUpperConj(const bool use_unit_diag,
                                 const int m, const int n,
                                 const ScalarType alpha,
                                 const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
@@ -146,7 +147,7 @@ SerialTrsmInternalLeftUpperConj(const bool use_unit_diag,
 
 
 template<class AViewType, class BViewType>
-void SerialTrsm_Invoke (const char side[],
+void SerialTrmm_Invoke (const char side[],
                   const char uplo[],
                   const char trans[],
                   const char diag[],
@@ -156,13 +157,13 @@ void SerialTrsm_Invoke (const char side[],
 {
   //Side::Left, Uplo::Lower, Trans::NoTranspose
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
                                                                B.data(), B.stride(0), B.stride(1));
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
@@ -170,13 +171,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Left, Uplo::Lower, Trans::Transpose
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
                                                                B.data(), B.stride(0), B.stride(1));
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
@@ -184,13 +185,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Left, Uplo::Lower, Trans::ConjTranspose
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpperConj(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftUpperConj(Diag::Unit::use_unit_diag,
                                     B.extent(0), B.extent(1),
                                     alpha,
                                     A.data(), A.stride(1), A.stride(0),
                                     B.data(), B.stride(0), B.stride(1));
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpperConj(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftUpperConj(Diag::NonUnit::use_unit_diag,
                                     B.extent(0), B.extent(1),
                                     alpha,
                                     A.data(), A.stride(1), A.stride(0),
@@ -198,13 +199,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Left, Uplo::Upper, Trans::NoTranspose
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
                                                                B.data(), B.stride(0), B.stride(1));
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
@@ -212,13 +213,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Left, Uplo::Upper, Trans::Transpose
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
                                                                B.data(), B.stride(0), B.stride(1));
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(0), B.extent(1),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
@@ -226,13 +227,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Left, Uplo::Upper, Trans::ConjTranspose
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLowerConj(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftLowerConj(Diag::Unit::use_unit_diag,
                                     B.extent(0), B.extent(1),
                                     alpha,
                                     A.data(), A.stride(1), A.stride(0),
                                     B.data(), B.stride(0), B.stride(1));
   if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLowerConj(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftLowerConj(Diag::NonUnit::use_unit_diag,
                                     B.extent(0), B.extent(1),
                                     alpha,
                                     A.data(), A.stride(1), A.stride(0),
@@ -240,13 +241,13 @@ void SerialTrsm_Invoke (const char side[],
   ////
   //Side::Right, Uplo::Lower, Trans::NoTranspose
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
                                                                B.data(), B.stride(1), B.stride(0));
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
@@ -254,13 +255,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Right, Uplo::Lower, Trans::Transpose
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
                                                                B.data(), B.stride(1), B.stride(0));
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
@@ -268,13 +269,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Right, Uplo::Lower, Trans::ConjTranspose
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLowerConj(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftLowerConj(Diag::Unit::use_unit_diag,
                                     B.extent(1), B.extent(0),
                                     alpha,
                                     A.data(), A.stride(0), A.stride(1),
                                     B.data(), B.stride(1), B.stride(0));
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLowerConj(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftLowerConj(Diag::NonUnit::use_unit_diag,
                                     B.extent(1), B.extent(0),
                                     alpha,
                                     A.data(), A.stride(0), A.stride(1),
@@ -282,13 +283,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Right, Uplo::Upper, Trans::NoTranspose
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
                                                                B.data(), B.stride(1), B.stride(0));
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(1), A.stride(0),
@@ -296,13 +297,13 @@ void SerialTrsm_Invoke (const char side[],
 
   //Side::Right, Uplo::Upper, Trans::Transpose
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
                                                                B.data(), B.stride(1), B.stride(0));
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                B.extent(1), B.extent(0),
                                                                alpha,
                                                                A.data(), A.stride(0), A.stride(1),
@@ -310,13 +311,13 @@ void SerialTrsm_Invoke (const char side[],
 															   
   //Side::Right, Uplo::Upper, Trans::ConjTranspose
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpperConj(Diag::Unit::use_unit_diag,
+    SerialTrmmInternalLeftUpperConj(Diag::Unit::use_unit_diag,
                                     B.extent(1), B.extent(0),
                                     alpha,
                                     A.data(), A.stride(0), A.stride(1),
                                     B.data(), B.stride(1), B.stride(0));
   if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpperConj(Diag::NonUnit::use_unit_diag,
+    SerialTrmmInternalLeftUpperConj(Diag::NonUnit::use_unit_diag,
                                     B.extent(1), B.extent(0),
                                     alpha,
                                     A.data(), A.stride(0), A.stride(1),
@@ -326,3 +327,4 @@ void SerialTrsm_Invoke (const char side[],
 }// namespace Impl
 }// namespace KokkosBlas
 #endif // KOKKOSBLAS3_TRSM_IMPL_HPP_
+#endif // 0

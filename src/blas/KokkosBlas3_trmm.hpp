@@ -146,7 +146,7 @@ trmm (const char side[],
   int64_t B_n = B.extent(1);
 
   // Return if degenerated matrices are provided
-  if((A_m == 0) || (A_n == 0) || (B_m) == 0) || (B_n == 0))
+  if((A_m == 0) || (A_n == 0) || (B_m == 0) || (B_n == 0))
     return;
 
   // Ensure that the dimensions of A match and that we can legally perform A*B

@@ -340,7 +340,7 @@ KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSp
 #endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 // cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS_DISABLED
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 #include<KokkosBlas_tpl_spec.hpp>
 
 namespace KokkosBlas {
@@ -418,9 +418,9 @@ struct TRMM< \
     \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     if(A_is_ll) \
-      cublasDtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha, A.data(), LDA, B.data(), LDB); \
+      cublasDtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha, A.data(), LDA, B.data(), LDB, B.data(), LDB); \
     else \
-      cublasDtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha, A.data(), LDA, B.data(), LDB); \
+      cublasDtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha, A.data(), LDA, B.data(), LDB, B.data(), LDB); \
     \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -498,9 +498,9 @@ struct TRMM< \
     \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     if(A_is_ll) \
-      cublasStrmm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha, A.data(), LDA, B.data(), LDB); \
+      cublasStrmm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha, A.data(), LDA, B.data(), LDB), B.data(), LDB; \
     else \
-      cublasStrmm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha, A.data(), LDA, B.data(), LDB); \
+      cublasStrmm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha, A.data(), LDA, B.data(), LDB, B.data(), LDB); \
     \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -578,9 +578,9 @@ struct TRMM< \
     \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     if(A_is_ll) \
-      cublasZtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB); \
+      cublasZtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB); \
     else \
-      cublasZtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB); \
+      cublasZtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB); \
     \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -658,52 +658,52 @@ struct TRMM< \
     \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     if(A_is_ll) \
-      cublasCtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<cuComplex*>(B.data()), LDB); \
+      cublasCtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<cuComplex*>(B.data()), LDB, reinterpret_cast<cuComplex*>(B.data()), LDB); \
     else \
-      cublasCtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<cuComplex*>(B.data()), LDB); \
+      cublasCtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<cuComplex*>(B.data()), LDB), reinterpret_cast<cuComplex*>(B.data()), LDB; \
     \
     Kokkos::Profiling::popRegion(); \
   } \
 };
 
-KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
 }

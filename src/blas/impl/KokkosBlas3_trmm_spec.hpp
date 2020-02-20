@@ -82,7 +82,7 @@ struct trmm_eti_spec_avail {
 
 // Include the actual specialization declarations
 #include<KokkosBlas3_trmm_tpl_spec_avail.hpp>
-#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_avail.hpp>
+//#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -109,7 +109,7 @@ struct TRMM{
 };
 
 // Fall-back ETI implementation of KokkosBlas::trmm.
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+#if 0 && (!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 template<class AVIT,
          class BVIT>
 struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
@@ -192,6 +192,6 @@ template struct TRMM< \
     KOKKOSBLAS3_TRMM_ETI_SPEC_INST_LAYOUTS(SCALAR, LAYOUT, LAYOUT, EXEC_SPACE, MEM_SPACE)
 
 #include<KokkosBlas3_trmm_tpl_spec_decl.hpp>
-#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_decl.hpp>
+//#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLAS3_TRMM_SPEC_HPP_
