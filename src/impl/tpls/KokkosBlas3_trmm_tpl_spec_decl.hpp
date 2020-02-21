@@ -498,7 +498,7 @@ struct TRMM< \
     \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     if(A_is_ll) \
-      cublasStrmm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha, A.data(), LDA, B.data(), LDB), B.data(), LDB; \
+      cublasStrmm(s.handle, side_, uplo_, trans_, diag_, M, N, &alpha, A.data(), LDA, B.data(), LDB, B.data(), LDB); \
     else \
       cublasStrmm(s.handle, side_, uplo_, trans_, diag_, N, M, &alpha, A.data(), LDA, B.data(), LDB, B.data(), LDB); \
     \

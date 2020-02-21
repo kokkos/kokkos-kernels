@@ -77,9 +77,6 @@ namespace Test {
       });
     }
   };
-  //
-  //
-  //
 
   template<class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_trmm(const char* side, const char* uplo, const char* trans, const char* diag, 
@@ -89,50 +86,44 @@ namespace Test {
     using ScalarA         = typename ViewTypeA::value_type;
     using APT             = Kokkos::Details::ArithTraits<ScalarA>;
     using mag_type        = typename APT::mag_type;
-    
+
     double machine_eps = APT::epsilon();
+    const mag_type eps = 1.0e5 * machine_eps; //~1e-13 for double
     bool A_l = (side[0]=='L') || (side[0]=='l');
     int K = A_l?M:N;
-
-    //printf("KokkosBlas::trmm test for alpha %lf, %c %c %c %c, M %d, N %d, eps %.12lf, ViewType: %s\n", double(APT::abs(alpha)),side[0],uplo[0],trans[0],diag[0],M,N,1.0e8*machine_eps,typeid(ViewTypeA).name());
-
     ViewTypeA A  ("A", K,K);
     ViewTypeB B  ("B", M,N);
     ViewTypeB B_expected ("B_expected", M,N);
+    uint64_t seed = Kokkos::Impl::clock_tic();
+    ScalarA beta       = ScalarA(0);
+
+    //printf("KokkosBlas::trmm test for alpha %g, %c %c %c %c, M %d, N %d, eps %g, ViewType: %s\n", double(APT::abs(alpha)),side[0],uplo[0],trans[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
 
     typename ViewTypeA::HostMirror host_A  = Kokkos::create_mirror_view(A);
     typename ViewTypeB::HostMirror host_B_actual  = Kokkos::create_mirror_view(B);
     typename ViewTypeB::HostMirror host_B_expected = Kokkos::create_mirror_view(B_expected);
 
-    uint64_t seed = Kokkos::Impl::clock_tic();
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
     if((diag[0]=='U')||(diag[0]=='u')) {
-      // Initialize A with deterministic random numbers in [?, ?] and perturb by
-      // 0.1?
-      Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max()*0.1);
+      // Initialize A with deterministic random numbers
+      Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
       using functor_type = UnitDiagTRMM<ViewTypeA,execution_space>;
       functor_type udtrmm(A);
       // Initialize As diag with 1s
       Kokkos::parallel_for("KokkosBlas::Test::UnitDiagTRMM", Kokkos::RangePolicy<execution_space>(0,K), udtrmm);
     } else {//(diag[0]=='N')||(diag[0]=='n')
-      // Initialize A with random numbers in [?, ?]
+      // Initialize A with random numbers
       Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
       using functor_type = NonUnitDiagTRMM<ViewTypeA,execution_space>;
       functor_type nudtrmm(A);
       // Initialize As diag with A(i,i)+10
       Kokkos::parallel_for("KokkosBlas::Test::NonUnitDiagTRMM", Kokkos::RangePolicy<execution_space>(0,K), nudtrmm);
     }
-    // B is the same as A?
     Kokkos::fill_random(B, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
-
-    Kokkos::deep_copy(host_A,  A);
-    //Kokkos::deep_copy(B_expected, B);
-
-    ScalarA beta       = ScalarA(0);
-
     Kokkos::fence();
- 
+    
+    Kokkos::deep_copy(host_A,  A);
     // Make host_A a lower triangle
     if ((uplo[0]=='L')||(uplo[0]=='l')) {
       for (int i = 0; i < K-1; i++)
@@ -145,11 +136,10 @@ namespace Test {
         for (int j = 0; j < i; j++)
           host_A(i,j) = ScalarA(0); 
     }
-
     Kokkos::deep_copy(A, host_A);
 
     if (A_l){
-      // B_expected = alpha * op(A) * B
+      // B_expected = alpha * op(A) * B + beta * C = 1 * op(A) * B + 0 * C
       struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = (trans[0]!='N') && (trans[0]!='n'); vgemm.B_t = false;
       vgemm.A_c = (trans[0]=='C') || (trans[0]=='c'); vgemm.B_c = false;
@@ -161,7 +151,7 @@ namespace Test {
       Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
     }
     else {
-      // B_expected = alpha * B * op(A)
+      // B_expected = alpha * B * op(A) + beta * C = 1 * B * op(A) + 0 * C
       struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = false; vgemm.B_t = (trans[0]!='N') && (trans[0]!='n');
       vgemm.A_c = false; vgemm.B_c = (trans[0]=='C') || (trans[0]=='c');
@@ -173,15 +163,12 @@ namespace Test {
       Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
     }
     Kokkos::fence();
-
-    KokkosBlas::trmm(side, uplo, trans, diag, alpha, A, B);
-
-    Kokkos::fence();
-
-    Kokkos::deep_copy(host_B_actual, B);
     Kokkos::deep_copy(host_B_expected, B_expected);
 
-    const mag_type eps = 1.0e5 * machine_eps;
+    KokkosBlas::trmm(side, uplo, trans, diag, alpha, A, B);
+    Kokkos::fence();
+    Kokkos::deep_copy(host_B_actual, B);
+
     bool test_flag = true;
     for (int i=0; i<M; i++) {
       for (int j=0; j<N; j++) {

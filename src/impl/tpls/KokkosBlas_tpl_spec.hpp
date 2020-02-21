@@ -18,7 +18,7 @@ struct CudaBlasSingleton {
 
 }
 }
-#endif
+#endif // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 #include "magma_v2.h"
@@ -28,7 +28,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 struct MagmaSingleton {
-  
+
   MagmaSingleton();
 
   static MagmaSingleton & singleton();
@@ -36,6 +36,6 @@ struct MagmaSingleton {
 
 }
 }
-#endif
+#endif // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#endif
+#endif // KOKKOSBLAS_TPL_SPEC_HPP_

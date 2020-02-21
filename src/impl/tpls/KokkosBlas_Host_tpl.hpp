@@ -8,17 +8,23 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_ArithTraits.hpp"
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
+// TODO: include lapacke_config.h for lapack_int
+#endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
-#if defined( KOKKOSKERNELS_ENABLE_TPL_BLAS )
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 
 namespace KokkosBlas {
   namespace Impl {
+    
+    using lapack_int_t = int; // TODO: pull in from lapacke_config.h
 
     template<typename T>
     struct HostBlas {
       typedef Kokkos::ArithTraits<T> ats;
       typedef typename ats::mag_type mag_type;
   
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
       static
       void scal(int n,
                 const T alpha,
@@ -98,11 +104,18 @@ namespace KokkosBlas {
                 T *a, int lda, int *ipiv,
                 T *b, int ldb,
                 int info);
-    };
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
+      static
+      lapack_int_t trtri(const int matrix_layout, const char uplo, const char diag,
+                 lapack_int_t n,
+                 const T *a, lapack_int_t lda);
+#endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
+    };
   }
 }
 
-#endif
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS || defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 
-#endif
+#endif // KOKKOSBLAS_HOST_TPL_HPP_
