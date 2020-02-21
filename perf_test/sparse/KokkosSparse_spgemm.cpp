@@ -293,8 +293,6 @@ int main (int argc, char ** argv){
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
   Kokkos::print_configuration(std::cout);
 
-  bool ran = false;
-
 #if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
@@ -309,7 +307,6 @@ int main (int argc, char ** argv){
         params
         );
 #endif
-    ran = true;
   }
 #endif
 
@@ -327,13 +324,12 @@ int main (int argc, char ** argv){
         );
 
 #endif
-    ran = true;
   }
 #endif
 
 #if defined( KOKKOS_ENABLE_SERIAL )
   //If only serial is enabled (or no other device was specified), run with serial
-  if (!ran)
+  if (!params.use_openmp && !params.use_cuda)
   {
     KokkosKernels::Experiment::run_multi_mem_spgemm
     <size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace>(params);
