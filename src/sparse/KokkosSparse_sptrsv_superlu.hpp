@@ -65,7 +65,7 @@ namespace Experimental {
 
 /* ========================================================================================= */
 template <typename graph_t>
-graph_t read_superlu_graphL(bool cusparse, bool merge, SuperMatrix *L) {
+graph_t read_superlu_graphL(bool block_diag, bool merge, SuperMatrix *L) {
 
   /* ---------------------------------------------------------------------- */
   /* get inputs */
@@ -80,7 +80,7 @@ graph_t read_superlu_graphL(bool cusparse, bool merge, SuperMatrix *L) {
   int * rowind = Lstore->rowind;
 
   bool ptr_by_column = true;
-  return read_supernodal_graphL<graph_t> (cusparse, merge,
+  return read_supernodal_graphL<graph_t> (block_diag, merge,
                                           n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
 }
 
@@ -172,11 +172,7 @@ graph_t read_superlu_graphU(SuperMatrix *L,  SuperMatrix *U) {
 
     /* the diagonal "dense" block */
     for (int i = 0; i < nscol; i++) {
-      for (int j = 0; j < i; j++) {
-        hc(hr(j1 + i) + j) = j1 + j;
-      }
-
-      for (int j = i; j < nscol; j++) {
+      for (int j = 0; j < nscol; j++) {
         hc(hr(j1 + i) + j) = j1 + j;
       }
       hr (j1 + i) += nscol;
@@ -427,12 +423,12 @@ void sptrsv_symbolic(
     std::cout << " > Merge supernodes" << std::endl;
   }
   #endif
-  bool cusparse = false; // pad diagonal blocks with zeros
+  bool block_diag = true; // pad diagonal blocks with zeros
   host_graph_t graphL_host;
   host_graph_t graphU_host;
 
   tic.reset();
-  graphL_host = read_superlu_graphL<host_graph_t> (cusparse, merge, &L);
+  graphL_host = read_superlu_graphL<host_graph_t> (block_diag, merge, &L);
   if (UinCSC) {
     graphU_host = read_superlu_graphU_CSC<host_graph_t> (&L, &U);
   } else {
@@ -451,11 +447,9 @@ void sptrsv_symbolic(
 
   // ===================================================================
   // call supnodal symbolic
-  handleL->set_graph_host (graphL_host);
-  handleU->set_graph_host (graphU_host);
-  handleL->set_supernodes (nsuper, supercols, etree);
-  handleU->set_supernodes (nsuper, supercols, etree);
-  sptrsv_supernodal_symbolic<scalar_type, ordinal_type, size_type> (kernelHandleL, kernelHandleU);
+  sptrsv_supernodal_symbolic<scalar_type, ordinal_type, size_type> (nsuper, supercols, etree,
+                                                                    graphL_host, kernelHandleL,
+                                                                    graphU_host, kernelHandleU);
 }
 
 
@@ -463,8 +457,8 @@ void sptrsv_symbolic(
 /* Auxiliary functions for numeric computation                                               */
 
 /* ========================================================================================= */
-template <typename crsmat_t, typename graph_t>
-crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool invert_offdiag, SuperMatrix *L, graph_t &static_graph) {
+template <typename crsmat_t, typename graph_t, typename KernelHandle>
+crsmat_t read_superlu_valuesL(KernelHandle kernelHandle, bool block_diag, SuperMatrix *L, graph_t &static_graph) {
 
   using values_view_t = typename crsmat_t::values_type::non_const_type;
   using scalar_t      = typename values_view_t::value_type;
@@ -484,22 +478,26 @@ crsmat_t read_superlu_valuesL(bool cusparse, bool merge, bool invert_diag, bool 
 
   bool unit_diag = true;
   bool ptr_by_column = true;
-  return read_supernodal_valuesL<crsmat_t, graph_t, scalar_t> (cusparse, merge, invert_diag, invert_offdiag,
-                                                               unit_diag, n, nsuper, ptr_by_column, mb, nb,
-                                                               colptr, rowind, Lx, static_graph);
+  return read_supernodal_valuesL<crsmat_t, graph_t> (kernelHandle, block_diag,
+                                                     unit_diag, n, nsuper, ptr_by_column, mb, nb,
+                                                     colptr, rowind, Lx, static_graph);
 }
 
 
 /* ========================================================================================= */
 // store numerical values of SuperLU U-factor into CSR
-template <typename crsmat_t, typename graph_t>
-crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
+template <typename crsmat_t, typename graph_t, typename KernelHandle>
+crsmat_t read_superlu_valuesU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t       = typename values_view_t::value_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
   const scalar_t zero (0.0);
+
+  // load parameters
+  auto *handle = kernelHandle->get_sptrsv_handle ();
+  bool invert_diag = handle->get_invert_diagonal ();
 
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
@@ -630,8 +628,8 @@ crsmat_t read_superlu_valuesU(bool invert_diag, SuperMatrix *L,  SuperMatrix *U,
 
 /* ========================================================================================= */
 // store numerical values of SuperLU U-factor into CSC
-template <typename crsmat_t, typename graph_t>
-crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
+template <typename crsmat_t, typename graph_t, typename KernelHandle>
+crsmat_t read_superlu_valuesU_CSC(KernelHandle kernelHandle,
                                   SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
@@ -640,6 +638,12 @@ crsmat_t read_superlu_valuesU_CSC(bool invert_diag, bool invert_offdiag,
 
   const scalar_t zero (0.0);
   const scalar_t one (1.0);
+
+  // load parameters
+  auto *handle = kernelHandle->get_sptrsv_handle ();
+  bool invert_diag = handle->get_invert_diagonal ();
+  bool invert_offdiag = handle->get_invert_offdiagonal ();
+
 
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
@@ -847,49 +851,45 @@ void sptrsv_compute(
     // ========================================================
     // read in the numerical L-values into merged csc
     // NOTE: we first load into CRS, and then merge (should be combined)
-    bool cusparse = false;
-    bool invert_diag = false; // invert after merge
+    bool block_diag = true;
+    kernelHandleL->set_sptrsv_invert_diagonal (false);  // invert after merge
     // 1) load L into crs (offdiagonal not inverted, unless invert diag)
     auto original_graphL_host = handleL->get_original_graph_host ();
-    superluL_host = read_superlu_valuesL<host_crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, original_graphL_host);
+    superluL_host = read_superlu_valuesL<host_crsmat_t> (kernelHandleL, block_diag, &L, original_graphL_host);
     // 2) re-load L into merged crs
-    invert_diag = true;       // TODO: diagonals are always inverted
     bool lower = true;
     bool unit_diag = true;
+    kernelHandleL->set_sptrsv_invert_diagonal (true);  // now invert, TODO: diagonals are always inverted
     if (useSpMV) {
-      superluL_host = read_merged_supernodes<host_crsmat_t> (nsuper, supercols,
-                                                             lower, unit_diag, invert_diag, invert_offdiag,
-                                                             superluL_host, graphL_host);
+      superluL_host = read_merged_supernodes<host_crsmat_t> (kernelHandleL, nsuper, supercols,
+                                                             lower, unit_diag, superluL_host, graphL_host);
     } else {
-      superluL = read_merged_supernodes<crsmat_t> (nsuper, supercols,
-                                                   lower, unit_diag, invert_diag, invert_offdiag,
-                                                   superluL_host, graphL);
+      superluL = read_merged_supernodes<crsmat_t> (kernelHandleL, nsuper, supercols,
+                                                   lower, unit_diag, superluL_host, graphL);
     }
 
     // ========================================================
     // read in the numerical U-values into merged csr
     // 1) load U into crs
     invert_offdiag = handleU->get_invert_offdiagonal ();
-    invert_diag = false;     // invert after merge
+    kernelHandleU->set_sptrsv_invert_diagonal (false);  // invert after merge
     auto original_graphU_host = handleU->get_original_graph_host ();
     if (UinCSC) {
-      superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (invert_diag, invert_offdiag, &L, &U, original_graphU_host);
+      superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (kernelHandleU, &L, &U, original_graphU_host);
     } else {
       // NOTE: invert-offdiag not supported in CSR format
-      superluU_host = read_superlu_valuesU<host_crsmat_t> (invert_diag, &L, &U, original_graphU_host);
+      superluU_host = read_superlu_valuesU<host_crsmat_t> (kernelHandleU, &L, &U, original_graphU_host);
     }
-    invert_diag = true;      // TODO: diagonals are always inverted
+    kernelHandleU->set_sptrsv_invert_diagonal (true);  // now invert, TODO: diagonals are always inverted
     // 2) re-load U into merged crs
     lower = (UinCSC ? false : true);
     unit_diag = false;
     if (useSpMV) {
-      superluU_host = read_merged_supernodes<host_crsmat_t> (nsuper, supercols,
-                                                             lower, unit_diag, invert_diag, invert_offdiag,
-                                                             superluU_host, graphU_host);
+      superluU_host = read_merged_supernodes<host_crsmat_t> (kernelHandleU, nsuper, supercols,
+                                                             lower, unit_diag, superluU_host, graphU_host);
     } else {
-      superluU = read_merged_supernodes<crsmat_t> (nsuper, supercols,
-                                                   lower, unit_diag, invert_diag, invert_offdiag,
-                                                   superluU_host, graphU);
+      superluU = read_merged_supernodes<crsmat_t> (kernelHandleU, nsuper, supercols,
+                                                   lower, unit_diag, superluU_host, graphU);
     }
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     time_seconds = tic.seconds ();
@@ -898,13 +898,13 @@ void sptrsv_compute(
   } else {
     // ========================================================
     // read in the numerical values into merged csc for L
-    bool cusparse = false;
-    bool invert_diag = true; // only, invert diag is supported for now
+    bool block_diag = true;
+    kernelHandleL->set_sptrsv_invert_diagonal (true); // only, invert diag is supported for now
     tic.reset ();
     if (useSpMV) {
-      superluL_host = read_superlu_valuesL<host_crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL_host);
+      superluL_host = read_superlu_valuesL<host_crsmat_t> (kernelHandleL, block_diag, &L, graphL_host);
     } else {
-      superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
+      superluL = read_superlu_valuesL<crsmat_t> (kernelHandleL, block_diag, &L, graphL);
     }
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     double timeL = tic.seconds ();
@@ -913,17 +913,18 @@ void sptrsv_compute(
     // ========================================================
     // read in the numerical values into merged csc/csr for U
     tic.reset ();
+    kernelHandleU->set_sptrsv_invert_diagonal (true); // only, invert diag is supported for now
     if (useSpMV) {
       if (UinCSC) {
-        superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU_host);
+        superluU_host = read_superlu_valuesU_CSC<host_crsmat_t> (kernelHandleU, &L, &U, graphU_host);
       } else {
-        superluU_host = read_superlu_valuesU<host_crsmat_t> (invert_diag, &L, &U, graphU_host);
+        superluU_host = read_superlu_valuesU<host_crsmat_t> (kernelHandleU, &L, &U, graphU_host);
       }
     } else {
       if (UinCSC) {
-        superluU = read_superlu_valuesU_CSC<crsmat_t> (invert_diag, invert_offdiag, &L, &U, graphU);
+        superluU = read_superlu_valuesU_CSC<crsmat_t> (kernelHandleU, &L, &U, graphU);
       } else {
-        superluU = read_superlu_valuesU<crsmat_t> (invert_diag, &L, &U, graphU);
+        superluU = read_superlu_valuesU<crsmat_t> (kernelHandleU, &L, &U, graphU);
       }
     }
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE

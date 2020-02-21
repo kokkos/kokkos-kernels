@@ -607,6 +607,10 @@ public:
     this->sptrsvHandle->set_merge_supernodes (flag);
   }
 
+  void set_sptrsv_invert_diagonal(bool flag) {
+    this->sptrsvHandle->set_invert_diagonal (flag);
+  }
+
   void set_sptrsv_invert_offdiagonal (bool flag) {
     if (flag == true && !(this->is_sptrsv_column_major ())) {
       std::cout << std::endl

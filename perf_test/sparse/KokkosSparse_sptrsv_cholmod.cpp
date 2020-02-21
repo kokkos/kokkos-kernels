@@ -68,82 +68,6 @@ enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
 
 /* ========================================================================================= */
 template<typename scalar_type>
-void print_factor_cholmod(cholmod_factor *L, cholmod_common *cm) {
-
-  scalar_type *Lx;
-  int *mb, *colptr, *rowind, *nb;
-  int nsuper, j1, j2, i1, i2, psx, nsrow, nscol, i, ii, jj, s,
-      nsrow2, ps2;
-
-  /* ---------------------------------------------------------------------- */
-  /* get inputs */
-  /* ---------------------------------------------------------------------- */
-
-  nsuper = L->nsuper;      // # of supernodal columns
-  mb = (int*)(L->pi);      // mb[s+1] - mb[s] = total number of rows in all the s-th supernodes (diagonal+off-diagonal)
-  nb = (int*)(L->super);
-  colptr = (int*)(L->px);
-  rowind = (int*)(L->s);               // rowind
-  Lx = (scalar_type*)(L->x);                // data
-
-  printf( " >> print factor(n=%ld, nsuper=%d) <<\n",L->n,nsuper );
-  for (s = 0 ; s < nsuper ; s++) {
-    j1 = nb [s];
-    j2 = nb [s+1];
-    nscol = j2 - j1;      // number of columns in the s-th supernode column
-    printf( " nb[%d] = %d\n",s,nscol );
-  }
-  for (s = 0 ; s < nsuper ; s++) {
-    j1 = nb [s];
-    j2 = nb [s+1];
-    nscol = j2 - j1;      // number of columns in the s-th supernode column
-
-    i1 = mb [s];
-    i2 = mb [s+1];
-    nsrow  = i2 - i1;    // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-    nsrow2 = nsrow - nscol;  // "total" number of rows in all the off-diagonal supernodes
-    ps2    = i1 + nscol;    // offset into rowind
-
-    psx = colptr [s];           // offset into data,   Lx[s][s]
-
-    /* print diagonal block */
-    for (ii = 0; ii < nscol; ii++) {
-      for (jj = 0; jj <= ii; jj++)
-        std::cout << j1+ii+1 << " " << j1+jj+1 << " " <<  Lx[psx + (ii + jj*nsrow)] << std::endl;
-    }
-
-    /* print off-diagonal blocks */
-    for (ii = 0; ii < nsrow2; ii++) {
-      i = rowind [ps2 + ii] ;
-      for (jj = 0; jj < nscol; jj++)
-        std::cout << i+1 << " " << j1+jj+1 << " " << Lx[psx + (nscol+ii + jj*nsrow)] << std::endl;
-    }
-  }
-}
-
-
-template <typename crsmat_t>
-void print_factor_cholmod(crsmat_t *L) {
-  using graph_t       = typename crsmat_t::StaticCrsGraphType;
-  using values_view_t = typename crsmat_t::values_type::non_const_type;
-  using scalar_type   = typename values_view_t::value_type;
-
-  graph_t  graph = L->graph;
-  const int      *colptr = graph.row_map.data ();
-  const int      *rowind = graph.entries.data ();
-  const scalar_type *Lx     = L->values.data ();
-
-  printf( "\n -- print cholmod factor in crs (numCols = %d) --\n",L->numCols () );
-  for (int j = 0; j < L->numCols (); j++) {
-    for (int k = colptr[j]; k < colptr[j+1]; k++) {
-      std::cout << rowind[k] << " " <<  j << " " << Lx[k] << std::endl;
-    }
-  }
-}
-
-
-/* ========================================================================================= */
-template<typename scalar_type>
 cholmod_factor* factor_cholmod(const int nrow, const int nnz, scalar_type *nzvals, int *rowptr, int *colind, cholmod_common *Comm, int **etree) {
 
   // Start Cholmod
@@ -433,10 +357,10 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
           // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
           timer.reset();
           std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
-          bool cusparse = true;
-          bool invert_diag = false;
-          auto graph = read_cholmod_graphL<graph_t>(cusparse, L, &cm);
-          auto cholmodMtx = read_cholmod_factor<crsmat_t, graph_t> (cusparse, invert_diag, L, &cm, graph);
+          bool block_diag = false;
+          khL.set_sptrsv_invert_diagonal (false);
+          auto graph = read_cholmod_graphL<graph_t>(block_diag, L, &cm);
+          auto cholmodMtx = read_cholmod_factor<crsmat_t, graph_t> (&khL, block_diag, L, &cm, graph);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
 
           bool col_majorL = true;

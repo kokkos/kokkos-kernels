@@ -75,114 +75,6 @@ enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_S
 
 
 /* ========================================================================================= */
-template <typename scalar_type>
-void print_factor_superlu(int n, SuperMatrix *L, SuperMatrix *U, int *perm_r, int *perm_c) {
-
-  SCformat *Lstore = (SCformat*)(L->Store);
-  int *nb = Lstore->sup_to_col;
-  for (int k = 0; k <= Lstore->nsuper; k++)
-  {
-    int j1 = nb[k];
-    int j2 = nb[k+1];
-    int nscol  = j2 - j1;
-    printf( "%d %d %d\n",k,j1,nscol );
-  }
-
-  /* permutation vectors */
-  int *iperm_r = new int[n];
-  int *iperm_c = new int[n];
-  for (int k = 0; k < n; k++) {
-    iperm_r[perm_r[k]] = k;
-    iperm_c[perm_c[k]] = k;
-  }
-  printf( "P=[\n" );
-  for (int k = 0; k < n; k++) {
-    printf( "%d, %d %d, %d %d\n",k, perm_r[k],iperm_r[k], perm_c[k],iperm_c[k] );
-  }
-  printf( "];\n" );
-
-#if 0
-  using STS = Kokkos::Details::ArithTraits<scalar_type>;
-
-  int *colptr = Lstore->nzval_colptr;
-  int *rowind = Lstore->rowind;
-
-  int *mb = Lstore->rowind_colptr;
-
-  scalar_type *Lx = (scalar_type*)(Lstore->nzval);
-
-  /* Lower-triangular matrix */
-  printf( " L = [\n ");
-  for (int k = 0; k <= Lstore->nsuper; k++)
-  {
-    int j1 = nb[k];
-    int j2 = nb[k+1];
-    int nscol = j2 - j1;
-
-    int i1 = mb[j1];
-    int i2 = mb[j1+1];
-    int nsrow = i2 - i1;
-    int nsrow2 = nsrow - nscol;
-    int ps2    = i1 + nscol;
-
-    int psx = colptr[j1];
-
-    /* the diagonal block */
-    for (int i = 0; i < nscol; i++) {
-      for (int j = 0; j < i; j++) {
-        if (Lx[psx + i + j*nsrow] != STS::zero()) {
-          printf( "%d %d %.16e\n",1+j1+i, 1+j1+j, Lx[psx + i + j*nsrow] );
-        }
-      }
-      printf( "%d %d 1.0\n",1+j1+i, 1+j1+i );
-    }
-
-    /* the off-diagonal blocks */
-    for (int ii = 0; ii < nsrow2; ii++) {
-      int i = rowind [ps2 + ii];
-      for (int j = 0; j < nscol; j++) {
-        printf( "%d %d %.16e\n",1+i, 1+j1+j, Lx[psx+nscol + ii + j*nsrow] );
-      }
-    }
-  }
-  printf( "];\n ");
-
-  /* Upper-triangular matrix */
-  NCformat *Ustore = (NCformat*)(U->Store);
-  scalar_type *Uval = (scalar_type*)(Ustore->nzval);
-  printf( " U = [\n ");
-  for (int k = Lstore->nsuper; k >= 0; k--) {
-    int j1 = nb[k];
-    int nscol = nb[k+1] - j1;
-
-    int i1 = mb[j1];
-    int nsrow = mb[j1+1] - i1;
-
-    int psx = colptr[j1];
-
-    /* the diagonal block */
-    for (int i = 0; i < nscol; i++) {
-      for (int j = i; j < nscol; j++) {
-        printf( "%d %d %.16e\n",j1+i, j1+j, Lx[psx + i + j*nsrow] );
-        //std::cout << j1+i+1 << " " << j1+j+1 << " " << Lx[psx + i + j*nsrow] << std::endl;
-      }
-    }
-
-    /* the off-diagonal blocks */
-    for (int jcol = j1; jcol < j1 + nscol; jcol++) {
-      for (int i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++ ){
-        int irow = U_SUB(i);
-        printf( "%d %d %.16e\n", irow, jcol, Uval[i] );
-        //std::cout << irow+1 << " " << jcol+1 << " " << Uval[i] << std::endl;
-      }
-    }
-  }
-  printf( "];\n" );
-#endif
-}
-
-
-/* ========================================================================================= */
 template<typename scalar_type>
 void factor_superlu (bool symm_mode, bool metis,
                      const int nrow, scalar_type *nzvals, int *rowptr, int *colind,
@@ -431,6 +323,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
                                  values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                                  panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
     std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
+    //print_factor_superlu<scalar_type> (nrows, &L, &U, perm_r, perm_c);
 
     // ==============================================
     // Run all requested algorithms
@@ -628,30 +521,31 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
         {
           // ==============================================
           // read SuperLU factor on the host (and copy to default host/device)
-          bool cusparse = true; // pad diagonal blocks with zeros
-          bool invert_diag = false;
+          bool block_diag = false; // pad diagonal blocks with zeros
           timer.reset();
           graph_t graphL;
           crsmat_t superluL;
-          graphL = read_superlu_graphL<graph_t> (cusparse, merge, &L);
+          khL.set_sptrsv_invert_diagonal (false);
+          graphL = read_superlu_graphL<graph_t> (block_diag, merge, &L);
           double time = timer.seconds ();
           timer.reset ();
-          superluL = read_superlu_valuesL<crsmat_t> (cusparse, merge, invert_diag, invert_offdiag, &L, graphL);
+          superluL = read_superlu_valuesL<crsmat_t> (&khL, block_diag, &L, graphL);
           std::cout << "   Conversion Time for L: " << time << " + " << timer.seconds() << std::endl;
 
           timer.reset ();
           graph_t graphU;
           crsmat_t superluU;
+          khU.set_sptrsv_invert_diagonal (false);
           if (u_in_csr) {
             graphU = read_superlu_graphU<graph_t> (&L, &U);
             time = timer.seconds ();
             timer.reset ();
-            superluU = read_superlu_valuesU<crsmat_t, graph_t> (invert_diag, &L, &U, graphU);
+            superluU = read_superlu_valuesU<crsmat_t, graph_t> (&khU, &L, &U, graphU);
           } else {
             graphU = read_superlu_graphU_CSC<graph_t> (&L, &U);
             time = timer.seconds ();
             timer.reset ();
-            superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (invert_diag, invert_offdiag, &L, &U, graphU);
+            superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (&khU, &L, &U, graphU);
           }
           std::cout << "   Conversion Time for U: " << time << " + " << timer.seconds() << std::endl;
 

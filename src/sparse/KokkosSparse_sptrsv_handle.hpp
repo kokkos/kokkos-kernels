@@ -342,6 +342,7 @@ private:
 
   // 
   bool merge_supernodes;
+  bool invert_diagonal;
   bool invert_offdiagonal;
   int *etree;
 
@@ -415,6 +416,7 @@ public:
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     , merge_supernodes (false)
+    , invert_diagonal (true)
     , invert_offdiagonal (false)
     , etree (nullptr)
     , sup_size_unblocked (100)
@@ -569,6 +571,15 @@ public:
 
   int* get_etree() {
     return this->etree;
+  }
+
+  // specify to invertt diagonal
+  void set_invert_diagonal(bool flag) {
+    this->invert_diagonal = flag;
+  }
+
+  bool get_invert_diagonal() {
+    return this->invert_diagonal;
   }
 
   // specify to apply the inverse of diagonal to the offdiagonal blocks
