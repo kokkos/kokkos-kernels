@@ -157,12 +157,11 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 
 
 template <typename ExecSpace, typename crsMat_t, typename crsMat_t2 , typename crsMat_t3 , typename TempMemSpace , typename PersistentMemSpace >
-crsMat_t3 run_experiment(
-    crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params){
-    //int algorithm, int repeat, int chunk_size ,int multi_color_scale, int shmemsize, int team_size, int use_dynamic_scheduling, int verbose){
-
+crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
+{
   using namespace KokkosSparse;
   using namespace KokkosSparse::Experimental;
+  using device_t = Kokkos::Device<ExecSpace, PersistentMemSpace>;
   int algorithm = params.algorithm;
   int repeat = params.repeat;
   int chunk_size = params.chunk_size;
@@ -183,11 +182,6 @@ crsMat_t3 run_experiment(
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename lno_view_t::value_type size_type;
   typedef typename scalar_view_t::value_type scalar_t;
-
-  typedef CrsMatrix<scalar_t, lno_t, Kokkos::Serial, void, size_type> crsMatHost_t;
-  typedef typename crsMatHost_t::values_type::non_const_type  host_scalar_view_t;
-  typedef typename crsMatHost_t::row_map_type::non_const_type host_lno_view_t;
-  typedef typename crsMatHost_t::index_type::non_const_type   host_lno_nnz_view_t;
 
   lno_view_t row_mapC;
   lno_nnz_view_t entriesC;
@@ -223,15 +217,19 @@ crsMat_t3 run_experiment(
     exit(1);
   }
 
-  host_lno_view_t     row_mapC_ref;
-  host_lno_nnz_view_t entriesC_ref;
-  host_scalar_view_t  valuesC_ref;
-  crsMatHost_t        Ccrsmat_ref;
+  //The reference product (for verifying correctness)
+  //Don't allocate them if they won't be used, but they must be declared here.
+  lno_view_t     row_mapC_ref;
+  lno_nnz_view_t entriesC_ref;
+  scalar_view_t  valuesC_ref;
+  //Reference output has same type as actual output
+  crsMat_t3      Ccrsmat_ref;
+
   if (check_output)
   {
     if (verbose)
       std::cout << "Running a reference algorithm" << std::endl;
-    row_mapC_ref = host_lno_view_t("non_const_lnow_row", m + 1);
+    row_mapC_ref = lno_view_t("non_const_lnow_row", m + 1);
     KernelHandle sequential_kh;
     sequential_kh.set_team_work_size(chunk_size);
     sequential_kh.set_shmem_size(shmemsize);
@@ -261,8 +259,8 @@ crsMat_t3 run_experiment(
 
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-    entriesC_ref = host_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC_ref =  host_scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    entriesC_ref = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+    valuesC_ref =  scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
 
     spgemm_numeric(
         &sequential_kh,
@@ -284,7 +282,7 @@ crsMat_t3 run_experiment(
     );
     ExecSpace().fence();
 
-    Ccrsmat_ref = crsMatHost_t("CorrectC", m, k, valuesC_ref.extent(0), valuesC_ref, row_mapC_ref, entriesC_ref);
+    Ccrsmat_ref = crsMat_t3("CorrectC", m, k, valuesC_ref.extent(0), valuesC_ref, row_mapC_ref, entriesC_ref);
   }
 
   for (int i = 0; i < repeat; ++i) {
@@ -377,23 +375,15 @@ crsMat_t3 run_experiment(
     KokkosKernels::Impl::print_1Dview(entriesC);
     KokkosKernels::Impl::print_1Dview(row_mapC);
   }
-
-
+  crsMat_t3 Ccrsmat_result("CrsMatrixC", m, k, valuesC.extent(0), valuesC, row_mapC, entriesC);
   if (check_output){
-    auto row_mapC_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), row_mapC);
-    auto entriesC_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entriesC);
-    auto valuesC_host  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), valuesC);
-
-    crsMatHost_t Ccrsmathost(
-        "CHost", m, k, valuesC_host.extent(0), valuesC_host, row_mapC_host, entriesC_host);
-    bool is_identical = is_same_matrix<crsMatHost_t, Kokkos::Serial>(Ccrsmat_ref, Ccrsmathost);
+    bool is_identical = is_same_matrix<crsMat_t3, device_t>(Ccrsmat_result, Ccrsmat_ref);
     if (!is_identical){
       std::cerr << "Result differs. If values are differing, might be floating point order error." << std::endl;
       exit(1);
     }
   }
-
-  return crsMat_t3("CrsMatrixC", m, k, valuesC.extent(0), valuesC, row_mapC, entriesC);
+  return Ccrsmat_result;
 }
 
 

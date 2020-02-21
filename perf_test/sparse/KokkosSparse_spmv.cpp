@@ -131,9 +131,9 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, 
                 break;
         case KK_KERNELS_INSP:
                 if(A.graph.row_block_offsets.data()==NULL) {
-                  printf("PTR: %p\n",A.graph.row_block_offsets.data());
+                  printf("PTR: %p\n",static_cast<void*>(A.graph.row_block_offsets.data()));
                   A.graph.create_block_partitioning(AType::execution_space::concurrency());
-                  printf("PTR2: %p\n",A.graph.row_block_offsets.data());
+                  printf("PTR2: %p\n",static_cast<void*>(A.graph.row_block_offsets.data()));
                 }
                 KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
                 break;

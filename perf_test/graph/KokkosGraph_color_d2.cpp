@@ -601,7 +601,6 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
 template<typename size_type, typename lno_t, typename exec_space, typename mem_space>
 void experiment_driver(Parameters params)
 {
-    using myExecSpace = exec_space;
     using device_t    = Kokkos::Device<exec_space, mem_space>;
     using crsMat_t    = typename KokkosSparse::CrsMatrix<double, lno_t, device_t, void, size_type>;
     using graph_t     = typename crsMat_t::StaticCrsGraphType;

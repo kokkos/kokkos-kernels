@@ -138,8 +138,6 @@ int main(int argc, char **argv)
 
   Kokkos::initialize(argc,argv);
   {
-    typedef default_lno_t lno_t;
-    typedef default_size_type size_type;
     typedef KokkosSparse::CrsMatrix<Scalar,lno_t,Kokkos::DefaultExecutionSpace,void,size_type> matrix_type;
     typedef typename Kokkos::View<Scalar**,Kokkos::LayoutLeft> mv_type;
     // typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,Kokkos::MemoryRandomAccess > mv_random_read_type;
