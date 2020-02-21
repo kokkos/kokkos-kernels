@@ -177,6 +177,13 @@ KOKKOS_OPTIONS=""
 
 CXX_STANDARD="11"
 
+
+SPOT_CHECK_TPLS=False
+KOKKOSKERNELS_ENABLE_TPL_CMD=
+KOKKOSKERNELS_TPL_PATH_CMD=
+KOKKOSKERNELS_TPL_LIBS_CMD=
+KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD=
+
 #
 # Handle arguments.
 #
@@ -212,6 +219,9 @@ do
       ;;
     --dry-run*)
       DRYRUN=True
+      ;;
+    --spot-check-tpls*)
+      SPOT_CHECK_TPLS=True
       ;;
     --spot-check*)
       SPOT_CHECK=True
@@ -271,6 +281,11 @@ do
   shift
 done
 
+if [[ "${SPOT_CHECK}" = "True" && "${SPOT_CHECK_TPLS}" = "True" ]]; then
+    echo "Warning: --spot-check and --spot-check-tpls were requested but only one is allowed - defaulting to --spot-check"
+    SPOT_CHECK_TPLS=False
+fi
+
 SCRIPT_KOKKOSKERNELS_ROOT=$( cd "$( dirname "$0" )" && cd .. && pwd )
 
 # Set kokkos path.
@@ -319,6 +334,14 @@ if [ "$MACHINE" = "sems" ]; then
                "clang/3.9.0 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
                "cuda/9.2 $CUDA9_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "clang/3.9.0 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
+               "cuda/9.2 $CUDA9_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
@@ -357,6 +380,15 @@ elif [ "$MACHINE" = "kokkos-dev" ]; then
                "clang/7.0.1 $CLANG7_MODULE_LIST "Cuda_OpenMP" clang++ $CLANG_WARNING_FLAGS"
                "cuda/9.2 $CUDA9_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
+               "gcc/7.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "clang/4.0.1 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
+               "clang/7.0.1 $CLANG7_MODULE_LIST "Cuda_OpenMP" clang++ $CLANG_WARNING_FLAGS"
+               "cuda/9.2 $CUDA9_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
@@ -386,6 +418,12 @@ elif [ "$MACHINE" = "white" ]; then
   CUDA_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,ibm/xl/16.1.0"
   CUDA10_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.0"
 
+  GCC72_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,netlib/3.8.0/gcc/7.2.0"
+  GCC74_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.4/gcc/7.4.0"
+  CUDA_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
+  CUDA10_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,openblas/0.3.4/gcc/7.4.0"
+  IBM_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/ibm/xl/16.1.0"
+
   # Don't do pthread on white.
   GCC_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
 
@@ -396,6 +434,13 @@ elif [ "$MACHINE" = "white" ]; then
                "ibm/16.1.0 $IBM_MODULE_LIST "Serial" xlC $IBM_WARNING_FLAGS"
                "cuda/9.2.88 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/10.1.105 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST "Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
+               "gcc/7.4.0 $GCC74_MODULE_TPL_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
+               "cuda/9.2.88 $CUDA_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.1.105 $CUDA10_MODULE_TPL_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
@@ -457,7 +502,12 @@ elif [ "$MACHINE" = "blake" ]; then
   BASE_MODULE_LIST_INTEL="cmake/3.12.3,<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
 
   if [ "$SPOT_CHECK" = "True" ]; then
-
+  # Format: (compiler module-list build-list exe-name warning-flag)
+  COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+             "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+             "pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
+  )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
   # Format: (compiler module-list build-list exe-name warning-flag)
   COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
              "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
@@ -507,6 +557,15 @@ elif [ "$MACHINE" = "apollo" ]; then
   BUILD_LIST_CLANG="Serial,Pthread,OpenMP"
 
   if [ "$SPOT_CHECK" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/4.8.4 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
+               "gcc/5.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/16.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "clang/3.9.0 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
+               "clang/6.0 $CLANG_MODULE_LIST "Cuda_Pthread,OpenMP" clang++ $CUDA_WARNING_FLAGS"
+               "cuda/9.1 $CUDA_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
+  if [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/4.8.4 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
                "gcc/5.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
@@ -575,6 +634,15 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
                "cuda/10.1 $NVCC_SEMSMODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   else
+  if [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/7.3.0 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
+               "gcc/8.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "gcc/9.1 $GCC91_MODULE_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/18.0.5 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "clang/8.0 $CLANG8_MODULE_LIST "Cuda_OpenMP,Pthread_Serial" clang++ $CLANG8_CUDA_WARNING_FLAGS"
+               "cuda/10.1 $NVCC_SEMSMODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("cuda/10.0 $NVCC_MODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/10.1 $NVCC_SEMSMODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
@@ -584,6 +652,7 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
                "gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/7.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/8.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/9.1 $GCC91_MODULE_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
@@ -753,6 +822,30 @@ setup_env() {
   local compiler=$1
   local compiler_modules=$(get_compiler_modules $compiler)
 
+  # Default tpls passed in via command-line - users responsibility to ensure this works if set manually
+  KOKKOSKERNELS_ENABLE_TPL_CMD="--with-tpls=$KOKKOSKERNELS_ENABLE_TPLS"
+  echo "SETUP_ENV: compiler=$compiler modules=$compiler_modules"
+  local NEW_TPL_LIST=
+  if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
+    # device tpls
+    if [[ "$compiler" == cuda* ]]; then
+      NEW_TPL_LIST="cublas,cusparse,"
+    fi
+    # host tpls - use mkl with intel, else use system blas
+    if [[ "$compiler" == intel* ]]; then
+      NEW_TPL_LIST="mkl,"
+    else
+      NEW_TPL_LIST="blas,${NEW_TPL_LIST}"
+    fi
+
+    # Overwrite new tpl list with trailing comma removed
+    NEW_TPL_LIST=$(echo ${NEW_TPL_LIST} | sed 's/.\w*$//')
+    echo "TESTING NEW_TPL_LIST=$NEW_TPL_LIST"
+
+    KOKKOSKERNELS_ENABLE_TPL_CMD="--with-tpls=${NEW_TPL_LIST}"
+    echo "TPL USAGE: KOKKOSKERNELS_ENABLE_TPL_CMD=$KOKKOSKERNELS_ENABLE_TPL_CMD"
+  fi
+
   module purge
 
   local mod
@@ -763,6 +856,33 @@ setup_env() {
     # module. Module does not return error codes and piping to grep
     # causes module to run in a subshell.
     module list 2>&1 | grep "$mod" >& /dev/null || return 1
+
+    if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
+      # Some machines will require explicitly setting include dirs and libs
+      if [[ "$MACHINE" = white* ]] && [[ "$mod" = openblas* ]]; then
+        BLAS_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
+        LAPACK_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
+  #      BLAS_LIBRARIES="openblas"
+        BLAS_LIBRARIES="blas"
+        LAPACK_LIBRARIES="lapack"
+        KOKKOSKERNELS_TPL_PATH_CMD="--user-blas-path=${BLAS_LIBRARY_DIRS} --user-lapack-path=${LAPACK_LIBRARY_DIRS}"
+        KOKKOSKERNELS_TPL_LIBS_CMD="--user-blas-lib=${BLAS_LIBRARIES} --user-lapack-lib=${LAPACK_LIBRARIES}"
+        KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD="--extra-linker-flags=-lgfortran,-lm"
+        echo "TPL PATHS: KOKKOSKERNELS_TPL_PATH_CMD=$KOKKOSKERNELS_TPL_PATH_CMD"
+        echo "TPL LIBS:  KOKKOSKERNELS_TPL_LIBS_CMD=$KOKKOSKERNELS_TPL_LIBS_CMD"
+      elif [[ "$MACHINE" = white* ]] && [[ "$mod" = netlib* ]]; then
+        BLAS_LIBRARY_DIRS="${BLAS_ROOT}/lib"
+        LAPACK_LIBRARY_DIRS="${BLAS_ROOT}/lib"
+        BLAS_LIBRARIES="blas"
+        LAPACK_LIBRARIES="lapack"
+        KOKKOSKERNELS_TPL_PATH_CMD="--user-blas-path=${BLAS_LIBRARY_DIRS} --user-lapack-path=${LAPACK_LIBRARY_DIRS}"
+        KOKKOSKERNELS_TPL_LIBS_CMD="--user-blas-lib=${BLAS_LIBRARIES} --user-lapack-lib=${LAPACK_LIBRARIES}"
+        KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD="--extra-linker-flags=-lgfortran,-lm"
+        echo "TPL PATHS: KOKKOSKERNELS_TPL_PATH_CMD=$KOKKOSKERNELS_TPL_PATH_CMD"
+        echo "TPL LIBS:  KOKKOSKERNELS_TPL_LIBS_CMD=$KOKKOSKERNELS_TPL_LIBS_CMD"
+      fi
+    fi
+
   done
 
   if [ -e ${CM_ALL_SCRIPT_PATH}/update_lib.sh ]; then
@@ -837,7 +957,8 @@ single_build_and_test() {
     echo "kokkos options: ${KOKKOS_OPTIONS}"
     echo "kokkos devices: ${LOCAL_KOKKOS_DEVICES}"
     echo "kokkos cxx: ${cxxflags}"
-    run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    echo ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --no-examples $extra_args
+    run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 48 all >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)
