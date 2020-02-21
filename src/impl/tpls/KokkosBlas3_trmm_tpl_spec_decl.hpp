@@ -660,7 +660,7 @@ struct TRMM< \
     if(A_is_ll) \
       cublasCtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<cuComplex*>(B.data()), LDB, reinterpret_cast<cuComplex*>(B.data()), LDB); \
     else \
-      cublasCtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<cuComplex*>(B.data()), LDB), reinterpret_cast<cuComplex*>(B.data()), LDB; \
+      cublasCtrmm(s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<cuComplex*>(B.data()), LDB, reinterpret_cast<cuComplex*>(B.data()), LDB); \
     \
     Kokkos::Profiling::popRegion(); \
   } \
