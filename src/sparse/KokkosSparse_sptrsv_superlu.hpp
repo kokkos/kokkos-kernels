@@ -389,8 +389,8 @@ void sptrsv_symbolic(
     SuperMatrix &L,
     SuperMatrix &U)
 {
-  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
-  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type>;
+  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
 
   Kokkos::Timer timer;
   Kokkos::Timer tic;
@@ -486,8 +486,11 @@ crsmat_t read_superlu_valuesL(KernelHandle kernelHandle, bool block_diag, SuperM
 
 /* ========================================================================================= */
 // store numerical values of SuperLU U-factor into CSR
-template <typename crsmat_t, typename graph_t, typename KernelHandle>
-crsmat_t read_superlu_valuesU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
+template <typename crsmat_t,
+          typename graph_t,
+          typename KernelHandle>
+crsmat_t
+read_superlu_valuesU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t       = typename values_view_t::value_type;
@@ -495,10 +498,7 @@ crsmat_t read_superlu_valuesU(KernelHandle kernelHandle, SuperMatrix *L,  SuperM
 
   const scalar_t zero (0.0);
 
-  // load parameters
-  auto *handle = kernelHandle->get_sptrsv_handle ();
-  bool invert_diag = handle->get_invert_diagonal ();
-
+  /* load inputs */
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
 
@@ -548,17 +548,6 @@ crsmat_t read_superlu_valuesU(KernelHandle kernelHandle, SuperMatrix *L,  SuperM
 
     /* the diagonal "dense" block */
     int psx = colptrL[j1];
-    if (invert_diag) {
-      if (std::is_same<scalar_t, double>::value) {
-        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
-                        'U', 'N', nscol,
-                        reinterpret_cast <double*> (&Lx[psx]), nsrow);
-      } else {
-        LAPACKE_ztrtri(LAPACK_COL_MAJOR,
-                       'U', 'N', nscol,
-                       reinterpret_cast <lapack_complex_double*> (&Lx[psx]), nsrow);
-      }
-    }
     for (int i = 0; i < nscol; i++) {
       #if 0
       for (int j = 0; j < i; j++) {
@@ -619,32 +608,45 @@ crsmat_t read_superlu_valuesU(KernelHandle kernelHandle, SuperMatrix *L,  SuperM
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
   #endif
 
+  // invert blocks (TODO: done on host for now)
+  using ordinal_type = typename crsmat_t::ordinal_type;
+  using size_type = typename crsmat_t::size_type;
+  using hostspace = Kokkos::DefaultHostExecutionSpace;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, hostspace, void, size_type>;
+
+  auto entries = static_graph.entries;
+  auto hc = Kokkos::create_mirror_view (entries);
+  Kokkos::deep_copy (hc, entries);
+  host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
+
+  bool lower = true; // U in CSR
+  bool unit_diag = false;
+  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat);
+
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
   // create crs
   crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
+
   return crsmat;
 }
 
 /* ========================================================================================= */
 // store numerical values of SuperLU U-factor into CSC
-template <typename crsmat_t, typename graph_t, typename KernelHandle>
-crsmat_t read_superlu_valuesU_CSC(KernelHandle kernelHandle,
-                                  SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
+template <typename crsmat_t,
+          typename graph_t,
+          typename KernelHandle>
+crsmat_t 
+read_superlu_valuesU_CSC(KernelHandle kernelHandle,
+                         SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using       scalar_t = typename values_view_t::value_type;
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
 
   const scalar_t zero (0.0);
-  const scalar_t one (1.0);
 
-  // load parameters
-  auto *handle = kernelHandle->get_sptrsv_handle ();
-  bool invert_diag = handle->get_invert_diagonal ();
-  bool invert_offdiag = handle->get_invert_offdiagonal ();
-
-
+  /* load inputs */
   SCformat *Lstore = (SCformat*)(L->Store);
   scalar_t *Lx = (scalar_t*)(Lstore->nzval);
 
@@ -694,18 +696,6 @@ crsmat_t read_superlu_valuesU_CSC(KernelHandle kernelHandle,
 
     /* the diagonal "dense" block (!! first !!)*/
     int psx = colptrL[j1];
-    if (invert_diag) {
-      if (std::is_same<scalar_t, double>::value) {
-        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
-                        'U', 'N', nscol,
-                        reinterpret_cast <double*> (&Lx[psx]), nsrow);
-      } else {
-        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
-                        'U', 'N', nscol,
-                        reinterpret_cast <lapack_complex_double*> (&Lx[psx]), nsrow);
-      }
-    }
-    auto nnzD = hr(j1);
     for (int j = 0; j < nscol; j++) {
       for (int i = 0; i <= j; i++) {
         hv(hr(j1 + j) + i) = Lx[psx + i + j*nsrow];
@@ -744,26 +734,6 @@ crsmat_t read_superlu_valuesU_CSC(KernelHandle kernelHandle,
       hr(jcol) += offset;
     }
 
-    if (invert_diag) {
-      if (offset > 0 && invert_offdiag) {
-        if (std::is_same<scalar_t, double>::value) {
-          cblas_dtrmm (CblasColMajor,
-                CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
-                offset, nscol,
-                1.0, reinterpret_cast <double*> (&hv(nnzD)), nscol+offset,
-                     reinterpret_cast <double*> (&hv(nnzD+nscol)), nscol+offset);
-        } else {
-          // NOTE: use double pointers
-          scalar_t alpha = one;
-          cblas_ztrmm (CblasColMajor,
-                CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit,
-                offset, nscol,
-                reinterpret_cast <double*> (&alpha), 
-                reinterpret_cast <double*> (&hv(nnzD)), nscol+offset,
-                reinterpret_cast <double*> (&hv(nnzD+nscol)), nscol+offset);
-        }
-      }
-    }
     // reset check
     for (int i = 0; i < nsup; i++) {
       check (sup (i)) = 0;
@@ -781,10 +751,26 @@ crsmat_t read_superlu_valuesU_CSC(KernelHandle kernelHandle,
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
   #endif
 
+  // invert blocks (TODO: done on host for now)
+  using ordinal_type = typename crsmat_t::ordinal_type;
+  using size_type = typename crsmat_t::size_type;
+  using hostspace = Kokkos::DefaultHostExecutionSpace;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, hostspace, void, size_type>;
+
+  auto entries = static_graph.entries;
+  auto hc = Kokkos::create_mirror_view (entries);
+  Kokkos::deep_copy (hc, entries);
+  host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
+
+  bool lower = false;
+  bool unit_diag = false;
+  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat);
+
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
   // create crs
   crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
+
   return crsmat;
 }
 
@@ -803,8 +789,8 @@ void sptrsv_compute(
     SuperMatrix &L,
     SuperMatrix &U)
 {
-  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type> crsmat_t;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type>;
+  using crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type>;
 
   Kokkos::Timer tic;
   Kokkos::Timer timer;

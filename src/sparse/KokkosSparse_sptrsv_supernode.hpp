@@ -914,6 +914,104 @@ void sptrsv_supernodal_symbolic(
 /* Auxiliary functions for numeric computation                                               */
 
 /* ========================================================================================= */
+template <typename crsmat_t, typename KernelHandle>
+void
+invert_supernodal_columns(KernelHandle kernelHandle, bool lower, bool unit_diag, int nsuper, const int *nb, crsmat_t &Mtx) {
+
+  using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using scalar_t = typename values_view_t::value_type;
+
+  const scalar_t one (1.0);
+
+  // load parameters
+  auto *handle = kernelHandle->get_sptrsv_handle ();
+  bool invert_diag = handle->get_invert_diagonal ();
+  bool invert_offdiag = handle->get_invert_offdiagonal ();
+
+  // quick return
+  if (!invert_diag) return;
+
+  // original matrix
+  auto graph = Mtx.graph; // in_graph
+  auto row_map = graph.row_map;
+  auto entries = graph.entries;
+  auto values  = Mtx.values;
+
+  Kokkos::Timer timer;
+  double time1 = 0.0;
+  double time2 = 0.0;
+
+  auto hr = Kokkos::create_mirror_view (row_map);
+  auto hc = Kokkos::create_mirror_view (entries);
+  auto hv = Kokkos::create_mirror_view (values);
+  Kokkos::deep_copy (hr, row_map);
+  Kokkos::deep_copy (hc, entries);
+  Kokkos::deep_copy (hv, values);
+
+  // ----------------------------------------------------------
+  // now let's invert some blocks
+  for (int s2 = 0; s2 < nsuper; s2++) {
+    int j1 = nb[s2];
+    int nsrow = hr(j1+1) - hr(j1);
+    int nscol = nb[s2+1]-nb[s2];
+    if (invert_diag) {
+      auto nnzD = hr (j1);
+      char uplo_char = (lower ? 'L' : 'U');
+      char diag_char = (unit_diag ? 'U' : 'N');
+
+      timer.reset ();
+      if (std::is_same<scalar_t, double>::value) {
+        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
+                        uplo_char, diag_char, nscol,
+                        reinterpret_cast <double*> (&hv(nnzD)), nsrow);
+      }
+      else if (std::is_same<scalar_t, std::complex<double>>::value ||
+               std::is_same<scalar_t, Kokkos::complex<double>>::value) {
+        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
+                        uplo_char, diag_char, nscol, 
+                        reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
+      }
+      else {
+        throw std::runtime_error( "Unsupported scalar type for calling trtri");
+      }
+      time1 += timer.seconds ();
+      if (nsrow > nscol && invert_offdiag) {
+        CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
+        CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
+
+        timer.reset ();
+        if (std::is_same<scalar_t, double>::value) {
+          cblas_dtrmm (CblasColMajor,
+                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
+                nsrow-nscol, nscol,
+                1.0, reinterpret_cast <double*> (&hv(nnzD)), nsrow,
+                     reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
+        } else {
+          // NOTE: use double pointers
+          scalar_t alpha = one;
+          cblas_ztrmm (CblasColMajor,
+                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
+                nsrow-nscol, nscol,
+                reinterpret_cast <double*> (&alpha),
+                reinterpret_cast <double*> (&hv(nnzD)), nsrow,
+                reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
+        }
+        time2 += timer.seconds ();
+      }
+    }
+  }
+
+  // deepcopy
+  Kokkos::deep_copy (values, hv);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  std::cout << "   invert_supernodes" << std::endl;
+  std::cout << "   > Time for inversion::trtri : " << time1 << std::endl;
+  std::cout << "   > Time for inversion::trmm  : " << time2 << std::endl;
+  #endif
+}
+
+
+/* ========================================================================================= */
 template <typename crsmat_t, typename input_crsmat_t, typename graph_t, typename KernelHandle>
 crsmat_t
 read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
@@ -924,12 +1022,6 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
   using scalar_view_host_t = Kokkos::View<scalar_t*, Kokkos::HostSpace>;
 
   const scalar_t zero (0.0);
-  const scalar_t one (1.0);
-
-  // load parameters
-  auto *handle = kernelHandle->get_sptrsv_handle ();
-  bool invert_diag = handle->get_invert_diagonal ();
-  bool invert_offdiag = handle->get_invert_offdiagonal ();
 
   // original matrix
   auto graphL = L.graph; // in_graph
@@ -937,9 +1029,8 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
   auto entriesL = graphL.entries;
   auto valuesL  = L.values;
 
-  Kokkos::Timer tic;
-  double time1 = 0.0;
-  double time2 = 0.0;
+  Kokkos::Timer timer;
+  timer.reset ();
 
   // merged graph
   auto rowmap_view = static_graph.row_map;
@@ -951,7 +1042,7 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
   Kokkos::deep_copy (hc, column_view);
 
   // ----------------------------------------------------------
-  // now let's copy numerical values
+  // now let's merge supernodes
   int n = graphL.numRows ();
   scalar_view_host_t dwork ("dwork", n);
   Kokkos::deep_copy (dwork, zero);
@@ -972,74 +1063,34 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
         dwork (entriesL[k]) = zero;
       }
     }
-
-    int j1 = nb[s2];
-    int nsrow = hr(j1+1) - hr(j1);
-    int nscol = nb[s2+1]-nb[s2];
-    if (invert_diag) {
-      auto nnzD = hr (j1);
-      char uplo_char = (lower ? 'L' : 'U');
-      char diag_char = (unit_diag ? 'U' : 'N');
-
-      tic.reset ();
-      if (std::is_same<scalar_t, double>::value) {
-        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
-                        uplo_char, diag_char, nscol,
-                        reinterpret_cast <double*> (&hv(nnzD)), nsrow);
-      }
-      else if (std::is_same<scalar_t, std::complex<double>>::value ||
-               std::is_same<scalar_t, Kokkos::complex<double>>::value) {
-        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
-                        uplo_char, diag_char, nscol, 
-                        reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
-      }
-      else {
-        throw std::runtime_error( "Unsupported scalar type for calling trtri");
-      }
-
-      time1 += tic.seconds ();
-      if (nsrow > nscol && invert_offdiag) {
-        CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
-        CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
-
-        tic.reset ();
-        if (std::is_same<scalar_t, double>::value) {
-          cblas_dtrmm (CblasColMajor,
-                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-                nsrow-nscol, nscol,
-                1.0, reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-                     reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-        } else {
-          // NOTE: use double pointers
-          scalar_t alpha = one;
-          cblas_ztrmm (CblasColMajor,
-                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-                nsrow-nscol, nscol,
-                reinterpret_cast <double*> (&alpha),
-                reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-                reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-        }
-        time2 += tic.seconds ();
-      }
-    }
   }
+
+  // invert blocks (TODO done on host for now)
+  using ordinal_type = typename crsmat_t::ordinal_type;
+  using size_type = typename crsmat_t::size_type;
+  using hostspace = Kokkos::DefaultHostExecutionSpace;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, hostspace, void, size_type>;
+  host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
+
+  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat); 
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time = timer.seconds ();
   std::cout << "   read_merged_supernodes" << std::endl;
-  std::cout << "   > Time for inversion::trtri : " << time1 << std::endl;
-  std::cout << "   > Time for inversion::trmm  : " << time2 << std::endl;
+  std::cout << "   > Time : " << time << std::endl;
   #endif
 
   // create crs
   crsmat_t crsmat("CrsMatrix", n, values_view, static_graph);
+
   return crsmat;
 }
 
 
 /* ========================================================================================= */
-template <typename crsmat_t, typename graph_t, typename scalar_t = typename crsmat_t::value_type, typename KernelHandle>
+template <typename crsmat_t, typename graph_t, typename scalar_t, typename KernelHandle>
 crsmat_t
 read_supernodal_valuesL(KernelHandle kernelHandle, bool block_diag, bool unit_diag,
                         int n, int nsuper, bool ptr_by_column, const int *mb, const int *nb,
@@ -1051,14 +1102,11 @@ read_supernodal_valuesL(KernelHandle kernelHandle, bool block_diag, bool unit_di
   const scalar_t zero (0.0);
   const scalar_t one (1.0);
 
-  Kokkos::Timer tic;
-  double time1 = 0.0; // time for trtri
-  double time2 = 0.0; // time for trmm to offdiagonal
+  Kokkos::Timer timer;
+  timer.reset ();
 
   // load parameters
   auto *handle = kernelHandle->get_sptrsv_handle ();
-  bool invert_diag = handle->get_invert_diagonal ();
-  bool invert_offdiag = handle->get_invert_offdiagonal ();
   bool merge = handle->get_merge_supernodes ();
 
   // total nnz
@@ -1128,42 +1176,6 @@ read_supernodal_valuesL(KernelHandle kernelHandle, bool block_diag, bool unit_di
     /* diagonal block */
     // for each column (or row due to symmetry), the diagonal supernodal block is stored (in ascending order of row indexes) first
     // so that we can do TRSM on the diagonal block
-    if (invert_diag) {
-      tic.reset ();
-      char diag_char = (unit_diag ? 'U' : 'N');
-      if (std::is_same<scalar_t, double>::value) {
-        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
-                        'L', diag_char, nscol,
-                        reinterpret_cast <double*> (&Lx[psx]), nsrow);
-      } else {
-        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
-                        'L', diag_char, nscol,
-                        reinterpret_cast <lapack_complex_double*> (&Lx[psx]), nsrow);
-      }
-      time1 += tic.seconds ();
-
-      if (nsrow2 > 0 && invert_offdiag) {
-        tic.reset ();
-        CBLAS_DIAG diag_int = (unit_diag ? CblasUnit : CblasNonUnit);
-        if (std::is_same<scalar_t, double>::value) {
-          cblas_dtrmm (CblasColMajor,
-                CblasRight, CblasLower, CblasNoTrans, diag_int,
-                nsrow2, nscol,
-                1.0, reinterpret_cast <double*> (&Lx[psx]), nsrow,
-                     reinterpret_cast <double*> (&Lx[psx+nscol]), nsrow);
-        } else {
-          // NOTE: use double pointers
-          scalar_t alpha = one;
-          cblas_ztrmm (CblasColMajor,
-                CblasRight, CblasLower, CblasNoTrans, diag_int,
-                nsrow2, nscol,
-                reinterpret_cast <double*> (&alpha),
-                reinterpret_cast <double*> (&Lx[psx]), nsrow,
-                reinterpret_cast <double*> (&Lx[psx+nscol]), nsrow);
-        }
-        time2 += tic.seconds ();
-      }
-    }
     for (int jj = 0; jj < nscol; jj++) {
       if (block_diag) {
         // explicitly store zeros in upper-part
@@ -1216,14 +1228,26 @@ read_supernodal_valuesL(KernelHandle kernelHandle, bool block_diag, bool unit_di
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
 
-  std::cout << "    > Time for trtri on diagonal    : " << time1 << std::endl;
-  std::cout << "    > Time for trmm  on off-diagonal: " << time2 << std::endl;
+  double time = timer.seconds ();
+  std::cout << "    > Time : " << time << std::endl;
   #endif
+
+  // invert blocks (TODO done on host for now)
+  using ordinal_type = typename crsmat_t::ordinal_type;
+  using size_type = typename crsmat_t::size_type;
+  using hostspace = Kokkos::DefaultHostExecutionSpace;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, hostspace, void, size_type>;
+  host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
+
+  bool lower = true;
+  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat); 
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
+
   // create crs
   crsmat_t crsmat ("CrsMatrix", n, values_view, static_graph);
+
   return crsmat;
 }
 
@@ -1510,8 +1534,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       KernelHandle *kernelHandleL,
       crsmat_t L)
   {
-    using graph_t  = typename crsmat_t::StaticCrsGraphType;
-
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -1540,9 +1562,9 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
     bool block_diag = true;
     bool unit_diag = false;
     bool ptr_by_column = true;
-    auto crsmatL = read_supernodal_valuesL<crsmat_t, graph_t> (kernelHandleL, block_diag, unit_diag,
-                                                               nrows, nsuper, ptr_by_column, row_map.data (), supercols,
-                                                               row_map.data (), entries.data (), values.data (), graph);
+    auto crsmatL = read_supernodal_valuesL<crsmat_t> (kernelHandleL, block_diag, unit_diag,
+                                                      nrows, nsuper, ptr_by_column, row_map.data (), supercols,
+                                                      row_map.data (), entries.data (), values.data (), graph);
 
     // ===================================================================
     bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||

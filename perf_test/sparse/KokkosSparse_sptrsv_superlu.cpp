@@ -307,7 +307,6 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
     auto row_map_host = graph_host.row_map;
     auto entries_host = graph_host.entries;
     auto values_host  = Mtx.values;
-    //print_crsmat<host_crsmat_t> (nrows, Mtx);
 
     // ==============================================
     // call SuperLU on the host    
@@ -323,7 +322,6 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
                                  values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                                  panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
     std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
-    //print_factor_superlu<scalar_type> (nrows, &L, &U, perm_r, perm_c);
 
     // ==============================================
     // Run all requested algorithms
