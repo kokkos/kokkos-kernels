@@ -16,8 +16,6 @@
 
 namespace KokkosBlas {
   namespace Impl {
-    
-    using lapack_int_t = int; // TODO: pull in from lapacke_config.h
 
     template<typename T>
     struct HostBlas {
@@ -107,10 +105,14 @@ namespace KokkosBlas {
 #endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
+      //static
+      //lapack_int_t trtri(const int matrix_layout, const char uplo, const char diag,
+      //           lapack_int_t n,
+      //           const T *a, lapack_int_t lda);
       static
-      lapack_int_t trtri(const int matrix_layout, const char uplo, const char diag,
-                 lapack_int_t n,
-                 const T *a, lapack_int_t lda);
+      int trtri(const int matrix_layout, const char uplo, const char diag,
+                 int n,
+                 const T *a, int lda);
 #endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
     };
   }
