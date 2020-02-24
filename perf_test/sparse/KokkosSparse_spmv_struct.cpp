@@ -51,6 +51,8 @@
 #include <cmath>
 #include <unordered_map>
 
+#include <sstream>
+
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
@@ -114,7 +116,7 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  for(int i=0;i<argc;i++)
+  for(int i = 0; i < argc; i++)
     {
       if((strcmp(argv[i],"-nx" )==0)) {nx=atoi(argv[++i]); continue;}
       if((strcmp(argv[i],"-ny" )==0)) {ny=atoi(argv[++i]); continue;}
@@ -234,11 +236,12 @@ int main(int argc, char **argv)
         for(int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
           h_y_compare(rowIdx, vecIdx) = 0;
         }
+
         for(int entryIdx = start; entryIdx < end; ++entryIdx) {
           // Scalar tmp_val = h_graph.entries(entryIdx) + i;
-          int idx = h_graph.entries(entryIdx);
+          int colIdx = h_graph.entries(entryIdx);
           for(int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
-            h_y_compare(rowIdx, vecIdx) += h_values(entryIdx)*h_x(idx, vecIdx);
+            h_y_compare(rowIdx, vecIdx) += h_values(entryIdx)*h_x(colIdx, vecIdx);
           }
         }
       }
@@ -249,7 +252,6 @@ int main(int argc, char **argv)
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> x1("X1", A.numCols(), numVecs);
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> y1("Y1", A.numRows(), numVecs);
     Kokkos::deep_copy(x1, h_x);
-    // typename KokkosSparse::CrsMatrix<Scalar,int,Kokkos::DefaultExecutionSpace,void,int>::values_type y1("Y1", A.numRows(), numVecs);
 
     {
       Kokkos::Profiling::pushRegion("Structured spmv test");
@@ -257,7 +259,7 @@ int main(int argc, char **argv)
       double min_time = 1.0e32;
       double max_time = 0.0;
       double ave_time = 0.0;
-      for(int i=0;i<loop;i++) {
+      for(int i=0; i<loop; i++) {
 	Kokkos::Timer timer;
 	KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0, A, x1, 1.0, y1);
 	Kokkos::fence();
@@ -314,7 +316,13 @@ int main(int argc, char **argv)
 
     if(check_errors) {
       // Error Check
-      Kokkos::deep_copy(h_y, y1);
+      Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> x_check("X_check", A.numCols(), numVecs);
+      Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> y_check("Y_check", A.numRows(), numVecs);
+      Kokkos::deep_copy(x_check, h_x);
+      KokkosSparse::Experimental::spmv_struct("N", stencil_type, structure, 1.0, A, x_check, 1.0, y_check);
+      Kokkos::fence();
+
+      Kokkos::deep_copy(h_y, y_check);
       Scalar error = 0;
       Scalar sum = 0;
       for(int rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {
