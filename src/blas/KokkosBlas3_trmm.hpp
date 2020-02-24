@@ -73,11 +73,11 @@ namespace KokkosBlas {
 /// \param alpha [in] Input coefficient used for
 //                    multiplication with either A or B
 /// \param A [in]     Input matrix, as a 2-D Kokkos::View 
-///                   TODO:If side == "L" or "l", matrix A is a M-by-M triangular matrix;
-///                   TODO:otherwise, matrix A is a N-by-N triangular matrix 
+///                   If side == "L" or "l", matrix A is a M-by-M triangular matrix;
+///                   otherwise, matrix A is a N-by-N triangular matrix 
 /// \param B [in,out] Input/Output matrix, as a 2-D Kokkos::View 
-///                   TODO:On entry, M-by-N matrix of multile RHS
-///                   TODO:On exit, overwritten with the solution X
+///                   On entry, M-by-N matrix
+///                   On exit, overwritten with the solution
 template<class AViewType,
          class BViewType>
 void
