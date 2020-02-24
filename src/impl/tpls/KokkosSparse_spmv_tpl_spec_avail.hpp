@@ -54,6 +54,47 @@ struct spmv_tpl_spec_avail {
   enum : bool { value = false };
 };
 
+// cuSPARSE
+#if defined (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (9000 <= CUDA_VERSION)
+
+#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(SCALAR, XL, YL, MEMSPACE) \
+template <> \
+struct spmv_tpl_spec_avail<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int, \
+			   const SCALAR*,       XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, \
+			   SCALAR*,             YL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> > { \
+  enum : bool { value = true }; \
+};
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
+  KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
+  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
+  KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_FLOAT) \
+  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
+  KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+#endif
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE) \
+  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
+  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
+  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
+  KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+#endif
+
+#endif
+
 // Specialization struct which defines whether a specialization exists
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
