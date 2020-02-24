@@ -138,6 +138,8 @@ inline int kk_get_suggested_team_size(const int vector_size, const ExecSpaceType
 
 // Taken from kokkos perf_test:
 // https://github.com/kokkos/kokkos/blob/3e51447871eaec53ac4adc94d4d5376b7345b360/core/perf_test/PerfTest_ExecSpacePartitioning.cpp#L7-L36
+namespace Experimental {
+
 template <class ExecSpace>
 struct SpaceInstance {
   static ExecSpace create() { return ExecSpace(); }
@@ -167,6 +169,8 @@ struct SpaceInstance<Kokkos::Cuda> {
   }
 };
 #endif
+
+}
 
 }
 }
