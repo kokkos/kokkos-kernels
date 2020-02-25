@@ -156,7 +156,7 @@ struct trmm_tpl_spec_avail< \
 #endif
 
 #endif // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-}
-}
+} // namespace Impl
+} // namespace KokkosBlas
 
 #endif // KOKKOSBLAS3_TRMM_TPL_SPEC_AVAIL_HPP_

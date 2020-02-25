@@ -51,7 +51,7 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_TRMM_BLAS(SCALAR_TYPE, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL) \
+#define KOKKOSBLAS3_TRMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL) \
 template<class ExecSpace> \
 struct TRMM< \
      Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
@@ -78,16 +78,16 @@ struct TRMM< \
     const int M = static_cast<int> (B.extent(0)); \
     const int N = static_cast<int> (B.extent(1)); \
     \
-    bool A_is_ll = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
-    bool B_is_ll = std::is_same<Kokkos::LayoutLeft,LAYOUTB>::value; \
+    bool A_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
+    bool B_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTB>::value; \
     \
-    const int AST = A_is_ll?A.stride(1):A.stride(0), LDA = (AST == 0) ? 1 : AST; \
-    const int BST = B_is_ll?B.stride(1):B.stride(0), LDB = (BST == 0) ? 1 : BST; \
+    const int AST = A_is_layout_left?A.stride(1):A.stride(0), LDA = (AST == 0) ? 1 : AST; \
+    const int BST = B_is_layout_left?B.stride(1):B.stride(0), LDB = (BST == 0) ? 1 : BST; \
     \
     char  side_; \
     char  uplo_; \
     \
-    if(A_is_ll) { \
+    if(A_is_layout_left) { \
       if ((side[0]=='L')||(side[0]=='l')) \
         side_ = 'L'; \
       else \
@@ -108,25 +108,25 @@ struct TRMM< \
         uplo_ = 'L'; \
     } \
     \
-    if(A_is_ll) \
-      HostBlas<SCALAR>::trmm(side_, uplo_, trans[0], diag[0], M, N, alpha, A.data(), LDA, B.data(), LDB); \
+    if (A_is_layout_left) \
+      HostBlas<BASE_SCALAR_TYPE>::trmm(side_, uplo_, trans[0], diag[0], M, N, alpha, reinterpret_cast<const BASE_SCALAR_TYPE *>(A.data()), LDA, reinterpret_cast<BASE_SCALAR_TYPE *>(B.data()), LDB); \
     else \
-      HostBlas<SCALAR>::trmm(side_, uplo_, trans[0], diag[0], N, M, alpha, reinterpret_cast<const SCALAR *>(A.data()), LDA, reinterpret_cast<const SCALAR *>(B.data()), LDB); \
+      HostBlas<BASE_SCALAR_TYPE>::trmm(side_, uplo_, trans[0], diag[0], N, M, alpha, reinterpret_cast<const BASE_SCALAR_TYPE *>(A.data()), LDA, reinterpret_cast<BASE_SCALAR_TYPE *>(B.data()), LDB); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
 
 #define KOKKOSBLAS3_DTRMM_BLAS(LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_BLAS(double, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS3_TRMM_BLAS(double, double, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS3_STRMM_BLAS( LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_BLAS(float, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS3_TRMM_BLAS(float, float, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS3_ZTRMM_BLAS( LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<double>, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS3_CTRMM_BLAS( LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<float>, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUTA,  LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)
 
 // Explicitly define the TRMM class for all permutations listed below
 
@@ -161,7 +161,7 @@ KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSp
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_TRMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
+#define KOKKOSBLAS3_TRMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct TRMM< \
      Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
@@ -188,18 +188,18 @@ struct TRMM< \
     const int M = static_cast<int> (B.extent(0)); \
     const int N = static_cast<int> (B.extent(1)); \
     \
-    bool A_is_ll = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
-    bool B_is_ll = std::is_same<Kokkos::LayoutLeft,LAYOUTB>::value; \
+    bool A_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
+    bool B_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTB>::value; \
     \
-    const int AST = A_is_ll?A.stride(1):A.stride(0), LDA = (AST == 0) ? 1 : AST; \
-    const int BST = B_is_ll?B.stride(1):B.stride(0), LDB = (BST == 0) ? 1 : BST; \
+    const int AST = A_is_layout_left?A.stride(1):A.stride(0), LDA = (AST == 0) ? 1 : AST; \
+    const int BST = B_is_layout_left?B.stride(1):B.stride(0), LDB = (BST == 0) ? 1 : BST; \
     \
     cublasSideMode_t  side_; \
     cublasFillMode_t  uplo_; \
     cublasOperation_t trans_; \
     cublasDiagType_t  diag_; \
     \
-    if(A_is_ll) { \
+    if(A_is_layout_left) { \
       if ((side[0]=='L')||(side[0]=='l')) \
         side_ = CUBLAS_SIDE_LEFT; \
       else \
@@ -232,22 +232,25 @@ struct TRMM< \
       diag_ = CUBLAS_DIAG_NON_UNIT; \
     \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
-    cublasZtrmm(s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha), reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB, reinterpret_cast<cuDoubleComplex*>(B.data()), LDB); \
+    if (A_is_layout_left) \
+      CUBLAS_FN(s.handle, side_, uplo_, trans_, diag_, M, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha), reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB); \
+    else \
+      CUBLAS_FN(s.handle, side_, uplo_, trans_, diag_, N, M, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha), reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB, reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB); \
     Kokkos::Profiling::popRegion(); \
   } \
 }; \
 
 #define KOKKOSBLAS3_DTRMM_CUBLAS( LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_CUBLAS(double, double, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
+KOKKOSBLAS3_TRMM_CUBLAS(double, double, cublasDtrmm, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
 
 #define KOKKOSBLAS3_STRMM_CUBLAS( LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_CUBLAS(float, float, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
+KOKKOSBLAS3_TRMM_CUBLAS(float, float, cublasStrmm, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
 
 #define KOKKOSBLAS3_ZTRMM_CUBLAS( LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
+KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZtrmm, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
 
 #define KOKKOSBLAS3_CTRMM_CUBLAS( LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL ) \
-KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<float>, cuComplex, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
+KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCtrmm, LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL )
 
 // Explicitly define the TRMM class for all permutations listed below
 
