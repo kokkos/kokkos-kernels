@@ -62,9 +62,13 @@ namespace KokkosBlas {
 ///                   "L" or "l" indicates matrix A is a lower triangular matrix
 /// \param diag  [in] "U" or "u" indicates the diagonal of A is assumed to be unit
 //                    "N" or "n" indicates the diagonal of A is assumed to be non-unit
-/// \param A [in,out]     Input matrix, as a 2-D Kokkos::View 
+/// \param A [in,out] Input matrix, as a 2-D Kokkos::View 
 ///                   On entry, A
-///                   On exit, inv(A)
+///                   On successful exit, inv(A)
+/// \return           0 upon success, 
+//                    i if the i-th diagonal elemet of A is zero, A is singular,
+//                    and the inversion could not be completed.
+// source: https://software.intel.com/en-us/mkl-developer-reference-c-trtri
 template<class AViewType>
 int
 trtri (const char uplo[],

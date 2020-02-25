@@ -101,7 +101,7 @@ struct trtri_tpl_spec_avail< \
 
 #endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
-}
-}
+} // namespace Impl
+} // namespace KokkosBlas
 
 #endif // KOKKOSBLASLAPACK_TRTRI_TPL_SPEC_AVAIL_HPP_

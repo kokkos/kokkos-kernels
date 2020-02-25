@@ -44,29 +44,25 @@
 #ifndef KOKKOSBLASLAPACK_TRTRI_TPL_SPEC_DECL_HPP_
 #define KOKKOSBLASLAPACK_TRTRI_TPL_SPEC_DECL_HPP_
 
-// Generic Host side BLAS (could be MKL or anything)
-//#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#include "KokkosBlas_Host_tpl.hpp"
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#include "KokkosBlas_Host_tpl.hpp" // trtri prototype
 #include "KokkosBlas_tpl_spec.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
 
-// TODO: add SCALAR_TYPE parameter and stringify it.
-#define KOKKOSBLASLAPACK_DTRTRI_BLAS( LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL ) \
+#define KOKKOSBLASLAPACK_DTRTRI_BLAS(SCALAR_TYPE, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const double**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+     Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
-  typedef double SCALAR; \
+  typedef SCALAR_TYPE SCALAR; \
 typedef Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RViewType; \
-  typedef Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+  typedef Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > AViewType; \
   \
   static void \
@@ -75,7 +71,7 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
         const char diag[], \
         const AViewType& A) { \
     \
-    Kokkos::Profiling::pushRegion("KokkosBlas::trtri[TPL_BLAS,double]"); \
+    Kokkos::Profiling::pushRegion("KokkosBlas::trtri[TPL_BLAS,"#SCALAR_TYPE"]"); \
     const int M = static_cast<int> (A.extent(0)); \
     \
     bool A_is_ll = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
@@ -98,7 +94,7 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
         uplo_ = 'L'; \
     } \
     \
-    R() = HostBlas<double>::trtri(matrix_layout_, uplo_, diag[0], M, A.data(), LDA); \
+    R() = HostBlas<SCALAR>::trtri(matrix_layout_, uplo_, diag[0], M, A.data(), LDA); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -106,9 +102,9 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
 // Explicitly define the TRTRI class for all permutations listed below
 
 //KOKKOSBLASLAPACK_DTRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_DTRTRI_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLASLAPACK_DTRTRI_BLAS( double, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 //KOKKOSBLASLAPACK_DTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_DTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLASLAPACK_DTRTRI_BLAS( double, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 #if 0
 //KOKKOSBLASLAPACK_STRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
@@ -127,8 +123,8 @@ KOKKOSBLASLAPACK_CTRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::
 KOKKOSBLASLAPACK_CTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 #endif // 0
 
-}
-}
+} // namespace Impl
+} // nameSpace KokkosBlas
 #endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
 #endif // KOKKOSBLASLAPACK_TRTRI_TPL_SPEC_DECL_HPP_

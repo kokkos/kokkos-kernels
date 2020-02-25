@@ -59,8 +59,8 @@ template<class RVIT, class AVIT>
 struct trtri_eti_spec_avail {
   enum : bool { value = false };
 };
-}
-}
+} // namespace Impl
+} // namespace KokkosBlas
 
 //
 // This Macros provides the ETI specialization of trtri, currently not available.
@@ -76,7 +76,7 @@ struct trtri_eti_spec_avail {
 
 // Include the actual specialization declarations
 #include<KokkosBlasLapack_trtri_tpl_spec_avail.hpp>
-//#include<generated_specializations_hpp/KokkosBlasLapack_trtri_eti_spec_avail.hpp>
+//TODO: #include<generated_specializations_hpp/KokkosBlasLapack_trtri_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -99,10 +99,10 @@ struct TRTRI{
         const AVIT& A);
 };
 
-// Fall-back ETI implementation of KokkosBlas::trtri.
+// TODO: Fall-back ETI implementation of KokkosBlas::trtri.
 #if 0 && (!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-template<class AVIT, class RVIT>
-struct TRTRI<AVIT, RVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template<class RVIT, class AVIT>
+struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void
   trtri (const RVIT& R,
         const char uplo[],
@@ -122,7 +122,7 @@ struct TRTRI<AVIT, RVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
     // TODO: Why does this always execute in host space? kokkos parallel operations
     // can execute in device space.
-    SerialTrtri_Invoke<typename AVIT::HostMirror, typename RVIT::HostMirror> (uplo, diag, host_A);
+    SerialTrtri_Invoke<RVIT, typename AVIT::HostMirror> (uplo, diag, host_A);
 
     Kokkos::deep_copy(A, host_A);
 
@@ -159,6 +159,6 @@ template struct TRTRI< \
      false, true>;
 
 #include<KokkosBlasLapack_trtri_tpl_spec_decl.hpp>
-//#include<generated_specializations_hpp/KokkosBlasLapack_trtri_eti_spec_decl.hpp>
+// TODO: #include<generated_specializations_hpp/KokkosBlasLapack_trtri_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLASLAPACK_TRTRI_SPEC_HPP_
