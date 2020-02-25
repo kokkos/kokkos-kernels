@@ -276,13 +276,11 @@ void sptrsv_symbolic(
   // ===================================================================
   // load sptrsv-handles
   auto *handleL = kernelHandleL->get_sptrsv_handle ();
-  auto *handleU = kernelHandleU->get_sptrsv_handle ();
   int *etree = handleL->get_etree ();
 
   // ===================================================================
   // load options
   bool merge = handleL->get_merge_supernodes ();
-  bool u_in_csc = handleU->is_column_major ();
   bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                     handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
   if (needEtree && etree == nullptr) {
@@ -557,7 +555,6 @@ void sptrsv_compute(
   // ===================================================================
   // load options
   bool merge = handleL->get_merge_supernodes ();
-  bool u_in_csc = handleU->is_column_major ();
   bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                   handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE

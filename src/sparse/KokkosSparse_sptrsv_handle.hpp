@@ -217,26 +217,26 @@ public:
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-  typedef typename execution_space::memory_space  supercols_memory_space;
+  using supercols_memory_space = typename execution_space::memory_space;
 
-  typedef Kokkos::DefaultHostExecutionSpace                      supercols_host_execution_space;
-  typedef typename supercols_host_execution_space::memory_space  supercols_host_memory_space;
+  using supercols_host_execution_space = Kokkos::DefaultHostExecutionSpace;
+  using supercols_host_memory_space = typename supercols_host_execution_space::memory_space;
 
-  typedef Kokkos::View<int*, supercols_memory_space>       integer_view_t;
-  typedef Kokkos::View<int*, supercols_host_memory_space>  integer_view_host_t;
+  using integer_view_t = Kokkos::View<int*, supercols_memory_space>;
+  using integer_view_host_t = Kokkos::View<int*, supercols_host_memory_space>;
 
-  typedef typename Kokkos::View<scalar_t*, memory_space> workspace_t;
-
-  //
-  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type> crsmat_t;
+  using workspace_t = typename Kokkos::View<scalar_t*, memory_space>;
 
   //
-  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
-  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type>;
+  using crsmat_t      = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type>;
 
   //
-  typedef typename std::vector<crsmat_t> crsmat_list_t;
+  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
+  using graph_t      = typename      crsmat_t::StaticCrsGraphType;
+
+  //
+  using crsmat_list_t = typename std::vector<crsmat_t>;
 #endif
 
 private:
