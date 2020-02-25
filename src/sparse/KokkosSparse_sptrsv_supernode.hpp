@@ -916,7 +916,7 @@ void sptrsv_supernodal_symbolic(
 /* ========================================================================================= */
 template <typename crsmat_t, typename KernelHandle>
 void
-invert_supernodal_columns(KernelHandle kernelHandle, bool lower, bool unit_diag, int nsuper, const int *nb, crsmat_t &Mtx) {
+invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper, const int *nb, crsmat_t &Mtx) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t = typename values_view_t::value_type;
@@ -927,6 +927,10 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool lower, bool unit_diag,
   auto *handle = kernelHandle->get_sptrsv_handle ();
   bool invert_diag = handle->get_invert_diagonal ();
   bool invert_offdiag = handle->get_invert_offdiagonal ();
+
+ // lower is always in CSC, if UinCSC, then lower=false, else lower=true
+  bool lower_tri = kernelHandle->is_sptrsv_lower_tri ();
+  bool lower = (lower_tri ? true : (handle->is_column_major () ? false : true));
 
   // quick return
   if (!invert_diag) return;
@@ -1015,7 +1019,7 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool lower, bool unit_diag,
 template <typename crsmat_t, typename input_crsmat_t, typename graph_t, typename KernelHandle>
 crsmat_t
 read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
-                       bool lower, bool unit_diag, input_crsmat_t &L, graph_t &static_graph) {
+                       bool unit_diag, input_crsmat_t &L, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
   using scalar_t = typename values_view_t::value_type;
@@ -1072,7 +1076,7 @@ read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const int *nb,
   using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, hostspace, void, size_type>;
   host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
 
-  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat); 
+  invert_supernodal_columns (kernelHandle, unit_diag, nsuper, nb, host_crsmat);
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
@@ -1239,8 +1243,7 @@ read_supernodal_valuesL(KernelHandle kernelHandle, bool block_diag, bool unit_di
   using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, hostspace, void, size_type>;
   host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
 
-  bool lower = true;
-  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat); 
+  invert_supernodal_columns (kernelHandle, unit_diag, nsuper, nb, host_crsmat);
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
@@ -1528,18 +1531,32 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For numeric computation                                                                   */
-  template <typename crsmat_t,
+  template <typename crsmat_input_t,
             typename KernelHandle>
   void sptrsv_compute(
       KernelHandle *kernelHandleL,
-      crsmat_t L)
+      crsmat_input_t L)
   {
+    using scalar_t = typename KernelHandle::nnz_scalar_t;
+    using ordinal_type = typename crsmat_input_t::ordinal_type;
+    using execution_space = typename KernelHandle::HandleExecSpace;
+    using size_type = typename crsmat_input_t::size_type;
+    using crsmat_t = KokkosSparse::CrsMatrix<scalar_t, ordinal_type, execution_space, void, size_type>;
+
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
     if (!(handleL->is_symbolic_complete())) {
       std::cout << std::endl
                 << " ** needs to call sptrsv_symbolic before calling sptrsv_numeric **"
+                << std::endl << std::endl;
+      return;
+    }
+    bool merged = handleL->get_merge_supernodes ();
+    if (merged) {
+      // TODO: follow what's done in sptrsv_compute in superlu
+      std::cout << std::endl
+                << " ** merge is not supported through this interface, yet **"
                 << std::endl << std::endl;
       return;
     }
@@ -1551,11 +1568,15 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 
     // ==============================================
     // load crsGraph
-    auto graph = handleL->get_graph (); // graph stored in handle vs. graph in crsmat
-    auto row_map = graph.row_map;
-    auto entries = graph.entries;
-    auto nrows = graph.numRows ();
-    auto values = L.values;
+    //auto graph = handleL->get_original_graph_host (); // graph stored in handle (before merge)
+    auto graph = handleL->get_graph (); // graph stored in handle (before merge)
+    auto graph_host = handleL->get_graph_host (); // graph stored in handle (before merge)
+    auto row_map = graph_host.row_map;
+    auto entries = graph_host.entries;
+    auto nrows = graph_host.numRows ();
+
+    // from input CrsMatrix
+    auto values = L.values;            // numerical values from input (host), output will be stored in handle
 
     // ==============================================
     // read numerical values of L from Cholmod
@@ -1582,7 +1603,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
     // ===================================================================
     handleL->set_numeric_complete ();
   }
-
 
 } // namespace Experimental
 } // namespace KokkosSparse

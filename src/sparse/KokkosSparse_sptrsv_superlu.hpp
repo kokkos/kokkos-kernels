@@ -619,9 +619,8 @@ read_superlu_valuesU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMatrix *U,
   Kokkos::deep_copy (hc, entries);
   host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
 
-  bool lower = true; // U in CSR
   bool unit_diag = false;
-  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat);
+  invert_supernodal_columns (kernelHandle, unit_diag, nsuper, nb, host_crsmat);
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
@@ -762,9 +761,8 @@ read_superlu_valuesU_CSC(KernelHandle kernelHandle,
   Kokkos::deep_copy (hc, entries);
   host_crsmat_t host_crsmat("HostCrsMatrix", n, n, hr (n), hv, hr, hc);
 
-  bool lower = false;
   bool unit_diag = false;
-  invert_supernodal_columns (kernelHandle, lower, unit_diag, nsuper, nb, host_crsmat);
+  invert_supernodal_columns (kernelHandle, unit_diag, nsuper, nb, host_crsmat);
 
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
@@ -843,15 +841,14 @@ void sptrsv_compute(
     auto original_graphL_host = handleL->get_original_graph_host ();
     superluL_host = read_superlu_valuesL<host_crsmat_t> (kernelHandleL, block_diag, &L, original_graphL_host);
     // 2) re-load L into merged crs
-    bool lower = true;
     bool unit_diag = true;
     kernelHandleL->set_sptrsv_invert_diagonal (true);  // now invert, TODO: diagonals are always inverted
     if (useSpMV) {
       superluL_host = read_merged_supernodes<host_crsmat_t> (kernelHandleL, nsuper, supercols,
-                                                             lower, unit_diag, superluL_host, graphL_host);
+                                                             unit_diag, superluL_host, graphL_host);
     } else {
       superluL = read_merged_supernodes<crsmat_t> (kernelHandleL, nsuper, supercols,
-                                                   lower, unit_diag, superluL_host, graphL);
+                                                   unit_diag, superluL_host, graphL);
     }
 
     // ========================================================
@@ -868,14 +865,13 @@ void sptrsv_compute(
     }
     kernelHandleU->set_sptrsv_invert_diagonal (true);  // now invert, TODO: diagonals are always inverted
     // 2) re-load U into merged crs
-    lower = (UinCSC ? false : true);
     unit_diag = false;
     if (useSpMV) {
       superluU_host = read_merged_supernodes<host_crsmat_t> (kernelHandleU, nsuper, supercols,
-                                                             lower, unit_diag, superluU_host, graphU_host);
+                                                             unit_diag, superluU_host, graphU_host);
     } else {
       superluU = read_merged_supernodes<crsmat_t> (kernelHandleU, nsuper, supercols,
-                                                   lower, unit_diag, superluU_host, graphU);
+                                                   unit_diag, superluU_host, graphU);
     }
     #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     time_seconds = tic.seconds ();
