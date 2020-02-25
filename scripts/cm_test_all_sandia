@@ -765,10 +765,15 @@ setup_env() {
     module list 2>&1 | grep "$mod" >& /dev/null || return 1
   done
 
+  if [[ "$MACHINE" = bowman* ]]; then
+    module swap gcc/6.2.0
+  fi
+
   if [ -e ${CM_ALL_SCRIPT_PATH}/update_lib.sh ]; then
      echo calling ${CM_ALL_SCRIPT_PATH}/update_lib.sh $MACHINE
      source ${CM_ALL_SCRIPT_PATH}/update_lib.sh $MACHINE
   fi
+
   return 0
 }
 
@@ -844,7 +849,7 @@ single_build_and_test() {
     comment="build_time=$(($build_end_time-$build_start_time))"
 
     if [[ "$BUILD_ONLY" == False ]]; then
-      run_cmd make test >& ${desc}.test.log || { report_and_log_test_result 1 ${desc} test && return 0; }
+      run_cmd ctest -V >& ${desc}.test.log || { report_and_log_test_result 1 ${desc} test && return 0; }
       local -i run_end_time=$(date +%s)
       comment="$comment run_time=$(($run_end_time-$build_end_time))"
     fi
