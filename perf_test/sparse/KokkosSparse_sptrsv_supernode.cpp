@@ -50,6 +50,8 @@
   (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
     defined(KOKKOSKERNELS_INST_DOUBLE)
 
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "KokkosSparse_sptrsv_aux.hpp"
 
 using namespace KokkosKernels;
@@ -414,6 +416,13 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
+#else // defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+int main(int argc, char **argv) {
+  std::cout << std::endl << " ** SUPERNODAL NOT ENABLED **" << std::endl << std::endl;
+  exit(0);
+  return 0;
+}
+#endif
 
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
