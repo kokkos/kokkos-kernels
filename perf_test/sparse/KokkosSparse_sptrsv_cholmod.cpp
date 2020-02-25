@@ -353,14 +353,16 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
         case CUSPARSE:
         {
+          std::cout << " > create handle for CuSparse (SUPERNODAL_NAIVE)" << std::endl << std::endl;
+          khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
+
           // ==============================================
           // read CHOLMOD factor int crsMatrix on the host (cholmodMat_host) and copy to default host/device (cholmodMtx)
           timer.reset();
           std::cout << " > Read Cholmod factor into KokkosSparse::CrsMatrix (invert diagonabl, and copy to device) " << std::endl;
-          bool block_diag = false;
           khL.set_sptrsv_invert_diagonal (false);
-          auto graph = read_cholmod_graphL<graph_t>(block_diag, L, &cm);
-          auto cholmodMtx = read_cholmod_factor<crsmat_t, graph_t> (&khL, block_diag, L, &cm, graph);
+          auto graph = read_cholmod_graphL<graph_t>(&khL, L, &cm);
+          auto cholmodMtx = read_cholmod_factor<crsmat_t, graph_t> (&khL, L, &cm, graph);
           std::cout << "   Conversion Time: " << timer.seconds() << std::endl << std::endl;
 
           bool col_majorL = true;

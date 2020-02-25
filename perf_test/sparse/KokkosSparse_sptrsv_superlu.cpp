@@ -517,34 +517,33 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& filenam
 
         case CUSPARSE:
         {
+          std::cout << " > create handle for CuSparse (SUPERNODAL_NAIVE)" << std::endl << std::endl;
+          khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
+          khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, false);
+
+          khL.set_sptrsv_column_major (!u_in_csr);
+          khU.set_sptrsv_column_major (!u_in_csr);
+
           // ==============================================
           // read SuperLU factor on the host (and copy to default host/device)
-          bool block_diag = false; // pad diagonal blocks with zeros
           timer.reset();
           graph_t graphL;
           crsmat_t superluL;
           khL.set_sptrsv_invert_diagonal (false);
-          graphL = read_superlu_graphL<graph_t> (block_diag, merge, &L);
+          graphL = read_superlu_graphL<graph_t> (&khL, &L);
           double time = timer.seconds ();
           timer.reset ();
-          superluL = read_superlu_valuesL<crsmat_t> (&khL, block_diag, &L, graphL);
+          superluL = read_superlu_valuesL<crsmat_t> (&khL, &L, graphL);
           std::cout << "   Conversion Time for L: " << time << " + " << timer.seconds() << std::endl;
 
           timer.reset ();
           graph_t graphU;
           crsmat_t superluU;
           khU.set_sptrsv_invert_diagonal (false);
-          if (u_in_csr) {
-            graphU = read_superlu_graphU<graph_t> (&L, &U);
-            time = timer.seconds ();
-            timer.reset ();
-            superluU = read_superlu_valuesU<crsmat_t, graph_t> (&khU, &L, &U, graphU);
-          } else {
-            graphU = read_superlu_graphU_CSC<graph_t> (&L, &U);
-            time = timer.seconds ();
-            timer.reset ();
-            superluU = read_superlu_valuesU_CSC<crsmat_t, graph_t> (&khU, &L, &U, graphU);
-          }
+          graphU = read_superlu_graphU<graph_t> (&khU, &L, &U);
+          time = timer.seconds ();
+          timer.reset ();
+          superluU = read_superlu_valuesU<crsmat_t, graph_t> (&khU, &L, &U, graphU);
           std::cout << "   Conversion Time for U: " << time << " + " << timer.seconds() << std::endl;
 
           // remove zeros in L/U

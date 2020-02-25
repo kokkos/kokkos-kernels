@@ -63,8 +63,8 @@ namespace Experimental {
 /* Auxiliary functions for symbolic analysis                                                 */
 
   /* ========================================================================================= */
-  template <typename graph_t>
-  graph_t read_cholmod_graphL(bool block_diag, cholmod_factor *L, cholmod_common *cm) {
+  template <typename graph_t, typename KernelHandle>
+  graph_t read_cholmod_graphL(KernelHandle kernelHandle, cholmod_factor *L, cholmod_common *cm) {
 
     /* ---------------------------------------------------------------------- */
     /* get inputs */
@@ -76,11 +76,8 @@ namespace Experimental {
     int *colptr = (int*)(L->px);      // colptr
     int *rowind = (int*)(L->s);       // rowind
 
-    bool merge = false;
     bool ptr_by_column = false;
-
-    return read_supernodal_graphL<graph_t> (block_diag, merge,
-                                            n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
+    return read_supernodal_graphL<graph_t> (kernelHandle, n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
   }
 
 
@@ -135,8 +132,7 @@ namespace Experimental {
     Kokkos::Timer timer;
     // ==============================================
     // extract CrsGraph from Cholmod
-    bool block_diag = true; // pad diagonal blocks with zeros
-    auto graph = read_cholmod_graphL<graph_t>(block_diag, L, cm);
+    auto graph = read_cholmod_graphL<graph_t>(kernelHandleL, L, cm);
     auto row_map = graph.row_map;
     auto entries = graph.entries;
 
@@ -183,7 +179,7 @@ namespace Experimental {
 
   /* ========================================================================================= */
   template <typename crsmat_t, typename graph_t, typename KernelHandle>
-  crsmat_t read_cholmod_factor(KernelHandle kernelHandle, bool block_diag, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
+  crsmat_t read_cholmod_factor(KernelHandle kernelHandle, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
 
     using values_view_t = typename crsmat_t::values_type::non_const_type;
     using scalar_t      = typename values_view_t::value_type;
@@ -203,7 +199,7 @@ namespace Experimental {
     bool ptr_by_column = false;
     //kernelHandle->set_sptrsv_invert_diagonal (true);
     //kernelHandle->set_sptrsv_invert_offdiagonal (false);
-    return read_supernodal_valuesL<crsmat_t, graph_t> (kernelHandle, block_diag, unit_diag, n, nsuper,
+    return read_supernodal_valuesL<crsmat_t, graph_t> (unit_diag, kernelHandle, n, nsuper,
                                                        ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
   }
 
@@ -243,8 +239,7 @@ namespace Experimental {
 
     // ==============================================
     // read numerical values of L from Cholmod
-    bool block_diag = true; // pad diagonal blocks with zeros
-    auto cholmodL = read_cholmod_factor<crsmat_t> (kernelHandleL, block_diag, L, cm, graph);
+    auto cholmodL = read_cholmod_factor<crsmat_t> (kernelHandleL, L, cm, graph);
 
     // ==============================================
     // save crsmat
