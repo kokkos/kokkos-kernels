@@ -51,7 +51,7 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLASLAPACK_DTRTRI_BLAS(SCALAR_TYPE, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL ) \
+#define KOKKOSBLASLAPACK_TRTRI_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
 template<class ExecSpace> \
 struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
@@ -74,14 +74,14 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
     Kokkos::Profiling::pushRegion("KokkosBlas::trtri[TPL_BLAS,"#SCALAR_TYPE"]"); \
     const int M = static_cast<int> (A.extent(0)); \
     \
-    bool A_is_ll = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
-    int matrix_layout_ = A_is_ll ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR; \
+    bool A_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
+    int matrix_layout_ = A_is_layout_left ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR; \
     \
-    const int AST = A_is_ll?A.stride(1):A.stride(0), LDA = (AST == 0) ? 1 : AST; \
+    const int AST = A_is_layout_left?A.stride(1):A.stride(0), LDA = (AST == 0) ? 1 : AST; \
     \
     char  uplo_; \
     \
-    if(A_is_ll) { \
+    if(A_is_layout_left) { \
       if ((uplo[0]=='L')||(uplo[0]=='l')) \
         uplo_ = 'L'; \
       else \
@@ -94,34 +94,43 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
         uplo_ = 'L'; \
     } \
     \
-    R() = HostBlas<SCALAR>::trtri(matrix_layout_, uplo_, diag[0], M, A.data(), LDA); \
+    R() = HostBlas<BASE_SCALAR_TYPE>::trtri(matrix_layout_, uplo_, diag[0], M, reinterpret_cast<const BASE_SCALAR_TYPE *>(A.data()), LDA); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
 
+#define KOKKOSBLASLAPACK_DTRTRI_BLAS(LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
+KOKKOSBLASLAPACK_TRTRI_BLAS(double, double, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)
+
+#define KOKKOSBLASLAPACK_STRTRI_BLAS(LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
+KOKKOSBLASLAPACK_TRTRI_BLAS(float, float, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)
+
+#define KOKKOSBLASLAPACK_ZTRTRI_BLAS(LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
+KOKKOSBLASLAPACK_TRTRI_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)
+
+#define KOKKOSBLASLAPACK_CTRTRI_BLAS(LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
+KOKKOSBLASLAPACK_TRTRI_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)
 // Explicitly define the TRTRI class for all permutations listed below
 
-//KOKKOSBLASLAPACK_DTRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_DTRTRI_BLAS( double, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-//KOKKOSBLASLAPACK_DTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_DTRTRI_BLAS( double, Kokkos::LayoutRight, Kokkos::HostSpace, false)
+//KOKKOSBLASLAPACK_DTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_DTRTRI_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+//KOKKOSBLASLAPACK_DTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_DTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-#if 0
-//KOKKOSBLASLAPACK_STRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_STRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-//KOKKOSBLASLAPACK_STRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_STRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
+//KOKKOSBLASLAPACK_STRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_STRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+//KOKKOSBLASLAPACK_STRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_STRTRI_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-//KOKKOSBLASLAPACK_ZTRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_ZTRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-//KOKKOSBLASLAPACK_ZTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_ZTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
+//KOKKOSBLASLAPACK_ZTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_ZTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+//KOKKOSBLASLAPACK_ZTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_ZTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-//KOKKOSBLASLAPACK_CTRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_CTRTRI_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-//KOKKOSBLASLAPACK_CTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLASLAPACK_CTRTRI_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
-#endif // 0
+//KOKKOSBLASLAPACK_CTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_CTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+//KOKKOSBLASLAPACK_CTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLASLAPACK_CTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 } // namespace Impl
 } // nameSpace KokkosBlas

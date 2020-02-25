@@ -79,8 +79,11 @@ namespace Test {
   };
 
   template<class ViewTypeA, class Device>
-  int impl_test_trtri(const char* uplo, const char* diag, 
-                      const int M, const int N) {
+  int impl_test_trtri(int bad_diag_idx,
+                      const char* uplo,
+                      const char* diag, 
+                      const int M, 
+                      const int N) {
 
     using execution_space = typename ViewTypeA::device_type::execution_space;
     using ScalarA         = typename ViewTypeA::value_type;
@@ -89,19 +92,31 @@ namespace Test {
 
     double machine_eps = APT::epsilon();
     const mag_type eps = 1.0e5 * machine_eps; //~1e-13 for double
-    bool A_l = (uplo[0]=='L') || (uplo[0]=='l');
+    bool is_A_lower_triangular = (uplo[0]=='L') || (uplo[0]=='l');
     int ret;
     ViewTypeA A ("A", M,N);
     ViewTypeA A_original ("A_original", M,N);
-    ViewTypeA A_I ("A_I", M,N); // is A_I taken...?
+    ViewTypeA A_I ("A_I", M,N); // is I taken...?
     uint64_t seed = Kokkos::Impl::clock_tic();
     ScalarA beta       = ScalarA(0);
     ScalarA cur_check_val; // Either 1 or 0, to check A_I
 
     //printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
 
-    if (M != N)
+    if (M != N || bad_diag_idx != -1) {
+      if (bad_diag_idx != -1) {
+        for (int i = 0; i < M; i++) {
+          for (int j = 0; j < N; j++) {
+            if (i==j)
+              A(i,j) = ScalarA(1);
+            else
+              A(i,j) = ScalarA(0);
+          }
+        }
+        A(bad_diag_idx-1, bad_diag_idx-1) = ScalarA(0);
+      }
       return KokkosBlas::trtri(uplo, diag, A);
+    }
 
     // If M is greater than 100 and A is an unit triangluar matrix, make A the
     // identity matrix
@@ -131,12 +146,12 @@ namespace Test {
     Kokkos::fence();
     Kokkos::deep_copy(host_A,  A);
     // Make host_A a lower triangle
-    if (A_l || M_gt_100) {
+    if (is_A_lower_triangular || M_gt_100) {
       for (int i = 0; i < M-1; i++)
         for (int j = i+1; j < N; j++)
           host_A(i,j) = ScalarA(0);
     }
-    if (!A_l || M_gt_100) {
+    if (!is_A_lower_triangular || M_gt_100) {
       // Make host_A a upper triangle
       for (int i = 1; i < M; i++)
         for (int j = 0; j < i; j++)
@@ -221,6 +236,7 @@ namespace Test {
 template<class ScalarA, class Device>
 int test_trtri(const char* mode) {
   int ret;
+  int bad_diag_idx = -1;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   using view_type_a = Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
 #endif
@@ -229,24 +245,31 @@ int test_trtri(const char* mode) {
   using view_type_a = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
 #endif
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],0,0);
+  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 0, 0);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],1,1);
+  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 1, 1);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],15,15);
+  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 15, 15);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],100,100);
+  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 100, 100);
   EXPECT_EQ(ret, 0);
 
   // Rounding errors with randomly generated matrices begin here where M>100, so we pass in A=I
-  ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],473,473);
+  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 473, 473);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],1002,1002);
+  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 1002, 1002);
   EXPECT_EQ(ret, 0);
+
+  // Only non-unit matrices have could be singular.
+  if (mode[1] == 'N' || mode[1] == 'n') {
+    bad_diag_idx = 2; // 1-index based
+    ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 2, 2);
+    EXPECT_EQ(ret, bad_diag_idx);
+  }
 
   // One time check, disabled due to runtime throw instead of return here
   //ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],1031,731);
