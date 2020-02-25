@@ -59,8 +59,8 @@ template<class AVIT, class BVIT>
 struct trmm_eti_spec_avail {
   enum : bool { value = false };
 };
-}
-}
+} // namespace Impl
+} // namespace KokkosBlas
 
 //
 // This Macro is for readability of the template arguments.
@@ -82,7 +82,7 @@ struct trmm_eti_spec_avail {
 
 // Include the actual specialization declarations
 #include<KokkosBlas3_trmm_tpl_spec_avail.hpp>
-//#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_avail.hpp>
+//TODO: #include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -108,7 +108,7 @@ struct TRMM{
         const BVIT& B);
 };
 
-// Fall-back ETI implementation of KokkosBlas::trmm.
+// TODO: Fall-back ETI implementation of KokkosBlas::trmm.
 #if 0 && (!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 template<class AVIT,
          class BVIT>
@@ -136,10 +136,8 @@ struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     typename AVIT::HostMirror host_A  = Kokkos::create_mirror_view(A);
     typename BVIT::HostMirror host_B  = Kokkos::create_mirror_view(B);
 
-    // Copy A to host_A and B to host_B, this is a no-op if A and B MemorySpace
-    // is HostSpace
-    // TODO: If A and B MemorySpace is DeviceSpace and we're going to be executing in
-    // DeviceSpace, don't copy to the host!
+    // Copy A to host_A and B to host_B
+    // no-op if A and B MemorySpace is HostSpace
     Kokkos::deep_copy(host_A, A);
     Kokkos::deep_copy(host_B, B);
 
@@ -147,8 +145,6 @@ struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
     // Copy host_B to B
     // no-op if B's MemorySpace is HostSpace
-    // TODO: If A and B MemorySpace is DeviceSpace and we're going to be executing in
-    // DeviceSpace, don't copy to the host!
     Kokkos::deep_copy(B, host_B);
 
     Kokkos::Profiling::popRegion();
