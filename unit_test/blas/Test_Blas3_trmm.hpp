@@ -96,10 +96,8 @@ namespace Test {
     ViewTypeB B_expected ("B_expected", M,N);
     uint64_t seed = Kokkos::Impl::clock_tic();
     ScalarA beta       = ScalarA(0);
-    //bool is_complex = std::is_same<Kokkos::complex<double>,typename ViewTypeA::value_type>::value;
 
-    //if (is_complex)
-    printf("KokkosBlas::trmm test for alpha %g, %c %c %c %c, M %d, N %d, eps %g, ViewType: %s\n", Kokkos::Details::ArithTraits<Scalar>::real(alpha),side[0],uplo[0],trans[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
+    //printf("KokkosBlas::trmm test for alpha %g, %c %c %c %c, M %d, N %d, eps %g, ViewType: %s\n", Kokkos::Details::ArithTraits<Scalar>::real(alpha),side[0],uplo[0],trans[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
 
     typename ViewTypeA::HostMirror host_A  = Kokkos::create_mirror_view(A);
     typename ViewTypeB::HostMirror host_B_actual  = Kokkos::create_mirror_view(B);
@@ -176,7 +174,7 @@ namespace Test {
       for (int j=0; j<N; j++) {
         if ( APT::abs(host_B_actual(i,j) - host_B_expected(i,j)) > eps ) {
           test_flag = false;
-          printf("   Error: eps ( %g ), abs_result( %.15lf ) != abs_solution( %.15lf ) (abs result-solution %g) at (i %d, j %d)\n", eps, APT::abs(host_B_actual(i,j)), APT::abs(B_expected(i,j)), APT::abs(host_B_actual(i,j) - B_expected(i,j)), i, j);
+          //printf("   Error: eps ( %g ), abs_result( %.15lf ) != abs_solution( %.15lf ) (abs result-solution %g) at (i %d, j %d)\n", eps, APT::abs(host_B_actual(i,j)), APT::abs(B_expected(i,j)), APT::abs(host_B_actual(i,j) - B_expected(i,j)), i, j);
           break;
         }
       }
