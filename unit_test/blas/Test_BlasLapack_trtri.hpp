@@ -102,7 +102,8 @@ namespace Test {
     ScalarA beta       = ScalarA(0);
     ScalarA cur_check_val; // Either 1 or 0, to check A_I
 
-    //printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name()); fflush(stdout);
+    //const int As0 = A.stride(0), As1 = A.stride(1);
+    //printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s, A.stride(0): %d, A.stride(1): %d START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1); fflush(stdout);
 
     if (M != N || bad_diag_idx > 0) {
       if (bad_diag_idx > 0) {
@@ -116,7 +117,7 @@ namespace Test {
         }
         // Set just 1 value in the diagonal to 0.
         if (M > 0 && N > 0)
-          A(bad_diag_idx-1, bad_diag_idx-1) = ScalarA(0);
+          A(bad_diag_idx-1, bad_diag_idx-1) = ScalarA(0);       
       }
       return KokkosBlas::trtri(uplo, diag, A);
     }
