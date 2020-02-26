@@ -77,7 +77,7 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
     bool A_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
     int matrix_layout_ = A_is_layout_left ? LAPACK_COL_MAJOR : LAPACK_ROW_MAJOR; \
     \
-    const int AST = A_is_layout_left?A.stride(1):A.stride(0), LDA = (AST == 0) ? 1 : AST; \
+    const int AST = A.stride(0), LDA = (AST == 0) ? 1 : AST; \
     \
     char  uplo_; \
     \

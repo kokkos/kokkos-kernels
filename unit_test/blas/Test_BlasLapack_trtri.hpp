@@ -93,6 +93,7 @@ namespace Test {
     double machine_eps = APT::epsilon();
     const mag_type eps = 1.0e5 * machine_eps; //~1e-13 for double
     bool is_A_lower_triangular = (uplo[0]=='L') || (uplo[0]=='l');
+    bool is_A_layout_left = std::is_same<Kokkos::LayoutLeft,typename ViewTypeA::array_layout>::value;
     int ret;
     ViewTypeA A ("A", M,N);
     ViewTypeA A_original ("A_original", M,N);
@@ -101,10 +102,10 @@ namespace Test {
     ScalarA beta       = ScalarA(0);
     ScalarA cur_check_val; // Either 1 or 0, to check A_I
 
-    //printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name());
+    //printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name()); fflush(stdout);
 
-    if (M != N || bad_diag_idx != -1) {
-      if (bad_diag_idx != -1) {
+    if (M != N || bad_diag_idx > 0) {
+      if (bad_diag_idx > 0) {
         for (int i = 0; i < M; i++) {
           for (int j = 0; j < N; j++) {
             if (i==j)
@@ -113,7 +114,9 @@ namespace Test {
               A(i,j) = ScalarA(0);
           }
         }
-        A(bad_diag_idx-1, bad_diag_idx-1) = ScalarA(0);
+        // Set just 1 value in the diagonal to 0.
+        if (M > 0 && N > 0)
+          A(bad_diag_idx-1, bad_diag_idx-1) = ScalarA(0);
       }
       return KokkosBlas::trtri(uplo, diag, A);
     }
@@ -158,13 +161,35 @@ namespace Test {
           host_A(i,j) = ScalarA(0); 
     }
     Kokkos::deep_copy(A, host_A);
+
+    // Transpose A
+    if (!is_A_layout_left) {
+      #if 0
+      printf("host_A:\n");
+      for (int i = 0; i < M; i++) {
+          for (int j = 0; j < N; j++) {
+            printf("%*.13lf ", 20, true?host_A(i,j):host_A(j,i));
+          }
+          printf("\n");
+      }
+      #endif
+
+      // Use A_I as temp space
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+          A_I(j,i) = host_A(i,j);
+        }
+      }
+      Kokkos::deep_copy(A, A_I);
+    }
     Kokkos::deep_copy(A_original, A);
 
     #if 0
+    Kokkos::deep_copy(host_A, A);
     printf("host_A:\n");
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-          printf("%.13lf ", host_A(i,j));
+          printf("%*.13lf ", 20, host_A(i,j));
         }
         printf("\n");
     }
@@ -180,16 +205,17 @@ namespace Test {
     }
 
     #if 0
-    printf("A:\n");
+    Kokkos::deep_copy(host_A, A);
+    printf("host_A:\n");
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-          printf("%.13lf ", A(i,j));
+          printf("%*.13lf ", 20, host_A(i,j));
         }
         printf("\n");
     }
     #endif
 
-    // A_I = A_original * A
+    // A_I = A * A_original
     struct VanillaGEMM<ViewTypeA,ViewTypeA,ViewTypeA,execution_space> vgemm;
     vgemm.A_t = false; vgemm.B_t = false;
     vgemm.A_c = false; vgemm.B_c = false;
@@ -206,7 +232,7 @@ namespace Test {
     printf("host_I:\n");
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-          printf("%.13lf ", host_I(i,j));
+          printf("%*.13lf ", 20, host_I(i,j));
         }
         printf("\n");
     }
@@ -221,8 +247,8 @@ namespace Test {
         // Check how close |A_I - cur_check_val| is to 0.
         if (APT::abs(APT::abs(host_I(i,j)) - cur_check_val) > eps) {
             test_flag = false;
-            printf("   Error: eps ( %g ), host_I ( %.15lf ) != cur_check_val ( %.15lf ) (abs result-cur_check_val %g) at (i %d, j %d)\n", 
-                  eps, host_I(i,j), cur_check_val, APT::abs(host_I(i,j) - cur_check_val), i, j);
+            //printf("   Error: eps ( %g ), host_I ( %.15f ) != cur_check_val ( %.15f ) (abs result-cur_check_val %g) at (i %d, j %d)\n", 
+            //      eps, host_I(i,j), cur_check_val, APT::abs(host_I(i,j) - cur_check_val), i, j);
             break;
         }
       }
@@ -238,42 +264,70 @@ int test_trtri(const char* mode) {
   int ret;
   int bad_diag_idx = -1;
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a = Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
-#endif
+  using view_type_a_layout_left = Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
-#endif
-
-  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 0, 0);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 0, 0);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 1, 1);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 1, 1);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 15, 15);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 15, 15);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 100, 100);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 100, 100);
   EXPECT_EQ(ret, 0);
 
   // Rounding errors with randomly generated matrices begin here where M>100, so we pass in A=I
-  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 473, 473);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 473, 473);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 1002, 1002);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 1002, 1002);
   EXPECT_EQ(ret, 0);
 
-  // Only non-unit matrices have could be singular.
+ // Only non-unit matrices could be singular.
   if (mode[1] == 'N' || mode[1] == 'n') {
     bad_diag_idx = 2; // 1-index based
-    ret = Test::impl_test_trtri<view_type_a, Device>(bad_diag_idx, &mode[0], &mode[1], 2, 2);
+    ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 2, 2);
     EXPECT_EQ(ret, bad_diag_idx);
+    bad_diag_idx = -1;
   }
 
   // One time check, disabled due to runtime throw instead of return here
-  //ret = Test::impl_test_trtri<view_type_a, Device>(&mode[0],&mode[1],1031,731);
+  //ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(&mode[0],&mode[1],1031,731);
   //EXPECT_NE(ret, 0);
+#endif
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  using view_type_a_layout_right = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
+  
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 0, 0);
+  EXPECT_EQ(ret, 0);
+
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 1, 1);
+  EXPECT_EQ(ret, 0);
+
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 15, 15);
+  EXPECT_EQ(ret, 0);
+
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 100, 100);
+  EXPECT_EQ(ret, 0);
+
+  // Rounding errors with randomly generated matrices begin here where M>100, so we pass in A=I
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 473, 473);
+  EXPECT_EQ(ret, 0);
+
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 1002, 1002);
+  EXPECT_EQ(ret, 0);
+
+  // Only non-unit matrices could be singular.
+  if (mode[1] == 'N' || mode[1] == 'n') {
+    bad_diag_idx = 2; // 1-index based
+    ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 2, 2);
+    EXPECT_EQ(ret, bad_diag_idx);
+    bad_diag_idx = -1;
+  }
+#endif
 
   return 1;
 }
