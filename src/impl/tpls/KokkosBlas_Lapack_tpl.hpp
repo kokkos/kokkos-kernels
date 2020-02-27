@@ -1,13 +1,14 @@
 #ifndef KOKKOSBLASLAPACK_LAPACK_TPL_HPP_
 #define KOKKOSBLASLAPACK_LAPACK_TPL_HPP_
 
-#include<KokkosBlas_Host_tpl.hpp>
+#include<KokkosBlas_Host_tpl.hpp> // trtri prototype
+#include<KokkosBlas_tpl_spec.hpp> // LAPACKE_
 
-#if defined (KOKKOSKERNELS_ENABLE_TPL_LAPACK)
-#include<KokkosBlas_tpl_spec.hpp>
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
 
 namespace KokkosBlas {
   namespace Impl {
+    //// TRTRI ////
     template<>
     int 
     HostBlas<double >::trtri(const int matrix_layout, const char uplo, const char diag,

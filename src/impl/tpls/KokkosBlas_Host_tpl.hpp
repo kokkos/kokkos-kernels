@@ -145,11 +145,6 @@ namespace KokkosBlas {
 #endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
-      // TODO: use lapack_int from lapacke_config.h
-      //static
-      //lapack_int trtri(const int matrix_layout, const char uplo, const char diag,
-      //           lapack_int n,
-      //           const T *a, lapack_int lda);
       static
       int trtri(const int matrix_layout, const char uplo, const char diag,
                  int n,

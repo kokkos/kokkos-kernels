@@ -91,7 +91,7 @@ namespace Test {
     using mag_type        = typename APT::mag_type;
 
     double machine_eps = APT::epsilon();
-    const mag_type eps = 1.0e5 * machine_eps; //~1e-13 for double
+    const mag_type eps = 1.0e8 * machine_eps; //~1e-13 for double
     bool is_A_lower_triangular = (uplo[0]=='L') || (uplo[0]=='l');
     bool is_A_layout_left = std::is_same<Kokkos::LayoutLeft,typename ViewTypeA::array_layout>::value;
     int ret;
@@ -105,32 +105,30 @@ namespace Test {
     //const int As0 = A.stride(0), As1 = A.stride(1);
     //printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s, A.stride(0): %d, A.stride(1): %d START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1); fflush(stdout);
 
+    typename ViewTypeA::HostMirror host_A  = Kokkos::create_mirror_view(A);
+    typename ViewTypeA::HostMirror host_I  = Kokkos::create_mirror_view(A);
+
     if (M != N || bad_diag_idx > 0) {
       if (bad_diag_idx > 0) {
         for (int i = 0; i < M; i++) {
           for (int j = 0; j < N; j++) {
             if (i==j)
-              A(i,j) = ScalarA(1);
+              host_A(i,j) = ScalarA(1);
             else
-              A(i,j) = ScalarA(0);
+              host_A(i,j) = ScalarA(0);
           }
         }
         // Set just 1 value in the diagonal to 0.
         if (M > 0 && N > 0)
-          A(bad_diag_idx-1, bad_diag_idx-1) = ScalarA(0);       
+          host_A(bad_diag_idx-1, bad_diag_idx-1) = ScalarA(0);       
+        Kokkos::deep_copy(A, host_A);
       }
       return KokkosBlas::trtri(uplo, diag, A);
     }
 
     // If M is greater than 100 and A is an unit triangluar matrix, make A the
-    // identity matrix
-    // TODO: Why do the unit matrices have such large rounding errors? Why does
-    // adding 10 to the diagonal for non-unit matrices result in fewer rounding
-    // errors?
+    // identity matrix due to large rounding errors in unit matrices
     bool M_gt_100 = (M > 100) && ((diag[0]=='U')||(diag[0]=='u'));
-
-    typename ViewTypeA::HostMirror host_A  = Kokkos::create_mirror_view(A);
-    typename ViewTypeA::HostMirror host_I  = Kokkos::create_mirror_view(A);
 
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
@@ -149,6 +147,7 @@ namespace Test {
     }
     Kokkos::fence();
     Kokkos::deep_copy(host_A,  A);
+
     // Make host_A a lower triangle
     if (is_A_lower_triangular || M_gt_100) {
       for (int i = 0; i < M-1; i++)
@@ -178,9 +177,10 @@ namespace Test {
       // Use A_I as temp space
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-          A_I(j,i) = host_A(i,j);
+          host_I(j,i) = host_A(i,j);
         }
       }
+      Kokkos::deep_copy(A_I, host_I);
       Kokkos::deep_copy(A, A_I);
     }
     Kokkos::deep_copy(A_original, A);
@@ -249,7 +249,7 @@ namespace Test {
         if (APT::abs(APT::abs(host_I(i,j)) - cur_check_val) > eps) {
             test_flag = false;
             //printf("   Error: eps ( %g ), host_I ( %.15f ) != cur_check_val ( %.15f ) (abs result-cur_check_val %g) at (i %d, j %d)\n", 
-            //      eps, host_I(i,j), cur_check_val, APT::abs(host_I(i,j) - cur_check_val), i, j);
+                  //eps, host_I(i,j), cur_check_val, APT::abs(host_I(i,j) - cur_check_val), i, j);
             break;
         }
       }

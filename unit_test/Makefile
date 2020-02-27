@@ -235,7 +235,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas3_gemm.o #Not yet ready need to figure out how to handle CUBLAS
   OBJ_CUDA += Test_Cuda_Blas3_trsm.o
   OBJ_CUDA += Test_Cuda_Blas3_trmm.o
-#  OBJ_CUDA += Test_Cuda_BlasLapack_trtri.o
+  OBJ_CUDA += Test_Cuda_BlasLapack_trtri.o
   OBJ_CUDA += Test_Cuda_Blas_gesv.o
   OBJ_CUDA += Test_Cuda_Sparse_spmv.o
   #OBJ_CUDA += Test_Cuda_Sparse_trsv.o #removing trsv from cuda unit test as it runs only sequential.

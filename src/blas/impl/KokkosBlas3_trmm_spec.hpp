@@ -45,11 +45,9 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_InnerProductSpaceTraits.hpp"
-#include <sstream>
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-#include<KokkosBlas3_trmm_impl.hpp>
+//#include<KokkosBlas3_trmm_impl.hpp>
 #endif
 
 namespace KokkosBlas {

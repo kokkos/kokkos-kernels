@@ -124,9 +124,10 @@ trtri (const char uplo[],
                            typename AViewType::device_type,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
+  // This is the return value type and should always reside on host
   using RViewInternalType = Kokkos::View<int,
                            typename AViewType::array_layout,
-                           typename AViewType::device_type,
+                           Kokkos::HostSpace,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   int result;

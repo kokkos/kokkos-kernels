@@ -623,5 +623,4 @@ TEST_F( TestCategory, trmm_complex_float_RUCU_fourfive ) {
     test_trmm<Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("RUCU",Kokkos::complex<float>(4.5f,0.0f));
   Kokkos::Profiling::popRegion();
 }
-}
 #endif
