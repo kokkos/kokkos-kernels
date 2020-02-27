@@ -20,6 +20,7 @@ print_help() {
   echo "--skip-hwloc: Do not do hwloc tests"
   echo "--num=N: Number of jobs to run in parallel"
   echo "--spot-check: Minimal test set to issue pull request"
+  echo "--spot-check-tpls: Minimal test set enabling blas and lapack tpls"
   echo "--dry-run: Just print what would be executed"
   echo "--build-only: Just do builds, don't run anything"
   echo "--opt-flag=FLAG: Optimization flag (default: -O3)"
@@ -94,6 +95,11 @@ CUDA_ENABLE_CMD=
 
 if [[ "$HOSTNAME" =~ (white|ride).* ]]; then
   MACHINE=white
+  module load git
+fi
+
+if [[ "$HOSTNAME" =~ waterman.* ]]; then
+  MACHINE=waterman
   module load git
 fi
 
@@ -408,6 +414,7 @@ elif [ "$MACHINE" = "kokkos-dev" ]; then
                "cuda/9.2 $CUDA9_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   fi
+
 elif [ "$MACHINE" = "white" ]; then
   source /etc/profile.d/modules.sh
   SKIP_HWLOC=True
@@ -457,6 +464,59 @@ elif [ "$MACHINE" = "white" ]; then
   if [ -z "$ARCH_FLAG" ]; then
     ARCH_FLAG="--arch=Power8,Kepler37"
   fi
+
+elif [ "$MACHINE" = "waterman" ]; then
+  source /etc/profile.d/modules.sh
+  SKIP_HWLOC=True
+
+  BASE_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  IBM_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0"
+  CUDA_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,ibm/xl/16.1.0"
+  CUDA10_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.0"
+
+  GCC72_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0"
+  CUDA_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
+  CUDA10_MODULE_TPL_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,openblas/0.2.20/gcc/7.2.0"
+    # Issues finding CUBLAS with cuda/10.1.243 module at configure
+    # "Could NOT find TPLCUBLAS (missing: CUDA_CUBLAS_LIBRARIES)"
+    # Once resolved add the compiler + modules below to the SPOT_CHECK_TPLS
+#               "cuda/10.1.243 $CUDA10_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+
+
+  # Don't do pthread on waterman
+  GCC_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
+
+  if [ "$SPOT_CHECK" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/6.4.0 $BASE_MODULE_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "ibm/16.1.0 $IBM_MODULE_LIST "Serial" xlC $IBM_WARNING_FLAGS"
+               "cuda/9.2.88 $CUDA_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.1.243 $CUDA10_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "cuda/9.2.88 $CUDA_MODULE_TPL_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
+  else
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/6.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "ibm/16.1.0 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
+               "ibm/16.1.1 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
+               "cuda/9.2.88 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.0.130 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.1.105 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.1.243 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    )
+  fi
+
+  if [ -z "$ARCH_FLAG" ]; then
+    ARCH_FLAG="--arch=Power9,Volta70"
+  fi
+
 
 elif [ "$MACHINE" = "bowman" ]; then
   source /etc/profile.d/modules.sh
@@ -835,6 +895,7 @@ setup_env() {
   KOKKOSKERNELS_ENABLE_TPL_CMD="--with-tpls=$KOKKOSKERNELS_ENABLE_TPLS"
   echo "SETUP_ENV: compiler=$compiler modules=$compiler_modules"
   local NEW_TPL_LIST=
+  # Reset KOKKOSKERNELS_ENABLE_TPL_CMD is --spot-check-tpls used
   if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
     # device tpls
     if [[ "$compiler" == cuda* ]]; then
@@ -852,14 +913,14 @@ setup_env() {
     #echo "TESTING NEW_TPL_LIST=$NEW_TPL_LIST"
 
     KOKKOSKERNELS_ENABLE_TPL_CMD="--with-tpls=${NEW_TPL_LIST}"
-    echo "TPL USAGE: KOKKOSKERNELS_ENABLE_TPL_CMD=$KOKKOSKERNELS_ENABLE_TPL_CMD"
+    #echo "TPL USAGE: KOKKOSKERNELS_ENABLE_TPL_CMD=$KOKKOSKERNELS_ENABLE_TPL_CMD"
   fi
 
   module purge
 
   local mod
   for mod in $compiler_modules; do
-    echo "Loading module $mod"
+    #echo "Loading module $mod"
     module load $mod 2>&1
     # It is ridiculously hard to check for the success of a loaded
     # module. Module does not return error codes and piping to grep
@@ -868,7 +929,7 @@ setup_env() {
 
     if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
       # Some machines will require explicitly setting include dirs and libs
-      if [[ "$MACHINE" = white* ]] && [[ "$mod" = openblas* ]]; then
+      if ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = waterman* ]]) && [[ "$mod" = openblas* ]]; then
         BLAS_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
         LAPACK_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
   #      BLAS_LIBRARIES="openblas"
@@ -879,7 +940,7 @@ setup_env() {
         KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD="--extra-linker-flags=-lgfortran,-lm"
         echo "TPL PATHS: KOKKOSKERNELS_TPL_PATH_CMD=$KOKKOSKERNELS_TPL_PATH_CMD"
         echo "TPL LIBS:  KOKKOSKERNELS_TPL_LIBS_CMD=$KOKKOSKERNELS_TPL_LIBS_CMD"
-      elif [[ "$MACHINE" = white* ]] && [[ "$mod" = netlib* ]]; then
+      elif ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = waterman* ]]) && [[ "$mod" = netlib* ]]; then
         BLAS_LIBRARY_DIRS="${BLAS_ROOT}/lib"
         LAPACK_LIBRARY_DIRS="${BLAS_ROOT}/lib"
         BLAS_LIBRARIES="blas"
@@ -970,9 +1031,9 @@ single_build_and_test() {
     echo "kokkos options: ${KOKKOS_OPTIONS}"
     echo "kokkos devices: ${LOCAL_KOKKOS_DEVICES}"
     echo "kokkos cxx: ${cxxflags}"
-    echo "MODULE LIST:"
-    module list
-    echo ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --no-examples $extra_args
+    #echo "MODULE LIST:"
+    #module list
+    #echo ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --no-examples $extra_args
     run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 48 all >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
