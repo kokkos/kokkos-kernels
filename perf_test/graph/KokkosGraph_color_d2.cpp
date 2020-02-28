@@ -108,7 +108,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "Parameters:" << std::endl
        << spaces << "  Parallelism (select one of the following):" << std::endl
 #ifdef KOKKOS_ENABLE_SERIAL
-       << spaces << "      --serial <N>        Execute serially." << std::endl
+       << spaces << "      --serial            Execute serially." << std::endl
 #endif
 #ifdef KOKKOS_ENABLE_THREADS
        << spaces << "      --threads <N>       Use N posix threads." << std::endl
@@ -117,7 +117,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
 #endif
 #ifdef KOKKOS_ENABLE_CUDA
-       << spaces << "      --cuda              Use CUDA" << std::endl
+       << spaces << "      --cuda <id>         Use CUDA (device $id)" << std::endl
 #endif
        << std::endl
        << spaces << "  Required Parameters:" << std::endl
@@ -143,6 +143,16 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << " " << std::endl;
 }
 
+static char* getNextArg(int& i, int argc, char** argv)
+{
+  i++;
+  if(i >= argc)
+  {
+    std::cerr << "Error: expected additional command-line argument!\n";
+    exit(1);
+  }
+  return argv[i];
+}
 
 int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
 {
@@ -153,41 +163,40 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
     {
         if(0 == strcasecmp(argv[i], "--threads"))
         {
-            params.use_threads = atoi(argv[++i]);
+            params.use_threads = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--serial"))
         {
-            params.use_serial = atoi(argv[++i]);
+            params.use_serial = 1;
         }
         else if(0 == strcasecmp(argv[i], "--openmp"))
         {
-            params.use_openmp = atoi(argv[++i]);
-            std::cout << "use_openmp = " << params.use_openmp << std::endl;
+            params.use_openmp = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--cuda"))
         {
-            params.use_cuda = 1;
+            params.use_cuda = 1 + atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--repeat"))
         {
-            params.repeat = atoi(argv[++i]);
+            params.repeat = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--chunksize"))
         {
-            params.chunk_size = atoi(argv[++i]);
+            params.chunk_size = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--teamsize"))
         {
-            params.team_size = atoi(argv[++i]);
+            params.team_size = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--vectorsize"))
         {
-            params.vector_size = atoi(argv[++i]);
+            params.vector_size = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--amtx"))
         {
             got_required_param_amtx = true;
-            params.a_mtx_bin_file   = argv[++i];
+            params.a_mtx_bin_file  = getNextArg(i, argc, argv);
         }
         else if(0 == strcasecmp(argv[i], "--dynamic"))
         {
@@ -656,7 +665,9 @@ int main(int argc, char *argv[])
               << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
     const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
-    const int device_id   = 0;
+    int device_id = 0;
+    if(params.use_cuda)
+      device_id = params.use_cuda - 1;
     Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 
     // Print out verbose information about the configuration of the run.
