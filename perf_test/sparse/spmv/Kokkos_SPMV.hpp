@@ -44,8 +44,6 @@
 #ifndef KOKKOS_SPMV_HPP_
 #define KOKKOS_SPMV_HPP_
 
-
-
 template<class AMatrix,
          class XVector,
          class YVector,
@@ -163,19 +161,18 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
 }
 
 template<typename AType, typename XType, typename YType,class ScheduleType>
-void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
-
-  typedef typename XType::non_const_value_type Scalar;
+void kokkos_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, int vector_length) {
   typedef typename AType::execution_space execution_space;
-  typedef KokkosSparse::CrsMatrix<const Scalar,int,execution_space,void,int> matrix_type ;
-  typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> y_type;
-  typedef typename Kokkos::View<const Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > x_type;
+  typedef typename AType::non_const_size_type size_type;
+  typedef typename AType::non_const_ordinal_type lno_t;
+  typedef typename AType::non_const_value_type scalar_t;
+  typedef KokkosSparse::CrsMatrix<const scalar_t,lno_t,execution_space,void,size_type> matrix_type ;
 
   int rows_per_team = launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
 
   double s_a = 1.0;
   double s_b = 0.0;
-  SPMV_Functor<matrix_type,x_type,y_type,0,false> func (s_a,A,x,s_b,y,rows_per_team);
+  SPMV_Functor<matrix_type,XType,YType,0,false> func (s_a,A,x,s_b,y,rows_per_team);
 
   int worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
@@ -191,3 +188,4 @@ void kk_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, in
 
 
 #endif /* KOKKOS_SPMV_HPP_ */
+
