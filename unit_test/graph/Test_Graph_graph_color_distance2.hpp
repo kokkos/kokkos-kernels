@@ -168,7 +168,7 @@ test_d2_symmetric(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type 
     graph_type static_graph(sym_adj, sym_xadj);
     input_mat = crsMat_type("CrsMatrix", numCols, newValues, static_graph);
     run_graphcolor_d2<crsMat_type, device>(input_mat, input_mat,
-        {COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_VB_DYNAMIC});
+        {COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT});
 
 }
 
@@ -195,7 +195,7 @@ test_d2_asymmetric(lno_type numRows, lno_type numCols, size_type nnz, lno_type b
       (numRows, numCols, input_mat.graph.row_map, input_mat.graph.entries, transRowmap, transColinds);
     crsMat_type input_mat_T("input^T", numCols, numRows, input_mat.nnz(), input_mat.values, transRowmap, transColinds);
     run_graphcolor_d2<crsMat_type, device>(input_mat, input_mat_T,
-        {COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_VB_DYNAMIC});
+        {COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT});
 }
 
 //Filtering test: start with a symmetric matrix, but intentionally add some entries that are have out-of-bounds columns.
@@ -268,7 +268,7 @@ test_d2_filtering(lno_type numRows, lno_type numCols, size_type nnz, lno_type ba
 
     //Note that MATRIX_SQUARED cannot be used here, because SPGEMM doesn't accept out-of-bounds indices
     run_graphcolor_d2<crsMat_type, device>(input_mat, input_mat,
-        {COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_VB_DYNAMIC});
+        {COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT});
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                           \

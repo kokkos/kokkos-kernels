@@ -129,7 +129,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array (Default)." << std::endl
        << spaces << "                 COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
        << spaces << "                 COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
-       << spaces << "                 COLORING_D2_VB_DYNAMIC      - VB_BIT with dynamic programming, default on parallel devices" << std::endl
+       << spaces << "                 COLORING_D2_NB_BIT      - VB_BIT with dynamic programming, default on parallel devices" << std::endl
 
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
@@ -225,7 +225,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 params.algorithm             = 5;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_DYNAMIC"))
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_NB_BIT"))
             {
                 params.algorithm             = 6;
                 got_required_param_algorithm = true;
@@ -366,8 +366,8 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
             label_algorithm = "COLORING_D2_VB_BIT_EF";
             break;
         case 6:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_DYNAMIC);
-            label_algorithm = "COLORING_D2_VB_DYNAMIC";
+            kh.create_distance2_graph_coloring_handle(COLORING_D2_NB_BIT);
+            label_algorithm = "COLORING_D2_NB_BIT";
             break;
         default:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB);

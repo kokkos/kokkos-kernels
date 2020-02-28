@@ -64,7 +64,7 @@ enum GraphColoringAlgorithmDistance2
     COLORING_D2_VB,                  // Distance-2 Graph Coloring Vertex Based
     COLORING_D2_VB_BIT,              // Distance-2 Graph Coloring Vertex Based BIT
     COLORING_D2_VB_BIT_EF,           // Distance-2 Graph Coloring Vertex Based BIT + Edge Filtering
-    COLORING_D2_VB_DYNAMIC           // Vertex Based + dynamic programming forbidden
+    COLORING_D2_NB_BIT               // Distance-2 Graph Coloring Net Based BIT
 };
 
 
@@ -177,7 +177,7 @@ class GraphColorDistance2Handle
      *                     - COLORING_D2_VB
      *                     - COLORING_D2_VB_BIT
      *                     - COLORING_D2_VB_BIT_EF
-     *                     - COLORING_D2_VB_DYNAMIC
+     *                     - COLORING_D2_NB_BIT
      *
      *  @param[in] set_default_parameters Whether or not to reset the default parameters for the given algorithm.
      *                                    Default = true.
@@ -206,7 +206,7 @@ class GraphColorDistance2Handle
      *
      * This chooses the best algorithm based on the execution space:
      * - COLORING_D2_SERIAL if the execution space is SERIAL
-     * - COLORING_D2_VB_DYNAMIC otherwise
+     * - COLORING_D2_NB_BIT otherwise
      *
      */
 
@@ -227,10 +227,10 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_THREADS)
         if(std::is_same<Kokkos::Threads, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_DYNAMIC;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
             found = true;
 #ifdef VERBOSE
-            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_D2_VB_DYNAMIC" << std::endl;
+            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
@@ -238,10 +238,10 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_OPENMP)
         if(std::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_DYNAMIC;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
             found = true;
 #ifdef VERBOSE
-            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_D2_VB_DYNAMIC" << std::endl;
+            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
@@ -249,10 +249,10 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_CUDA)
         if(std::is_same<Kokkos::Cuda, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_DYNAMIC;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
             found = true;
 #ifdef VERBOSE
-            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_D2_VB_DYNAMIC" << std::endl;
+            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
@@ -260,10 +260,10 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_QTHREAD)
         if(std::is_same<Kokkos::Qthread, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_DYNAMIC;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
             found = true;
 #ifdef VERBOSE
-            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_D2_VB_DYNAMIC" << std::endl;
+            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
@@ -297,7 +297,7 @@ class GraphColorDistance2Handle
             case COLORING_D2_VB:
             case COLORING_D2_VB_BIT:
             case COLORING_D2_VB_BIT_EF:
-            case COLORING_D2_VB_DYNAMIC:
+            case COLORING_D2_NB_BIT:
                 this->tictoc                   = false;
                 this->vb_edge_filtering        = false;
                 this->vb_chunk_size            = 8;

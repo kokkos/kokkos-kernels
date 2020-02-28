@@ -108,7 +108,7 @@ void graph_compute_distance2_color(KernelHandle *handle,
       {
         gc.compute_distance2_color_serial();
       }
-      else if(algorithm == COLORING_D2_VB_DYNAMIC)
+      else if(algorithm == COLORING_D2_NB_BIT)
       {
         gc.compute_d2_coloring_dynamic();
       }
