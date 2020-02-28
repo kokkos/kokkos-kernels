@@ -41,8 +41,6 @@
 //@HEADER
 */
 
-// EXERCISE 1 Goal:
-//   Use Kokkos to parallelize the outer loop of <y,Ax> using Kokkos::parallel_reduce.
 #include <stdlib.h>
 #include <string>
 #include <unistd.h>
@@ -109,10 +107,18 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << std::endl
        << spaces << "Parameters:" << std::endl
        << spaces << "  Parallelism (select one of the following):" << std::endl
+#ifdef KOKKOS_ENABLE_SERIAL
        << spaces << "      --serial <N>        Execute serially." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_THREADS
        << spaces << "      --threads <N>       Use N posix threads." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
        << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_CUDA
        << spaces << "      --cuda              Use CUDA" << std::endl
+#endif
        << std::endl
        << spaces << "  Required Parameters:" << std::endl
        << spaces << "      --amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
@@ -123,6 +129,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array (Default)." << std::endl
        << spaces << "                 COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
        << spaces << "                 COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
+       << spaces << "                 COLORING_D2_VB_DYNAMIC      - VB_BIT with dynamic programming, default on parallel devices" << std::endl
 
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
@@ -216,6 +223,11 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT_EF"))
             {
                 params.algorithm             = 5;
+                got_required_param_algorithm = true;
+            }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_DYNAMIC"))
+            {
+                params.algorithm             = 6;
                 got_required_param_algorithm = true;
             }
             else
@@ -352,6 +364,10 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
         case 5:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
             label_algorithm = "COLORING_D2_VB_BIT_EF";
+            break;
+        case 6:
+            kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_DYNAMIC);
+            label_algorithm = "COLORING_D2_VB_DYNAMIC";
             break;
         default:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB);
