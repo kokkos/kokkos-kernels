@@ -295,7 +295,6 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
   Kokkos::deep_copy (entries_host, entries);
 
   // map col/row to supernode
-  //int *map = new int[n];
   integer_view_host_t map ("map", n);
   for (int s = 0; s < nsuper; s++) {
     for (int j = nb[s]; j < nb[s+1]; j++) {
@@ -944,50 +943,49 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
     int j1 = nb[s2];
     int nsrow = hr(j1+1) - hr(j1);
     int nscol = nb[s2+1]-nb[s2];
-    if (invert_diag) {
-      auto nnzD = hr (j1);
-      char uplo_char = (lower ? 'L' : 'U');
-      char diag_char = (unit_diag ? 'U' : 'N');
+
+    auto nnzD = hr (j1);
+    char uplo_char = (lower ? 'L' : 'U');
+    char diag_char = (unit_diag ? 'U' : 'N');
+
+    timer.reset ();
+    if (std::is_same<scalar_t, double>::value) {
+      LAPACKE_dtrtri (LAPACK_COL_MAJOR,
+                      uplo_char, diag_char, nscol,
+                      reinterpret_cast <double*> (&hv(nnzD)), nsrow);
+    }
+    else if (std::is_same<scalar_t, std::complex<double>>::value ||
+             std::is_same<scalar_t, Kokkos::complex<double>>::value) {
+      LAPACKE_ztrtri (LAPACK_COL_MAJOR,
+                      uplo_char, diag_char, nscol,
+                      reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
+    }
+    else {
+      throw std::runtime_error( "Unsupported scalar type for calling trtri");
+    }
+    time1 += timer.seconds ();
+    if (nsrow > nscol && invert_offdiag) {
+      CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
+      CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
 
       timer.reset ();
       if (std::is_same<scalar_t, double>::value) {
-        LAPACKE_dtrtri (LAPACK_COL_MAJOR,
-                        uplo_char, diag_char, nscol,
-                        reinterpret_cast <double*> (&hv(nnzD)), nsrow);
+        cblas_dtrmm (CblasColMajor,
+              CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
+              nsrow-nscol, nscol,
+              1.0, reinterpret_cast <double*> (&hv(nnzD)), nsrow,
+                   reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
+      } else {
+        // NOTE: use double pointers
+        scalar_t alpha = one;
+        cblas_ztrmm (CblasColMajor,
+              CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
+              nsrow-nscol, nscol,
+              reinterpret_cast <double*> (&alpha),
+              reinterpret_cast <double*> (&hv(nnzD)), nsrow,
+              reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
       }
-      else if (std::is_same<scalar_t, std::complex<double>>::value ||
-               std::is_same<scalar_t, Kokkos::complex<double>>::value) {
-        LAPACKE_ztrtri (LAPACK_COL_MAJOR,
-                        uplo_char, diag_char, nscol, 
-                        reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
-      }
-      else {
-        throw std::runtime_error( "Unsupported scalar type for calling trtri");
-      }
-      time1 += timer.seconds ();
-      if (nsrow > nscol && invert_offdiag) {
-        CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
-        CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
-
-        timer.reset ();
-        if (std::is_same<scalar_t, double>::value) {
-          cblas_dtrmm (CblasColMajor,
-                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-                nsrow-nscol, nscol,
-                1.0, reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-                     reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-        } else {
-          // NOTE: use double pointers
-          scalar_t alpha = one;
-          cblas_ztrmm (CblasColMajor,
-                CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-                nsrow-nscol, nscol,
-                reinterpret_cast <double*> (&alpha),
-                reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-                reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-        }
-        time2 += timer.seconds ();
-      }
+      time2 += timer.seconds ();
     }
   }
 
