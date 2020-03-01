@@ -64,10 +64,18 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << std::endl
        << spaces << "Parameters:" << std::endl
        << spaces << "  Parallelism (select one of the following):" << std::endl
-       << spaces << "      --serial <N>        Execute serially." << std::endl
+#if defined(KOKKOS_ENABLE_SERIAL)
+       << spaces << "      --serial            Execute serially." << std::endl
+#endif
+#if defined(KOKKOS_ENABLE_THREADS)
        << spaces << "      --threads <N>       Use N posix threads." << std::endl
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
        << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
-       << spaces << "      --cuda              Use CUDA" << std::endl
+#endif
+#if defined(KOKKOS_ENABLE_CUDA)
+       << spaces << "      --cuda <id>         Use CUDA (device $id)" << std::endl
+#endif
        << std::endl
        << spaces << "  Required Parameters:" << std::endl
        << spaces << "      --amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
@@ -93,7 +101,16 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << " " << std::endl;
 }
 
-
+static char* getNextArg(int& i, int argc, char** argv)
+{
+  i++;
+  if(i >= argc)
+  {
+    std::cerr << "Error: expected additional command-line argument!\n";
+    exit(1);
+  }
+  return argv[i];
+}
 
 int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
 {
@@ -102,32 +119,32 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
 
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
-      params.use_threads = atoi( argv[++i] );
+      params.use_threads = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--serial" ) ) {
-      params.use_serial = atoi( argv[++i] );
+      params.use_serial = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
-      params.use_openmp = atoi( argv[++i] );
+      params.use_openmp = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
-      params.use_cuda = 1;
+      params.use_cuda = 1 + atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
-      params.repeat = atoi( argv[++i] );
+      params.repeat = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--chunksize" ) ) {
-      params.chunk_size = atoi( argv[++i] ) ;
+      params.chunk_size = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--teamsize" ) ) {
-      params.team_size = atoi( argv[++i] ) ;
+      params.team_size = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--vectorsize" ) ) {
-      params.vector_size  = atoi( argv[++i] ) ;
+      params.vector_size = atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
       got_required_param_amtx = true;
-      params.a_mtx_bin_file = argv[++i];
+      params.a_mtx_bin_file = getNextArg(i, argc, argv);
     }
     else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
@@ -136,7 +153,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.verbose = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--outputfile" ) || 0 == strcasecmp( argv[i] , "-o" ) ) {
-      params.coloring_output_file = argv[++i];
+      params.coloring_output_file = getNextArg(i, argc, argv);
     }
     else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
       got_required_param_algorithm = true;

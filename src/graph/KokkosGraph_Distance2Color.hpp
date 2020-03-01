@@ -52,7 +52,6 @@
 #include "KokkosKernels_Utils.hpp"
 
 
-
 namespace KokkosGraph {
 
 namespace Experimental {
@@ -86,76 +85,44 @@ void graph_compute_distance2_color(KernelHandle *handle,
                                    lno_colnnz_view_t_ col_entries)
 {
     Kokkos::Impl::Timer timer;
-
     // Set our handle pointer to a GraphColoringHandleType.
     typename KernelHandle::GraphColorDistance2HandleType *gch_d2 = handle->get_distance2_graph_coloring_handle();
-
     // Get the algorithm we're running from the graph coloring handle.
     GraphColoringAlgorithmDistance2 algorithm = gch_d2->get_coloring_algo_type();
-
     // Create a view to save the colors to.
     using color_view_type = typename KernelHandle::GraphColorDistance2HandleType::color_view_type;
     color_view_type colors_out("Graph Colors", num_rows);
 
-    switch(algorithm)
+    if(algorithm == COLORING_D2_MATRIX_SQUARED ||
+        algorithm == COLORING_D2_SPGEMM)
     {
-        case COLORING_D2_MATRIX_SQUARED:
-        case COLORING_D2_SPGEMM:
-        {
-            Impl::GraphColorDistance2MatrixSquared<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-                gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
-
-            gc.compute_distance2_color();
-        }
-        break;
-
-        case COLORING_D2_SERIAL:
-        {
-            // todo: The original Serial D2 coloring code is in GraphColorHandle. This should get moved to the
-            //       distance-2 coloring handle but that might break backwards compatibility.
-            int num_phases = 0;
-
-            typename KernelHandle::GraphColoringHandleType *gch_d1 = handle->get_graph_coloring_handle();
-
-            Impl::GraphColor<typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_>
-                gc(num_rows, row_entries.extent(0), row_map, row_entries, gch_d1);
-
-            gc.d2_color_graph(colors_out, num_phases, num_cols, col_map, col_entries);
-
-            // Save out the number of phases and vertex colors
-            gch_d2->set_vertex_colors(colors_out);
-            gch_d2->set_num_phases((double)num_phases);
-        }
-        break;
-
-        case COLORING_D2:
-        case COLORING_D2_VB:
-        case COLORING_D2_VB_BIT:
-        case COLORING_D2_VB_BIT_EF:
-        {
-            Impl::GraphColorDistance2<typename KernelHandle::GraphColorDistance2HandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-                gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
-
-            gc.compute_distance2_color();
-
-            double coloring_time = timer.seconds();
-            gch_d2->add_to_overall_coloring_time(coloring_time);
-            gch_d2->set_coloring_time(coloring_time);
-
-            break;
-        }
-
-        default:
-            break;
+      Impl::GraphColorDistance2MatrixSquared<KernelHandle, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
+      gc.compute_distance2_color();
     }
-
-    double coloring_time = timer.seconds();
-    gch_d2->add_to_overall_coloring_time(coloring_time);
-    gch_d2->set_coloring_time(coloring_time);
+    else
+    {
+      Impl::GraphColorDistance2<typename KernelHandle::GraphColorDistance2HandleType, lno_row_view_t_, lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
+        gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, gch_d2);
+      if(algorithm == COLORING_D2_SERIAL)
+      {
+        gc.compute_distance2_color_serial();
+      }
+      else if(algorithm == COLORING_D2_NB_BIT)
+      {
+        gc.compute_d2_coloring_dynamic();
+      }
+      else
+      {
+        gc.compute_distance2_color();
+      }
+    }
+    gch_d2->add_to_overall_coloring_time(timer.seconds());
+    gch_d2->set_coloring_time(timer.seconds());
 }
 
 
 }      // end namespace Experimental
 }      // end namespace KokkosGraph
 
-#endif      //_KOKKOS_GRAPH_COLOR_HPP
+#endif //_KOKKOS_GRAPH_COLORDISTANCE2_HPP
