@@ -269,7 +269,7 @@ class GraphColorDistance2Handle
 #endif
         //Since this logic is based on checking every exec space, detect when a new one needs to be supported
         if(!found)
-          throw std::logic_error("D2 coloring: default algorithm hasn't been chosen for th current execution space");
+          throw std::logic_error("D2 coloring: default algorithm hasn't been chosen for the current execution space");
     }
 
 
