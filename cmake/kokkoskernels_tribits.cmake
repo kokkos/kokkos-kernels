@@ -10,7 +10,7 @@ MESSAGE(STATUS "The project name is: ${PROJECT_NAME}")
 MACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
   IF (KOKKOSKERNELS_HAS_TRILINOS)
     TRIBITS_PACKAGE_POSTPROCESS()
-  ELSEIF(NOT KOKKOSKERNELS_HAS_PARENT)
+  ELSE()
     INCLUDE(CMakePackageConfigHelpers)
     configure_package_config_file(cmake/KokkosKernelsConfig.cmake.in
          "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfig.cmake"
