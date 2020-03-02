@@ -110,7 +110,6 @@ IF (KOKKOSKERNELS_INST_EXECSPACE_CUDA)
 ENDIF()
 
 LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
-#LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ETIHelperMacros.h)
 
 #-----------------------------------------------------------------------------
 
@@ -120,15 +119,22 @@ KOKKOSKERNELS_ADD_LIBRARY(
   SOURCES ${SOURCES}
 )
 
+# It does not seem to be possible to automatically have headers installed
+# in the correct subdirectory structure using HEADERS and ADD_LIBRARY with tribits
+# Force the specializations to be installed in a subdirectory
+APPEND_GLOB(HEADERS_GENERATED ${CMAKE_CURRENT_SOURCE_DIR}/impl/generated_specializations_hpp/*.hpp)
+INSTALL(FILES ${HEADERS_GENERATED} DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR}/generated_specializations_hpp/)
+
 IF (KOKKOSKERNELS_HAS_TRILINOS)
   #no linking commands required - tribits does this
 ELSE()
   ADD_LIBRARY(Kokkos::kokkoskernels ALIAS kokkoskernels)
-  TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC ${KOKKOS_DEPENDENCY_NAME})
+  TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC Kokkos::kokkos)
   FOREACH(DIR ${KK_INCLUDE_DIRS})
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC $<BUILD_INTERFACE:${DIR}>)
   ENDFOREACH()
-  TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC $<INSTALL_INTERFACE:include>)
+  TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC
+    $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
 ENDIF()
 
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC BLAS)
@@ -141,15 +147,3 @@ KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MKL)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUBLAS)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUSPARSE)
 # Not yet here KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MAGMA)
-
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/impl/generated_specializations_hpp)
-APPEND_GLOB(HEADERS_GENERATED ${CMAKE_CURRENT_SOURCE_DIR}/impl/generated_specializations_hpp/*.hpp)
-INSTALL(FILES ${HEADERS_GENERATED} DESTINATION ${KOKKOSKERNELS_HEADER_DIR}/generated_specializations_hpp/)
-
-#
-# Make a trivial change here if you add a file either to this
-# directory, or to the impl/ subdirectory.  Keep making changes
-# whenever you add or remove a .cpp or .hpp file, and everything will
-# be OK.  Here is another such change, and here is yet another.
-#
-
