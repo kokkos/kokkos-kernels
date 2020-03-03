@@ -243,9 +243,6 @@ private:
   int mkl_sort_option;
   bool calculate_read_write_cost;
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  SPGEMMcuSparseHandleType *cuSPARSEHandle;
-#endif
   public:
 
   std::string coloring_input_file;
@@ -299,6 +296,14 @@ private:
   int get_mkl_sort_option(){
     return this->mkl_sort_option;
   }
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  private:
+  SPGEMMcuSparseHandleType *cuSPARSEHandle;
+
+  public:
+#endif
+
   void set_c_column_indices(nnz_lno_temp_work_view_t c_col_indices_){
     this->c_column_indices = c_col_indices_;
   }

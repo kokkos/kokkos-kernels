@@ -213,7 +213,6 @@ namespace Impl{
   typedef typename KernelHandle::scalar_t  scalar_type;
 
   if (std::is_same<idx_type, int>::value) {
-    bool is_lower = sptrsv_handle->is_lower_tri();
 
     cusparseStatus_t status;
 
