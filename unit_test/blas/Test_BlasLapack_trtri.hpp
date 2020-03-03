@@ -102,9 +102,9 @@ namespace Test {
     ScalarA beta       = ScalarA(0);
     ScalarA cur_check_val; // Either 1 or 0, to check A_I
 
-    const int As0 = A.stride(0), As1 = A.stride(1);
-    const int Ae0 = A.extent(0), Ae1 = A.extent(1);
-    printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s, A.stride(0): %d, A.stride(1): %d, A.extent(0): %d, A.extent(1): %d START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1, Ae0, Ae1); fflush(stdout);
+    //const int As0 = A.stride(0), As1 = A.stride(1);
+    //const int Ae0 = A.extent(0), Ae1 = A.extent(1);
+    //printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s, A.stride(0): %d, A.stride(1): %d, A.extent(0): %d, A.extent(1): %d START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1, Ae0, Ae1); fflush(stdout);
 
     typename ViewTypeA::HostMirror host_A  = Kokkos::create_mirror_view(A);
     typename ViewTypeA::HostMirror host_I  = Kokkos::create_mirror_view(A);
@@ -227,8 +227,8 @@ namespace Test {
         // Check how close |A_I - cur_check_val| is to 0.
         if (APT::abs(APT::abs(host_I(i,j)) - cur_check_val) > eps) {
             test_flag = false;
-            printf("   Error: eps ( %g ), host_I ( %.15f ) != cur_check_val ( %.15f ) (abs result-cur_check_val %g) at (i %d, j %d)\n", 
-                  eps, host_I(i,j), cur_check_val, APT::abs(host_I(i,j) - cur_check_val), i, j);
+            //printf("   Error: eps ( %g ), host_I ( %.15f ) != cur_check_val ( %.15f ) (abs result-cur_check_val %g) at (i %d, j %d)\n", 
+                  //eps, host_I(i,j), cur_check_val, APT::abs(host_I(i,j) - cur_check_val), i, j);
             break;
         }
       }
