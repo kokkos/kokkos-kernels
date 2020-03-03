@@ -48,7 +48,7 @@
 #include "Kokkos_Core.hpp"
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//#include<KokkosBlasLapack_trtri_impl.hpp>
+//#include<KokkosBlas_trtri_impl.hpp>
 #endif
 
 namespace KokkosBlas {
@@ -74,8 +74,8 @@ struct trtri_eti_spec_avail {
          > { enum : bool { value = false }; };
 
 // Include the actual specialization declarations
-#include<KokkosBlasLapack_trtri_tpl_spec_avail.hpp>
-//TODO: #include<generated_specializations_hpp/KokkosBlasLapack_trtri_eti_spec_avail.hpp>
+#include<KokkosBlas_trtri_tpl_spec_avail.hpp>
+//TODO: #include<generated_specializations_hpp/KokkosBlas_trtri_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -157,7 +157,7 @@ template struct TRTRI< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      false, true>;
 
-#include<KokkosBlasLapack_trtri_tpl_spec_decl.hpp>
-// TODO: #include<generated_specializations_hpp/KokkosBlasLapack_trtri_eti_spec_decl.hpp>
+#include<KokkosBlas_trtri_tpl_spec_decl.hpp>
+// TODO: #include<generated_specializations_hpp/KokkosBlas_trtri_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLASLAPACK_TRTRI_SPEC_HPP_

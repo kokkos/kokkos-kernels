@@ -1,7 +1,7 @@
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
-#include<KokkosBlasLapack_trtri.hpp>
+#include<KokkosBlas_trtri.hpp>
 #include<KokkosKernels_TestUtils.hpp>
 
 namespace Test {

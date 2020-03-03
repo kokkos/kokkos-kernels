@@ -44,10 +44,10 @@
 #ifndef KOKKOSBLASLAPACK_TRTRI_HPP_
 #define KOKKOSBLASLAPACK_TRTRI_HPP_
 
-/// \file KokkosBlasLapack_trtri.hpp
+/// \file KokkosBlas_trtri.hpp
 
 #include "KokkosKernels_Macros.hpp"
-#include "KokkosBlasLapack_trtri_spec.hpp"
+#include "KokkosBlas_trtri_spec.hpp"
 #include "KokkosKernels_helpers.hpp"
 #include <sstream>
 #include <type_traits>
@@ -90,14 +90,14 @@ trtri (const char uplo[],
 
   if(!valid_uplo) {
     std::ostringstream os;
-    os << "KokkosBlasLapack::trtri: uplo = '" << uplo[0] << "'. " <<
+    os << "KokkosBlas::trtri: uplo = '" << uplo[0] << "'. " <<
       "Valid values include 'U' or 'u' (A is upper triangular), "
       "'L' or 'l' (A is lower triangular).";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
   if(!valid_diag) {
     std::ostringstream os;
-    os << "KokkosBlasLapack::trtri: diag = '" << diag[0] << "'. " <<
+    os << "KokkosBlas::trtri: diag = '" << diag[0] << "'. " <<
       "Valid values include 'U' or 'u' (the diagonal of A is assumed to be unit), "
      "'N' or 'n' (the diagonal of A is assumed to be non-unit).";
     Kokkos::Impl::throw_runtime_exception (os.str ());
@@ -114,7 +114,7 @@ trtri (const char uplo[],
   // or B*A
   if (A_m != A_n) {
     std::ostringstream os;
-    os << "KokkosBlasLapack::trtri: Dimensions of A do not match,"
+    os << "KokkosBlas::trtri: Dimensions of A do not match,"
        << " A: " << A.extent(0) << " x " << A.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
