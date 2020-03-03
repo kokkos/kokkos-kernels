@@ -5,7 +5,7 @@
 #include<KokkosBlas_tpl_spec.hpp> // LAPACKE_
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
-
+#if 0
 namespace KokkosBlas {
   namespace Impl {
     //// TRTRI ////
@@ -39,5 +39,6 @@ namespace KokkosBlas {
     }
   } // Impl
 } // KokkosBlas
+#endif
 #endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 #endif // KOKKOSBLASLAPACK_LAPACK_TPL_HPP_
