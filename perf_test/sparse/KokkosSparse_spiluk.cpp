@@ -73,7 +73,7 @@ using namespace KokkosKernels::Experimental;
 
 enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/};
 
-int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
+int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
   typedef default_scalar scalar_t;
   typedef default_lno_t lno_t;
   typedef default_size_type size_type;
@@ -106,7 +106,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int k, int t
     graph_t graph = A.graph; // in_graph
     const size_type nrows = graph.numRows();
     const int       nnz   = A.nnz();
-    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(k);
+    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(kin);
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     //cuSPARSE requires lno_t = size_type = int. For both, int is always used (if enabled)
@@ -423,7 +423,7 @@ int main(int argc, char **argv)
   
   std::string afilename;
   
-  int k = 0;
+  int kin = 0;
   int vector_length = -1;
   int team_size = -1;
   // int idx_offset = 0;
@@ -453,7 +453,7 @@ int main(int argc, char **argv)
       continue;
     }
     if((strcmp(argv[i],"-f")==0)) {afilename = argv[++i]; continue;}
-    if((strcmp(argv[i],"-k")==0)) {k = atoi(argv[++i]); continue;}
+    if((strcmp(argv[i],"-k")==0)) {kin = atoi(argv[++i]); continue;}
     if((strcmp(argv[i],"-ts")==0)) {team_size = atoi(argv[++i]); continue;}
     if((strcmp(argv[i],"-vl")==0)) {vector_length = atoi(argv[++i]); continue;}
     //if((strcmp(argv[i],"--offset")==0)) {idx_offset = atoi(argv[++i]); continue;}
@@ -487,7 +487,7 @@ int main(int argc, char **argv)
   
   Kokkos::initialize(argc,argv);
   {
-    int total_errors = test_spiluk_perf(tests, afilename, k, team_size, vector_length, /*idx_offset,*/ loop);
+    int total_errors = test_spiluk_perf(tests, afilename, kin, team_size, vector_length, /*idx_offset,*/ loop);
     
     if(total_errors == 0)
       printf("Kokkos::SPILUK Test: Passed\n");
