@@ -25,7 +25,7 @@ endif
 
 CXXFLAGS = -O3 -g
 LINK = ${CXX}
-LINKFLAGS =  
+LINKFLAGS =
 
 DEPFLAGS = -M
 
@@ -96,7 +96,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas1_team_axpy.o
   OBJ_OPENMP += Test_OpenMP_Blas1_dot.o
   OBJ_OPENMP += Test_OpenMP_Blas1_team_dot.o
-  OBJ_OPENMP += Test_OpenMP_Blas1_iamax.o  
+  OBJ_OPENMP += Test_OpenMP_Blas1_iamax.o
   OBJ_OPENMP += Test_OpenMP_Blas1_mult.o
   OBJ_OPENMP += Test_OpenMP_Blas1_team_mult.o
   OBJ_OPENMP += Test_OpenMP_Blas1_nrm1.o
@@ -136,7 +136,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Common_set_bit_count.o
   OBJ_OPENMP += Test_OpenMP_Common_Sorting.o
 #  OBJ_OPENMP += Test_OpenMP_Common_float128.o
- # Real 
+ # Real
   OBJ_OPENMP += Test_OpenMP_Batched_SerialMatUtil_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsm_Real.o
@@ -347,7 +347,6 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Blas2_team_gemv.o
   OBJ_SERIAL += Test_Serial_Blas3_gemm.o
   OBJ_SERIAL += Test_Serial_Blas3_trsm.o
-  OBJ_SERIAL += Test_Serial_Blas3_trmm.o
   OBJ_SERIAL += Test_Serial_Blas_gesv.o
   OBJ_SERIAL += Test_Serial_Sparse_spmv.o
   OBJ_SERIAL += Test_Serial_Sparse_trsv.o
@@ -450,7 +449,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Blas1_team_dot.o
   OBJ_THREADS += Test_Threads_Blas1_iamax.o
   OBJ_THREADS += Test_Threads_Blas1_mult.o
-  OBJ_THREADS += Test_Threads_Blas1_team_mult.o 
+  OBJ_THREADS += Test_Threads_Blas1_team_mult.o
   OBJ_THREADS += Test_Threads_Blas1_nrm1.o
   OBJ_THREADS += Test_Threads_Blas1_nrm2.o
   OBJ_THREADS += Test_Threads_Blas1_team_nrm2.o
@@ -466,7 +465,6 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Blas2_team_gemv.o
   OBJ_THREADS += Test_Threads_Blas3_gemm.o
   OBJ_THREADS += Test_Threads_Blas3_trsm.o
-  OBJ_THREADS += Test_Threads_Blas3_trmm.o
   OBJ_THREADS += Test_Threads_Blas_gesv.o
   OBJ_THREADS += Test_Threads_Sparse_spmv.o
   OBJ_THREADS += Test_Threads_Sparse_trsv.o
