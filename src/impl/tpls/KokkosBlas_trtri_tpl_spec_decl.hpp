@@ -51,8 +51,8 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
-#define KOKKOSBLAS_TRTRI_BLAS_LAPACK(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#define KOKKOSBLAS_TRTRI_BLAS_HOST(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
 template<class ExecSpace> \
 struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
@@ -91,8 +91,8 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
   } \
 };
 #else
-#define KOKKOSBLAS_TRTRI_BLAS_LAPACK(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)
-#endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#define KOKKOSBLAS_TRTRI_BLAS_HOST(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 #define KOKKOSBLAS_TRTRI_BLAS_MAGMA(SCALAR_TYPE, BASE_SCALAR_TYPE, MAGMA_FN, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
@@ -149,22 +149,22 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
 
 // Handle type and space permutations
 #define KOKKOSBLAS_DTRTRI_BLAS(LAYOUTA, ETI_SPEC_AVAIL) \
-KOKKOSBLAS_TRTRI_BLAS_LAPACK(double, double, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
+KOKKOSBLAS_TRTRI_BLAS_HOST(double, double, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(double, magmaDouble_ptr, magma_dtrtri_gpu, LAYOUTA, Kokkos::CudaSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(double, magmaDouble_ptr, magma_dtrtri_gpu, LAYOUTA, Kokkos::CudaUVMSpace, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS_STRTRI_BLAS(LAYOUTA, ETI_SPEC_AVAIL) \
-KOKKOSBLAS_TRTRI_BLAS_LAPACK(float, float, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
+KOKKOSBLAS_TRTRI_BLAS_HOST(float, float, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(float, magmaFloat_ptr, magma_strtri_gpu, LAYOUTA, Kokkos::CudaSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(float, magmaFloat_ptr, magma_strtri_gpu, LAYOUTA, Kokkos::CudaUVMSpace, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS_ZTRTRI_BLAS(LAYOUTA, ETI_SPEC_AVAIL) \
-KOKKOSBLAS_TRTRI_BLAS_LAPACK(Kokkos::complex<double>, std::complex<double>, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
+KOKKOSBLAS_TRTRI_BLAS_HOST(Kokkos::complex<double>, std::complex<double>, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(Kokkos::complex<double>, magmaDoubleComplex_ptr, magma_ztrtri_gpu, LAYOUTA, Kokkos::CudaSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(Kokkos::complex<double>, magmaDoubleComplex_ptr, magma_ztrtri_gpu, LAYOUTA, Kokkos::CudaUVMSpace, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS_CTRTRI_BLAS(LAYOUTA, ETI_SPEC_AVAIL) \
-KOKKOSBLAS_TRTRI_BLAS_LAPACK(Kokkos::complex<float>, std::complex<float>, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
+KOKKOSBLAS_TRTRI_BLAS_HOST(Kokkos::complex<float>, std::complex<float>, LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(Kokkos::complex<float>, magmaFloatComplex_ptr, magma_ctrtri_gpu, LAYOUTA, Kokkos::CudaSpace, ETI_SPEC_AVAIL) \
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(Kokkos::complex<float>, magmaFloatComplex_ptr, magma_ctrtri_gpu, LAYOUTA, Kokkos::CudaUVMSpace, ETI_SPEC_AVAIL) \
 

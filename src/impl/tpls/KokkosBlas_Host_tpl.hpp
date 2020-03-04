@@ -53,7 +53,7 @@
 #include "KokkosKernels_config.h"
 #include "Kokkos_ArithTraits.hpp"
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 
 namespace KokkosBlas {
   namespace Impl {
@@ -63,7 +63,6 @@ namespace KokkosBlas {
       typedef Kokkos::ArithTraits<T> ats;
       typedef typename ats::mag_type mag_type;
   
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
       static
       void scal(int n,
                 const T alpha,
@@ -143,17 +142,14 @@ namespace KokkosBlas {
                 T *a, int lda, int *ipiv,
                 T *b, int ldb,
                 int info);
-#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
       static
       int trtri(const char uplo, const char diag,
                 int n, const T *a, int lda);
-#endif // KOKKOSKERNELS_ENABLE_TPL_LAPACK
     };
   }
 }
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS || defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 #endif // KOKKOSBLAS_HOST_TPL_HPP_

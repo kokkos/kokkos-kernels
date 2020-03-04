@@ -93,7 +93,6 @@ namespace Test {
     double machine_eps = APT::epsilon();
     const mag_type eps = 1.0e8 * machine_eps; //~1e-13 for double
     bool is_A_lower_triangular = (uplo[0]=='L') || (uplo[0]=='l');
-    bool is_A_layout_left = std::is_same<Kokkos::LayoutLeft,typename ViewTypeA::array_layout>::value;
     int ret;
     ViewTypeA A ("A", M,N);
     ViewTypeA A_original ("A_original", M,N);
