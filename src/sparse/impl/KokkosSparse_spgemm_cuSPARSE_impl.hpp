@@ -82,7 +82,6 @@ namespace Impl{
     typedef typename ain_nonzero_index_view_type::device_type device2;
 
     typedef typename KernelHandle::nnz_lno_t idx;
-    typedef typename ain_row_index_view_type::non_const_type idx_array_type;
 
 
     //TODO this is not correct, check memory space.
@@ -188,7 +187,6 @@ namespace Impl{
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     typedef typename KernelHandle::nnz_lno_t idx;
-    typedef ain_row_index_view_type idx_array_type;
 
     typedef typename KernelHandle::nnz_scalar_t value_type;
 

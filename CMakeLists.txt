@@ -112,6 +112,13 @@ CHECK_KOKKOS_BACKEND(OPENMP)
 CHECK_KOKKOS_BACKEND(PTHREAD)
 CHECK_KOKKOS_BACKEND(SERIAL)
 
+KOKKOSKERNELS_ADD_OPTION(
+  ADD_DEFAULT_ETI
+  ON
+  BOOL
+  "Whether to include a set of default ETI instantiations (otherwise only those explicitly requested will be included"
+)
+
 IF(KOKKOS_ENABLE_CUDA)
  KOKKOSKERNELS_ADD_OPTION(
    INST_EXECSPACE_CUDA
@@ -147,7 +154,7 @@ ENDIF()
 
 KOKKOSKERNELS_ADD_OPTION(
  INST_MEMSPACE_HOSTSPACE
- ON
+ ${KOKKOSKERNELS_ADD_DEFAULT_ETI}
  BOOL
  "Whether to pre instantiate kernels for the memory space Kokkos::HostSpace.  Disabling this when one of the Host execution spaces is enabled may increase build times. Default: ON"
 )
@@ -217,7 +224,7 @@ KOKKOSKERNELS_ADD_OPTION(
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_DOUBLE
-  ON
+  ${KOKKOSKERNELS_ADD_DEFAULT_ETI}
   BOOL
   "Whether to pre instantiate kernels for the scalar type double.  This option is KokkosKernels_INST_DOUBLE=ON by default.  Disabling this may increase build times. Default: ON"
   )
@@ -281,7 +288,7 @@ ENDIF()
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_LAYOUTLEFT
-  ON
+  ${KOKKOSKERNELS_ADD_DEFAULT_ETI}
   BOOL
   "Whether to pre instantiate kernels for the view layout LayoutLeft.  This option is KokkosKernels_INST_LAYOUTLEFT=ON by default.  Disabling this may increase build times. Default: ON"
   )
@@ -306,7 +313,7 @@ ENDIF()
 # ==================================================================
 
 
-SET(KOKKOSKERNELS_INST_ORDINAL_INT_DEFAULT  ON)
+SET(KOKKOSKERNELS_INST_ORDINAL_INT_DEFAULT ${KOKKOSKERNELS_ADD_DEFAULT_ETI})
 SET(KOKKOSKERNELS_INST_ORDINAL_INT64_T_DEFAULT  OFF)
 
 
@@ -338,10 +345,9 @@ ENDIF()
 # ==================================================================
 
 
-SET(KOKKOSKERNELS_INST_OFFSET_SIZE_T_DEFAULT  ON)
-SET(KOKKOSKERNELS_INST_OFFSET_INT_DEFAULT  ON)
+SET(KOKKOSKERNELS_INST_OFFSET_SIZE_T_DEFAULT ${KOKKOSKERNELS_ADD_DEFAULT_ETI})
+SET(KOKKOSKERNELS_INST_OFFSET_INT_DEFAULT ${KOKKOSKERNELS_ADD_DEFAULT_ETI})
 #GLOBAL_SET(KokkosKernels_INST_OFFSET_INT64_T_DEFAULT  OFF)
-
 
 KOKKOSKERNELS_ADD_OPTION(
   INST_OFFSET_INT

@@ -65,8 +65,8 @@ enum GraphColoringAlgorithmDistance2
     COLORING_D2_VB,                  // Distance-2 Graph Coloring Vertex Based
     COLORING_D2_VB_BIT,              // Distance-2 Graph Coloring Vertex Based BIT
     COLORING_D2_VB_BIT_EF,           // Distance-2 Graph Coloring Vertex Based BIT + Edge Filtering
+    COLORING_D2_NB_BIT               // Distance-2 Graph Coloring Net Based BIT
 };
-
 
 
 template<class size_type_,
@@ -178,6 +178,7 @@ class GraphColorDistance2Handle
      *                     - COLORING_D2_VB
      *                     - COLORING_D2_VB_BIT
      *                     - COLORING_D2_VB_BIT_EF
+     *                     - COLORING_D2_NB_BIT
      *
      *  @param[in] set_default_parameters Whether or not to reset the default parameters for the given algorithm.
      *                                    Default = true.
@@ -206,17 +207,20 @@ class GraphColorDistance2Handle
      *
      * This chooses the best algorithm based on the execution space:
      * - COLORING_D2_SERIAL if the execution space is SERIAL
-     * - COLORING_D2_VB_BIT otherwise
+     * - COLORING_D2_NB_BIT otherwise
      *
      */
+
     void choose_default_algorithm()
     {
+        bool found = false;
 #if defined(KOKKOS_ENABLE_SERIAL)
         if(std::is_same<Kokkos::Serial, ExecutionSpace>::value)
         {
             this->coloring_algorithm_type = COLORING_D2_SERIAL;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "Serial Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "Serial Execution Space, Default Algorithm: COLORING_D2_SERIAL" << std::endl;
 #endif
         }
 #endif
@@ -224,9 +228,10 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_THREADS)
         if(std::is_same<Kokkos::Threads, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
@@ -234,9 +239,10 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_OPENMP)
         if(std::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
@@ -244,9 +250,10 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_CUDA)
         if(std::is_same<Kokkos::Cuda, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
@@ -254,12 +261,16 @@ class GraphColorDistance2Handle
 #if defined(KOKKOS_ENABLE_QTHREAD)
         if(std::is_same<Kokkos::Qthread, ExecutionSpace>::value)
         {
-            this->coloring_algorithm_type = COLORING_D2_VB_BIT;
+            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+            found = true;
 #ifdef VERBOSE
-            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
 #endif
         }
 #endif
+        //Since this logic is based on checking every exec space, detect when a new one needs to be supported
+        if(!found)
+          throw std::logic_error("D2 coloring: default algorithm hasn't been chosen for the current execution space");
     }
 
 
@@ -287,6 +298,7 @@ class GraphColorDistance2Handle
             case COLORING_D2_VB:
             case COLORING_D2_VB_BIT:
             case COLORING_D2_VB_BIT_EF:
+            case COLORING_D2_NB_BIT:
                 this->tictoc                   = false;
                 this->vb_edge_filtering        = false;
                 this->vb_chunk_size            = 8;
@@ -336,7 +348,7 @@ class GraphColorDistance2Handle
     void set_verbose(const bool verbose_) { this->verbose = verbose_; }
     void set_coloring_time(const double& coloring_time_) { this->coloring_time = coloring_time_; }
     void set_max_number_of_iterations(const int& max_phases) { this->max_number_of_iterations = max_phases; }
-    void set_num_phases(const double& num_phases_) { this->num_phases = num_phases_; }
+    void set_num_phases(const int& num_phases_) { this->num_phases = num_phases_; }
 
     void add_to_overall_coloring_time(const double& coloring_time_) { this->overall_coloring_time += coloring_time_; }
     void add_to_overall_coloring_time_phase1(const double& coloring_time_)

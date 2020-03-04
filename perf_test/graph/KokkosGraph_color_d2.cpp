@@ -41,8 +41,6 @@
 //@HEADER
 */
 
-// EXERCISE 1 Goal:
-//   Use Kokkos to parallelize the outer loop of <y,Ax> using Kokkos::parallel_reduce.
 #include <stdlib.h>
 #include <string>
 #include <unistd.h>
@@ -61,7 +59,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <KokkosKernels_IOUtils.hpp>
-#include <KokkosKernels_MyCRSMatrix.hpp>
+#include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
 
@@ -109,10 +107,18 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << std::endl
        << spaces << "Parameters:" << std::endl
        << spaces << "  Parallelism (select one of the following):" << std::endl
-       << spaces << "      --serial <N>        Execute serially." << std::endl
+#ifdef KOKKOS_ENABLE_SERIAL
+       << spaces << "      --serial            Execute serially." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_THREADS
        << spaces << "      --threads <N>       Use N posix threads." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
        << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
-       << spaces << "      --cuda              Use CUDA" << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_CUDA
+       << spaces << "      --cuda <id>         Use CUDA (device $id)" << std::endl
+#endif
        << std::endl
        << spaces << "  Required Parameters:" << std::endl
        << spaces << "      --amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
@@ -123,6 +129,7 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array (Default)." << std::endl
        << spaces << "                 COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
        << spaces << "                 COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
+       << spaces << "                 COLORING_D2_NB_BIT      - VB_BIT with dynamic programming, default on parallel devices" << std::endl
 
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
@@ -136,6 +143,16 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << " " << std::endl;
 }
 
+static char* getNextArg(int& i, int argc, char** argv)
+{
+  i++;
+  if(i >= argc)
+  {
+    std::cerr << "Error: expected additional command-line argument!\n";
+    exit(1);
+  }
+  return argv[i];
+}
 
 int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
 {
@@ -146,41 +163,40 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
     {
         if(0 == strcasecmp(argv[i], "--threads"))
         {
-            params.use_threads = atoi(argv[++i]);
+            params.use_threads = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--serial"))
         {
-            params.use_serial = atoi(argv[++i]);
+            params.use_serial = 1;
         }
         else if(0 == strcasecmp(argv[i], "--openmp"))
         {
-            params.use_openmp = atoi(argv[++i]);
-            std::cout << "use_openmp = " << params.use_openmp << std::endl;
+            params.use_openmp = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--cuda"))
         {
-            params.use_cuda = 1;
+            params.use_cuda = 1 + atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--repeat"))
         {
-            params.repeat = atoi(argv[++i]);
+            params.repeat = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--chunksize"))
         {
-            params.chunk_size = atoi(argv[++i]);
+            params.chunk_size = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--teamsize"))
         {
-            params.team_size = atoi(argv[++i]);
+            params.team_size = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--vectorsize"))
         {
-            params.vector_size = atoi(argv[++i]);
+            params.vector_size = atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--amtx"))
         {
             got_required_param_amtx = true;
-            params.a_mtx_bin_file   = argv[++i];
+            params.a_mtx_bin_file  = getNextArg(i, argc, argv);
         }
         else if(0 == strcasecmp(argv[i], "--dynamic"))
         {
@@ -216,6 +232,11 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT_EF"))
             {
                 params.algorithm             = 5;
+                got_required_param_algorithm = true;
+            }
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_NB_BIT"))
+            {
+                params.algorithm             = 6;
                 got_required_param_algorithm = true;
             }
             else
@@ -274,11 +295,19 @@ std::string getCurrentDateTimeStr()
 }
 
 
-template<typename ExecSpace, typename crsGraph_t, typename crsGraph_t2, typename crsGraph_t3, typename TempMemSpace, typename PersistentMemSpace>
-void run_experiment(crsGraph_t crsGraph, Parameters params)
+template<typename crsGraph_t>
+void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
 {
     using namespace KokkosGraph;
     using namespace KokkosGraph::Experimental;
+
+    using device_t = typename crsGraph_t::device_type;
+    using exec_space = typename device_t::execution_space;
+    using mem_space = typename device_t::memory_space;
+    using lno_view_t = typename crsGraph_t::row_map_type::non_const_type;
+    using lno_nnz_view_t = typename crsGraph_t::entries_type::non_const_type;
+    using size_type = typename lno_view_t::non_const_value_type;
+    using lno_t     = typename lno_nnz_view_t::non_const_value_type;
 
     int algorithm  = params.algorithm;
     int repeat     = params.repeat;
@@ -289,16 +318,9 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     int use_dynamic_scheduling = params.use_dynamic_scheduling;
     int verbose                = params.verbose;
 
-    // char spgemm_step = params.spgemm_step;
     int vector_size = params.vector_size;
 
-    using lno_view_t = typename crsGraph_t3::row_map_type::non_const_type;
-    using lno_nnz_view_t = typename crsGraph_t3::entries_type::non_const_type;
-
-    using size_type = typename lno_view_t::non_const_value_type;
-    using lno_t     = typename lno_nnz_view_t::non_const_value_type;
-
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, ExecSpace, TempMemSpace, PersistentMemSpace> KernelHandle;
+    typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, exec_space, mem_space, mem_space> KernelHandle;
 
     // Get Date/Time stamps of start to use later when printing out summary data.
     //auto t  =  std::time(nullptr);
@@ -352,6 +374,10 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
             label_algorithm = "COLORING_D2_VB_BIT_EF";
             break;
+        case 6:
+            kh.create_distance2_graph_coloring_handle(COLORING_D2_NB_BIT);
+            label_algorithm = "COLORING_D2_NB_BIT";
+            break;
         default:
             kh.create_distance2_graph_coloring_handle(COLORING_D2_VB);
             label_algorithm = "COLORING_D2_VB";
@@ -366,7 +392,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
-        graph_compute_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
+        graph_compute_distance2_color(&kh, crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
 
         total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();
@@ -393,7 +419,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         bool d2_coloring_is_valid            = false;
         bool d2_coloring_validation_flags[4] = { false };
 
-        d2_coloring_is_valid = KokkosGraph::Impl::graph_verify_distance2_color(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, d2_coloring_validation_flags);
+        d2_coloring_is_valid = KokkosGraph::Impl::graph_verify_distance2_color(&kh, crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, d2_coloring_validation_flags);
 
         // Print out messages based on coloring validation check.
         if(d2_coloring_is_valid)
@@ -419,7 +445,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
         // ------------------------------------------
         // Print out the colors histogram
         // ------------------------------------------
-        KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
+        KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
 
     } // for i...
 
@@ -438,7 +464,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
     non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
 
     size_t degree_d2_max=0;
-    KokkosGraph::Impl::graph_compute_distance2_degree(&kh, crsGraph.numRows(), crsGraph.numCols(),
+    KokkosGraph::Impl::graph_compute_distance2_degree(&kh, crsGraph.numRows(), num_cols,
                                    crsGraph.row_map, crsGraph.entries,
                                    crsGraph.row_map, crsGraph.entries,
                                    degree_d2_dist, degree_d2_max);
@@ -590,46 +616,25 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << label_algorithm
               << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << ",";
-    KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
+    KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
     std::cout << std::endl;
 
     // Kokkos::print_configuration(std::cout);
 }
 
 
-template<typename size_type, typename lno_t, typename exec_space, typename hbm_mem_space>
+template<typename size_type, typename lno_t, typename exec_space, typename mem_space>
 void experiment_driver(Parameters params)
 {
-    using myExecSpace     = exec_space;
-    using myFastDevice    = Kokkos::Device<exec_space, hbm_mem_space>;
-    using fast_crstmat_t  = typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type>;
-    using fast_graph_t    = typename fast_crstmat_t::StaticCrsGraphType;
+    using device_t    = Kokkos::Device<exec_space, mem_space>;
+    using crsMat_t    = typename KokkosSparse::CrsMatrix<double, lno_t, device_t, void, size_type>;
+    using graph_t     = typename crsMat_t::StaticCrsGraphType;
+ 
+    crsMat_t A     = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(params.a_mtx_bin_file);
+    graph_t Agraph = A.graph;
+    int num_cols   = A.numCols();
 
-    char *a_mat_file = params.a_mtx_bin_file;
-
-    fast_graph_t a_fast_crsgraph, /*b_fast_crsgraph,*/ c_fast_crsgraph;
-
-    if(params.a_mem_space == 1)
-    {
-        fast_crstmat_t a_fast_crsmat;
-        a_fast_crsmat            = KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
-        a_fast_crsgraph          = a_fast_crsmat.graph;
-        a_fast_crsgraph.num_cols = a_fast_crsmat.numCols();
-    }
-
-    if(params.a_mem_space == 1 && params.b_mem_space==1 && params.c_mem_space==1 && params.work_mem_space==1)
-    {
-        KokkosKernels::Experiment::run_experiment<myExecSpace, fast_graph_t, fast_graph_t, fast_graph_t, hbm_mem_space, hbm_mem_space>
-                (a_fast_crsgraph, /*b_fast_crsgraph,*/ params);
-    }
-    else
-    {
-        std::cout << ">>> unhandled memspace configuration flags:"      << std::endl
-                  << ">>>   a_mem_space    = " << params.a_mem_space    << std::endl
-                  << ">>>   b_mem_space    = " << params.a_mem_space    << std::endl
-                  << ">>>   c_mem_space    = " << params.a_mem_space    << std::endl
-                  << ">>>   work_mem_space = " << params.work_mem_space << std::endl;
-    }
+    KokkosKernels::Experiment::run_experiment<graph_t>(Agraph, num_cols, params);
 }
 
 
@@ -660,7 +665,9 @@ int main(int argc, char *argv[])
               << "Sizeof(size_type): " << sizeof(kk_size_type) << std::endl;
 
     const int num_threads = params.use_openmp;      // Assumption is that use_openmp variable is provided as number of threads
-    const int device_id   = 0;
+    int device_id = 0;
+    if(params.use_cuda)
+      device_id = params.use_cuda - 1;
     Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 
     // Print out verbose information about the configuration of the run.

@@ -51,6 +51,7 @@
 #include <KokkosBlas1_fill.hpp>
 #include <KokkosBlas1_nrm2.hpp>
 #include <KokkosKernels_config.h>
+#include "KokkosSparse_perftest_types.hpp"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -58,26 +59,12 @@
 using std::cout;
 using std::string;
 
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
-#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
-#else
-  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
-#endif
-  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
-#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
-#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
-#else
-  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
-#endif
-
-template<typename size_type, typename lno_t, typename device_t>
+template<typename device_t>
 void runGS(string matrixPath, string devName, bool symmetric)
 {
-  typedef double scalar_t;
+  typedef default_scalar scalar_t;
+  typedef default_lno_t lno_t;
+  typedef default_size_type size_type;
   typedef typename device_t::execution_space exec_space;
   typedef typename device_t::memory_space mem_space;
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exec_space, mem_space, mem_space> KernelHandle;
@@ -240,28 +227,28 @@ int main(int argc, char** argv)
   #ifdef KOKKOS_ENABLE_SERIAL
   if(device == "serial")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::Serial>(matrixPath, device, sym);
+    runGS<Kokkos::Serial>(matrixPath, device, sym);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_OPENMP
   if(device == "openmp")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::OpenMP>(matrixPath, device, sym);
+    runGS<Kokkos::OpenMP>(matrixPath, device, sym);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_THREADS
   if(device == "threads")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::Threads>(matrixPath, device, sym);
+    runGS<Kokkos::Threads>(matrixPath, device, sym);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_CUDA
   if(device == "cuda")
   {
-    runGS<default_size_type, default_lno_t, Kokkos::Cuda>(matrixPath, device, sym);
+    runGS<Kokkos::Cuda>(matrixPath, device, sym);
     run = true;
   }
   #endif

@@ -57,30 +57,14 @@
 #endif
 
 #include <Kokkos_Core.hpp>
-#include <matrix_market.hpp>
 
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_spiluk.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_perftest_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
-
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
-#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
-#else
-  #error "Expect int and/or int64_t to be enabled as ORDINAL (lno_t) types"
-#endif
-  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
-#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
-#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
-#else
-  #error "Expect size_t and/or int to be enabled as OFFSET (size_type) types"
-#endif
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 using namespace KokkosSparse;
@@ -90,10 +74,8 @@ using namespace KokkosKernels::Experimental;
 
 enum {DEFAULT, CUSPARSE, LVLSCHED_RP, LVLSCHED_TP1/*, LVLSCHED_TP2*/};
 
-template<typename Scalar>
-int test_spiluk_perf(std::vector<int> tests, std::string afilename, int K, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
-
-  typedef Scalar scalar_t;
+int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin, int team_size, int vector_length, /*int idx_offset,*/ int loop) {
+  typedef default_scalar scalar_t;
   typedef default_lno_t lno_t;
   typedef default_size_type size_type;
   typedef Kokkos::DefaultExecutionSpace execution_space;
@@ -125,7 +107,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int K, int t
     graph_t graph = A.graph; // in_graph
     const size_type nrows = graph.numRows();
     const int       nnz   = A.nnz();
-    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(K) ;
+    const typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(kin);
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     //cuSPARSE requires lno_t = size_type = int. For both, int is always used (if enabled)
@@ -315,7 +297,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int K, int t
             return 1;
           }
           else {
-            Kokkos::View<lno_t*,    Kokkos::LayoutLeft, Kokkos::HostSpace> h_tmp_entries ( "h_tmp_entries", a_row_end-a_row_start);
+            Kokkos::View<lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> h_tmp_entries ( "h_tmp_entries", a_row_end-a_row_start);
             Kokkos::View<scalar_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> h_tmp_values  ( "h_tmp_values",  a_row_end-a_row_start);
         
             Kokkos::deep_copy(subview(h_tmp_entries, Kokkos::make_pair(0,l_row_end-l_row_start)),
@@ -442,7 +424,7 @@ int main(int argc, char **argv)
   
   std::string afilename;
   
-  int k = 0;
+  int kin = 0;
   int vector_length = -1;
   int team_size = -1;
   // int idx_offset = 0;
@@ -472,7 +454,7 @@ int main(int argc, char **argv)
       continue;
     }
     if((strcmp(argv[i],"-f")==0)) {afilename = argv[++i]; continue;}
-    if((strcmp(argv[i],"-k")==0)) {k = atoi(argv[++i]); continue;}
+    if((strcmp(argv[i],"-k")==0)) {kin = atoi(argv[++i]); continue;}
     if((strcmp(argv[i],"-ts")==0)) {team_size = atoi(argv[++i]); continue;}
     if((strcmp(argv[i],"-vl")==0)) {vector_length = atoi(argv[++i]); continue;}
     //if((strcmp(argv[i],"--offset")==0)) {idx_offset = atoi(argv[++i]); continue;}
@@ -506,7 +488,7 @@ int main(int argc, char **argv)
   
   Kokkos::initialize(argc,argv);
   {
-    int total_errors = test_spiluk_perf<double>(tests, afilename, k, team_size, vector_length, /*idx_offset,*/ loop);
+    int total_errors = test_spiluk_perf(tests, afilename, kin, team_size, vector_length, /*idx_offset,*/ loop);
     
     if(total_errors == 0)
       printf("Kokkos::SPILUK Test: Passed\n");
