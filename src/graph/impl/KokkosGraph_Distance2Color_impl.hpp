@@ -1286,33 +1286,21 @@ class GraphColorDistance2
                                 nnz_lno_temp_work_view_t current_vertexList_,
                                 size_type                current_vertexListLength_)
     {
-        color_type*  forbidden = new color_type[ _nv ];
+        //At any given time, forbidden[c] = the most recent vertex seen for which color c is forbidden.
+        nnz_lno_type* forbidden = new nnz_lno_type[_nv];
+        for(nnz_lno_type i = 0; i < _nv; i++)
+          forbidden[i] = _nv;
         nnz_lno_type vid       = 0;
-        nnz_lno_type end       = _nv;
 
-        typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
+        auto h_recolor_list = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), current_vertexList_);
+        auto h_colors = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), vertex_colors_);
 
-        end            = current_vertexListLength_;
-        h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
-        Kokkos::deep_copy(h_recolor_list, current_vertexList_);
+        auto h_idx = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), xadj_);
+        auto h_adj = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), adj_);
+        auto h_t_idx = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), t_xadj_);
+        auto h_t_adj = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), t_adj_);
 
-        auto h_colors = Kokkos::create_mirror_view(vertex_colors_);
-
-        auto h_idx = Kokkos::create_mirror_view(xadj_);
-        auto h_adj = Kokkos::create_mirror_view(adj_);
-
-        auto h_t_idx = Kokkos::create_mirror_view(t_xadj_);
-        auto h_t_adj = Kokkos::create_mirror_view(t_adj_);
-
-        Kokkos::deep_copy(h_colors, vertex_colors_);
-
-        Kokkos::deep_copy(h_idx, xadj_);
-        Kokkos::deep_copy(h_adj, adj_);
-
-        Kokkos::deep_copy(h_t_idx, t_xadj_);
-        Kokkos::deep_copy(h_t_adj, t_adj_);
-
-        for(nnz_lno_type k = 0; k < end; k++)
+        for(nnz_lno_type k = 0; k < nnz_lno_type(current_vertexListLength_); k++)
         {
             vid = h_recolor_list(k);
 
