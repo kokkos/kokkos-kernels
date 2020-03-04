@@ -698,6 +698,7 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
                "intel/18.0.5 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
                "clang/8.0 $CLANG8_MODULE_LIST "Cuda_OpenMP,Pthread_Serial" clang++ $CLANG8_CUDA_WARNING_FLAGS"
                "cuda/10.1 $NVCC_SEMSMODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/9.2 $NVCC_SEMSMODULE_LIST "Cuda_Serial" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
@@ -712,6 +713,7 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("cuda/10.0 $NVCC_MODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/10.1 $NVCC_SEMSMODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/9.2 $NVCC_SEMSMODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "clang/8.0 $CLANG8_MODULE_LIST $BUILD_LIST_CUDA_CLANG clang++ $CLANG8_CUDA_WARNING_FLAGS"
                "clang/8.0 $CLANG8_MODULE_LIST $BUILD_LIST_CLANG clang++ $CLANG_WARNING_FLAGS"
                "gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
@@ -890,6 +892,18 @@ report_and_log_test_result() {
 setup_env() {
   local compiler=$1
   local compiler_modules=$(get_compiler_modules $compiler)
+
+  # Test UVM for cuda/9.2* builds
+  if [[ "$compiler" == cuda/9.2* ]]; then
+    if [[ "$KOKKOS_CUDA_OPTIONS" = "" ]]; then
+      export KOKKOS_CUDA_OPTIONS="force_uvm"
+    else
+      export KOKKOS_CUDA_OPTIONS="${KOKKOS_CUDA_OPTIONS},force_uvm"
+    fi
+    export CUDA_LAUNCH_BLOCKING=1
+    export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+    echo "cuda/9.2 + UVM Check KOKKOS_CUDA_OPTIONS: $KOKKOS_CUDA_OPTIONS"
+  fi
 
   # Default tpls passed in via command-line - users responsibility to ensure this works if set manually
   KOKKOSKERNELS_ENABLE_TPL_CMD="--with-tpls=$KOKKOSKERNELS_ENABLE_TPLS"
