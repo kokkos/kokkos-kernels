@@ -895,7 +895,14 @@ setup_env() {
 
   # Test UVM for cuda/9.2* builds
   if [[ "$compiler" == cuda/9.2* ]]; then
-    KOKKOS_CUDA_OPTIONS="force_uvm"
+    if [[ "$KOKKOS_CUDA_OPTIONS" = "" ]]; then
+      export KOKKOS_CUDA_OPTIONS="force_uvm"
+    else
+      export KOKKOS_CUDA_OPTIONS="${KOKKOS_CUDA_OPTIONS},force_uvm"
+    fi
+    export CUDA_LAUNCH_BLOCKING=1
+    export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+    echo "cuda/9.2 + UVM Check KOKKOS_CUDA_OPTIONS: $KOKKOS_CUDA_OPTIONS"
   fi
 
   # Default tpls passed in via command-line - users responsibility to ensure this works if set manually
