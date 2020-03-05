@@ -914,6 +914,7 @@ setup_env() {
     # device tpls
     if [[ "$compiler" == cuda* ]]; then
       NEW_TPL_LIST="cublas,cusparse,"
+      export KOKKOS_CUDA_OPTIONS="${KOKKOS_CUDA_OPTIONS},enable_lambda"
     fi
     # host tpls - use mkl with intel, else use host blas
     if [[ "$compiler" == intel* ]]; then
