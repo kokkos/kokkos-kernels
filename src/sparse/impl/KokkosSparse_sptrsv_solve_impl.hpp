@@ -2548,6 +2548,7 @@ cudaProfilerStop();
   auto nodes_per_level = thandle.get_nodes_per_level();
   auto hnodes_per_level = thandle.get_host_nodes_per_level();
   auto nodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
+  auto nodes_grouped_by_level_host = thandle.get_host_nodes_grouped_by_level();
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using namespace KokkosSparse::Experimental;
@@ -2559,11 +2560,10 @@ cudaProfilerStop();
 
   const scalar_t zero (0.0);
   const scalar_t one (1.0);
-
-  auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
 
-  auto row_map_host = Kokkos::create_mirror_view (row_map);
+  Kokkos::View<size_type*, Kokkos::HostSpace> row_map_host(
+      Kokkos::ViewAllocateWithoutInitializing("host rowmap"), row_map.extent(0));
   Kokkos::deep_copy (row_map_host, row_map);
 
   // inversion options
@@ -2827,10 +2827,11 @@ cudaProfilerStop();
   const scalar_t zero (0.0);
   const scalar_t one (1.0);
 
-  auto nodes_grouped_by_level_host = Kokkos::create_mirror_view (nodes_grouped_by_level);
+  auto nodes_grouped_by_level_host = thandle.get_host_nodes_grouped_by_level();
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
 
-  auto row_map_host = Kokkos::create_mirror_view (row_map);
+  Kokkos::View<size_type*, Kokkos::HostSpace> row_map_host(
+      Kokkos::ViewAllocateWithoutInitializing("host rowmap"), row_map.extent(0));
   Kokkos::deep_copy (row_map_host, row_map);
 
   // supernode sizes
@@ -2928,7 +2929,6 @@ cudaProfilerStart();
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
             for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
-
               auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
               // supernodal column size
@@ -3007,7 +3007,6 @@ cudaProfilerStart();
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
             for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
-
               auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
               // supernodal column size

@@ -423,6 +423,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   const scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero();
   const scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one();
   srand(245);
+  typedef typename device::execution_space exec_space;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   lno_t numCols = numRows;
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
@@ -443,6 +444,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   vector_t xgold("X gold", numRows);
   Kokkos::deep_copy(xgold, x);
   vector_t y = Test::create_y_vector(input_mat, x);
+  exec_space().fence();
   auto y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
   //initial solution is zero
   Kokkos::deep_copy(x_host, zero);

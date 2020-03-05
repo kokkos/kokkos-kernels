@@ -179,6 +179,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
+  typedef typename device::execution_space exec_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
@@ -221,8 +222,10 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 
   lno_t nv = ((crsmat2.numRows() / block_size)+1) * block_size;
 
-  const scalar_view_t solution_x("X", nv);
+  const scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv);
+  //create_x_vector operates on host mirror, then copies to device. But create_y does everything on device.
   create_x_vector(solution_x);
+  exec_space().fence();
   scalar_view_t y_vector = create_y_vector(crsmat2, solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
 #ifdef gauss_seidel_testmore
@@ -278,6 +281,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 
+  typedef typename device::execution_space exec_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
@@ -324,10 +328,12 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   //how many columns X/Y have
   constexpr lno_t numVecs = 2;
 
-  scalar_view2d_t solution_x("X", nv, numVecs);
+  scalar_view2d_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv, numVecs);
   create_x_vector(solution_x);
   scalar_view2d_t y_vector = create_y_vector_mv(crsmat2, solution_x);
+  exec_space().fence();
   auto solution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), solution_x);
+  //Need to fence before reading from solution_host
   std::vector<mag_t> initial_norms(numVecs);
   for(lno_t i = 0; i < numVecs; i++)
   {
@@ -378,6 +384,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
             //double gs = timer1.seconds();
             //KokkosKernels::Impl::print_1Dview(x_vector);
             Kokkos::deep_copy(x_host, x_vector);
+            exec_space().fence();
             for(lno_t c = 0; c < numVecs; c++)
             {
               scalar_t sum = 0;
