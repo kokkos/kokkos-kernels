@@ -310,7 +310,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
           // Benchmark
           // L-solve
-          double min_time = 1.0e32;
+          double min_time = 0.0;
           double max_time = 0.0;
           double ave_time = 0.0;
           Kokkos::fence();
@@ -320,9 +320,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
             Kokkos::fence();
             double time = timer.seconds();
             ave_time += time;
-            if(time>max_time) max_time = time;
-            if(time<min_time) min_time = time;
-            //std::cout << time << std::endl;
+            if(time>max_time || i == 0) max_time = time;
+            if(time<min_time || i == 0) min_time = time;
           }
           std::cout << " L-solve: loop = " << loop << std::endl;
           std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;

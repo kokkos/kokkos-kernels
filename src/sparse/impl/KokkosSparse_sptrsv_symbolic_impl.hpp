@@ -439,7 +439,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
 
     signed_integral_t num_done = 0;
     signed_integral_t level = 0;
-    //#define profile_supernodal_etree
+    #define profile_supernodal_etree
     #ifdef profile_supernodal_etree
     // min, max, tot size of supernodes
     signed_integral_t max_nsrow = 0;
@@ -485,7 +485,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           #ifdef profile_supernodal_etree
           // gather static if requested
           signed_integral_t nscol = supercols[s+1] - supercols[s];
-          if (tot_nscol == 0) {
+          if (num_leave == 0) {
             max_nscol = nscol;
             min_nscol = nscol;
 
@@ -536,7 +536,8 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
       }
       #ifdef profile_supernodal_etree
       std::cout << level <<  " : num_leave="
-                << num_leave << ", avg_nsrow=" << avg_nsrow << ", avg_nscol=" << avg_nscol 
+                << num_leave << ", nsrow=" << min_nsrow << ", " << avg_nsrow << ", " << max_nsrow 
+                             << ", nscol=" << min_nscol << ", " << avg_nscol << ", " << max_nscol
                 << ", kernel_type=" << diag_kernel_type_by_level (level)
                 << "(" << size_unblocked << "," << thandle.get_supernode_size_blocked() << ")" << std::endl;
       if (level == 0) {
