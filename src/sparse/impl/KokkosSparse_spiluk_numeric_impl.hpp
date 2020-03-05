@@ -374,7 +374,6 @@ void iluk_numeric ( IlukHandle& thandle,
   using size_type       = typename IlukHandle::size_type;
   using nnz_lno_t       = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using HandleHostEntriesType   = typename IlukHandle::nnz_lno_view_t::HostMirror;
 
   size_type nlevels = thandle.get_num_levels();
   size_type nrows   = thandle.get_nrows();
