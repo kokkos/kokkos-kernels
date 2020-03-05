@@ -480,7 +480,7 @@ int main(int argc, char **argv)
     }
 
     if(compare_cusparse) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA_LAMBDA)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       // The data needs to be reformatted for cusparse before launching the kernel.
       // Step one, extract raw data
       using graph_type = typename matrix_type::StaticCrsGraphType;
