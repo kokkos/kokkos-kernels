@@ -1,7 +1,7 @@
 # Change Log
 
-## [2.9.99](https://github.com/kokkos/kokkos-kernels/tree/2.9.99) (2020-01-27)
-[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.9.00...2.9.99)
+## [3.0.00](https://github.com/kokkos/kokkos-kernels/tree/3.0.00) (2020-01-27)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.9.00...3.0.00)
 
 **Implemented enhancements:**
 
@@ -14,6 +14,7 @@
 - BLAS trsm: Add support and interface for trsm [\#513](https://github.com/kokkos/kokkos-kernels/issues/513)
 - BLAS iamax: Implement iamax [\#87](https://github.com/kokkos/kokkos-kernels/issues/87)
 - BLAS gesv: [\#449](https://github.com/kokkos/kokkos-kernels/issues/449)
+- sptrsv supernodal: Add supernodal sparse triangular solver [\#552](https://github.com/kokkos/kokkos-kernels/pull/552)
 - sptrsv: Add cusparse tpl support for sparse triangular solve, cudagraphs to fallback [\#555](https://github.com/kokkos/kokkos-kernels/pull/555)
 - KokkosGraph: Output colors assigned during graph coloring [\#444](https://github.com/kokkos/kokkos-kernels/issues/444)
 - MatrixReader: Full matrix market support [\#466](https://github.com/kokkos/kokkos-kernels/pull/466)
