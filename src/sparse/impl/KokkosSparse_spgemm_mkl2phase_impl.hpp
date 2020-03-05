@@ -1,9 +1,9 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//          KokkosKernels: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
@@ -35,11 +35,10 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
-*/
 
 #ifndef _KOKKOSSPGEMMMKL2_HPP
 #define _KOKKOSSPGEMMMKL2_HPP
