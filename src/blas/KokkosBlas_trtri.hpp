@@ -41,8 +41,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSBLASLAPACK_TRTRI_HPP_
-#define KOKKOSBLASLAPACK_TRTRI_HPP_
+#ifndef KOKKOSBLAS_TRTRI_HPP_
+#define KOKKOSBLAS_TRTRI_HPP_
 
 /// \file KokkosBlas_trtri.hpp
 

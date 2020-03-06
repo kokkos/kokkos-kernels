@@ -42,8 +42,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLASLAPACK_TRTRI_TPL_SPEC_DECL_HPP_
-#define KOKKOSBLASLAPACK_TRTRI_TPL_SPEC_DECL_HPP_
+#ifndef KOKKOSBLAS_TRTRI_TPL_SPEC_DECL_HPP_
+#define KOKKOSBLAS_TRTRI_TPL_SPEC_DECL_HPP_
 
 #include "KokkosBlas_Host_tpl.hpp" // trtri prototype
 #include "KokkosBlas_tpl_spec.hpp"
@@ -192,4 +192,4 @@ KOKKOSBLAS_CTRTRI_BLAS(Kokkos::LayoutRight, false)
 } // namespace Impl
 } // nameSpace KokkosBlas
 
-#endif // KOKKOSBLASLAPACK_TRTRI_TPL_SPEC_DECL_HPP_
+#endif // KOKKOSBLAS_TRTRI_TPL_SPEC_DECL_HPP_

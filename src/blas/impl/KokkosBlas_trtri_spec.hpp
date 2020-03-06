@@ -41,8 +41,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSBLASLAPACK_TRTRI_SPEC_HPP_
-#define KOKKOSBLASLAPACK_TRTRI_SPEC_HPP_
+#ifndef KOKKOSBLAS_TRTRI_SPEC_HPP_
+#define KOKKOSBLAS_TRTRI_SPEC_HPP_
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
@@ -64,7 +64,7 @@ struct trtri_eti_spec_avail {
 //
 // This Macros provides the ETI specialization of trtri, currently not available.
 //
-#define KOKKOSBLASLAPACK_TRTRI_ETI_SPEC_AVAIL( SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS_TRTRI_ETI_SPEC_AVAIL( SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE ) \
     template<> \
     struct trtri_eti_spec_avail< \
          Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
@@ -141,7 +141,7 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // "extern template" skips the implicit instatiation step ensuring that the
 // callers code uses this explicit instantiation definition of TRTRI.
 //
-#define KOKKOSBLASLAPACK_TRTRI_ETI_SPEC_DECL( SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS_TRTRI_ETI_SPEC_DECL( SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE ) \
 extern template struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -149,7 +149,7 @@ extern template struct TRTRI< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      false, true>;
 
-#define KOKKOSBLASLAPACK_TRTRI_ETI_SPEC_INST( SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE ) \
+#define KOKKOSBLAS_TRTRI_ETI_SPEC_INST( SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE ) \
 template struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -160,4 +160,4 @@ template struct TRTRI< \
 #include<KokkosBlas_trtri_tpl_spec_decl.hpp>
 // TODO: #include<generated_specializations_hpp/KokkosBlas_trtri_eti_spec_decl.hpp>
 
-#endif // KOKKOSBLASLAPACK_TRTRI_SPEC_HPP_
+#endif // KOKKOSBLAS_TRTRI_SPEC_HPP_
