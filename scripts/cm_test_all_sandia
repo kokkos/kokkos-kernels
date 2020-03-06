@@ -900,8 +900,6 @@ setup_env() {
     else
       export KOKKOS_CUDA_OPTIONS="${KOKKOS_CUDA_OPTIONS},force_uvm"
     fi
-    export CUDA_LAUNCH_BLOCKING=1
-    export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
     echo "cuda/9.2 + UVM Check KOKKOS_CUDA_OPTIONS: $KOKKOS_CUDA_OPTIONS"
   fi
 
