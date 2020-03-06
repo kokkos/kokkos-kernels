@@ -30,7 +30,7 @@
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFIS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -74,11 +74,12 @@ namespace Impl {
     cudaDataType myCudaDataType;
     if(std::is_same<value_type, float>::value)  {myCudaDataType = CUDA_R_32F;}
     if(std::is_same<value_type, double>::value) {myCudaDataType = CUDA_R_64F;}
+    std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<value_type>::name() + "]: ";
 
     /* initialize cusparse library */
     status = cusparseCreate(&handle);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse was not initialized correctly");
+      throw std::runtime_error(label + "cusparse was not initialized correctly");
     }
 
     /* create matrix */
@@ -92,18 +93,18 @@ namespace Impl {
 			       CUSPARSE_INDEX_BASE_ZERO,
 			       myCudaDataType);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse matrix was not created correctly");
+      throw std::runtime_error(label + "cusparse matrix was not created correctly");
     }
 
     /* create lhs and rhs */
     cusparseDnVecDescr_t vecX, vecY;
     status = cusparseCreateDnVec(&vecX, x.extent_int(0), const_cast<value_type*>(x.data()), myCudaDataType);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse vecX was not created correctly");
+      throw std::runtime_error(label + "cusparse vecX was not created correctly");
     }
     status = cusparseCreateDnVec(&vecY, y.extent_int(0), const_cast<value_type*>(y.data()), myCudaDataType);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse vecY was not created correctly");
+      throw std::runtime_error(label + "cusparse vecY was not created correctly");
     }
 
     size_t bufferSize = 0;
@@ -112,11 +113,11 @@ namespace Impl {
 				     &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
 				     CUSPARSE_CSRMV_ALG1, &bufferSize);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse bufferSize computation failed");
+      throw std::runtime_error(label + "cusparse bufferSize computation failed");
     }
     cuError = cudaMalloc(&dBuffer, bufferSize);
     if (cuError != cudaSuccess) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cuda buffer allocation failed");
+      throw std::runtime_error(label + "cuda buffer allocation failed");
     }
 
     /* perform SpMV */
@@ -124,54 +125,55 @@ namespace Impl {
 			  &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
 			  CUSPARSE_CSRMV_ALG1, dBuffer);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparseSpMV() failed");
+      throw std::runtime_error(label + "cusparseSpMV() failed");
     }
 
     cuError = cudaFree(dBuffer);
     if (cuError != cudaSuccess) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cuda buffer deallocation failed");
+      throw std::runtime_error(label + "cuda buffer deallocation failed");
     }
     status = cusparseDestroyDnVec(vecX);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse vecX was not destroyed correctly");
+      throw std::runtime_error(label + "cusparse vecX was not destroyed correctly");
     }
     status = cusparseDestroyDnVec(vecY);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse vecY was not destroyed correctly");
+      throw std::runtime_error(label + "cusparse vecY was not destroyed correctly");
     }
     status = cusparseDestroySpMat(A_cusparse);
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse matrix was not destroyed correctly");
+      throw std::runtime_error(label + "cusparse matrix was not destroyed correctly");
     }
     status = cusparseDestroy(handle);
     handle = 0;
     if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse handle was not desctroyed correctly");
+      throw std::runtime_error(label + "cusparse handle was not desctroyed correctly");
     }
 
 #else
+    std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<value_type>::name() + "]: ";
 
     /* Initialize cusparse */
     cusparseStatus_t cusparseStatus;
     cusparseHandle_t cusparseHandle=0;
     cusparseStatus = cusparseCreate(&cusparseHandle);
     if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: cannot initialize cusparse handle");
+      throw std::runtime_error(label + "cannot initialize cusparse handle");
     }
 
     /* create and set the matrix descriptor */
     cusparseMatDescr_t descrA = 0;
     cusparseStatus = cusparseCreateMatDescr(&descrA);
     if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: error creating the matrix descriptor");
+      throw std::runtime_error(label + "error creating the matrix descriptor");
     }
     cusparseStatus = cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
     if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: error setting the matrix type");
+      throw std::runtime_error(label + "error setting the matrix type");
     }
     cusparseStatus = cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO);
     if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error("KokkosSparse::spmv[TPL_CUSPARSE,double]: error setting the matrix index base");
+      throw std::runtime_error(label + "error setting the matrix index base");
     }
 
     /* perform the actual SpMV operation */
@@ -202,12 +204,12 @@ namespace Impl {
 
     cusparseStatus = cusparseDestroyMatDescr(descrA);
     if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw("KokkosSparse::spmv[TPL_CUSPARSE,double]: matrix descriptor was not desctroyed correctly");
+      throw std::logic_error(label + "matrix descriptor was not desctroyed correctly");
     }
     cusparseStatus = cusparseDestroy(cusparseHandle);
     cusparseHandle = 0;
     if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw("KokkosSparse::spmv[TPL_CUSPARSE,double]: cusparse handle was not desctroyed correctly");
+      throw std::logic_error(label + "cusparse handle was not desctroyed correctly");
     }
 
 #endif // CUSPARSE_VERSION
@@ -233,7 +235,8 @@ namespace Impl {
 		      const XVector& x,					\
 		      const coefficient_type& beta,			\
 		      const YVector& y) {				\
-      Kokkos::Profiling::pushRegion("KokkosSparse::spmv[TPL_CUSPARSE,double]");	\
+      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
+      Kokkos::Profiling::pushRegion(label);				\
       spmv_cusparse(mode, alpha, A, x, beta, y);			\
       Kokkos::Profiling::popRegion();					\
     }									\
