@@ -95,7 +95,6 @@ int run_block_gauss_seidel_1(
   typedef KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
-
   KernelHandle kh;
   kh.set_team_work_size(16);
   kh.set_shmem_size(shmem_size);
@@ -188,13 +187,16 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
+
+  //Intentionally testing block_size that's not a multiple of #rows.
+  lno_t block_size = 7;
+
   crsMat_t crsmat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
   lno_view_t pf_rm;
   lno_nnz_view_t pf_e;
   scalar_view_t pf_v;
   size_t out_r, out_c;
-  int block_size = 7;
 
   //this makes consecutive 5 rows to have same columns.
   //it will add scalar 0's for those entries that does not exists.
@@ -221,7 +223,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   graph_t static_graph (bf_e, bf_rm);
   crsMat_t input_mat("CrsMatrix", but_c, bf_v, static_graph);
 
-  lno_t nv = ((crsmat2.numRows() / block_size)+1) * block_size;
+  lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
   const scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv);
   //create_x_vector operates on host mirror, then copies to device. But create_y does everything on device.
@@ -291,13 +293,16 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
+
+  //Intentionally testing block_size that's not a multiple of #rows.
+  lno_t block_size = 7;
+
   crsMat_t crsmat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
   lno_view_t pf_rm;
   lno_nnz_view_t pf_e;
   scalar_view_t pf_v;
   size_t out_r, out_c;
-  int block_size = 7;
 
   //this makes consecutive 5 rows to have same columns.
   //it will add scalar 0's for those entries that does not exists.
@@ -324,7 +329,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   graph_t static_graph (bf_e, bf_rm);
   crsMat_t input_mat("CrsMatrix", but_c, bf_v, static_graph);
 
-  lno_t nv = ((crsmat2.numRows() / block_size)+1) * block_size;
+  lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
   //how many columns X/Y have
   constexpr lno_t numVecs = 2;
