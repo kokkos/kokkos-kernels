@@ -638,6 +638,7 @@ void test_github_issue_101 ()
   }
 }
 
+
 #define EXECUTE_TEST_ISSUE_101( DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv_issue_101 ## _ ## OFFSET ## _ ## DEVICE ) { \
 	test_github_issue_101<DEVICE> (); \
@@ -689,7 +690,7 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv_struct ## _ ## SCALAR ## _ ## ORDINA
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int, int, TestExecSpace)
  EXECUTE_TEST_STRUCT(double, int, int, TestExecSpace)
- #endif
+#endif
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \

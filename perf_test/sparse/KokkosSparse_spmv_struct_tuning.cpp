@@ -93,6 +93,48 @@ void print_help() {
   printf("  --print-lp         : Print launch parameters to screen.\n");
 }
 
+template<typename graph_type>
+struct copy_crs_data {
+  using execution_space = typename graph_type::device_type::execution_space;
+  using cusparse_int_type = typename Kokkos::View<int*,
+						  typename graph_type::entries_type::array_layout,
+						  typename graph_type::device_type>;
+
+  // Dispatch tags
+  struct rowPtrTag{};
+  struct colIndTag{};
+
+  typename graph_type::row_map_type::const_type Arowptr;
+  typename graph_type::entries_type::const_type Acolind;
+  cusparse_int_type cusparse_Arowptr, cusparse_Acolind;
+
+  copy_crs_data(typename graph_type::row_map_type::const_type Arowptr_,
+		typename graph_type::entries_type::const_type Acolind_,
+		cusparse_int_type cusparse_Arowptr_,
+		cusparse_int_type cusparse_Acolind_) :
+    Arowptr(Arowptr_), Acolind(Acolind_),
+    cusparse_Arowptr(cusparse_Arowptr_),
+    cusparse_Acolind(cusparse_Acolind_) {};
+
+  void doCopy() {
+    Kokkos::RangePolicy<execution_space, rowPtrTag> rowPtrPolicy(0, Arowptr.extent(0));
+    Kokkos::parallel_for("copy rowPtr to cusparse", rowPtrPolicy, *this);
+
+    Kokkos::RangePolicy<execution_space, colIndTag> colIndPolicy(0, Acolind.extent(0));
+    Kokkos::parallel_for("copy colInd to cusparse", colIndPolicy, *this);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const rowPtrTag&, const size_t idx) const {
+    cusparse_Arowptr(idx) = int(Arowptr(idx));
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const colIndTag&, const size_t idx) const {
+    cusparse_Acolind(idx) = int(Acolind(idx));
+  }
+};
+
 template<class AMatrix,
          class XVector,
          class YVector>
@@ -102,7 +144,7 @@ void struct_matvec(const int stencil_type,
                    const AMatrix& A,
                    const XVector& x,
                    typename YVector::const_value_type& beta,
-                   const YVector& y,
+                   YVector& y,
                    int team_size_int,
                    int vector_length,
                    int64_t rows_per_thread_int,
@@ -184,7 +226,7 @@ void matvec(typename YVector::const_value_type& alpha,
             const AMatrix& A,
             const XVector& x,
             typename YVector::const_value_type& beta,
-            const YVector& y,
+            YVector& y,
             int team_size,
             int vector_length,
             int64_t rows_per_thread,
@@ -439,26 +481,21 @@ int main(int argc, char **argv)
     }
 
     if(compare_cusparse) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA_LAMBDA)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       // The data needs to be reformatted for cusparse before launching the kernel.
       // Step one, extract raw data
       using graph_type = typename matrix_type::StaticCrsGraphType;
       using cusparse_int_type = typename Kokkos::View<int*,
 						      typename graph_type::entries_type::array_layout,
-						      typename matrix_type::device_type>;
+						      typename graph_type::device_type>;
 
       typename graph_type::row_map_type::const_type     Arowptr = A.graph.row_map;
       typename graph_type::entries_type::const_type     Acolind = A.graph.entries;
       typename matrix_type::values_type::non_const_type Avals   = A.values;
-      cusparse_int_type Arowptr_cusparse, Acolind_cusparse;
-      Arowptr_cusparse = cusparse_int_type("Arowptr", Arowptr.extent(0));
-      Acolind_cusparse = cusparse_int_type("Acolind", Acolind.extent(0));
-      Kokkos::parallel_for(Arowptr.extent(0), KOKKOS_LAMBDA(const size_t idx) {
-      	  Arowptr_cusparse[idx] = Arowptr[idx];
-      	});
-      Kokkos::parallel_for(Acolind.extent(0), KOKKOS_LAMBDA(const size_t idx) {
-      	  Acolind_cusparse[idx] = Acolind[idx];
-      	});
+      cusparse_int_type Arowptr_cusparse("Arowptr", Arowptr.extent(0));
+      cusparse_int_type Acolind_cusparse("Acolind", Acolind.extent(0));
+      copy_crs_data<graph_type> myCopyFunctor(Arowptr, Acolind, Arowptr_cusparse, Acolind_cusparse);
+      myCopyFunctor.doCopy();
 
       int*    rows = reinterpret_cast<int*>(Arowptr_cusparse.data());
       int*    cols = reinterpret_cast<int*>(Acolind_cusparse.data());
