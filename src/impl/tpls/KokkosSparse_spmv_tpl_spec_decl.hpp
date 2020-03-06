@@ -48,6 +48,7 @@
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
+#include "KokkosKernels_SparseUtils_cusparse.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -65,8 +66,7 @@ namespace Impl {
 
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
-    cudaError_t      cuError;
-    cusparseStatus_t status;
+    // cudaError_t      cuError;
     cusparseHandle_t handle=0;
 
     cusparseIndexType_t myCusparseIndexType;
@@ -78,78 +78,53 @@ namespace Impl {
     std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<value_type>::name() + "]: ";
 
     /* initialize cusparse library */
-    status = cusparseCreate(&handle);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse was not initialized correctly");
-    }
+    CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
+    // if (status != CUSPARSE_STATUS_SUCCESS) {
+    //   throw std::runtime_error(label + "cusparse was not initialized correctly");
+    // }
 
     /* create matrix */
     cusparseSpMatDescr_t A_cusparse;
-    status = cusparseCreateCsr(&A_cusparse, A.numRows(), A.numCols(), A.nnz(),
-			       const_cast<offset_type*>(A.graph.row_map.data()),
-			       const_cast<offset_type*>(A.graph.entries.data()),
-			       const_cast<value_type*>(A.values.data()),
-			       myCusparseIndexType,
-			       myCusparseIndexType,
-			       CUSPARSE_INDEX_BASE_ZERO,
-			       myCudaDataType);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse matrix was not created correctly");
-    }
+    CUSPARSE_SAFE_CALL(cusparseCreateCsr(&A_cusparse, A.numRows(), A.numCols(), A.nnz(),
+					 const_cast<offset_type*>(A.graph.row_map.data()),
+					 const_cast<offset_type*>(A.graph.entries.data()),
+					 const_cast<value_type*>(A.values.data()),
+					 myCusparseIndexType,
+					 myCusparseIndexType,
+					 CUSPARSE_INDEX_BASE_ZERO,
+					 myCudaDataType));
 
     /* create lhs and rhs */
     cusparseDnVecDescr_t vecX, vecY;
-    status = cusparseCreateDnVec(&vecX, x.extent_int(0), const_cast<value_type*>(x.data()), myCudaDataType);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse vecX was not created correctly");
-    }
-    status = cusparseCreateDnVec(&vecY, y.extent_int(0), const_cast<value_type*>(y.data()), myCudaDataType);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse vecY was not created correctly");
-    }
+    CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), const_cast<value_type*>(x.data()), myCudaDataType));
+    CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), const_cast<value_type*>(y.data()), myCudaDataType));
 
     size_t bufferSize = 0;
     void*  dBuffer    = NULL;
-    status = cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				     &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
-				     CUSPARSE_CSRMV_ALG1, &bufferSize);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse bufferSize computation failed");
-    }
-    cuError = cudaMalloc(&dBuffer, bufferSize);
-    if (cuError != cudaSuccess) {
-      throw std::runtime_error(label + "cuda buffer allocation failed");
-    }
+    CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+					       &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
+					       CUSPARSE_CSRMV_ALG1, &bufferSize));
+    CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
+    // cuError = cudaMalloc(&dBuffer, bufferSize);
+    // if (cuError != cudaSuccess) {
+    //   throw std::runtime_error(label + "cuda buffer allocation failed");
+    // }
 
     /* perform SpMV */
-    status = cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-			  &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
-			  CUSPARSE_CSRMV_ALG1, dBuffer);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparseSpMV() failed");
-    }
+    CUSPARSE_SAFE_CALL(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+				    &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
+				    CUSPARSE_CSRMV_ALG1, dBuffer));
 
-    cuError = cudaFree(dBuffer);
-    if (cuError != cudaSuccess) {
-      throw std::runtime_error(label + "cuda buffer deallocation failed");
-    }
-    status = cusparseDestroyDnVec(vecX);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse vecX was not destroyed correctly");
-    }
-    status = cusparseDestroyDnVec(vecY);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse vecY was not destroyed correctly");
-    }
-    status = cusparseDestroySpMat(A_cusparse);
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse matrix was not destroyed correctly");
-    }
-    status = cusparseDestroy(handle);
+    CUDA_SAFE_CALL(cudaFree(dBuffer));
+    // cuError = cudaFree(dBuffer);
+    // if (cuError != cudaSuccess) {
+    //   throw std::runtime_error(label + "cuda buffer deallocation failed");
+    // }
+    CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
+    CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
+    CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
+    CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
     handle = 0;
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cusparse handle was not desctroyed correctly");
-    }
 
 #else
     std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<value_type>::name() + "]: ";
@@ -157,45 +132,35 @@ namespace Impl {
     /* Initialize cusparse */
     cusparseStatus_t cusparseStatus;
     cusparseHandle_t cusparseHandle=0;
-    cusparseStatus = cusparseCreate(&cusparseHandle);
-    if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "cannot initialize cusparse handle");
-    }
+    CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
 
     /* create and set the matrix descriptor */
     cusparseMatDescr_t descrA = 0;
-    cusparseStatus = cusparseCreateMatDescr(&descrA);
-    if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "error creating the matrix descriptor");
-    }
-    cusparseStatus = cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
-    if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "error setting the matrix type");
-    }
-    cusparseStatus = cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO);
-    if(cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::runtime_error(label + "error setting the matrix index base");
-    }
+    CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
+    CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     /* perform the actual SpMV operation */
     if(std::is_same<int, offset_type>::value) {
       if (std::is_same<value_type,float>::value) {
 	cusparseStatus = cusparseScsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
 					A.numRows(), A.numCols(), A.nnz(),
-					(const float *) &alpha, descrA,
-					(const float *) A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
-					(const float *) x.data(),
-					(const float *) &beta,
-					(float *) y.data());
+					reinterpret_cast<const float *>(&alpha), descrA,
+					reinterpret_cast<const float *>(A.values.data()),
+					A.graph.row_map.data(), A.graph.entries.data(),
+					reinterpret_cast<const float *>(x.data()),
+					reinterpret_cast<const float *>(&beta),
+					reinterpret_cast<float *>(y.data()));
 
       } else  if (std::is_same<value_type,double>::value) {
 	cusparseStatus = cusparseDcsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
 					A.numRows(), A.numCols(), A.nnz(),
-					(double const *) &alpha, descrA,
-					(double const *) A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
-					(double const *) x.data(),
-					(double const *) &beta,
-					(double *) y.data());
+					reinterpret_cast<double const *>(&alpha), descrA,
+					reinterpret_cast<double const *>(A.values.data()),
+					A.graph.row_map.data(), A.graph.entries.data(),
+					reinterpret_cast<double const *>(x.data()),
+					reinterpret_cast<double const *>(&beta),
+					reinterpret_cast<double *>(y.data()));
       } else {
 	throw std::logic_error("Trying to call cusparse SpMV with a scalar type that is not float or double!");
       }
@@ -203,15 +168,9 @@ namespace Impl {
       throw std::logic_error("Trying to call cusparse SpMV with an offset type that is not int!");
     }
 
-    cusparseStatus = cusparseDestroyMatDescr(descrA);
-    if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::logic_error(label + "matrix descriptor was not desctroyed correctly");
-    }
-    cusparseStatus = cusparseDestroy(cusparseHandle);
+    CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
+    CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle));
     cusparseHandle = 0;
-    if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-      throw std::logic_error(label + "cusparse handle was not desctroyed correctly");
-    }
 
 #endif // CUSPARSE_VERSION
   }

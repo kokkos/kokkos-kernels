@@ -51,10 +51,10 @@
 namespace KokkosSparse {
 namespace Impl {
 
-void cusparse_internal_error_throw(cusparseStatus_t cusparseStatus,
-				   const char *name,
-				   const char *file,
-				   const int line) {
+inline void cusparse_internal_error_throw(cusparseStatus_t cusparseStatus,
+					  const char *name,
+					  const char *file,
+					  const int line) {
   std::ostringstream out;
   out << name << " error( " << cusparseGetErrorName(cusparseStatus)
       << "): " << cusparseGetErrorString(cusparseStatus);
