@@ -769,7 +769,10 @@ if ! [ -z "$UNCOMMITTED" ]; then
 fi
 
 GITSTATUS=`cd ${KOKKOSKERNELS_PATH}; git log -n 1 --format=oneline`
-echo "Repository Status: " ${GITSTATUS}
+echo "KokkosKernels Repository Status: " ${GITSTATUS}
+echo ""
+KOKKOSGITSTATUS=`cd ${KOKKOS_PATH}; git log -n 1 --format=oneline`
+echo "Kokkos Repository Status: " ${KOKKOSGITSTATUS}
 echo ""
 echo ""
 
