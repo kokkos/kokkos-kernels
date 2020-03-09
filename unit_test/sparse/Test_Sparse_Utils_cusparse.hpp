@@ -7,11 +7,11 @@ void test_cusparse_safe_call() {
   bool caught_exception = false;
 
   cusparseStatus_t myStatus = CUSPARSE_STATUS_SUCCESS;
-  CUSPARSE_SAFE_CALL(myStatus);
+  KOKKOS_CUSPARSE_SAFE_CALL(myStatus);
 
   try {
     myStatus = CUSPARSE_STATUS_INVALID_VALUE;
-    CUSPARSE_SAFE_CALL(myStatus);
+    KOKKOS_CUSPARSE_SAFE_CALL(myStatus);
   } catch (std::runtime_error& e) {
     caught_exception = true;
   }

@@ -73,11 +73,16 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus,
   }
 }
 
-}  // namespace Impl
-}  // namespace KokkosSparse
-
-#define CUSPARSE_SAFE_CALL(call) \
+  // The macro below defines is the public interface for the safe cusparse calls.
+  // The functions themselves are protected by impl namespace.
+#define KOKKOS_CUSPARSE_SAFE_CALL(call) \
   KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
+
+}  // namespace Impl
+
+
+
+}  // namespace KokkosSparse
 
 
 #endif // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE

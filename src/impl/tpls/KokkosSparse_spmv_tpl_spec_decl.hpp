@@ -61,106 +61,87 @@ namespace Impl {
 		     typename YVector::non_const_value_type const & beta,
 		     const YVector& y) {
     using offset_type  = typename AMatrix::non_const_size_type;
-    // using ordinal_type = typename AMatrix::non_const_ordinal_type;
     using value_type   = typename AMatrix::non_const_value_type;
+
+    /* initialize cusparse library */
+    cusparseHandle_t cusparseHandle = 0;
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
+
+    /* Set the operation mode */
+    cusparseOperation_t myCusparseOperation = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    if(mode[0] == Transpose[0]) {myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;}
 
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
-    // cudaError_t      cuError;
-    cusparseHandle_t handle=0;
-
+    /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
     cusparseIndexType_t myCusparseIndexType;
     if(std::is_same<offset_type, int>::value)     {myCusparseIndexType = CUSPARSE_INDEX_32I;}
     if(std::is_same<offset_type, int64_t>::value) {myCusparseIndexType = CUSPARSE_INDEX_64I;}
     cudaDataType myCudaDataType;
     if(std::is_same<value_type, float>::value)  {myCudaDataType = CUDA_R_32F;}
     if(std::is_same<value_type, double>::value) {myCudaDataType = CUDA_R_64F;}
-    std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<value_type>::name() + "]: ";
-
-    /* initialize cusparse library */
-    CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
-    // if (status != CUSPARSE_STATUS_SUCCESS) {
-    //   throw std::runtime_error(label + "cusparse was not initialized correctly");
-    // }
 
     /* create matrix */
     cusparseSpMatDescr_t A_cusparse;
-    CUSPARSE_SAFE_CALL(cusparseCreateCsr(&A_cusparse, A.numRows(), A.numCols(), A.nnz(),
-					 const_cast<offset_type*>(A.graph.row_map.data()),
-					 const_cast<offset_type*>(A.graph.entries.data()),
-					 const_cast<value_type*>(A.values.data()),
-					 myCusparseIndexType,
-					 myCusparseIndexType,
-					 CUSPARSE_INDEX_BASE_ZERO,
-					 myCudaDataType));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&A_cusparse, A.numRows(), A.numCols(), A.nnz(),
+						const_cast<offset_type*>(A.graph.row_map.data()),
+						const_cast<offset_type*>(A.graph.entries.data()),
+						const_cast<value_type*>(A.values.data()),
+						myCusparseIndexType,
+						myCusparseIndexType,
+						CUSPARSE_INDEX_BASE_ZERO,
+						myCudaDataType));
 
     /* create lhs and rhs */
     cusparseDnVecDescr_t vecX, vecY;
-    CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), const_cast<value_type*>(x.data()), myCudaDataType));
-    CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), const_cast<value_type*>(y.data()), myCudaDataType));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), const_cast<value_type*>(x.data()), myCudaDataType));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), const_cast<value_type*>(y.data()), myCudaDataType));
 
     size_t bufferSize = 0;
     void*  dBuffer    = NULL;
-    CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-					       &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
-					       CUSPARSE_CSRMV_ALG1, &bufferSize));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(cusparseHandle, myCusparseOperation,
+						      &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
+						      CUSPARSE_CSRMV_ALG1, &bufferSize));
     CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
-    // cuError = cudaMalloc(&dBuffer, bufferSize);
-    // if (cuError != cudaSuccess) {
-    //   throw std::runtime_error(label + "cuda buffer allocation failed");
-    // }
 
     /* perform SpMV */
-    CUSPARSE_SAFE_CALL(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-				    &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
-				    CUSPARSE_CSRMV_ALG1, dBuffer));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV(cusparseHandle, myCusparseOperation,
+					   &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
+					   CUSPARSE_CSRMV_ALG1, dBuffer));
 
     CUDA_SAFE_CALL(cudaFree(dBuffer));
-    // cuError = cudaFree(dBuffer);
-    // if (cuError != cudaSuccess) {
-    //   throw std::runtime_error(label + "cuda buffer deallocation failed");
-    // }
-    CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
-    CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
-    CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
-    CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
-    handle = 0;
-
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
 #else
-    std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<value_type>::name() + "]: ";
-
-    /* Initialize cusparse */
-    cusparseStatus_t cusparseStatus;
-    cusparseHandle_t cusparseHandle=0;
-    CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
 
     /* create and set the matrix descriptor */
     cusparseMatDescr_t descrA = 0;
-    CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     /* perform the actual SpMV operation */
     if(std::is_same<int, offset_type>::value) {
       if (std::is_same<value_type,float>::value) {
-	cusparseStatus = cusparseScsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-					A.numRows(), A.numCols(), A.nnz(),
-					reinterpret_cast<const float *>(&alpha), descrA,
-					reinterpret_cast<const float *>(A.values.data()),
-					A.graph.row_map.data(), A.graph.entries.data(),
-					reinterpret_cast<const float *>(x.data()),
-					reinterpret_cast<const float *>(&beta),
-					reinterpret_cast<float *>(y.data()));
+	KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrmv(cusparseHandle, myCusparseOperation,
+						 A.numRows(), A.numCols(), A.nnz(),
+						 reinterpret_cast<const float *>(&alpha), descrA,
+						 reinterpret_cast<const float *>(A.values.data()),
+						 A.graph.row_map.data(), A.graph.entries.data(),
+						 reinterpret_cast<const float *>(x.data()),
+						 reinterpret_cast<const float *>(&beta),
+						 reinterpret_cast<float *>(y.data()) ));
 
       } else  if (std::is_same<value_type,double>::value) {
-	cusparseStatus = cusparseDcsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-					A.numRows(), A.numCols(), A.nnz(),
-					reinterpret_cast<double const *>(&alpha), descrA,
-					reinterpret_cast<double const *>(A.values.data()),
-					A.graph.row_map.data(), A.graph.entries.data(),
-					reinterpret_cast<double const *>(x.data()),
-					reinterpret_cast<double const *>(&beta),
-					reinterpret_cast<double *>(y.data()));
+	KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrmv(cusparseHandle, myCusparseOperation,
+						 A.numRows(), A.numCols(), A.nnz(),
+						 reinterpret_cast<double const *>(&alpha), descrA,
+						 reinterpret_cast<double const *>(A.values.data()),
+						 A.graph.row_map.data(), A.graph.entries.data(),
+						 reinterpret_cast<double const *>(x.data()),
+						 reinterpret_cast<double const *>(&beta),
+						 reinterpret_cast<double *>(y.data()) ));
       } else {
 	throw std::logic_error("Trying to call cusparse SpMV with a scalar type that is not float or double!");
       }
@@ -168,11 +149,11 @@ namespace Impl {
       throw std::logic_error("Trying to call cusparse SpMV with an offset type that is not int!");
     }
 
-    CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
-    CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle));
-    cusparseHandle = 0;
-
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
 #endif // CUSPARSE_VERSION
+
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle));
+    cusparseHandle = 0;
   }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, OFFSET, LAYOUT, COMPILE_LIBRARY) \
