@@ -304,17 +304,15 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
 
   // count non-empty supernodal blocks
   row_map_view_host_t hr ("rowmap_view", nsuper+1);
-  for (int s = 0; s < nsuper; s++ ) {
-    hr (s) = 0;
-  }
-
   integer_view_host_t check ("check", nsuper);
+  Kokkos::deep_copy (hr, 0);
   Kokkos::deep_copy (check, 0);
 
   int nblocks = 0;
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
-    for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
+    int j2 = j1+1;  // based on the first row
+    for (int i = row_map_host (j1); i < row_map_host (j2); i++) {
       int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
       // so need to check by each row
@@ -325,7 +323,6 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
         // count blocks per row for col_major
         hr (s2+1) ++;
       }
-      i ++;
     }
     // reset check
     Kokkos::deep_copy (check, 0);
@@ -342,7 +339,8 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
   nblocks = 0;
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
-    for (int i = row_map_host (j1); i < row_map_host (j1+1);) {
+    int j2 = j1+1;  // based on the first row
+    for (int i = row_map_host (j1); i < row_map_host (j2); i++) {
       int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
       // so need to check by each row
@@ -357,7 +355,6 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const int 
         }
         nblocks ++;
       }
-      i ++;
     }
     if (!col_major) {
       hr (s+1) = nblocks;
@@ -404,6 +401,8 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
   row_map_view_t colptr ("rowind", nsuper+1);
   cols_view_t rowind ("colptr", row_mapL (nsuper)); // over-estimate
   cols_view_t edges ("edges", nsuper); // workspace
+  cols_view_t check ("edges", nsuper); // workspace
+  Kokkos::deep_copy (check, 0);
   colptr (0) = totedges;
   for (int s = 0; s < nsuper; s ++) {
     // count # of edges (search for first matching nonzero)
@@ -415,10 +414,25 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
        while (k2+1 < row_mapU (s+1) && entriesL (k1) > entriesU (k2)) {
          k2 ++;
        }
-       if (k2 >= row_mapU (s+1) || entriesL (k1) <= entriesU (k2)) {
+       if (k2+1 >= row_mapU (s+1) || entriesL (k1) <= entriesU (k2)) {
          edges (nedges) = entriesL (k1);
          nedges ++;
          if (entriesL (k1) == entriesU (k2)) {
+           #if 0
+           // make sure entriesU(k2) rows include the sparsity structure of s?
+           for (int k = row_mapL (entriesU (k2)); k < row_mapL (entriesU (k2) + 1); k++) {
+             check (entriesL (k)) = 1;
+           }
+           for (int k = k1 + 1; k < row_mapL (s+1); k++) {
+             if (check (entriesL (k)) != 1) {
+               edges (nedges) = entriesL (k1);
+               nedges ++;
+             }
+           }
+           for (int k = row_mapL (entriesU (k2)); k < row_mapL (entriesU (k2) + 1); k++) {
+             check (entriesL (k)) = 0;
+           }
+           #endif
            break;
          }
       }
