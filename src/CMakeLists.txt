@@ -120,10 +120,10 @@ KOKKOSKERNELS_ADD_LIBRARY(
   SOURCES ${SOURCES}
 )
 
-
 IF (KOKKOSKERNELS_HAS_TRILINOS)
   #no linking commands required - tribits does this
 ELSE()
+  ADD_LIBRARY(Kokkos::kokkoskernels ALIAS kokkoskernels)
   TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC ${KOKKOS_DEPENDENCY_NAME})
   FOREACH(DIR ${KK_INCLUDE_DIRS})
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC $<BUILD_INTERFACE:${DIR}>)
