@@ -61,7 +61,7 @@ struct trtri_tpl_spec_avail< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
      >  { enum : bool { value = true }; };
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
