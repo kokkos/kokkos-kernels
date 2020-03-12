@@ -47,16 +47,6 @@
 /// \file Kokkos_Sparse_impl_sptrsv_symbolic.hpp
 /// \brief Implementation(s) of sparse triangular solve.
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
-    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
-   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
-
- // Enable supernodal sptrsv
- #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-
-#endif
-
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_sptrsv_handle.hpp>

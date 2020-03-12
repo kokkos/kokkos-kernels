@@ -54,14 +54,9 @@
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
-    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
-   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
  // Enable supernodal sptrsv
- #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-
  #include "KokkosBlas2_gemv.hpp"
  #include "KokkosBlas2_team_gemv.hpp"
  #include "KokkosSparse_spmv.hpp"

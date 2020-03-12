@@ -1,4 +1,7 @@
 IF (NOT CBLAS_ROOT)
+  SET(CBLAS_ROOT $ENV{CBLAS_ROOT})
+ENDIF()
+IF (NOT CBLAS_ROOT)
   SET(CBLAS_ROOT $ENV{OPENBLAS_ROOT})
 ENDIF()
 
@@ -12,7 +15,7 @@ IF (CBLAS_LIBRARIES)
 ELSE()
   #we need to find one of the valid versions from the list below
   KOKKOSKERNELS_FIND_IMPORTED(CBLAS
-    LIBRARY cblas blas blis openblas
+    LIBRARY cblas openblas blas blis
     LIBRARY_PATHS ${CBLAS_LIBRARY_DIRS}
     HEADERS cblas.h
     HEADER_PATHS ${CBLAS_INCLUDE_DIRS})
