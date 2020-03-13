@@ -280,7 +280,6 @@ void sptrsv_symbolic(
 
   // ===================================================================
   // load options
-  bool merge = handleL->get_merge_supernodes ();
   bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
                     handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
   if (needEtree && etree == nullptr) {
@@ -293,6 +292,7 @@ void sptrsv_symbolic(
   // ===================================================================
   // read CrsGraph from SuperLU factor
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  bool merge = handleL->get_merge_supernodes ();
   std::cout << " > Read SuperLU factor into KokkosSparse::CrsMatrix (invert diagonal and copy to device)" << std::endl;
   if (merge) {
     std::cout << " > Merge supernodes" << std::endl;
