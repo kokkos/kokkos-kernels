@@ -58,15 +58,9 @@
 #define KOKKOSKERNELS_SPTRSV_CUDAGRAPHSUPPORT
 #endif
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
-    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
-   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
-
  // Enable supernodal sptrsv
- #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
- #include <KokkosSparse_CrsMatrix.hpp>
-
+#ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
 namespace KokkosSparse {

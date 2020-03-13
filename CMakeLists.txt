@@ -389,6 +389,7 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   )
 ENDIF()
 INCLUDE(cmake/kokkoskernels_tpls.cmake)
+INCLUDE(cmake/kokkoskernels_features.cmake)
 
 # ==================================================================
 # Fortran Complex BLAS
