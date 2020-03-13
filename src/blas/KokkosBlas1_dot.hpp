@@ -244,6 +244,7 @@ dot (const RV& R, const XMV& X, const YMV& Y,
   YMV_Internal Y_internal = Y;
 
   Impl::Dot<RV_Internal, XMV_Internal, YMV_Internal>::dot(R_internal, X_internal, Y_internal);
+  Kokkos::fence();
 }
 }
 
