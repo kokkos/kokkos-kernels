@@ -61,231 +61,291 @@ using namespace KokkosGraph::Experimental;
 
 namespace Test {
 
-template<typename crsMat_type, typename device>
-void
-run_graphcolor_d2(crsMat_type input_mat, crsMat_type input_mat_T, const std::vector<GraphColoringAlgorithmDistance2>& algos)
+//Verify that a distance-2 coloring is correct (all views must be hostspace)
+template<typename lno_t, typename size_type, typename rowmap_t, typename entries_t, typename colors_t>
+bool verifyD2Coloring(
+    lno_t numVerts,
+    const rowmap_t& rowmap, const entries_t& entries,
+    const colors_t& colors)
 {
+  //Just do the simplest possible neighbors-of-neighbors loop to find conflicts
+  for(lno_t v = 0; v < numVerts; v++)
+  {
+    if(colors(v) == 0)
+    {
+      std::cout << "Vertex " << v << " is uncolored.\n";
+      return false;
+    }
+    size_type rowBegin = rowmap(v);
+    size_type rowEnd = rowmap(v + 1);
+    for(size_type i = rowBegin; i < rowEnd; i++)
+    {
+      lno_t nei1 = entries(i);
+      if(nei1 < numVerts && nei1 != v)
+      {
+        //check for dist-1 conflict
+        if(colors(v) == colors(nei1))
+        {
+          std::cout << "Dist-1 conflict between " << v << " and " << nei1 << '\n';
+          return false;
+        }
+        //iterate over dist-2 neighbors
+        size_type colBegin = rowmap(nei1);
+        size_type colEnd = rowmap(nei1 + 1);
+        for(size_type j = colBegin; j < colEnd; j++)
+        {
+          lno_t nei2 = entries(j);
+          if(nei2 < numVerts && nei2 != v)
+          {
+            if(colors(v) == colors(nei2))
+            {
+              std::cout << "Dist-2 conflict between " << v << " and " << nei2 << '\n';
+              return false;
+            }
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
 
-    using graph_type        = typename crsMat_type::StaticCrsGraphType;
-    using lno_view_type     = typename graph_type::row_map_type;
-    using lno_nnz_view_type = typename graph_type::entries_type;
-    using scalar_view_type  = typename crsMat_type::values_type::non_const_type;
+template<typename lno_t, typename size_type, typename rowmap_t, typename entries_t, typename colors_t>
+bool verifyBipartitePartialColoring(
+    lno_t numRows, lno_t numCols,
+    const rowmap_t& rowmap, const entries_t& entries,
+    const rowmap_t& t_rowmap, const entries_t& t_entries,
+    const colors_t& colors)
+{
+  //Just do the simplest possible neighbors-of-neighbors loop to find conflicts
+  for(lno_t v = 0; v < numRows; v++)
+  {
+    if(colors(v) == 0)
+    {
+      std::cout << "Vertex " << v << " is uncolored.\n";
+      return false;
+    }
+    size_type rowBegin = rowmap(v);
+    size_type rowEnd = rowmap(v + 1);
+    for(size_type i = rowBegin; i < rowEnd; i++)
+    {
+      lno_t nei1 = entries(i);
+      if(nei1 < numCols)
+      {
+        //iterate over dist-2 neighbors
+        size_type colBegin = t_rowmap(nei1);
+        size_type colEnd = t_rowmap(nei1 + 1);
+        for(size_type j = colBegin; j < colEnd; j++)
+        {
+          lno_t nei2 = t_entries(j);
+          if(nei2 < numRows && nei2 != v)
+          {
+            if(colors(v) == colors(nei2))
+            {
+              std::cout << "Hyperedge conflict between " << v << " and " << nei2 << '\n';
+              return false;
+            }
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
+}
 
-    using size_type   = typename lno_view_type::value_type;
-    using lno_type    = typename lno_nnz_view_type::value_type;
-    using scalar_type = typename scalar_view_type::value_type;
-
-    using KernelHandle = KokkosKernelsHandle<size_type,
-                                             lno_type,
-                                             scalar_type,
-                                             typename device::execution_space,
-                                             typename device::memory_space,
-                                             typename device::memory_space>;
-
+template<typename scalar_unused, typename lno_t, typename size_type, typename device>
+void test_dist2_coloring(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
+{
+    using execution_space = typename device::execution_space;
+    using memory_space = typename device::memory_space;
+    using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+    using graph_type = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t = typename graph_type::row_map_type;
+    using c_entries_t = typename graph_type::entries_type;
+    using rowmap_t = typename c_rowmap_t::non_const_type;
+    using entries_t = typename c_entries_t::non_const_type;
+    using KernelHandle = KokkosKernelsHandle<
+      size_type, lno_t, double,
+      execution_space, memory_space, memory_space>;
+    //Generate graph, and add some out-of-bounds columns
+    crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(numVerts, numVerts, nnz, row_size_variance, bandwidth);
+    auto G = A.graph;
+    //Symmetrize the graph
+    rowmap_t symRowmap;
+    entries_t symEntries;
+    KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
+      <c_rowmap_t, c_entries_t,
+      rowmap_t, entries_t, execution_space>
+        (numVerts, G.row_map, G.entries, symRowmap, symEntries);
+    auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symRowmap);
+    auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symEntries);
+    std::vector<GraphColoringAlgorithmDistance2> algos =
+    {COLORING_D2_DEFAULT, COLORING_D2_SERIAL, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT};
     for(auto algo : algos)
     {
       KernelHandle kh;
-      kh.set_team_work_size(16);
-      kh.set_dynamic_scheduling(true);
-
       kh.create_distance2_graph_coloring_handle(algo);
-
-      EXPECT_EQ(input_mat.numRows(), input_mat_T.numCols());
-      EXPECT_EQ(input_mat.numCols(), input_mat_T.numRows());
-
-      const lno_type nv = input_mat.numRows();
-      const lno_type nc = input_mat.numCols();
-
       // Compute the Distance-2 graph coloring.
-      graph_compute_distance2_color<KernelHandle, lno_view_type, lno_nnz_view_type>
-          (&kh, nv, nc, input_mat.graph.row_map, input_mat.graph.entries, input_mat_T.graph.row_map, input_mat_T.graph.entries);
-
-      kh.get_distance2_graph_coloring_handle()->get_num_colors();
-      kh.get_distance2_graph_coloring_handle()->get_vertex_colors();
-
-      // Verify the Distance-2 graph coloring is valid.
-      bool d2_coloring_is_valid = false;
-      bool d2_coloring_validation_flags[4] = { false };
-
-      d2_coloring_is_valid = KokkosGraph::Impl::graph_verify_distance2_color(
-          &kh, nv, nc,
-          input_mat.graph.row_map, input_mat.graph.entries,
-          input_mat_T.graph.row_map, input_mat_T.graph.entries,
-          d2_coloring_validation_flags);
-
-      // Print out messages based on coloring validation check.
-      if(!d2_coloring_is_valid)
-      {
-          std::cout << std::endl
-                    << "Distance-2 Graph Coloring is NOT VALID" << std::endl
-                    << "  - Vert(s) left uncolored : " << d2_coloring_validation_flags[1] << std::endl
-                    << "  - Invalid D2 Coloring    : " << d2_coloring_validation_flags[2] << std::endl
-                    << std::endl;
-      }
-      if(d2_coloring_validation_flags[3])
-      {
-          std::cout << "Distance-2 Graph Coloring may have poor quality." << std::endl
-                    << "  - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
-                    << std::endl;
-      }
-
+      graph_color_distance2<KernelHandle, c_rowmap_t, c_entries_t>
+        (&kh, numVerts, symRowmap, symEntries);
+      execution_space().fence();
+      auto coloring_handle = kh.get_distance2_graph_coloring_handle();
+      auto colors = coloring_handle->get_vertex_colors();
+      auto colorsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colors);
+      auto numColors = coloring_handle->get_num_colors();
+      EXPECT_LE(numColors, numVerts);
+      bool success = Test::verifyD2Coloring
+        <lno_t, size_type, decltype(rowmapHost), decltype(entriesHost), decltype(colorsHost)>
+        (numVerts, rowmapHost, entriesHost, colorsHost);
+      EXPECT_TRUE(success) << "Dist-2: algorithm " << coloring_handle->getD2AlgorithmName() << " produced invalid coloring";
       kh.destroy_distance2_graph_coloring_handle();
-
-      EXPECT_TRUE(d2_coloring_is_valid);
     }
 }
 
-}      // namespace Test
-
-
-//Symmetric test: generates a random matrix, and then symmetrizes it (unions 
-template<typename scalar_type, typename lno_type, typename size_type, typename device>
-void
-test_d2_symmetric(lno_type numRows, size_type nnz, lno_type bandwidth, lno_type row_size_variance)
+template<typename scalar_unused, typename lno_t, typename size_type, typename device>
+void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool colorRows)
 {
-    using namespace Test;
-
-    using crsMat_type       = KokkosSparse::CrsMatrix<scalar_type, lno_type, device, void, size_type>;
-    using graph_type        = typename crsMat_type::StaticCrsGraphType;
-    using lno_view_type     = typename graph_type::row_map_type;
-    using lno_nnz_view_type = typename graph_type::entries_type;
-    using lno_view_nc       = typename graph_type::row_map_type::non_const_type;
-    using lno_nnz_view_nc   = typename graph_type::entries_type::non_const_type;
-    using scalar_view_type  = typename crsMat_type::values_type::non_const_type;
-
-    lno_type    numCols = numRows;
-    crsMat_type input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_type>(numRows, numCols, nnz, row_size_variance, bandwidth);
-
-    typename lno_view_type::non_const_type     sym_xadj;
-    typename lno_nnz_view_type::non_const_type sym_adj;
-
-    KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
-      <lno_view_type, lno_nnz_view_type, lno_view_nc, lno_nnz_view_nc, device>
-      (numRows, input_mat.graph.row_map, input_mat.graph.entries, sym_xadj, sym_adj);
-
-    size_type        numentries = sym_adj.extent(0);
-    scalar_view_type newValues("vals", numentries);
-
-    graph_type static_graph(sym_adj, sym_xadj);
-    input_mat = crsMat_type("CrsMatrix", numCols, newValues, static_graph);
-    run_graphcolor_d2<crsMat_type, device>(input_mat, input_mat,
-        {COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT});
-
-}
-
-//Asymmetric test: generates a random matrix (with nv != nc), and uses the explicit transpose as input_mat_T
-template<typename scalar_type, typename lno_type, typename size_type, typename device>
-void
-test_d2_asymmetric(lno_type numRows, lno_type numCols, size_type nnz, lno_type bandwidth, lno_type row_size_variance)
-{
-    using namespace Test;
-
-    using crsMat_type       = KokkosSparse::CrsMatrix<scalar_type, lno_type, device, void, size_type>;
-    using graph_type        = typename crsMat_type::StaticCrsGraphType;
-    using lno_view_type     = typename graph_type::row_map_type;
-    using lno_nnz_view_type = typename graph_type::entries_type;
-    using lno_view_nc       = typename graph_type::row_map_type::non_const_type;
-    using lno_nnz_view_nc   = typename graph_type::entries_type::non_const_type;
-
-    crsMat_type input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_type>(numRows, numCols, nnz, row_size_variance, bandwidth);
-
-    lno_view_nc transRowmap("input^T rowmap", numCols + 1);
-    lno_nnz_view_nc transColinds("input^T colinds", input_mat.nnz());
-
-    KokkosKernels::Impl::kk_transpose_graph<lno_view_type, lno_nnz_view_type, lno_view_nc, lno_nnz_view_nc, lno_view_nc, typename device::execution_space>
-      (numRows, numCols, input_mat.graph.row_map, input_mat.graph.entries, transRowmap, transColinds);
-    crsMat_type input_mat_T("input^T", numCols, numRows, input_mat.nnz(), input_mat.values, transRowmap, transColinds);
-    run_graphcolor_d2<crsMat_type, device>(input_mat, input_mat_T,
-        {COLORING_D2_MATRIX_SQUARED, COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT});
-}
-
-//Filtering test: start with a symmetric matrix, but intentionally add some entries that are have out-of-bounds columns.
-//These entries should be ignored by D2. This test simulates the MueLu use case.
-template<typename scalar_type, typename lno_type, typename size_type, typename device>
-void
-test_d2_filtering(lno_type numRows, lno_type numCols, size_type nnz, lno_type bandwidth, lno_type row_size_variance)
-{
-    using namespace Test;
-
-    using crsMat_type       = KokkosSparse::CrsMatrix<scalar_type, lno_type, device, void, size_type>;
-    using graph_type        = typename crsMat_type::StaticCrsGraphType;
-    using lno_view_type     = typename graph_type::row_map_type;
-    using lno_nnz_view_type = typename graph_type::entries_type;
-    using lno_view_nc       = typename graph_type::row_map_type::non_const_type;
-    using lno_nnz_view_nc   = typename graph_type::entries_type::non_const_type;
-    using scalar_view_type  = typename crsMat_type::values_type::non_const_type;
-
-    crsMat_type input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_type>(numRows, numRows, nnz, row_size_variance, bandwidth);
-
-    lno_view_nc sym_xadj;
-    lno_nnz_view_nc sym_adj;
-
-    KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
-      <lno_view_type, lno_nnz_view_type, lno_view_nc, lno_nnz_view_nc, device>
-      (numRows, input_mat.graph.row_map, input_mat.graph.entries, sym_xadj, sym_adj);
-
-    auto xadj_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sym_xadj);
-    auto adj_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sym_adj);
-    
-    Kokkos::View<size_type*, Kokkos::HostSpace> newRowmap("Unfiltered rowmap", numRows + 1);
-
-    //Precompute the new rowmap
-    size_type accum = 0;
-    for(lno_type i = 0; i <= numRows; i++)
+    using execution_space = typename device::execution_space;
+    using memory_space = typename device::memory_space;
+    using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+    using graph_type = typename crsMat::StaticCrsGraphType;
+    using rowmap_t = typename graph_type::row_map_type::non_const_type;
+    using entries_t = typename graph_type::entries_type::non_const_type;
+    using c_rowmap_t = typename graph_type::row_map_type;
+    using c_entries_t = typename graph_type::entries_type;
+    using KernelHandle = KokkosKernelsHandle<
+      size_type, lno_t, double,
+      execution_space, memory_space, memory_space>;
+    //Generate graph
+    crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(numRows, numCols, nnz, row_size_variance, bandwidth);
+    auto G = A.graph;
+    rowmap_t t_rowmap("rowmap^T", numCols + 1);
+    entries_t t_entries("entries^T", G.entries.extent(0));
+    KokkosKernels::Impl::kk_transpose_graph
+      <c_rowmap_t, c_entries_t, rowmap_t, entries_t, rowmap_t, execution_space>
+      (numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
+    auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.row_map);
+    auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.entries);
+    auto t_rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), t_rowmap);
+    auto t_entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), t_entries);
+    std::vector<GraphColoringAlgorithmDistance2> algos =
+    {COLORING_D2_DEFAULT, COLORING_D2_SERIAL, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT};
+    for(auto algo : algos)
     {
-      newRowmap(i) = accum;
-      if(i == numRows)
-        break;
-      size_type oldRowSize = xadj_host(i + 1) - xadj_host(i);
-      accum += oldRowSize * 1.5;
+      KernelHandle kh;
+      kh.create_distance2_graph_coloring_handle(algo);
+      // Compute the one-sided bipartite coloring.
+      if(colorRows)
+      {
+        bipartite_color_rows<KernelHandle, c_rowmap_t, c_entries_t>
+          (&kh, numRows, numCols, G.row_map, G.entries);
+      }
+      else
+      {
+        bipartite_color_columns<KernelHandle, c_rowmap_t, c_entries_t>
+          (&kh, numRows, numCols, G.row_map, G.entries);
+      }
+      execution_space().fence();
+      auto coloring_handle = kh.get_distance2_graph_coloring_handle();
+      auto colors = coloring_handle->get_vertex_colors();
+      auto colorsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colors);
+      auto numColors = coloring_handle->get_num_colors();
+      bool success;
+      if(colorRows)
+      {
+        EXPECT_LE(numColors, numRows);
+        success = Test::verifyBipartitePartialColoring
+          <lno_t, size_type, decltype(rowmapHost), decltype(entriesHost), decltype(colorsHost)>
+          (numRows, numCols, rowmapHost, entriesHost, t_rowmapHost, t_entriesHost, colorsHost);
+      }
+      else
+      {
+        EXPECT_LE(numColors, numCols);
+        success = Test::verifyBipartitePartialColoring
+          <lno_t, size_type, decltype(rowmapHost), decltype(entriesHost), decltype(colorsHost)>
+          (numCols, numRows, t_rowmapHost, t_entriesHost, rowmapHost, entriesHost, colorsHost);
+      }
+      EXPECT_TRUE(success) << "Bipartite " << (colorRows ? "row" : "column") << " coloring: algorithm " << coloring_handle->getD2AlgorithmName() << " produced invalid coloring";
+      kh.destroy_distance2_graph_coloring_handle();
     }
-    size_type newNNZ = newRowmap(numRows);
-    Kokkos::View<lno_type*, Kokkos::HostSpace> newEntries("Unfiltered entries", newNNZ);
-    //Randomly shuffle each row so that the entries to filter are spread throughout
-    std::random_device rd;
-    std::mt19937 g(rd());
-    for(lno_type i = 0; i < numRows; i++)
-    {
-      size_type oldRowBegin = xadj_host(i);
-      size_type oldRowEnd = xadj_host(i + 1);
-      size_type newRowSize = newRowmap(i + 1) - newRowmap(i);
-      std::vector<lno_type> ents;
-      ents.reserve(newRowSize);
-      for(size_type j = oldRowBegin; j < oldRowEnd; j++)
-        ents.push_back(adj_host(j));
-      for(size_type j = oldRowEnd - oldRowBegin; j < newRowSize; j++)
-        ents.push_back(numRows + rand() % (numCols - numRows));
-      std::shuffle(ents.begin(), ents.end(), g);
-      for(size_t j = 0; j < ents.size(); j++)
-        newEntries(newRowmap(i) + j) = ents[j];
-    }
-    lno_view_nc finalRowmap("Rowmap", numRows + 1);
-    lno_nnz_view_nc finalEntries("Entries", newNNZ);
-    Kokkos::deep_copy(finalRowmap, newRowmap);
-    Kokkos::deep_copy(finalEntries, newEntries);
-    scalar_view_type newValues("Vals", newNNZ);
-
-    input_mat = crsMat_type("input", numRows, numRows, newNNZ, newValues, finalRowmap, finalEntries);
-
-    //Note that MATRIX_SQUARED cannot be used here, because SPGEMM doesn't accept out-of-bounds indices
-    run_graphcolor_d2<crsMat_type, device>(input_mat, input_mat,
-        {COLORING_D2_SERIAL, COLORING_D2, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT});
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                           \
-    TEST_F(TestCategory, graph##_##graph_color_d2_symmetric##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
-    {                                                                                           \
-      test_d2_symmetric<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 30, 200, 10);          \
-      test_d2_symmetric<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 5, 100, 10);          \
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+template<typename scalar_unused, typename lno_t, typename size_type, typename device>
+void test_old_d2(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
+{
+    using execution_space = typename device::execution_space;
+    using memory_space = typename device::memory_space;
+    using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+    using graph_type = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t = typename graph_type::row_map_type;
+    using c_entries_t = typename graph_type::entries_type;
+    using rowmap_t = typename graph_type::row_map_type::non_const_type;
+    using entries_t = typename graph_type::entries_type::non_const_type;
+    using KernelHandle = KokkosKernelsHandle<
+      size_type, lno_t, double,
+      execution_space, memory_space, memory_space>;
+    //Generate graph
+    crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(numRows, numCols, nnz, row_size_variance, bandwidth);
+    auto G = A.graph;
+    rowmap_t t_rowmap("rowmap^T", numCols + 1);
+    entries_t t_entries("entries^T", G.entries.extent(0));
+    KokkosKernels::Impl::kk_transpose_graph
+      <c_rowmap_t, c_entries_t, rowmap_t, entries_t, rowmap_t, execution_space>
+      (numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
+    auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.row_map);
+    auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.entries);
+    auto t_rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), t_rowmap);
+    auto t_entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), t_entries);
+    std::vector<GraphColoringAlgorithmDistance2> algos =
+    {COLORING_D2_DEFAULT, COLORING_D2_SERIAL, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT};
+    for(auto algo : algos)
+    {
+      KernelHandle kh;
+      kh.create_distance2_graph_coloring_handle(algo);
+      // Compute the one-sided bipartite coloring.
+      graph_compute_distance2_color<KernelHandle, c_rowmap_t, c_entries_t, rowmap_t, entries_t>
+        (&kh, numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
+      execution_space().fence();
+      auto coloring_handle = kh.get_distance2_graph_coloring_handle();
+      auto colors = coloring_handle->get_vertex_colors();
+      auto colorsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colors);
+      auto numColors = coloring_handle->get_num_colors();
+      EXPECT_LE(numColors, numRows);
+      bool success = Test::verifyBipartitePartialColoring
+          <lno_t, size_type, decltype(rowmapHost), decltype(entriesHost), decltype(colorsHost)>
+          (numRows, numCols, rowmapHost, entriesHost, t_rowmapHost, t_entriesHost, colorsHost);
+      EXPECT_TRUE(success) << "Old dist-2 coloring: algorithm " << coloring_handle->getD2AlgorithmName() << " produced invalid coloring";
+      kh.destroy_distance2_graph_coloring_handle();
+    }
+}
+#define DO_DEPRECATED_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+      test_old_d2<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 4000, 3000 * 20, 800, 10); \
+      test_old_d2<SCALAR, ORDINAL, OFFSET, DEVICE>(4000, 2000, 3000 * 20, 800, 10);
+#else
+#define DO_DEPRECATED_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)
+#endif
+
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+    TEST_F(TestCategory, graph##_##graph_color_distance2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
+    { \
+      test_dist2_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10); \
+      test_dist2_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10); \
     } \
-    TEST_F(TestCategory, graph##_##graph_color_d2_asymmetric##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
-    {                                                                                           \
-      test_d2_asymmetric<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 6000, 5000 * 30, 200, 10);          \
-      test_d2_asymmetric<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 6000, 5000 * 5, 100, 10);          \
+    TEST_F(TestCategory, graph##_##graph_color_deprecated_distance2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
+    { \
+      DO_DEPRECATED_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
     } \
-    TEST_F(TestCategory, graph##_##graph_color_d2_filtering##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
-    {                                                                                           \
-      test_d2_filtering<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 7000, 5000 * 10, 200, 10); \
+    TEST_F(TestCategory, graph##_##graph_color_bipartite_row##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
+    { \
+      test_bipartite<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 4000, 3000 * 20, 800, 10, true); \
+      test_bipartite<SCALAR, ORDINAL, OFFSET, DEVICE>(4000, 2000, 3000 * 20, 800, 10, true); \
+    } \
+    TEST_F(TestCategory, graph##_##graph_color_bipartite_col##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
+    { \
+      test_bipartite<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 4000, 3000 * 20, 800, 10, false); \
+      test_bipartite<SCALAR, ORDINAL, OFFSET, DEVICE>(4000, 2000, 3000 * 20, 800, 10, false); \
     }
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)

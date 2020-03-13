@@ -48,6 +48,7 @@
 namespace KokkosKernels{
 
 namespace Experiment{
+
 struct Parameters{
   int algorithm;
   int accumulator;
