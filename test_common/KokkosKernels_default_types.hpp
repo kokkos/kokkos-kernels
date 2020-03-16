@@ -42,10 +42,10 @@
 //@HEADER
 */
 
-#ifndef KOKKOSSPARSE_PERFTEST_TYPES_H
-#define KOKKOSSPARSE_PERFTEST_TYPES_H
+#ifndef KOKKOSKERNELS_DEFAULT_TYPES_H
+#define KOKKOSKERNELS_DEFAULT_TYPES_H
 
-#include <Kokkos_Core.hpp>
+#include "Kokkos_Core.hpp"        //for LayoutLeft/LayoutRight
 #include <KokkosKernels_config.h> //for all the ETI #cmakedefine macros
 
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT)

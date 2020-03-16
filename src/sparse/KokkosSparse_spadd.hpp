@@ -407,10 +407,9 @@ namespace Experimental {
                          nrows, a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
       Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::UnmergedSum", range_type(0, nrows), unmergedSum);
       //sort the unmerged sum
-      SortEntriesFunctor<execution_space, size_type, ordinal_type, clno_row_view_t_, clno_nnz_view_t_>
-        sortEntries(c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
-      Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::SortEntries",
-          Kokkos::TeamPolicy<execution_space>(nrows, Kokkos::AUTO()), sortEntries);
+      KokkosKernels::Impl::sort_crs_matrix
+        <execution_space, clno_row_view_t_, clno_nnz_view_t_, clno_nnz_view_t_>
+        (c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
       clno_nnz_view_t_ a_pos(NoInitialize("A entry positions"), a_entries.extent(0));
       clno_nnz_view_t_ b_pos(NoInitialize("B entry positions"), b_entries.extent(0));
       //merge the entries and compute Apos/Bpos, as well as Crowcounts

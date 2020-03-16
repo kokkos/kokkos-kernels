@@ -56,6 +56,7 @@
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
+#include "KokkosKernels_default_types.hpp"
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
@@ -72,8 +73,6 @@
 #include <OpenMPDynamic_SPMV.hpp>
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
-
-#include "KokkosSparse_perftest_types.hpp"
 
 enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};

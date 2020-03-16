@@ -51,6 +51,7 @@
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include <vector>
 #include "KokkosKernels_PrintUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 #ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
 #include<parallel/algorithm>
@@ -305,7 +306,6 @@ void kk_create_blockcrs_from_blockcrs_formatted_point_crs(
     	hov(i) = hv(i);
     }
     Kokkos::deep_copy (out_vals, hov);
-
 }
 
 template <typename in_row_view_t,
@@ -321,22 +321,14 @@ struct TransposeMatrix{
   struct CountTag{};
   struct FillTag{};
 
-  typedef struct CountTag CountTag;
-  typedef struct FillTag FillTag;
-
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
-
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_count_policy_t ;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t ;
-
 
   typedef typename team_count_policy_t::member_type team_count_member_t ;
   typedef typename team_fill_policy_t::member_type team_fill_member_t ;
 
   typedef typename in_nnz_view_t::non_const_value_type nnz_lno_t;
   typedef typename in_row_view_t::non_const_value_type size_type;
-
 
   typename in_nnz_view_t::non_const_value_type num_rows;
   typename in_nnz_view_t::non_const_value_type num_cols;
@@ -419,100 +411,6 @@ struct TransposeMatrix{
     });
   }
 };
-
-/**
- * \brief function returns transpose of the given graph.
- * \param num_rows: num rows in input graph
- * \param num_cols: num cols in input graph
- * \param xadj: row pointers of the input graph
- * \param adj: column indices of the input graph
- * \param t_xadj: output, the row indices of the output graph. MUST BE INITIALIZED WITH ZEROES.
- * \param t_adj: output, column indices. No need for initializations.
- * \param vector_size: suggested vector size, optional. if -1, kernel will decide.
- * \param suggested_team_size: suggested team size, optional. if -1, kernel will decide.
- * \param team_work_chunk_size: suggested work size of a team, optional. if -1, kernel will decide.
- * \param use_dynamic_scheduling: whether to use dynamic scheduling. Default is true.
- */
-template <typename in_row_view_t,
-          typename in_nnz_view_t,
-          typename out_row_view_t,
-          typename out_nnz_view_t,
-          typename tempwork_row_view_t,
-          typename MyExecSpace>
-inline void kk_transpose_graph(
-    typename in_nnz_view_t::non_const_value_type num_rows,
-    typename in_nnz_view_t::non_const_value_type num_cols,
-    in_row_view_t xadj,
-    in_nnz_view_t adj,
-    out_row_view_t t_xadj, //pre-allocated -- initialized with 0
-    out_nnz_view_t t_adj,  //pre-allocated -- no need for initialize
-    int vector_size = -1,
-    int suggested_team_size = -1,
-    typename in_nnz_view_t::non_const_value_type team_work_chunk_size = -1,
-    bool use_dynamic_scheduling = true
-    ){
-
-  //allocate some memory for work for row pointers
-  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
-
-  in_nnz_view_t tmp1;
-  out_nnz_view_t tmp2;
-
-  //create the functor for tranpose.
-  typedef TransposeMatrix <
-      in_row_view_t, in_nnz_view_t, in_nnz_view_t,
-      out_row_view_t, out_nnz_view_t, out_nnz_view_t,
-      tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
-
-  typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
-  typedef typename TransposeFunctor_t::team_fill_policy_t fill_tp_t;
-  typedef typename TransposeFunctor_t::dynamic_team_count_policy_t d_count_tp_t;
-  typedef typename TransposeFunctor_t::dynamic_team_fill_policy_t d_fill_tp_t;
-
-  typename in_row_view_t::non_const_value_type nnz = adj.extent(0);
-
-  //set the vector size, if not suggested.
-  if (vector_size == -1)
-    vector_size = kk_get_suggested_vector_size(num_rows, nnz, kk_get_exec_space_type<MyExecSpace>());
-
-  //set the team size, if not suggested.
-  if (suggested_team_size == -1)
-    suggested_team_size = kk_get_suggested_team_size(vector_size, kk_get_exec_space_type<MyExecSpace>());
-
-  //set the chunk size, if not suggested.
-  if (team_work_chunk_size == -1)
-    team_work_chunk_size = suggested_team_size;
-
-
-  TransposeFunctor_t tm ( num_rows, num_cols, xadj, adj, tmp1,
-                          t_xadj, t_adj, tmp2,
-                          tmp_row_view,
-                          false,
-                          team_work_chunk_size);
-
-  if (use_dynamic_scheduling){
-    Kokkos::parallel_for(  "KokkosKernels::Common::TransposeGraph::DynamicSchedule::S0", d_count_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
-  }
-  else {
-    Kokkos::parallel_for(  "KokkosKernels::Common::TransposeGraph::StaticSchedule::S0", count_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
-  }
-  MyExecSpace().fence();
-
-  kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
-  MyExecSpace().fence();
-
-  Kokkos::deep_copy(tmp_row_view, t_xadj);
-  MyExecSpace().fence();
-
-
-  if (use_dynamic_scheduling){
-    Kokkos::parallel_for(  "KokkosKernels::Common::TransposeGraph::DynamicSchedule::S1", fill_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
-  }
-  else {
-    Kokkos::parallel_for(  "KokkosKernels::Common::TransposeGraph::StaticSchedule::S1", d_fill_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
-  }
-  MyExecSpace().fence();
-}
 
 template <typename forward_map_type, typename reverse_map_type>
 struct Fill_Reverse_Scale_Functor{
@@ -828,6 +726,177 @@ inline size_t kk_is_d1_coloring_valid(
 
   MyExecSpace().fence();
   return num_conf;
+}
+
+template<typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
+struct SortCrsMatrixFunctor
+{
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+  using scalar_t = typename values_t::non_const_value_type;
+  using team_mem = typename Kokkos::TeamPolicy<execution_space>::member_type;
+
+  SortCrsMatrixFunctor(bool usingRangePol, const rowmap_t& rowmap_, const entries_t& entries_, const values_t& values_)
+    : rowmap(rowmap_), entries(entries_), values(values_)
+  {
+    if(usingRangePol)
+    {
+      entriesAux = entries_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
+          entries.extent(0));
+      valuesAux = values_t(Kokkos::ViewAllocateWithoutInitializing("Values aux"),
+          values.extent(0));
+    }
+    //otherwise, aux arrays won't be allocated (sorting in place)
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(const lno_t i) const
+  {
+    size_type rowStart = rowmap(i);
+    size_type rowEnd = rowmap(i + 1);
+    lno_t rowNum = rowEnd - rowStart;
+    //Radix sort requires unsigned keys for comparison
+    using unsigned_lno_t = typename std::make_unsigned<lno_t>::type;
+    KokkosKernels::Impl::SerialRadixSort2<lno_t, unsigned_lno_t, scalar_t>(
+        (unsigned_lno_t*) entries.data() + rowStart,
+        (unsigned_lno_t*) entriesAux.data() + rowStart,
+        values.data() + rowStart,
+        valuesAux.data() + rowStart, rowNum);
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(const team_mem t) const
+  {
+    size_type i = t.league_rank();
+    size_type rowStart = rowmap(i);
+    size_type rowEnd = rowmap(i + 1);
+    lno_t rowNum = rowEnd - rowStart;
+    KokkosKernels::Impl::TeamBitonicSort2<lno_t, lno_t, scalar_t, team_mem>
+      (entries.data() + rowStart, values.data() + rowStart, rowNum, t);
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  entries_t entriesAux;
+  values_t values;
+  values_t valuesAux;
+};
+
+template<typename execution_space, typename rowmap_t, typename entries_t>
+struct SortCrsGraphFunctor
+{
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+  using team_mem = typename Kokkos::TeamPolicy<execution_space>::member_type;
+
+  SortCrsGraphFunctor(bool usingRangePol, const rowmap_t& rowmap_, const entries_t& entries_)
+    : rowmap(rowmap_), entries(entries_)
+  {
+    if(usingRangePol)
+    {
+      entriesAux = entries_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
+          entries.extent(0));
+    }
+    //otherwise, aux arrays won't be allocated (sorting in place)
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(const lno_t i) const
+  {
+    size_type rowStart = rowmap(i);
+    size_type rowEnd = rowmap(i + 1);
+    lno_t rowNum = rowEnd - rowStart;
+    //Radix sort requires unsigned keys for comparison
+    using unsigned_lno_t = typename std::make_unsigned<lno_t>::type;
+    KokkosKernels::Impl::SerialRadixSort<lno_t, unsigned_lno_t>(
+        (unsigned_lno_t*) entries.data() + rowStart,
+        (unsigned_lno_t*) entriesAux.data() + rowStart,
+        rowNum);
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(const team_mem t) const
+  {
+    size_type i = t.league_rank();
+    size_type rowStart = rowmap(i);
+    size_type rowEnd = rowmap(i + 1);
+    lno_t rowNum = rowEnd - rowStart;
+    KokkosKernels::Impl::TeamBitonicSort<lno_t, lno_t, team_mem>
+      (entries.data() + rowStart, rowNum, t);
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  entries_t entriesAux;
+};
+
+// Sort a CRS matrix: within each row, sort entries ascending by column.
+// At the same time, permute the values.
+template<typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
+void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const values_t& values)
+{
+  using lno_t = typename entries_t::non_const_value_type;
+  using team_pol = Kokkos::TeamPolicy<execution_space>;
+#ifdef KOKKOS_ENABLE_CUDA
+  //only CUDA benefits from using team-based bitonic
+  bool useRadix = std::is_same<execution_space, Kokkos::Cuda>::value ? false : true;
+#else
+  bool useRadix = true;
+#endif
+  SortCrsMatrixFunctor<execution_space, rowmap_t, entries_t, values_t>
+    funct(useRadix, rowmap, entries, values);
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  if(useRadix)
+  {
+    Kokkos::parallel_for("sort_crs_matrix", Kokkos::RangePolicy<execution_space>(0, numRows), funct);
+  }
+  else
+  {
+    //Try to get teamsize to be largest power of 2 not greater than avg entries per row
+    //TODO (probably important for performnce): add thread-level sort also, and use that
+    //for small avg degree. But this works for now.
+    int teamSize = 1;
+    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    while(teamSize * 2 * 2 <= avgDeg)
+    {
+      teamSize *= 2;
+    }
+    team_pol temp(numRows, teamSize);
+    teamSize = std::min(teamSize, temp.team_size_max(funct, Kokkos::ParallelForTag()));
+    Kokkos::parallel_for("sort_crs_matrix", team_pol(numRows, teamSize), funct);
+  }
+}
+
+// Sort a CRS graph: within each row, sort entries ascending by column.
+template<typename execution_space, typename rowmap_t, typename entries_t>
+void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
+{
+  using lno_t = typename entries_t::non_const_value_type;
+  using team_pol = Kokkos::TeamPolicy<execution_space>;
+#ifdef KOKKOS_ENABLE_CUDA
+  //only CUDA benefits from using team-based bitonic
+  bool useRadix = std::is_same<execution_space, Kokkos::Cuda>::value ? false : true;
+#else
+  bool useRadix = true;
+#endif
+  SortCrsGraphFunctor<execution_space, rowmap_t, entries_t>
+    funct(useRadix, rowmap, entries);
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  if(useRadix)
+  {
+    Kokkos::parallel_for("sort_crs_graph", Kokkos::RangePolicy<execution_space>(0, numRows), funct);
+  }
+  else
+  {
+    //Try to get teamsize to be largest power of 2 not greater than avg entries per row
+    //TODO (probably important for performnce): add thread-level sort also, and use that
+    //for small avg degree. But this works for now.
+    int teamSize = 1;
+    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    while(teamSize * 2 * 2 <= avgDeg)
+    {
+      teamSize *= 2;
+    }
+    team_pol temp(numRows, teamSize);
+    teamSize = std::min(teamSize, temp.team_size_max(funct, Kokkos::ParallelForTag()));
+    Kokkos::parallel_for("sort_crs_graph", team_pol(numRows, teamSize), funct);
+  }
 }
 
 

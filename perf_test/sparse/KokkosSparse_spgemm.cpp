@@ -43,7 +43,7 @@
 */
 #include <iostream>
 #include "KokkosKernels_config.h"
-#include "KokkosSparse_perftest_types.hpp"
+#include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
 
