@@ -351,7 +351,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, const D2Parameters& param
                 crsGraph.row_map, crsGraph.entries);
             break;
           case MODE_BIPARTITE_COLS:
-            bipartite_color_rows(&kh, crsGraph.numRows(), num_cols,
+            bipartite_color_columns(&kh, crsGraph.numRows(), num_cols,
                 crsGraph.row_map, crsGraph.entries);
             break;
         }
