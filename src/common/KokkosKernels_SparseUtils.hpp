@@ -464,12 +464,6 @@ inline void kk_transpose_graph(
       out_row_view_t, out_nnz_view_t, out_nnz_view_t,
       tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
 
-  TransposeFunctor_t tm ( num_rows, num_cols, xadj, adj, tmp1,
-                          t_xadj, t_adj, tmp2,
-                          tmp_row_view,
-                          false,
-                          team_work_chunk_size);
-
   typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
   typedef typename TransposeFunctor_t::team_fill_policy_t fill_tp_t;
   typedef typename TransposeFunctor_t::dynamic_team_count_policy_t d_count_tp_t;
@@ -490,6 +484,11 @@ inline void kk_transpose_graph(
     team_work_chunk_size = suggested_team_size;
 
 
+  TransposeFunctor_t tm ( num_rows, num_cols, xadj, adj, tmp1,
+                          t_xadj, t_adj, tmp2,
+                          tmp_row_view,
+                          false,
+                          team_work_chunk_size);
 
   if (use_dynamic_scheduling){
     Kokkos::parallel_for(  "KokkosKernels::Common::TransposeGraph::DynamicSchedule::S0", d_count_tp_t(num_rows  / team_work_chunk_size + 1 , suggested_team_size, vector_size), tm);
