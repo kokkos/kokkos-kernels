@@ -204,6 +204,55 @@ void test_dist2_coloring(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t r
 }
 
 template<typename scalar_unused, typename lno_t, typename size_type, typename device>
+void test_bipartite_symmetric(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
+{
+    using execution_space = typename device::execution_space;
+    using memory_space = typename device::memory_space;
+    using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+    using graph_type = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t = typename graph_type::row_map_type;
+    using c_entries_t = typename graph_type::entries_type;
+    using rowmap_t = typename c_rowmap_t::non_const_type;
+    using entries_t = typename c_entries_t::non_const_type;
+    using KernelHandle = KokkosKernelsHandle<
+      size_type, lno_t, double,
+      execution_space, memory_space, memory_space>;
+    //Generate graph, and add some out-of-bounds columns
+    crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(numVerts, numVerts, nnz, row_size_variance, bandwidth);
+    auto G = A.graph;
+    //Symmetrize the graph
+    rowmap_t symRowmap;
+    entries_t symEntries;
+    KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
+      <c_rowmap_t, c_entries_t,
+      rowmap_t, entries_t, execution_space>
+        (numVerts, G.row_map, G.entries, symRowmap, symEntries);
+    auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symRowmap);
+    auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symEntries);
+    std::vector<GraphColoringAlgorithmDistance2> algos =
+    {COLORING_D2_DEFAULT, COLORING_D2_SERIAL, COLORING_D2_VB, COLORING_D2_VB_BIT, COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT};
+    for(auto algo : algos)
+    {
+      KernelHandle kh;
+      kh.create_distance2_graph_coloring_handle(algo);
+      // Compute the Distance-2 graph coloring.
+      bipartite_color_rows<KernelHandle, c_rowmap_t, c_entries_t>
+        (&kh, numVerts, numVerts, symRowmap, symEntries, true);
+      execution_space().fence();
+      auto coloring_handle = kh.get_distance2_graph_coloring_handle();
+      auto colors = coloring_handle->get_vertex_colors();
+      auto colorsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colors);
+      auto numColors = coloring_handle->get_num_colors();
+      EXPECT_LE(numColors, numVerts);
+      bool success = Test::verifyBipartitePartialColoring
+        <lno_t, size_type, decltype(rowmapHost), decltype(entriesHost), decltype(colorsHost)>
+        (numVerts, numVerts, rowmapHost, entriesHost, rowmapHost, entriesHost, colorsHost);
+      EXPECT_TRUE(success) << "Dist-2: algorithm " << coloring_handle->getD2AlgorithmName() << " produced invalid coloring";
+      kh.destroy_distance2_graph_coloring_handle();
+    }
+}
+
+template<typename scalar_unused, typename lno_t, typename size_type, typename device>
 void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool colorRows)
 {
     using execution_space = typename device::execution_space;
@@ -227,7 +276,6 @@ void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth
       (numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
     //TODO: remove me, shouldn't be needed even with UVM
     execution_space().fence();
-    KokkosKernels::Impl::print_1Dview(t_rowmap);
     auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.row_map);
     auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.entries);
     auto t_rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), t_rowmap);
@@ -339,6 +387,11 @@ void test_old_d2(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth, l
     TEST_F(TestCategory, graph##_##graph_color_deprecated_distance2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
     { \
       DO_DEPRECATED_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+    } \
+    TEST_F(TestCategory, graph##_##graph_color_bipartite_sym##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
+    { \
+      test_bipartite_symmetric<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 5, 30, 1); \
+      test_bipartite_symmetric<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20, 800, 10); \
     } \
     TEST_F(TestCategory, graph##_##graph_color_bipartite_row##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
     { \
