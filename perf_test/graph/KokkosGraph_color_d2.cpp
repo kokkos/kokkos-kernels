@@ -64,8 +64,40 @@
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
 
-
 using namespace KokkosGraph;
+
+enum ColoringMode
+{
+  MODE_D2_SYMMETRIC,
+  MODE_BIPARTITE_ROWS,
+  MODE_BIPARTITE_COLS
+};
+
+struct D2Parameters
+{
+  GraphColoringAlgorithmDistance2 algorithm;
+  int repeat;
+  int verbose;
+  int use_threads;
+  int use_openmp;
+  int use_cuda;
+  int use_serial;
+  const char* mtx_file;
+  ColoringMode d2_color_type;
+
+  D2Parameters()
+  {
+    algorithm = COLORING_D2_DEFAULT;
+    repeat = 6;
+    verbose = 0;
+    use_threads = 0;
+    use_openmp = 0;
+    use_cuda = 0;
+    use_serial = 0;
+    mtx_file = NULL;
+    d2_color_type = MODE_D2_SYMMETRIC;
+  }
+};
 
 #ifdef KOKKOSKERNELS_INST_DOUBLE
     typedef double kk_scalar_t;
@@ -91,14 +123,7 @@ using namespace KokkosGraph;
     #endif
 #endif
 
-// Toggle EXPERIMENTAL code for calculating
-// a tight bound on distance-2 degree.
-#define USE_EXPERIMENTAL_MAXD2DEGREE 0
-
-
 using namespace KokkosGraph;
-
-
 
 void print_options(std::ostream &os, const char *app_name, unsigned int indent = 0)
 {
@@ -107,39 +132,37 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
        << spaces << "  " << app_name << " [parameters]" << std::endl
        << std::endl
        << spaces << "Parameters:" << std::endl
-       << spaces << "  Parallelism (select one of the following):" << std::endl
-#ifdef KOKKOS_ENABLE_SERIAL
-       << spaces << "      --serial            Execute serially." << std::endl
-#endif
-#ifdef KOKKOS_ENABLE_THREADS
-       << spaces << "      --threads <N>       Use N posix threads." << std::endl
-#endif
-#ifdef KOKKOS_ENABLE_OPENMP
-       << spaces << "      --openmp <N>        Use OpenMP with N threads." << std::endl
-#endif
-#ifdef KOKKOS_ENABLE_CUDA
-       << spaces << "      --cuda <id>         Use CUDA (device $id)" << std::endl
-#endif
-       << std::endl
        << spaces << "  Required Parameters:" << std::endl
        << spaces << "      --amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
        << std::endl
-       << spaces << "      --algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
-       << spaces << "                 COLORING_D2_MATRIX_SQUARED  - Matrix-squared + Distance-1 method." << std::endl
-       << spaces << "                 COLORING_D2_SERIAL          - Serial algorithm (must use with 'serial' mode)" << std::endl
-       << spaces << "                 COLORING_D2_VB              - Vertex Based method using boolean forbidden array (Default)." << std::endl
-       << spaces << "                 COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
-       << spaces << "                 COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
-       << spaces << "                 COLORING_D2_NB_BIT      - VB_BIT with dynamic programming, default on parallel devices" << std::endl
-
+       << spaces << "      Device type (the following are enabled in this build):" << std::endl
+#ifdef KOKKOS_ENABLE_SERIAL
+       << spaces << "          --serial            Execute serially." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_THREADS
+       << spaces << "          --threads <N>       Use N posix threads." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+       << spaces << "          --openmp <N>        Use OpenMP with N threads." << std::endl
+#endif
+#ifdef KOKKOS_ENABLE_CUDA
+       << spaces << "          --cuda <device id>  Use given CUDA device" << std::endl
+#endif
+       << std::endl
+       << spaces << "  Coloring modes:" << std::endl
+       << spaces << "      --symmetric_d2  (default): distance-2 on undirected/symmmetric graph" << std::endl
+       << spaces << "      --bipartite_rows: color rows (left side of bipartite graph)" << std::endl
+       << spaces << "      --bipartite_cols: color columns (right side of bipartite graph)" << std::endl
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
+       << spaces << "      --algorithm <algorithm_name>   Set the algorithm to use.  Allowable values are:" << std::endl
+       << spaces << "          COLORING_D2_SERIAL          - Serial net-based algorithm" << std::endl
+       << spaces << "          COLORING_D2_VB              - Vertex Based method using boolean forbidden array (Default)." << std::endl
+       << spaces << "          COLORING_D2_VB_BIT          - VB with Bitvector Forbidden Array" << std::endl
+       << spaces << "          COLORING_D2_VB_BIT_EF       - VB_BIT with Edge Filtering" << std::endl
+       << spaces << "          COLORING_D2_NB_BIT          - Net-based (fastest parallel algorithm)" << std::endl
        << spaces << "      --repeat <N>        Set number of test repetitions (Default: 1) " << std::endl
        << spaces << "      --verbose           Enable verbose mode (record and print timing + extra information)" << std::endl
-       << spaces << "      --chunksize <N>     Set the chunk size." << std::endl
-       << spaces << "      --dynamic           Use dynamic scheduling." << std::endl
-       << spaces << "      --teamsize  <N>     Set the team size." << std::endl
-       << spaces << "      --vectorsize <N>    Set the vector size." << std::endl
        << spaces << "      --help              Print out command line help." << std::endl
        << spaces << " " << std::endl;
 }
@@ -155,11 +178,9 @@ static char* getNextArg(int& i, int argc, char** argv)
   return argv[i];
 }
 
-int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char **argv)
+int parse_inputs(D2Parameters &params, int argc, char **argv)
 {
     bool got_required_param_amtx      = false;
-    bool got_required_param_algorithm = false;
-
     for(int i = 1; i < argc; ++i)
     {
         if(0 == strcasecmp(argv[i], "--threads"))
@@ -182,26 +203,10 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
         {
             params.repeat = atoi(getNextArg(i, argc, argv));
         }
-        else if(0 == strcasecmp(argv[i], "--chunksize"))
-        {
-            params.chunk_size = atoi(getNextArg(i, argc, argv));
-        }
-        else if(0 == strcasecmp(argv[i], "--teamsize"))
-        {
-            params.team_size = atoi(getNextArg(i, argc, argv));
-        }
-        else if(0 == strcasecmp(argv[i], "--vectorsize"))
-        {
-            params.vector_size = atoi(getNextArg(i, argc, argv));
-        }
         else if(0 == strcasecmp(argv[i], "--amtx"))
         {
             got_required_param_amtx = true;
-            params.a_mtx_bin_file  = getNextArg(i, argc, argv);
-        }
-        else if(0 == strcasecmp(argv[i], "--dynamic"))
-        {
-            params.use_dynamic_scheduling = 1;
+            params.mtx_file  = getNextArg(i, argc, argv);
         }
         else if(0 == strcasecmp(argv[i], "--verbose"))
         {
@@ -210,35 +215,25 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
         else if(0 == strcasecmp(argv[i], "--algorithm"))
         {
             ++i;
-            if(0 == strcasecmp(argv[i], "COLORING_D2_MATRIX_SQUARED"))
+            if(0 == strcasecmp(argv[i], "COLORING_D2_SERIAL"))
             {
-                params.algorithm             = 1;
-                got_required_param_algorithm = true;
+                params.algorithm = COLORING_D2_SERIAL;
             }
-            else if(0 == strcasecmp(argv[i], "COLORING_D2_SERIAL"))
+            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB"))
             {
-                params.algorithm             = 2;
-                got_required_param_algorithm = true;
-            }
-            else if(0 == strcasecmp(argv[i], "COLORING_D2_VB") || 0 == strcasecmp(argv[i], "COLORING_D2") )
-            {
-                params.algorithm             = 3;
-                got_required_param_algorithm = true;
+                params.algorithm = COLORING_D2_VB;
             }
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT"))
             {
-                params.algorithm             = 4;
-                got_required_param_algorithm = true;
+                params.algorithm = COLORING_D2_VB_BIT;
             }
             else if(0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT_EF"))
             {
-                params.algorithm             = 5;
-                got_required_param_algorithm = true;
+                params.algorithm = COLORING_D2_VB_BIT_EF;
             }
             else if(0 == strcasecmp(argv[i], "COLORING_D2_NB_BIT"))
             {
-                params.algorithm             = 6;
-                got_required_param_algorithm = true;
+                params.algorithm = COLORING_D2_NB_BIT;
             }
             else
             {
@@ -246,6 +241,18 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
                 print_options(std::cout, argv[0]);
                 return 1;
             }
+        }
+        else if(0 == strcasecmp(argv[i], "--symmetric_d2"))
+        {
+          params.d2_color_type = MODE_D2_SYMMETRIC;
+        }
+        else if(0 == strcasecmp(argv[i], "--bipartite_rows"))
+        {
+          params.d2_color_type = MODE_BIPARTITE_ROWS;
+        }
+        else if(0 == strcasecmp(argv[i], "--bipartite_cols"))
+        {
+          params.d2_color_type = MODE_BIPARTITE_COLS;
         }
         else if(0 == strcasecmp(argv[i], "--help") || 0 == strcasecmp(argv[i], "-h"))
         {
@@ -263,12 +270,6 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc, char *
     if(!got_required_param_amtx)
     {
         std::cout << "Missing required parameter amtx" << std::endl << std::endl;
-        print_options(std::cout, argv[0]);
-        return 1;
-    }
-    if(!got_required_param_algorithm)
-    {
-        std::cout << "Missing required parameter algorithm" << std::endl << std::endl;
         print_options(std::cout, argv[0]);
         return 1;
     }
@@ -297,7 +298,7 @@ std::string getCurrentDateTimeStr()
 
 
 template<typename crsGraph_t>
-void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
+void run_experiment(crsGraph_t crsGraph, int num_cols, const D2Parameters& params)
 {
     using namespace KokkosGraph;
     using namespace KokkosGraph::Experimental;
@@ -308,40 +309,18 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
     using lno_view_t = typename crsGraph_t::row_map_type::non_const_type;
     using lno_nnz_view_t = typename crsGraph_t::entries_type::non_const_type;
     using size_type = typename lno_view_t::non_const_value_type;
-    using lno_t     = typename lno_nnz_view_t::non_const_value_type;
+    using lno_t = typename lno_nnz_view_t::non_const_value_type;
 
-    int algorithm  = params.algorithm;
-    int repeat     = params.repeat;
-    int chunk_size = params.chunk_size;
+    int repeat = params.repeat;
 
-    int shmemsize              = params.shmemsize;
-    int team_size              = params.team_size;
-    int use_dynamic_scheduling = params.use_dynamic_scheduling;
-    int verbose                = params.verbose;
-
-    int vector_size = params.vector_size;
+    int verbose = params.verbose;
 
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, exec_space, mem_space, mem_space> KernelHandle;
 
-    // Get Date/Time stamps of start to use later when printing out summary data.
-    //auto t  =  std::time(nullptr);
-    //auto tm = *std::localtime(&t);
-
-    // Note: crsGraph.numRows() == number of vertices in the 'graph'
-    //       crsGraph.entries.extent(0) == number of edges in the 'graph'
     std::cout << "Num verts: " << crsGraph.numRows()         << std::endl
               << "Num edges: " << crsGraph.entries.extent(0) << std::endl;
 
     KernelHandle kh;
-    kh.set_team_work_size(chunk_size);
-    kh.set_shmem_size(shmemsize);
-    kh.set_suggested_team_size(team_size);
-    kh.set_suggested_vector_size(vector_size);
-
-    if(use_dynamic_scheduling)
-    {
-        kh.set_dynamic_scheduling(true);
-    }
 
     if(verbose)
     {
@@ -352,39 +331,8 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
     size_t total_colors = 0;
     size_t total_phases = 0;
 
-    std::string label_algorithm;
-    switch(algorithm)
-    {
-        case 1:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_MATRIX_SQUARED);
-            label_algorithm = "COLORING_D2_MATRIX_SQUARED";
-            break;
-        case 2:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_SERIAL);
-            label_algorithm = "COLORING_D2_SERIAL";
-            break;
-        case 3:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_VB);
-            label_algorithm = "COLORING_D2_VB";
-            break;
-        case 4:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT);
-            label_algorithm = "COLORING_D2_VB_BIT";
-            break;
-        case 5:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_VB_BIT_EF);
-            label_algorithm = "COLORING_D2_VB_BIT_EF";
-            break;
-        case 6:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_NB_BIT);
-            label_algorithm = "COLORING_D2_NB_BIT";
-            break;
-        default:
-            kh.create_distance2_graph_coloring_handle(COLORING_D2_VB);
-            label_algorithm = "COLORING_D2_VB";
-            break;
-    }
-
+    kh.create_distance2_graph_coloring_handle(params.algorithm);
+    std::string label_algorithm = kh.get_distance2_graph_coloring_handle()->getD2AlgorithmName();
     std::cout << std::endl << "Run Graph Color D2 (" << label_algorithm << ")" << std::endl;
 
     // If any of the runs have an invalid result, this will be set to false.
@@ -393,8 +341,20 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
     // Loop over # of experiments to run
     for(int i = 0; i < repeat; ++i)
     {
-        graph_compute_distance2_color(&kh, crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries);
-
+        switch(params.d2_color_type)
+        {
+          case MODE_D2_SYMMETRIC:
+            graph_color_distance2(&kh, crsGraph.numRows(), crsGraph.row_map, crsGraph.entries);
+            break;
+          case MODE_BIPARTITE_ROWS:
+            bipartite_color_rows(&kh, crsGraph.numRows(), num_cols,
+                crsGraph.row_map, crsGraph.entries);
+            break;
+          case MODE_BIPARTITE_COLS:
+            bipartite_color_columns(&kh, crsGraph.numRows(), num_cols,
+                crsGraph.row_map, crsGraph.entries);
+            break;
+        }
         total_colors += kh.get_distance2_graph_coloring_handle()->get_num_colors();
         total_phases += kh.get_distance2_graph_coloring_handle()->get_num_phases();
 
@@ -417,6 +377,8 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
         // ------------------------------------------
         // Verify correctness
         // ------------------------------------------
+        // TODO bmk: write a faster color verification
+        /*
         bool d2_coloring_is_valid            = false;
         bool d2_coloring_validation_flags[4] = { false };
 
@@ -442,11 +404,12 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
                       << "  - Vert(s) have high color value : " << d2_coloring_validation_flags[3] << std::endl
                       << std::endl;
         }
+        */
 
         // ------------------------------------------
         // Print out the colors histogram
         // ------------------------------------------
-        KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, false);
+        KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, false);
 
     } // for i...
 
@@ -456,21 +419,6 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
     std::cout << "Compute Distance-2 Degree " << std::endl;
 
     Kokkos::Impl::Timer timer;
-
-    #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
-    double time_d2_degree;
-    timer.reset();
-
-    typedef typename KernelHandle::GraphColoringHandleType::non_const_1d_size_type_view_t non_const_1d_size_type_view_t;
-    non_const_1d_size_type_view_t degree_d2_dist = non_const_1d_size_type_view_t("degree d2", crsGraph.numRows());
-
-    size_t degree_d2_max=0;
-    KokkosGraph::Impl::graph_compute_distance2_degree(&kh, crsGraph.numRows(), num_cols,
-                                   crsGraph.row_map, crsGraph.entries,
-                                   crsGraph.row_map, crsGraph.entries,
-                                   degree_d2_dist, degree_d2_max);
-    time_d2_degree = timer.seconds();
-    #endif
 
     double total_time                   = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time();
     double total_time_color_greedy      = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase1();
@@ -488,9 +436,8 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
     double avg_time_matrix_squared    = total_time_matrix_squared / (double)repeat;
     double avg_time_matrix_squared_d1 = total_time_matrix_squared_d1 / (double)repeat;
 
-    std::string a_mtx_bin_file = params.a_mtx_bin_file;
-    a_mtx_bin_file             = a_mtx_bin_file.substr(a_mtx_bin_file.find_last_of("/\\") + 1);
-
+    std::string short_mtx_file(params.mtx_file);
+    short_mtx_file = short_mtx_file.substr(short_mtx_file.find_last_of("/\\") + 1);
 
     int result;
     char hostname[100];
@@ -518,16 +465,11 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
               << "-------" << std::endl
               << "    Date/Time      : " << currentDateTimeStr << std::endl
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
-              << "    Filename       : " << a_mtx_bin_file << std::endl
+              << "    Filename       : " << short_mtx_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
               << "    Num Edges      : " << crsGraph.entries.extent(0) << std::endl
               << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
-              #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
-              << "Graph Stats" << std::endl
-              << "    Degree D2 Max  : " << degree_d2_max << std::endl
-              << "    Degree D2 Time : " << time_d2_degree << std::endl
-              #endif
               << "Overall Time/Stats" << std::endl
               << "    Total Time     : " << total_time << std::endl
               << "    Avg Time       : " << avg_time << std::endl
@@ -562,15 +504,11 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
               << "," << "Total Time RC"
               << "," << "Avg Colors"
               << "," << "Avg Num Phases"
-              #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
-              << "," << "Time D2 Degree"
-              << "," << "Degree D2 Max"
-              #endif
               << "," << "Validation"
               << std::endl;
 
     std::cout << "CSVTIMEDATA"
-              << "," << a_mtx_bin_file
+              << "," << short_mtx_file
               << "," << hostname
               << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
@@ -588,10 +526,6 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
 
               << "," << avg_colors
               << "," << avg_phases
-              #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
-              << "," << time_d2_degree
-              << "," << degree_d2_max
-              #endif
               << "," << all_results_valid_str
               << std::endl;
 
@@ -608,7 +542,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
               << std::endl;
 
     std::cout << "CSVHISTDATA"
-              << "," << a_mtx_bin_file
+              << "," << short_mtx_file
               << "," << hostname
               << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
@@ -617,7 +551,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
               << "," << label_algorithm
               << "," << Kokkos::DefaultExecutionSpace::concurrency()
               << ",";
-    KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, crsGraph.numRows(), num_cols, crsGraph.row_map, crsGraph.entries, crsGraph.row_map, crsGraph.entries, true);
+    KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, true);
     std::cout << std::endl;
 
     // Kokkos::print_configuration(std::cout);
@@ -625,13 +559,13 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params)
 
 
 template<typename size_type, typename lno_t, typename exec_space, typename mem_space>
-void experiment_driver(Parameters params)
+void experiment_driver(const D2Parameters& params)
 {
     using device_t    = Kokkos::Device<exec_space, mem_space>;
     using crsMat_t    = typename KokkosSparse::CrsMatrix<double, lno_t, device_t, void, size_type>;
     using graph_t     = typename crsMat_t::StaticCrsGraphType;
  
-    crsMat_t A     = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(params.a_mtx_bin_file);
+    crsMat_t A     = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
     graph_t Agraph = A.graph;
     int num_cols   = A.numCols();
 
@@ -646,7 +580,7 @@ void experiment_driver(Parameters params)
 
 int main(int argc, char *argv[])
 {
-    KokkosKernels::Experiment::Parameters params;
+    D2Parameters params;
 
     // Override default repeats (default is 6)
     params.repeat = 1;
@@ -656,7 +590,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if(params.a_mtx_bin_file == NULL)
+    if(params.mtx_file == NULL)
     {
         std::cerr << "Provide a matrix file" << std::endl;
         return 0;

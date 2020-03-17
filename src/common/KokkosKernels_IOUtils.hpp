@@ -85,21 +85,22 @@ void kk_sparseMatrix_generate(
   for(int row=0;row<nrows;row++)
   {
     int varianz = (1.0*rand()/RAND_MAX-0.5)*row_size_variance;
-    rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
+    int numRowEntries = elements_per_row + varianz;
+    if(numRowEntries < 0)
+      numRowEntries = 0;
+    rowPtr[row+1] = rowPtr[row] + numRowEntries;
   }
   nnz = rowPtr[nrows];
   values = new ScalarType[nnz];
   colInd = new OrdinalType[nnz];
   for(OrdinalType row=0;row<nrows;row++)
   {
-
     for(SizeType k=rowPtr[row] ;k<rowPtr[row+1];k++)
     {
-
       while (true){
         OrdinalType pos = (1.0*rand()/RAND_MAX-0.5)*bandwidth+row;
-        if(pos<0) pos+=ncols;
-        if(pos>=ncols) pos-=ncols;
+        while(pos<0) pos+=ncols;
+        while(pos>=ncols) pos-=ncols;
 
         bool is_already_in_the_row = false;
         for(SizeType j = rowPtr[row] ; j<k ;j++){
@@ -115,8 +116,6 @@ void kk_sparseMatrix_generate(
           break;
         }
       }
-
-
     }
   }
 }
