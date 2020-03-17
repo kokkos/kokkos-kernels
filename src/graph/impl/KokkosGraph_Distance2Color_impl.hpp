@@ -117,8 +117,7 @@ class GraphColorDistance2
     using forbidden_view        = Kokkos::View<uint32_t*, device_type>;
 
   protected:
-    lno_t     nv;          // num vertices
-    lno_t     nr;          // num_rows  (# verts)
+    lno_t     nr;          // num_rows  (also #verts, the objects being colored)
     lno_t     nc;          // num cols
     size_type ne;          // # edges
     rowmap_t  xadj;        // rowmap, transpose of rowmap
@@ -140,21 +139,20 @@ class GraphColorDistance2
   public:
     /**
      * \brief GraphColorDistance2 constructor.
-     * \param nv_: number of vertices in the graph
-     * \param row_map: the xadj array of the graph. Its size is nv_ +1
+     * \param nr_: number of vertices in the graph
+     * \param row_map: the xadj array of the graph. Its size is nr_ +1
      * \param entries: adjacency array of the graph.
      * \param handle: GraphColoringHandle object that holds the specification about the graph coloring,
      *    including parameters.
      */
-    GraphColorDistance2(lno_t       nv_,
+    GraphColorDistance2(lno_t       nr_,
                         lno_t       nc_,
                         rowmap_t    row_map,
                         entries_t   entries,
                         rowmap_t    t_row_map,
                         entries_t   t_entries,
                         HandleType* handle)
-        : nv(nv_)
-        , nr(nv_)
+        : nr(nr_)
         , nc(nc_)
         , ne(entries.extent(0))
         , xadj(row_map)
@@ -170,7 +168,7 @@ class GraphColorDistance2
       //Internal logic check: distance-2 coloring (non-bipartite) requires a square graph
       if(!doing_bipartite && nr != nc)
       {
-        throw std::runtime_error("D2 INTERNAL ERROR: requested undirected d2 coloring but input graph is not square (nv_ != nc_)");
+        throw std::runtime_error("D2 INTERNAL ERROR: requested undirected d2 coloring but input graph is not square (nr_ != nc_)");
       }
     }
 
@@ -193,7 +191,7 @@ class GraphColorDistance2
     {
         //Delegate to different coloring functions, depending on algorithm
         using_edge_filtering = false;
-        color_view_type colors_out("Graph Colors", this->nv);
+        color_view_type colors_out("Graph Colors", this->nr);
         switch(this->gc_handle->get_coloring_algo_type())
         {
           case COLORING_D2_VB_BIT_EF:
@@ -231,7 +229,7 @@ class GraphColorDistance2
                       << "\t  chunkSize                : " << this->_chunkSize << std::endl
                       << "\t  Edge Filtering Pass?     : " << (int)using_edge_filtering << std::endl
                       << "\tgraph information:" << std::endl
-                      << "\t  nv                       : " << this->nv << std::endl
+                      << "\t  nr                       : " << this->nr << std::endl
                       << "\t  ne                       : " << this->ne << std::endl;
             /*
             // For extra verbosity if debugging...
@@ -244,20 +242,20 @@ class GraphColorDistance2
 
         // conflictlist - store conflicts that can happen when we're coloring in parallel.
         lno_view_t current_vertexList(
-            Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
+            Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nr);
 
         // init conflictlist sequentially.
-        Kokkos::parallel_for("InitList", range_policy_type(0, this->nv), functorInitList<lno_view_t>(current_vertexList));
+        Kokkos::parallel_for("InitList", range_policy_type(0, this->nr), functorInitList<lno_view_t>(current_vertexList));
 
         // Next iteratons's conflictList
-        lno_view_t next_iteration_recolorList(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
+        lno_view_t next_iteration_recolorList(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nr);
 
         // Size the next iteration conflictList
         single_lno_view_t next_iteration_recolorListLength("recolorListLength");
 
-        lno_t numUncolored             = this->nv;
-        lno_t numUncoloredPreviousIter = this->nv + 1;
-        lno_t current_vertexListLength = this->nv;
+        lno_t numUncolored             = this->nr;
+        lno_t numUncoloredPreviousIter = this->nr + 1;
+        lno_t current_vertexListLength = this->nr;
 
         double              time;
         double              total_time = 0.0;
@@ -620,8 +618,8 @@ class GraphColorDistance2
     struct NB_Worklist
     {
       NB_Worklist(
-          const color_view_type colors_, const lno_view_t& worklist_, const single_lno_view_t& worklen_, lno_t nv_)
-        : colors(colors_), worklist(worklist_), worklen(worklen_), nv(nv_)
+          const color_view_type colors_, const lno_view_t& worklist_, const single_lno_view_t& worklen_, lno_t nr_)
+        : colors(colors_), worklist(worklist_), worklen(worklen_), nr(nr_)
       {}
 
       KOKKOS_INLINE_FUNCTION void operator()(const lno_t v, lno_t& lnum, bool finalPass) const
@@ -632,7 +630,7 @@ class GraphColorDistance2
             worklist(lnum) = v;
           lnum++;
         }
-        if(finalPass && v == nv - 1)
+        if(finalPass && v == nr - 1)
         {
           //The very last thread in the kernel knows how many items are in the next worklist
           worklen() = lnum;
@@ -642,14 +640,14 @@ class GraphColorDistance2
       color_view_type colors;
       lno_view_t worklist;
       single_lno_view_t worklen;
-      lno_t nv;
+      lno_t nr;
     };
 
     struct NB_UpdateBatch
     {
       NB_UpdateBatch(
-          const color_view_type& colors_, const lno_view_t& worklist_, const single_lno_view_t& worklen_, lno_t nv_)
-        : colors(colors_), worklist(worklist_), worklen(worklen_), nv(nv_)
+          const color_view_type& colors_, const lno_view_t& worklist_, const single_lno_view_t& worklen_, lno_t nr_)
+        : colors(colors_), worklist(worklist_), worklen(worklen_), nr(nr_)
       {}
 
       KOKKOS_INLINE_FUNCTION void operator()(const lno_t v, lno_t & lnum, bool finalPass) const
@@ -660,7 +658,7 @@ class GraphColorDistance2
             worklist(lnum) = v;
           lnum++;
         }
-        if(finalPass && v == nv - 1)
+        if(finalPass && v == nr - 1)
         {
           //The very last thread in the kernel knows the length of the new worklist.
           worklen() = lnum;
@@ -670,14 +668,14 @@ class GraphColorDistance2
       color_view_type colors;
       lno_view_t worklist;
       single_lno_view_t worklen;
-      lno_t nv;
+      lno_t nr;
     };
 
     void compute_d2_coloring_nb(const color_view_type& colors_out)
     {
       //Member data used:
       // gc_handle    = graph coloring handle
-      // nv           = #vertices
+      // nr           = #vertices
       // nc           = #columns
       // xadj/adj     = graph where rows are vertices, and adjacent columns are listed
       // t_xadj/t_adj = graph where rows are columns, and adjacent vertices are listed.
@@ -685,16 +683,16 @@ class GraphColorDistance2
       if(this->_ticToc)
       {
         std::cout << "\tcolor_symmetric_graph_d2 params:\n"
-          << "\t\t#vertices : " << this->nv << '\n'
+          << "\t\t#vertices : " << this->nr << '\n'
           << "\t\t#edges: " << this->ne << '\n';
       }
       //Initialize worklist with every vertex
-      lno_view_t worklist("Worklist", this->nv);
+      lno_view_t worklist("Worklist", this->nr);
       single_lno_view_t worklen("Worklist length");
-      Kokkos::deep_copy(worklen, this->nv);
+      Kokkos::deep_copy(worklen, this->nr);
 
       // init conflictlist sequentially.
-      Kokkos::parallel_for("InitList", range_policy_type(0, this->nv),
+      Kokkos::parallel_for("InitList", range_policy_type(0, this->nr),
           functorInitList<lno_view_t>(worklist));
 
       //Estimate the number of colors that will be needed
@@ -719,13 +717,13 @@ class GraphColorDistance2
           break;
         }
       }
-      const lno_t numVerts = this->nv;
+      const lno_t numVerts = this->nr;
       const lno_t numCols = this->nc;
       //note: relying on forbidden and colors_out being initialized to 0
       forbidden_view forbidden("Forbidden", batch * numCols);
       int iter = 0;
       Kokkos::Impl::Timer timer;
-      lno_t currentWork = this->nv;
+      lno_t currentWork = this->nr;
       batch = 1;
       double colorTime = 0;
       double conflictTime = 0;
@@ -858,7 +856,7 @@ class GraphColorDistance2
     {
       //Member data used:
       // gc_handle    = graph coloring handle
-      // nv           = #vertices
+      // nr           = #vertices
       // nc           = #columns
       // xadj/adj     = graph where rows are vertices, and adjacent columns are listed
       // t_xadj/t_adj = graph where rows are columns, and adjacent vertices are listed.
@@ -866,7 +864,7 @@ class GraphColorDistance2
       if(this->_ticToc)
       {
         std::cout << "\tcolor_symmetric_graph_d2 params:\n"
-          << "\t\t#vertices : " << this->nv << '\n'
+          << "\t\t#vertices : " << this->nr << '\n'
           << "\t\t#edges: " << this->ne << '\n';
       }
       Kokkos::View<unsigned*, Kokkos::HostSpace> forbidden("Forbidden", this->nc);
@@ -875,10 +873,10 @@ class GraphColorDistance2
       Kokkos::View<const size_type*, Kokkos::HostSpace> Vrowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), this->xadj);
       Kokkos::View<const lno_t*, Kokkos::HostSpace> Vcolinds = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), this->adj);
       //Create worklist
-      Kokkos::View<lno_t*, Kokkos::HostSpace> worklist(Kokkos::ViewAllocateWithoutInitializing("Worklist"), this->nv);
+      Kokkos::View<lno_t*, Kokkos::HostSpace> worklist(Kokkos::ViewAllocateWithoutInitializing("Worklist"), this->nr);
       int iter = 0;
       Kokkos::Impl::Timer timer;
-      lno_t currentWork = this->nv;
+      lno_t currentWork = this->nr;
       lno_t numCols = this->nc;
       for(color_type colorBase = 1; currentWork > 0; colorBase += 32)
       {
@@ -971,8 +969,8 @@ class GraphColorDistance2
             case COLORING_D2_VB:
             {
                 functorGreedyColorVB gc(
-                  this->nv, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
-                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nv), gc);
+                  this->nr, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
+                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr), gc);
             }
             break;
 
@@ -984,8 +982,8 @@ class GraphColorDistance2
             case COLORING_D2_VB_BIT:
             {
                 functorGreedyColorVB_BIT gc(
-                  this->nv, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
-                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nv), gc);
+                  this->nr, this->nc, xadj_, adj_, t_xadj_, t_adj_, vertex_colors_, current_vertexList_, current_vertexListLength_);
+                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr), gc);
             }
             break;
 
@@ -1018,13 +1016,13 @@ class GraphColorDistance2
             // 4. [S] loop over vertex neighbors of neighbors
             case COLORING_D2_VB_BIT_EF:
             {
-                functorGreedyColorVB_BIT_EF gc(this->nv, this->nc,
+                functorGreedyColorVB_BIT_EF gc(this->nr, this->nc,
                                                xadj_,
                                                adj_copy_,
                                                t_xadj_,
                                                t_adj_copy_,
                                                vertex_colors_);
-                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nv), gc);
+                Kokkos::parallel_for("LoopOverChunks", range_policy_type(0, this->nr), gc);
                 // prettyPrint1DView(vertex_colors_, "COLORS_GC_VB_BIT",500);
             }
             break;
@@ -1057,7 +1055,7 @@ class GraphColorDistance2
         lno_t output_numUncolored = 0;
 
         functorFindConflicts_Atomic conf(
-            this->nv, this->nc,
+            this->nr, this->nc,
             xadj_,
             adj_,
             t_xadj_,
@@ -1085,11 +1083,11 @@ class GraphColorDistance2
                                 lno_view_t      current_vertexList_,
                                 size_type       current_vertexListLength_)
     {
-        color_type*  forbidden = new color_type[ nv ];
-        for(lno_t i = 0; i < nv; i++)
-          forbidden[i] = nv;
+        color_type*  forbidden = new color_type[ nr ];
+        for(lno_t i = 0; i < nr; i++)
+          forbidden[i] = nr;
         lno_t vid = 0;
-        lno_t end = nv;
+        lno_t end = nr;
 
         typename lno_view_t::HostMirror h_recolor_list;
 
@@ -1136,7 +1134,7 @@ class GraphColorDistance2
                     lno_t vid_d2 = h_t_adj(vid_d2_adj);
 
                     // skip over loops vid -- x -- vid, and filter out-of-bounds
-                    if(vid_d2 != vid && vid_d2 < nv)
+                    if(vid_d2 != vid && vid_d2 < nr)
                       forbidden[ h_colors(vid_d2) ] = vid;
                   }
                 }
@@ -1215,7 +1213,7 @@ class GraphColorDistance2
      */
     struct functorGreedyColorVB
     {
-        lno_t           nv;                // num vertices
+        lno_t           nr;                // num vertices
         lno_t           nc;                // num columns
         rowmap_t        _idx;              // vertex degree list
         entries_t       _adj;              // vertex adjacency list
@@ -1226,7 +1224,7 @@ class GraphColorDistance2
         lno_t           _vertexListLength; //
         lno_t           _chunkSize;        //
 
-        functorGreedyColorVB(lno_t            nv_,
+        functorGreedyColorVB(lno_t            nr_,
                              lno_t            nc_,
                              rowmap_t         xadj_,
                              entries_t        adj_,
@@ -1235,7 +1233,7 @@ class GraphColorDistance2
                              color_view_type  colors,
                              lno_view_t       vertexList,
                              lno_t            vertexListLength)
-            : nv(nv_), nc(nc_)
+            : nr(nr_), nc(nc_)
             , _idx(xadj_)
             , _adj(adj_)
             , _t_idx(t_xadj_)
@@ -1272,7 +1270,7 @@ class GraphColorDistance2
                 // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
                 //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.
                 //   This could be as big as all the vertices in the graph if diameter(G)=2...
-                for(color_type offset = 1; offset <= nv; offset += VB_D2_COLORING_FORBIDDEN_SIZE)
+                for(color_type offset = 1; offset <= nr; offset += VB_D2_COLORING_FORBIDDEN_SIZE)
                 {
                     // initialize
                     for(int i = 0; i < VB_D2_COLORING_FORBIDDEN_SIZE; i++) { forbidden[ i ] = false; }
@@ -1300,7 +1298,7 @@ class GraphColorDistance2
                             const lno_t vid_d2 = _t_adj(vid_d1_adj);
 
                             // Skip distance-2-self-loops
-                            if(vid_d2 != vid && vid_d2 < nv)
+                            if(vid_d2 != vid && vid_d2 < nr)
                             {
                                 const color_type c = _colors(vid_d2);
                                 if((c >= offset) && (c - offset < VB_D2_COLORING_FORBIDDEN_SIZE))
@@ -1321,7 +1319,7 @@ class GraphColorDistance2
                             return;
                         }
                     }      // for c...
-                }          // for offset < nv
+                }          // for offset < nr
             }              // if _colors(vid) <= 0...
         }                  // operator() (end)
     };                     // struct functorGreedyColorVB (end)
@@ -1333,7 +1331,7 @@ class GraphColorDistance2
      */
     struct functorGreedyColorVB_BIT
     {
-        lno_t           nv;                // num vertices
+        lno_t           nr;                // num vertices
         lno_t           nc;                // num columns
         rowmap_t        _idx;              // vertex degree list
         entries_t       _adj;              // vertex adjacency list
@@ -1343,7 +1341,7 @@ class GraphColorDistance2
         lno_view_t      _vertexList;       //
         lno_t           _vertexListLength; //
 
-        functorGreedyColorVB_BIT(lno_t            nv_,
+        functorGreedyColorVB_BIT(lno_t            nr_,
                                  lno_t            nc_,
                                  rowmap_t         xadj_,
                                  entries_t        adj_,
@@ -1352,7 +1350,7 @@ class GraphColorDistance2
                                  color_view_type  colors,
                                  lno_view_t       vertexList,
                                  lno_t            vertexListLength)
-            : nv(nv_), nc(nc_)
+            : nr(nr_), nc(nc_)
             , _idx(xadj_)
             , _adj(adj_)
             , _t_idx(t_xadj_)
@@ -1381,7 +1379,7 @@ class GraphColorDistance2
                 const size_type vid_adj_begin = _idx(vid);
                 const size_type vid_adj_end   = _idx(vid + 1);
 
-                for(color_type offset = 1; offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
+                for(color_type offset = 1; offset <= (nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
                     offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                 {
                     // Forbidden colors
@@ -1429,7 +1427,7 @@ class GraphColorDistance2
                               const lno_t vid_d2 = _t_adj(vid_d1_adj);
 
                               // Ignore Distance-2 Self Loops
-                              if(vid_d2 != vid && vid_d2 < nv)
+                              if(vid_d2 != vid && vid_d2 < nr)
                               {
                                   const color_type color        = _colors(vid_d2);
                                   const color_type color_offset = color - offset;
@@ -1460,7 +1458,7 @@ class GraphColorDistance2
                         _colors(vid) = offset + color_offset;
                         return;
                     }
-                }      // for offset <= (nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE)
+                }      // for offset <= (nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE)
             }          // if _colors(vid)==0
         }              // operator() (end)
     };                 // struct functorGreedyColorVB_BIT (end)
@@ -1472,7 +1470,7 @@ class GraphColorDistance2
      */
     struct functorGreedyColorVB_BIT_EF
     {
-        lno_t           _nv;                // num vertices
+        lno_t           _nr;                // num vertices
         lno_t           _nc;                // num vertices
         rowmap_t        _idx;               // rowmap
         lno_view_t      _adj;               // vertex adjacency list  (mutable)
@@ -1480,14 +1478,14 @@ class GraphColorDistance2
         entries_t       _t_adj;             // transpose vertex adjacency list (NOT modified)
         color_view_type _colors;            // vertex colors
 
-        functorGreedyColorVB_BIT_EF(lno_t           nv_,
+        functorGreedyColorVB_BIT_EF(lno_t           nr_,
                                     lno_t           nc_,
                                     rowmap_t        xadj_,
                                     lno_view_t      adj_,
                                     rowmap_t        t_xadj_,
                                     entries_t       t_adj_,
                                     color_view_type colors)
-            : _nv(nv_), _nc(nc_)
+            : _nr(nr_), _nc(nc_)
             , _idx(xadj_)
             , _adj(adj_)
             , _t_idx(t_xadj_)
@@ -1514,7 +1512,7 @@ class GraphColorDistance2
                 size_type vid_adj_end   = _idx(vid + 1);
 
                 bool foundColor = false;
-                for(color_type offset = 0; !foundColor && offset <= (_nv + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
+                for(color_type offset = 0; !foundColor && offset <= (_nr + VBBIT_D2_COLORING_FORBIDDEN_SIZE);
                     offset += VBBIT_D2_COLORING_FORBIDDEN_SIZE)
                 {
                     // Forbidden colors
@@ -1567,7 +1565,7 @@ class GraphColorDistance2
                               const lno_t vid_d2 = _t_adj(vid_d1_adj);
 
                               // Ignore Distance-2 Self Loops
-                              if(vid_d2 != vid && vid_d2 < _nv)
+                              if(vid_d2 != vid && vid_d2 < _nr)
                               {
                                   color_type color = _colors(vid_d2);
                                   color_type color_offset =
@@ -1654,7 +1652,7 @@ class GraphColorDistance2
 
     struct functorFindConflicts_Atomic
     {
-        lno_t             nv;      // num verts
+        lno_t             nr;      // num verts
         lno_t             nc;      // num columns
         rowmap_t          _idx;
         entries_t         _adj;
@@ -1665,7 +1663,7 @@ class GraphColorDistance2
         lno_view_t        _recolorList;
         single_lno_view_t _recolorListLength;
 
-        functorFindConflicts_Atomic(lno_t             nv_,
+        functorFindConflicts_Atomic(lno_t             nr_,
                                     lno_t             nc_,
                                     rowmap_t          xadj_,
                                     entries_t         adj_,
@@ -1675,7 +1673,7 @@ class GraphColorDistance2
                                     lno_view_t        vertexList,
                                     lno_view_t        recolorList,
                                     single_lno_view_t recolorListLength)
-            : nv(nv_), nc(nc_)
+            : nr(nr_), nc(nc_)
             , _idx(xadj_)
             , _adj(adj_)
             , _t_idx(t_xadj_)
@@ -1719,7 +1717,7 @@ class GraphColorDistance2
                   {
                       const lno_t vid_d2 = _t_adj(vid_d2_adj);
 
-                      if(vid != vid_d2 && vid_d2 < nv)
+                      if(vid != vid_d2 && vid_d2 < nr)
                       {
                           if(_colors(vid_d2) == my_color)
                           {

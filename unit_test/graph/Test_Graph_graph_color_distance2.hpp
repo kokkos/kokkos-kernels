@@ -227,8 +227,6 @@ void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth
       (numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
     //TODO: remove me, shouldn't be needed even with UVM
     execution_space().fence();
-    std::cout << "Transposed the graph for bipartite testing. The rowmap of transpose:\n";
-    std::cout << "#rows = " << numRows << ", #cols = " << numCols << ", nnz = " << G.entries.extent(0) << " = " << t_entries.extent(0) << '\n';
     KokkosKernels::Impl::print_1Dview(t_rowmap);
     auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.row_map);
     auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.entries);
