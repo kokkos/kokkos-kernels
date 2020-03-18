@@ -154,7 +154,7 @@ void bipartite_color_rows(
     //Compute the transpose
     col_map = TRowmap("Col map", num_columns + 1);
     col_entries = TEntries("Col entries", nnz);
-    KokkosKernels::Impl::kk_transpose_graph
+    KokkosKernels::Impl::transpose_graph
       <InRowmap, InEntries, TRowmap, TEntries, TRowmap, execution_space>
       (num_rows, num_columns, row_map, row_entries, col_map, col_entries);
   }
@@ -227,7 +227,7 @@ void bipartite_color_columns(
   //Compute the transpose
   TRowmap col_map("Col map", num_columns + 1);
   TEntries col_entries(Kokkos::ViewAllocateWithoutInitializing("Col entries"), nnz);
-  KokkosKernels::Impl::kk_transpose_graph
+  KokkosKernels::Impl::transpose_graph
     <InRowmap, InEntries, TRowmap, TEntries, TRowmap, execution_space>
     (num_rows, num_columns, row_map, row_entries, col_map, col_entries);
   //Get unmanaged views for both graph and its transpose

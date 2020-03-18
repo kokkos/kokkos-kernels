@@ -50,9 +50,10 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Sort.hpp>
-#include <KokkosKernels_SimpleUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
 #include <KokkosKernels_Sorting.hpp>
+#include <KokkosKernels_default_types.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
@@ -542,6 +543,81 @@ void testBitonicSortLexicographic()
   ASSERT_TRUE(ordered);
 }
 
+template<typename exec_space>
+void testSortCRS(default_lno_t numRows, default_size_type nnz, bool doValues)
+{
+  using scalar_t = default_scalar;
+  using lno_t = default_lno_t;
+  using size_type = default_size_type;
+  using mem_space = typename exec_space::memory_space;
+  using device_t = Kokkos::Device<exec_space, mem_space>;
+  using crsMat_t = KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
+  using rowmap_t = typename crsMat_t::row_map_type;
+  using entries_t = typename crsMat_t::index_type;
+  using values_t = typename crsMat_t::values_type;
+  //Create a random matrix on device
+  //IMPORTANT: kk_generate_sparse_matrix does not sort the rows, if it did this
+  //wouldn't test anything
+  crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>
+    (numRows, numRows, nnz, 2, numRows / 2);
+  auto rowmap = A.graph.row_map;
+  auto entries = A.graph.entries;
+  auto values = A.values;
+  Kokkos::View<size_type*, Kokkos::HostSpace> rowmapHost("rowmap host", numRows + 1);
+  Kokkos::View<lno_t*, Kokkos::HostSpace> entriesHost("sorted entries host", nnz);
+  Kokkos::View<scalar_t*, Kokkos::HostSpace> valuesHost("sorted values host", nnz);
+  Kokkos::deep_copy(rowmapHost, rowmap);
+  Kokkos::deep_copy(entriesHost, entries);
+  Kokkos::deep_copy(valuesHost, values);
+  //sort one row at a time on host using STL.
+  {
+    using ColValue = std::pair<lno_t, scalar_t>;
+    for(lno_t i = 0; i < numRows; i++)
+    {
+      std::vector<ColValue> rowCopy;
+      for(size_type j = rowmapHost(i); j < rowmapHost(i + 1); j++)
+        rowCopy.emplace_back(entriesHost(j), valuesHost(j));
+      std::sort(rowCopy.begin(), rowCopy.end(),
+          [](const ColValue& lhs, const ColValue& rhs)
+          {
+            return lhs.first < rhs.first;
+          });
+      //write sorted row back
+      for(size_t j = 0; j < rowCopy.size(); j++)
+      {
+        entriesHost(rowmapHost(i) + j) = rowCopy[j].first;
+        valuesHost(rowmapHost(i) + j) = rowCopy[j].second;
+      }
+    }
+  }
+  //call the actual sort routine being tested
+  if(doValues)
+  {
+    KokkosKernels::Impl::sort_crs_matrix
+      <exec_space, rowmap_t, entries_t, values_t>
+      (A.graph.row_map, A.graph.entries, A.values);
+  }
+  else
+  {
+    KokkosKernels::Impl::sort_crs_graph
+      <exec_space, rowmap_t, entries_t>
+      (A.graph.row_map, A.graph.entries);
+  }
+  //Copy to host and compare
+  Kokkos::View<lno_t*, Kokkos::HostSpace> entriesOut("sorted entries host", nnz);
+  Kokkos::View<scalar_t*, Kokkos::HostSpace> valuesOut("sorted values host", nnz);
+  Kokkos::deep_copy(entriesOut, entries);
+  Kokkos::deep_copy(valuesOut, values);
+  for(size_type i = 0; i < nnz; i++)
+  {
+    EXPECT_EQ(entriesHost(i), entriesOut(i)) << "Sorted column indices are wrong!";
+    if(doValues)
+    {
+      EXPECT_EQ(valuesHost(i), valuesOut(i)) << "Sorted values are wrong!";
+    }
+  }
+}
+
 TEST_F(TestCategory, common_serial_radix) {
   //Test serial radix over some contiguous small arrays
   //1st arg is #arrays, 2nd arg is max subarray size
@@ -602,6 +678,18 @@ TEST_F( TestCategory, common_device_bitonic) {
   testBitonicSortDescending<TestExecSpace>();
   //Test custom comparator: lexicographic comparison of 3-element struct
   testBitonicSortLexicographic<TestExecSpace>();
+}
+
+TEST_F( TestCategory, common_sort_crsgraph) {
+  testSortCRS<TestExecSpace>(10, 20, false);
+  testSortCRS<TestExecSpace>(100, 2000, false);
+  testSortCRS<TestExecSpace>(1000, 30000, false);
+}
+
+TEST_F( TestCategory, common_sort_crsmatrix) {
+  testSortCRS<TestExecSpace>(10, 20, true);
+  testSortCRS<TestExecSpace>(100, 2000, true);
+  testSortCRS<TestExecSpace>(1000, 30000, true);
 }
 
 #endif
