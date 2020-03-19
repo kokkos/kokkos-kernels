@@ -412,6 +412,143 @@ struct TransposeMatrix{
   }
 };
 
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename in_scalar_view_t,
+          typename out_row_view_t,
+          typename out_nnz_view_t,
+          typename out_scalar_view_t,
+          typename tempwork_row_view_t,
+          typename MyExecSpace>
+void transpose_matrix(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    typename in_nnz_view_t::non_const_value_type num_cols,
+    in_row_view_t xadj,
+    in_nnz_view_t adj,
+    in_scalar_view_t vals,
+    out_row_view_t t_xadj,    //pre-allocated -- initialized with 0
+    out_nnz_view_t t_adj,     //pre-allocated -- no need for initialize
+    out_scalar_view_t t_vals  //pre-allocated -- no need for initialize
+    )
+{
+  //allocate some memory for work for row pointers
+  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
+
+  //create the functor for tranpose.
+  typedef TransposeMatrix <
+      in_row_view_t, in_nnz_view_t, in_scalar_view_t,
+      out_row_view_t, out_nnz_view_t, out_scalar_view_t,
+      tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
+
+  typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
+  typedef typename TransposeFunctor_t::team_fill_policy_t fill_tp_t;
+
+  typename in_row_view_t::non_const_value_type nnz = adj.extent(0);
+
+  //determine vector lanes per thread
+  int thread_size = kk_get_suggested_vector_size(num_rows, nnz, kk_get_exec_space_type<MyExecSpace>());
+
+  //determine threads per team
+  int team_size = kk_get_suggested_team_size(thread_size, kk_get_exec_space_type<MyExecSpace>());
+
+  TransposeFunctor_t tm ( num_rows, num_cols, xadj, adj, vals,
+                          t_xadj, t_adj, t_vals,
+                          tmp_row_view,
+                          true,
+                          team_size);
+
+  Kokkos::parallel_for("KokkosKernels::Impl::transpose_matrix::S0", count_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
+
+  kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
+
+  Kokkos::deep_copy(tmp_row_view, t_xadj);
+
+  Kokkos::parallel_for("KokkosKernels::Impl::transpose_matrix::S1", fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
+
+  MyExecSpace().fence();
+}
+
+template <typename crsMat_t>
+crsMat_t transpose_matrix(const crsMat_t& A)
+{
+  //Allocate views and call the other version of transpose_matrix
+  using c_rowmap_t = typename crsMat_t::row_map_type;
+  using c_entries_t = typename crsMat_t::index_type;
+  using c_values_t = typename crsMat_t::values_type;
+  using rowmap_t = typename crsMat_t::row_map_type::non_const_type;
+  using entries_t = typename crsMat_t::index_type::non_const_type;
+  using values_t = typename crsMat_t::values_type::non_const_type;
+  rowmap_t AT_rowmap("Transpose rowmap", A.numCols() + 1);
+  entries_t AT_entries(
+      Kokkos::ViewAllocateWithoutInitializing("Transpose entries"), A.nnz());
+  values_t AT_values(
+      Kokkos::ViewAllocateWithoutInitializing("Transpose values"), A.nnz());
+  transpose_matrix<
+    c_rowmap_t, c_entries_t, c_values_t,
+    rowmap_t, entries_t, values_t,
+    rowmap_t, typename crsMat_t::execution_space>(
+        A.numRows(), A.numCols(),
+        A.graph.row_map, A.graph.entries, A.values,
+        AT_rowmap, AT_entries, AT_values);
+  //And construct the transpose crsMat_t
+  return crsMat_t("Transpose", A.numCols(), A.numRows(), A.nnz(), AT_values, AT_rowmap, AT_entries);
+}
+
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename out_row_view_t,
+          typename out_nnz_view_t,
+          typename tempwork_row_view_t,
+          typename MyExecSpace>
+void transpose_graph(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    typename in_nnz_view_t::non_const_value_type num_cols,
+    in_row_view_t xadj,
+    in_nnz_view_t adj,
+    out_row_view_t t_xadj, //pre-allocated -- initialized with 0
+    out_nnz_view_t t_adj   //pre-allocated -- no need for initialize
+    )
+{
+  //allocate some memory for work for row pointers
+  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
+
+  in_nnz_view_t tmp1;
+  out_nnz_view_t tmp2;
+
+  //create the functor for tranpose.
+  typedef TransposeMatrix <
+      in_row_view_t, in_nnz_view_t, in_nnz_view_t,
+      out_row_view_t, out_nnz_view_t, out_nnz_view_t,
+      tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
+
+  typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
+  typedef typename TransposeFunctor_t::team_fill_policy_t fill_tp_t;
+
+  typename in_row_view_t::non_const_value_type nnz = adj.extent(0);
+
+  //determine vector lanes per thread
+  int thread_size = kk_get_suggested_vector_size(num_rows, nnz, kk_get_exec_space_type<MyExecSpace>());
+
+  //determine threads per team
+  int team_size = kk_get_suggested_team_size(thread_size, kk_get_exec_space_type<MyExecSpace>());
+
+  TransposeFunctor_t tm ( num_rows, num_cols, xadj, adj, tmp1,
+                          t_xadj, t_adj, tmp2,
+                          tmp_row_view,
+                          false,
+                          team_size);
+
+  Kokkos::parallel_for("KokkosKernels::Impl::transpose_graph::S0", count_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
+
+  kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
+
+  Kokkos::deep_copy(tmp_row_view, t_xadj);
+
+  Kokkos::parallel_for("KokkosKernels::Impl::transpose_graph::S1", fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
+
+  MyExecSpace().fence();
+}
+
 template <typename forward_map_type, typename reverse_map_type>
 struct Fill_Reverse_Scale_Functor{
 
@@ -863,6 +1000,21 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const val
   }
 }
 
+template <typename crsMat_t>
+void sort_crs_matrix(const crsMat_t& A)
+{
+  //Note: rowmap_t has const values, but that's OK as sorting doesn't modify it
+  using rowmap_t = typename crsMat_t::row_map_type;
+  using entries_t = typename crsMat_t::index_type::non_const_type;
+  using values_t = typename crsMat_t::values_type::non_const_type;
+  using exec_space = typename crsMat_t::execution_space;
+  //NOTE: the rowmap of a StaticCrsGraph is const-valued, but the
+  //entries and CrsMatrix values are non-const (so sorting them directly
+  //is allowed)
+  sort_crs_matrix<exec_space, rowmap_t, entries_t, values_t>
+    (A.graph.row_map, A.graph.entries, A.values);
+}
+
 // Sort a CRS graph: within each row, sort entries ascending by column.
 template<typename execution_space, typename rowmap_t, typename entries_t>
 void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
@@ -884,7 +1036,8 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
   }
   else
   {
-    //Try to get teamsize to be largest power of 2 not greater than avg entries per row
+    //Try to get teamsize to be largest power of 2 less than or equal to
+    //half the entries per row. 0.5 * #entries is bitonic's parallelism within a row.
     //TODO (probably important for performnce): add thread-level sort also, and use that
     //for small avg degree. But this works for now.
     int teamSize = 1;
@@ -899,6 +1052,134 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
   }
 }
 
+template<typename rowmap_t, typename entries_t>
+struct MergedRowmapFunctor
+{
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+  using c_rowmap_t = typename rowmap_t::const_type;
+
+  //Precondition: entries are sorted within each row
+  MergedRowmapFunctor(const rowmap_t& mergedCounts_, const c_rowmap_t& rowmap_, const entries_t& entries_)
+    : mergedCounts(mergedCounts_), rowmap(rowmap_), entries(entries_)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(lno_t row, size_type& lnewNNZ) const
+  {
+    size_type rowBegin = rowmap(row);
+    size_type rowEnd = rowmap(row + 1);
+    if(rowEnd == rowBegin)
+    {
+      //Row was empty to begin with
+      mergedCounts(row) = 0;
+      return;
+    }
+    //Otherwise, the first entry in the row exists
+    lno_t uniqueEntries = 1;
+    for(size_type j = rowBegin + 1; j < rowEnd; j++)
+    {
+      if(entries(j - 1) != entries(j))
+        uniqueEntries++;
+    }
+    mergedCounts(row) = uniqueEntries;
+    lnewNNZ += uniqueEntries;
+    if(row == lno_t((rowmap.extent(0) - 1) - 1))
+      mergedCounts(row + 1) = 0;
+  }
+
+  rowmap_t mergedCounts;
+  c_rowmap_t rowmap;
+  entries_t entries;
+};
+
+template<typename rowmap_t, typename entries_t, typename values_t>
+struct MergedEntriesFunctor
+{
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+  using scalar_t = typename values_t::non_const_value_type;
+
+  //Precondition: entries are sorted within each row
+  MergedEntriesFunctor(
+      const rowmap_t& rowmap_, const entries_t& entries_, const values_t& values_,
+      const rowmap_t& mergedRowmap_, const entries_t& mergedEntries_, const values_t& mergedValues_)
+    : rowmap(rowmap_), entries(entries_), values(values_),
+    mergedRowmap(mergedRowmap_), mergedEntries(mergedEntries_), mergedValues(mergedValues_)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(lno_t row) const
+  {
+    size_type rowBegin = rowmap(row);
+    size_type rowEnd = rowmap(row + 1);
+    if(rowEnd == rowBegin)
+    {
+      //Row was empty to begin with, nothing to do
+      return;
+    }
+    //Otherwise, accumulate the value for each column
+    scalar_t accumVal = values(rowBegin);
+    lno_t accumCol = entries(rowBegin);
+    size_type insertPos = mergedRowmap(row);
+    for(size_type j = rowBegin + 1; j < rowEnd; j++)
+    {
+      if(accumCol == entries(j))
+      {
+        //accumulate
+        accumVal += values(j);
+      }
+      else
+      {
+        //write out and reset
+        mergedValues(insertPos) = accumVal;
+        mergedEntries(insertPos) = accumCol;
+        insertPos++;
+        accumVal = values(j);
+        accumCol = entries(j);
+      }
+    }
+    //always left with the last unique entry
+    mergedValues(insertPos) = accumVal;
+    mergedEntries(insertPos) = accumCol;
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  values_t values;
+  rowmap_t mergedRowmap;
+  entries_t mergedEntries;
+  values_t mergedValues;
+};
+
+//Sort the rows of matrix, and merge duplicate entries.
+template<typename crsMat_t>
+crsMat_t sort_and_merge_matrix(const crsMat_t& A)
+{
+  using c_rowmap_t = typename crsMat_t::row_map_type;
+  using rowmap_t = typename crsMat_t::row_map_type::non_const_type;
+  using entries_t = typename crsMat_t::index_type::non_const_type;
+  using values_t = typename crsMat_t::values_type::non_const_type;
+  using size_type = typename rowmap_t::non_const_value_type;
+  using exec_space = typename crsMat_t::execution_space;
+  using range_t = Kokkos::RangePolicy<exec_space>;
+  sort_crs_matrix(A);
+  //Count entries per row into a new rowmap, in terms of merges that can be done
+  rowmap_t mergedRowmap(Kokkos::ViewAllocateWithoutInitializing("SortedMerged rowmap"), A.numRows() + 1);
+  size_type numCompressedEntries = 0;
+  Kokkos::parallel_reduce(range_t(0, A.numRows()),
+      MergedRowmapFunctor<rowmap_t, entries_t>(mergedRowmap, A.graph.row_map, A.graph.entries), numCompressedEntries);
+  //Prefix sum to get rowmap
+  kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(A.numRows() + 1, mergedRowmap);
+  entries_t mergedEntries("SortedMerged entries", numCompressedEntries);
+  values_t mergedValues("SortedMerged values", numCompressedEntries);
+  //Compute merged entries and values
+  Kokkos::parallel_for(range_t(0, A.numRows()),
+      MergedEntriesFunctor<c_rowmap_t, entries_t, values_t>
+      (A.graph.row_map, A.graph.entries, A.values,
+       mergedRowmap, mergedEntries, mergedValues));
+  //Finally, construct the new compressed matrix
+  return crsMat_t("SortedMerged", A.numRows(), A.numCols(), numCompressedEntries,
+      mergedValues, mergedRowmap, mergedEntries);
+}
 
 template <typename lno_view_t,
           typename lno_nnz_view_t,

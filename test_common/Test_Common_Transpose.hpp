@@ -49,7 +49,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Sort.hpp>
-#include <KokkosKernels_Utils.hpp>
+#include <KokkosKernels_SparseUtils.hpp>
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_default_types.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -87,9 +87,10 @@ void testTranspose(int numRows, int numCols, bool doValues)
   using rowmap_t = typename crsMat_t::row_map_type::non_const_type;
   using entries_t = typename crsMat_t::index_type::non_const_type;
   using values_t = typename crsMat_t::values_type::non_const_type;
-  size_type nnz = 20 * numRows;
+  size_type nnz = 10 * numRows;
+  //Generate a matrix that has 0 entries in some rows
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>
-    (numRows, numCols, nnz, 0, numRows / 2);
+    (numRows, numCols, nnz, 3 * 10, numRows / 2);
   //compute the transpose while unsorted, then transpose again
   rowmap_t t_rowmap("Rowmap^T", numCols + 1); //this view is initialized to 0
   entries_t t_entries(Kokkos::ViewAllocateWithoutInitializing("Entries^T"),
