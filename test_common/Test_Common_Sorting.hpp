@@ -665,6 +665,7 @@ void testSortAndMerge()
   crsMat_t input("Input", nrows, ncols, nnz,
       devInValues, devInRowmap, devInEntries);
   crsMat_t output = KokkosKernels::Impl::sort_and_merge_matrix(input);
+  exec_space().fence();
   EXPECT_EQ(output.numRows(), nrows);
   EXPECT_EQ(output.numCols(), ncols);
   auto outRowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), output.graph.row_map);
