@@ -51,7 +51,7 @@
 #include <KokkosBlas1_fill.hpp>
 #include <KokkosBlas1_nrm2.hpp>
 #include <KokkosKernels_config.h>
-#include "KokkosSparse_perftest_types.hpp"
+#include "KokkosKernels_default_types.hpp"
 #include <iostream>
 #include <vector>
 #include <string>

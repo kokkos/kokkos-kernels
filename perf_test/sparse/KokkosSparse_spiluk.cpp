@@ -63,7 +63,7 @@
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_perftest_types.hpp"
+#include "KokkosKernels_default_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))

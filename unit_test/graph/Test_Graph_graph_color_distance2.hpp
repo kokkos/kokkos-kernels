@@ -271,7 +271,7 @@ void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth
     auto G = A.graph;
     rowmap_t t_rowmap("rowmap^T", numCols + 1);
     entries_t t_entries("entries^T", G.entries.extent(0));
-    KokkosKernels::Impl::kk_transpose_graph
+    KokkosKernels::Impl::transpose_graph
       <c_rowmap_t, c_entries_t, rowmap_t, entries_t, rowmap_t, execution_space>
       (numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
     //TODO: remove me, shouldn't be needed even with UVM
@@ -342,7 +342,7 @@ void test_old_d2(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth, l
     auto G = A.graph;
     rowmap_t t_rowmap("rowmap^T", numCols + 1);
     entries_t t_entries("entries^T", G.entries.extent(0));
-    KokkosKernels::Impl::kk_transpose_graph
+    KokkosKernels::Impl::transpose_graph
       <c_rowmap_t, c_entries_t, rowmap_t, entries_t, rowmap_t, execution_space>
       (numRows, numCols, G.row_map, G.entries, t_rowmap, t_entries);
     auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), G.row_map);

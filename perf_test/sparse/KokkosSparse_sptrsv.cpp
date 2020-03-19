@@ -62,7 +62,7 @@
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_perftest_types.hpp"
+#include "KokkosKernels_default_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 
 //#define INTERNAL_CUSPARSE

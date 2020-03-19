@@ -59,7 +59,7 @@
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
 #include <KokkosSparse_spmv_struct_impl.hpp>
 #include <KokkosSparse_spmv_impl.hpp>
-#include "KokkosSparse_perftest_types.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 enum {STRUCT, UNSTR};
 enum {AUTO, DYNAMIC, STATIC};
