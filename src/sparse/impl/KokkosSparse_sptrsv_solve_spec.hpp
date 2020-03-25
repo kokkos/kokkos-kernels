@@ -161,6 +161,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
   {
     // Call specific algorithm type
     auto sptrsv_handle = handle->get_sptrsv_handle();
+    Kokkos::Profiling::pushRegion(sptrsv_handle->is_lower_tri() ? "KokkosSparse_sptrsv[lower]" : "KokkosSparse_sptrsv[upper]");
     if ( sptrsv_handle->is_lower_tri() ) {
       if ( sptrsv_handle->is_symbolic_complete() == false ) {
         Experimental::lower_tri_symbolic(*sptrsv_handle, row_map, entries);
@@ -195,6 +196,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
           Experimental::upper_tri_solve( *sptrsv_handle, row_map, entries, values, b, x);
       }
     }
+    Kokkos::Profiling::popRegion();
   }
 
 };
