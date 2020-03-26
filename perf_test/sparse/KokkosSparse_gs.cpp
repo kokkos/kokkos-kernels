@@ -232,8 +232,8 @@ int main(int argc, char** argv)
       device = "threads";
     #endif
   }
-  //Kokkos::initialize();
-  Kokkos::ScopeGuard kokkosScope (argc, argv);
+  Kokkos::initialize();
+  //Kokkos::ScopeGuard kokkosScope (argc, argv);
 
   bool run = false;
   #ifdef KOKKOS_ENABLE_SERIAL

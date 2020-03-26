@@ -623,9 +623,6 @@ namespace KokkosSparse{
     using ordinal_t = typename std::remove_const<input_ordinal_t>::type;
     using size_type = typename std::remove_const<input_size_t>::type;
 
-    using input_crsmat_t = KokkosSparse::CrsMatrix <input_scalar_t, input_ordinal_t, ExecutionSpace, void, input_size_t>;
-    using input_graph_t  = typename input_crsmat_t::StaticCrsGraphType;
-
     using crsmat_t = KokkosSparse::CrsMatrix <scalar_t, ordinal_t, ExecutionSpace, void, size_type>;
     using graph_t  = typename crsmat_t::StaticCrsGraphType;
 
@@ -654,18 +651,8 @@ namespace KokkosSparse{
     TwoStageGaussSeidelHandle () :
     GSHandle (GS_TWOSTAGE),
     nrows (0),
-    ncols (0)
+    nrhs (1)
     {}
-
-    void setA (input_crsmat_t *A) {
-      int nrows_ = A->numRows ();
-      int ncols_ = 3;
-      initVectors (nrows_, ncols_);
-      this->crsmatA = A;
-    }
-    input_crsmat_t* getA () {
-      return this->crsmatA;
-    }
 
     void setL (crsmat_t L) {
       this->crsmatL = L;
@@ -688,13 +675,13 @@ namespace KokkosSparse{
       return this->D;
     }
 
-    void initVectors (int nrows_, int ncols_) {
-      if (this->nrows != nrows_ || this->ncols != ncols_) {
-        this->localR = vector_view_t ("temp", nrows_, ncols_);
-        this->localT = vector_view_t ("temp", nrows_, ncols_);
-        this->localZ = vector_view_t ("temp", nrows_, ncols_);
+    void initVectors (int nrows_, int nrhs_) {
+      if (this->nrows != nrows_ || this->nrhs != nrhs_) {
+        this->localR = vector_view_t ("temp", nrows_, nrhs_);
+        this->localT = vector_view_t ("temp", nrows_, nrhs_);
+        this->localZ = vector_view_t ("temp", nrows_, nrhs_);
         this->nrows = nrows_;
-        this->ncols = ncols_;
+        this->nrhs = nrhs_;
       }
     }
     vector_view_t getVectorR () {
@@ -708,13 +695,12 @@ namespace KokkosSparse{
     }
 
   private:
-    input_crsmat_t *crsmatA;
     values_view_t D;
     crsmat_t crsmatL;
     crsmat_t crsmatU;
 
     int nrows;
-    int ncols;
+    int nrhs;
     vector_view_t localR;
     vector_view_t localT;
     vector_view_t localZ;
