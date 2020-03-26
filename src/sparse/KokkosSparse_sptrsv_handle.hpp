@@ -213,26 +213,26 @@ public:
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-  typedef typename execution_space::memory_space  supercols_memory_space;
+  using supercols_memory_space = typename execution_space::memory_space;
 
-  typedef Kokkos::DefaultHostExecutionSpace                      supercols_host_execution_space;
-  typedef typename supercols_host_execution_space::memory_space  supercols_host_memory_space;
+  using supercols_host_execution_space = Kokkos::DefaultHostExecutionSpace;
+  using supercols_host_memory_space = typename supercols_host_execution_space::memory_space;
 
-  typedef Kokkos::View<int*, supercols_memory_space>       integer_view_t;
-  typedef Kokkos::View<int*, supercols_host_memory_space>  integer_view_host_t;
+  using integer_view_t = Kokkos::View<int*, supercols_memory_space>;
+  using integer_view_host_t = Kokkos::View<int*, supercols_host_memory_space>;
 
-  typedef typename Kokkos::View<scalar_t*, memory_space> workspace_t;
-
-  //
-  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type> host_crsmat_t;
-  typedef KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type> crsmat_t;
+  using workspace_t = typename Kokkos::View<scalar_t*, memory_space>;
 
   //
-  typedef typename host_crsmat_t::StaticCrsGraphType host_graph_t;
-  typedef typename      crsmat_t::StaticCrsGraphType      graph_t;
+  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type>;
+  using crsmat_t      = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type>;
 
   //
-  typedef typename std::vector<crsmat_t> crsmat_list_t;
+  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
+  using graph_t      = typename      crsmat_t::StaticCrsGraphType;
+
+  //
+  using crsmat_list_t = typename std::vector<crsmat_t>;
 #endif
 
 private:
@@ -338,6 +338,7 @@ private:
 
   // 
   bool merge_supernodes;
+  bool invert_diagonal;
   bool invert_offdiagonal;
   int *etree;
 
@@ -411,6 +412,7 @@ public:
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     , merge_supernodes (false)
+    , invert_diagonal (true)
     , invert_offdiagonal (false)
     , etree (nullptr)
     , sup_size_unblocked (100)
@@ -437,22 +439,22 @@ public:
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
   void set_supernodes (signed_integral_t nsuper_, int *supercols_, int *etree_) {
+    // set etree
+    this->etree_host = integer_view_host_t (etree_, nsuper_);
+    // set supernodes
     integer_view_host_t supercols_view = integer_view_host_t (supercols_, 1+nsuper_);
     set_supernodes (nsuper_, supercols_view, etree_);
   }
 
   void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_, int *etree_) {
-    int default_sup_size_unblocked_ = 100;
-    int default_sup_size_blocked_ = 200;
-    set_supernodes(nsuper_, supercols_, etree_, default_sup_size_unblocked_, default_sup_size_blocked_);
+    // set etree
+    this->etree_host = integer_view_host_t (etree_, nsuper_);
+    // set supernodes
+    set_supernodes(nsuper_, supercols_);
   }
 
-  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_view, int *etree_,
-                       int sup_size_unblocked_, int sup_size_blocked_) {
+  void set_supernodes (signed_integral_t nsuper_, integer_view_host_t supercols_view) {
     this->nsuper = nsuper_;
-
-    // etree
-    this->etree_host = integer_view_host_t (etree_, nsuper_);
 
     // supercols
     integer_view_host_t supercols_subview (supercols_view.data (), 1+nsuper_);
@@ -467,8 +469,6 @@ public:
     this->work_offset = integer_view_t ("workoffset", nsuper_);
 
     // kernel type 
-    this->sup_size_unblocked = sup_size_unblocked_;
-    this->sup_size_blocked = sup_size_blocked_;
     this->diag_kernel_type_host = integer_view_host_t ("diag_kernel_type_host", nsuper_);
     this->diag_kernel_type = integer_view_t ("diag_kernel_type", nsuper_);
     this->kernel_type_host = integer_view_host_t ("kernel_type_host", nsuper_);
@@ -567,6 +567,15 @@ public:
 
   int* get_etree() {
     return this->etree;
+  }
+
+  // specify to invertt diagonal
+  void set_invert_diagonal(bool flag) {
+    this->invert_diagonal = flag;
+  }
+
+  bool get_invert_diagonal() {
+    return this->invert_diagonal;
   }
 
   // specify to apply the inverse of diagonal to the offdiagonal blocks
