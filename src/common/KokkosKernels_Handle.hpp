@@ -182,6 +182,11 @@ public:
   typedef typename KokkosSparse::
     ClusterGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       ClusterGaussSeidelHandleType;
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+  typedef typename KokkosSparse::
+    TwoStageGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      TwoStageGaussSeidelHandleType;
+#endif
 
   typedef typename KokkosSparse::
     SPGEMMHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
@@ -521,8 +526,21 @@ public:
   void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+    if (gs_algorithm == KokkosSparse::GS_TWOSTAGE)
+      this->gsHandle = new TwoStageGaussSeidelHandleType();
+    else
+#endif
+      this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
   }
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+  TwoStageGaussSeidelHandleType *get_twostage_gs_handle() {
+    auto gs2 = dynamic_cast<TwoStageGaussSeidelHandleType*>(this->gsHandle);
+    if(this->gsHandle && !gs2)
+      throw std::runtime_error("GaussSeidelHandle exists but is not set up for two-stage GS.");
+    return gs2;
+  }
+#endif
   void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;

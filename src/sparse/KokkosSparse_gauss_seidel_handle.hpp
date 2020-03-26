@@ -42,16 +42,22 @@
 //@HEADER
 */
 
+
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Utils.hpp>
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+#include <KokkosSparse_CrsMatrix.hpp>
+#endif
+
 #ifndef _GAUSSSEIDELHANDLE_HPP
 #define _GAUSSSEIDELHANDLE_HPP
 //#define VERBOSE
 
 namespace KokkosSparse{
 
-  enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER};
+  enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER, GS_TWOSTAGE};
+  enum GSDirection{GS_FORWARD, GS_BACKWARD, GS_SYMMETRIC};
   enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_BALLOON, CLUSTER_CUTHILL_MCKEE, CLUSTER_DO_NOTHING, NUM_CLUSTERING_ALGORITHMS};
 
   inline const char* getClusterAlgoName(ClusteringAlgorithm ca)
@@ -600,7 +606,120 @@ namespace KokkosSparse{
 
     ClusteringAlgorithm get_clustering_algo() const {return this->cluster_algo;}
   };
-}
 
+
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+  template <typename input_size_t, typename input_ordinal_t, typename input_scalar_t,
+            class ExecutionSpace,
+            class TemporaryMemorySpace,
+            class PersistentMemorySpace>
+  class TwoStageGaussSeidelHandle
+  : public GaussSeidelHandle<input_size_t, input_ordinal_t, input_scalar_t,
+                             ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace>
+  {
+  public:
+    using memory_space = typename ExecutionSpace::memory_space;
+    using scalar_t  = typename std::remove_const<input_scalar_t>::type;
+    using ordinal_t = typename std::remove_const<input_ordinal_t>::type;
+    using size_type = typename std::remove_const<input_size_t>::type;
+
+    using input_crsmat_t = KokkosSparse::CrsMatrix <input_scalar_t, input_ordinal_t, ExecutionSpace, void, input_size_t>;
+    using input_graph_t  = typename input_crsmat_t::StaticCrsGraphType;
+
+    using crsmat_t = KokkosSparse::CrsMatrix <scalar_t, ordinal_t, ExecutionSpace, void, size_type>;
+    using graph_t  = typename crsmat_t::StaticCrsGraphType;
+
+    using input_row_map_view_t = typename graph_t::row_map_type;
+    using input_entries_view_t = typename graph_t::entries_type;
+    using input_values_view_t  = typename crsmat_t::values_type;
+
+    using const_row_map_view_t = typename input_row_map_view_t::const_type;
+    using       row_map_view_t = typename input_row_map_view_t::non_const_type;
+
+    using const_entries_view_t = typename input_entries_view_t::const_type;
+    using       entries_view_t = typename input_entries_view_t::non_const_type;
+
+    using memory_traits = typename input_values_view_t::traits::memory_traits;
+    using const_values_view_t = typename input_values_view_t::const_type;
+    using       values_view_t = typename input_values_view_t::non_const_type;
+
+    using const_ordinal_t = typename const_entries_view_t::value_type;
+    using const_scalar_t  = typename const_values_view_t::value_type;
+
+    using GSHandle = GaussSeidelHandle<input_size_t, input_ordinal_t, input_scalar_t,
+                                       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace>;
+
+    using vector_view_t = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, ExecutionSpace>;
+
+    TwoStageGaussSeidelHandle () :
+    GSHandle (GS_TWOSTAGE),
+    nrows (0),
+    ncols (0)
+    {}
+
+    void setA (input_crsmat_t *A) {
+      int nrows_ = A->numRows ();
+      int ncols_ = 3;
+      initVectors (nrows_, ncols_);
+      this->crsmatA = A;
+    }
+    input_crsmat_t* getA () {
+      return this->crsmatA;
+    }
+
+    void setL (crsmat_t L) {
+      this->crsmatL = L;
+    }
+    crsmat_t getL () {
+      return this->crsmatL;
+    }
+
+    void setU (crsmat_t U) {
+      this->crsmatU = U;
+    }
+    crsmat_t getU () {
+      return this->crsmatU;
+    }
+
+    void setD (values_view_t D_) {
+      this->D = D_;
+    }
+    values_view_t getD () {
+      return this->D;
+    }
+
+    void initVectors (int nrows_, int ncols_) {
+      if (this->nrows != nrows_ || this->ncols != ncols_) {
+        this->localR = vector_view_t ("temp", nrows_, ncols_);
+        this->localT = vector_view_t ("temp", nrows_, ncols_);
+        this->localZ = vector_view_t ("temp", nrows_, ncols_);
+        this->nrows = nrows_;
+        this->ncols = ncols_;
+      }
+    }
+    vector_view_t getVectorR () {
+      return this->localR;
+    }
+    vector_view_t getVectorT () {
+      return this->localT;
+    }
+    vector_view_t getVectorZ () {
+      return this->localZ;
+    }
+
+  private:
+    input_crsmat_t *crsmatA;
+    values_view_t D;
+    crsmat_t crsmatL;
+    crsmat_t crsmatU;
+
+    int nrows;
+    int ncols;
+    vector_view_t localR;
+    vector_view_t localT;
+    vector_view_t localZ;
+  };
+#endif
+}
 #endif
 

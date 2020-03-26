@@ -101,12 +101,17 @@ int run_gauss_seidel(
   kh.set_dynamic_scheduling(true);
   if(gs_algorithm == GS_CLUSTER)
     kh.create_gs_handle(cluster_algorithm, cluster_size);
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+  else if(gs_algorithm == GS_TWOSTAGE)
+    kh.create_gs_handle(gs_algorithm);
+#endif
   else
     kh.create_gs_handle(GS_DEFAULT);
 
   const size_t num_rows_1 = input_mat.numRows();
   const size_t num_cols_1 = input_mat.numCols();
-  const int apply_count = 100;
+  //const int apply_count = 100;
+  const int apply_count = 1;
 
   gauss_seidel_symbolic
     (&kh, num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, is_symmetric_graph);
@@ -270,8 +275,10 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
     //KokkosKernels::Impl::print_1Dview(x_vector);
     KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
+    std::cout << result_norm_res / initial_norm_res << std::endl;
     EXPECT_LT(result_norm_res, initial_norm_res);
   }
+  std::cout << std::endl;
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
   for(int csize = 0; csize < 3; csize++)
@@ -291,6 +298,21 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
     }
   }
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+  //*** Two-stage version ****
+  for (int apply_type = 0; apply_type < apply_count; ++apply_type)
+  {
+    Kokkos::Impl::Timer timer1;
+    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    run_gauss_seidel<crsMat_t, scalar_view_t, device>(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
+    //double gs = timer1.seconds();
+    //KokkosKernels::Impl::print_1Dview(x_vector);
+    KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
+    mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
+    std::cout << result_norm_res / initial_norm_res << std::endl;
+    EXPECT_LT(result_norm_res, initial_norm_res);
+  }
+#endif
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -348,9 +370,12 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
       mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
           Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
+      std::cout << res / initial_norms[i] << " ";
       EXPECT_LT(res, initial_norms[i]);
     }
+    std::cout << std::endl;
   }
+  std::cout << std::endl;
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
   for(int csize = 0; csize < 3; csize++)
@@ -380,6 +405,33 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
     }
   }
+#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+  //*** Two-stage version ****
+  for(int apply_type = 0; apply_type < apply_count; ++apply_type)
+  {
+    Kokkos::Impl::Timer timer1;
+    //Zero out X before solving
+    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    run_gauss_seidel<crsMat_t, scalar_view2d_t, device>(
+        input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
+    Kokkos::deep_copy(x_host, x_vector);
+    for(lno_t i = 0; i < numVecs; i++)
+    {
+      scalar_t diffDot = 0;
+      for(lno_t j = 0; j < numRows; j++)
+      {
+        scalar_t diff = x_host(j, i) - solution_x(j, i);
+        diffDot += diff * diff;
+      }
+      mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
+          Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
+      std::cout << res / initial_norms[i] << " ";
+      EXPECT_LT(res, initial_norms[i]);
+    }
+    std::cout << std::endl;
+  }
+  //*** Cluster-coloring version ****
+#endif
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
