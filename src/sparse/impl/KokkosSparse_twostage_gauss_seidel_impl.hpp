@@ -57,17 +57,15 @@
 #include "KokkosBlas1_mult.hpp"
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosSparse_spmv.hpp"
-#define KOKKOSSPARSE_IMPL_CLASSICAL_GS
-#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS
- //#include "KokkosSparse_sptrsv_handle.hpp"
- #include "KokkosSparse_sptrsv.hpp"
-#endif
+// needed for classical GS
+#include "KokkosSparse_sptrsv.hpp"
 
 //FOR DEBUGGING
 #include "KokkosBlas1_nrm2.hpp"
 
 #define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV
-#define IFPACK_GS_JR_EXPLICIT_RESIDUAL
+#define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_SPLIT_NNZ_COUNT
+
 
 namespace KokkosSparse{
   namespace Impl{
@@ -167,7 +165,6 @@ namespace KokkosSparse{
         output_entries_view_t  entries2;
         output_values_view_t   values2;
 
-#define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_SPLIT_NNZ_COUNT
 #ifdef KOKKOSSPARSE_IMPL_TWOSTAGE_GS_SPLIT_NNZ_COUNT
         // for counting nnz
         TwostageGaussSeidel_functor (
@@ -688,16 +685,16 @@ namespace KokkosSparse{
         gsHandle->setL (crsmatL);
         gsHandle->setU (crsmatU);
         gsHandle->setD (viewD);
-#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS
         if (!(gsHandle->isTwoStage ())) {
+          // create SpTRSV handles for classical GS
           using namespace KokkosSparse::Experimental;
+          // TODO: figure out how to use CuSPARSE
           #if 1 // !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA)
           using namespace KokkosSparse::Experimental;
           sptrsv_symbolic (handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries);
           sptrsv_symbolic (handle->get_gs_sptrsvU_handle(), rowmap_viewL, crsmatU.graph.entries);
           #endif
         }
-#endif
       }
 
 
@@ -743,15 +740,14 @@ namespace KokkosSparse{
         timer.reset();
 #endif
 
-#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS
         if (!(gsHandle->isTwoStage ())) {
+          // TODO: figure out how to use CuSPARSE
           #if 0 // defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
           using namespace KokkosSparse::Experimental;
           sptrsv_symbolic (handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries, values_viewL);
           sptrsv_symbolic (handle->get_gs_sptrsvU_handle(), rowmap_viewL, crsmatU.graph.entries, values_viewU);
           #endif
         }
-#endif
       }
 
 
@@ -821,7 +817,6 @@ namespace KokkosSparse{
           NumSweeps *= 2;
         }
         for (int sweep = 0; sweep < NumSweeps; ++sweep) {
-          #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL)
           // R = B - A*x
           KokkosBlas::scal (localR, one, localB);
           if (sweep > 0 || !init_zero_x_vector) {
@@ -830,41 +825,12 @@ namespace KokkosSparse{
                              localX,
                         one, localR);
           }
-          #else // !defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL)
-          if (direction == GS_FORWARD ||
-             (direction == GS_SYMMETRIC && sweep%2 == 0)) {
-            // R = B - U*x
-            for (int i = 0; i < nrows; i++) {
-              for (int j = 0; j < nrhs; j++) {
-                localR (i, j) = localB (i, j);
-                for (ordinal_t k = rowmap_view (i); k < rowmap_view (i+1); k++) {
-                  if (entries (k) > i) {
-                    localR (i, j) -= values(k) * localX (entries (k), j);
-                  }
-                }
-              }
-            }
-          }
-          else {
-            // R = B - L*x
-            for (int i = 0; i < nrows; i++) {
-              for (int j = 0; j < nrhs; j++) {
-                localR (i, j) = localB (i, j);
-                for (ordinal_t k = rowmap_view (i); k < rowmap_view (i+1); k++) {
-                  if (entries (k) < i || entries (k) >= nrows) {
-                    localR (i, j) -= values(k) * localX (entries (k), j);
-                  }
-                }
-              }
-            }
-          }
-          #endif
 
           if (!two_stage) { // ===== sparse-triangular solve =====
             if (direction == GS_FORWARD ||
                (direction == GS_SYMMETRIC && sweep%2 == 0)) {
               // T = (L+D)^{-1} * R
-              #if 1
+              // NOTE: need to go over RHSs
               using namespace KokkosSparse::Experimental;
               for (int j = 0; j < nrhs; j++) {
                 using single_vector_view_t = Kokkos::View<scalar_t*, Kokkos::LayoutLeft, execution_space>;
@@ -874,26 +840,9 @@ namespace KokkosSparse{
                 single_vector_view_t Zj (localZj.data (), nrows);
                 sptrsv_solve (handle->get_gs_sptrsvL_handle(), crsmatL.graph.row_map, crsmatL.graph.entries, crsmatL.values, Rj, Zj);
               }
-              #else
-              for (int i = 0; i < nrows; i++) {
-                for (int j = 0; j < nrhs; j++) {
-                  scalar_t d = zero;
-                  localZ (i, j) = localR (i, j);
-                  for (int k = rowmap_view (i); k < rowmap_view (i+1); k++) {
-                    if (column_view (k) == i) {
-                      d = values_view (k);
-                    } else if (column_view (k) < i) {
-                      localZ (i, j) -= values_view(k) * localZ (column_view (k), j);
-                    }
-                  } 
-                  localZ (i, j) /= d;
-                }
-              }
-              #endif
             } else {
-              // T = (D+U)^{-1} * R
-              #if 1
               using namespace KokkosSparse::Experimental;
+              // NOTE: need to go over RHSs
               for (int j = 0; j < nrhs; j++) {
                 using single_vector_view_t = Kokkos::View<scalar_t*, Kokkos::LayoutLeft, execution_space>;
                 auto localRj = Kokkos::subview (localR, Kokkos::ALL (), range_type (j, j+1));
@@ -902,28 +851,10 @@ namespace KokkosSparse{
                 single_vector_view_t Zj (localZj.data (), nrows);
                 sptrsv_solve (handle->get_gs_sptrsvU_handle(), crsmatU.graph.row_map, crsmatU.graph.entries, crsmatU.values, Rj, Zj);
               }
-              #else
-              for (int i = nrows-1; i >= 0; i--) {
-                for (int j = 0; j < nrhs; j++) {
-                  scalar_t d = zero;
-                  localZ (i, j) = localR (i, j);
-                  for (int k = rowmap_view (i); k < rowmap_view (i+1); k++) {
-                    if (column_view (k) == i) {
-                      d = values_view (k);
-                    } else if (column_view (k) > i && column_view (k) < nrows) {
-                      localZ (i, j) -= values_view (k) * localZ (column_view (k), j);
-                    }
-                  }
-                  localZ (i, j) /= d;
-                }
-              }
-              #endif
             }
-            #if !defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
-            #endif
           } else {// ====== inner Jacobi-Richardson =====
             // compute starting vector: T = D^{-1}*R
-            #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL) && defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
+            #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
             if (NumInnerSweeps == 0) {
               // this is Jacobi-Richardson X_{k+1} := X_{k} + D^{-1}(b-A*X_{k})
               // copy to localZ (output of JR iteration)
@@ -973,22 +904,12 @@ namespace KokkosSparse{
               #endif
             } // end of inner Jacobi Richardson
           }
-
-          #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL)
-           // Y = X + T
-           auto localY = Kokkos::subview (localX, range_type(0, nrows), Kokkos::ALL ());
-           #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
-           KokkosBlas::axpy (one, localZ, localY);
-           #else
-           KokkosBlas::axpy (one, localT, localY);
-           #endif
+          // Y = X + T
+          auto localY = Kokkos::subview (localX, range_type(0, nrows), Kokkos::ALL ());
+          #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
+          KokkosBlas::axpy (one, localZ, localY);
           #else
-          // Y = T
-          for (int i = 0; i < nrows; i++) {
-            for (int j = 0; j < nrhs; j++) {
-              localX (i, j) = localT (i, j);
-            }
-          }
+          KokkosBlas::axpy (one, localT, localY);
           #endif
         } // end of outer GS sweep
       }

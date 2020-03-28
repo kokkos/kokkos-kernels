@@ -46,9 +46,8 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Utils.hpp>
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
- #include <KokkosSparse_CrsMatrix.hpp>
-#endif
+// needed for two-stage/classical GS
+#include <KokkosSparse_CrsMatrix.hpp>
 
 #ifndef _GAUSSSEIDELHANDLE_HPP
 #define _GAUSSSEIDELHANDLE_HPP
@@ -608,7 +607,8 @@ namespace KokkosSparse{
   };
 
 
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+  // -------------------------------------
+  // Handle for Two-stage/Classical GS
   template <typename input_size_t, typename input_ordinal_t, typename input_scalar_t,
             class ExecutionSpace,
             class TemporaryMemorySpace,
@@ -741,7 +741,7 @@ namespace KokkosSparse{
     bool two_stage;
     int num_inner_sweeps;
   };
-#endif
+  // -------------------------------------
 }
 #endif
 
