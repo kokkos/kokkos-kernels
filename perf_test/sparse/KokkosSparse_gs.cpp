@@ -117,8 +117,9 @@ void runGS(string matrixPath, string devName, bool symmetric, bool twostage, boo
   for(int clusterSize : clusterSizes)
   {
     //cluster size of 1 is standard multicolor GS
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
+
     if(twostage || classic) {
+      // Two-stage or Classical GS
       if (classic) {
         std::cout << "\n\n***** RUNNING CLASSICAL SGS (two-stage with innter triangular solve)\n";
       } else {
@@ -127,9 +128,7 @@ void runGS(string matrixPath, string devName, bool symmetric, bool twostage, boo
       //this constructor is for two-stage
       kh.create_gs_handle(KokkosSparse::GS_TWOSTAGE);
       kh.set_gs_twostage(!classic, nrows);
-    } else
-#endif
-    if(clusterSize == 1)
+    } else if(clusterSize == 1)
     {
       std::cout << "\n\n***** RUNNING POINT COLORING SGS\n";
       //this constructor is for point coloring

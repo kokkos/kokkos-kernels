@@ -66,7 +66,7 @@
 //FOR DEBUGGING
 #include "KokkosBlas1_nrm2.hpp"
 
-#define IFPACK_GS_JR_MERGE_SPMV
+#define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV
 #define IFPACK_GS_JR_EXPLICIT_RESIDUAL
 
 namespace KokkosSparse{
@@ -364,7 +364,7 @@ namespace KokkosSparse{
               }
             }
           }
-          #if defined(IFPACK_GS_JR_MERGE_SPMV)
+          #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
           if (two_stage) {
             for (ordinal_t k = row_map (i); k < nnz; k++) {
               values (k) *= diags (i);
@@ -429,7 +429,7 @@ namespace KokkosSparse{
               nnz ++;
             }
           }
-          #if defined(IFPACK_GS_JR_MERGE_SPMV)
+          #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
           if (two_stage) {
             for (ordinal_t k = row_map (i); k < nnz; k++) {
               values (k) *= diags (i);
@@ -511,7 +511,7 @@ namespace KokkosSparse{
               nnzU ++;
             }
           }
-          #if defined(IFPACK_GS_JR_MERGE_SPMV)
+          #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
           if (two_stage) {
             for (ordinal_t k = row_map (i); k < nnzL; k++) {
               values (k) *= diags (i);
@@ -579,7 +579,6 @@ namespace KokkosSparse{
        */
       void initialize_symbolic ()
       {
-#define KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
         Kokkos::Impl::Timer timer;
@@ -920,11 +919,11 @@ namespace KokkosSparse{
               }
               #endif
             }
-            #if !defined(IFPACK_GS_JR_MERGE_SPMV)
+            #if !defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
             #endif
           } else {// ====== inner Jacobi-Richardson =====
             // compute starting vector: T = D^{-1}*R
-            #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL) && defined(IFPACK_GS_JR_MERGE_SPMV)
+            #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL) && defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
             if (NumInnerSweeps == 0) {
               // this is Jacobi-Richardson X_{k+1} := X_{k} + D^{-1}(b-A*X_{k})
               // copy to localZ (output of JR iteration)
@@ -942,7 +941,7 @@ namespace KokkosSparse{
             // inner Jacobi-Richardson:
             for (int ii = 0; ii < NumInnerSweeps; ii++) {
               // Z = R
-              #if defined(IFPACK_GS_JR_MERGE_SPMV)
+              #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
               // R = D^{-1}*R, and L = D^{-1}*L and U = D^{-1}*U
               KokkosBlas::scal (localZ, one, localT);
               #else
@@ -963,7 +962,7 @@ namespace KokkosSparse{
                                 localT,
                            one, localZ);
               }
-              #if defined(IFPACK_GS_JR_MERGE_SPMV)
+              #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
               if (ii+1 < NumInnerSweeps) {
                 KokkosBlas::scal (localT, one, localZ);
               }
@@ -978,7 +977,7 @@ namespace KokkosSparse{
           #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL)
            // Y = X + T
            auto localY = Kokkos::subview (localX, range_type(0, nrows), Kokkos::ALL ());
-           #if defined(IFPACK_GS_JR_MERGE_SPMV)
+           #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
            KokkosBlas::axpy (one, localZ, localY);
            #else
            KokkosBlas::axpy (one, localT, localY);

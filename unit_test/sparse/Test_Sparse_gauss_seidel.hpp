@@ -102,12 +102,11 @@ int run_gauss_seidel(
   kh.set_dynamic_scheduling(true);
   if(gs_algorithm == GS_CLUSTER)
     kh.create_gs_handle(cluster_algorithm, cluster_size);
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
   else if(gs_algorithm == GS_TWOSTAGE) {
+    // test for two-stage/classical gs
     kh.create_gs_handle(gs_algorithm);
     kh.set_gs_twostage(!classic, input_mat.numRows());
   }
-#endif
   else
     kh.create_gs_handle(GS_DEFAULT);
 
@@ -301,7 +300,6 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
     }
   }
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
   //*** Two-stage version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
@@ -322,7 +320,6 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
     std::cout << result_norm_res / initial_norm_res << std::endl;
     EXPECT_LT(result_norm_res, initial_norm_res);
   }
-#endif
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -415,7 +412,6 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
     }
   }
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
   //*** Two-stage version ****
   for(int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
@@ -462,7 +458,6 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
     }
     std::cout << std::endl;
   }
-#endif
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>

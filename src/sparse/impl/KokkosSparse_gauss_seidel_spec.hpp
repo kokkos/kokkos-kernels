@@ -53,9 +53,7 @@
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosSparse_gauss_seidel_impl.hpp"
 #include "KokkosSparse_cluster_gauss_seidel_impl.hpp"
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
 #include "KokkosSparse_twostage_gauss_seidel_impl.hpp"
-#endif
 #endif
 
 namespace KokkosSparse {
@@ -249,7 +247,6 @@ namespace KokkosSparse {
           SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
           sgs.initialize_symbolic();
         }
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
         else if(gsHandle->get_algorithm_type() == GS_TWOSTAGE)
         {
           using SGS = typename Impl::TwostageGaussSeidel
@@ -257,7 +254,6 @@ namespace KokkosSparse {
           SGS sgs(handle, num_rows, num_cols, row_map, entries);
           sgs.initialize_symbolic();
         }
-#endif
         else
         {
           using SGS = typename Impl::PointGaussSeidel
@@ -292,7 +288,6 @@ namespace KokkosSparse {
           SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
           sgs.initialize_numeric();
         }
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
         else if(gsHandle->get_algorithm_type() == GS_TWOSTAGE)
         {
           using SGS = typename Impl::TwostageGaussSeidel
@@ -300,7 +295,6 @@ namespace KokkosSparse {
           SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
           sgs.initialize_numeric();
         }
-#endif
         else
         {
           using SGS = typename Impl::PointGaussSeidel
@@ -375,7 +369,6 @@ namespace KokkosSparse {
                     apply_forward,
                     apply_backward, update_y_vector);
         }
-#if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
         else if(gsHandle->get_algorithm_type() == GS_TWOSTAGE)
         {
           using SGS = typename Impl::TwostageGaussSeidel
@@ -390,7 +383,6 @@ namespace KokkosSparse {
                     apply_forward,
                     apply_backward, update_y_vector);
         }
-#endif
         else
         {
           using SGS = typename Impl::PointGaussSeidel <KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t>;
