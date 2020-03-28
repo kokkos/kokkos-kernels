@@ -138,6 +138,11 @@ public:
     this->gcHandle_d2 = right_side_handle.get_distance2_graph_coloring_handle();
 
     this->gsHandle = right_side_handle.get_gs_handle();
+#define KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+    this->gs_sptrsvLHandle = right_side_handle.get_gs_sptrsvL_handle();
+    this->gs_sptrsvUHandle = right_side_handle.get_gs_sptrsvU_handle();
+#endif
     this->spgemmHandle = right_side_handle.get_spgemm_handle();
 
     this->sptrsvHandle = right_side_handle.get_sptrsv_handle();
@@ -153,6 +158,10 @@ public:
     this->vector_size = right_side_handle.get_set_suggested_vector_size();
 
     is_owner_of_the_gc_handle = false;
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+    is_owner_of_the_gs_sptrsvL_handle = false;
+    is_owner_of_the_gs_sptrsvU_handle = false;
+#endif
     is_owner_of_the_d2_gc_handle = false;
     is_owner_of_the_gs_handle = false;
     is_owner_of_the_spgemm_handle = false;
@@ -186,6 +195,9 @@ public:
   typedef typename KokkosSparse::
     TwoStageGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       TwoStageGaussSeidelHandleType;
+  typedef
+    KokkosKernelsHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+      TwoStageGaussSeidelSPTRSVHandleType;
 #endif
 
   typedef typename KokkosSparse::
@@ -230,6 +242,10 @@ private:
   GraphColorDistance2HandleType *gcHandle_d2;
 
   GaussSeidelHandleType *gsHandle;
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+  TwoStageGaussSeidelSPTRSVHandleType *gs_sptrsvLHandle;
+  TwoStageGaussSeidelSPTRSVHandleType *gs_sptrsvUHandle;
+#endif
   SPGEMMHandleType *spgemmHandle;
   SPADDHandleType *spaddHandle;
   SPTRSVHandleType *sptrsvHandle;
@@ -247,6 +263,10 @@ private:
   bool is_owner_of_the_gc_handle;
   bool is_owner_of_the_d2_gc_handle;
   bool is_owner_of_the_gs_handle;
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+  bool is_owner_of_the_gs_sptrsvL_handle;
+  bool is_owner_of_the_gs_sptrsvU_handle;
+#endif
   bool is_owner_of_the_spgemm_handle;
   bool is_owner_of_the_spadd_handle;
   bool is_owner_of_the_sptrsv_handle;
@@ -258,6 +278,10 @@ public:
     : gcHandle(NULL)
     , gcHandle_d2(NULL)
     , gsHandle(NULL)
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+    , gs_sptrsvLHandle(NULL)
+    , gs_sptrsvUHandle(NULL)
+#endif
     , spgemmHandle(NULL)
     , spaddHandle(NULL)
     , sptrsvHandle(NULL)
@@ -272,14 +296,22 @@ public:
     , is_owner_of_the_gc_handle(true)
     , is_owner_of_the_d2_gc_handle(true)
     , is_owner_of_the_gs_handle(true)
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+    , is_owner_of_the_gs_sptrsvL_handle(true)
+    , is_owner_of_the_gs_sptrsvU_handle(true)
+#endif
     , is_owner_of_the_spgemm_handle(true)
     , is_owner_of_the_spadd_handle(true)
     , is_owner_of_the_sptrsv_handle(true)
     , is_owner_of_the_spiluk_handle(true)
-  { }
+  {}
 
   ~KokkosKernelsHandle(){
     this->destroy_gs_handle();
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+    this->destroy_gs_sptrsvL_handle();
+    this->destroy_gs_sptrsvU_handle();
+#endif
     this->destroy_graph_coloring_handle();
     this->destroy_distance2_graph_coloring_handle();
     this->destroy_spgemm_handle();
@@ -540,6 +572,21 @@ public:
       throw std::runtime_error("GaussSeidelHandle exists but is not set up for two-stage GS.");
     return gs2;
   }
+
+  void set_gs_twostage (bool two_stage, size_type nrows) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setTwoStage (two_stage);
+    if (!two_stage) {
+      using namespace KokkosSparse::Experimental;
+      #if 0 // defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+      this->create_gs_sptrsvL_handle (SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows);
+      this->create_gs_sptrsvU_handle (SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows);
+      #else
+      this->create_gs_sptrsvL_handle (SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows);
+      this->create_gs_sptrsvU_handle (SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows);
+      #endif
+    }
+  }
 #endif
   void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
     this->destroy_gs_handle();
@@ -555,6 +602,43 @@ public:
       this->gsHandle = NULL;
     }
   }
+
+
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS_HANDLE
+  TwoStageGaussSeidelSPTRSVHandleType *get_gs_sptrsvL_handle(){
+    return this->gs_sptrsvLHandle;
+  }
+  TwoStageGaussSeidelSPTRSVHandleType *get_gs_sptrsvU_handle(){
+    return this->gs_sptrsvUHandle;
+  }
+  void create_gs_sptrsvL_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows) {
+    this->destroy_gs_sptrsvL_handle();
+    this->is_owner_of_the_gs_sptrsvL_handle = true;
+    this->gs_sptrsvLHandle = new TwoStageGaussSeidelSPTRSVHandleType();
+    this->gs_sptrsvLHandle->create_sptrsv_handle(algm, nrows, true);
+  }
+  void create_gs_sptrsvU_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows) {
+    this->destroy_gs_sptrsvU_handle();
+    this->is_owner_of_the_gs_sptrsvU_handle = true;
+    this->gs_sptrsvUHandle = new TwoStageGaussSeidelSPTRSVHandleType();
+    this->gs_sptrsvUHandle->create_sptrsv_handle(algm, nrows, false);
+  }
+  void destroy_gs_sptrsvL_handle(){
+    if (this->is_owner_of_the_gs_sptrsvL_handle && this->gs_sptrsvLHandle != nullptr)
+    {
+      delete this->gs_sptrsvLHandle;
+      this->gs_sptrsvLHandle = nullptr;
+    }
+  }
+  void destroy_gs_sptrsvU_handle(){
+    if (this->is_owner_of_the_gs_sptrsvU_handle && this->gs_sptrsvUHandle != nullptr)
+    {
+      delete this->gs_sptrsvUHandle;
+      this->gs_sptrsvUHandle = nullptr;
+    }
+  }
+#endif
+
 
   SPADDHandleType *get_spadd_handle(){
     return this->spaddHandle;

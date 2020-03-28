@@ -57,6 +57,11 @@
 #include "KokkosBlas1_mult.hpp"
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosSparse_spmv.hpp"
+#define KOKKOSSPARSE_IMPL_CLASSICAL_GS
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS
+ //#include "KokkosSparse_sptrsv_handle.hpp"
+ #include "KokkosSparse_sptrsv.hpp"
+#endif
 
 //FOR DEBUGGING
 #include "KokkosBlas1_nrm2.hpp"
@@ -98,7 +103,7 @@ namespace KokkosSparse{
                                                       input_device_t,
                                                       typename input_values_view_t::memory_traits,
                                                       typename input_row_map_view_t::value_type>;
-      using  input_graph_t  = typename input_crsmat_t::StaticCrsGraphType;
+      using input_graph_t  = typename input_crsmat_t::StaticCrsGraphType;
 
     private:
       HandleType *handle;
@@ -119,9 +124,6 @@ namespace KokkosSparse{
       input_row_map_view_t rowmap_view;
       input_entries_view_t column_view;
       input_values_view_t  values_view;
-
-      GSDirection direction;
-      int num_inner_sweeps;
 
     // --------------------------------------------------------- //
     public:
@@ -147,6 +149,7 @@ namespace KokkosSparse{
 
         public:
         // input
+        bool two_stage;
         const_ordinal_t num_rows;
         input_row_map_view_t rowmap_view;
         input_entries_view_t column_view;
@@ -168,10 +171,12 @@ namespace KokkosSparse{
 #ifdef KOKKOSSPARSE_IMPL_TWOSTAGE_GS_SPLIT_NNZ_COUNT
         // for counting nnz
         TwostageGaussSeidel_functor (
+                  bool two_stage_,
                   const_ordinal_t num_rows_,
                   input_row_map_view_t  rowmap_view_,
                   input_entries_view_t  column_view_,
                   output_row_map_view_t row_map_) :
+          two_stage(two_stage_),
           num_rows(num_rows_),
           rowmap_view(rowmap_view_),
           column_view(column_view_),
@@ -181,11 +186,13 @@ namespace KokkosSparse{
 #else
         // for counting nnzL & nnzU
         TwostageGaussSeidel_functor (
+                  bool two_stage_,
                   const_ordinal_t num_rows_,
                   input_row_map_view_t  rowmap_view_,
                   input_entries_view_t  column_view_,
                   output_row_map_view_t row_map_,
                   output_row_map_view_t row_map2_) :
+          two_stage(two_stage_),
           num_rows(num_rows_),
           rowmap_view(rowmap_view_),
           column_view(column_view_),
@@ -200,11 +207,13 @@ namespace KokkosSparse{
 
         // for storing entries
         TwostageGaussSeidel_functor (
+                  bool two_stage_,
                   const_ordinal_t num_rows_,
                   input_row_map_view_t  rowmap_view_,
                   input_entries_view_t  column_view_,
                   output_row_map_view_t row_map_,
                   output_entries_view_t entries_) :
+          two_stage(two_stage_),
           num_rows(num_rows_),
           rowmap_view(rowmap_view_),
           column_view(column_view_),
@@ -215,6 +224,7 @@ namespace KokkosSparse{
 
         // for storing values
         TwostageGaussSeidel_functor (
+                  bool two_stage_,
                   const_ordinal_t num_rows_,
                   input_row_map_view_t  rowmap_view_,
                   input_entries_view_t  column_view_,
@@ -222,6 +232,7 @@ namespace KokkosSparse{
                   output_row_map_view_t row_map_,
                   output_values_view_t  values_,
                   output_values_view_t  diags_) :
+          two_stage(two_stage_),
           num_rows(num_rows_),
           rowmap_view(rowmap_view_),
           column_view(column_view_),
@@ -234,6 +245,7 @@ namespace KokkosSparse{
 
         // for storing booth L&U entries
         TwostageGaussSeidel_functor (
+                  bool two_stage_,
                   const_ordinal_t num_rows_,
                   input_row_map_view_t  rowmap_view_,
                   input_entries_view_t  column_view_,
@@ -241,6 +253,7 @@ namespace KokkosSparse{
                   output_entries_view_t entries_,
                   output_row_map_view_t row_map2_,
                   output_entries_view_t entries2_) :
+          two_stage(two_stage_),
           num_rows(num_rows_),
           rowmap_view(rowmap_view_),
           column_view(column_view_),
@@ -255,6 +268,7 @@ namespace KokkosSparse{
 
         // for storing both L&U values 
         TwostageGaussSeidel_functor (
+                  bool two_stage_,
                   const_ordinal_t num_rows_,
                   input_row_map_view_t  rowmap_view_,
                   input_entries_view_t  column_view_,
@@ -264,6 +278,7 @@ namespace KokkosSparse{
                   output_values_view_t  diags_,
                   output_row_map_view_t row_map2_,
                   output_values_view_t  values2_):
+          two_stage(two_stage_),
           num_rows(num_rows_),
           rowmap_view(rowmap_view_),
           column_view(column_view_),
@@ -282,6 +297,7 @@ namespace KokkosSparse{
                   const_ordinal_t num_rows_,
                   output_row_map_view_t row_map_,
                   output_row_map_view_t row_cnt_):
+          two_stage(true),
           num_rows(num_rows_),
           rowmap_view(),
           column_view(),
@@ -302,6 +318,8 @@ namespace KokkosSparse{
           for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
             if (column_view (k) < i) {
               nnz_i ++;
+            } else if(!two_stage && column_view (k) == i) {
+              nnz_i ++;
             }
           }
           row_map (i+1) = nnz_i;
@@ -320,6 +338,9 @@ namespace KokkosSparse{
             if (column_view (k) < i) {
               entries (nnz) = column_view (k);
               nnz ++;
+            } else if(!two_stage && column_view (k) == i) {
+              entries (nnz) = column_view (k);
+              nnz ++;
             }
           }
         }
@@ -335,12 +356,19 @@ namespace KokkosSparse{
               values (nnz) = values_view (k);
               nnz ++;
             } else if (column_view (k) == i) {
-              diags (i) = one / values_view (k);
+              if (two_stage) {
+                diags (i) = one / values_view (k);
+              } else {
+                values (nnz) = values_view (k);
+                nnz ++;
+              }
             }
           }
           #if defined(IFPACK_GS_JR_MERGE_SPMV)
-          for (ordinal_t k = row_map (i); k < nnz; k++) {
-            values (k) *= diags (i);
+          if (two_stage) {
+            for (ordinal_t k = row_map (i); k < nnz; k++) {
+              values (k) *= diags (i);
+            }
           }
           #endif
         }
@@ -354,6 +382,8 @@ namespace KokkosSparse{
           ordinal_t nnz_i = 0;
           for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
             if (column_view (k) > i && column_view (k) < num_rows) {
+              nnz_i ++;
+            } else if(!two_stage && column_view (k) == i) {
               nnz_i ++;
             }
           }
@@ -373,6 +403,9 @@ namespace KokkosSparse{
             if (column_view (k) > i && column_view (k) < num_rows) {
               entries (nnz) = column_view (k);
               nnz ++;
+            } else if(!two_stage && column_view (k) == i) {
+              entries (nnz) = column_view (k);
+              nnz ++;
             }
           }
         }
@@ -385,15 +418,22 @@ namespace KokkosSparse{
           ordinal_t nnz = row_map (i);
           for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
             if (column_view (k) == i) {
-              diags (i) = one / values_view (k);
+              if (two_stage) {
+                diags (i) = one / values_view (k);
+              } else {
+                values (nnz) = values_view (k);
+                nnz ++;
+              }
             } else if (column_view (k) > i && column_view (k) < num_rows) {
               values (nnz) = values_view (k);
               nnz ++;
             }
           }
           #if defined(IFPACK_GS_JR_MERGE_SPMV)
-          for (ordinal_t k = row_map (i); k < nnz; k++) {
-            values (k) *= diags (i);
+          if (two_stage) {
+            for (ordinal_t k = row_map (i); k < nnz; k++) {
+              values (k) *= diags (i);
+            }
           }
           #endif
         }
@@ -408,6 +448,9 @@ namespace KokkosSparse{
           for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
             if (column_view (k) < i) {
               nnzL ++;
+            } else if (column_view (k) == i && !two_stage) {
+              nnzL ++;
+              nnzU ++;
             } else if (column_view (k) > i && column_view (k) < num_rows) {
               nnzU ++;
             }
@@ -431,6 +474,11 @@ namespace KokkosSparse{
             if (column_view (k) < i) {
               entries (nnzL) = column_view (k);
               nnzL ++;
+            } else if (column_view (k) == i && !two_stage) {
+              entries (nnzL) = column_view (k);
+              entries2 (nnzU) = column_view (k);
+              nnzL ++;
+              nnzU ++;
             } else if (column_view (k) > i && column_view (k) < num_rows) {
               entries2 (nnzU) = column_view (k);
               nnzU ++;
@@ -450,18 +498,27 @@ namespace KokkosSparse{
               values (nnzL) = values_view (k);
               nnzL ++;
             } else if (column_view (k) == i) {
-              diags (i) = one / values_view (k);
+              if (two_stage) {
+                diags (i) = one / values_view (k);
+              } else {
+                values (nnzL) = values_view (k);
+                values2 (nnzU) = values_view (k);
+                nnzL ++;
+                nnzU ++;
+              }
             } else if (column_view (k) < num_rows) {
               values2 (nnzU) = values_view (k);
               nnzU ++;
             }
           }
           #if defined(IFPACK_GS_JR_MERGE_SPMV)
-          for (ordinal_t k = row_map (i); k < nnzL; k++) {
-            values (k) *= diags (i);
-          }
-          for (ordinal_t k = row_map2 (i); k < nnzU; k++) {
-            values2 (k) *= diags (i);
+          if (two_stage) {
+            for (ordinal_t k = row_map (i); k < nnzL; k++) {
+              values (k) *= diags (i);
+            }
+            for (ordinal_t k = row_map2 (i); k < nnzU; k++) {
+              values2 (k) *= diags (i);
+            }
           }
           #endif
         }
@@ -496,16 +553,12 @@ namespace KokkosSparse{
                   const_ordinal_t num_rows_,
                   const_ordinal_t num_cols_,
                   input_row_map_view_t rowmap_view_,
-                  input_entries_view_t column_view_,
-                  GSDirection direction_ = GS_SYMMETRIC,
-                  int num_inner_sweeps_ = 1):
+                  input_entries_view_t column_view_) :
         handle(handle_),
         num_rows(num_rows_), num_cols(num_cols_),
         rowmap_view(rowmap_view_),
         column_view(column_view_),
-        values_view(),
-        direction(direction_),
-        num_inner_sweeps(num_inner_sweeps_) {}
+        values_view() {}
 
       // for numeric/solve (with values)
       TwostageGaussSeidel (HandleType *handle_,
@@ -513,16 +566,12 @@ namespace KokkosSparse{
                            const_ordinal_t num_cols_,
                            input_row_map_view_t rowmap_view_,
                            input_entries_view_t column_view_,
-                           input_values_view_t values_view_,
-                           GSDirection direction_ = GS_SYMMETRIC,
-                           int num_inner_sweeps_ = 1):
+                           input_values_view_t values_view_) :
         handle(handle_),
         num_rows(num_rows_), num_cols(num_cols_),
         rowmap_view(rowmap_view_),
         column_view(column_view_),
-        values_view(values_view_),
-        direction(direction_),
-        num_inner_sweeps(num_inner_sweeps_) {}
+        values_view(values_view_) {}
 
 
       /**
@@ -537,6 +586,9 @@ namespace KokkosSparse{
         Kokkos::fence();
         tic = timer.seconds ();
 #endif
+        auto *gsHandle = get_gs_handle();
+        bool two_stage = gsHandle->isTwoStage ();
+        GSDirection direction = gsHandle->getSweepDirection ();
         using GS_Functor_t = TwostageGaussSeidel_functor<row_map_view_t, entries_view_t, values_view_t>;
         // count nnz in local L & U matrices (rowmap_viewL/rowmap_viewU stores offsets for each row)
         ordinal_t nnzL = 0;
@@ -550,23 +602,23 @@ namespace KokkosSparse{
         if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
           using range_policy = Kokkos::RangePolicy <Tag_countNnzL, execution_space>;
           Kokkos::parallel_reduce ("nnzL", range_policy (0, num_rows),
-                                   GS_Functor_t (num_rows, rowmap_view, column_view, 
-                                                           rowcnt_viewL),
+                                   GS_Functor_t (two_stage, num_rows, rowmap_view, column_view,
+                                                                      rowcnt_viewL),
                                    nnzL);
         }
         if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
           using range_policy = Kokkos::RangePolicy <Tag_countNnzU, execution_space>;
           Kokkos::parallel_reduce ("nnzU", range_policy (0, num_rows),
-                                   GS_Functor_t (num_rows, rowmap_view, column_view,
-                                                           rowcnt_viewU),
+                                   GS_Functor_t (two_stage, num_rows, rowmap_view, column_view,
+                                                                      rowcnt_viewU),
                                    nnzU);
         }
 #else
         {
           using range_policy = Kokkos::RangePolicy <Tag_countNnzLU, execution_space>;
           Kokkos::parallel_reduce ("nnzLU", range_policy (0, num_rows),
-                                   GS_Functor_t (num_rows, rowmap_view, column_view, 
-                                                           rowcnt_viewL, rowcnt_viewU),
+                                   GS_Functor_t (two_stage, num_rows, rowmap_view, column_view,
+                                                                      rowcnt_viewL, rowcnt_viewU),
                                    nnzL);
           // NOTE: assuming nonzero diagonals
           nnzU = column_view.extent(0) - (nnzL + num_rows);
@@ -616,9 +668,9 @@ namespace KokkosSparse{
           // extract local L & U structures (for computing (L+D)^{-1} or (D+U)^{-1})
           using range_policy = Kokkos::RangePolicy <Tag_entriesLU, execution_space>;
           Kokkos::parallel_for ("entryLU", range_policy (0, num_rows),
-                                GS_Functor_t (num_rows, rowmap_view, column_view, 
-                                                        rowmap_viewL, column_viewL,
-                                                        rowmap_viewU, column_viewU));
+                                GS_Functor_t (two_stage, num_rows, rowmap_view, column_view,
+                                                                   rowmap_viewL, column_viewL,
+                                                                   rowmap_viewU, column_viewU));
         }
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         Kokkos::fence();
@@ -634,10 +686,19 @@ namespace KokkosSparse{
         crsmat_t crsmatU ("U", num_rows, values_viewU, graphU);
 
         // store them in handle
-        auto *gsHandle = get_gs_handle();
         gsHandle->setL (crsmatL);
         gsHandle->setU (crsmatU);
         gsHandle->setD (viewD);
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS
+        if (!(gsHandle->isTwoStage ())) {
+          using namespace KokkosSparse::Experimental;
+          #if 1 // !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA)
+          using namespace KokkosSparse::Experimental;
+          sptrsv_symbolic (handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries);
+          sptrsv_symbolic (handle->get_gs_sptrsvU_handle(), rowmap_viewL, crsmatU.graph.entries);
+          #endif
+        }
+#endif
       }
 
 
@@ -654,8 +715,10 @@ namespace KokkosSparse{
 #endif
         using GS_Functor_t = TwostageGaussSeidel_functor<const_row_map_view_t, entries_view_t, values_view_t>;
 
-        // load local D from handle
         auto *gsHandle = get_gs_handle();
+        bool two_stage = gsHandle->isTwoStage ();
+
+        // load local D from handle
         auto viewD = gsHandle->getD ();
 
         // load local L from handle
@@ -671,14 +734,24 @@ namespace KokkosSparse{
         // extract local L, D & U matrices
         using range_policy = Kokkos::RangePolicy <Tag_valuesLU, execution_space>;
         Kokkos::parallel_for ("valueLU", range_policy (0, num_rows),
-                              GS_Functor_t (num_rows, rowmap_view, column_view, values_view, 
-                                                      rowmap_viewL, values_viewL, viewD,
-                                                      rowmap_viewU, values_viewU));
+                              GS_Functor_t (two_stage, num_rows, rowmap_view, column_view, values_view, 
+                                                                 rowmap_viewL, values_viewL, viewD,
+                                                                 rowmap_viewU, values_viewU));
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         Kokkos::fence();
         tic = timer.seconds ();
         std::cout << std::endl << "TWO-STAGE GS::NUMERIC::INSERT LU TIME : " << tic << std::endl;
         timer.reset();
+#endif
+
+#ifdef KOKKOSSPARSE_IMPL_CLASSICAL_GS
+        if (!(gsHandle->isTwoStage ())) {
+          #if 0 // defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+          using namespace KokkosSparse::Experimental;
+          sptrsv_symbolic (handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries, values_viewL);
+          sptrsv_symbolic (handle->get_gs_sptrsvU_handle(), rowmap_viewL, crsmatU.graph.entries, values_viewU);
+          #endif
+        }
 #endif
       }
 
@@ -698,21 +771,28 @@ namespace KokkosSparse{
       {
         const_scalar_t one (1.0);
         const_scalar_t zero (0.0);
+#ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
+        double tic;
+        Kokkos::Impl::Timer timer;
+        Kokkos::fence();
+        tic = timer.seconds ();
+#endif
 
         //
-        GSDirection direction_ = direction;
+        auto *gsHandle = get_gs_handle();
+        bool two_stage = gsHandle->isTwoStage ();
+        GSDirection direction = gsHandle->getSweepDirection ();
         if (apply_forward && apply_backward) {
-          direction_ = GS_SYMMETRIC;
+          direction = GS_SYMMETRIC;
         } else if (apply_forward) {
-          direction_ = GS_FORWARD;
+          direction = GS_FORWARD;
         } else if (apply_backward) {
-          direction_ = GS_BACKWARD;
+          direction = GS_BACKWARD;
         } else {
           return;
         }
 
         // load auxiliary matrices from handle
-        auto *gsHandle = get_gs_handle();
         auto localD = gsHandle->getD ();
         auto crsmatL = gsHandle->getL ();
         auto crsmatU = gsHandle->getU ();
@@ -720,6 +800,12 @@ namespace KokkosSparse{
         // wratp A into crsmat
         input_graph_t graphA (column_view, rowmap_view);
         input_crsmat_t crsmatA ("A", num_rows, values_view, graphA);
+#ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
+        Kokkos::fence();
+        tic = timer.seconds ();
+        std::cout << std::endl << "TWO-STAGE GS::APPLY::CREATE CRS_A TIME : " << tic << std::endl;
+        timer.reset();
+#endif
 
         // load auxiliary vectors
         int nrows = num_rows;
@@ -731,8 +817,8 @@ namespace KokkosSparse{
 
         // outer Gauss-Seidel iteration
         int NumSweeps = numIter;
-        int NumInnerSweeps = num_inner_sweeps;
-        if (direction_ == GS_SYMMETRIC) {
+        int NumInnerSweeps = gsHandle->getNumInnerSweeps ();
+        if (direction == GS_SYMMETRIC) {
           NumSweeps *= 2;
         }
         for (int sweep = 0; sweep < NumSweeps; ++sweep) {
@@ -741,18 +827,18 @@ namespace KokkosSparse{
           KokkosBlas::scal (localR, one, localB);
           if (sweep > 0 || !init_zero_x_vector) {
             KokkosSparse::
-            spmv("N", -one, crsmatA,
-                            localX,
-                       one, localR);
+            spmv ("N", -one, crsmatA,
+                             localX,
+                        one, localR);
           }
           #else // !defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL)
-          if (direction_ == GS_FORWARD ||
-             (direction_ == GS_SYMMETRIC && sweep%2 == 0)) {
+          if (direction == GS_FORWARD ||
+             (direction == GS_SYMMETRIC && sweep%2 == 0)) {
             // R = B - U*x
             for (int i = 0; i < nrows; i++) {
               for (int j = 0; j < nrhs; j++) {
                 localR (i, j) = localB (i, j);
-                for (ordinal_t k = row_map (i); k < row_map (i+1); k++) {
+                for (ordinal_t k = rowmap_view (i); k < rowmap_view (i+1); k++) {
                   if (entries (k) > i) {
                     localR (i, j) -= values(k) * localX (entries (k), j);
                   }
@@ -765,7 +851,7 @@ namespace KokkosSparse{
             for (int i = 0; i < nrows; i++) {
               for (int j = 0; j < nrhs; j++) {
                 localR (i, j) = localB (i, j);
-                for (ordinal_t k = row_map (i); k < row_map (i+1); k++) {
+                for (ordinal_t k = rowmap_view (i); k < rowmap_view (i+1); k++) {
                   if (entries (k) < i || entries (k) >= nrows) {
                     localR (i, j) -= values(k) * localX (entries (k), j);
                   }
@@ -775,94 +861,119 @@ namespace KokkosSparse{
           }
           #endif
 
-          #if 0 // ===== sparse-triangular solve =====
-          if (direction_ == GS_FORWARD || 
-             (direction_ == GS_SYMMETRIC && sweep%2 == 0)) {
-            // T = (L+D)^{-1} * R
-            for (int i = 0; i < nrows; i++) {
+          if (!two_stage) { // ===== sparse-triangular solve =====
+            if (direction == GS_FORWARD ||
+               (direction == GS_SYMMETRIC && sweep%2 == 0)) {
+              // T = (L+D)^{-1} * R
+              #if 1
+              using namespace KokkosSparse::Experimental;
               for (int j = 0; j < nrhs; j++) {
-                scalar_t_ d = zero;
-                localT (i, j) = localR (i, j);
-                for (int k = row_map (i); k < row_map (i+1); k++) {
-                  if (entries (k) == i) {
-                    d = values(k);
-                  } else if (entries (k) < i) {
-                    localT (i, j) -= values (k) * localT (entries (k), j);
-                  }
-                } 
-                localT (i, j) /= d;
+                using single_vector_view_t = Kokkos::View<scalar_t*, Kokkos::LayoutLeft, execution_space>;
+                auto localRj = Kokkos::subview (localR, Kokkos::ALL (), range_type (j, j+1));
+                auto localZj = Kokkos::subview (localZ, Kokkos::ALL (), range_type (j, j+1));
+                single_vector_view_t Rj (localRj.data (), nrows);
+                single_vector_view_t Zj (localZj.data (), nrows);
+                sptrsv_solve (handle->get_gs_sptrsvL_handle(), crsmatL.graph.row_map, crsmatL.graph.entries, crsmatL.values, Rj, Zj);
               }
-            }
-          } else
-          {
-            // T = (D+U)^{-1} * R
-            for (int i = nrows-1; i >= 0; i--) {
-              for (int j = 0; j < nrhs; j++) {
-                scalar_t_ d = zero;
-                localT (i, j) = localR (i, j);
-                for (int k = row_map (i); k < row_map (i+1); k++) {
-                  if (entries (k) == i) {
-                    d = values(k);
-                  } else if (entries (k) > i && entries (k) < nrows) {
-                    localT (i, j) -= values (k) * localT (entries (k), j);
-                  }
+              #else
+              for (int i = 0; i < nrows; i++) {
+                for (int j = 0; j < nrhs; j++) {
+                  scalar_t d = zero;
+                  localZ (i, j) = localR (i, j);
+                  for (int k = rowmap_view (i); k < rowmap_view (i+1); k++) {
+                    if (column_view (k) == i) {
+                      d = values_view (k);
+                    } else if (column_view (k) < i) {
+                      localZ (i, j) -= values_view(k) * localZ (column_view (k), j);
+                    }
+                  } 
+                  localZ (i, j) /= d;
                 }
-                localT (i, j) /= d;
               }
+              #endif
+            } else {
+              // T = (D+U)^{-1} * R
+              #if 1
+              using namespace KokkosSparse::Experimental;
+              for (int j = 0; j < nrhs; j++) {
+                using single_vector_view_t = Kokkos::View<scalar_t*, Kokkos::LayoutLeft, execution_space>;
+                auto localRj = Kokkos::subview (localR, Kokkos::ALL (), range_type (j, j+1));
+                auto localZj = Kokkos::subview (localZ, Kokkos::ALL (), range_type (j, j+1));
+                single_vector_view_t Rj (localRj.data (), nrows);
+                single_vector_view_t Zj (localZj.data (), nrows);
+                sptrsv_solve (handle->get_gs_sptrsvU_handle(), crsmatU.graph.row_map, crsmatU.graph.entries, crsmatU.values, Rj, Zj);
+              }
+              #else
+              for (int i = nrows-1; i >= 0; i--) {
+                for (int j = 0; j < nrhs; j++) {
+                  scalar_t d = zero;
+                  localZ (i, j) = localR (i, j);
+                  for (int k = rowmap_view (i); k < rowmap_view (i+1); k++) {
+                    if (column_view (k) == i) {
+                      d = values_view (k);
+                    } else if (column_view (k) > i && column_view (k) < nrows) {
+                      localZ (i, j) -= values_view (k) * localZ (column_view (k), j);
+                    }
+                  }
+                  localZ (i, j) /= d;
+                }
+              }
+              #endif
             }
-          }
-          #else // ====== inner Jacobi-Richardson =====
-          // compute starting vector: T = D^{-1}*R
-          #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL) && defined(IFPACK_GS_JR_MERGE_SPMV)
-          if (NumInnerSweeps == 0) {
-            // this is Jacobi-Richardson X_{k+1} := X_{k} + D^{-1}(b-A*X_{k})
-            // copy to localZ (output of JR iteration)
-            KokkosBlas::mult (zero, localZ,
-                              one,  localD, localR);
-          } else {
-            // copy to localT (temporary used in JR iteration)
-            KokkosBlas::mult (zero, localT,
-                              one,  localD, localR);
-          }
-          #else
-          KokkosBlas::mult (zero, localT,
-                            one,  localD, localR);
-          #endif
-          // inner Jacobi-Richardson:
-          for (int ii = 0; ii < NumInnerSweeps; ii++) {
-            // Z = R
-            #if defined(IFPACK_GS_JR_MERGE_SPMV)
-            // R = D^{-1}*R, and L = D^{-1}*L and U = D^{-1}*U
-            KokkosBlas::scal (localZ, one, localT);
-            #else
-            KokkosBlas::scal (localZ, one, localR);
+            #if !defined(IFPACK_GS_JR_MERGE_SPMV)
             #endif
-            if (direction_ == GS_FORWARD ||
-               (direction_ == GS_SYMMETRIC && sweep%2 == 0)) {
-              // Z = R - L*T
-              KokkosSparse::
-              spmv("N", -one, crsmatL,
-                              localT,
-                         one, localZ);
-            }
-            else {
-              // Z = R - U*T
-              KokkosSparse::
-              spmv("N", -one, crsmatU,
-                              localT,
-                         one, localZ);
-            }
-            #if defined(IFPACK_GS_JR_MERGE_SPMV)
-            if (ii+1 < NumInnerSweeps) {
-              KokkosBlas::scal (localT, one, localZ);
+          } else {// ====== inner Jacobi-Richardson =====
+            // compute starting vector: T = D^{-1}*R
+            #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL) && defined(IFPACK_GS_JR_MERGE_SPMV)
+            if (NumInnerSweeps == 0) {
+              // this is Jacobi-Richardson X_{k+1} := X_{k} + D^{-1}(b-A*X_{k})
+              // copy to localZ (output of JR iteration)
+              KokkosBlas::mult (zero, localZ,
+                                one,  localD, localR);
+            } else {
+              // copy to localT (temporary used in JR iteration)
+              KokkosBlas::mult (zero, localT,
+                                one,  localD, localR);
             }
             #else
-            // T = D^{-1}*Z
             KokkosBlas::mult (zero, localT,
-                              one,  localD, localZ);
+                              one,  localD, localR);
             #endif
-          } // end of inner Jacobi Richardson
-          #endif
+            // inner Jacobi-Richardson:
+            for (int ii = 0; ii < NumInnerSweeps; ii++) {
+              // Z = R
+              #if defined(IFPACK_GS_JR_MERGE_SPMV)
+              // R = D^{-1}*R, and L = D^{-1}*L and U = D^{-1}*U
+              KokkosBlas::scal (localZ, one, localT);
+              #else
+              KokkosBlas::scal (localZ, one, localR);
+              #endif
+              if (direction == GS_FORWARD ||
+                 (direction == GS_SYMMETRIC && sweep%2 == 0)) {
+                // Z = R - L*T
+                KokkosSparse::
+                spmv("N", -one, crsmatL,
+                                localT,
+                           one, localZ);
+              }
+              else {
+                // Z = R - U*T
+                KokkosSparse::
+                spmv("N", -one, crsmatU,
+                                localT,
+                           one, localZ);
+              }
+              #if defined(IFPACK_GS_JR_MERGE_SPMV)
+              if (ii+1 < NumInnerSweeps) {
+                KokkosBlas::scal (localT, one, localZ);
+              }
+              #else
+              // T = D^{-1}*Z
+              KokkosBlas::mult (zero, localT,
+                                one,  localD, localZ);
+              #endif
+            } // end of inner Jacobi Richardson
+          }
 
           #if defined(IFPACK_GS_JR_EXPLICIT_RESIDUAL)
            // Y = X + T

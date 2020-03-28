@@ -47,7 +47,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Utils.hpp>
 #if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
-#include <KokkosSparse_CrsMatrix.hpp>
+ #include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
 #ifndef _GAUSSSEIDELHANDLE_HPP
@@ -636,7 +636,6 @@ namespace KokkosSparse{
     using const_entries_view_t = typename input_entries_view_t::const_type;
     using       entries_view_t = typename input_entries_view_t::non_const_type;
 
-    using memory_traits = typename input_values_view_t::traits::memory_traits;
     using const_values_view_t = typename input_values_view_t::const_type;
     using       values_view_t = typename input_values_view_t::non_const_type;
 
@@ -651,8 +650,45 @@ namespace KokkosSparse{
     TwoStageGaussSeidelHandle () :
     GSHandle (GS_TWOSTAGE),
     nrows (0),
-    nrhs (1)
+    nrhs (1),
+    direction (GS_SYMMETRIC),
+    two_stage (true),
+    num_inner_sweeps (1)
     {}
+
+
+    // Sweep direction
+    void setSweepDirection (GSDirection direction_) {
+      this->direction = direction_;
+    }
+    GSDirection getSweepDirection () {
+      return this->direction;
+    }
+
+    // specify whether to perform inner sweeps
+    void setTwoStage (bool two_stage_) {
+      this->two_stage = two_stage_;
+    }
+    bool isTwoStage () {
+      return this->two_stage;
+    }
+
+
+    // Number of inner sweeps
+    void setNumInnerSweeps (int num_inner_sweeps_) {
+      this->num_inner_sweeps = num_inner_sweeps_;
+    }
+    int getNumInnerSweeps () {
+      return this->num_inner_sweeps;
+    }
+
+    // workspaces
+    void setD (values_view_t D_) {
+      this->D = D_;
+    }
+    values_view_t getD () {
+      return this->D;
+    }
 
     void setL (crsmat_t L) {
       this->crsmatL = L;
@@ -666,13 +702,6 @@ namespace KokkosSparse{
     }
     crsmat_t getU () {
       return this->crsmatU;
-    }
-
-    void setD (values_view_t D_) {
-      this->D = D_;
-    }
-    values_view_t getD () {
-      return this->D;
     }
 
     void initVectors (int nrows_, int nrhs_) {
@@ -695,15 +724,22 @@ namespace KokkosSparse{
     }
 
   private:
+    int nrows;
+    int nrhs;
+
+    // workspace
     values_view_t D;
     crsmat_t crsmatL;
     crsmat_t crsmatU;
 
-    int nrows;
-    int nrhs;
     vector_view_t localR;
     vector_view_t localT;
     vector_view_t localZ;
+
+    // solver parameters
+    GSDirection direction;
+    bool two_stage;
+    int num_inner_sweeps;
   };
 #endif
 }

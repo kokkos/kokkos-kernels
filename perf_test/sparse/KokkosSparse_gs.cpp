@@ -60,7 +60,7 @@ using std::cout;
 using std::string;
 
 template<typename device_t>
-void runGS(string matrixPath, string devName, bool symmetric, bool sgs2)
+void runGS(string matrixPath, string devName, bool symmetric, bool twostage, bool classic)
 {
   typedef default_scalar scalar_t;
   typedef default_lno_t lno_t;
@@ -118,10 +118,15 @@ void runGS(string matrixPath, string devName, bool symmetric, bool sgs2)
   {
     //cluster size of 1 is standard multicolor GS
 #if 1 //defined(KOKKOS_ENABLE_TWOSTAGE_GS)
-    if(sgs2) {
-      std::cout << "\n\n***** RUNNING TWO-STAGE SGS\n";
+    if(twostage || classic) {
+      if (classic) {
+        std::cout << "\n\n***** RUNNING CLASSICAL SGS (two-stage with innter triangular solve)\n";
+      } else {
+        std::cout << "\n\n***** RUNNING TWO-STAGE SGS\n";
+      }
       //this constructor is for two-stage
       kh.create_gs_handle(KokkosSparse::GS_TWOSTAGE);
+      kh.set_gs_twostage(!classic, nrows);
     } else
 #endif
     if(clusterSize == 1)
@@ -194,11 +199,14 @@ int main(int argc, char** argv)
   string device;
   string matrixPath;
   bool sym = false;
-  bool sgs2 = false;
+  bool twostage = false;
+  bool classic = false;
   for(int i = 1; i < argc; i++)
   {
-    if(!strcmp(argv[i], "--sgs2"))
-      sgs2 = true;
+    if(!strcmp(argv[i], "--twostage"))
+      twostage = true;
+    else if(!strcmp(argv[i], "--classic"))
+      classic = true;
     else if(!strcmp(argv[i], "--symmetric"))
       sym = true;
     else if(!strcmp(argv[i], "--serial"))
@@ -239,28 +247,28 @@ int main(int argc, char** argv)
   #ifdef KOKKOS_ENABLE_SERIAL
   if(device == "serial")
   {
-    runGS<Kokkos::Serial>(matrixPath, device, sym, sgs2);
+    runGS<Kokkos::Serial>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_OPENMP
   if(device == "openmp")
   {
-    runGS<Kokkos::OpenMP>(matrixPath, device, sym, sgs2);
+    runGS<Kokkos::OpenMP>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_THREADS
   if(device == "threads")
   {
-    runGS<Kokkos::Threads>(matrixPath, device, sym, sgs2);
+    runGS<Kokkos::Threads>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_CUDA
   if(device == "cuda")
   {
-    runGS<Kokkos::Cuda>(matrixPath, device, sym, sgs2);
+    runGS<Kokkos::Cuda>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
