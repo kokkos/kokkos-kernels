@@ -121,7 +121,7 @@ void runGS(string matrixPath, string devName, bool symmetric, bool twostage, boo
     if(twostage || classic) {
       // Two-stage or Classical GS
       if (classic) {
-        std::cout << "\n\n***** RUNNING CLASSICAL SGS (two-stage with innter triangular solve)\n";
+        std::cout << "\n\n***** RUNNING CLASSICAL SGS (two-stage with inner triangular solve)\n";
       } else {
         std::cout << "\n\n***** RUNNING TWO-STAGE SGS\n";
       }
