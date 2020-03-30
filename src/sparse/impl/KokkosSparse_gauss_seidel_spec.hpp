@@ -238,7 +238,7 @@ namespace KokkosSparse {
                              a_size_view_t_ row_map,
                              a_lno_view_t_ entries,
                              bool is_graph_symmetric){
-        Kokkos::Profiling::pushRegion("KokkosSparse::Imple::gauss_seidel_symbolic");
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_symbolic");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
@@ -279,7 +279,7 @@ namespace KokkosSparse {
                            a_scalar_view_t values,
                            bool is_graph_symmetric)
       {
-        Kokkos::Profiling::pushRegion("KokkosSparse::Imple::gauss_seidel_numeric");
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_numeric");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
@@ -315,7 +315,7 @@ namespace KokkosSparse {
                            a_scalar_view_t given_inverse_diagonal,
                            bool is_graph_symmetric)
       {
-        Kokkos::Profiling::pushRegion("KokkosSparse::Imple::gauss_seidel_numeric");
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_numeric");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
@@ -354,7 +354,7 @@ namespace KokkosSparse {
                          bool update_y_vector,
                          typename KernelHandle::nnz_scalar_t omega, int numIter, bool apply_forward, bool apply_backward)
       {
-        Kokkos::Profiling::pushRegion("KokkosSparse::Imple::gauss_seidel_apply");
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_apply");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
