@@ -466,7 +466,7 @@ namespace KokkosSparse{
 
 
         // ------------------------------------------------------- //
-        // functor for computinr row_map (with parallel_scan)
+        // functor for computing row_map (with parallel_scan)
         KOKKOS_INLINE_FUNCTION
         void operator() (const Tag_compPtr&, const ordinal_t i, ordinal_t &update, const bool final) const
         {
