@@ -46,12 +46,8 @@
 #define _KOKKOS_TWOSTAGE_GS_IMP_HPP
 
 #include <KokkosKernels_config.h>
-//#include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosSparse_gauss_seidel_handle.hpp"
-//#include <Kokkos_Atomic.hpp>
-//#include <impl/Kokkos_Timer.hpp>
-//#include <Kokkos_MemoryTraits.hpp>
 
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_mult.hpp"
@@ -60,11 +56,7 @@
 // needed for classical GS
 #include "KokkosSparse_sptrsv.hpp"
 
-//FOR DEBUGGING
-#include "KokkosBlas1_nrm2.hpp"
-
 #define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV
-#define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_SPLIT_NNZ_COUNT
 
 
 namespace KokkosSparse{
@@ -128,7 +120,6 @@ namespace KokkosSparse{
       // tag for counting nnz
       struct Tag_countNnzL{};
       struct Tag_countNnzU{};
-      struct Tag_countNnzLU{};
       // tag for inserting entries
       struct Tag_entriesL{};
       struct Tag_entriesU{};
@@ -165,7 +156,6 @@ namespace KokkosSparse{
         output_entries_view_t  entries2;
         output_values_view_t   values2;
 
-#ifdef KOKKOSSPARSE_IMPL_TWOSTAGE_GS_SPLIT_NNZ_COUNT
         // for counting nnz
         TwostageGaussSeidel_functor (
                   bool two_stage_,
@@ -180,27 +170,6 @@ namespace KokkosSparse{
           values_view(),
           row_map(row_map_)
         {}
-#else
-        // for counting nnzL & nnzU
-        TwostageGaussSeidel_functor (
-                  bool two_stage_,
-                  const_ordinal_t num_rows_,
-                  input_row_map_view_t  rowmap_view_,
-                  input_entries_view_t  column_view_,
-                  output_row_map_view_t row_map_,
-                  output_row_map_view_t row_map2_) :
-          two_stage(two_stage_),
-          num_rows(num_rows_),
-          rowmap_view(rowmap_view_),
-          column_view(column_view_),
-          values_view(),
-          row_map(row_map_),
-          entries(),
-          values(),
-          diags(),
-          row_map2(row_map2_)
-        {}
-#endif
 
         // for storing entries
         TwostageGaussSeidel_functor (
@@ -346,7 +315,7 @@ namespace KokkosSparse{
         KOKKOS_INLINE_FUNCTION
         void operator()(const Tag_valuesL&, const ordinal_t i) const
         {
-          const_scalar_t one (1.0);
+          const_scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
           ordinal_t nnz = row_map (i);
           for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
             if (column_view (k) < i) {
@@ -411,7 +380,7 @@ namespace KokkosSparse{
         KOKKOS_INLINE_FUNCTION
         void operator()(const Tag_valuesU&, const ordinal_t i) const
         {
-          const_scalar_t one (1.0);
+          const_scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
           ordinal_t nnz = row_map (i);
           for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
             if (column_view (k) == i) {
@@ -436,31 +405,6 @@ namespace KokkosSparse{
         }
 
         // ------------------------------------------------------- //
-        // functor for counting nnzL & nnzU / row, and total nnzL (with parallel_reduce)
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const Tag_countNnzLU&, const ordinal_t i, ordinal_t &nnz) const
-        {
-          ordinal_t nnzL = 0;
-          ordinal_t nnzU = 0;
-          for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
-            if (column_view (k) < i) {
-              nnzL ++;
-            } else if (column_view (k) == i && !two_stage) {
-              nnzL ++;
-              nnzU ++;
-            } else if (column_view (k) > i && column_view (k) < num_rows) {
-              nnzU ++;
-            }
-          }
-          row_map (i+1) = nnzL;
-          row_map2 (i+1) = nnzU;
-          if (i == 0) {
-            row_map (0) = 0;
-            row_map2 (0) = 0;
-          }
-          nnz += nnzL;
-        }
-
         // functor for storing entriesL and entriesU (with parallel_for)
         KOKKOS_INLINE_FUNCTION
         void operator()(const Tag_entriesLU&, const ordinal_t i) const
@@ -487,7 +431,7 @@ namespace KokkosSparse{
         KOKKOS_INLINE_FUNCTION
         void operator()(const Tag_valuesLU&, const ordinal_t i) const
         {
-          const_scalar_t one (1.0);
+          const_scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
           ordinal_t nnzL = row_map (i);
           ordinal_t nnzU = row_map2 (i);
           for (size_type k = rowmap_view (i); k < rowmap_view (i+1); k++) {
@@ -594,7 +538,6 @@ namespace KokkosSparse{
         ordinal_t nnzU = 0;
         row_map_view_t  rowmap_viewU ("row_mapU", num_rows+1);
         row_map_view_t  rowcnt_viewU ("row_cntU", num_rows+1);
-#ifdef KOKKOSSPARSE_IMPL_TWOSTAGE_GS_SPLIT_NNZ_COUNT
         if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
           using range_policy = Kokkos::RangePolicy <Tag_countNnzL, execution_space>;
           Kokkos::parallel_reduce ("nnzL", range_policy (0, num_rows),
@@ -609,17 +552,6 @@ namespace KokkosSparse{
                                                                       rowcnt_viewU),
                                    nnzU);
         }
-#else
-        {
-          using range_policy = Kokkos::RangePolicy <Tag_countNnzLU, execution_space>;
-          Kokkos::parallel_reduce ("nnzLU", range_policy (0, num_rows),
-                                   GS_Functor_t (two_stage, num_rows, rowmap_view, column_view,
-                                                                      rowcnt_viewL, rowcnt_viewU),
-                                   nnzL);
-          // NOTE: assuming nonzero diagonals
-          nnzU = column_view.extent(0) - (nnzL + num_rows);
-        }
-#endif
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         Kokkos::fence();
         tic = timer.seconds ();
@@ -764,8 +696,8 @@ namespace KokkosSparse{
                   bool apply_backward = true,
                   bool update_y_vector = true)
       {
-        const_scalar_t one (1.0);
-        const_scalar_t zero (0.0);
+        const_scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
+        const_scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero ();
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
         Kokkos::Impl::Timer timer;
