@@ -266,21 +266,20 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //we just test GS_DEFAULT.
   int apply_count = 3;  //test symmetric, forward, backward
   scalar_view_t x_vector(Kokkos::ViewAllocateWithoutInitializing("x vector"), nv);
-  const scalar_t alpha = 1.0;
+  const scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
+  const scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero ();
   //*** Point-coloring version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
     Kokkos::Impl::Timer timer1;
-    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view_t, device>(input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
     //double gs = timer1.seconds();
     //KokkosKernels::Impl::print_1Dview(x_vector);
-    KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
+    KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
-    std::cout << result_norm_res / initial_norm_res << std::endl;
     EXPECT_LT(result_norm_res, initial_norm_res);
   }
-  std::cout << std::endl;
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
   for(int csize = 0; csize < 3; csize++)
@@ -291,10 +290,10 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       {
         Kokkos::Impl::Timer timer1;
         //Zero out X before solving
-        Kokkos::deep_copy(x_vector, scalar_t(0.0));
+        Kokkos::deep_copy(x_vector, zero);
         run_gauss_seidel<crsMat_t, scalar_view_t, device>(
             input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize], (ClusteringAlgorithm) algo);
-        KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
+        KokkosBlas::axpby(one, solution_x, -one, x_vector);
         mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
         EXPECT_LT(result_norm_res, initial_norm_res);
       }
@@ -303,21 +302,19 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //*** Two-stage version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
-    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view_t, device>(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
-    KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
+    KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
-    std::cout << result_norm_res / initial_norm_res << std::endl;
     EXPECT_LT(result_norm_res, initial_norm_res);
   }
   //*** Two-stage version (classic) ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
-    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view_t, device>(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, true);
-    KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
+    KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
-    std::cout << result_norm_res / initial_norm_res << std::endl;
     EXPECT_LT(result_norm_res, initial_norm_res);
   }
 }
@@ -358,12 +355,13 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
         Kokkos::Details::ArithTraits<scalar_t>::abs(sum));
   }
   int apply_count = 3;  //test symmetric, forward, backward
+  const scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero ();
   //*** Point-coloring version ****
   for(int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
     Kokkos::Impl::Timer timer1;
     //Zero out X before solving
-    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view2d_t, device>(
         input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
     Kokkos::deep_copy(x_host, x_vector);
@@ -377,12 +375,9 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
       mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
           Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
-      std::cout << res / initial_norms[i] << " ";
       EXPECT_LT(res, initial_norms[i]);
     }
-    std::cout << std::endl;
   }
-  std::cout << std::endl;
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
   for(int csize = 0; csize < 3; csize++)
@@ -393,7 +388,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       {
         Kokkos::Impl::Timer timer1;
         //Zero out X before solving
-        Kokkos::deep_copy(x_vector, scalar_t(0.0));
+        Kokkos::deep_copy(x_vector, zero);
         run_gauss_seidel<crsMat_t, scalar_view2d_t, device>(
             input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize], (ClusteringAlgorithm) algo);
         Kokkos::deep_copy(x_host, x_vector);
@@ -416,7 +411,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   for(int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
     //Zero out X before solving
-    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view2d_t, device>(
         input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
     Kokkos::deep_copy(x_host, x_vector);
@@ -430,16 +425,14 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
       mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
           Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
-      std::cout << res / initial_norms[i] << " ";
       EXPECT_LT(res, initial_norms[i]);
     }
-    std::cout << std::endl;
   }
   //*** Two-stage version (classic) ****
   for(int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
     //Zero out X before solving
-    Kokkos::deep_copy(x_vector, scalar_t(0.0));
+    Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view2d_t, device>(
         input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, true);
     Kokkos::deep_copy(x_host, x_vector);
@@ -453,10 +446,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
       }
       mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
           Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
-      std::cout << res / initial_norms[i] << " ";
       EXPECT_LT(res, initial_norms[i]);
     }
-    std::cout << std::endl;
   }
 }
 
