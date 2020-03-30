@@ -727,13 +727,17 @@ namespace KokkosSparse{
     int nrows;
     int nrhs;
 
-    // workspace
+    // workspaces
+    // > A = L + D + U
     values_view_t D;
     crsmat_t crsmatL;
     crsmat_t crsmatU;
 
+    // > residual vector for outer GS, Rk = B-A*Xk
     vector_view_t localR;
+    // > workspace used for inner JR (for SpMV)
     vector_view_t localT;
+    // > solultion correction from inner JR
     vector_view_t localZ;
 
     // solver parameters
