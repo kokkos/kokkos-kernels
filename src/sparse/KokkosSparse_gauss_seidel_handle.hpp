@@ -656,7 +656,6 @@ namespace KokkosSparse{
     num_inner_sweeps (1)
     {}
 
-
     // Sweep direction
     void setSweepDirection (GSDirection direction_) {
       this->direction = direction_;
@@ -672,7 +671,6 @@ namespace KokkosSparse{
     bool isTwoStage () {
       return this->two_stage;
     }
-
 
     // Number of inner sweeps
     void setNumInnerSweeps (int num_inner_sweeps_) {

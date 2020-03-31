@@ -585,14 +585,20 @@ public:
     gs2->setTwoStage (two_stage);
     if (!two_stage) {
       using namespace KokkosSparse::Experimental;
-      // TODO: figure out how to use CuSPARSE on GPU
-      #if 0 // defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
-      this->create_gs_sptrsvL_handle (SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows);
-      this->create_gs_sptrsvU_handle (SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows);
-      #else
-      this->create_gs_sptrsvL_handle (SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows);
-      this->create_gs_sptrsvU_handle (SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows);
+      #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+      // NOTE: we call CuSPARSE on GPU, if possible
+      if (std::is_same<size_type, int>::value &&
+          std::is_same<nnz_lno_t, int>::value &&
+          std::is_same<HandleExecSpace, Kokkos::Cuda>::value)
+      {
+        this->create_gs_sptrsvL_handle (SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows);
+        this->create_gs_sptrsvU_handle (SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows);
+      } else
       #endif
+      {
+        this->create_gs_sptrsvL_handle (SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows);
+        this->create_gs_sptrsvU_handle (SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows);
+      }
     }
   }
 

@@ -303,7 +303,8 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel<crsMat_t, scalar_view_t, device>(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
+    run_gauss_seidel<crsMat_t, scalar_view_t, device>
+      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
     EXPECT_LT(result_norm_res, initial_norm_res);
@@ -311,8 +312,10 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //*** Two-stage version (classic) ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
+    ClusteringAlgorithm cluster_algo = (ClusteringAlgorithm)0;
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel<crsMat_t, scalar_view_t, device>(input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, true);
+    run_gauss_seidel<crsMat_t, scalar_view_t, device>
+      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, cluster_algo, true);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
     EXPECT_LT(result_norm_res, initial_norm_res);
@@ -412,8 +415,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   {
     //Zero out X before solving
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel<crsMat_t, scalar_view2d_t, device>(
-        input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
+    run_gauss_seidel<crsMat_t, scalar_view2d_t, device>
+      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type);
     Kokkos::deep_copy(x_host, x_vector);
     for(lno_t i = 0; i < numVecs; i++)
     {
@@ -432,9 +435,10 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   for(int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
     //Zero out X before solving
+    ClusteringAlgorithm cluster_algo = (ClusteringAlgorithm)0;
     Kokkos::deep_copy(x_vector, zero);
-    run_gauss_seidel<crsMat_t, scalar_view2d_t, device>(
-        input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, true);
+    run_gauss_seidel<crsMat_t, scalar_view2d_t, device>
+      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, cluster_algo, true);
     Kokkos::deep_copy(x_host, x_vector);
     for(lno_t i = 0; i < numVecs; i++)
     {
