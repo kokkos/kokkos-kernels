@@ -432,18 +432,7 @@ namespace KokkosSparse{
               values (nnzL) = values_view (k);
               nnzL ++;
             } else if (column_view (k) == i) {
-              #if 0 // Kokkos' sptrsv assumes diagonal of L and U to come at end and start
-              if (two_stage) {
-                diags (i) = one / values_view (k);
-              } else {
-                values (nnzL) = values_view (k);
-                values2 (nnzU) = values_view (k);
-                nnzL ++;
-                nnzU ++;
-              }
-              #else
               diags (i) = values_view (k);
-              #endif
             } else if (column_view (k) < num_rows) {
               values2 (nnzU) = values_view (k);
               nnzU ++;
