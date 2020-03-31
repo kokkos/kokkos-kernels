@@ -55,6 +55,7 @@
 #include "KokkosSparse_spmv.hpp"
 // needed for classical GS
 #include "KokkosSparse_sptrsv.hpp"
+#include "KokkosKernels_SparseUtils.hpp"
 
 #define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV
 
@@ -155,9 +156,6 @@ namespace KokkosSparse{
         output_entries_view_t  entries2;
         output_values_view_t   values2;
 
-        // parameter
-        bool sort_entries;
-
         // for counting nnz
         TwostageGaussSeidel_functor (
                   bool two_stage_,
@@ -247,8 +245,7 @@ namespace KokkosSparse{
                   output_values_view_t  diags_,
                   output_row_map_view_t row_map2_,
                   output_entries_view_t entries2_,
-                  output_values_view_t  values2_,
-                  bool sort_entries_ = false) :
+                  output_values_view_t  values2_) :
           two_stage(two_stage_),
           num_rows(num_rows_),
           rowmap_view(rowmap_view_),
@@ -260,8 +257,7 @@ namespace KokkosSparse{
           diags(diags_),
           row_map2(row_map2_),
           entries2(entries2_),
-          values2(values2_),
-          sort_entries(sort_entries_)
+          values2(values2_)
         {}
 
         // for generating ptr with parallel-scan
@@ -476,46 +472,6 @@ namespace KokkosSparse{
             nnzU = row_map2 (i);
             values2 (nnzU) = diags (i);
             values (nnzL) = diags (i);
-
-            if (sort_entries) {
-              // CuSparse wants column index sorted
-              // > bubble-sort L (off-diagonals)
-              for (ordinal_t k = row_map (i); k < row_map (i+1) - 1; k++) {
-                ordinal_t pos = k;
-                for (ordinal_t j = k-1; j >= row_map (i); j--) {
-                  if (entries (j) > entries (pos)) {
-                    scalar_t val = values (j);
-                    ordinal_t ind = entries (j);
-                    values (j) = values (pos);
-                    entries (j) = entries (pos);
-
-                    values (pos) = val;
-                    entries (pos) = ind;
-                    pos = j;
-                  } else {
-                    break;
-                  }
-                }
-              }
-              // > bubble-sort U (off-diagonals)
-              for (ordinal_t k = row_map2 (i) + 1; k < row_map2 (i+1); k++) {
-                ordinal_t pos = k;
-                for (ordinal_t j = k-1; j >= row_map2 (i); j--) {
-                  if (entries2 (j) > entries2 (pos)) {
-                    scalar_t val = values2 (j);
-                    ordinal_t ind = entries2 (j);
-                    values2 (j) = values2 (pos);
-                    entries2 (j) = entries2 (pos);
-
-                    values2 (pos) = val;
-                    entries2 (pos) = ind;
-                    pos = j;
-                  } else {
-                    break;
-                  }
-                }
-              }
-            }
           }
           #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
           if (two_stage) {
@@ -728,17 +684,10 @@ namespace KokkosSparse{
 
         // extract local L, D & U matrices
         using range_policy = Kokkos::RangePolicy <Tag_valuesLU, execution_space>;
-        using namespace KokkosSparse::Experimental;
-        bool use_cusparse = false;
-        if (!(gsHandle->isTwoStage ())) {
-          auto sptrsv_algo = handle->get_gs_sptrsvL_handle()->get_sptrsv_handle()->get_algorithm();
-          use_cusparse = (sptrsv_algo == SPTRSVAlgorithm::SPTRSV_CUSPARSE);
-        }
         Kokkos::parallel_for ("valueLU", range_policy (0, num_rows),
                               GS_Functor_t (two_stage, num_rows, rowmap_view, column_view, values_view, 
                                                                  rowmap_viewL, column_viewL, values_viewL, viewD,
-                                                                 rowmap_viewU, column_viewU, values_viewU,
-                                            use_cusparse));
+                                                                 rowmap_viewU, column_viewU, values_viewU));
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         Kokkos::fence();
         tic = timer.seconds ();
@@ -746,9 +695,21 @@ namespace KokkosSparse{
         timer.reset();
 #endif
 
-        if (use_cusparse) { // symbolic with CuSparse needs values
-          sptrsv_symbolic (handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries, values_viewL);
-          sptrsv_symbolic (handle->get_gs_sptrsvU_handle(), rowmap_viewU, crsmatU.graph.entries, values_viewU);
+        if (!(gsHandle->isTwoStage ())) {
+          using namespace KokkosSparse::Experimental;
+          auto sptrsv_algo = handle->get_gs_sptrsvL_handle()->get_sptrsv_handle()->get_algorithm();
+          if (sptrsv_algo == SPTRSVAlgorithm::SPTRSV_CUSPARSE) { // symbolic with CuSparse needs values
+            // CuSparse needs matrix sorted by column indexes for each row
+            // TODO: may need to move this to symbolic/numeric of sptrsv
+            KokkosKernels::Impl::sort_crs_matrix <execution_space, const_row_map_view_t, entries_view_t, values_view_t>
+              (rowmap_viewL, column_viewL, values_viewL);
+            KokkosKernels::Impl::sort_crs_matrix <execution_space, const_row_map_view_t, entries_view_t, values_view_t>
+              (rowmap_viewU, column_viewU, values_viewU);
+
+            // now do symbolic
+            sptrsv_symbolic (handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries, values_viewL);
+            sptrsv_symbolic (handle->get_gs_sptrsvU_handle(), rowmap_viewU, crsmatU.graph.entries, values_viewU);
+          }
         }
       }
 
