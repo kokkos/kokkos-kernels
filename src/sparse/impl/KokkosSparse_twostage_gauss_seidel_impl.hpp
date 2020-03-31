@@ -53,6 +53,7 @@
 #include "KokkosBlas1_mult.hpp"
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosSparse_spmv.hpp"
+#include "KokkosKernels_SimpleUtils.hpp"
 // needed for classical GS
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
@@ -128,8 +129,6 @@ namespace KokkosSparse{
       struct Tag_valuesL{};
       struct Tag_valuesU{};
       struct Tag_valuesLU{};
-      // tag for computing map_row
-      struct Tag_compPtr{};
 
       template <typename output_row_map_view_t, 
                 typename output_entries_view_t, 
@@ -148,14 +147,13 @@ namespace KokkosSparse{
         output_entries_view_t  entries;
         output_values_view_t   values;
         output_values_view_t   diags;
-
-        output_row_map_view_t  row_cnt;
-
         // output
         output_row_map_view_t  row_map2;
         output_entries_view_t  entries2;
         output_values_view_t   values2;
 
+        // ------------------------------------------------------- //
+        // Constructors
         // for counting nnz
         TwostageGaussSeidel_functor (
                   bool two_stage_,
@@ -260,22 +258,6 @@ namespace KokkosSparse{
           values2(values2_)
         {}
 
-        // for generating ptr with parallel-scan
-        TwostageGaussSeidel_functor (
-                  const_ordinal_t num_rows_,
-                  output_row_map_view_t row_map_,
-                  output_row_map_view_t row_cnt_):
-          two_stage(true),
-          num_rows(num_rows_),
-          rowmap_view(),
-          column_view(),
-          values_view(),
-          row_map(row_map_),
-          entries(),
-          values(),
-          diags(),
-          row_cnt(row_cnt_)
-        {}
 
         // ------------------------------------------------------- //
         // functor for counting nnzL (with parallel_reduce)
@@ -485,24 +467,6 @@ namespace KokkosSparse{
           }
           #endif
         }
-
-
-        // ------------------------------------------------------- //
-        // functor for computing row_map (with parallel_scan)
-        KOKKOS_INLINE_FUNCTION
-        void operator() (const Tag_compPtr&, const ordinal_t i, ordinal_t &update, const bool final) const
-        {
-          update += row_cnt (i);
-          if (final) {
-            row_map (i) = update;
-          }
-        }
-
-        KOKKOS_INLINE_FUNCTION
-        void init (unsigned & update) const { update = 0; }
-
-        KOKKOS_INLINE_FUNCTION
-        void join (volatile unsigned &update, const volatile unsigned &input) const { update += input; }
       };
     // --------------------------------------------------------- //
 
@@ -554,24 +518,21 @@ namespace KokkosSparse{
         using GS_Functor_t = TwostageGaussSeidel_functor<row_map_view_t, entries_view_t, values_view_t>;
         // count nnz in local L & U matrices (rowmap_viewL/rowmap_viewU stores offsets for each row)
         ordinal_t nnzL = 0;
-        row_map_view_t  rowmap_viewL ("row_mapL", num_rows+1);
-        row_map_view_t  rowcnt_viewL ("row_cntL", num_rows+1);
-
         ordinal_t nnzU = 0;
+        row_map_view_t  rowmap_viewL ("row_mapL", num_rows+1);
         row_map_view_t  rowmap_viewU ("row_mapU", num_rows+1);
-        row_map_view_t  rowcnt_viewU ("row_cntU", num_rows+1);
         if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
           using range_policy = Kokkos::RangePolicy <Tag_countNnzL, execution_space>;
           Kokkos::parallel_reduce ("nnzL", range_policy (0, num_rows),
                                    GS_Functor_t (two_stage, num_rows, rowmap_view, column_view,
-                                                                      rowcnt_viewL),
+                                                                      rowmap_viewL),
                                    nnzL);
         }
         if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
           using range_policy = Kokkos::RangePolicy <Tag_countNnzU, execution_space>;
           Kokkos::parallel_reduce ("nnzU", range_policy (0, num_rows),
                                    GS_Functor_t (two_stage, num_rows, rowmap_view, column_view,
-                                                                      rowcnt_viewU),
+                                                                      rowmap_viewU),
                                    nnzU);
         }
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
@@ -582,14 +543,12 @@ namespace KokkosSparse{
 #endif
         // shift ptr so that it now contains offsets (combine it with the previous functor calls?)
         if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
-          using range_policy = Kokkos::RangePolicy <Tag_compPtr, execution_space>;
-          Kokkos::parallel_scan ("ptrL", range_policy (0, 1+num_rows),
-                                 GS_Functor_t (num_rows, rowmap_viewL, rowcnt_viewL));
+          KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t, execution_space> 
+            (1+num_rows, rowmap_viewL);
         }
         if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
-          using range_policy = Kokkos::RangePolicy <Tag_compPtr, execution_space>;
-          Kokkos::parallel_scan ("ptrU", range_policy (0, 1+num_rows),
-                                 GS_Functor_t (num_rows, rowmap_viewU, rowcnt_viewU));
+          KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t, execution_space> 
+            (1+num_rows, rowmap_viewU);
         }
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         Kokkos::fence();
