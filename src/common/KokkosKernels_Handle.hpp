@@ -246,6 +246,7 @@ private:
   GaussSeidelHandleType *gsHandle;
   // ---------------------------------------- //
   // Handles for Classical GS (inner SpTRSV)
+  // NOTE: move these handles inside GS handle
   TwoStageGaussSeidelSPTRSVHandleType *gs_sptrsvLHandle;
   TwoStageGaussSeidelSPTRSVHandleType *gs_sptrsvUHandle;
   // ---------------------------------------- //
