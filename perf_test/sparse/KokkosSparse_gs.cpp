@@ -60,7 +60,7 @@ using std::cout;
 using std::string;
 
 template<typename device_t>
-void runGS(string matrixPath, string devName, bool symmetric)
+void runGS(string matrixPath, string devName, bool symmetric, bool twostage, bool classic)
 {
   typedef default_scalar scalar_t;
   typedef default_lno_t lno_t;
@@ -117,7 +117,18 @@ void runGS(string matrixPath, string devName, bool symmetric)
   for(int clusterSize : clusterSizes)
   {
     //cluster size of 1 is standard multicolor GS
-    if(clusterSize == 1)
+
+    if(twostage || classic) {
+      // Two-stage or Classical GS
+      if (classic) {
+        std::cout << "\n\n***** RUNNING CLASSICAL SGS (two-stage with inner triangular solve)\n";
+      } else {
+        std::cout << "\n\n***** RUNNING TWO-STAGE SGS\n";
+      }
+      //this constructor is for two-stage
+      kh.create_gs_handle(KokkosSparse::GS_TWOSTAGE);
+      kh.set_gs_twostage(!classic, nrows);
+    } else if(clusterSize == 1)
     {
       std::cout << "\n\n***** RUNNING POINT COLORING SGS\n";
       //this constructor is for point coloring
@@ -176,7 +187,7 @@ void runGS(string matrixPath, string devName, bool symmetric)
 int main(int argc, char** argv)
 {
   //Expect two args: matrix name and device flag.
-  if(argc != 3 && argc != 4)
+  if(argc != 3 && argc != 4 && argc != 5)
   {
     std::cout << "Usage: ./sparse_gs matrix.mtx [--device] [--symmetric]\n\n";
     std::cout << "device can be \"serial\", \"openmp\", \"cuda\" or \"threads\".\n";
@@ -187,9 +198,15 @@ int main(int argc, char** argv)
   string device;
   string matrixPath;
   bool sym = false;
+  bool twostage = false;
+  bool classic = false;
   for(int i = 1; i < argc; i++)
   {
-    if(!strcmp(argv[i], "--symmetric"))
+    if(!strcmp(argv[i], "--twostage"))
+      twostage = true;
+    else if(!strcmp(argv[i], "--classic"))
+      classic = true;
+    else if(!strcmp(argv[i], "--symmetric"))
       sym = true;
     else if(!strcmp(argv[i], "--serial"))
       device = "serial";
@@ -223,32 +240,34 @@ int main(int argc, char** argv)
     #endif
   }
   Kokkos::initialize();
+  //Kokkos::ScopeGuard kokkosScope (argc, argv);
+
   bool run = false;
   #ifdef KOKKOS_ENABLE_SERIAL
   if(device == "serial")
   {
-    runGS<Kokkos::Serial>(matrixPath, device, sym);
+    runGS<Kokkos::Serial>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_OPENMP
   if(device == "openmp")
   {
-    runGS<Kokkos::OpenMP>(matrixPath, device, sym);
+    runGS<Kokkos::OpenMP>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_THREADS
   if(device == "threads")
   {
-    runGS<Kokkos::Threads>(matrixPath, device, sym);
+    runGS<Kokkos::Threads>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
   #ifdef KOKKOS_ENABLE_CUDA
   if(device == "cuda")
   {
-    runGS<Kokkos::Cuda>(matrixPath, device, sym);
+    runGS<Kokkos::Cuda>(matrixPath, device, sym, twostage, classic);
     run = true;
   }
   #endif
