@@ -623,7 +623,8 @@ namespace KokkosSparse{
     using ordinal_t = typename std::remove_const<input_ordinal_t>::type;
     using size_type = typename std::remove_const<input_size_t>::type;
 
-    using crsmat_t = KokkosSparse::CrsMatrix <scalar_t, ordinal_t, ExecutionSpace, void, size_type>;
+    using device_t = Kokkos::Device<ExecutionSpace, TemporaryMemorySpace>;
+    using crsmat_t = KokkosSparse::CrsMatrix <scalar_t, ordinal_t, device_t, void, size_type>;
     using graph_t  = typename crsmat_t::StaticCrsGraphType;
 
     using input_row_map_view_t = typename graph_t::row_map_type;
@@ -642,10 +643,10 @@ namespace KokkosSparse{
     using const_ordinal_t = typename const_entries_view_t::value_type;
     using const_scalar_t  = typename const_values_view_t::value_type;
 
+    using vector_view_t = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, device_t>;
+
     using GSHandle = GaussSeidelHandle<input_size_t, input_ordinal_t, input_scalar_t,
                                        ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace>;
-
-    using vector_view_t = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, ExecutionSpace>;
 
     TwoStageGaussSeidelHandle () :
     GSHandle (GS_TWOSTAGE),
