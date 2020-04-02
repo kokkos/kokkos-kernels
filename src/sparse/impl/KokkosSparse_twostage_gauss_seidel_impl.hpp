@@ -47,16 +47,19 @@
 
 #include <KokkosKernels_config.h>
 #include "Kokkos_Core.hpp"
-#include "KokkosSparse_gauss_seidel_handle.hpp"
 
+// Blas Kernels
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_mult.hpp"
 #include "KokkosBlas1_axpby.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
+
 // needed for classical GS
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosKernels_SparseUtils.hpp"
+
+#include "KokkosSparse_gauss_seidel_handle.hpp"
 
 #define KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV
 
@@ -71,16 +74,16 @@ namespace KokkosSparse{
       using execution_space = typename HandleType::HandleExecSpace;
       using memory_space    = typename TwoStageGaussSeidelHandleType::memory_space;
 
-      using const_ordinal_t     = typename TwoStageGaussSeidelHandleType::const_ordinal_t;
-      using       ordinal_t     = typename TwoStageGaussSeidelHandleType::ordinal_t;
-      using       size_type     = typename TwoStageGaussSeidelHandleType::size_type;
-      using        scalar_t     = typename TwoStageGaussSeidelHandleType::scalar_t;
-      using  row_map_view_t     = typename TwoStageGaussSeidelHandleType::row_map_view_t;
-      using  entries_view_t     = typename TwoStageGaussSeidelHandleType::entries_view_t;
-      using   values_view_t     = typename TwoStageGaussSeidelHandleType::values_view_t;
+      using  const_scalar_t = typename TwoStageGaussSeidelHandleType::const_scalar_t;
+      using        scalar_t = typename TwoStageGaussSeidelHandleType::scalar_t;
+      using const_ordinal_t = typename TwoStageGaussSeidelHandleType::const_ordinal_t;
+      using       ordinal_t = typename TwoStageGaussSeidelHandleType::ordinal_t;
+      using       size_type = typename TwoStageGaussSeidelHandleType::size_type;
 
-      using  const_scalar_t     = typename TwoStageGaussSeidelHandleType::const_scalar_t;
       using  const_row_map_view_t = typename TwoStageGaussSeidelHandleType::const_row_map_view_t;
+      using  row_map_view_t       = typename TwoStageGaussSeidelHandleType::row_map_view_t;
+      using  entries_view_t       = typename TwoStageGaussSeidelHandleType::entries_view_t;
+      using   values_view_t       = typename TwoStageGaussSeidelHandleType::values_view_t;
 
       using       crsmat_t      = typename TwoStageGaussSeidelHandleType::crsmat_t;
       using        graph_t      = typename TwoStageGaussSeidelHandleType::graph_t;
@@ -88,13 +91,18 @@ namespace KokkosSparse{
       using range_type = Kokkos::pair<int, int>;
 
       // to wrap input (rowmap, colind, values) into crsmat
-      using input_device_t = Kokkos::Device<typename input_row_map_view_t::execution_space, typename input_row_map_view_t::memory_space>;
-      using input_crsmat_t = KokkosSparse::CrsMatrix <typename input_values_view_t::value_type,
-                                                      typename input_entries_view_t::value_type,
-                                                      input_device_t,
-                                                      typename input_values_view_t::memory_traits,
-                                                      typename input_row_map_view_t::value_type>;
+      using input_device_t  = Kokkos::Device<typename input_row_map_view_t::execution_space, typename input_row_map_view_t::memory_space>;
+      using input_memory_t  = typename input_values_view_t::memory_traits;
+      using input_scalar_t  = typename input_values_view_t::value_type;
+      using input_ordinal_t = typename input_entries_view_t::value_type;
+      using input_size_t    = typename input_row_map_view_t::value_type;
+      using input_crsmat_t  = KokkosSparse::CrsMatrix <input_scalar_t,
+                                                       input_ordinal_t,
+                                                       input_device_t,
+                                                       input_memory_t,
+                                                       input_size_t>;
       using input_graph_t  = typename input_crsmat_t::StaticCrsGraphType;
+      using single_vector_view_t = Kokkos::View<scalar_t*, Kokkos::LayoutLeft, input_device_t, input_memory_t>;
 
     private:
       HandleType *handle;
@@ -432,18 +440,7 @@ namespace KokkosSparse{
               values (nnzL) = values_view (k);
               nnzL ++;
             } else if (column_view (k) == i) {
-              #if 0 // Kokkos' sptrsv assumes diagonal of L and U to come at end and start
-              if (two_stage) {
-                diags (i) = one / values_view (k);
-              } else {
-                values (nnzL) = values_view (k);
-                values2 (nnzU) = values_view (k);
-                nnzL ++;
-                nnzU ++;
-              }
-              #else
               diags (i) = values_view (k);
-              #endif
             } else if (column_view (k) < num_rows) {
               values2 (nnzU) = values_view (k);
               nnzU ++;
@@ -757,7 +754,6 @@ namespace KokkosSparse{
               // NOTE: need to go over RHSs
               using namespace KokkosSparse::Experimental;
               for (int j = 0; j < nrhs; j++) {
-                using single_vector_view_t = Kokkos::View<scalar_t*, Kokkos::LayoutLeft, execution_space>;
                 auto localRj = Kokkos::subview (localR, Kokkos::ALL (), range_type (j, j+1));
                 auto localZj = Kokkos::subview (localZ, Kokkos::ALL (), range_type (j, j+1));
                 single_vector_view_t Rj (localRj.data (), nrows);
@@ -768,7 +764,6 @@ namespace KokkosSparse{
               using namespace KokkosSparse::Experimental;
               // NOTE: need to go over RHSs
               for (int j = 0; j < nrhs; j++) {
-                using single_vector_view_t = Kokkos::View<scalar_t*, Kokkos::LayoutLeft, execution_space>;
                 auto localRj = Kokkos::subview (localR, Kokkos::ALL (), range_type (j, j+1));
                 auto localZj = Kokkos::subview (localZ, Kokkos::ALL (), range_type (j, j+1));
                 single_vector_view_t Rj (localRj.data (), nrows);
