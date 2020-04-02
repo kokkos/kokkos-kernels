@@ -198,7 +198,7 @@ public:
     TwoStageGaussSeidelHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
       TwoStageGaussSeidelHandleType;
   typedef
-    KokkosKernelsHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace>
+    KokkosKernelsHandle<const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandleTempMemorySpace>
       TwoStageGaussSeidelSPTRSVHandleType;
   // ---------------------------------------- //
 
