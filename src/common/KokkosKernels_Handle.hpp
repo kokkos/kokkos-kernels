@@ -581,6 +581,12 @@ public:
   }
   // ---------------------------------------- //
   // Specify to use either Two-stage or Classical (i.e., inner Jacobi-Richardson or SpTrsv)
+  void set_gs_set_num_inner_sweeps (int num_inner_sweeps) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setNumInnerSweeps (num_inner_sweeps);
+  }
+  // ---------------------------------------- //
+  // Specify to use either Two-stage or Classical (i.e., inner Jacobi-Richardson or SpTrsv)
   void set_gs_twostage (bool two_stage, size_type nrows) {
     auto gs2 = get_twostage_gs_handle();
     gs2->setTwoStage (two_stage);
