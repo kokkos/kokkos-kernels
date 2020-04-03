@@ -344,7 +344,7 @@ namespace KokkosSparse{
           }
           #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
           if (two_stage) {
-            for (ordinal_t k = row_map (i); k < nnz; k++) {
+            for (size_type k = row_map (i); k < nnz; k++) {
               values (k) *= diags (i);
             }
           }
@@ -413,7 +413,7 @@ namespace KokkosSparse{
           }
           #if defined(KOKKOSSPARSE_IMPL_TWOSTAGE_GS_MERGE_SPMV)
           if (two_stage) {
-            for (ordinal_t k = row_map (i); k < nnz; k++) {
+            for (size_type k = row_map (i); k < nnz; k++) {
               values (k) *= diags (i);
             }
           }
@@ -498,10 +498,10 @@ namespace KokkosSparse{
               diags (i) = one / diags (i);
             }
             // compute inv(D)*L
-            for (ordinal_t k = row_map (i); k < row_map (i+1); k++) {
+            for (size_type k = row_map (i); k < row_map (i+1); k++) {
               values (k) *= diags (i);
             }
-            for (ordinal_t k = row_map2 (i); k < row_map2 (i+1); k++) {
+            for (size_type k = row_map2 (i); k < row_map2 (i+1); k++) {
               values2 (k) *= diags (i);
             }
           }
