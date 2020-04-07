@@ -44,16 +44,6 @@
 #ifndef _KOKKOS_SPGEMM_SYMBOLIC_HPP
 #define _KOKKOS_SPGEMM_SYMBOLIC_HPP
 
-/*
-#include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
-#include "KokkosSparse_spgemm_CUSP_impl.hpp"
-#include "KokkosSparse_spgemm_impl.hpp"
-#include "KokkosSparse_spgemm_impl_seq.hpp"
-#include "KokkosSparse_spgemm_mkl_impl.hpp"
-#include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
-#include "KokkosSparse_spgemm_viennaCL_impl.hpp"
-#include "KokkosKernels_Handle.hpp"
-*/
 #include "KokkosKernels_helpers.hpp"
 
 #include "KokkosSparse_spgemm_symbolic_spec.hpp"
@@ -124,7 +114,6 @@ void spgemm_symbolic(
   typedef typename Kokkos::Device<c_exec_t, c_temp_t> UniformDevice_t;
 
   typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
-  //const_handle_type tmp_handle = *handle;
   const_handle_type tmp_handle (*handle);
 
 
@@ -162,14 +151,6 @@ void spgemm_symbolic(
       UniformDevice_t, //      typename clno_row_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_clno_row_view_t_;
 
-  //const_handle_type *const_handle = (const_handle_type *)handle;
-  /*
-  Internal_alno_row_view_t_ const_a_r  = row_mapA;
-  Internal_alno_nnz_view_t_ const_a_l  = entriesA;
-  Internal_blno_row_view_t_ const_b_r  = row_mapB;
-  Internal_blno_nnz_view_t_ const_b_l  = entriesB;
-  Internal_clno_row_view_t_ const_c_r  = row_mapC;
-  */
   Internal_alno_row_view_t_ const_a_r (row_mapA.data(), row_mapA.extent(0));
   Internal_alno_nnz_view_t_ const_a_l (entriesA.data(), entriesA.extent(0));
   Internal_blno_row_view_t_ const_b_r (row_mapB.data(), row_mapB.extent(0));
