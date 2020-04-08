@@ -392,6 +392,7 @@ private:
 
 
 public:
+/*
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for colored SPGEMM
   ////DECL IS AT _color.hpp
@@ -400,17 +401,18 @@ public:
             typename b_row_view_t__, typename b_nnz_view_t__, typename b_scalar_view_t__,
             typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__>
   struct NumericCCOLOR;
+*/
 private:
   /**
    * \brief Numeric phase with speed method
    */
+/*
   template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
   void KokkosSPGEMM_numeric_color(
       c_row_view_t rowmapC_,
       c_lno_nnz_view_t entriesC_,
       c_scalar_nnz_view_t valuesC_,
       SPGEMMAlgorithm spgemm_algorithm);
-
 
   template <typename c_row_view_t, typename c_nnz_view_t>
   void d2_color_c_matrix(
@@ -425,6 +427,7 @@ private:
       nnz_lno_t &num_colors_in_one_step,
       nnz_lno_t &num_multi_color_steps,
       SPGEMMAlgorithm spgemm_algorithm);
+*/
 public:
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for kkmem SPGEMM
@@ -760,7 +763,6 @@ private:
 #include "KokkosSparse_spgemm_imp_outer.hpp"
 #include "KokkosSparse_spgemm_impl_memaccess.hpp"
 #include "KokkosSparse_spgemm_impl_kkmem.hpp"
-#include "KokkosSparse_spgemm_impl_color.hpp"
 #include "KokkosSparse_spgemm_impl_speed.hpp"
 #include "KokkosSparse_spgemm_impl_compression.hpp"
 #include "KokkosSparse_spgemm_impl_def.hpp"
