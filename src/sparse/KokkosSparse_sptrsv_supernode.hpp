@@ -52,11 +52,13 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
+// trmm & trtri are called on Host
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+
+#include "KokkosBlas3_trmm.hpp"
+#include "KokkosBlas_trtri.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)
-#include "cblas.h"
-#include "lapacke.h"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -930,9 +932,11 @@ void
 invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper, const int *nb, 
                           row_map_type& hr, index_type& hc, values_type& hv) {
 
-  //using values_view_t  = typename crsmat_t::values_type::non_const_type;
+  using execution_space = typename values_type::execution_space;
+  using memory_space = typename execution_space::memory_space;
   using values_view_t  = typename values_type::non_const_type;
   using scalar_t = typename values_view_t::value_type;
+  using range_type = Kokkos::pair<int, int>;
 
   const scalar_t one (1.0);
 
@@ -941,7 +945,7 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
   bool invert_diag = handle->get_invert_diagonal ();
   bool invert_offdiag = handle->get_invert_offdiagonal ();
 
- // lower is always in CSC, if UinCSC, then lower=false, else lower=true
+  // lower is always in CSC, if UinCSC, then lower=false, else lower=true
   bool lower_tri = kernelHandle->is_sptrsv_lower_tri ();
   bool lower = (lower_tri ? true : (handle->is_column_major () ? false : true));
 
@@ -963,43 +967,23 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
     char uplo_char = (lower ? 'L' : 'U');
     char diag_char = (unit_diag ? 'U' : 'N');
 
+    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged>
+      viewL (&hv(nnzD), nsrow, nscol);
+    auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
+
     timer.reset ();
-    if (std::is_same<scalar_t, double>::value) {
-      LAPACKE_dtrtri (LAPACK_COL_MAJOR,
-                      uplo_char, diag_char, nscol,
-                      reinterpret_cast <double*> (&hv(nnzD)), nsrow);
-    }
-    else if (std::is_same<scalar_t, std::complex<double>>::value ||
-             std::is_same<scalar_t, Kokkos::complex<double>>::value) {
-      LAPACKE_ztrtri (LAPACK_COL_MAJOR,
-                      uplo_char, diag_char, nscol,
-                      reinterpret_cast <lapack_complex_double*> (&hv(nnzD)), nsrow);
-    }
-    else {
-      throw std::runtime_error( "Unsupported scalar type for calling trtri");
-    }
+    KokkosBlas::trtri(&uplo_char, &diag_char, Ljj);
     time1 += timer.seconds ();
+
     if (nsrow > nscol && invert_offdiag) {
-      CBLAS_UPLO uplo_cblas = (lower ? CblasLower : CblasUpper);
-      CBLAS_DIAG diag_cblas = (unit_diag ? CblasUnit : CblasNonUnit);
+      char side_char = 'R';
+      char tran_char = 'N';
+      auto Lij = Kokkos::subview (viewL, range_type (nscol, nsrow), Kokkos::ALL ());
 
       timer.reset ();
-      if (std::is_same<scalar_t, double>::value) {
-        cblas_dtrmm (CblasColMajor,
-              CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-              nsrow-nscol, nscol,
-              1.0, reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-                   reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-      } else {
-        // NOTE: use double pointers
-        scalar_t alpha = one;
-        cblas_ztrmm (CblasColMajor,
-              CblasRight, uplo_cblas, CblasNoTrans, diag_cblas,
-              nsrow-nscol, nscol,
-              reinterpret_cast <double*> (&alpha),
-              reinterpret_cast <double*> (&hv(nnzD)), nsrow,
-              reinterpret_cast <double*> (&hv(nnzD+nscol)), nsrow);
-      }
+      KokkosBlas::trmm (&side_char, &uplo_char,
+                        &tran_char, &diag_char,
+                        one, Ljj, Lij);
       time2 += timer.seconds ();
     }
   }
@@ -1579,6 +1563,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_LAPACKE & KOKKOSKERNELS_ENABLE_TPL_CBLAS
+#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif // KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
