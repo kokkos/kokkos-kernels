@@ -42,9 +42,6 @@
 //@HEADER
 */
 
-#ifndef _KOKKOSSPGEMMIMPL_HPP
-#define  _KOKKOSSPGEMMIMPL_HPP
-
 #include "KokkosGraph_Distance2Color.hpp"
 
 namespace KokkosSparse{
@@ -487,7 +484,7 @@ void
       transpose_col_xadj = row_lno_temp_work_view_t("transpose_col_xadj", b_col_cnt + 1);
       transpose_col_adj = nnz_lno_temp_work_view_t (Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), c_nnz_size);
 
-    KokkosKernels::Impl::kk_transpose_graph<
+    KokkosKernels::Impl::transpose_graph<
   c_row_view_t, c_nnz_view_t,
   row_lno_temp_work_view_t, nnz_lno_temp_work_view_t, row_lno_temp_work_view_t,
   MyExecSpace>
@@ -652,6 +649,4 @@ void
 
 }
 }
-
-#endif
 
