@@ -213,7 +213,7 @@ public:
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-  using supercols_memory_space = TemporaryMemorySpace; //typename execution_space::memory_space;
+  using supercols_memory_space = TemporaryMemorySpace;
 
   using supercols_host_execution_space = Kokkos::DefaultHostExecutionSpace;
   using supercols_host_memory_space = typename supercols_host_execution_space::memory_space;
