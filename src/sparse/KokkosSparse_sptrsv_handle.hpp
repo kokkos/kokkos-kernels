@@ -213,7 +213,7 @@ public:
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-  using supercols_memory_space = typename execution_space::memory_space;
+  using supercols_memory_space = TemporaryMemorySpace; //typename execution_space::memory_space;
 
   using supercols_host_execution_space = Kokkos::DefaultHostExecutionSpace;
   using supercols_host_memory_space = typename supercols_host_execution_space::memory_space;
@@ -221,7 +221,7 @@ public:
   using integer_view_t = Kokkos::View<int*, supercols_memory_space>;
   using integer_view_host_t = Kokkos::View<int*, supercols_host_memory_space>;
 
-  using workspace_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using workspace_t = typename Kokkos::View<scalar_t*, supercols_memory_space>;
 
   //
   using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type>;

@@ -1255,7 +1255,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   auto entriesL = graphL.entries;
 
   auto values = superluL.values;
-  values_view_host_t valuesL = Kokkos::create_mirror_view (values);
+  auto valuesL = Kokkos::create_mirror_view (values);
   Kokkos::deep_copy (valuesL, values);
 
   int node_count = 0; // number of supernodes processed

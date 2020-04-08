@@ -604,11 +604,13 @@ struct LowerTriLvlSchedTP2SolverFunctor
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 // -----------------------------------------------------------
 // Helper functors for Lower-triangular solve with SpMV 
-template <class LHSType, class NGBLType>
+template <class TriSolveHandle, class LHSType, class NGBLType>
 struct SparseTriSupernodalSpMVFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  //using execution_space = typename LHSType::execution_space;
+  //using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type = Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
@@ -675,11 +677,11 @@ struct SparseTriSupernodalSpMVFunctor
 
 // -----------------------------------------------------------
 // Functor for Lower-triangular solve
-template <class ColptrView, class RowindType, class ValuesType, class LHSType, class NGBLType>
+template <class TriSolveHandle, class ColptrView, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct LowerTriSupernodalFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type =  Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
@@ -829,11 +831,11 @@ struct LowerTriSupernodalFunctor
 
 // -----------------------------------------------------------
 // Functor for Upper-triangular solve in CSR
-template <class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
+template <class TriSolveHandle, class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct UpperTriSupernodalFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type = Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
@@ -975,11 +977,11 @@ struct UpperTriSupernodalFunctor
 
 // -----------------------------------------------------------
 // Functor for Upper-triangular solve in CSC
-template <class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
+template <class TriSolveHandle, class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct UpperTriTranSupernodalFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type = Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
@@ -2579,7 +2581,7 @@ cudaProfilerStop();
   // workspaces
   integer_view_t work_offset = thandle.get_work_offset ();
   integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
-  Kokkos::View<scalar_t*, memory_space> work = thandle.get_workspace ();
+  auto work = thandle.get_workspace ();
 #endif
 
   size_type node_count = 0;
@@ -2710,7 +2712,7 @@ cudaProfilerStart();
 
         // launching sparse-triangular solve functor
         typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
-        LowerTriSupernodalFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
+        LowerTriSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
           sptrsv_functor (invert_offdiagonal, supercols, row_map, entries, values, lvl, kernel_type, diag_kernel_type, lhs,
                           work, work_offset, nodes_grouped_by_level, node_count);
         Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_functor);
@@ -2746,12 +2748,12 @@ cudaProfilerStart();
                           lhs,
                      one, work);
           // copy from work to lhs corresponding to diagonal blocks
-          SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+          SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
             sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, lhs, work);
           Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
         } else {
           // copy lhs corresponding to diagonal blocks to work and zero out in lhs
-          SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+          SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
             sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
           Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
         }
@@ -2763,7 +2765,7 @@ cudaProfilerStart();
                    one, lhs);
 
         // reinitialize workspace
-        SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+        SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
           sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, lhs, work);
         Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_finalize_functor);
 
@@ -2848,7 +2850,7 @@ cudaProfilerStop();
   // workspace
   integer_view_t work_offset = thandle.get_work_offset ();
   integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
-  Kokkos::View<scalar_t*, memory_space> work = thandle.get_workspace ();
+  auto work = thandle.get_workspace ();
 #endif
 
   size_type node_count = 0;
@@ -2984,7 +2986,7 @@ cudaProfilerStart();
           }
 
           // launching sparse-triangular solve functor
-          UpperTriTranSupernodalFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
+          UpperTriTranSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
             sptrsv_functor (invert_offdiagonal, supercols, row_map, entries, values,lvl, kernel_type, diag_kernel_type, lhs,
                             work, work_offset, nodes_grouped_by_level, node_count);
 
@@ -2992,7 +2994,7 @@ cudaProfilerStart();
           Kokkos::parallel_for ("parfor_usolve_tran_supernode", policy_type (lvl_nodes , Kokkos::AUTO), sptrsv_functor);
         } else { // U stored in CSR
           // launching sparse-triangular solve functor
-          UpperTriSupernodalFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
+          UpperTriSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
             sptrsv_functor (supercols, row_map, entries, values,lvl, kernel_type, diag_kernel_type, lhs,
                             work, work_offset, nodes_grouped_by_level, node_count);
 
@@ -3080,12 +3082,12 @@ cudaProfilerStart();
                             lhs,
                        one, work);
             // copy from work to lhs corresponding to diagonal blocks
-            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
               sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, lhs, work);
             Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
           } else {
             // zero out lhs corresponding to diagonal blocks in lhs, and copy to work
-            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
               sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
             Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
           }
@@ -3098,7 +3100,7 @@ cudaProfilerStart();
         } else {
           if (!invert_offdiagonal) {
             // zero out lhs corresponding to diagonal blocks in lhs, and copy to work
-            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
               sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
             Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
 
@@ -3120,7 +3122,7 @@ cudaProfilerStart();
           }
         }
         // reinitialize workspace
-        SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
+        SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
           sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, lhs, work);
         Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_finalize_functor);
 
