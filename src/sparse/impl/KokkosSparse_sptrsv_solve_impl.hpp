@@ -2682,7 +2682,8 @@ cudaProfilerStart();
               gemv("N", one,  Ljj,
                               Xj,
                         zero, Y);
-              Kokkos::deep_copy(Xj, Y);
+              auto Yj = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));
+              Kokkos::deep_copy(Xj, Yj);
             } else {
               auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));
               auto Xj = Kokkos::subview (lhs, range_type (j1, j2));                      // part of the solution, corresponding to the diagonal block
