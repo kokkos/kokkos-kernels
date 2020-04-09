@@ -42,6 +42,8 @@
 //@HEADER
 */
 
+// ech-TODO: How does use_unit_diag affect trmm operation? Just copy from B
+// instead of multiply against A...?
 #ifndef __KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP__
 #define __KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP__
 
@@ -106,6 +108,9 @@ namespace KokkosBatched {
       auto B_elems = left_row;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = 0; i <= B_elems; i++) {
         //printf("%lf * %lf\n", A[left_row*as0 + i*as1], B[i*bs0 + bs1*right_col]);
         sum += A[left_row*as0 + i*as1] * B[i*bs0 + bs1*right_col];
@@ -123,7 +128,13 @@ namespace KokkosBatched {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int m = left_m-1; m >= 0; m--) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
         for (int n = 0; n < right_n; n++) {
           B[m*bs0 + n*bs1] = dotLowerLeft(A, as0, as1, m, B, bs0, bs1, n);
         }

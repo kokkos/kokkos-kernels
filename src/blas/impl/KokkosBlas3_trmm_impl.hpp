@@ -85,6 +85,13 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(0), A.stride(1),
                                                                   B.data(), B.stride(0), B.stride(1));
+      if (__side == 'l' && __uplo == 'l' && __trans == 'n' && __diag == 'n')
+        SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+                                                                  A.extent(0), A.extent(1),
+                                                                  B.extent(0), B.extent(1),
+                                                                  alpha,
+                                                                  A.data(), A.stride(0), A.stride(1),
+                                                                  B.data(), B.stride(0), B.stride(1));
     }
   } // namespace Impl
 } // namespace KokkosBlas
