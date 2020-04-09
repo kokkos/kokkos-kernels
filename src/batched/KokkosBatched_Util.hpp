@@ -241,12 +241,20 @@ namespace KokkosBatched {
     struct NonUnit { static const bool use_unit_diag = false; };
   };
 
+  struct Direct {
+    struct Forward {};
+    struct Backward {};
+  };
+
   struct Mode {
     struct Serial {
       static const char *name() { return "Serial"; }        
     };
     struct Team {
       static const char *name() { return "Team"; }
+    };
+    struct TeamVector {
+      static const char *name() { return "TeamVector"; }
     };
   };
 
@@ -285,6 +293,7 @@ namespace KokkosBatched {
     using LU   = Level3;
     using InverseLU = Level3;
     using SolveLU   = Level3;
+    using QR = Level3;
 
     struct Level2 {
       struct Unblocked {};
@@ -310,6 +319,7 @@ namespace KokkosBatched {
 
     using Gemv = Level2;
     using Trsv = Level2;
+    using ApplyQ = Level2;
 
     //         struct Level1 {
     //           struct Unblocked {};

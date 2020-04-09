@@ -1,11 +1,11 @@
-#ifndef __KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP__
+#ifndef __KOKKOSBATCHED_APPLY_Q_TEAMVECTOR_INTERNAL_HPP__
+#define __KOKKOSBATCHED_APPLY_Q_TEAMVECTOR_INTERNAL_HPP__
 
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_ApplyHouseholder_Serial_Internal.hpp"
+#include "KokkosBatched_ApplyHouseholder_TeamVector_Internal.hpp"
 
 namespace KokkosBatched {
 
@@ -17,11 +17,13 @@ namespace KokkosBatched {
   ///
 
 
-  struct SerialApplyQ_LeftForwardInternal {
-    template<typename ValueType>
+  struct TeamVectorApplyQ_LeftForwardInternal {
+    template<typename MemberType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const int m, 
+    invoke(const MemberType &member, 
+           const int m, 
            const int n, 
            const int k, 
            /* */ ValueType * A, const int as0, const int as1,
@@ -63,13 +65,14 @@ namespace KokkosBatched {
         const int m_A2 = m - m_A0 - 1;
         /// -----------------------------------------------------
         // left apply householder to partitioned B1 and B2
-        SerialApplyLeftHouseholderInternal::invoke(m_A2, n,
-                                                   tau,
-                                                   A_part3x3.A21, as0,
-                                                   B_part3x1.A1,  bs1,
-                                                   B_part3x1.A2,  bs0, bs1, 
-                                                   w);            
-
+        TeamVectorApplyLeftHouseholderInternal::invoke(member, 
+                                                       m_A2, n,
+                                                       tau,
+                                                       A_part3x3.A21, as0,
+                                                       B_part3x1.A1,  bs1,
+                                                       B_part3x1.A2,  bs0, bs1, 
+                                                       w);            
+        member.team_barrier();
         /// -----------------------------------------------------
         A_part2x2.mergeToABR(A_part3x3);
         t_part2x1.mergeToAB (t_part3x1);
@@ -79,11 +82,13 @@ namespace KokkosBatched {
     }
   };
 
-  struct SerialApplyQ_LeftBackwardInternal {
-    template<typename ValueType>
+  struct TeamVectorApplyQ_LeftBackwardInternal {
+    template<typename MemberType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const int m, 
+    invoke(const MemberType &member, 
+           const int m, 
            const int n, 
            const int k, 
            /* */ ValueType * A, const int as0, const int as1,
@@ -94,7 +99,7 @@ namespace KokkosBatched {
         
       /// Given a matrix A that includes a series of householder vectors,
       /// it applies a unitary matrix Q to B from left without transpose
-      ///   B = Q^H B = (H(k-1) H(k-2) ... H0) B
+      ///   B = Q B = (H0 H1 H2 H3 ... H(k-1)) B
       /// where
       ///   A is m x k (holding H0, H1 ... H(k-1)
       ///   t is k x 1 
@@ -125,13 +130,14 @@ namespace KokkosBatched {
         const int m_A2 = m - m_A0 - 1;
         /// -----------------------------------------------------
         // left apply householder to partitioned B1 and B2
-        SerialApplyLeftHouseholderInternal::invoke(m_A2, n,
-                                                   tau,
-                                                   A_part3x3.A21, as0,
-                                                   B_part3x1.A1,  bs1,
-                                                   B_part3x1.A2,  bs0, bs1, 
-                                                   w);            
-
+        TeamVectorApplyLeftHouseholderInternal::invoke(member, 
+                                                       m_A2, n,
+                                                       tau,
+                                                       A_part3x3.A21, as0,
+                                                       B_part3x1.A1,  bs1,
+                                                       B_part3x1.A2,  bs0, bs1, 
+                                                       w);            
+        member.team_barrier();
         /// -----------------------------------------------------
         A_part2x2.mergeToATL(A_part3x3);
         t_part2x1.mergeToAT (t_part3x1);
@@ -141,11 +147,13 @@ namespace KokkosBatched {
     }
   };
 
-  struct SerialApplyQ_RightForwardInternal {
-    template<typename ValueType>
+  struct TeamVectorApplyQ_RightForwardInternal {
+    template<typename MemberType, 
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const int m,
+    invoke(const MemberType &member, 
+           const int m,
            const int n,
            const int k,
            /* */ ValueType * A, const int as0, const int as1,
@@ -187,12 +195,14 @@ namespace KokkosBatched {
         const int n_B2 = n - n_A0 - 1;
         /// -----------------------------------------------------
         // right apply householder to partitioned B1 and B2
-        SerialApplyRightHouseholderInternal::invoke(m, n_B2,
-                                                    tau,
-                                                    A_part3x3.A21, as0,
-                                                    B_part1x3.A1,  bs0,
-                                                    B_part1x3.A2,  bs0, bs1, 
-                                                    w);
+        TeamVectorApplyRightHouseholderInternal::invoke(member, 
+                                                        m, n_B2,
+                                                        tau,
+                                                        A_part3x3.A21, as0,
+                                                        B_part1x3.A1,  bs0,
+                                                        B_part1x3.A2,  bs0, bs1, 
+                                                        w);
+        member.team_barrier();
         /// -----------------------------------------------------
         A_part2x2.mergeToATL(A_part3x3);
         t_part2x1.mergeToAT (t_part3x1);
