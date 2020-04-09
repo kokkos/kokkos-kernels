@@ -101,13 +101,19 @@ namespace KokkosBatched {
     const ScalarType one(1.0), zero(0.0);
     int left_m = am;
     int right_n = bn;
-    int r;
-    int B_elems;
-    int A_elems;
-    int left_row;
-    int right_col;
-    ScalarType sum = 0;
-        
+    
+    auto dotLowerLeft = [](const ValueType *__restrict__ A, const int as0, const int as1, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
+      auto B_elems = left_row;
+      auto A_elems = B_elems * as0;
+      ScalarType sum = 0;
+      for (int i = 0; i <= B_elems; i++) {
+        //printf("%lf * %lf\n", A[left_row*as0 + i*as1], B[i*bs0 + bs1*right_col]);
+        sum += A[left_row*as0 + i*as1] * B[i*bs0 + bs1*right_col];
+      }
+      //printf("--sum=%lf\n", sum);
+      return sum;
+    };
+
     if (bm <= 0 || bn <= 0 || am <= 0 || an <= 0)
       return 0;
 
@@ -117,18 +123,9 @@ namespace KokkosBatched {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
-      for (int m = 0; m < left_m; m++) {
+      for (int m = left_m-1; m >= 0; m--) {
         for (int n = 0; n < right_n; n++) {
-          //dotLowerLeft(A, as0, as1, m, B, bs0, bs1, n);
-          left_row = m;
-          right_col = n;
-          B_elems = left_row;
-          A_elems = B_elems * as0;
-          sum = 0;
-          for (int i = 0; i <= B_elems; i++) {
-            sum += A[left_row*as0 + i*as1] * B[i*bs0 + bs1*right_col];
-          }
-          B[m*bs0 + n*bs1] = sum;
+          B[m*bs0 + n*bs1] = dotLowerLeft(A, as0, as1, m, B, bs0, bs1, n);
         }
       }
     }
