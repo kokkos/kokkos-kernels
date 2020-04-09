@@ -180,8 +180,8 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   {
     int varianz = (1.0*rand()/RAND_MAX-0.5)*row_size_variance;
     rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
-    if(rowPtr[row+1] == rowPtr[row])   // This makes sure that
-      rowPtr[row+1]++;                 // there are no empty rows
+    if(rowPtr[row+1] <= rowPtr[row])   // This makes sure that there is
+      rowPtr[row+1] = rowPtr[row] + 1; // at least one nonzero in the row
   }
   nnz = rowPtr[nrows];
   values = new ScalarType[nnz];
