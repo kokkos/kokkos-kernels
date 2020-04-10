@@ -41,13 +41,12 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef _KOKKOS_SPGEMM_HPP
-#define _KOKKOS_SPGEMM_HPP
+#ifndef KOKKOSSPARSE_SPGEMM_JACOBI_ETI_SPEC_DECL_HPP_
+#define KOKKOSSPARSE_SPGEMM_JACOBI_ETI_SPEC_DECL_HPP_
 
-
-#include "KokkosSparse_spgemm_numeric.hpp"
-#include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_jacobi.hpp"
-
-
+namespace KokkosSparse {
+namespace Impl {
+@SPARSE_SPGEMM_JACOBI_ETI_DECL_BLOCK@
+  } //IMPL 
+} //Kokkos
 #endif
