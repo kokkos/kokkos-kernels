@@ -206,19 +206,11 @@ namespace KokkosSparse{
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
 	case KokkosKernels::Impl::Exec_OMP:
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-	  return Kokkos::OpenMP::hardware_thread_id();
-#else
 	  return Kokkos::OpenMP::impl_hardware_thread_id();
-#endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
 	case KokkosKernels::Impl::Exec_PTHREADS:
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-	  return Kokkos::Threads::hardware_thread_id();
-#else
 	  return Kokkos::Threads::impl_hardware_thread_id();
-#endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
 	case KokkosKernels::Impl::Exec_QTHREADS:
