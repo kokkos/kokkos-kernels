@@ -284,7 +284,7 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row
   view_t dinv("Dinv", numRows, 1);
   Kokkos::deep_copy(dinv, 2.0);
 
-  run_spgemm_jacobi<crsMat_t, device, scalar_t, view_t>(input_mat, input_mat, omega, dinv, SPGEMM_DEBUG, output_mat2);
+  run_spgemm_jacobi<crsMat_t, device, scalar_t, view_t>(input_mat, input_mat, omega, dinv, SPGEMM_SERIAL, output_mat2);
 
   SPGEMMAlgorithm spgemm_algorithm = SPGEMM_KK_MEMORY; // should we test other SpGEMM algorithms as well?
 

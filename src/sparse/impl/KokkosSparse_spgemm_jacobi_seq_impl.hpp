@@ -59,7 +59,7 @@ template <typename KernelHandle,
   typename clno_nnz_view_t_,
   typename cscalar_nnz_view_t_,
   typename dinv_scalar_view_t>
-void spgemm_debug_jacobi(
+void spgemm_jacobi_seq(
     KernelHandle * /* handle */,
     typename KernelHandle::nnz_lno_t m,
     typename KernelHandle::nnz_lno_t /* n */,

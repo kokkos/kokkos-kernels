@@ -219,12 +219,12 @@ namespace KokkosSparse {
 	  throw std::runtime_error ("Call spgemm symbolic before calling SpGEMM jacobi");
 	}
 
-	if (sh->get_algorithm_type() == SPGEMM_DEBUG) {
-	  spgemm_debug_jacobi(handle, m, n, k,
-			      row_mapA, entriesA, valuesA, transposeA,
-			      row_mapB, entriesB, valuesB, transposeB,
-			      row_mapC, entriesC, valuesC,
-			      omega, dinv);
+	if (sh->get_algorithm_type() == SPGEMM_SERIAL) {
+	  spgemm_jacobi_seq(handle, m, n, k,
+			    row_mapA, entriesA, valuesA, transposeA,
+			    row_mapB, entriesB, valuesB, transposeB,
+			    row_mapC, entriesC, valuesC,
+			    omega, dinv);
 	}
 	else {
 	  KokkosSPGEMM
