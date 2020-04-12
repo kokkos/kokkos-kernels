@@ -63,11 +63,11 @@ namespace KokkosSparse{
 	      typename clno_nnz_view_t_,
 	      typename cscalar_nnz_view_t_,
 	      typename dinv_view_t_>
-    void spgemm_jacobi(
-		       KernelHandle *handle,
+    void spgemm_jacobi(KernelHandle *handle,
 		       typename KernelHandle::const_nnz_lno_t m,
 		       typename KernelHandle::const_nnz_lno_t n,
 		       typename KernelHandle::const_nnz_lno_t k,
+
 		       alno_row_view_t_ row_mapA,
 		       alno_nnz_view_t_ entriesA,
 		       ascalar_nnz_view_t_ valuesA,
@@ -83,9 +83,7 @@ namespace KokkosSparse{
 		       cscalar_nnz_view_t_ &valuesC,
 
 		       typename cscalar_nnz_view_t_::const_value_type omega,
-		       dinv_view_t_ dinv
-		       ){
-
+		       dinv_view_t_ dinv){
 
 
       static_assert (std::is_same<typename clno_row_view_t_::value_type,
@@ -138,7 +136,7 @@ namespace KokkosSparse{
 
 
       if (transposeA || transposeB){
-	throw std::runtime_error ("SpGEMM is not implemented for Transposes yet. "
+	throw std::runtime_error ("spgemm-jacobi does not support transposed multiply. "
 				  "If you need this case please let kokkos-kernels developers know.\n");
       }
 
@@ -223,11 +221,11 @@ namespace KokkosSparse{
       Internal_ascalar_nnz_view_t_ const_a_s (valuesA.data(), valuesA.extent(0));
       Internal_blno_row_view_t_ const_b_r (row_mapB.data(), row_mapB.extent(0));
       Internal_blno_nnz_view_t_ const_b_l  (entriesB.data(), entriesB.extent(0));
-      Internal_bscalar_nnz_view_t_ const_b_s ( valuesB.data(), valuesB.extent(0));
-      Internal_clno_row_view_t_ nonconst_c_r  ( row_mapC.data(), row_mapC.extent(0));
-      Internal_clno_nnz_view_t_ nonconst_c_l  ( entriesC.data(), entriesC.extent(0));
-      Internal_cscalar_nnz_view_t_ nonconst_c_s ( valuesC.data(), valuesC.extent(0));
-      Internal_dinv_view_t_ const_d_s ( dinv.data(), dinv.extent(0), dinv.extent(1));
+      Internal_bscalar_nnz_view_t_ const_b_s (valuesB.data(), valuesB.extent(0));
+      Internal_clno_row_view_t_ nonconst_c_r  (row_mapC.data(), row_mapC.extent(0));
+      Internal_clno_nnz_view_t_ nonconst_c_l  (entriesC.data(), entriesC.extent(0));
+      Internal_cscalar_nnz_view_t_ nonconst_c_s (valuesC.data(), valuesC.extent(0));
+      Internal_dinv_view_t_ const_d_s (dinv.data(), dinv.extent(0), dinv.extent(1));
 
 
       KokkosSparse::Impl::SPGEMM_JACOBI<
