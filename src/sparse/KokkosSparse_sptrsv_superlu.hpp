@@ -255,20 +255,15 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* Symbolic analysis                                                                         */
-template <typename scalar_type,
-          typename ordinal_type,
-          typename size_type,
-          typename KernelHandle,
-          typename execution_space      = Kokkos::DefaultExecutionSpace,
-          typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+template <typename KernelHandle>
 void sptrsv_symbolic(
     KernelHandle *kernelHandleL,
     KernelHandle *kernelHandleU,
     SuperMatrix &L,
     SuperMatrix &U)
 {
-  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type>;
-  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
+  using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
+  using host_graph_t  = typename KernelHandle::SPTRSVHandleType::host_graph_t;
 
   Kokkos::Timer timer;
   Kokkos::Timer tic;
@@ -318,9 +313,9 @@ void sptrsv_symbolic(
 
   // ===================================================================
   // call supnodal symbolic
-  sptrsv_supernodal_symbolic<scalar_type, ordinal_type, size_type> (nsuper, supercols, etree,
-                                                                    graphL_host, kernelHandleL,
-                                                                    graphU_host, kernelHandleU);
+  sptrsv_supernodal_symbolic (nsuper, supercols, etree,
+                              graphL_host, kernelHandleL,
+                              graphU_host, kernelHandleU);
 }
 
 
@@ -523,20 +518,15 @@ read_superlu_valuesU(KernelHandle kernelHandle,
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For numeric computation                                                                   */
-template <typename scalar_type,
-          typename ordinal_type,
-          typename size_type,
-          typename KernelHandle,
-          typename execution_space      = Kokkos::DefaultExecutionSpace,
-          typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+template <typename KernelHandle>
 void sptrsv_compute(
     KernelHandle *kernelHandleL,
     KernelHandle *kernelHandleU,
     SuperMatrix &L,
     SuperMatrix &U)
 {
-  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type>;
-  using crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type,      execution_space, void, size_type>;
+  using      crsmat_t = typename KernelHandle::SPTRSVHandleType::crsmat_t;
+  using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
 
   Kokkos::Timer tic;
   Kokkos::Timer timer;

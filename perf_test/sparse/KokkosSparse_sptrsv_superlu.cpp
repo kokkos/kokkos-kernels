@@ -48,6 +48,7 @@
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_sptrsv_superlu.hpp"
 
+
 #if defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )         && \
   (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)) && \
     defined(KOKKOSKERNELS_INST_DOUBLE) || \
@@ -254,7 +255,8 @@ void free_superlu (SuperMatrix &L, SuperMatrix &U,
 /* ========================================================================================= */
 template<typename scalar_type>
 int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filename, bool symm_mode, bool metis, bool merge,
-                      bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int loop) {
+                      bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int block_size,
+                      int loop) {
 
   using ordinal_type = int;
   using size_type    = int;
@@ -366,13 +368,17 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khL.set_sptrsv_verbose (verbose);
 
           // specify if U is stored in CSR or CSC
+          std::cout << "=============================== " << std::endl;
+          std::cout << " U in CSR           : " << u_in_csr << std::endl;
           khU.set_sptrsv_column_major (!u_in_csr);
 
           // specify wheather to merge supernodes (optional, default merge is false)
+          std::cout << " Merge Supernode    : " << merge << std::endl;
           khL.set_sptrsv_merge_supernodes (merge);
           khU.set_sptrsv_merge_supernodes (merge);
 
           // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
+          std::cout << " Invert Off-diagonal: " << invert_offdiag << std::endl;
           khL.set_sptrsv_invert_offdiagonal (invert_offdiag);
           khU.set_sptrsv_invert_offdiagonal (invert_offdiag);
           
@@ -386,15 +392,24 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khL.set_sptrsv_perm (perm_r);
           khU.set_sptrsv_perm (perm_c);
 
+          // block size to switch to device call
+          if (block_size >= 0) {
+            std::cout << " Block Size         : " << block_size << std::endl;
+            khL.set_sptrsv_diag_supernode_sizes (block_size, block_size);
+            khU.set_sptrsv_diag_supernode_sizes (block_size, block_size);
+          }
+          std::cout << std::endl;
+
+
           // ==============================================
           // do symbolic analysis (preprocssing, e.g., merging supernodes, inverting diagonal/offdiagonal blocks,
           // and scheduling based on graph/dag)
-          sptrsv_symbolic<scalar_type, ordinal_type, size_type> (&khL, &khU, L, U);
+          sptrsv_symbolic (&khL, &khU, L, U);
 
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
-          sptrsv_compute<scalar_type, ordinal_type, size_type> (&khL, &khU, L, U);
+          sptrsv_compute (&khL, &khU, L, U);
 
 
           // ==============================================
@@ -600,10 +615,12 @@ int main(int argc, char **argv) {
   bool metis = false;
   // merge supernodes
   bool merge = false;
-  // invert off-diagonal of L-factor
+  // apply invert of diagonal to offdiagonal
   bool invert_offdiag = false;
   // store U in CSR, or CSC
   bool u_in_csr = true;
+  // block size to switch to device call (default is 100)
+  int block_size  = -1;
   // parameters for SuperLU (only affects factorization)
   int panel_size = sp_ienv(1);
   int relax_size = sp_ienv(2);
@@ -677,6 +694,10 @@ int main(int argc, char **argv) {
       relax_size = atoi(argv[++i]);
       continue;
     }
+    if((strcmp(argv[i],"--block-size")==0)) {
+      block_size = atoi(argv[++i]);
+      continue;
+    }
     if((strcmp(argv[i],"--help")==0) || (strcmp(argv[i],"-h")==0)) {
       print_help_sptrsv();
       return 0;
@@ -706,7 +727,8 @@ int main(int argc, char **argv) {
     #endif
   #endif
   int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
-                                                  invert_offdiag, u_in_csr, panel_size, relax_size, loop);
+                                                 invert_offdiag, u_in_csr, panel_size, relax_size,
+                                                 block_size, loop);
   if(total_errors == 0)
     std::cout << "Kokkos::SPTRSV Test: Passed " << scalarTypeString
               << std::endl << std::endl;

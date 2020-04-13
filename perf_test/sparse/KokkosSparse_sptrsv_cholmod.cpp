@@ -230,11 +230,11 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, int loop) {
 
           // ==============================================
           // Do symbolic analysis
-          sptrsv_symbolic<scalar_type, ordinal_type, size_type> (&khL, &khU, L, &cm);
+          sptrsv_symbolic (&khL, &khU, L, &cm);
 
           // ==============================================
           // Do numerical compute
-          sptrsv_compute<scalar_type, ordinal_type, size_type> (&khL, &khU, L, &cm);
+          sptrsv_compute (&khL, &khU, L, &cm);
 
           // ==============================================
           // Create the known solution and set to all 1's ** on host **

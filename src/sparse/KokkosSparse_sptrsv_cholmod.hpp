@@ -99,21 +99,13 @@ namespace Experimental {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For symbolic analysis                                                                     */
-  template <typename scalar_type,
-            typename ordinal_type,
-            typename size_type,
-            typename KernelHandle,
-            typename execution_space      = Kokkos::DefaultExecutionSpace,
-            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+  template <typename KernelHandle>
   void sptrsv_symbolic(
       KernelHandle *kernelHandleL,
       KernelHandle *kernelHandleU,
       cholmod_factor *L,
       cholmod_common *cm)
   {
-    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type>  crsmat_t;
-    typedef typename  crsmat_t::StaticCrsGraphType  graph_t;
-
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -133,6 +125,7 @@ namespace Experimental {
     Kokkos::Timer timer;
     // ==============================================
     // extract CrsGraph from Cholmod
+    using graph_t  = typename KernelHandle::SPTRSVHandleType::graph_t;
     auto graph = read_cholmod_graphL<graph_t>(kernelHandleL, L, cm);
     auto row_map = graph.row_map;
     auto entries = graph.entries;
@@ -207,20 +200,13 @@ namespace Experimental {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* For numeric computation                                                                   */
-  template <typename scalar_type,
-            typename ordinal_type,
-            typename size_type,
-            typename KernelHandle,
-            typename execution_space      = Kokkos::DefaultExecutionSpace,
-            typename host_execution_space = Kokkos::DefaultHostExecutionSpace>
+  template <typename KernelHandle>
   void sptrsv_compute(
       KernelHandle *kernelHandleL,
       KernelHandle *kernelHandleU,
       cholmod_factor *L,
       cholmod_common *cm)
   {
-    typedef KokkosSparse::CrsMatrix<scalar_type, ordinal_type, execution_space, void, size_type> crsmat_t;
-
     // ===================================================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
@@ -240,6 +226,7 @@ namespace Experimental {
 
     // ==============================================
     // read numerical values of L from Cholmod
+    using crsmat_t = typename KernelHandle::SPTRSVHandleType::crsmat_t;
     auto cholmodL = read_cholmod_factor<crsmat_t> (kernelHandleL, L, cm, graph);
 
     // ==============================================
