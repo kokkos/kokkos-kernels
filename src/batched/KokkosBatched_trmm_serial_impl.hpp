@@ -61,6 +61,7 @@ namespace KokkosBatched {
            const AViewType &A,
            const BViewType &B) {
       return SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(ArgDiag::use_unit_diag,
+                                                                        false,
                                                                         A.extent(0), A.extent(1),
                                                                         B.extent(0), B.extent(1),
                                                                         alpha, 

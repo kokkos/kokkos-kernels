@@ -42,8 +42,6 @@
 //@HEADER
 */
 
-// ech-TODO: How does use_unit_diag affect trmm operation? Just copy from B
-// instead of multiply against A...?
 #ifndef __KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP__
 #define __KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP__
 
@@ -61,6 +59,22 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     static int 
     invoke(const bool use_unit_diag,
+           const bool do_conj,
+           const int am, const int an, 
+           const int bm, const int bn, 
+           const ScalarType alpha,
+           const ValueType *__restrict__ A, const int as0, const int as1,
+           /**/  ValueType *__restrict__ B, const int bs0, const int bs1);
+  };
+
+  template<typename AlgoType>
+  struct SerialTrmmInternalLeftUpper {
+    template<typename ScalarType,
+             typename ValueType>
+    KOKKOS_INLINE_FUNCTION
+    static int 
+    invoke(const bool use_unit_diag,
+           const bool do_conj,
            const int am, const int an, 
            const int bm, const int bn, 
            const ScalarType alpha,
@@ -87,6 +101,9 @@ namespace KokkosBatched {
     }
   #endif
 
+  // ech-note: use_unit_diag intentionally ignored for now. Compiler can optimize
+  // it out. Assuming that branching logic (especially on GPU) to handle use_unit_diag
+  // will use more cycles than simply doing 1.0*B[idx] for the copy if use_unit_diag.
   template<>
   template<typename ScalarType,
            typename ValueType>
@@ -94,6 +111,7 @@ namespace KokkosBatched {
   int
   SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::
   invoke(const bool use_unit_diag,
+         const bool do_conj,
          const int am, const int an,
          const int bm, const int bn,
          const ScalarType alpha,
@@ -101,10 +119,16 @@ namespace KokkosBatched {
          /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
 
     const ScalarType one(1.0), zero(0.0);
+    typedef Kokkos::Details::ArithTraits<ValueType> AT;
+    bool do_conj_transpose = false;
     int left_m = am;
     int right_n = bn;
+    auto conjOp = [](const ValueType a){return a;};
+
+    if (do_conj_transpose)
+      auto conjOp = AT::conj;
     
-    auto dotLowerLeft = [](const ValueType *__restrict__ A, const int as0, const int as1, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
+    auto dotLowerLeft = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
       auto B_elems = left_row;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
@@ -112,8 +136,8 @@ namespace KokkosBatched {
 #pragma unroll
 #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", A[left_row*as0 + i*as1], B[i*bs0 + bs1*right_col]);
-        sum += A[left_row*as0 + i*as1] * B[i*bs0 + bs1*right_col];
+        //printf("%lf * %lf\n", conjOp(A[left_row*as0 + i*as1]), B[i*bs0 + bs1*right_col]);
+        sum += conjOp(A[left_row*as0 + i*as1]) * B[i*bs0 + bs1*right_col];
       }
       //printf("--sum=%lf\n", sum);
       return sum;
@@ -137,6 +161,69 @@ namespace KokkosBatched {
 #endif
         for (int n = 0; n < right_n; n++) {
           B[m*bs0 + n*bs1] = dotLowerLeft(A, as0, as1, m, B, bs0, bs1, n);
+        }
+      }
+    }
+    return 0;
+  }
+
+  template<>
+  template<typename ScalarType,
+           typename ValueType>
+  KOKKOS_INLINE_FUNCTION
+  int
+  SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::
+  invoke(const bool use_unit_diag,
+         const bool do_conj,
+         const int am, const int an,
+         const int bm, const int bn,
+         const ScalarType alpha,
+         const ValueType *__restrict__ A, const int as0, const int as1,
+         /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
+
+    const ScalarType one(1.0), zero(0.0);
+    typedef Kokkos::Details::ArithTraits<ValueType> AT;
+    bool do_conj_transpose = false;
+    int left_m = am;
+    int right_n = bn;
+    auto conjOp = [](const ValueType a){return a;};
+
+    if (do_conj_transpose)
+      auto conjOp = AT::conj;
+    
+    auto dotUpperLeft = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int an, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
+      auto B_elems = an - left_row - 1;
+      auto A_elems = B_elems * as0;
+      ScalarType sum = 0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+      for (int i = 0; i <= B_elems; i++) {
+        //printf("%lf * %lf\n", conjOp(A[left_row*as0 + (left_row+i)*as1]), B[(left_row+i)*bs0 + bs1*right_col]);
+        sum += conjOp(A[left_row*as0 + (left_row+i)*as1]) * B[(left_row+i)*bs0 + bs1*right_col];
+      }
+      //printf("--sum=%lf\n", sum);
+      return sum;
+    };
+
+    if (bm <= 0 || bn <= 0 || am <= 0 || an <= 0)
+      return 0;
+
+    if (alpha == zero)
+      SerialSetInternal::invoke(bm, bn, zero,  B, bs0, bs1);
+    else {
+      if (alpha != one)
+        SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+      for (int m = 0; m < left_m; ++m) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+        for (int n = 0; n < right_n; ++n) {
+          B[m*bs0 + n*bs1] = dotUpperLeft(A, as0, as1, an, m, B, bs0, bs1, n);
         }
       }
     }
