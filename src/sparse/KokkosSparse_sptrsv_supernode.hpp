@@ -914,6 +914,7 @@ void sptrsv_supernodal_symbolic(
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time_seconds = timer.seconds ();
   std::cout << "   Total Symbolic Time: " << time_seconds << std::endl << std::endl;
+  std::cout << "   Total nnz: " << graphL_host.row_map (nrows) << " + " << graphU_host.row_map (nrows) << std::endl;
   #endif
 }
 
@@ -1468,6 +1469,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       graph_t diag_graph(columnD_view, rowmapD_view);
       diag_blocks[lvl] = crsmat_t("DiagMatrix", nrows, valuesD_view, diag_graph);
     }
+    //std::cout << "   > split nnz(" << lvl << ") = " << nnzL+nnzD << std::endl; 
     time2 += timer.seconds ();
 
     // update the number of supernodes processed

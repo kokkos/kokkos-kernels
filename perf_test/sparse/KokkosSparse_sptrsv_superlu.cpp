@@ -255,7 +255,7 @@ void free_superlu (SuperMatrix &L, SuperMatrix &U,
 /* ========================================================================================= */
 template<typename scalar_type>
 int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filename, bool symm_mode, bool metis, bool merge,
-                      bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int block_size,
+                      bool invert_diag, bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int block_size,
                       int loop) {
 
   using ordinal_type = int;
@@ -377,6 +377,10 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khL.set_sptrsv_merge_supernodes (merge);
           khU.set_sptrsv_merge_supernodes (merge);
 
+          // specify wheather to invert diagonal blocks
+          khL.set_sptrsv_invert_diagonal (invert_diag);
+          khU.set_sptrsv_invert_diagonal (invert_diag);
+          
           // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
           std::cout << " Invert Off-diagonal: " << invert_offdiag << std::endl;
           khL.set_sptrsv_invert_offdiagonal (invert_offdiag);
@@ -404,12 +408,18 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           // ==============================================
           // do symbolic analysis (preprocssing, e.g., merging supernodes, inverting diagonal/offdiagonal blocks,
           // and scheduling based on graph/dag)
+          timer.reset();
           sptrsv_symbolic (&khL, &khU, L, U);
+          double symbolic_time = timer.seconds();
+          std::cout << "   Symbolic Time   : " << symbolic_time << std::endl << std::endl;
 
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)
+          timer.reset();
           sptrsv_compute (&khL, &khU, L, U);
+          double compute_time = timer.seconds();
+          std::cout << "   Numeric Time   : " << compute_time << std::endl << std::endl;
 
 
           // ==============================================
@@ -441,15 +451,18 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           timer.reset();
           sptrsv_solve (&khL, sol, rhs);
           Kokkos::fence();
+          double solveL_time = timer.seconds();
           std::cout << " > Lower-TRI: " << std::endl;
-          std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
+          std::cout << "   Solve Time   : " << solveL_time << std::endl;
 
           // ==============================================
           // do U solve
+          timer.reset();
           sptrsv_solve (&khU, rhs, sol);
           Kokkos::fence ();
+          double solveU_time = timer.seconds();
           std::cout << " > Upper-TRI: " << std::endl;
-          std::cout << "   Solve Time   : " << timer.seconds() << std::endl;
+          std::cout << "   Solve Time   : " << solveU_time << std::endl;
  
           // copy solution to host
           Kokkos::deep_copy (tmp_host, rhs);
@@ -491,7 +504,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
 
           // Benchmark
           // L-solve
-          double min_time = 1.0e32;
+          double min_time = 0.0;
           double max_time = 0.0;
           double ave_time = 0.0;
           Kokkos::fence ();
@@ -501,9 +514,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
             Kokkos::fence();
             double time = timer.seconds ();
             ave_time += time;
-            if(time > max_time) max_time = time;
-            if(time < min_time) min_time = time;
-            //std::cout << time << std::endl;
+            if(time > max_time || i == 0) max_time = time;
+            if(time < min_time || i == 0) min_time = time;
           }
           std::cout << " L-solve: loop = " << loop << std::endl;
           std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
@@ -511,7 +523,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl << std::endl;
 
           // U-solve
-          min_time = 1.0e32;
+          min_time = 0.0;
           max_time = 0.0;
           ave_time = 0.0;
           Kokkos::fence ();
@@ -521,9 +533,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
             Kokkos::fence();
             double time = timer.seconds ();
             ave_time += time;
-            if(time > max_time) max_time = time;
-            if(time < min_time) min_time = time;
-            //std::cout << time << std::endl;
+            if(time > max_time || i == 0) max_time = time;
+            if(time < min_time || i == 0) min_time = time;
           }
           std::cout << " U-solve: loop = " << loop << std::endl;
           std::cout << "  LOOP_AVG_TIME:  " << ave_time/loop << std::endl;
@@ -538,7 +549,6 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
           khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, false);
 
-          khL.set_sptrsv_column_major (!u_in_csr);
           khU.set_sptrsv_column_major (!u_in_csr);
 
           // ==============================================
@@ -551,7 +561,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           double time = timer.seconds ();
           timer.reset ();
           superluL = read_superlu_valuesL<crsmat_t> (&khL, &L, graphL);
-          std::cout << "   Conversion Time for L: " << time << " + " << timer.seconds() << std::endl;
+          double readL_time = timer.seconds();
+          std::cout << "   Conversion Time for L: " << time << " + " << readL_time << std::endl;
 
           timer.reset ();
           graph_t graphU;
@@ -561,7 +572,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           time = timer.seconds ();
           timer.reset ();
           superluU = read_superlu_valuesU<crsmat_t, graph_t> (&khU, &L, &U, graphU);
-          std::cout << "   Conversion Time for U: " << time << " + " << timer.seconds() << std::endl;
+          double readU_time = timer.seconds();
+          std::cout << "   Conversion Time for U: " << time << " + " << readU_time << std::endl;
 
           // remove zeros in L/U
           timer.reset();
@@ -569,7 +581,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           superluL = remove_zeros_crsmat(superluL);
           std::cout << "   Compress U-factor: " << std::endl;
           superluU = remove_zeros_crsmat(superluU);
-          std::cout << "   Compression Time: " << timer.seconds() << std::endl << std::endl;
+          double compress_time = timer.seconds();
+          std::cout << "   Compression Time: " << compress_time << std::endl << std::endl;
 
           bool col_majorL = true;
           bool col_majorU = !u_in_csr;
@@ -615,6 +628,8 @@ int main(int argc, char **argv) {
   bool metis = false;
   // merge supernodes
   bool merge = false;
+  // invert diagonal of L-factor
+  bool invert_diag = true;
   // apply invert of diagonal to offdiagonal
   bool invert_offdiag = false;
   // store U in CSR, or CSC
@@ -678,6 +693,10 @@ int main(int argc, char **argv) {
       merge = true;
       continue;
     }
+    if((strcmp(argv[i],"--no-invert-diag")==0)) {
+      invert_diag = false;
+      continue;
+    }
     if((strcmp(argv[i],"--invert-offdiag")==0)) {
       invert_offdiag = true;
       continue;
@@ -727,8 +746,8 @@ int main(int argc, char **argv) {
     #endif
   #endif
   int total_errors = test_sptrsv_perf<scalar_t> (tests, verbose, filename, symm_mode, metis, merge,
-                                                 invert_offdiag, u_in_csr, panel_size, relax_size,
-                                                 block_size, loop);
+                                                 invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                                 relax_size, block_size, loop);
   if(total_errors == 0)
     std::cout << "Kokkos::SPTRSV Test: Passed " << scalarTypeString
               << std::endl << std::endl;
