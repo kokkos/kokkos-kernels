@@ -128,7 +128,7 @@ namespace KokkosBlas {
                                                                   
       // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
       if (__side == 'l' && __uplo == 'u' && __trans == 'c')
-        SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+        SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                   do_conj,
                                                                   A.extent(1), A.extent(0),
                                                                   B.extent(0), B.extent(1),
