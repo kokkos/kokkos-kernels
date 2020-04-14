@@ -123,9 +123,9 @@ namespace KokkosBatched {
     int left_m = am;
     int right_n = bn;
     //echo-TODO: See about coniditionally setting conjOp at compile time.
-    //auto conjOp = doUpperLeft;
+    //auto dotOp = dotUpperLeft;
     //if (do_conj) {
-    //  conjOp = doUpperLeftConj;
+    //  dotOp = dotUpperLeftConj;
     //}
     
     auto dotLowerLeftConj = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
@@ -167,27 +167,17 @@ namespace KokkosBatched {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
-      if (do_conj) {
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      for (int m = left_m-1; m >= 0; m--) {
         #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
         #pragma unroll
         #endif
-        for (int m = left_m-1; m >= 0; m--) {
-          #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-          #pragma unroll
-          #endif
-          for (int n = 0; n < right_n; n++) {
+        for (int n = 0; n < right_n; n++) {
+          if (do_conj) {
             B[m*bs0 + n*bs1] = dotLowerLeftConj(A, as0, as1, m, B, bs0, bs1, n);
-          }
-        }
-      } else {
-        #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-        #pragma unroll
-        #endif
-        for (int m = left_m-1; m >= 0; m--) {
-          #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-          #pragma unroll
-          #endif
-          for (int n = 0; n < right_n; n++) {
+          } else {
             B[m*bs0 + n*bs1] = dotLowerLeft(A, as0, as1, m, B, bs0, bs1, n);
           }
         }
@@ -215,9 +205,9 @@ namespace KokkosBatched {
     int left_m = am;
     int right_n = bn;
     //echo-TODO: See about coniditionally setting conjOp at compile time.
-    //auto conjOp = doUpperLeft;
+    //auto dotOp = dotUpperLeft;
     //if (do_conj) {
-    //  conjOp = doUpperLeftConj;
+    //  dotOp = dotUpperLeftConj;
     //}
     
     auto dotUpperLeft = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int an, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
@@ -258,33 +248,22 @@ namespace KokkosBatched {
     else {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
-
-      if (do_conj) {
+      
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      for (int m = 0; m < left_m; ++m) {
         #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
         #pragma unroll
         #endif
-        for (int m = 0; m < left_m; ++m) {
-          #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-          #pragma unroll
-          #endif
-          for (int n = 0; n < right_n; ++n) {
+        for (int n = 0; n < right_n; ++n) {
+          if (do_conj) {
             B[m*bs0 + n*bs1] = dotUpperLeftConj(A, as0, as1, an, m, B, bs0, bs1, n);
-          }
-        }
-      } else {
-        #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-        #pragma unroll
-        #endif
-        for (int m = 0; m < left_m; ++m) {
-          #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-          #pragma unroll
-          #endif
-          for (int n = 0; n < right_n; ++n) {
+          } else {
             B[m*bs0 + n*bs1] = dotUpperLeft(A, as0, as1, an, m, B, bs0, bs1, n);
           }
         }
       }
-
     }
     return 0;
   }
