@@ -89,6 +89,14 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(0), A.stride(1),
                                                                   B.data(), B.stride(0), B.stride(1));
+      if (__side == 'r' && __uplo == 'l' && __trans == 'n')
+        SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+                                                                  !do_conj,
+                                                                  A.extent(0), A.extent(1),
+                                                                  B.extent(0), B.extent(1),
+                                                                  alpha,
+                                                                  A.data(), A.stride(0), A.stride(1),
+                                                                  B.data(), B.stride(0), B.stride(1));
       // Transpose A by simply swapping the dimensions (extent) and stride parameters
       if (__side == 'l' && __uplo == 'l' && __trans == 't')
         SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
@@ -125,10 +133,26 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(1), A.stride(0),
                                                                   B.data(), B.stride(0), B.stride(1));
+      if (__side == 'r' && __uplo == 'u' && __trans == 't')
+        SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+                                                                  !do_conj,
+                                                                  A.extent(1), A.extent(0),
+                                                                  B.extent(0), B.extent(1),
+                                                                  alpha,
+                                                                  A.data(), A.stride(1), A.stride(0),
+                                                                  B.data(), B.stride(0), B.stride(1));
                                                                   
       // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
       if (__side == 'l' && __uplo == 'u' && __trans == 'c')
         SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+                                                                  do_conj,
+                                                                  A.extent(1), A.extent(0),
+                                                                  B.extent(0), B.extent(1),
+                                                                  alpha,
+                                                                  A.data(), A.stride(1), A.stride(0),
+                                                                  B.data(), B.stride(0), B.stride(1));
+      if (__side == 'r' && __uplo == 'u' && __trans == 'c')
+        SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                   do_conj,
                                                                   A.extent(1), A.extent(0),
                                                                   B.extent(0), B.extent(1),
