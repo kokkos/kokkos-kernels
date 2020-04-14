@@ -388,39 +388,46 @@ namespace KokkosBatched {
 
     const ScalarType one(1.0), zero(0.0);
     typedef Kokkos::Details::ArithTraits<ValueType> AT;
-    int left_m = am;
-    int right_n = bn;
+    int left_m = bm;
+    int right_n = an;
     //echo-TODO: See about coniditionally setting conjOp at compile time.
     //auto conjOp = noop;
     //if (do_conj) {
     //  conjOp = AT::conj;
     //}
     
-    auto dotUpperLeft = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int an, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
-      auto B_elems = an - left_row - 1;
+    // Lower triangular matrix is on RHS with the base facing down.
+    // Everytime we compute a new output row of B, we must shift over to the
+    // right by one in A's column to ensure we skip the 0's.
+    auto dotUpperRightConj = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
+      auto B_elems = right_col;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
       #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", A[left_row*as0 + (left_row+i)*as1], B[(left_row+i)*bs0 + bs1*right_col]);
-        sum += A[left_row*as0 + (left_row+i)*as1] * B[(left_row+i)*bs0 + bs1*right_col];
+        //printf("%lf * %lf\n", B[i*bs1 + bs0*left_row], AT::conj(A[right_col*as1 + i*as0]));
+        // B[left_row, i] * A[i, right_col]
+        sum += B[left_row*bs0 + i*bs1] * AT::conj(A[i*as0 + right_col*as1]);
+        //B[i*bs1 + bs0*left_row] * AT::conj(A[right_col*as1 + i*as0]);
       }
       //printf("--sum=%lf\n", sum);
       return sum;
     };
 
-    auto dotUpperLeftConj = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int an, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
-      auto B_elems = an - left_row - 1;
+    auto dotUpperRight = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
+    auto B_elems = right_col;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
       #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", A[left_row*as0 + (left_row+i)*as1], B[(left_row+i)*bs0 + bs1*right_col]);
-        sum += AT::conj(A[left_row*as0 + (left_row+i)*as1]) * B[(left_row+i)*bs0 + bs1*right_col];
+        //printf("%lf * %lf\n", B[i*bs1 + bs0*left_row], AT::conj(A[right_col*as1 + i*as0]));
+        // B[left_row, i] * A[i, right_col]
+        sum += B[left_row*bs0 + i*bs1] * A[i*as0 + right_col*as1];
+        //B[i*bs1 + bs0*left_row] * AT::conj(A[right_col*as1 + i*as0]);
       }
       //printf("--sum=%lf\n", sum);
       return sum;
@@ -442,11 +449,11 @@ namespace KokkosBatched {
         #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
         #pragma unroll
         #endif
-        for (int n = 0; n < right_n; ++n) {
+        for (int n = right_n - 1; n >= 0; --n) {
           if (do_conj) {
-            B[m*bs0 + n*bs1] = dotUpperLeftConj(A, as0, as1, an, m, B, bs0, bs1, n);
+            B[m*bs0 + n*bs1] = dotUpperRightConj(A, as0, as1, m, B, bs0, bs1, n);
           } else {
-            B[m*bs0 + n*bs1] = dotUpperLeft(A, as0, as1, an, m, B, bs0, bs1, n);
+            B[m*bs0 + n*bs1] = dotUpperRight(A, as0, as1, m, B, bs0, bs1, n);
           }
         }
       }

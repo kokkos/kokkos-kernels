@@ -81,6 +81,7 @@ namespace KokkosBlas {
 
       // Ignoring diag, see "ech-note" in KokkosBatched_trmm_serial_internal.hpp
 
+      //// Lower non-transpose ////
       if (__side == 'l' && __uplo == 'l' && __trans == 'n')
         SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                   !do_conj,
@@ -97,6 +98,7 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(0), A.stride(1),
                                                                   B.data(), B.stride(0), B.stride(1));
+      //// Lower transpose /////
       // Transpose A by simply swapping the dimensions (extent) and stride parameters
       if (__side == 'l' && __uplo == 'l' && __trans == 't')
         SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
@@ -106,7 +108,16 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(1), A.stride(0),
                                                                   B.data(), B.stride(0), B.stride(1));
-                                                                  
+      if (__side == 'r' && __uplo == 'l' && __trans == 't')
+        SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+                                                                  !do_conj,
+                                                                  A.extent(1), A.extent(0),
+                                                                  B.extent(0), B.extent(1),
+                                                                  alpha,
+                                                                  A.data(), A.stride(1), A.stride(0),
+                                                                  B.data(), B.stride(0), B.stride(1));
+
+      //// Lower conjugate-transpose ////
       // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
       if (__side == 'l' && __uplo == 'l' && __trans == 'c')
         SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
@@ -116,6 +127,15 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(1), A.stride(0),
                                                                   B.data(), B.stride(0), B.stride(1));
+      if (__side == 'r' && __uplo == 'l' && __trans == 'c')
+        SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+                                                                  do_conj,
+                                                                  A.extent(1), A.extent(0),
+                                                                  B.extent(0), B.extent(1),
+                                                                  alpha,
+                                                                  A.data(), A.stride(1), A.stride(0),
+                                                                  B.data(), B.stride(0), B.stride(1));
+      //// Upper non-transpose ////
       if (__side == 'l' && __uplo == 'u' && __trans == 'n')
         SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                   !do_conj,
@@ -124,6 +144,15 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(0), A.stride(1),
                                                                   B.data(), B.stride(0), B.stride(1));
+      if (__side == 'r' && __uplo == 'u' && __trans == 'n')
+        SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+                                                                  !do_conj,
+                                                                  A.extent(0), A.extent(1),
+                                                                  B.extent(0), B.extent(1),
+                                                                  alpha,
+                                                                  A.data(), A.stride(0), A.stride(1),
+                                                                  B.data(), B.stride(0), B.stride(1));
+      //// Upper transpose
       // Transpose A by simply swapping the dimensions (extent) and stride parameters
       if (__side == 'l' && __uplo == 'u' && __trans == 't')
         SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
@@ -141,7 +170,8 @@ namespace KokkosBlas {
                                                                   alpha,
                                                                   A.data(), A.stride(1), A.stride(0),
                                                                   B.data(), B.stride(0), B.stride(1));
-                                                                  
+
+      //// Upper conjugate-transpose ////
       // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
       if (__side == 'l' && __uplo == 'u' && __trans == 'c')
         SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
