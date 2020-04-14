@@ -49,12 +49,14 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosKernels_Controls.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
 
   template <class AMatrix, class XVector, class YVector>
-  void spmv_cusparse(const char mode[],
+  void spmv_cusparse(KokkosKernels::Experimental::Controls& controls,
+		     const char mode[],
 		     typename YVector::non_const_value_type const & alpha,
 		     const AMatrix& A,
 		     const XVector& x,
@@ -64,7 +66,7 @@ namespace Impl {
     using value_type   = typename AMatrix::non_const_value_type;
 
     /* initialize cusparse library */
-    cusparseHandle_t cusparseHandle = 0;
+    cusparseHandle_t cusparseHandle = 0;// controls.getCusparseHandle();
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
 
     /* Set the operation mode */
@@ -97,11 +99,13 @@ namespace Impl {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), const_cast<value_type*>(x.data()), myCudaDataType));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), const_cast<value_type*>(y.data()), myCudaDataType));
 
-    size_t bufferSize = 0;
-    void*  dBuffer    = NULL;
+    size_t bufferSize     = 0;
+    void*  dBuffer        = NULL;
+    cusparseSpMVAlg_t alg = CUSPARSE_CSRMV_ALG1;
+    if(controls.getParameter("algorithm") == "merge") {alg = CUSPARSE_CSRMV_ALG2;}
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(cusparseHandle, myCusparseOperation,
 						      &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
-						      CUSPARSE_CSRMV_ALG1, &bufferSize));
+						      alg, &bufferSize));
     CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
 
     /* perform SpMV */
@@ -164,13 +168,15 @@ namespace Impl {
 	      true, COMPILE_LIBRARY> {					\
     using device_type = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>; \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;	\
-    using AMatrix = CrsMatrix<SCALAR const, OFFSET const, device_type, memory_trait_type, OFFSET const>; \
-    using XVector = Kokkos::View<SCALAR const*, LAYOUT,device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>>; \
-    using YVector = Kokkos::View<SCALAR*, LAYOUT, device_type, memory_trait_type>; \
+    using AMatrix  = CrsMatrix<SCALAR const, OFFSET const, device_type, memory_trait_type, OFFSET const>; \
+    using XVector  = Kokkos::View<SCALAR const*, LAYOUT,device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>>; \
+    using YVector  = Kokkos::View<SCALAR*, LAYOUT, device_type, memory_trait_type>; \
+    using Controls = KokkosKernels::Experimental::Controls;		\
 									\
     using coefficient_type = typename YVector::non_const_value_type;	\
 									\
-    static void spmv (const char mode[],				\
+    static void spmv (Controls& controls,				\
+                      const char mode[],				\
 		      const coefficient_type& alpha,			\
 		      const AMatrix& A,					\
 		      const XVector& x,					\
@@ -178,7 +184,7 @@ namespace Impl {
 		      const YVector& y) {				\
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);				\
-      spmv_cusparse(mode, alpha, A, x, beta, y);			\
+      spmv_cusparse(controls, mode, alpha, A, x, beta, y);		\
       Kokkos::Profiling::popRegion();					\
     }									\
   };
