@@ -147,10 +147,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", AT::conj(A[left_row*as0 + i*as1]), B[i*bs0 + bs1*right_col]);
+        // sum += A[left_row, i] * B[i, right_col]
         sum += AT::conj(A[left_row*as0 + i*as1]) * B[i*bs0 + bs1*right_col];
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
 
@@ -162,10 +161,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", A[left_row*as0 + i*as1], B[i*bs0 + bs1*right_col]);
+        // sum += A[left_row, i] * B[i, right_col]
         sum += A[left_row*as0 + i*as1] * B[i*bs0 + bs1*right_col];
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
 
@@ -235,12 +233,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = right_col; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", B[i*bs1 + bs0*left_row], AT::conj(A[right_col*as1 + i*as0]));
-        // B[left_row, i] * A[i, right_col]
+        // sum += B[left_row, i] * A[i, right_col]
         sum += B[bs0*left_row + i*bs1] * AT::conj(A[i*as0 + right_col*as1]);
-        //B[i*bs1 + bs0*left_row] * AT::conj(A[right_col*as1 + i*as0]);
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
 
@@ -252,11 +247,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = right_col; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", B[i*bs1 + bs0*left_row], A[right_col*as1 + i*as0]);
-        // B[left_row, i] * A[i, right_col]
+        // sum += B[left_row, i] * A[i, right_col]
         sum += B[bs0*left_row + i*bs1] * A[i*as0 + right_col*as1];
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
 
@@ -320,11 +313,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", A[left_row*as0 + (left_row+i)*as1], B[(left_row+i)*bs0 + bs1*right_col]);
-        // A[left_row, i+left_row] * B[i+left_row, right_col]
+        // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
         sum += AT::conj(A[left_row*as0 + (i+left_row)*as1]) * B[(i+left_row)*bs0 + bs1*right_col];
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
     
@@ -336,11 +327,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", A[left_row*as0 + (left_row+i)*as1], B[(left_row+i)*bs0 + bs1*right_col]);
-        // A[left_row, i+left_row] * B[i+left_row, right_col]
+        // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
         sum += A[left_row*as0 + (i+left_row)*as1] * B[(i+left_row)*bs0 + bs1*right_col];
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
 
@@ -395,10 +384,7 @@ namespace KokkosBatched {
     //if (do_conj) {
     //  conjOp = AT::conj;
     //}
-    
-    // Lower triangular matrix is on RHS with the base facing down.
-    // Everytime we compute a new output row of B, we must shift over to the
-    // right by one in A's column to ensure we skip the 0's.
+
     auto dotUpperRightConj = [&](const ValueType *__restrict__ A, const int as0, const int as1, const int left_row, ValueType *__restrict__ B, const int bs0, const int bs1, const int right_col) {
       auto B_elems = right_col;
       auto A_elems = B_elems * as0;
@@ -407,12 +393,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", B[i*bs1 + bs0*left_row], AT::conj(A[right_col*as1 + i*as0]));
-        // B[left_row, i] * A[i, right_col]
+        // sum += B[left_row, i] * A[i, right_col]
         sum += B[left_row*bs0 + i*bs1] * AT::conj(A[i*as0 + right_col*as1]);
-        //B[i*bs1 + bs0*left_row] * AT::conj(A[right_col*as1 + i*as0]);
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
 
@@ -424,12 +407,9 @@ namespace KokkosBatched {
       #pragma unroll
       #endif
       for (int i = 0; i <= B_elems; i++) {
-        //printf("%lf * %lf\n", B[i*bs1 + bs0*left_row], AT::conj(A[right_col*as1 + i*as0]));
-        // B[left_row, i] * A[i, right_col]
+        // sum += B[left_row, i] * A[i, right_col]
         sum += B[left_row*bs0 + i*bs1] * A[i*as0 + right_col*as1];
-        //B[i*bs1 + bs0*left_row] * AT::conj(A[right_col*as1 + i*as0]);
       }
-      //printf("--sum=%lf\n", sum);
       return sum;
     };
 
