@@ -61,10 +61,12 @@ using namespace KokkosBatched;
 namespace KokkosBlas {
   namespace Impl {
 
-    template<class AViewType>
-    void SerialTrtri_Invoke (const char uplo[],
+    template<class RViewType,
+             class AViewType>
+    void SerialTrtri_Invoke (const RViewType &R,
+                            const char uplo[],
                             const char diag[],
-                            AViewType& A)
+                            const AViewType &A)
     { 
       char __uplo = tolower(uplo[0]),
            __diag = tolower(diag[0]);
@@ -72,22 +74,22 @@ namespace KokkosBlas {
       //// Lower ////
       if (__uplo == 'l') {
         if (__diag == 'u') {
-          SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+          R() = SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                   A.extent(0), A.extent(1),
                                                                   A.data(), A.stride(0), A.stride(1));
         } else {
-          SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+          R() = SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                   A.extent(0), A.extent(1),
                                                                   A.data(), A.stride(0), A.stride(1));
         }
       } else {
       //// Upper ////
       if (__diag == 'u') {
-          SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(Diag::Unit::use_unit_diag,
+          R() = SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                   A.extent(0), A.extent(1),
                                                                   A.data(), A.stride(0), A.stride(1));
         } else {
-          SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
+          R() = SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
                                                                   A.extent(0), A.extent(1),
                                                                   A.data(), A.stride(0), A.stride(1));
         }

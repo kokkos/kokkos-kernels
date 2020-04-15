@@ -51,8 +51,7 @@ namespace KokkosBatched {
 
   template<typename AlgoType>
   struct SerialTrtriInternalLower {
-    template<typename ScalarType,
-             typename ValueType>
+    template<typename ValueType>
     KOKKOS_INLINE_FUNCTION
     static int 
     invoke(const bool use_unit_diag,
@@ -62,8 +61,7 @@ namespace KokkosBatched {
 
   template<typename AlgoType>
   struct SerialTrtriInternalUpper {
-    template<typename ScalarType,
-             typename ValueType>
+    template<typename ValueType>
     KOKKOS_INLINE_FUNCTION
     static int 
     invoke(const bool use_unit_diag,
@@ -72,8 +70,7 @@ namespace KokkosBatched {
   };
 
   template<>
-  template<typename ScalarType,
-           typename ValueType>
+  template<typename ValueType>
   KOKKOS_INLINE_FUNCTION
   int
   SerialTrtriInternalLower<Algo::Trtri::Unblocked>::
@@ -84,8 +81,7 @@ namespace KokkosBatched {
   }
 
   template<>
-  template<typename ScalarType,
-           typename ValueType>
+  template<typename ValueType>
   KOKKOS_INLINE_FUNCTION
   int
   SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::

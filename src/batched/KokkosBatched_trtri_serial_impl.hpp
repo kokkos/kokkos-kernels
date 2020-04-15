@@ -52,8 +52,7 @@ namespace KokkosBatched {
 
   template<typename ArgDiag>
   struct SerialTrtri<Uplo::Lower,ArgDiag,Algo::Trtri::Unblocked> {
-    template<typename ScalarType,
-             typename AViewType>
+    template<typename AViewType>
     KOKKOS_INLINE_FUNCTION
     static int
     invoke(const AViewType &A) {
