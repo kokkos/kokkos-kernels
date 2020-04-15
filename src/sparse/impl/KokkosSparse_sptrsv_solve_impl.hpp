@@ -2697,7 +2697,7 @@ cudaProfilerStart();
           // using device-level kernels (functor is called to scatter the results)
           scalar_t *dataL = const_cast<scalar_t*> (values.data ());
 
-          for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+          for (size_type league_rank = 0; league_rank < lvl_nodes; league_rank++) {
 
             auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
@@ -2982,7 +2982,7 @@ cudaProfilerStart();
             // using device-level kernels (functor is called to gather the input into workspace)
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
-            for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+            for (size_type league_rank = 0; league_rank < lvl_nodes; league_rank++) {
               auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
               // supernodal column size
@@ -3069,7 +3069,7 @@ cudaProfilerStart();
             // using device-level kernels (functor is called to gather the input into workspace)
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
-            for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+            for (size_type league_rank = 0; league_rank < lvl_nodes; league_rank++) {
               auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
               // supernodal column size

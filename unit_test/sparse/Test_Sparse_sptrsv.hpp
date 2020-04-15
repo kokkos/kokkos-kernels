@@ -714,18 +714,18 @@ void run_test_sptrsv() {
       using in_values_view_t  = typename ValuesType::HostMirror;
 
       size_type nnzL = hrow_map (nrows);
-      row_map_view_t row_map ("rowmap_view", nrows+1);
-      cols_view_t    entries ("colmap_view", nnzL);
-      values_view_t  values  ("values_view", nnzL);
+      row_map_view_t Lrow_map ("rowmap_view", nrows+1);
+      cols_view_t    Lentries ("colmap_view", nnzL);
+      values_view_t  Lvalues  ("values_view", nnzL);
       transpose_matrix <in_row_map_view_t, in_cols_view_t, in_values_view_t,
                            row_map_view_t,    cols_view_t,    values_view_t,
                         row_map_view_t, host_exec_space>
         (nrows, nrows, hrow_map, hentries, hvalues,
-                        row_map,  entries,  values);
+                       Lrow_map, Lentries, Lvalues);
 
       // store L in crsmat
-      host_graph_t static_graph(entries, row_map);
-      L = host_crsmat_t ("CrsMatrixL", nrows, values, static_graph);
+      host_graph_t static_graph(Lentries, Lrow_map);
+      L = host_crsmat_t ("CrsMatrixL", nrows, Lvalues, static_graph);
 
       khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
     }
@@ -735,7 +735,7 @@ void run_test_sptrsv() {
       // > set up supernodes (block size = one)
       int *etree = NULL;
       Kokkos::View<int*, Kokkos::HostSpace> supercols ("supercols", 1+nrows);
-      for (int i = 0; i <= nrows; i++) {
+      for (size_type i = 0; i <= nrows; i++) {
         supercols (i) = i;
       }
 

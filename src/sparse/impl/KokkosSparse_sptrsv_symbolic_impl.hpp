@@ -419,8 +419,8 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
       }
     }
 
-    signed_integral_t num_done = 0;
-    signed_integral_t level = 0;
+    size_type num_done = 0;
+    size_type level = 0;
     //#define profile_supernodal_etree
     #ifdef profile_supernodal_etree
     // min, max, tot size of supernodes
@@ -858,8 +858,8 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
     integer_view_host_t inverse_nodes_per_level ("nodes_per_level", nrows);
     integer_view_host_t inverse_nodes_grouped_by_level ("nodes_grouped_by_level", nrows);
 
-    signed_integral_t num_done = 0;
-    signed_integral_t level = 0;
+    size_type num_done = 0;
+    size_type level = 0;
     #ifdef profile_supernodal_etree
     // min, max, tot size of supernodes
     signed_integral_t max_nsrow = 0;
@@ -977,7 +977,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
     // now invert the lists
     num_done = 0;
-    signed_integral_t num_level = level;
+    size_type num_level = level;
     for (level = 0; level < num_level; level ++) {
       signed_integral_t num_leave = inverse_nodes_per_level (num_level - level - 1);
       nodes_per_level (level) = num_leave;
