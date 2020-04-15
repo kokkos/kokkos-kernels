@@ -70,7 +70,7 @@ struct trtri_eti_spec_avail {
          Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                      Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
          > { enum : bool { value = true }; };
 
 // Include the actual specialization declarations
