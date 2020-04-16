@@ -99,7 +99,7 @@ struct MV_Update_Functor
                    "MV_Update_Functor: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
                    "MV_Update_Functor: Z is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
+    static_assert (std::is_same<typename ZMV::value_type,
                    typename ZMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Update_Functor: Z is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -269,7 +269,7 @@ struct V_Update_Functor
                    "V_Update_Functor: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::"
                    "V_Update_Functor: Z is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename ZV::value_type,
+    static_assert (std::is_same<typename ZV::value_type,
                    typename ZV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Update_Functor: Z is const.  "
                    "It must be nonconst, because it is an output argument "
@@ -360,7 +360,7 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
                  "MV_Update_Generic: Y is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
                  "MV_Update_Generic: Z is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
+  static_assert (std::is_same<typename ZMV::value_type,
                  typename ZMV::non_const_value_type>::value,
                  "KokkosBlas::Impl::MV_Update_Generic: Z is const.  "
                  "It must be nonconst, because it is an output argument "
@@ -456,7 +456,7 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
                    "V_Update_Generic: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::"
                    "V_Update_Generic: Z is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename ZV::value_type,
+    static_assert (std::is_same<typename ZV::value_type,
                    typename ZV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Update_Generic: Z is const.  "
                    "It must be nonconst, because it is an output argument "

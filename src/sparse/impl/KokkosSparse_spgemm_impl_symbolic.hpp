@@ -1772,8 +1772,11 @@ void KokkosSPGEMM
 	{
 		Kokkos::Impl::Timer timer1_;
 		size_type c_max_nnz = 0;
-		KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-		MyExecSpace().fence();
+                if(m > 0)
+                {
+                  KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
+                  MyExecSpace().fence();
+                }
 		this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
 		if (KOKKOSKERNELS_VERBOSE){
@@ -2275,8 +2278,11 @@ void KokkosSPGEMM
   {
     Kokkos::Impl::Timer timer1_;
     size_type c_max_nnz = 0;
-    KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-    MyExecSpace().fence();
+    if(m > 0)
+    {
+      KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
+      MyExecSpace().fence();
+    }
     this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
     if (KOKKOSKERNELS_VERBOSE){

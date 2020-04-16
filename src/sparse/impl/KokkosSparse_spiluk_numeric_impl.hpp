@@ -375,14 +375,18 @@ void iluk_numeric ( IlukHandle& thandle,
   using size_type       = typename IlukHandle::size_type;
   using nnz_lno_t       = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using HandleHostEntriesType   = typename IlukHandle::nnz_lno_view_t::HostMirror;
 
   size_type nlevels = thandle.get_num_levels();
   size_type nrows   = thandle.get_nrows();
 
   // Keep this as host View, create device version and copy to back to host
   HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
-  HandleHostEntriesType level_ptr_h = Kokkos::create_mirror_view(level_ptr);
+  //Make level_ptr_h a separate allocation, since it will be accessed on host
+  //between kernel launches. If a mirror were used and level_ptr is in UVM space,
+  //a fence would be required before each access since UVM views can share pages.
+  Kokkos::View<nnz_lno_t*, Kokkos::HostSpace> level_ptr_h(
+      Kokkos::ViewAllocateWithoutInitializing("Host level pointers"),
+      level_ptr.extent(0));
   Kokkos::deep_copy(level_ptr_h, level_ptr);
 
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();

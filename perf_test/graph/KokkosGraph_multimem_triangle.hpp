@@ -43,7 +43,8 @@
 */
 
 #include "KokkosGraph_run_triangle.hpp"
-#include "KokkosKernels_MyCRSMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+
 namespace KokkosKernels{
 
 namespace Experiment{
@@ -56,21 +57,11 @@ namespace Experiment{
     typedef Kokkos::Device<exec_space, hbm_mem_space> myFastDevice;
     typedef Kokkos::Device<exec_space, sbm_mem_space> mySlowExecSpace;
 
-    typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type > fast_crstmat_t;
+    typedef typename KokkosSparse::CrsMatrix<double, lno_t, myFastDevice, void, size_type > fast_crstmat_t;
     typedef typename fast_crstmat_t::StaticCrsGraphType fast_graph_t;
-    //typedef typename fast_graph_t::row_map_type::non_const_type fast_row_map_view_t;
-    //typedef typename fast_graph_t::entries_type::non_const_type   fast_cols_view_t;
 
-    //typedef typename fast_graph_t::row_map_type::const_type const_fast_row_map_view_t;
-    //typedef typename fast_graph_t::entries_type::const_type   const_fast_cols_view_t;
-
-    typedef typename MyKokkosSparse::CrsMatrix<double, lno_t, mySlowExecSpace, void, size_type > slow_crstmat_t;
+    typedef typename KokkosSparse::CrsMatrix<double, lno_t, mySlowExecSpace, void, size_type > slow_crstmat_t;
     typedef typename slow_crstmat_t::StaticCrsGraphType slow_graph_t;
-
-    //typedef typename slow_graph_t::row_map_type::non_const_type slow_row_map_view_t;
-    //typedef typename slow_graph_t::entries_type::non_const_type   slow_cols_view_t;
-    //typedef typename slow_graph_t::row_map_type::const_type const_slow_row_map_view_t;
-    //typedef typename slow_graph_t::entries_type::const_type   const_slow_cols_view_t;
 
     char *a_mat_file = params.a_mtx_bin_file;
     //char *b_mat_file = params.b_mtx_bin_file;

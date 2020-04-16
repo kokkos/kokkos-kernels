@@ -53,6 +53,7 @@
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosSparse_gauss_seidel_impl.hpp"
 #include "KokkosSparse_cluster_gauss_seidel_impl.hpp"
+#include "KokkosSparse_twostage_gauss_seidel_impl.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -224,9 +225,9 @@ namespace KokkosSparse {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 
 
-    template<class KernelHandle, class a_size_view_t_, class a_lno_view_t>
+    template<class KernelHandle, class a_size_view_t_, class a_lno_view_t_>
     struct GAUSS_SEIDEL_SYMBOLIC<KernelHandle,
-                                 a_size_view_t_,  a_lno_view_t,
+                                 a_size_view_t_,  a_lno_view_t_,
                                  false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
 
       static void
@@ -235,24 +236,32 @@ namespace KokkosSparse {
                              typename KernelHandle::const_nnz_lno_t num_rows,
                              typename KernelHandle::const_nnz_lno_t num_cols,
                              a_size_view_t_ row_map,
-                             a_lno_view_t entries,
+                             a_lno_view_t_ entries,
                              bool is_graph_symmetric){
-
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_symbolic");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
           using SGS = typename Impl::ClusterGaussSeidel
-            <KernelHandle, a_size_view_t_, a_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t>;
+            <KernelHandle, a_size_view_t_, a_lno_view_t_, typename KernelHandle::in_scalar_nnz_view_t>;
           SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
+          sgs.initialize_symbolic();
+        }
+        else if(gsHandle->get_algorithm_type() == GS_TWOSTAGE)
+        {
+          using SGS = typename Impl::TwostageGaussSeidel
+            <KernelHandle, a_size_view_t_, a_lno_view_t_, typename KernelHandle::in_scalar_nnz_view_t>;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries);
           sgs.initialize_symbolic();
         }
         else
         {
           using SGS = typename Impl::PointGaussSeidel
-            <KernelHandle, a_size_view_t_, a_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t>; 
+            <KernelHandle, a_size_view_t_, a_lno_view_t_, typename KernelHandle::in_scalar_nnz_view_t>;
           SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
           sgs.initialize_symbolic();
         }
+        Kokkos::Profiling::popRegion();
       }
     };
 
@@ -270,12 +279,20 @@ namespace KokkosSparse {
                            a_scalar_view_t values,
                            bool is_graph_symmetric)
       {
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_numeric");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
           using SGS = typename Impl::ClusterGaussSeidel
             <KernelHandle,a_size_view_t_, a_lno_view_t,a_scalar_view_t>;
           SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
+          sgs.initialize_numeric();
+        }
+        else if(gsHandle->get_algorithm_type() == GS_TWOSTAGE)
+        {
+          using SGS = typename Impl::TwostageGaussSeidel
+            <KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t>;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
           sgs.initialize_numeric();
         }
         else
@@ -285,6 +302,7 @@ namespace KokkosSparse {
           SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
           sgs.initialize_numeric();
         }
+        Kokkos::Profiling::popRegion();
       }
 
       static void
@@ -297,12 +315,20 @@ namespace KokkosSparse {
                            a_scalar_view_t given_inverse_diagonal,
                            bool is_graph_symmetric)
       {
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_numeric");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
           using SGS = typename Impl::ClusterGaussSeidel
             <KernelHandle,a_size_view_t_, a_lno_view_t,a_scalar_view_t>;
           SGS sgs(handle, num_rows, num_cols, row_map, entries, values, given_inverse_diagonal, is_graph_symmetric);
+          sgs.initialize_numeric();
+        }
+        else if(gsHandle->get_algorithm_type() == GS_TWOSTAGE)
+        {
+          using SGS = typename Impl::TwostageGaussSeidel
+            <KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t>;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries, values, given_inverse_diagonal);
           sgs.initialize_numeric();
         }
         else
@@ -312,6 +338,7 @@ namespace KokkosSparse {
           SGS sgs(handle, num_rows, num_cols, row_map, entries, values, given_inverse_diagonal, is_graph_symmetric);
           sgs.initialize_numeric();
         }
+        Kokkos::Profiling::popRegion();
       }
     };
 
@@ -334,10 +361,25 @@ namespace KokkosSparse {
                          bool update_y_vector,
                          typename KernelHandle::nnz_scalar_t omega, int numIter, bool apply_forward, bool apply_backward)
       {
+        Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_apply");
         auto gsHandle = handle->get_gs_handle();
         if(gsHandle->get_algorithm_type() == GS_CLUSTER)
         {
           using SGS = typename Impl::ClusterGaussSeidel <KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t>;
+          SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
+          sgs.apply(
+                    x_lhs_output_vec,
+                    y_rhs_input_vec,
+                    init_zero_x_vector,
+                    numIter,
+                    omega,
+                    apply_forward,
+                    apply_backward, update_y_vector);
+        }
+        else if(gsHandle->get_algorithm_type() == GS_TWOSTAGE)
+        {
+          using SGS = typename Impl::TwostageGaussSeidel
+            <KernelHandle, a_size_view_t_, a_lno_view_t,a_scalar_view_t>;
           SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
           sgs.apply(
                     x_lhs_output_vec,
@@ -361,6 +403,7 @@ namespace KokkosSparse {
                     apply_forward,
                     apply_backward, update_y_vector);
         }
+        Kokkos::Profiling::popRegion();
       }
     };
 #endif

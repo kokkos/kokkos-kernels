@@ -105,7 +105,7 @@ iamax (const RV& R, const XMV& X,
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::iamax: "
                  "X is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                  typename RV::non_const_value_type>::value,
                  "KokkosBlas::iamax: R is const.  "
                  "It must be nonconst, because it is an output argument "
@@ -115,7 +115,7 @@ iamax (const RV& R, const XMV& X,
                  "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
   typedef typename XMV::size_type index_type;
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+  static_assert (std::is_same<typename RV::value_type,
                  index_type>::value,
                  "KokkosBlas::iamax: R must have the type of"
                  "the Xvectors size_type it is an output argument "

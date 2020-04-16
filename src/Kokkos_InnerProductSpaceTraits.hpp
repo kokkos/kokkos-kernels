@@ -348,7 +348,7 @@ struct CastPossiblyComplex<Kokkos::complex<OutReal>, Kokkos::complex<InReal>>
 {
   static Kokkos::complex<OutReal>
   cast (const Kokkos::complex<InReal>& x) {
-    return {x.real(), x.imag()};
+    return {static_cast<OutReal>(x.real()), static_cast<OutReal>(x.imag())};
   }
 };
 

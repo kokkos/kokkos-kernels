@@ -47,7 +47,7 @@
 #include "KokkosKernels_Utils.hpp"
 
 #include <string.h>
-#include "KokkosKernels_MyCRSMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 int main (int argc, char* argv[]){
   typedef int size_type;
@@ -94,7 +94,7 @@ int main (int argc, char* argv[]){
   }
   typedef Kokkos::DefaultHostExecutionSpace MyExecSpace;
 
-  typedef typename MyKokkosSparse::CrsMatrix<wt, idx, MyExecSpace, void, size_type > crstmat_t;
+  typedef typename KokkosSparse::CrsMatrix<wt, idx, MyExecSpace, void, size_type > crstmat_t;
   typedef typename crstmat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;

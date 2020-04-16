@@ -110,13 +110,13 @@ void mkl_symbolic(
     return;
   }
 */
-  if (Kokkos::Impl::is_same<idx, int>::value){
+  if (std::is_same<idx, int>::value){
 
     int *a_xadj = NULL;
     int *b_xadj = NULL;
     int_temp_work_view_t a_xadj_v, b_xadj_v;
 
-    if (Kokkos::Impl::is_same<size_type, int>::value){
+    if (std::is_same<size_type, int>::value){
 
       a_xadj = (int *)row_mapA.data();
       b_xadj = (int *)row_mapB.data();
@@ -168,7 +168,7 @@ void mkl_symbolic(
     sparse_matrix_t B;
     sparse_matrix_t C;
 
-    if (Kokkos::Impl::is_same<value_type, float>::value){
+    if (std::is_same<value_type, float>::value){
 
 
 
@@ -249,7 +249,7 @@ void mkl_symbolic(
         return;
       }
     }
-    else if (Kokkos::Impl::is_same<value_type, double>::value){
+    else if (std::is_same<value_type, double>::value){
 
       /*
       std::cout << "create a" << std::endl;
@@ -422,13 +422,13 @@ void mkl_symbolic(
       return;
     }
 */
-    if (Kokkos::Impl::is_same<idx, int>::value){
+    if (std::is_same<idx, int>::value){
 
       int *a_xadj = NULL;
       int *b_xadj = NULL;
       int_temp_work_view_t a_xadj_v, b_xadj_v;
 
-      if (Kokkos::Impl::is_same<size_type, int>::value){
+      if (std::is_same<size_type, int>::value){
 
         a_xadj = (int *)row_mapA.data();
         b_xadj = (int *)row_mapB.data();
@@ -478,7 +478,7 @@ void mkl_symbolic(
       sparse_matrix_t B;
       sparse_matrix_t C;
 
-      if (Kokkos::Impl::is_same<value_type, float>::value){
+      if (std::is_same<value_type, float>::value){
 
 
 
@@ -559,7 +559,7 @@ void mkl_symbolic(
           return;
         }
       }
-      else if (Kokkos::Impl::is_same<value_type, double>::value){
+      else if (std::is_same<value_type, double>::value){
 
         /*
         std::cout << "create a" << std::endl;
