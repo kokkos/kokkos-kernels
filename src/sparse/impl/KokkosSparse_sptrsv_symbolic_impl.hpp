@@ -47,16 +47,6 @@
 /// \file Kokkos_Sparse_impl_sptrsv_symbolic.hpp
 /// \brief Implementation(s) of sparse triangular solve.
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CBLAS)   && \
-    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE) && \
-   (defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD))
-
- // Enable supernodal sptrsv
- #define KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
-
-#endif
-
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_sptrsv_handle.hpp>
@@ -144,7 +134,7 @@ void symbolic_chain_phase(TriSolveHandle &thandle, const NPLViewType &nodes_per_
     // Two updates required - should only occur if chainlinks_length > 0
     // We have found two things: a non-one length chain, and a subsequent one length chain
     if (chain_state == 2) {
-      if (chainlinks_length == 0) { std::runtime_error("MAJOR LOGIC ERROR! TERMINATE!"); }
+      if (chainlinks_length == 0) { throw(std::runtime_error("MAJOR LOGIC ERROR! TERMINATE!")); }
 
       num_chain_entries += 1;
       h_chain_ptr(num_chain_entries) = h_chain_ptr(num_chain_entries-1) + chainlinks_length;
@@ -254,7 +244,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           }
           else if ( col > row ) {
             std::cout << "\nrow = " << row << "  col = " << col << "  offset = " << offset << std::endl;
-            std::runtime_error("SYMB ERROR: Lower tri with colid > rowid - SHOULD NOT HAPPEN!!!");
+            throw(std::runtime_error("SYMB ERROR: Lower tri with colid > rowid - SHOULD NOT HAPPEN!!!"));
           }
         } // end for offset , i.e. cols of this row
 
