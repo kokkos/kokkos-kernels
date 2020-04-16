@@ -412,10 +412,10 @@ FUNCTION(kokkoskernels_link_tpl TARGET)
   ENDIF()
 ENDFUNCTION()
 
-KOKKOSKERNELS_ADD_TPL_OPTION(BLAS OFF "Whether to enable BLAS")
-#Default on if BLAS is enabled
 KOKKOSKERNELS_ADD_TPL_OPTION(LAPACK ${KokkosKernels_ENABLE_TPL_BLAS} "Whether to enable LAPACK"
   DEFAULT_DOCSTRING "ON if BLAS is enabled, otherwise OFF")
+KOKKOSKERNELS_ADD_TPL_OPTION(BLAS OFF "Whether to enable BLAS")
+#Default on if BLAS is enabled
 KOKKOSKERNELS_ADD_TPL_OPTION(MKL  OFF "Whether to enable MKL")
 KOKKOSKERNELS_ADD_TPL_OPTION(MAGMA    OFF "Whether to enable MAGMA")
 KOKKOSKERNELS_ADD_TPL_OPTION(CBLAS OFF "Whether to enable CBLAS")
