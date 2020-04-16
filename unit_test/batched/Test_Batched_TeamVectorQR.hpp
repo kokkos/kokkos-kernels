@@ -39,7 +39,7 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
       typedef typename MatrixViewType::non_const_value_type value_type;
-      const value_type one(1), zero(0);
+      const value_type one(1), zero(0), add_this(10);
 
       const int k = member.league_rank();
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
@@ -47,6 +47,12 @@ namespace Test {
       auto xx = Kokkos::subview(_x, k, Kokkos::ALL());
       auto tt = Kokkos::subview(_t, k, Kokkos::ALL());
       auto ww = Kokkos::subview(_w, k, Kokkos::ALL());
+
+      // make diagonal dominant
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, aa.extent(0)),
+                           [&](const int &i) {
+                             aa(i,i) += add_this;
+                           });
 
       /// xx = 1
       TeamVectorSet<MemberType>::invoke(member, one, xx);
@@ -121,17 +127,18 @@ namespace Test {
     typename VectorViewType::HostMirror x_host = Kokkos::create_mirror_view(x);
     Kokkos::deep_copy(x_host, x);
 
-    /// check x = 1; this eps is about 10^-14
+    /// check x = 1; this eps is about 1e-14
     typedef typename ats::mag_type mag_type;
-    mag_type sum(1), diff(0);
-    const mag_type eps = 1.0e3 * ats::epsilon();
+    const mag_type eps = 1e3 * ats::epsilon();
 
-    for (int k=0;k<N;++k)
+    for (int k=0;k<N;++k) {
       for (int i=0;i<BlkSize;++i) {
-        sum  += ats::abs(x_host(k,i));
-        diff += ats::abs(x_host(k,i)-one);
+        const mag_type sum  = ats::abs(x_host(k,i));
+        const mag_type diff = ats::abs(x_host(k,i)-one);
+        EXPECT_NEAR_KK( diff/sum, mag_type(0), eps);
+        //printf("k = %d, i = %d, sum %e diff %e \n", k, i, sum, diff );
       }
-    EXPECT_NEAR_KK( diff/sum, 0, eps);
+    }
   }
 }
 
