@@ -334,8 +334,13 @@ LIST(APPEND SOURCES
  impl/tpls/KokkosBlas_Cuda_tpl.cpp
 )
 
-# Add the ETI headers to complete list of headers
-LIST(APPEND HEADERS ${ETI_HEADERS})
+# For now, don't add the ETI headers to complete list of headers
+# This will break some IDEs and won't properly display headers in the file list
+# However, because of the behavior of TRIBITS_ADD_LIBRARY
+# I can't add the ETI headers with them getting double-installed
+# with a bunch of headers in the wrong location
+# This doesn't change pre-existing behavior before the ETI changes
+#LIST(APPEND HEADERS ${ETI_HEADERS})
 #-----------------------------------------------------------------------------
 
 KOKKOSKERNELS_ADD_LIBRARY(
