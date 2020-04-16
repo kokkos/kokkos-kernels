@@ -99,11 +99,11 @@ namespace KokkosBatched {
                                            ww);
             
           SerialSetIdentityInternal::invoke(m, QZ, qzs0, qzs1);          
-          SerialApplyQ_LeftNoTransForwardInternal::invoke(m-1, m-1, m-1,
-                                                          A+as0, as0, as1,
-                                                          t, 1,
-                                                          QZ+qzs, qzs0, qzs1,
-                                                          ww);
+          SerialApplyQ_LeftForwardInternal::invoke(m-1, m-1, m-1,
+                                                   A+as0, as0, as1,
+                                                   t, 1,
+                                                   QZ+qzs, qzs0, qzs1,
+                                                   ww);
           /// recovery of workspace for ww
           w_now -= m; wlen_now += m;
         }
@@ -128,11 +128,11 @@ namespace KokkosBatched {
                                          ww);
           
         SerialSetIdentityInternal::invoke(m, QZ, qzs0, qzs1);          
-        SerialApplyQ_LeftNoTransForwardInternal::invoke(m-1, m-1, m-1,
-                                                        A+as0, as0, as1,
-                                                        t, 1,
-                                                        QZ+qzs, qzs0, qzs1,
-                                                        ww);
+        SerialApplyQ_LeftForwardInternal::invoke(m-1, m-1, m-1,
+                                                 A+as0, as0, as1,
+                                                 t, 1,
+                                                 QZ+qzs, qzs0, qzs1,
+                                                 ww);
 
         /// clean up H
         SerialSetLowerTriangularInternal::invoke(m, m,
