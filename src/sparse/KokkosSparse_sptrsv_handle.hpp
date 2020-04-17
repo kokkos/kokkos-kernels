@@ -438,11 +438,16 @@ public:
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
   // set nsuper and supercols (# of supernodes, and map from supernode to column id
-  void set_supernodes (signed_integral_t nsuper_, int *supercols_, int *etree_) {
-    // set etree
+  template<class input_int_type>
+  void set_supernodes (signed_integral_t nsuper_, input_int_type *supercols_, int *etree_) {
+    // set etree (just wrap etree in a view)
     this->etree_host = integer_view_host_t (etree_, nsuper_);
-    // set supernodes
-    integer_view_host_t supercols_view = integer_view_host_t (supercols_, 1+nsuper_);
+    // set supernodes (make a copy, from input_int_type to int)
+    integer_view_host_t supercols_view = integer_view_host_t ("supercols", 1+nsuper_);
+    for (signed_integral_t i = 0; i <= nsuper_; i++) {
+      supercols_view (i) = supercols_[i];
+    }
+
     set_supernodes (nsuper_, supercols_view, etree_);
   }
 

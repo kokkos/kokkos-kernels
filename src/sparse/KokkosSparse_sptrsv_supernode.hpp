@@ -63,12 +63,13 @@
 namespace KokkosSparse {
 namespace Experimental {
 
+template<typename ordinal_type>
 class sort_indices {
    public:
-     sort_indices(int* rowinds) : rowinds_(rowinds){}
+     sort_indices(ordinal_type* rowinds) : rowinds_(rowinds){}
      bool operator()(int i, int j) const { return rowinds_[i] < rowinds_[j]; }
    private:
-     int* rowinds_; // rowindices
+     ordinal_type* rowinds_; // rowindices
 };
 
 /* ========================================================================================= */
@@ -94,25 +95,18 @@ graph_t deep_copy_graph (host_graph_t &host_graph) {
 }
 
 /* ========================================================================================= */
-template <typename graph_t, typename input_size_type, typename input_ptr_type, typename KernelHandle>
+template <typename graph_t, typename ptr_type, typename size_type, typename ordinal_type, typename KernelHandle>
 graph_t
-read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by_column, int *mb,
-                       input_size_type *nb, input_ptr_type *colptr, int *rowind) {
+read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, int nnzA, bool ptr_by_column,
+                       ptr_type *mb, size_type *nb, ordinal_type *rowind) {
 
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using cols_view_t    = typename graph_t::entries_type::non_const_type;
-  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
+  using integer_view_host_t = Kokkos::View<ordinal_type*, Kokkos::HostSpace>;
 
   // load parameters
   auto *handle = kernelHandle->get_sptrsv_handle ();
   bool merge = handle->get_merge_supernodes ();
-
-  int nnzA; // overestimated if not block_diag
-  if (ptr_by_column) {
-    nnzA = colptr[n] - colptr[0];
-  } else {
-    nnzA = colptr[nsuper] - colptr[0];
-  }
 
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   cols_view_t    column_view ("colmap_view", nnzA);
@@ -150,7 +144,7 @@ read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by
   }
 
   integer_view_host_t sorted_rowind_view ("sorted_rowind", max_nnz_per_row);
-  int *sorted_rowind = sorted_rowind_view.data ();
+  ordinal_type *sorted_rowind = sorted_rowind_view.data ();
   // store L in csr
   for (int s = 0 ; s < nsuper ; s++) {
     int j1 = nb[s];
@@ -192,7 +186,7 @@ read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by
       for (int ii = 0; ii < nsrow2; ii++) {
         sorted_rowind[ii] = ii;
       }
-      std::sort(&(sorted_rowind[0]), &(sorted_rowind[nsrow2]), sort_indices(&rowind[ps2]));
+      std::sort(&(sorted_rowind[0]), &(sorted_rowind[nsrow2]), sort_indices<ordinal_type>(&rowind[ps2]));
     }
     for (int kk = 0; kk < nsrow2; kk++) {
       int ii = (merge ? sorted_rowind[kk] : kk); // sorted rowind
@@ -1074,7 +1068,7 @@ read_supernodal_valuesL(bool unit_diag, KernelHandle kernelHandle,
                         const size_type *colptr, ordinal_type *rowind, scalar_t *Lx, graph_t &static_graph) {
 
   using  values_view_t = typename crsmat_t::values_type::non_const_type;
-  using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
+  using integer_view_host_t = Kokkos::View<ordinal_type*, Kokkos::HostSpace>;
 
   const scalar_t zero (0.0);
   const scalar_t one (1.0);
@@ -1171,7 +1165,7 @@ read_supernodal_valuesL(bool unit_diag, KernelHandle kernelHandle,
       for (int ii = 0; ii < nsrow2; ii++) {
         sorted_rowind (ii) = ii;
       }
-      std::sort(sorted_rowind.data (), sorted_rowind.data () + nsrow2, sort_indices(&rowind[ps2]));
+      std::sort(sorted_rowind.data (), sorted_rowind.data () + nsrow2, sort_indices<ordinal_type>(&rowind[ps2]));
     }
     for (int jj = 0; jj < nscol; jj++) {
       for (int kk = 0; kk < nsrow2; kk++) {

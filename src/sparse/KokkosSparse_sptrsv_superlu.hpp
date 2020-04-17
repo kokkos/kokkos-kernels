@@ -81,7 +81,8 @@ graph_t read_superlu_graphL(KernelHandle *kernelHandleL, SuperMatrix *L) {
   int * rowind = Lstore->rowind;
 
   bool ptr_by_column = true;
-  return read_supernodal_graphL<graph_t> (kernelHandleL, n, nsuper, ptr_by_column, mb, nb, colptr, rowind);
+  int nnzA = colptr[n] - colptr[0]; // overestimated if not block_diag
+  return read_supernodal_graphL<graph_t> (kernelHandleL, n, nsuper, nnzA, ptr_by_column, mb, nb, rowind);
 }
 
 
@@ -344,9 +345,9 @@ crsmat_t read_superlu_valuesL(KernelHandle kernelHandle, SuperMatrix *L, graph_t
 
   bool unit_diag = true;
   bool ptr_by_column = true;
-  return read_supernodal_valuesL<crsmat_t, graph_t> (unit_diag, kernelHandle,
-                                                     n, nsuper, ptr_by_column, mb, nb,
-                                                     colptr, rowind, Lx, static_graph);
+  return read_supernodal_valuesL<crsmat_t> (unit_diag, kernelHandle,
+                                            n, nsuper, ptr_by_column, mb, nb,
+                                            colptr, rowind, Lx, static_graph);
 }
 
 

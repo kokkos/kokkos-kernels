@@ -2767,7 +2767,7 @@ cudaProfilerStart();
                           work, work_offset, nodes_grouped_by_level, node_count);
 
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
-        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_functor);
+        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_functor);
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
