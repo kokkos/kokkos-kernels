@@ -361,6 +361,17 @@ void run_test_sptrsv() {
       typename device::execution_space, typename device::memory_space, typename device::memory_space>;
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+  using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
+  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
+
+  using row_map_view_t  = typename host_graph_t::row_map_type::non_const_type;
+  using cols_view_t     = typename host_graph_t::entries_type::non_const_type;
+  using values_view_t   = typename host_crsmat_t::values_type::non_const_type;
+
+  using in_row_map_view_t = typename RowMapType::HostMirror;
+  using in_cols_view_t    = typename EntriesType::HostMirror;
+  using in_values_view_t  = typename ValuesType::HostMirror;
+
   // L & U handle for supernodal SpTrsv
   KernelHandle khL;
   KernelHandle khU;
@@ -370,8 +381,6 @@ void run_test_sptrsv() {
   ValuesType X ("sol", nrows);
 
   // host CRS for L & U
-  using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
-  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
   host_crsmat_t L, U;
 #endif
 
@@ -536,10 +545,21 @@ void run_test_sptrsv() {
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     {
-      host_graph_t static_graph(hentries, hrow_map);
-      U = host_crsmat_t ("CrsMatrixU", nrows, hvalues, static_graph);
+      // copy and save U for Supernodal Sptrsv
+      size_type nnzL = hrow_map (nrows);
+      row_map_view_t Urow_map ("rowmap_view", nrows+1);
+      cols_view_t    Uentries ("colmap_view", nnzL);
+      values_view_t  Uvalues  ("values_view", nnzL);
+      Kokkos::deep_copy (Urow_map, hrow_map);
+      Kokkos::deep_copy (Uentries, hentries);
+      Kokkos::deep_copy (Uvalues,  hvalues);
 
-      khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
+      host_graph_t static_graph(Uentries, Urow_map);
+      U = host_crsmat_t ("CrsMatrixU", nrows, Uvalues, static_graph);
+
+      // create handle for Supernodal Sptrsv
+      bool is_lower_tri = false;
+      khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
     }
 #endif
   }
@@ -705,13 +725,6 @@ void run_test_sptrsv() {
     {
       // convert L into csc
       using host_exec_space = typename KernelHandle::SPTRSVHandleType::supercols_host_execution_space;
-      using row_map_view_t  = typename host_graph_t::row_map_type::non_const_type;
-      using cols_view_t     = typename host_graph_t::entries_type::non_const_type;
-      using values_view_t   = typename host_crsmat_t::values_type::non_const_type;
-
-      using in_row_map_view_t = typename RowMapType::HostMirror;
-      using in_cols_view_t    = typename EntriesType::HostMirror;
-      using in_values_view_t  = typename ValuesType::HostMirror;
 
       size_type nnzL = hrow_map (nrows);
       row_map_view_t Lrow_map ("rowmap_view", nrows+1);
@@ -722,12 +735,30 @@ void run_test_sptrsv() {
                         row_map_view_t, host_exec_space>
         (nrows, nrows, hrow_map, hentries, hvalues,
                        Lrow_map, Lentries, Lvalues);
+      Kokkos::fence();
+
+      // sptrsv assumes the diagonal "block" is stored before off-diagonal blocks
+      for (size_type j = 0; j < nrows; j++) {
+        for (size_type k = Lrow_map (j); k < Lrow_map (j+1); k++) {
+          if (Lentries (k) == (lno_t)j) {
+            scalar_t val = Lvalues (k);
+
+            Lvalues (k) = Lvalues (Lrow_map(j));
+            Lentries (k) = Lentries (Lrow_map(j));
+
+            Lvalues (Lrow_map(j)) = val;
+            Lentries (Lrow_map(j)) = j;
+            break;
+          }
+        }
+      }
 
       // store L in crsmat
       host_graph_t static_graph(Lentries, Lrow_map);
       L = host_crsmat_t ("CrsMatrixL", nrows, Lvalues, static_graph);
 
-      khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
+      bool is_lower_tri = true;
+      khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
     }
 
     {
@@ -739,11 +770,17 @@ void run_test_sptrsv() {
         supercols (i) = i;
       }
 
+      // invert diagonal blocks
+      bool invert_diag = true;
+      khL.set_sptrsv_invert_diagonal (invert_diag);
+      khU.set_sptrsv_invert_diagonal (invert_diag);
+
       // > symbolic (on host)
       sptrsv_supernodal_symbolic (nrows, supercols.data (), etree, L.graph, &khL, U.graph, &khU);
       // > numeric (on host)
       sptrsv_compute (&khL, L);
       sptrsv_compute (&khU, U);
+      Kokkos::fence();
 
       // > solve 
       Kokkos::deep_copy (X, 0);
