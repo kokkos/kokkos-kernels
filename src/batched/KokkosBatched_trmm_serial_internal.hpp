@@ -143,9 +143,9 @@ namespace KokkosBatched {
       auto B_elems = left_row;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = 0; i <= B_elems; i++) {
         // sum += A[left_row, i] * B[i, right_col]
         sum += AT::conj(A[left_row*as0 + i*as1]) * B[i*bs0 + bs1*right_col];
@@ -157,9 +157,9 @@ namespace KokkosBatched {
       auto B_elems = left_row;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = 0; i <= B_elems; i++) {
         // sum += A[left_row, i] * B[i, right_col]
         sum += A[left_row*as0 + i*as1] * B[i*bs0 + bs1*right_col];
@@ -176,13 +176,13 @@ namespace KokkosBatched {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int m = left_m-1; m >= 0; m--) {
-        #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-        #pragma unroll
-        #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
         for (int n = 0; n < right_n; n++) {
           if (do_conj) {
             B[m*bs0 + n*bs1] = dotLowerLeftConj(A, as0, as1, m, B, bs0, bs1, n);
@@ -229,9 +229,9 @@ namespace KokkosBatched {
       auto B_elems = am - 1;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = right_col; i <= B_elems; i++) {
         // sum += B[left_row, i] * A[i, right_col]
         sum += B[bs0*left_row + i*bs1] * AT::conj(A[i*as0 + right_col*as1]);
@@ -243,9 +243,9 @@ namespace KokkosBatched {
       auto B_elems = am - 1;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = right_col; i <= B_elems; i++) {
         // sum += B[left_row, i] * A[i, right_col]
         sum += B[bs0*left_row + i*bs1] * A[i*as0 + right_col*as1];
@@ -262,13 +262,13 @@ namespace KokkosBatched {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int m = 0; m < left_m; m++) {
-        #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-        #pragma unroll
-        #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
         for (int n = 0; n < right_n; n++) {
           if (do_conj) {
             B[m*bs0 + n*bs1] = dotLowerRightConj(A, as0, as1, am, m, B, bs0, bs1, n);
@@ -309,9 +309,9 @@ namespace KokkosBatched {
       auto B_elems = an - left_row - 1;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = 0; i <= B_elems; i++) {
         // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
         sum += AT::conj(A[left_row*as0 + (i+left_row)*as1]) * B[(i+left_row)*bs0 + bs1*right_col];
@@ -323,9 +323,9 @@ namespace KokkosBatched {
       auto B_elems = an - left_row - 1;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = 0; i <= B_elems; i++) {
         // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
         sum += A[left_row*as0 + (i+left_row)*as1] * B[(i+left_row)*bs0 + bs1*right_col];
@@ -342,13 +342,13 @@ namespace KokkosBatched {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
       
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int m = 0; m < left_m; ++m) {
-        #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-        #pragma unroll
-        #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
         for (int n = 0; n < right_n; ++n) {
           if (do_conj) {
             B[m*bs0 + n*bs1] = dotUpperLeftConj(A, as0, as1, an, m, B, bs0, bs1, n);
@@ -389,9 +389,9 @@ namespace KokkosBatched {
       auto B_elems = right_col;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = 0; i <= B_elems; i++) {
         // sum += B[left_row, i] * A[i, right_col]
         sum += B[left_row*bs0 + i*bs1] * AT::conj(A[i*as0 + right_col*as1]);
@@ -403,9 +403,9 @@ namespace KokkosBatched {
     auto B_elems = right_col;
       auto A_elems = B_elems * as0;
       ScalarType sum = 0;
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int i = 0; i <= B_elems; i++) {
         // sum += B[left_row, i] * A[i, right_col]
         sum += B[left_row*bs0 + i*bs1] * A[i*as0 + right_col*as1];
@@ -421,14 +421,14 @@ namespace KokkosBatched {
     else {
       if (alpha != one)
         SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
-      
-      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-      #pragma unroll
-      #endif
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
       for (int m = 0; m < left_m; ++m) {
-        #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-        #pragma unroll
-        #endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
         for (int n = right_n - 1; n >= 0; --n) {
           if (do_conj) {
             B[m*bs0 + n*bs1] = dotUpperRightConj(A, as0, as1, m, B, bs0, bs1, n);

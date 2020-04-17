@@ -102,10 +102,10 @@ struct TRTRI{
 template<class RVIT, class AVIT>
 struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void
-  trtri (const RVIT &R,
+  trtri (const RVIT& R,
         const char uplo[],
         const char diag[],
-        const AVIT &A)
+        const AVIT& A)
   {
     static_assert (Kokkos::Impl::is_view<AVIT>::value,
                    "AVIT must be a Kokkos::View.");

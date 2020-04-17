@@ -84,7 +84,7 @@ namespace KokkosBlas {
         }
       } else {
       //// Upper ////
-      if (__diag == 'u') {
+        if (__diag == 'u') {
           R() = SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(Diag::Unit::use_unit_diag,
                                                                   A.extent(0), A.extent(1),
                                                                   A.data(), A.stride(0), A.stride(1));
