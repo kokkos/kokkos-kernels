@@ -46,6 +46,7 @@
 #define __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_trmm_serial_internal.hpp"
 
 namespace KokkosBatched {
 
@@ -77,6 +78,71 @@ namespace KokkosBatched {
   invoke(const bool use_unit_diag,
          const int am, const int an,
          ValueType *__restrict__ A, const int as0, const int as1) {
+    ValueType one(1.0), zero(0.0), A_ii;
+    if (use_unit_diag) {
+      A[(am-1)*as0 + (am-1)*as1] = one / A[(am-1)*as0 + (am-1)*as1];
+      A_ii = -one;
+
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      for (int i = am - 2; i >= 0; --i) {
+        A[i*as0 + i*as1] = one / A[i*as0 + i*as1];
+
+        ValueType *__restrict__ A_subblock = &A[(i+1)*as0 + (i+1)*as1];
+        int A_subblock_m = am - i, 
+            A_subblock_n = am - i;
+        ValueType *__restrict__ A_col_vec  = &A[(i+1)*as0 + i*as1];
+        int A_col_vec_m  = am - i,
+            A_col_vec_n  = 1;
+        // TRMV/TRMM −− x=Ax
+        // A((j+1):n,j) = -A((j+1):n,(j+1):n) ∗ A((j+1):n,j) ;
+        SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(use_unit_diag,
+                                                                    false,
+                                                                    A_subblock_m, A_subblock_n,
+                                                                    A_col_vec_m,  A_col_vec_n,
+                                                                    A_ii,
+                                                                    A_subblock, as0, as1,
+                                                                    A_col_vec,  as0, as1);
+      }
+    } else {
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      // Check for singularity
+      for (int i = 0; i < am; ++i)
+        if (A[i*as0 + i*as1] == zero)
+          return i+1;
+
+      A[(am-1)*as0 + (am-1)*as1] = one / A[(am-1)*as0 + (am-1)*as1];
+
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      for (int i = am - 2; i >= 0; --i) {
+        A[i*as0 + i*as1] = one / A[i*as0 + i*as1];
+        A_ii = -A[i*as0 + i*as1];
+
+        ValueType *__restrict__ A_subblock = &A[(i+1)*as0 + (i+1)*as1];
+        int A_subblock_m = am - i, 
+            A_subblock_n = am - i;
+        ValueType *__restrict__ A_col_vec  = &A[(i+1)*as0 + i*as1];
+        int A_col_vec_m  = am - i,
+            A_col_vec_n  = 1;
+        // TRMV/TRMM −− x=Ax
+        // A((j+1):n,j) = A((j+1):n,(j+1):n) ∗ A((j+1):n,j) ;
+        SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(use_unit_diag,
+                                                                    false,
+                                                                    A_subblock_m, A_subblock_n,
+                                                                    A_col_vec_m,  A_col_vec_n,
+                                                                    one,
+                                                                    A_subblock, as0, as1,
+                                                                    A_col_vec,  as0, as1);
+        // SCAL -- x=ax
+        // A((j+1):n,j) = A_ii * A((j+1):n,j)
+        SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n, A_ii, A_col_vec, as0, as1);
+      }
+    }
     return 0;
   }
 
@@ -88,6 +154,71 @@ namespace KokkosBatched {
   invoke(const bool use_unit_diag,
          const int am, const int an,
          ValueType *__restrict__ A, const int as0, const int as1) {
+    ValueType one(1.0), zero(0.0), A_ii;
+    if (use_unit_diag) {
+      A[0*as0 + 0*as1] = one / A[0*as0 + 0*as1];
+      A_ii = -one;
+
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      for (int i = 1; i < am; ++i) {
+        A[i*as0 + i*as1] = one / A[i*as0 + i*as1];
+
+        ValueType *__restrict__ A_subblock = &A[0*as0 + 0*as1];
+        int A_subblock_m = i,
+            A_subblock_n = i;
+        ValueType *__restrict__ A_col_vec  = &A[0*as0 + i*as1];
+        int A_col_vec_m  = i,
+            A_col_vec_n  = 1;
+        // TRMV/TRMM −− x=Ax
+        // A(1:(j-1),j) = A(1:(j-1),1:(j-1)) ∗ A(1:(j-1),j) ;
+        SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(use_unit_diag,
+                                                                    false,
+                                                                    A_subblock_m, A_subblock_n,
+                                                                    A_col_vec_m,  A_col_vec_n,
+                                                                    A_ii,
+                                                                    A_subblock, as0, as1,
+                                                                    A_col_vec,  as0, as1);
+      }
+    } else {
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      // Check for singularity
+      for (int i = 0; i < am; ++i)
+        if (A[i*as0 + i*as1] == zero)
+          return i+1;
+
+      A[0*as0 + 0*as1] = one / A[0*as0 + 0*as1];
+
+      #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+      #pragma unroll
+      #endif
+      for (int i = 1; i < am; ++i) {
+        A[i*as0 + i*as1] = one / A[i*as0 + i*as1];
+        A_ii = -A[i*as0 + i*as1];
+
+        ValueType *__restrict__ A_subblock = &A[0*as0 + 0*as1];
+        int A_subblock_m = i,
+            A_subblock_n = i;
+        ValueType *__restrict__ A_col_vec  = &A[0*as0 + i*as1];
+        int A_col_vec_m  = i,
+            A_col_vec_n  = 1;
+        // TRMV/TRMM −− x=Ax
+        // A(1:(j-1),j) = A(1:(j-1),1:(j-1)) ∗ A(1:(j-1),j) ;
+        SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(use_unit_diag,
+                                                                    false,
+                                                                    A_subblock_m, A_subblock_n,
+                                                                    A_col_vec_m,  A_col_vec_n,
+                                                                    one,
+                                                                    A_subblock, as0, as1,
+                                                                    A_col_vec,  as0, as1);
+        // SCAL -- x=ax
+        // A((j+1):n,j) = A_ii * A((j+1):n,j)
+        SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n, A_ii, A_col_vec, as0, as1);
+      }
+    }
     return 0;
   }
 } // namespace KokkosBatched
