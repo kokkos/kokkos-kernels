@@ -573,11 +573,11 @@ void testSortCRS(default_lno_t numRows, default_size_type nnz, bool doValues)
   {
     ColValue() {}
     ColValue(lno_t c, scalar_t v) : col(c), val(v) {}
-    bool operator<(const ColValue& rhs)
+    bool operator<(const ColValue& rhs) const
     {
       return col < rhs.col;
     }
-    bool operator==(const ColValue& rhs)
+    bool operator==(const ColValue& rhs) const
     {
       return col == rhs.col && val == rhs.val;
     }
