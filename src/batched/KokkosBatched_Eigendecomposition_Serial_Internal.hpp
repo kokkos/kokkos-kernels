@@ -67,7 +67,6 @@ namespace KokkosBatched {
       assert( (wlen_now >= 0) && "Eigendecomposition: workspace size is negative");
 
       const bool is_UL = UL != NULL, is_UR = UR != NULL;
-      const bool is_U  = is_UL || is_UR;
       assert((is_UL || is_UR) && "Eigendecomposition: neither left nor right eigenvectors were requested. Use SerialEigenvalueInternal instead.");
         
       real_type *QZ = w_now; w_now += (m*m); wlen_now -= (m*m);
