@@ -47,10 +47,6 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
 
-typedef default_size_type size_type;
-typedef default_lno_t lno_t;
-typedef default_scalar scalar_t;
-
 void print_options(){
   std::cerr << "Options\n" << std::endl;
 
@@ -283,6 +279,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
 }
 
 int main (int argc, char ** argv){
+  using size_type = default_size_type;
+  using lno_t = default_lno_t;
+  using scalar_t = default_scalar;
 
   KokkosKernels::Experiment::Parameters params;
 

@@ -47,10 +47,6 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_run_spgemm_jacobi.hpp"
 
-using size_type = default_size_type;
-using lno_t =  default_lno_t;
-using scalar_t = default_scalar;
-
 void print_options(){
   std::cerr << "Options\n" << std::endl;
   std::cerr << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]'" << std::endl;
@@ -250,6 +246,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
 }
 
 int main (int argc, char ** argv){
+  using size_type = default_size_type;
+  using lno_t =  default_lno_t;
+  using scalar_t = default_scalar;
 
   KokkosKernels::Experiment::Parameters params;
 
