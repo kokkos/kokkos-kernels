@@ -91,9 +91,7 @@ namespace Test {
       Kokkos::Profiling::pushRegion( name.c_str() );
 
       const int league_size = _a.extent(0);
-      Kokkos::fence();
       Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
-      Kokkos::fence();
 
       Kokkos::parallel_for(name.c_str(), policy, *this);
       Kokkos::Profiling::popRegion(); 
@@ -116,7 +114,6 @@ namespace Test {
     VectorViewType t("t", N, BlkSize);
     WorkViewType   w("w", N, BlkSize);
 
-    /// meaningless fence 
     Kokkos::fence();
 
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
@@ -132,9 +129,6 @@ namespace Test {
     /// for comparison send it to host
     typename VectorViewType::HostMirror x_host = Kokkos::create_mirror_view(x);
     Kokkos::deep_copy(x_host, x);
-
-    /// another meaningless fence
-    Kokkos::fence();
 
     /// check x = 1; this eps is about 1e-14
     typedef typename ats::mag_type mag_type;
