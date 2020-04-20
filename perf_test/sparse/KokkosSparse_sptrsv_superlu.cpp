@@ -645,7 +645,6 @@ void print_help_sptrsv() {
 int main(int argc, char **argv) {
   std::vector<int> tests;
   std::string filename;
-  std::string scalarTypeString;
 
   int loop = 1;
   // use symmetric mode for SuperLU
@@ -669,6 +668,7 @@ int main(int argc, char **argv) {
   bool verbose = true;
   // scalar type
   std::string char_scalar = "d";
+  std::string scalarTypeString = "(scalar_t = double)";
 
   if(argc == 1)
   {
@@ -762,38 +762,43 @@ int main(int argc, char **argv) {
   Kokkos::ScopeGuard kokkosScope (argc, argv);
 
   int total_errors = 0;
-  #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
   if (char_scalar == "z") {
+    #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
     scalarTypeString = "(scalar_t = Kokkos::complex<double>)";
     total_errors = test_sptrsv_perf<Kokkos::complex<double>> (tests, verbose, filename, symm_mode, metis, merge,
                                                               invert_diag, invert_offdiag, u_in_csr, panel_size,
                                                               relax_size, block_size, loop);
-  }
-  #endif
-  #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
-  if (char_scalar == "c") {
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_DOUBLE  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "c") {
+    #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
     scalarTypeString = "(scalar_t = Kokkos::complex<float>)";
     total_errors = test_sptrsv_perf<Kokkos::complex<float>> (tests, verbose, filename, symm_mode, metis, merge,
                                                              invert_diag, invert_offdiag, u_in_csr, panel_size,
                                                              relax_size, block_size, loop);
-  }
-  #endif
-  #if defined(KOKKOSKERNELS_INST_DOUBLE)
-  if (char_scalar == "d") {
-    scalarTypeString = "(scalar_t = double)";
-    total_errors = test_sptrsv_perf<double> (tests, verbose, filename, symm_mode, metis, merge,
-                                             invert_diag, invert_offdiag, u_in_csr, panel_size,
-                                             relax_size, block_size, loop);
-  }
-  #endif
-  #if defined(KOKKOSKERNELS_INST_FLOAT)
-  if (char_scalar == "f") {
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_FLOAT  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "d") {
+    #if defined(KOKKOSKERNELS_INST_DOUBLE)
+      scalarTypeString = "(scalar_t = double)";
+      total_errors = test_sptrsv_perf<double> (tests, verbose, filename, symm_mode, metis, merge,
+                                               invert_diag, invert_offdiag, u_in_csr, panel_size,
+                                               relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_DOUBLE  is not enabled ** " << std::endl << std::endl;
+    #endif
+  } else if (char_scalar == "f") {
+    #if defined(KOKKOSKERNELS_INST_FLOAT)
     scalarTypeString = "(scalar_t = float)";
     total_errors = test_sptrsv_perf<float> (tests, verbose, filename, symm_mode, metis, merge,
                                             invert_diag, invert_offdiag, u_in_csr, panel_size,
                                             relax_size, block_size, loop);
+    #else
+    std::cout << std::endl << " KOKKOSKERNELS_INST_FLOAT  is not enabled ** " << std::endl << std::endl;
+    #endif
   }
-  #endif
   if(total_errors == 0)
     std::cout << "Kokkos::SPTRSV Test: Passed " << scalarTypeString
               << std::endl << std::endl;
