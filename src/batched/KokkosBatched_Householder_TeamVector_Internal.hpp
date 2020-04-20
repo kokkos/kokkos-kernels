@@ -43,9 +43,11 @@ namespace KokkosBatched {
         
       /// if norm_x2 is zero, return with trivial values
       if (norm_x2_square == zero) {
-        *chi1 = -(*chi1);
-        *tau = half;
-          
+        Kokkos::single(Kokkos::PerTeam(member), [&]() { 
+            *chi1 = -(*chi1);
+            *tau = half;
+          });
+        member.team_barrier();
         return 0;
       }
 

@@ -92,6 +92,7 @@ namespace Test {
 
       const int league_size = _a.extent(0);
       Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+
       Kokkos::parallel_for(name.c_str(), policy, *this);
       Kokkos::Profiling::popRegion(); 
     }
@@ -112,6 +113,8 @@ namespace Test {
     VectorViewType b("b", N, BlkSize);
     VectorViewType t("t", N, BlkSize);
     WorkViewType   w("w", N, BlkSize);
+
+    Kokkos::fence();
 
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
     Kokkos::fill_random(a, random, value_type(1.0));
