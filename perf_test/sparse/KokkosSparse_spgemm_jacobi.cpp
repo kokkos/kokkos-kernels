@@ -50,7 +50,7 @@
 void print_options(){
   std::cerr << "Options\n" << std::endl;
   std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
-  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl
+  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl;
   std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB" << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> to write output C=AxB"  << std::endl;
   std::cerr << "\t[Optional] --DENSEACCMAX: on CPUs default algorithm may choose to use dense accumulators. This parameter defaults to 250k, which is max k value to choose dense accumulators. This can be increased with more memory bandwidth." << std::endl;

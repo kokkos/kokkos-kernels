@@ -52,7 +52,7 @@ void print_options(){
 
   std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
 
-  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl
+  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl;
   std::cerr << "\t[Optional] '--algorithm [DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE|MKL|CUSPARSE|CUSP|VIENNA|MKL2]' --> to choose algorithm. KKMEM is outdated, use KKSPGEMM instead." << std::endl;
   std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB" << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> to write output C=AxB"  << std::endl;
