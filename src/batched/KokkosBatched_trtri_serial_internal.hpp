@@ -102,10 +102,10 @@ namespace KokkosBatched {
         A_ii = -A[i*as0 + i*as1];
 
       ValueType *__restrict__ A_subblock = &A[(i+1)*as0 + (i+1)*as1];
-      int A_subblock_m = am - i, 
-          A_subblock_n = am - i;
+      int A_subblock_m = am - i - 1, 
+          A_subblock_n = am - i - 1;
       ValueType *__restrict__ A_col_vec  = &A[(i+1)*as0 + i*as1];
-      int A_col_vec_m  = am - i,
+      int A_col_vec_m  = am - i - 1,
           A_col_vec_n  = 1;
       // TRMV/TRMM −− x=Ax
       // A((j+1):n,j) = A((j+1):n,(j+1):n) ∗ A((j+1):n,j) ;
