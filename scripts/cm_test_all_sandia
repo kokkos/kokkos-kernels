@@ -430,6 +430,7 @@ elif [ "$MACHINE" = "kokkos-dev" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
                "gcc/7.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/16.0.3 $BASE_MODULE_LIST  "Serial,Pthread" icpc $INTEL_WARNING_FLAGS"
                "intel/17.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
                "clang/4.0.1 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
                "clang/7.0.1 $CLANG7_MODULE_LIST "Cuda_OpenMP" clang++ $CLANG_WARNING_FLAGS"
@@ -439,6 +440,7 @@ elif [ "$MACHINE" = "kokkos-dev" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
                "gcc/7.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/16.0.3 $BASE_MODULE_LIST  "Serial,Pthread" icpc $INTEL_WARNING_FLAGS"
                "intel/17.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
                "clang/4.0.1 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
                "clang/7.0.1 $CLANG7_MODULE_LIST "Cuda_OpenMP" clang++ $CLANG_WARNING_FLAGS"
@@ -754,8 +756,11 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
     COMPILERS=("gcc/7.3.0 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
                "gcc/8.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
                "gcc/9.1 $GCC91_MODULE_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST "Serial" icpc $INTEL_WARNING_FLAGS"
                "intel/18.0.5 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "intel/19.0.5 $BASE_MODULE_LIST "Pthread" icpc $INTEL_WARNING_FLAGS"
                "clang/8.0 $CLANG8_MODULE_LIST "Cuda_OpenMP,Pthread_Serial" clang++ $CLANG8_CUDA_WARNING_FLAGS"
+               "clang/9.0.0 $BASE_MODULE_LIST "Serial,Pthread" clang++ $CLANG_WARNING_FLAGS"
                "cuda/10.1 $NVCC_SEMSMODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/9.2 $NVCC_SEMSMODULE_LIST "Cuda_Serial" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
@@ -764,8 +769,11 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
     COMPILERS=("gcc/7.3.0 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
                "gcc/8.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
                "gcc/9.1 $GCC91_MODULE_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST "Serial" icpc $INTEL_WARNING_FLAGS"
                "intel/18.0.5 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+               "intel/19.0.5 $BASE_MODULE_LIST "Pthread" icpc $INTEL_WARNING_FLAGS"
                "clang/8.0 $CLANG8_MODULE_LIST "Cuda_OpenMP,Pthread_Serial" clang++ $CLANG8_CUDA_WARNING_FLAGS"
+               "clang/9.0.0 $BASE_MODULE_LIST "Serial,Pthread" clang++ $CLANG_WARNING_FLAGS"
                "cuda/10.1 $NVCC_SEMSMODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   else
