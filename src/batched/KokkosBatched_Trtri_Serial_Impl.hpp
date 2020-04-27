@@ -46,7 +46,7 @@
 #define __KOKKOSBATCHED_TRTRI_SERIAL_IMPL_HPP__
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_trtri_serial_internal.hpp"
+#include "KokkosBatched_Trtri_Serial_Internal.hpp"
 
 namespace KokkosBatched {
   template<typename ArgDiag>

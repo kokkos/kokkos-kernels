@@ -53,8 +53,8 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "KokkosBatched_trtri_decl.hpp"
-#include "KokkosBatched_trtri_serial_impl.hpp"
+#include "KokkosBatched_Trtri_Decl.hpp"
+#include "KokkosBatched_Trtri_Serial_Impl.hpp"
 
 using namespace KokkosBatched;
 

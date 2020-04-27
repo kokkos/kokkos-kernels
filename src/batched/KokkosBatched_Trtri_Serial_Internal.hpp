@@ -46,7 +46,7 @@
 #define __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_trmm_serial_internal.hpp"
+#include "KokkosBatched_Trmm_Serial_Internal.hpp"
 
 namespace KokkosBatched {
 
@@ -162,6 +162,7 @@ namespace KokkosBatched {
           A_col_vec_n  = 1;
       // TRMV/TRMM −− x=Ax
       // A(1:(j-1),j) = A(1:(j-1),1:(j-1)) ∗ A(1:(j-1),j) ;
+      //SerialTrmm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NoUnit,Algo::Trmm::Unblocked>
       SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(use_unit_diag,
                                                                   false,
                                                                   A_subblock_m, A_subblock_n,

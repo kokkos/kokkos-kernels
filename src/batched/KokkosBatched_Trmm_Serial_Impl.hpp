@@ -46,7 +46,7 @@
 #define __KOKKOSBATCHED_TRMM_SERIAL_IMPL_HPP__
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_trmm_serial_internal.hpp"
+#include "KokkosBatched_Trmm_Serial_Internal.hpp"
 
 namespace KokkosBatched {
   //// Lower non-transpose ////

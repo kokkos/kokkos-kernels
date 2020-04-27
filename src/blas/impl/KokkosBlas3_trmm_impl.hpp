@@ -56,8 +56,8 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Set_Internal.hpp"
 #include "KokkosBatched_Scale_Internal.hpp"
-#include "KokkosBatched_trmm_decl.hpp"
-#include "KokkosBatched_trmm_serial_impl.hpp"
+#include "KokkosBatched_Trmm_Decl.hpp"
+#include "KokkosBatched_Trmm_Serial_Impl.hpp"
 
 using namespace KokkosBatched;
 
@@ -79,7 +79,7 @@ namespace KokkosBlas {
             //__diag = tolower(diag[0]);
       bool do_conj = true;
 
-      // Ignoring diag, see "ech-note" in KokkosBatched_trmm_serial_internal.hpp
+      // Ignoring diag, see "ech-note" in KokkosBatched_Trmm_Serial_Internal.hpp
 
       //// Lower non-transpose ////
       if (__side == 'l' && __uplo == 'l' && __trans == 'n')
