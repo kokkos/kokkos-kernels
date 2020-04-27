@@ -77,7 +77,7 @@ namespace KokkosBatched {
 
       /// step 1: Hessenberg reduction A = Q H Q^H
       ///         Q is stored in QZ
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+#if (defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && (__INTEL_MKL__ >= 2018)) && defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
       {
         real_type *t  = w_now; w_now += m; wlen_now -= m;
         assert( (wlen_now >= 0) && "Eigendecomposition: Hessenberg reduction workspace t allocation fail");
