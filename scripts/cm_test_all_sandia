@@ -759,6 +759,7 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
   BUILD_LIST_CLANG="Serial,Pthread,OpenMP"
 
   CLANG8_CUDA_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wuninitialized,-Wno-pass-failed"
+  PGI_MODULE_LIST="sems-env,kokkos-env,sems-cmake/3.12.2,sems-gcc/7.3.0,<COMPILER_NAME>/<COMPILER_VERSION>"
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
