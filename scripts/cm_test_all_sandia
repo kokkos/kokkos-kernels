@@ -734,7 +734,7 @@ elif [ "$MACHINE" = "apollo" ]; then
   SPACK_CUDA_ARCH="+volta70" 
   SPACK_CUDA_HOST_COMPILER="%gcc@6.1.0"
 elif [ "$MACHINE" = "kokkos-dev-2" ]; then
-  MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh ; module use /home/projects/x86-64/modulefiles/local ; module purge"
+  MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh ; module use /home/projects/x86-64/modulefiles/local"
   $MODULE_ENVIRONMENT
   module load sems-env
   module load kokkos-env
