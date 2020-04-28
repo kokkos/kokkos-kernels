@@ -11,6 +11,30 @@ using namespace KokkosBatched;
 
 namespace Test {
 
+  template<class ViewTypeA, class ExecutionSpace>
+  struct UnitDiagTRMM {
+    ViewTypeA A_;
+    using ScalarA = typename ViewTypeA::value_type;
+
+    UnitDiagTRMM (const ViewTypeA& A) : A_(A) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const int& i) const {
+      A_(i,i) = ScalarA(1);
+    }
+  };
+  template<class ViewTypeA, class ExecutionSpace>
+  struct NonUnitDiagTRMM {
+    ViewTypeA A_;
+    using ScalarA = typename ViewTypeA::value_type;
+
+    NonUnitDiagTRMM (const ViewTypeA& A) : A_(A) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const int& i) const {
+      A_(i,i) = A_(i,i)+10;
+    }
+  };
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
   struct VanillaGEMM {
     bool A_t, B_t, A_c, B_c;
@@ -119,31 +143,77 @@ namespace Test {
            typename AlgoTagType>
   void impl_test_batched_trmm(const int N, const int nRows, const int nCols, const char *trans) {
     typedef typename ViewType::value_type value_type;
+    typedef typename DeviceType::execution_space execution_space;
     typedef Kokkos::Details::ArithTraits<value_type> ats;
 
     ScalarType alpha(1.0);
-    ScalarType beta(1.0);
+    ScalarType beta(0.0);
 
     const bool is_side_right = std::is_same<typename ParamTagType::side,Side::Right>::value;
+    const bool is_A_lower = std::is_same<typename ParamTagType::uplo,Uplo::Lower>::value;
     const int K = is_side_right ? nCols : nRows;
     ViewType
       A("A", N, K, K),
       B_actual("B_actual", N, nRows, nCols), 
       B_expected("B_expected", N, nRows, nCols);
+    typename ViewType::HostMirror A_host = Kokkos::create_mirror_view(A);
+    typename ViewType::HostMirror B_actual_host = Kokkos::create_mirror_view(B_actual);
+    typename ViewType::HostMirror B_expected_host = Kokkos::create_mirror_view(B_expected);
+    uint64_t seed = Kokkos::Impl::clock_tic();
 
-    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
-    Kokkos::fill_random(A, random, value_type(1.0));
-    Kokkos::fill_random(B_actual, random, value_type(1.0));
+    using ViewTypeSubA = decltype(Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL()));
+    using ViewTypeSubB = decltype(Kokkos::subview(B_actual, 0, Kokkos::ALL(), Kokkos::ALL()));
+
+    Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);    
+
+    if(std::is_same<typename ParamTagType::diag,Diag::NonUnit>::value) {
+      // Initialize A with deterministic random numbers
+      Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarType>::max());
+      using functor_type = UnitDiagTRMM<ViewTypeSubA,execution_space>;
+      for (int k = 0; k < N; ++k) {
+        functor_type udtrmm(Kokkos::subview(A, k, Kokkos::ALL(), Kokkos::ALL()));
+        // Initialize As diag with 1s
+        Kokkos::parallel_for("KokkosBlas::Test::UnitDiagTRMM", Kokkos::RangePolicy<execution_space>(0,K), udtrmm);
+      }
+    } else {//(diag[0]=='N')||(diag[0]=='n')
+      // Initialize A with random numbers
+      Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarType>::max());
+      using functor_type = NonUnitDiagTRMM<ViewTypeSubA,execution_space>;
+      for (int k = 0; k < N; ++k) {
+        functor_type nudtrmm(Kokkos::subview(A, k, Kokkos::ALL(), Kokkos::ALL()));
+        // Initialize As diag with A(i,i)+10
+        Kokkos::parallel_for("KokkosBlas::Test::NonUnitDiagTRMM", Kokkos::RangePolicy<execution_space>(0,K), nudtrmm);
+      }
+    }
+    Kokkos::fill_random(B_actual, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarType>::max());
+    Kokkos::fence();
 
     Kokkos::deep_copy(B_expected, B_actual);
     Kokkos::fence();
 
+    Kokkos::deep_copy(A_host,  A);
+    // Make A_host a lower triangle
+    for (int k = 0; k < N; k++) {
+      if (is_A_lower) {
+        for (int i = 0; i < K-1; i++)
+          for (int j = i+1; j < K; j++)
+            A_host(k,i,j) = ScalarType(0);
+      }
+      else {
+        // Make A_host a upper triangle
+        for (int i = 1; i < K; i++)
+          for (int j = 0; j < i; j++)
+            A_host(k,i,j) = ScalarType(0); 
+      }
+    }
+    Kokkos::deep_copy(A, A_host);
+
     if (!is_side_right){
       // B_expected = alpha * op(A) * B + beta * C = 1 * op(A) * B + 0 * C
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
+      struct VanillaGEMM<ViewTypeSubA,ViewTypeSubB,ViewTypeSubB,execution_space> vgemm;
       vgemm.A_t = (trans[0]!='N') && (trans[0]!='n'); vgemm.B_t = false;
       vgemm.A_c = (trans[0]=='C') || (trans[0]=='c'); vgemm.B_c = false;
-      vgemm.N = N;    vgemm.K = K;
+      vgemm.N = nCols;    vgemm.K = K;
       vgemm.alpha = alpha;
       vgemm.beta = beta;
       for (int i = 0; i < N; i++) {
@@ -155,10 +225,10 @@ namespace Test {
     }
     else {
       // B_expected = alpha * B * op(A) + beta * C = 1 * B * op(A) + 0 * C
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
+      struct VanillaGEMM<ViewTypeSubB,ViewTypeSubA,ViewTypeSubB,execution_space> vgemm;
       vgemm.A_t = false; vgemm.B_t = (trans[0]!='N') && (trans[0]!='n');
       vgemm.A_c = false; vgemm.B_c = (trans[0]=='C') || (trans[0]=='c');
-      vgemm.N = N;     vgemm.K = K;
+      vgemm.N = nCols;     vgemm.K = K;
       vgemm.alpha = alpha;
       vgemm.beta = beta;
       for (int i = 0; i < N; i++) {
@@ -173,26 +243,22 @@ namespace Test {
       ParamTagType,Algo::Trmm::Unblocked>(alpha, A, B_actual).run();
 
     Kokkos::fence();
-    Kokkos::deep_copy(host_B_expected, B_expected);
+
+    Kokkos::deep_copy(B_actual_host, B_actual);
+    Kokkos::deep_copy(B_expected_host, B_expected);
 
     Kokkos::fence();
 
-    /// for comparison send it to host
-    typename ViewType::HostMirror B_actual_host = Kokkos::create_mirror_view(B_actual);
-    typename ViewType::HostMirror B_explected_host = Kokkos::create_mirror_view(B_expected);
-
-    Kokkos::deep_copy(B_actual_host, B);
-    Kokkos::deep_copy(B_explected_host, B_expected);
-
-    /// check b0 = b1 ; this eps is about 10^-14
+    // eps is ~ 10^-13 for double
     typedef typename ats::mag_type mag_type;
-    const mag_type eps = 1.0e3 * ats::epsilon();
+    const mag_type eps = 1.0e8 * ats::epsilon();
     bool fail_flag = false;
 
     for (int k=0;k<N;++k) {
       for (int i=0;i<nRows;++i) {
         for (int j=0;j<nCols;++j) {
-          if (ats::abs(B_actual_host(k,i,j)-B_explected_host(k,i,j)) > eps) {
+          if (ats::abs(B_actual_host(k,i,j)-B_expected_host(k,i,j)) > eps) {
+            //printf("   Error: eps ( %g ), abs_result( %.15lf ) != abs_solution( %.15lf ) (abs result-solution %g) at (k %d, i %d, j %d)\n", eps, ats::abs(B_actual_host(k,i,j)), ats::abs(B_expected_host(k,i,j)), ats::abs(B_actual_host(k,i,j) - B_expected_host(k,i,j)), k, i, j);
             fail_flag = true;
           }
         }
@@ -209,31 +275,30 @@ template<typename DeviceType,
          typename ValueType,
          typename ScalarType,
          typename ParamTagType,
-         typename AlgoTagType,
-         typename ParamTransType>
+         typename AlgoTagType>
 int test_batched_trmm() {
-  char *trans = std::is_same<typename ParamTagType::side,Trans::NoTranspose>::value ? "N" :
-                std::is_same<typename ParamTagType::side,Trans::Transpose>::value; ? "T" :
-                std::is_same<typename ParamTagType::side,Trans::ConjTranspose>::value; ? "C" : "E"
+  char trans = std::is_same<typename ParamTagType::trans,Trans::NoTranspose>::value ? 'N' :
+                std::is_same<typename ParamTagType::trans,Trans::Transpose>::value ? 'T' :
+                std::is_same<typename ParamTagType::trans,Trans::ConjTranspose>::value ? 'C' : 'E';
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, trans);
+    Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4, trans);
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1, trans);
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4, &trans);
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1, &trans);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, trans);
+    Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);  
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4, trans);
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1), trans;
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4, &trans);
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1), &trans;
     }
   }
 #endif

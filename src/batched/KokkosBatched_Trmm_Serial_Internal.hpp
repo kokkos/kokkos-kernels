@@ -138,6 +138,7 @@ namespace KokkosBatched {
     //if (do_conj) {
     //  conjOp = AT::conj;
     //}
+    //printf("SerialTrmmInternalLeftLower\n");
     
     auto dotLowerLeftConj = [&](const ValueType *__restrict__ __A, const int __as0, const int __as1, const int __left_row, ValueType *__restrict__ __B, const int __bs0, const int __bs1, const int __right_col) {
       auto B_elems = __left_row;
