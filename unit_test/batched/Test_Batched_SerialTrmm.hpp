@@ -265,8 +265,7 @@ namespace Test {
       }
     }
 
-    if (fail_flag)
-      ASSERT_EQ( fail_flag, false );
+    ASSERT_EQ( fail_flag, false );
   }
 }
 
