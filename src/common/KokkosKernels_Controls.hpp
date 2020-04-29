@@ -51,6 +51,7 @@
 /// \author Luc Berger-Vergiat (lberge@sandia.gov)
 
 #include <unordered_map>
+#include "KokkosKernels_config.h"
 #include "KokkosKernels_tpl_handles_decl.hpp"
 
 // TPLS headers
@@ -60,6 +61,8 @@
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
+#else
+blahblah
 #endif
 
 namespace KokkosKernels{

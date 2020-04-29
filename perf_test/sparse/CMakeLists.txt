@@ -44,6 +44,11 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spmv_merge
+  SOURCES KokkosSparse_spmv_merge.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_sptrsv
   SOURCES KokkosSparse_sptrsv.cpp
   )

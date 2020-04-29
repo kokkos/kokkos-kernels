@@ -66,8 +66,7 @@ namespace Impl {
     using value_type   = typename AMatrix::non_const_value_type;
 
     /* initialize cusparse library */
-    cusparseHandle_t cusparseHandle = 0;// controls.getCusparseHandle();
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
+    cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
 
     /* Set the operation mode */
     cusparseOperation_t myCusparseOperation = CUSPARSE_OPERATION_NON_TRANSPOSE;
@@ -155,9 +154,6 @@ namespace Impl {
 
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
 #endif // CUSPARSE_VERSION
-
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle));
-    cusparseHandle = 0;
   }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, OFFSET, LAYOUT, COMPILE_LIBRARY) \
