@@ -84,7 +84,7 @@ spmv (const char mode[],
   static_assert (std::is_same<typename YVector::value_type,
                    typename YVector::non_const_value_type>::value,
     "KokkosSparse::spmv: Output Vector must be non-const.");
-
+ //int x = "testing"; 
   // Check compatibility of dimensions at run time.
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
     if ((x.extent(1) != y.extent(1)) ||

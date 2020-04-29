@@ -352,13 +352,14 @@ int main(int argc, char **argv)
  }
 
  Kokkos::initialize(argc,argv);
-
- int total_errors = test_crs_matrix_singlevec(size,size,test,filename,rows_per_thread,team_size,vector_length,schedule,loop);
-
+ for(int z = 6; z < 9; ++z){
+	 size = pow(10,z);
+   int total_errors = test_crs_matrix_singlevec(size,size,test,filename,rows_per_thread,team_size,vector_length,schedule,loop);
  if(total_errors == 0)
    printf("Kokkos::MultiVector Test: Passed\n");
  else
    printf("Kokkos::MultiVector Test: Failed\n");
+ }
 
 
   Kokkos::finalize();
