@@ -369,7 +369,7 @@ fi
 
 if [ "$MACHINE" = "sems" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
 
   # On unnamed sems machines, assume more restricted rhel7 environment
   # On rhel7 sems machines gcc/7.3.0, clang/4.0.1, and intel/16.0.3 are missing
@@ -421,7 +421,7 @@ if [ "$MACHINE" = "sems" ]; then
   SPACK_CUDA_HOST_COMPILER="%gcc@7.2.0"
 elif [ "$MACHINE" = "kokkos-dev" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
 
   module load sems-cmake/3.12.2
   BASE_MODULE_LIST="sems-env,sems-cmake/3.12.2,kokkos-env,kokkos-hwloc/1.10.1/base,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
@@ -475,7 +475,7 @@ elif [ "$MACHINE" = "kokkos-dev" ]; then
   SPACK_CUDA_HOST_COMPILER="%gcc@7.3.0"
 elif [ "$MACHINE" = "white" ]; then
   MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
@@ -527,7 +527,7 @@ elif [ "$MACHINE" = "white" ]; then
   SPACK_CUDA_HOST_COMPILER="%gcc@7.2.0"
 elif [ "$MACHINE" = "waterman" ]; then
   MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
 
   BASE_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>"
@@ -582,7 +582,7 @@ elif [ "$MACHINE" = "waterman" ]; then
   SPACK_CUDA_ARCH="+volta70"
 elif [ "$MACHINE" = "bowman" ]; then
   MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
@@ -620,7 +620,7 @@ elif [ "$MACHINE" = "mayer" ]; then
   SPACK_HOST_ARCH="+armv8_tx2" 
 elif [ "$MACHINE" = "blake" ]; then
   MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
@@ -664,7 +664,7 @@ elif [ "$MACHINE" = "blake" ]; then
   SPACK_HOST_ARCH="+skx"
 elif [ "$MACHINE" = "apollo" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh ; module use /home/projects/modulefiles/local/x86-64"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
   module load kokkos-env
 
   module load sems-git
@@ -734,7 +734,7 @@ elif [ "$MACHINE" = "apollo" ]; then
   SPACK_CUDA_HOST_COMPILER="%gcc@6.1.0"
 elif [ "$MACHINE" = "kokkos-dev-2" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh ; module use /home/projects/x86-64/modulefiles/local"
-  $MODULE_ENVIRONMENT
+  eval "$MODULE_ENVIRONMENT"
   module load sems-env
   module load kokkos-env
 
