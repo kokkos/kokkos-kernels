@@ -47,44 +47,6 @@
 #include <unistd.h>
 #include <getopt.h>
 
-typedef enum TEST {
-  BLAS,
-  BATCHED,
-  TEST_N
-} test_e;
-
-static std::string test_e_str[TEST_N] {
-  "BLAS",
-  "BATCHED"
-};
-
-typedef enum LOOP {
-  SERIAL,
-  PARALLEL,
-  LOOP_N
-} loop_e;
-
-static std::string loop_e_str[LOOP_N] = {
-  "SERIAL",
-  "PARALLEL"
-};
-
-struct matrix_dim {
-  int m, n;
-};
-typedef struct matrix_dim matrix_dim_t;
-
-struct trmm_perf_test_options {
-  test_e test;
-  loop_e loop;
-  matrix_dim_t start;
-  matrix_dim_t stop;
-  uint32_t step;
-  uint32_t warm_up_n;
-  uint32_t n;
-}; 
-typedef struct trmm_perf_test_options options_t;
-
 static struct option long_options[] = {
   {"help",              no_argument,       0, 'h'},
   {"test",              required_argument, 0, 't'},
@@ -115,6 +77,7 @@ static void __print_trmm_perf_test_options(options_t options)
   printf("options.warm_up_n = %d\n", options.warm_up_n);
   printf("options.n         = %d\n", options.n);
 }
+
 static void __print_help_trmm_perf_test()
 {
   printf("Options:\n");
@@ -245,6 +208,23 @@ int main(int argc, char **argv)
   __print_trmm_perf_test_options(options);
 
   Kokkos::initialize(argc,argv);
+  if (options.loop == SERIAL) {
+    if (options.test == BLAS) {
+        do_trmm_serial_blas(options);
+    }
+    if (options.test == BATCHED) {
+        do_trmm_serial_batched(options);
+    }
+  }
+  if (options.loop == PARALLEL) {
+    if (options.test == BLAS) {
+        do_trmm_parallel_blas(options);
+    }
+    if (options.test == BATCHED) {
+        do_trmm_parallel_batched(options);
+    }
+  }
   Kokkos::finalize();
+
   return 0;
 }
