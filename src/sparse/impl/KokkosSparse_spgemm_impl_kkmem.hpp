@@ -346,8 +346,6 @@ struct KokkosSPGEMM
       const size_type c_row_begin = rowmapC[row_index];
       const size_type c_row_end = rowmapC[row_index + 1];
 
-      const nnz_lno_t global_memory_hash_size = nnz_lno_t(c_row_end - c_row_begin);
-      hm2.max_value_size = global_memory_hash_size;
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
 
@@ -373,8 +371,8 @@ struct KokkosSPGEMM
           //int insertion =
           hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
               hash, b_col_ind, b_val,
-              &used_hash_sizes, hm2.max_value_size
-              ,&globally_used_hash_count,
+              &used_hash_sizes,
+              &globally_used_hash_count,
               globally_used_hash_indices
           );
         }
@@ -423,7 +421,6 @@ struct KokkosSPGEMM
       const size_type c_row_end = rowmapC[row_index + 1];
 
       const nnz_lno_t global_memory_hash_size = nnz_lno_t(c_row_end - c_row_begin);
-      hm2.max_value_size = global_memory_hash_size;
 
       const size_type col_begin = row_mapA[row_index];
       const nnz_lno_t left_work = row_mapA[row_index + 1] - col_begin;
@@ -445,8 +442,8 @@ struct KokkosSPGEMM
           //int insertion =
           hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
               hash, b_col_ind, b_val,
-              &used_hash_sizes, hm2.max_value_size
-              ,&globally_used_hash_count,
+              &used_hash_sizes,
+              &globally_used_hash_count,
               globally_used_hash_indices
           );
         }
@@ -538,7 +535,6 @@ struct KokkosSPGEMM
 		  tmp += pow2_hash_size ;
 		  hm2.hash_nexts = (nnz_lno_t *) (tmp);
 	  }
-      hm2.max_value_size = global_memory_hash_size;
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
 
@@ -574,23 +570,17 @@ struct KokkosSPGEMM
           //hash = b_col_ind % shmem_key_size;
           nnz_lno_t hash = b_col_ind & thread_shared_memory_hash_func;
           volatile int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAdd(
-              teamMember, vector_size,
-              hash, b_col_ind, b_val,
-              used_hash_sizes,
-              thread_shmem_key_size);
-          if (num_unsuccess){
-
+                                         teamMember, vector_size,
+                                         hash, b_col_ind, b_val,
+                                         used_hash_sizes);
+          if (num_unsuccess) {
         	  hash = b_col_ind & pow2_hash_func;
         	  hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
-        			  teamMember, vector_size,
-					  hash,b_col_ind,b_val,
-					  used_hash_sizes + 1, hm2.max_value_size
-					  ,globally_used_hash_count, globally_used_hash_indices
-        	  );
-
-
+              teamMember, vector_size,
+              hash,b_col_ind,b_val,
+              used_hash_sizes + 1,
+              globally_used_hash_count, globally_used_hash_indices);
           }
-
         });
       }
 

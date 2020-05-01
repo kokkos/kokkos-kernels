@@ -50,20 +50,34 @@ namespace KokkosKernels {
 
 namespace Experimental {
 
+template <typename size_type, typename key_type, typename value_type>
 /**
- * HashmapAccumulator
- *
+ * \brief HashmapAccumulator class
  * The use of this is described in the paper:
  *   "Performance-portable sparse matrix-matrix multiplication for many-core architectures"
  *   ( https://ieeexplore.ieee.org/abstract/document/7965111/ ) in section III.D
- *
+ * 
+ * Public members:
+ * \var hash_key_size: 
+ * \var used_size:   Atomic counter to measure how full the hashmap is.
+ * 
+ * \var hash_begins: Holds the beginning indices of the linked lists
+ *                   corresponding to hash values [Begins]
+ * \var hash_nexts:  Holds the indicies of the next elements
+ *                   within the linked list [Nexts]
+ * \var keys:        This stores the column indices of (??) [Ids]
+ * \var values:      This store the (matrix element?) numerical value of (??) [Values]
+ * 
+ * \var INSERT_SUCCESS:
+ * \var INSERT_FULL:
+ * 
+ * Private members:
+ * \var __max_value_size: The length of the two arrays (keys and hash_nexts)
  */
-
-template <typename size_type, typename key_type, typename value_type>
 struct HashmapAccumulator
 {
+  // begin public members
   size_type hash_key_size;
-  size_type max_value_size;
   size_type used_size;
 
   size_type*  hash_begins;
@@ -76,20 +90,35 @@ struct HashmapAccumulator
 
 
   /**
+   * \brief default constructor HashmapAccumulator
+   * Sets used_size to 0, INSERT_SUCCESS to 0, and INSERT_FULL to 1.
+   * 
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
   HashmapAccumulator ():
         hash_key_size(),
-        max_value_size(),
         used_size(0),
         hash_begins(),
         hash_nexts(),
         keys(),
-        values(), INSERT_SUCCESS(0), INSERT_FULL(1)  {}
+        values(), 
+        INSERT_SUCCESS(0), 
+        INSERT_FULL(1),
+        __max_value_size()  {}
 
 
   /**
+   * \brief parameterized constructor HashmapAccumulator
+   * Sets used_size to 0, INSERT_SUCCESS to 0, and INSERT_FULL to 1.
+   * 
+   * /param hash_key_size_: 
+   * /param value_size_:
+   * /param hash_begins_:
+   * /param hash_nexts_:
+   * /param keys_:
+   * /param values_:
+   * 
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
@@ -102,12 +131,15 @@ struct HashmapAccumulator
       value_type *values_):
 
         hash_key_size(hash_key_size_),
-        max_value_size(value_size_),
         used_size(0),
         hash_begins(hash_begins_),
         hash_nexts(hash_nexts_),
         keys(keys_),
-        values(values_), INSERT_SUCCESS(0), INSERT_FULL(1) {}
+        values(values_), 
+        INSERT_SUCCESS(0), 
+        INSERT_FULL(1),
+        __max_value_size(value_size_)
+        {}
 
 
   //function to be called from device.
@@ -118,9 +150,7 @@ struct HashmapAccumulator
       size_type hash,
       key_type key,
       value_type value,
-
       size_type *used_size_,
-      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -132,7 +162,7 @@ struct HashmapAccumulator
       }
     }
 
-    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
@@ -158,7 +188,6 @@ struct HashmapAccumulator
       value_type value,
       value_type *values2,
       size_type *used_size_,
-      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -171,7 +200,7 @@ struct HashmapAccumulator
       }
     }
 
-    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
@@ -196,7 +225,6 @@ struct HashmapAccumulator
       value_type value,
       value_type *values2,
       size_type *used_size_,
-      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -244,13 +272,11 @@ struct HashmapAccumulator
       value_type value,
       value_type *values2,
       size_type *used_size_,
-      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-
     //this function will directly insert, won't check if it exists already.
-    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     keys[my_index] = key;
@@ -275,13 +301,11 @@ struct HashmapAccumulator
       key_type key,
       value_type value,
       size_type *used_size_,
-      const size_type max_value_size_,
       size_type *used_hash_size,
-      size_type *used_hashes)
+      size_type *used_hashes) // TODO figure out what this "used_hashes" is for
   {
-
     //this function will directly insert, won't check if it exists already.
-    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     keys[my_index] = key;
@@ -306,13 +330,10 @@ struct HashmapAccumulator
       size_type hash,
       key_type key,
       value_type value,
-
       size_type *used_size_,
-      const size_type /* max_value_size_ */,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
@@ -321,7 +342,6 @@ struct HashmapAccumulator
       }
     }
 
-    //if (*used_size_ >= max_value_size_) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
@@ -343,9 +363,7 @@ struct HashmapAccumulator
   int sequential_insert_into_hash_TrackHashes (
       size_type hash,
       key_type key,
-
       size_type *used_size_,
-      const size_type /* max_value_size_ */,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -356,7 +374,6 @@ struct HashmapAccumulator
       }
     }
 
-    //if (*used_size_ >= max_value_size_) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
@@ -387,12 +404,10 @@ struct HashmapAccumulator
       const key_type key,
       const value_type value,
       volatile size_type *used_size_,
-      const size_type max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes
       )
   {
-
     if (hash != -1) {
       size_type i = hash_begins[hash];
 
@@ -408,7 +423,7 @@ struct HashmapAccumulator
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= max_value_size_) {
+    if (my_write_index >= __max_value_size) {
       return INSERT_FULL;
     } else {
 
@@ -438,24 +453,18 @@ struct HashmapAccumulator
     }
   }
 
-
-  //used in kkmem's numeric phase to insert to first level hashmaps.
-  //function to be called from device.
-  //Accumulation is Add operation. It is not atomicAdd, as this
-  //is for the cases where we know that none of the simultanous
-  //insertions will have the same key.
-  //Insertion is simulteanous for the vector lanes of a thread.
-  //used_size should be a shared pointer among the thread vectors
+  // NOTE: this is an exact copy of vector_atmoic_insert_into_hash_mergeAdd from
+  // https://github.com/kokkos/kokkos-kernels/blob/750fe24508a69ed4dba92bb4a9e17a6094b1a083/src/common/KokkosKernels_HashmapAccumulator.hpp#L442-L502
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
-  int vector_atomic_insert_into_hash_mergeAdd (
+  int vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length (
       const team_member_t & /* teamMember */,
       const int /* vector_size */,
       size_type &hash,
       const key_type key,
       const value_type value,
       volatile size_type *used_size_,
-      const size_type max_value_size_ )
+      const size_type max_value_size_)
   {
     if (hash != -1) {
       size_type i = hash_begins[hash];
@@ -469,7 +478,9 @@ struct HashmapAccumulator
       return INSERT_SUCCESS;
     }
 
-
+    // This appears to be redundant to the thread-safe atomic_fetch_add
+    // conditional check below.
+    // TODO: Remove this check?
     if (used_size_[0] >= max_value_size_) {
       return INSERT_FULL;
     }
@@ -501,6 +512,31 @@ struct HashmapAccumulator
     }
   }
 
+  //used in kkmem's numeric phase to insert to first level hashmaps.
+  //function to be called from device.
+  //Accumulation is Add operation. It is not atomicAdd, as this
+  //is for the cases where we know that none of the simultanous
+  //insertions will have the same key.
+  //Insertion is simulteanous for the vector lanes of a thread.
+  //used_size should be a shared pointer among the thread vectors
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int vector_atomic_insert_into_hash_mergeAdd (
+      const team_member_t & /* teamMember */,
+      const int /* vector_size */,
+      size_type &hash,
+      const key_type key,
+      const value_type value,
+      volatile size_type *used_size_)
+  {
+    return vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(nullptr,
+                                                                               0,
+                                                                               hash,
+                                                                               key,
+                                                                               value,
+                                                                               used_size_,
+                                                                               __max_value_size);
+  }
 
   //used in symbolic of kkmem if the compression is not applied.
   template <typename team_member_t>
@@ -508,11 +544,9 @@ struct HashmapAccumulator
   int vector_atomic_insert_into_hash (
       const team_member_t & /* teamMember */,
       const int &/* vector_size */,
-
       const size_type &hash,
       const key_type &key,
-      volatile size_type *used_size_,
-      const size_type &max_value_size_
+      volatile size_type *used_size_
       )
   {
     if (hash != -1) {
@@ -528,7 +562,7 @@ struct HashmapAccumulator
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= max_value_size_) {
+    if (my_write_index >= __max_value_size) {
       return INSERT_FULL;
     } else {
 
@@ -566,13 +600,10 @@ struct HashmapAccumulator
   int vector_atomic_insert_into_hash_mergeOr (
       const team_member_t & /* teamMember */,
       const int &/* vector_size */,
-
       const size_type &hash,
       const key_type &key,
       const value_type &value,
-      volatile size_type *used_size_,
-      const size_type &max_value_size_
-      )
+      volatile size_type *used_size_)
   {
     if (hash != -1){
       size_type i = hash_begins[hash];
@@ -588,7 +619,7 @@ struct HashmapAccumulator
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= max_value_size_) {
+    if (my_write_index >= __max_value_size) {
       return INSERT_FULL;
     } else {
 
@@ -627,12 +658,10 @@ struct HashmapAccumulator
   int vector_atomic_insert_into_hash_mergeOr_TrackHashes (
       const team_member_t & /* teamMember */,
       const int &/* vector_size */,
-
       const size_type &hash,
       const key_type &key,
       const value_type &value,
       volatile size_type *used_size_,
-      const size_type &max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -650,7 +679,7 @@ struct HashmapAccumulator
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= max_value_size_) {
+    if (my_write_index >= __max_value_size) {
       return INSERT_FULL;
     } else {
 
@@ -691,7 +720,6 @@ struct HashmapAccumulator
       const size_type &hash,
       const key_type &key,
       volatile size_type *used_size_,
-      const size_type &max_value_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
@@ -709,7 +737,7 @@ struct HashmapAccumulator
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= max_value_size_) {
+    if (my_write_index >= __max_value_size) {
       return INSERT_FULL;
     } else {
 
@@ -737,7 +765,10 @@ struct HashmapAccumulator
       return INSERT_SUCCESS;
     }
   }
-
+  // end public members
+  private:
+    size_type __max_value_size;
+  // private
 };  // struct HashmapAccumulator
 
 

@@ -357,6 +357,9 @@ struct KokkosSPGEMM
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
     hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
 
+    // TODO: understand below parallel_for loop.
+    // GOAL: Inialize hm2 with correct __max_value_size.
+
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
     hm2(0, 0,
         NULL, NULL, NULL, NULL);
@@ -366,13 +369,11 @@ struct KokkosSPGEMM
         pbeginsC + c_row_begin, pnextsC + c_row_begin, pEntriesC + c_row_begin, pvaluesC + c_row_begin);
         */
 
-
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
       const size_type c_row_begin = rowmapC[row_index];
       const nnz_lno_t global_memory_hash_size = nnz_lno_t(rowmapC[row_index + 1] - c_row_begin);
 
       hm2.hash_key_size = global_memory_hash_size;
-      hm2.max_value_size = global_memory_hash_size;
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
       hm2.hash_begins = pbeginsC + c_row_begin;
@@ -420,8 +421,7 @@ struct KokkosSPGEMM
           int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAdd(
               teamMember, vector_size,
               hash, b_col_ind, b_val,
-              used_hash_sizes,
-              shmem_key_size);
+              used_hash_sizes);
 
           int overall_num_unsuccess = 0;
 
@@ -437,10 +437,11 @@ struct KokkosSPGEMM
             }
 
             //int insertion =
-            hm2.vector_atomic_insert_into_hash_mergeAdd(
+            hm2.vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
                 teamMember, vector_size,
                 hash_,b_col_ind,b_val,
-                used_hash_sizes + 1, hm2.max_value_size
+                used_hash_sizes + 1,
+                global_memory_hash_size
             );
 
           }

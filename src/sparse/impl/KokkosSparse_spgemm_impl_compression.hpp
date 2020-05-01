@@ -279,7 +279,7 @@ struct KokkosSPGEMM
           //insert prev_nset_ind to hashmap
           hm2.sequential_insert_into_hash_TrackHashes(
               prev_nset_ind & pow2_hash_func, prev_nset_ind,
-              &used_size, hm2.max_value_size,
+              &used_size,
               &globally_used_hash_count,
               globally_used_hash_indices
           );
@@ -290,7 +290,7 @@ struct KokkosSPGEMM
       //insert prev_nset_ind to hashmap
       hm2.sequential_insert_into_hash_TrackHashes(
           prev_nset_ind & pow2_hash_func, prev_nset_ind,
-          &used_size, hm2.max_value_size,
+          &used_size,
           &globally_used_hash_count,
           globally_used_hash_indices
       );
@@ -364,7 +364,7 @@ struct KokkosSPGEMM
       } else {
         hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
             prev_nset_ind & pow2_hash_func, prev_nset_ind, prev_nset,
-            &used_size, hm2.max_value_size,
+            &used_size,
             &globally_used_hash_count,
             globally_used_hash_indices
         );
@@ -378,7 +378,7 @@ struct KokkosSPGEMM
     }
     hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
         prev_nset_ind & pow2_hash_func, prev_nset_ind, prev_nset,
-        &used_size, hm2.max_value_size,
+        &used_size,
         &globally_used_hash_count,
         globally_used_hash_indices
     );
@@ -658,8 +658,8 @@ struct KokkosSPGEMM
           nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
           if (n_set_index == -1) hash = -1;
           num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-                              teamMember, vector_size, hash,n_set_index,
-			      n_set, used_hash_sizes, shmem_hash_size);
+                            teamMember, vector_size, hash, n_set_index,
+                            n_set, used_hash_sizes);
           overall_num_unsuccess_ += num_unsuccess;
       }, overall_num_unsuccess);
 
@@ -669,7 +669,7 @@ struct KokkosSPGEMM
         nnz_lno_t hash_ = -1;
         if (num_unsuccess) hash_ = n_set_index % hm2.hash_key_size;
         hm2.vector_atomic_insert_into_hash_mergeOr(
-            teamMember, vector_size, hash_,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size);
+            teamMember, vector_size, hash_,n_set_index,n_set, used_hash_sizes + 1);
       }
 #else
       //if one of the inserts was successfull, which means we run out shared memory
@@ -703,8 +703,8 @@ struct KokkosSPGEMM
 	          [&] (nnz_lno_t i) {
 #endif
 		      hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-			      teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size
-			      ,globally_used_hash_count, globally_used_hash_indices);
+			      teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1,
+			      globally_used_hash_count, globally_used_hash_indices);
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
 		});
 #endif
