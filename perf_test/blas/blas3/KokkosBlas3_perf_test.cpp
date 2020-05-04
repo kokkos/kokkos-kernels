@@ -100,13 +100,13 @@ static void __print_help_trmm_perf_test()
   printf("%c[0m",27);
   printf(" invoke trmm in a Kokkos::parallel_for-loop.\n\n");
 
-  printf("\t-b, --matrix_size_start=MxN\n");
-  printf("\t\tMatrix size selection. (start)\n");
-  printf("\t\t\tValid values for M and N are any non-negative 32-bit integers. (default: 10x10)\n\n");
+  printf("\t-b, --matrix_size_start=MxN,IxJ\n");
+  printf("\t\tMatrix size selection where A is MxN and B is IxJ (start)\n");
+  printf("\t\t\tValid values for M and N are any non-negative 32-bit integers. (default: 10x10,10x10)\n\n");
 
-  printf("\t-e, --matrix_size_stop=PxQ\n");
-  printf("\t\tMatrix size selection. (stop)\n");
-  printf("\t\t\tValid values for P and Q are any non-negative 32-bit integers. (default: 2430x2430)\n\n");
+  printf("\t-e, --matrix_size_stop=PxQ,SxT\n");
+  printf("\t\tMatrix size selection where A is PxQ and B is SxT (stop)\n");
+  printf("\t\t\tValid values for P and Q are any non-negative 32-bit integers. (default: 2430x2430,2430x2430)\n\n");
   
   printf("\t-s, --matrix_size_step=K\n");
   printf("\t\tMatrix step selection.\n");
@@ -114,11 +114,18 @@ static void __print_help_trmm_perf_test()
   
   printf("\t-w, --warm_up_loop=LOOP\n");
   printf("\t\tWarm up loop selection. (untimed)\n");
-  printf("\t\t\tValid value for LOOP is any non-negative 32-bit integer. (default: 100)\n\n");
+  printf("\t\t\tValid value for LOOP is any non-negative 32-bit integer that's <= ITER. (default: 100)\n\n");
   
   printf("\t-i, --iter=ITER\n");
   printf("\t\tIteration selection. (timed)\n");
   printf("\t\t\tValid value for ITER is any non-negative 32-bit integer. (default: 100)\n\n");
+}
+
+static void __trmm_perf_test_input_error(char **argv, int option_idx)
+{
+    fprintf(stderr, "ERROR: invalid option \"%s %s\".\n", argv[option_idx], argv[option_idx+1]);
+    __print_help_trmm_perf_test();
+    exit(-EINVAL);
 }
 
 int main(int argc, char **argv)
@@ -130,8 +137,14 @@ int main(int argc, char **argv)
   /* set default options */
   options.test                                    = DEFAULT_TEST;
   options.loop                                    = DEFAULT_LOOP;
-  options.start.m = options.start.n               = DEFAULT_MATRIX_START;
-  options.stop.m = options.stop.n                 = DEFAULT_MATRIX_STOP;
+  options.start.a.m                               = DEFAULT_MATRIX_START;
+  options.start.a.n                               = DEFAULT_MATRIX_START;
+  options.stop.a.m                                = DEFAULT_MATRIX_STOP;
+  options.stop.a.n                                = DEFAULT_MATRIX_STOP;
+  options.start.b.m                               = DEFAULT_MATRIX_START;
+  options.start.b.n                               = DEFAULT_MATRIX_START;
+  options.stop.b.m                                = DEFAULT_MATRIX_STOP;
+  options.stop.b.n                                = DEFAULT_MATRIX_STOP;
   options.step                                    = DEFAULT_STEP;
   options.warm_up_n                               = DEFAULT_WARM_UP_N;
   options.n                                       = DEFAULT_N;
@@ -151,13 +164,13 @@ int main(int argc, char **argv)
         } else if (!strncasecmp(optarg, "batched", 6)) {
           options.test = BATCHED;
         } else {
-          goto err;
+          __trmm_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'o':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (strlen(optarg) != 4) {
-          goto err;
+          __trmm_perf_test_input_error(argv, option_idx);
         }
         options.trmm_args = optarg;
         break;
@@ -171,26 +184,40 @@ int main(int argc, char **argv)
         } else if (!strncasecmp(optarg, "parallel", 8)) {
           options.loop = PARALLEL;
         } else {
-          goto err;
+          __trmm_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'b':
         n_str = strcasestr(optarg, "x");
         if (n_str == NULL)
-          goto err;
+          __trmm_perf_test_input_error(argv, option_idx);
 
         n_str[0] = '\0';
-        options.start.m = atoi(optarg);
-        options.start.n = atoi(&n_str[1]);
+        options.start.a.m = atoi(optarg);
+        options.start.a.n = atoi(&n_str[1]);
+
+        n_str = strcasestr(&n_str[1], "x");
+        if (n_str == NULL)
+          __trmm_perf_test_input_error(argv, option_idx);
+        n_str[0] = '\0';
+        options.start.b.m = atoi(optarg);
+        options.start.b.n = atoi(&n_str[1]);
         break;
       case 'e':
         n_str = strcasestr(optarg, "x");
         if (n_str == NULL)
-          goto err;
+          __trmm_perf_test_input_error(argv, option_idx);
 
         n_str[0] = '\0';
-        options.stop.m = atoi(optarg);
-        options.stop.n = atoi(&n_str[1]);
+        options.stop.a.m = atoi(optarg);
+        options.stop.a.n = atoi(&n_str[1]);
+
+        n_str = strcasestr(&n_str[1], "x");
+        if (n_str == NULL)
+          __trmm_perf_test_input_error(argv, option_idx);
+        n_str[0] = '\0';
+        options.stop.b.m = atoi(optarg);
+        options.stop.b.n = atoi(&n_str[1]);
         break;
       case 's':
         options.step = atoi(optarg);
@@ -203,13 +230,13 @@ int main(int argc, char **argv)
         break;
       case '?':
       default:
-        err:
-        fprintf(stderr, "ERROR: invalid option \"%s %s\".\n", argv[option_idx], argv[option_idx+1]);
-        __print_help_trmm_perf_test();
-        return -EINVAL;
+        __trmm_perf_test_input_error(argv, option_idx);
     }
   }
   __print_trmm_perf_test_options(options);
+
+  if (options.warm_up_n > options.n)
+    __trmm_perf_test_input_error(argv, option_idx);
 
   Kokkos::initialize(argc,argv);
   if (options.loop == SERIAL) {

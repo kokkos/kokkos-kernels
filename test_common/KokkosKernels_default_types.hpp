@@ -84,10 +84,10 @@
   typedef Kokkos::OpenMP default_device;
 #elif defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::Cuda default_device;
-#elif defined(KOKKOS_ENABLE_SERIAL)
-  typedef Kokkos::Serial default_device;
-#elif defined(KOKKOS_ENABLE_PTHREAD)
+#elif defined(KOKKOS_ENABLE_PTHREAD) || defined(KOKKOS_ENABLE_THREADS)
   typedef Kokkos::Threads default_device;
+#else
+  typedef Kokkos::Serial default_device;
 #endif
 
 #endif // KOKKOSKERNELS_DEFAULT_TYPES_H
