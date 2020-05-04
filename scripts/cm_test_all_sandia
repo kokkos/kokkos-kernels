@@ -1142,6 +1142,7 @@ single_build_and_test() {
   then
     echo "        $MODULE_ENVIRONMENT" &>> reload_modules.sh
   fi
+  echo "        module purge" &>> reload_modules.sh
   echo "        module load $compiler_modules_list" &>> reload_modules.sh
   echo "" &>> reload_modules.sh
   chmod +x reload_modules.sh
