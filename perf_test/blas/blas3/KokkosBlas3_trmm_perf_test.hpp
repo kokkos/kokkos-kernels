@@ -44,13 +44,15 @@
 #ifndef KOKKOSBLAS_TRMM_PERF_TEST_H_
 #define KOKKOSBLAS_TRMM_PERF_TEST_H_
 
-#include <complex.h>
+//#include <complex.h>
 
 #include "KokkosKernels_default_types.hpp"
 
+#include<Kokkos_Random.hpp>
+
 #include <KokkosBlas3_trmm.hpp>
 
-/*****************************************************************************/
+/*************************** Test types and defaults **************************/
 #define DEFAULT_TEST BLAS
 #define DEFAULT_LOOP SERIAL
 #define DEFAULT_MATRIX_START 10
@@ -101,7 +103,7 @@ struct trmm_perf_test_options {
 };
 typedef struct trmm_perf_test_options options_t;
 
-/*****************************************************************************/
+/*************************** Internal helper fns **************************/
 static void __print_trmm_perf_test_options(options_t options)
 {
   printf("options.test      = %s\n", test_e_str[options.test].c_str());
@@ -126,86 +128,113 @@ static void __print_trmm_perf_test_options(options_t options)
   std::endl;
 }
 
-/*****************************************************************************/
-void __do_trmm_serial_blas(uint32_t warm_up_n, uint32_t n)
+using view_type = Kokkos::View<default_scalar**, default_layout, default_device>;
+struct trmm_args {
+  char side, uplo, trans, diag;
+  default_scalar alpha;
+  view_type A, B;
+};
+typedef struct trmm_args trmm_args_t;
+
+/*************************** Internal templated fns **************************/
+template<class scalar_type, class vta, class vtb, class device_type>
+void __do_trmm_serial_blas(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
 {
   printf("STATUS: %s.\n", __func__);
   return;
 }
 
-void __do_trmm_serial_batched(uint32_t warm_up_n, uint32_t n)
+template<class scalar_type, class vta, class vtb, class device_type>
+void __do_trmm_serial_batched(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
 {
   printf("STATUS: %s.\n", __func__);
   return;
 }
 
-void __do_trmm_parallel_blas(uint32_t warm_up_n, uint32_t n)
+template<class scalar_type, class vta, class vtb, class device_type>
+void __do_trmm_parallel_blas(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
 {
   printf("STATUS: %s.\n", __func__);
   return;
 }
 
-void __do_trmm_parallel_batched(uint32_t warm_up_n, uint32_t n)
+template<class scalar_type, class vta, class vtb, class device_type>
+void __do_trmm_parallel_batched(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
 {
   printf("STATUS: %s.\n", __func__);
   return;
 }
 
-/*****************************************************************************/
-void __do_setup(uint32_t n, matrix_dim_t dim)
+/*************************** Internal setup fns **************************/
+template<class scalar_type, class vta, class vtb, class device_type>
+trmm_args_t __do_setup(options_t options, matrix_dim_t dim)
 {
+  using execution_space = typename device_type::execution_space;
+
+  trmm_args_t trmm_args;
+  uint64_t seed = Kokkos::Impl::clock_tic();
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   printf("STATUS: %s.\n", __func__);
-  using view_type_a = Kokkos::View<default_scalar**, default_layout, default_device>;
-  using view_type_b = Kokkos::View<default_scalar**, default_layout, default_device>;
+
+  trmm_args.side  = options.trmm_args.c_str()[0];
+  trmm_args.uplo  = options.trmm_args.c_str()[1];
+  trmm_args.trans = options.trmm_args.c_str()[2];
+  trmm_args.diag  = options.trmm_args.c_str()[3];
   
-  return;
+  Kokkos::fill_random(trmm_args.A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
+  // TODO: make A upper/lower and unit/non-unit
+
+  Kokkos::fill_random(trmm_args.B, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
+  
+  return trmm_args;
 }
 
-/*****************************************************************************/
+/*************************** Interal run helper fns **************************/
 void __do_loop_and_invoke(options_t options, 
-                          void (*fn)(uint32_t, uint32_t))
+                          void (*fn)(uint32_t, uint32_t, trmm_args_t))
 {
   matrix_dim_t cur_dim;
+  trmm_args_t trmm_args;
   printf("STATUS: %s.\n", __func__);
 
   for (cur_dim = options.start;
         cur_dim.m <= options.stop.m && cur_dim.n <= options.stop.n;
         cur_dim.m *= options.step, cur_dim.n *= options.step) {
-        __do_setup(options.n, cur_dim);
+        trmm_args = __do_setup<default_scalar, view_type, view_type, default_device>(options, cur_dim);
         //start timer
-        fn(options.warm_up_n, options.n);
+        fn(options.warm_up_n, options.n, trmm_args);
         //stop timer
         //print stats
   }
   return;
 }
 
-/*****************************************************************************/
+/*************************** External fns **************************/
 void do_trmm_serial_blas(options_t options)
-{
+{ 
   printf("STATUS: %s.\n", __func__);
-  __do_loop_and_invoke(options, __do_trmm_serial_blas);
+  __do_loop_and_invoke(options, __do_trmm_serial_blas<default_scalar, view_type, view_type, default_device>);
   return;
 }
 
 void do_trmm_serial_batched(options_t options)
 {
   printf("STATUS: %s.\n", __func__);
-  __do_loop_and_invoke(options, __do_trmm_serial_batched);
+  __do_loop_and_invoke(options, __do_trmm_serial_batched<default_scalar, view_type, view_type, default_device>);
   return;
 }
 
 void do_trmm_parallel_blas(options_t options)
 {
   printf("STATUS: %s.\n", __func__);
-  __do_loop_and_invoke(options, __do_trmm_parallel_blas);
+  __do_loop_and_invoke(options, __do_trmm_parallel_blas<default_scalar, view_type, view_type, default_device>);
   return;
 }
 
 void do_trmm_parallel_batched(options_t options)
 {
   printf("STATUS: %s.\n", __func__);
-  __do_loop_and_invoke(options, __do_trmm_parallel_batched);
+  __do_loop_and_invoke(options, __do_trmm_parallel_batched<default_scalar, view_type, view_type, default_device>);
   return;
 }
 
