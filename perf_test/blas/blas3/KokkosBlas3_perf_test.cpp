@@ -50,6 +50,8 @@
 static struct option long_options[] = {
   {"help",              no_argument,       0, 'h'},
   {"test",              required_argument, 0, 't'},
+  {"trmm_options",      required_argument, 0, 'o'},
+  {"trmm_alpha",        required_argument, 0, 'a'},
   {"loop_type",         required_argument, 0, 'l'},
   {"matrix_size_start", required_argument, 0, 'b'},
   {"matrix_size_stop",  required_argument, 0, 'e'},
@@ -58,25 +60,6 @@ static struct option long_options[] = {
   {"iter",              required_argument, 0, 'i'},
   {0, 0, 0, 0}
 };
-
-#define DEFAULT_TEST BLAS
-#define DEFAULT_LOOP SERIAL
-#define DEFAULT_MATRIX_START 10
-#define DEFAULT_MATRIX_STOP 2430
-#define DEFAULT_STEP 3
-#define DEFAULT_WARM_UP_N 100
-#define DEFAULT_N 100
-
-static void __print_trmm_perf_test_options(options_t options)
-{
-  printf("options.test      = %s\n", test_e_str[options.test].c_str());
-  printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
-  printf("options.start     = %dx%d\n", options.start.m, options.start.n);
-  printf("options.stop      = %dx%d\n", options.stop.m, options.stop.n);
-  printf("options.step      = %d\n", options.step);
-  printf("options.warm_up_n = %d\n", options.warm_up_n);
-  printf("options.n         = %d\n", options.n);
-}
 
 static void __print_help_trmm_perf_test()
 {
@@ -96,6 +79,14 @@ static void __print_help_trmm_perf_test()
   printf("\t\t\t\tbatched:");
   printf("%c[0m",27);
   printf(" invoke KokkosBatched::SerialTrmm in the loop-body.\n\n");
+
+  printf("\t-o, --trmm_options=OPTION_STRING\n");
+  printf("\t\tTRMM side, uplo, trans, and diag options.\n");
+  printf("\t\t\tValid format for OPTION_STRING is \"%%c%%c%%c%%c\". (default: LUNU)\n");
+  
+  printf("\t-a, --trmm_alpha=SCALAR_VALUE\n");
+  printf("\t\tTRMM alpha value.\n");
+  printf("\t\t\tThe value of alpha in floating point. (default: 1.0)\n");
 
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
@@ -144,8 +135,10 @@ int main(int argc, char **argv)
   options.step                                    = DEFAULT_STEP;
   options.warm_up_n                               = DEFAULT_WARM_UP_N;
   options.n                                       = DEFAULT_N;
+  options.trmm_args                               = DEFAULT_TRMM_ARGS;
+  options.alpha                                   = DEFAULT_TRMM_ALPHA;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:", long_options, &option_idx)) != -1) {
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:", long_options, &option_idx)) != -1) {
 
     switch(ret) {
       case 'h':
@@ -160,6 +153,17 @@ int main(int argc, char **argv)
         } else {
           goto err;
         }
+        break;
+      case 'o':
+        // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
+        if (strlen(optarg) != 4) {
+          goto err;
+        }
+        options.trmm_args = optarg;
+        break;
+      case 'a':
+        // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
+        options.alpha = (default_scalar) atof(optarg);
         break;
       case 'l':
         if (!strncasecmp(optarg, "serial", 6)) {
