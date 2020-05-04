@@ -109,7 +109,7 @@ TEST_F( TestCategory, batched_scalar_serial_trmm_r_u_ct_n_scomplex_scomplex ) {
   typedef ::Test::ParamTag<Side::Right,Uplo::Upper,Trans::ConjTranspose,Diag::NonUnit> param_tag_type;
   typedef Algo::Trmm::Unblocked algo_tag_type;
   
-  test_batched_trmm<TestExecSpace,_scomplex_scomplexKokkos::complex<float>,Kokkos::complex<float>,param_tag_type,algo_tag_type>();
+  test_batched_trmm<TestExecSpace,Kokkos::complex<float>,Kokkos::complex<float>,param_tag_type,algo_tag_type>();
 }
 #endif
 
