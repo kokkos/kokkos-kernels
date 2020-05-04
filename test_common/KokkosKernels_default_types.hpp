@@ -86,6 +86,8 @@
   typedef Kokkos::Cuda default_device;
 #elif defined(KOKKOS_ENABLE_SERIAL)
   typedef Kokkos::Serial default_device;
+#elif defined(KOKKOS_ENABLE_PTHREAD)
+  typedef Kokkos::Threads default_device;
 #endif
 
 #endif // KOKKOSKERNELS_DEFAULT_TYPES_H
