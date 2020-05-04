@@ -234,6 +234,8 @@ KOKKOSKERNELS_TPL_PATH_CMD=
 KOKKOSKERNELS_TPL_LIBS_CMD=
 KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD=
 
+# Enable double and complex_double in all builds by default
+KOKKOSKERNELS_SCALARS="double,complex_double"
 #
 # Handle arguments.
 #
@@ -311,6 +313,7 @@ do
       LD_FLAGS_EXTRA="${key#*=}"
       ;;
     --with-scalars*)
+      # Overwrite the default double and complex_double types
       KOKKOSKERNELS_SCALARS="${key#*=}"
       ;;
     --with-ordinals*)
