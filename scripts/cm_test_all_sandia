@@ -1173,10 +1173,6 @@ single_build_and_test() {
   local compiler_warning_flags=$(get_compiler_warning_flags $compiler)
   local compiler_exe=$(get_compiler_exe_name $compiler)
 
-  if [[ "$KOKKOS_OPTIONS" == "" ]]; then
-    export KOKKOS_OPTIONS=enable_large_mem_tests
-  fi    
-
   if [[ "$build_type" = hwloc* ]]; then
     local extra_args="$extra_args --with-hwloc=$(dirname $(dirname $(which hwloc-info)))"
   fi
