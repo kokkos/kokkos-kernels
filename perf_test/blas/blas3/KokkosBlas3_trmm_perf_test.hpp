@@ -55,12 +55,12 @@
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
 
-#define TRMM_PERF_TEST_DEBUG
+//#define TRMM_PERF_TEST_DEBUG
 
 /*************************** Print macros **************************/
 #ifdef TRMM_PERF_TEST_DEBUG
 #define STATUS \
- printf("STATUS: %s.\n", __func__);
+ printf("STATUS: %s:%d.\n", __func__, __LINE__);
 #else
   #define STATUS
 #endif // TRMM_PERF_TEST_DEBUG
@@ -208,20 +208,13 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args)
   return;
 }
 
-template<class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args)
+template<class side, class uplo, class trans, class diag>
+void __do_trmm_serial_batched_template(options_t options, trmm_args_t trmm_args)
 {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n = options.n;
   Kokkos::Timer timer;
-  //trmm_args.side == 'l' || trmm_args.side == 'L' ? Side::Left : 
-  using side  = Side::Right;
-  using uplo  = Uplo::Lower;
-  using trans = Trans::NoTranspose;
-  using diag  = Diag::NonUnit;
   using tag   = Algo::Trmm::Unblocked;
-
-  STATUS;
 
   for (int i = 0; i < warm_up_n; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
@@ -235,11 +228,82 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args)
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans, 
-                     &trmm_args.diag, trmm_args.alpha, A, B);
+    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
   }
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
+}
+
+template<class scalar_type, class vta, class vtb, class device_type>
+void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args)
+{
+  char  __side = tolower(trmm_args.side), 
+        __uplo = tolower(trmm_args.uplo), 
+        __trans = tolower(trmm_args.trans);
+        //__diag = tolower(diag[0]);
+
+  STATUS;
+
+  //// Lower non-transpose ////
+  if (__side == 'l' && __uplo == 'l' && __trans == 'n') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'l' && __trans == 'n') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Right,Uplo::Lower,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  //// Lower transpose /////
+  // Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'l' && __trans == 't') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Left,Uplo::Lower,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'l' && __trans == 't') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Right,Uplo::Lower,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+  //// Lower conjugate-transpose ////
+  // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'l' && __trans == 'c') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Left,Uplo::Lower,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'l' && __trans == 'c') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Right,Uplo::Lower,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+  //// Upper non-transpose ////
+  if (__side == 'l' && __uplo == 'u' && __trans == 'n') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'u' && __trans == 'n') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  //// Upper transpose
+  // Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'u' && __trans == 't') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Left,Uplo::Upper,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'u' && __trans == 't') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Right,Uplo::Upper,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+
+  //// Upper conjugate-transpose ////
+  // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'u' && __trans == 'c') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'u' && __trans == 'c') {
+    STATUS;
+    __do_trmm_serial_batched_template<Side::Right,Uplo::Upper,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+
   return;
 }
 
@@ -253,7 +317,6 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args)
   STATUS;
 
   //for (int i = 0; i < warm_up_n; ++i) {
-  //Kokkos::parallel_for("toLowerLoop", options.n, KOKKOS_LAMBDA (const int& i) {
   Kokkos::parallel_for("parallelBlasWarmUpLoop", warm_up_n, KOKKOS_LAMBDA (const int& i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
@@ -276,10 +339,107 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args)
   return;
 }
 
+template<class side, class uplo, class trans, class diag>
+void __do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_args)
+{
+  uint32_t warm_up_n = options.warm_up_n;
+  uint32_t n = options.n;
+  Kokkos::Timer timer;
+  using tag   = Algo::Trmm::Unblocked;
+
+  STATUS;
+
+  //for (int i = 0; i < warm_up_n; ++i) {
+  Kokkos::parallel_for("parallelBatchedWarmUpLoop", warm_up_n, KOKKOS_LAMBDA (const int& i) {
+    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
+  });
+
+  timer.reset();
+  //for (int i = 0; i < n ; ++i) {
+  Kokkos::parallel_for("parallelBatchedTimedLoop", n, KOKKOS_LAMBDA (const int& i) {
+    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
+  });
+  Kokkos::fence();
+  __trmm_output_csv_row(options, trmm_args, timer.seconds());
+  return;
+}
+
 template<class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args)
 {
+  char  __side = tolower(trmm_args.side), 
+        __uplo = tolower(trmm_args.uplo), 
+        __trans = tolower(trmm_args.trans);
+        //__diag = tolower(diag[0]);
+
   STATUS;
+
+  //// Lower non-transpose ////
+  if (__side == 'l' && __uplo == 'l' && __trans == 'n') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'l' && __trans == 'n') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  //// Lower transpose /////
+  // Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'l' && __trans == 't') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'l' && __trans == 't') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+  //// Lower conjugate-transpose ////
+  // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'l' && __trans == 'c') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'l' && __trans == 'c') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+  //// Upper non-transpose ////
+  if (__side == 'l' && __uplo == 'u' && __trans == 'n') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'u' && __trans == 'n') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+  }
+  //// Upper transpose
+  // Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'u' && __trans == 't') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'u' && __trans == 't') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::Transpose,Diag::Unit>(options, trmm_args);
+  }
+
+  //// Upper conjugate-transpose ////
+  // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
+  if (__side == 'l' && __uplo == 'u' && __trans == 'c') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+  if (__side == 'r' && __uplo == 'u' && __trans == 'c') {
+    STATUS;
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+  }
+
   return;
 }
 
