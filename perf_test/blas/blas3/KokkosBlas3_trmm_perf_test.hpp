@@ -48,9 +48,22 @@
 
 #include "KokkosKernels_default_types.hpp"
 
-#include<Kokkos_Random.hpp>
+#include <Kokkos_Random.hpp>
 
 #include <KokkosBlas3_trmm.hpp>
+#include "KokkosBatched_Trmm_Decl.hpp"
+#include "KokkosBatched_Trmm_Serial_Impl.hpp"
+#include "KokkosBatched_Util.hpp"
+
+#define TRMM_PERF_TEST_DEBUG
+
+/*************************** Print macros **************************/
+#ifdef TRMM_PERF_TEST_DEBUG
+#define STATUS \
+ printf("STATUS: %s.\n", __func__);
+#else
+  #define STATUS
+#endif // TRMM_PERF_TEST_DEBUG
 
 /*************************** Test types and defaults **************************/
 #define DEFAULT_TEST BLAS
@@ -62,6 +75,7 @@
 #define DEFAULT_N 100
 #define DEFAULT_TRMM_ARGS "LUNU"
 #define DEFAULT_TRMM_ALPHA 1.0
+#define DEFAULT_OUT &std::cout
 
 struct matrix_dim {
   int m, n;
@@ -105,12 +119,39 @@ struct trmm_perf_test_options {
   uint32_t n;
   std::string trmm_args;
   default_scalar alpha;
+  std::ostream* out;
+  std::string out_file;
 };
 typedef struct trmm_perf_test_options options_t;
 
+using view_type_3d = Kokkos::View<default_scalar***, default_layout, default_device>;
+struct trmm_args {
+  char side, uplo, trans, diag;
+  default_scalar alpha;
+  view_type_3d A, B;
+};
+typedef struct trmm_args trmm_args_t;
+
+static std::string trmm_csv_header_str = "algorithm,side-uplo-trans-diag,alpha,loop_type,A_dims,B_dims,warm_up_n,iter,total_time(s),average_time(s)";
+
 /*************************** Internal helper fns **************************/
+static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args, double time_in_seconds)
+{
+  options.out[0] << test_e_str[options.test] << "," <<
+                  options.trmm_args << "," <<
+                  options.alpha << "," <<
+                  loop_e_str[options.loop] << "," <<
+                  trmm_args.A.extent(1) << "x" << trmm_args.A.extent(2) << "," <<
+                  trmm_args.B.extent(1) << "x" << trmm_args.B.extent(2) << "," <<
+                  options.warm_up_n << "," <<
+                  options.n << "," <<
+                  time_in_seconds << "," <<
+                  time_in_seconds / options.n << std::endl;
+}
+
 static void __print_trmm_perf_test_options(options_t options)
 {
+#ifdef TRMM_PERF_TEST_DEBUG
   printf("options.test      = %s\n", test_e_str[options.test].c_str());
   printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
   printf("options.start     = %dx%d,%dx%d\n", options.start.a.m, options.start.a.n, options.start.b.m, options.start.b.n);
@@ -119,6 +160,7 @@ static void __print_trmm_perf_test_options(options_t options)
   printf("options.warm_up_n = %d\n", options.warm_up_n);
   printf("options.n         = %d\n", options.n);
   printf("options.trmm_args = %s\n", options.trmm_args.c_str());
+  printf("options.out_file  = %s\n", options.out_file.c_str());
   if (std::is_same<double, default_scalar>::value)
     printf("options.alpha     = %lf\n", options.alpha);
   else if (std::is_same<float, default_scalar>::value)
@@ -131,26 +173,19 @@ static void __print_trmm_perf_test_options(options_t options)
                ", LAYOUT:" << typeid(default_layout).name() <<
                ", DEVICE:." << typeid(default_device).name() <<
   std::endl;
+#endif // TRMM_PERF_TEST_DEBUG
+  return;
 }
-
-using view_type_3d = Kokkos::View<default_scalar***, default_layout, default_device>;
-struct trmm_args {
-  char side, uplo, trans, diag;
-  default_scalar alpha;
-  view_type_3d A, B;
-};
-typedef struct trmm_args trmm_args_t;
 
 /*************************** Internal templated fns **************************/
 template<class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_serial_blas(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
+void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args)
 {
-  //vtb cur_B("cur_B", trmm_args.B.extent(0), trmm_args.B.extent(1), trmm_args.B.extent(2));
+  uint32_t warm_up_n = options.warm_up_n;
+  uint32_t n = options.n;
+  Kokkos::Timer timer;
 
-  //Kokkos::deep_copy(cur_B, trmm_args.B);
-  //Kokkos::fence();
-
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
 
   for (int i = 0; i < warm_up_n; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
@@ -160,10 +195,7 @@ void __do_trmm_serial_blas(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args
                      &trmm_args.diag, trmm_args.alpha, A, B);
   }
 
-  //Kokkos::deep_copy(cur_B, trmm_args.B);
-  //Kokkos::fence();
-
-  // TODO: Start timer
+  timer.reset();
   for (int i = 0; i < n ; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
@@ -171,28 +203,83 @@ void __do_trmm_serial_blas(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args
     KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans, 
                      &trmm_args.diag, trmm_args.alpha, A, B);
   }
-  // TODO: Stop timer
+  Kokkos::fence();
+  __trmm_output_csv_row(options, trmm_args, timer.seconds());
   return;
 }
 
 template<class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_serial_batched(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
+void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args)
 {
-  printf("STATUS: %s.\n", __func__);
+  uint32_t warm_up_n = options.warm_up_n;
+  uint32_t n = options.n;
+  Kokkos::Timer timer;
+  //trmm_args.side == 'l' || trmm_args.side == 'L' ? Side::Left : 
+  using side  = Side::Right;
+  using uplo  = Uplo::Lower;
+  using trans = Trans::NoTranspose;
+  using diag  = Diag::NonUnit;
+  using tag   = Algo::Trmm::Unblocked;
+
+  STATUS;
+
+  for (int i = 0; i < warm_up_n; ++i) {
+    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
+  }
+
+  timer.reset();
+  for (int i = 0; i < n ; ++i) {
+    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans, 
+                     &trmm_args.diag, trmm_args.alpha, A, B);
+  }
+  Kokkos::fence();
+  __trmm_output_csv_row(options, trmm_args, timer.seconds());
   return;
 }
 
 template<class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_parallel_blas(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
+void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args)
 {
-  printf("STATUS: %s.\n", __func__);
+  uint32_t warm_up_n = options.warm_up_n;
+  uint32_t n = options.n;
+  Kokkos::Timer timer;
+
+  STATUS;
+
+  //for (int i = 0; i < warm_up_n; ++i) {
+  //Kokkos::parallel_for("toLowerLoop", options.n, KOKKOS_LAMBDA (const int& i) {
+  Kokkos::parallel_for("parallelBlasWarmUpLoop", warm_up_n, KOKKOS_LAMBDA (const int& i) {
+    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans, 
+                     &trmm_args.diag, trmm_args.alpha, A, B);
+  });
+
+  timer.reset();
+  //for (int i = 0; i < n ; ++i) {
+  Kokkos::parallel_for("parallelBlasTimedLoop", n, KOKKOS_LAMBDA (const int& i) {
+    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans, 
+                     &trmm_args.diag, trmm_args.alpha, A, B);
+  });
+  Kokkos::fence();
+  __trmm_output_csv_row(options, trmm_args, timer.seconds());
   return;
 }
 
 template<class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_parallel_batched(uint32_t warm_up_n, uint32_t n, trmm_args_t trmm_args)
+void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args)
 {
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
   return;
 }
 
@@ -206,7 +293,7 @@ trmm_args_t __do_setup(options_t options, trmm_matrix_dims_t dim)
   uint64_t seed = Kokkos::Impl::clock_tic();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
 
   trmm_args.side  = options.trmm_args.c_str()[0];
   trmm_args.uplo  = options.trmm_args.c_str()[1];
@@ -255,11 +342,13 @@ trmm_args_t __do_setup(options_t options, trmm_matrix_dims_t dim)
 
 /*************************** Interal run helper fns **************************/
 void __do_loop_and_invoke(options_t options, 
-                          void (*fn)(uint32_t, uint32_t, trmm_args_t))
+                          void (*fn)(options_t, trmm_args_t))
 {
   trmm_matrix_dims_t cur_dims;
   trmm_args_t trmm_args;
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
+
+  options.out[0] << trmm_csv_header_str << std::endl;
 
   for (cur_dims = options.start;
         cur_dims.a.m <= options.stop.a.m && cur_dims.a.n <= options.stop.a.n &&
@@ -267,8 +356,7 @@ void __do_loop_and_invoke(options_t options,
         cur_dims.a.m *= options.step, cur_dims.a.n *= options.step,
         cur_dims.b.m *= options.step, cur_dims.b.n *= options.step) {
         trmm_args = __do_setup<default_scalar, view_type_3d, view_type_3d, default_device>(options, cur_dims);
-        fn(options.warm_up_n, options.n, trmm_args);
-        //print stats
+        fn(options, trmm_args);
   }
   return;
 }
@@ -276,28 +364,28 @@ void __do_loop_and_invoke(options_t options,
 /*************************** External fns **************************/
 void do_trmm_serial_blas(options_t options)
 { 
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
   __do_loop_and_invoke(options, __do_trmm_serial_blas<default_scalar, view_type_3d, view_type_3d, default_device>);
   return;
 }
 
 void do_trmm_serial_batched(options_t options)
 {
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
   __do_loop_and_invoke(options, __do_trmm_serial_batched<default_scalar, view_type_3d, view_type_3d, default_device>);
   return;
 }
 
 void do_trmm_parallel_blas(options_t options)
 {
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
   __do_loop_and_invoke(options, __do_trmm_parallel_blas<default_scalar, view_type_3d, view_type_3d, default_device>);
   return;
 }
 
 void do_trmm_parallel_batched(options_t options)
 {
-  printf("STATUS: %s.\n", __func__);
+  STATUS;
   __do_loop_and_invoke(options, __do_trmm_parallel_batched<default_scalar, view_type_3d, view_type_3d, default_device>);
   return;
 }

@@ -43,6 +43,9 @@
 */
 #include "KokkosBlas3_trmm_perf_test.hpp"
 
+#include <iostream>
+#include <fstream>
+
 #include <cstdlib>
 #include <unistd.h>
 #include <getopt.h>
@@ -58,6 +61,7 @@ static struct option long_options[] = {
   {"matrix_size_step",  required_argument, 0, 's'},
   {"warm_up_loop",      required_argument, 0, 'w'},
   {"iter",              required_argument, 0, 'i'},
+  {"csv",               required_argument, 0, 'c'},
   {0, 0, 0, 0}
 };
 
@@ -119,6 +123,10 @@ static void __print_help_trmm_perf_test()
   printf("\t-i, --iter=ITER\n");
   printf("\t\tIteration selection. (timed)\n");
   printf("\t\t\tValid value for ITER is any non-negative 32-bit integer. (default: 100)\n\n");
+  
+  printf("\t-c, --csv=/path/to/file.csv\n");
+  printf("\t\tCsv output file selection.\n");
+  printf("\t\t\tValid value for /path/to/file.csv is any valid file name. (default: stdout)\n\n");
 }
 
 static void __trmm_perf_test_input_error(char **argv, int option_idx)
@@ -133,6 +141,8 @@ int main(int argc, char **argv)
   options_t options;
   int option_idx = 0, ret;
   char *n_str = nullptr;
+  std::filebuf fb;
+  char *out_file = nullptr;
 
   /* set default options */
   options.test                                    = DEFAULT_TEST;
@@ -150,8 +160,9 @@ int main(int argc, char **argv)
   options.n                                       = DEFAULT_N;
   options.trmm_args                               = DEFAULT_TRMM_ARGS;
   options.alpha                                   = DEFAULT_TRMM_ALPHA;
+  options.out                                     = DEFAULT_OUT;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:", long_options, &option_idx)) != -1) {
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:", long_options, &option_idx)) != -1) {
 
     switch(ret) {
       case 'h':
@@ -228,11 +239,22 @@ int main(int argc, char **argv)
       case 'i':
         options.n = atoi(optarg);
         break;
+      case 'c':
+        out_file = optarg;
+        options.out_file = std::string(out_file);
+        break;
       case '?':
       default:
         __trmm_perf_test_input_error(argv, option_idx);
     }
   }
+
+  if (out_file != nullptr) {
+    fb.open(out_file, std::ios::out);
+    std::ostream out(&fb);
+    options.out = &out;
+  }
+
   __print_trmm_perf_test_options(options);
 
   if (options.warm_up_n > options.n)
@@ -255,6 +277,10 @@ int main(int argc, char **argv)
         do_trmm_parallel_batched(options);
     }
   }
+
+  if (out_file != nullptr)
+    fb.close();
+
   Kokkos::finalize();
 
   return 0;
