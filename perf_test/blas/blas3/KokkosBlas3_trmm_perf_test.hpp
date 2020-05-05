@@ -41,21 +41,35 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSBLAS_TRMM_PERF_TEST_H_
-#define KOKKOSBLAS_TRMM_PERF_TEST_H_
+#ifndef KOKKOSBLAS3_TRMM_PERF_TEST_H_
+#define KOKKOSBLAS3_TRMM_PERF_TEST_H_
 
 //#include <complex.h>
-
-#include "KokkosKernels_default_types.hpp"
+#include "KokkosBlas3_common.hpp"
 
 #include <Kokkos_Random.hpp>
 
 #include <KokkosBlas3_trmm.hpp>
+
 #include "KokkosBatched_Trmm_Decl.hpp"
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
 
 //#define TRMM_PERF_TEST_DEBUG
+
+// Forward declarations
+void do_trmm_serial_blas(options_t options);
+void do_trmm_serial_batched(options_t options);
+void do_trmm_parallel_blas(options_t options);
+void do_trmm_parallel_batched(options_t options);
+
+// trmm invoke table
+void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
+  do_trmm_serial_blas,
+  do_trmm_serial_batched,
+  do_trmm_parallel_blas,
+  do_trmm_parallel_batched
+};
 
 /*************************** Print macros **************************/
 #ifdef TRMM_PERF_TEST_DEBUG
@@ -66,63 +80,8 @@
 #endif // TRMM_PERF_TEST_DEBUG
 
 /*************************** Test types and defaults **************************/
-#define DEFAULT_TEST BLAS
-#define DEFAULT_LOOP SERIAL
-#define DEFAULT_MATRIX_START 10
-#define DEFAULT_MATRIX_STOP 2430
-#define DEFAULT_STEP 3
-#define DEFAULT_WARM_UP_N 100
-#define DEFAULT_N 100
 #define DEFAULT_TRMM_ARGS "LUNU"
 #define DEFAULT_TRMM_ALPHA 1.0
-#define DEFAULT_OUT &std::cout
-
-struct matrix_dim {
-  int m, n;
-};
-typedef struct matrix_dim matrix_dim_t;
-
-struct trmm_matrix_dims {
-  matrix_dim_t a, b;
-};
-typedef struct trmm_matrix_dims trmm_matrix_dims_t;
-
-typedef enum TEST {
-  BLAS,
-  BATCHED,
-  TEST_N
-} test_e;
-
-static std::string test_e_str[TEST_N] {
-  "BLAS",
-  "BATCHED"
-};
-
-typedef enum LOOP {
-  SERIAL,
-  PARALLEL,
-  LOOP_N
-} loop_e;
-
-static std::string loop_e_str[LOOP_N] = {
-  "SERIAL",
-  "PARALLEL"
-};
-
-struct trmm_perf_test_options {
-  test_e test;
-  loop_e loop;
-  trmm_matrix_dims_t start;
-  trmm_matrix_dims_t stop;
-  uint32_t step;
-  uint32_t warm_up_n;
-  uint32_t n;
-  std::string trmm_args;
-  default_scalar alpha;
-  std::ostream* out;
-  std::string out_file;
-};
-typedef struct trmm_perf_test_options options_t;
 
 using view_type_3d = Kokkos::View<default_scalar***, default_layout, default_device>;
 struct trmm_args {
@@ -138,8 +97,8 @@ static std::string trmm_csv_header_str = "algorithm,side-uplo-trans-diag,alpha,l
 static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args, double time_in_seconds)
 {
   options.out[0] << test_e_str[options.test] << "," <<
-                  options.trmm_args << "," <<
-                  options.alpha << "," <<
+                  options.blas_args.trmm.trmm_args << "," <<
+                  options.blas_args.trmm.alpha << "," <<
                   loop_e_str[options.loop] << "," <<
                   trmm_args.A.extent(1) << "x" << trmm_args.A.extent(2) << "," <<
                   trmm_args.B.extent(1) << "x" << trmm_args.B.extent(2) << "," <<
@@ -159,12 +118,12 @@ static void __print_trmm_perf_test_options(options_t options)
   printf("options.step      = %d\n", options.step);
   printf("options.warm_up_n = %d\n", options.warm_up_n);
   printf("options.n         = %d\n", options.n);
-  printf("options.trmm_args = %s\n", options.trmm_args.c_str());
+  printf("options.blas_args.trmm.trmm_args = %s\n", options.blas_args.trmm.trmm_args.c_str());
   printf("options.out_file  = %s\n", options.out_file.c_str());
   if (std::is_same<double, default_scalar>::value)
-    printf("options.alpha     = %lf\n", options.alpha);
+    printf("options.alpha     = %lf\n", options.blas_args.trmm.alpha);
   else if (std::is_same<float, default_scalar>::value)
-    printf("options.alpha     = %f\n", options.alpha);
+    printf("options.alpha     = %f\n", options.blas_args.trmm.alpha);
   //else if (std::is_same<Kokkos::complex<double>, default_scalar>::value)
   //  printf("options.alpha     = %lf+%lfi\n", creal(options.alpha), cimag(options.alpha));
   //else if (std::is_same<Kokkos::complex<float>, default_scalar>::value)
@@ -445,7 +404,7 @@ void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args)
 
 /*************************** Internal setup fns **************************/
 template<class scalar_type, class vta, class vtb, class device_type>
-trmm_args_t __do_setup(options_t options, trmm_matrix_dims_t dim)
+trmm_args_t __do_setup(options_t options, matrix_dims_t dim)
 {
   using execution_space = typename device_type::execution_space;
 
@@ -455,10 +414,10 @@ trmm_args_t __do_setup(options_t options, trmm_matrix_dims_t dim)
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
   STATUS;
 
-  trmm_args.side  = options.trmm_args.c_str()[0];
-  trmm_args.uplo  = options.trmm_args.c_str()[1];
-  trmm_args.trans = options.trmm_args.c_str()[2];
-  trmm_args.diag  = options.trmm_args.c_str()[3];
+  trmm_args.side  = options.blas_args.trmm.trmm_args.c_str()[0];
+  trmm_args.uplo  = options.blas_args.trmm.trmm_args.c_str()[1];
+  trmm_args.trans = options.blas_args.trmm.trmm_args.c_str()[2];
+  trmm_args.diag  = options.blas_args.trmm.trmm_args.c_str()[3];
   trmm_args.A     = vta("trmm_args.A", options.n, dim.a.m, dim.a.n);
   trmm_args.B     = vtb("trmm_args.B", options.n, dim.b.m, dim.b.n);
   
@@ -504,9 +463,11 @@ trmm_args_t __do_setup(options_t options, trmm_matrix_dims_t dim)
 void __do_loop_and_invoke(options_t options, 
                           void (*fn)(options_t, trmm_args_t))
 {
-  trmm_matrix_dims_t cur_dims;
+  matrix_dims_t cur_dims;
   trmm_args_t trmm_args;
   STATUS;
+
+  __print_trmm_perf_test_options(options);
 
   options.out[0] << trmm_csv_header_str << std::endl;
 
@@ -550,4 +511,4 @@ void do_trmm_parallel_batched(options_t options)
   return;
 }
 
-#endif // KOKKOSBLAS_TRMM_PERF_TEST_H_
+#endif // KOKKOSBLAS3_TRMM_PERF_TEST_H_

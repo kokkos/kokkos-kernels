@@ -41,10 +41,8 @@
 // ************************************************************************
 //@HEADER
 */
+#include "KokkosBlas3_common.hpp"
 #include "KokkosBlas3_trmm_perf_test.hpp"
-
-#include <iostream>
-#include <fstream>
 
 #include <cstdlib>
 #include <unistd.h>
@@ -62,10 +60,11 @@ static struct option long_options[] = {
   {"warm_up_loop",      required_argument, 0, 'w'},
   {"iter",              required_argument, 0, 'i'},
   {"csv",               required_argument, 0, 'c'},
+  {"routines",          required_argument, 0, 'r'},
   {0, 0, 0, 0}
 };
 
-static void __print_help_trmm_perf_test()
+static void __print_help_blas3_perf_test()
 {
   printf("Options:\n");
 
@@ -114,25 +113,29 @@ static void __print_help_trmm_perf_test()
   
   printf("\t-s, --matrix_size_step=K\n");
   printf("\t\tMatrix step selection.\n");
-  printf("\t\t\tValid value for K is any non-negative 32-bit integer. (default: 3)\n\n");
+  printf("\t\t\tValid value for K is any non-negative 32-bit integer. (default: %d)\n\n", DEFAULT_STEP);
   
   printf("\t-w, --warm_up_loop=LOOP\n");
   printf("\t\tWarm up loop selection. (untimed)\n");
-  printf("\t\t\tValid value for LOOP is any non-negative 32-bit integer that's <= ITER. (default: 100)\n\n");
+  printf("\t\t\tValid value for LOOP is any non-negative 32-bit integer that's <= ITER. (default: %d)\n\n", DEFAULT_WARM_UP_N);
   
   printf("\t-i, --iter=ITER\n");
   printf("\t\tIteration selection. (timed)\n");
-  printf("\t\t\tValid value for ITER is any non-negative 32-bit integer. (default: 100)\n\n");
+  printf("\t\t\tValid value for ITER is any non-negative 32-bit integer. (default: %d)\n\n", DEFAULT_N);
   
   printf("\t-c, --csv=/path/to/file.csv\n");
   printf("\t\tCsv output file selection.\n");
   printf("\t\t\tValid value for /path/to/file.csv is any valid file name. (default: stdout)\n\n");
+  
+  printf("\t-r, --routines=ROUTINES\n");
+  printf("\t\tRoutine selection.\n");
+  printf("\t\t\tValid value for ROUTINES is one of more valid blas3 routines delimited by a comma. (default: %s)\n\n", DEFAULT_BLAS_ROUTINES);
 }
 
-static void __trmm_perf_test_input_error(char **argv, int option_idx)
+static void __blas3_perf_test_input_error(char **argv, int option_idx)
 {
     fprintf(stderr, "ERROR: invalid option \"%s %s\".\n", argv[option_idx], argv[option_idx+1]);
-    __print_help_trmm_perf_test();
+    __print_help_blas3_perf_test();
     exit(-EINVAL);
 }
 
@@ -140,7 +143,7 @@ int main(int argc, char **argv)
 {
   options_t options;
   int option_idx = 0, ret;
-  char *n_str = nullptr;
+  char *n_str = nullptr, *prev_str = nullptr;
   std::filebuf fb;
   char *out_file = nullptr;
 
@@ -158,15 +161,17 @@ int main(int argc, char **argv)
   options.step                                    = DEFAULT_STEP;
   options.warm_up_n                               = DEFAULT_WARM_UP_N;
   options.n                                       = DEFAULT_N;
-  options.trmm_args                               = DEFAULT_TRMM_ARGS;
-  options.alpha                                   = DEFAULT_TRMM_ALPHA;
   options.out                                     = DEFAULT_OUT;
+  options.blas_routines                           = std::string(DEFAULT_BLAS_ROUTINES);
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:", long_options, &option_idx)) != -1) {
+  options.blas_args.trmm.trmm_args                = DEFAULT_TRMM_ARGS;
+  options.blas_args.trmm.alpha                    = DEFAULT_TRMM_ALPHA;
+
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:", long_options, &option_idx)) != -1) {
 
     switch(ret) {
       case 'h':
-        __print_help_trmm_perf_test();
+        __print_help_blas3_perf_test();
         return 0;
       case 't':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
@@ -175,19 +180,19 @@ int main(int argc, char **argv)
         } else if (!strncasecmp(optarg, "batched", 6)) {
           options.test = BATCHED;
         } else {
-          __trmm_perf_test_input_error(argv, option_idx);
+          __blas3_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'o':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (strlen(optarg) != 4) {
-          __trmm_perf_test_input_error(argv, option_idx);
+          __blas3_perf_test_input_error(argv, option_idx);
         }
-        options.trmm_args = optarg;
+        options.blas_args.trmm.trmm_args = optarg;
         break;
       case 'a':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
-        options.alpha = (default_scalar) atof(optarg);
+        options.blas_args.trmm.alpha = (default_scalar) atof(optarg);
         break;
       case 'l':
         if (!strncasecmp(optarg, "serial", 6)) {
@@ -195,13 +200,13 @@ int main(int argc, char **argv)
         } else if (!strncasecmp(optarg, "parallel", 8)) {
           options.loop = PARALLEL;
         } else {
-          __trmm_perf_test_input_error(argv, option_idx);
+          __blas3_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'b':
         n_str = strcasestr(optarg, "x");
         if (n_str == NULL)
-          __trmm_perf_test_input_error(argv, option_idx);
+          __blas3_perf_test_input_error(argv, option_idx);
 
         n_str[0] = '\0';
         options.start.a.m = atoi(optarg);
@@ -209,7 +214,7 @@ int main(int argc, char **argv)
 
         n_str = strcasestr(&n_str[1], "x");
         if (n_str == NULL)
-          __trmm_perf_test_input_error(argv, option_idx);
+          __blas3_perf_test_input_error(argv, option_idx);
         n_str[0] = '\0';
         options.start.b.m = atoi(optarg);
         options.start.b.n = atoi(&n_str[1]);
@@ -217,7 +222,7 @@ int main(int argc, char **argv)
       case 'e':
         n_str = strcasestr(optarg, "x");
         if (n_str == NULL)
-          __trmm_perf_test_input_error(argv, option_idx);
+          __blas3_perf_test_input_error(argv, option_idx);
 
         n_str[0] = '\0';
         options.stop.a.m = atoi(optarg);
@@ -225,7 +230,7 @@ int main(int argc, char **argv)
 
         n_str = strcasestr(&n_str[1], "x");
         if (n_str == NULL)
-          __trmm_perf_test_input_error(argv, option_idx);
+          __blas3_perf_test_input_error(argv, option_idx);
         n_str[0] = '\0';
         options.stop.b.m = atoi(optarg);
         options.stop.b.n = atoi(&n_str[1]);
@@ -243,9 +248,11 @@ int main(int argc, char **argv)
         out_file = optarg;
         options.out_file = std::string(out_file);
         break;
+      case 'r':
+        options.blas_routines = std::string(optarg);
       case '?':
       default:
-        __trmm_perf_test_input_error(argv, option_idx);
+        __blas3_perf_test_input_error(argv, option_idx);
     }
   }
 
@@ -255,27 +262,15 @@ int main(int argc, char **argv)
     options.out = &out;
   }
 
-  __print_trmm_perf_test_options(options);
-
   if (options.warm_up_n > options.n)
-    __trmm_perf_test_input_error(argv, option_idx);
+    __blas3_perf_test_input_error(argv, option_idx);
 
   Kokkos::initialize(argc,argv);
-  if (options.loop == SERIAL) {
-    if (options.test == BLAS) {
-        do_trmm_serial_blas(options);
-    }
-    if (options.test == BATCHED) {
-        do_trmm_serial_batched(options);
-    }
-  }
-  if (options.loop == PARALLEL) {
-    if (options.test == BLAS) {
-        do_trmm_parallel_blas(options);
-    }
-    if (options.test == BATCHED) {
-        do_trmm_parallel_batched(options);
-    }
+
+  for (int i = 0; i < BLAS_ROUTINES_N; i++) {
+    if (options.blas_routines.find(blas_routines_e_str[TRMM]) != std::string::npos)
+      do_trmm_invoke[options.loop][options.test](options);
+    //ADD MORE BLAS ROUTINES HERE
   }
 
   if (out_file != nullptr)
