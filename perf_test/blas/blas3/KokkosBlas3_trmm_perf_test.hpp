@@ -146,7 +146,7 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args)
 
   STATUS;
 
-  for (int i = 0; i < warm_up_n; ++i) {
+  for (uint32_t i = 0; i < warm_up_n; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
@@ -155,7 +155,7 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args)
   }
 
   timer.reset();
-  for (int i = 0; i < n ; ++i) {
+  for (uint32_t i = 0; i < n ; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
@@ -175,7 +175,7 @@ void __do_trmm_serial_batched_template(options_t options, trmm_args_t trmm_args)
   Kokkos::Timer timer;
   using tag   = Algo::Trmm::Unblocked;
 
-  for (int i = 0; i < warm_up_n; ++i) {
+  for (uint32_t i = 0; i < warm_up_n; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
@@ -183,7 +183,7 @@ void __do_trmm_serial_batched_template(options_t options, trmm_args_t trmm_args)
   }
 
   timer.reset();
-  for (int i = 0; i < n ; ++i) {
+  for (uint32_t i = 0; i < n ; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
@@ -424,7 +424,7 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim)
   Kokkos::fill_random(trmm_args.A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
   if (trmm_args.uplo == 'U' || trmm_args.uplo == 'u') {
     // Make A upper triangular
-    for (int k = 0; k < options.n; ++k) {
+    for (uint32_t k = 0; k < options.n; ++k) {
       auto A = Kokkos::subview(trmm_args.A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 1; i < dim.a.m; i++) {
         for (int j = 0; j < i; j++) {
@@ -435,7 +435,7 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim)
   } else {
     // Make A lower triangular
     //Kokkos::parallel_for("toLowerLoop", options.n, KOKKOS_LAMBDA (const int& i) {
-    for (int k = 0; k < options.n; ++k) {
+    for (uint32_t k = 0; k < options.n; ++k) {
       auto A = Kokkos::subview(trmm_args.A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < dim.a.m-1; i++) {
         for (int j = i+1; j < dim.a.n; j++) {
@@ -446,7 +446,7 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim)
   }
   
   if (trmm_args.diag == 'U' || trmm_args.diag == 'u') {
-    for (int k = 0; k < options.n; ++k) {
+    for (uint32_t k = 0; k < options.n; ++k) {
       auto A = Kokkos::subview(trmm_args.A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < min_dim; i++) {
         A(i,i) = scalar_type(1);

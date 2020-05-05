@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 {
   options_t options;
   int option_idx = 0, ret;
-  char *n_str = nullptr, *prev_str = nullptr;
+  char *n_str = nullptr;
   std::filebuf fb;
   char *out_file = nullptr;
 
