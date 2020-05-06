@@ -51,8 +51,6 @@
 static struct option long_options[] = {
   {"help",              no_argument,       0, 'h'},
   {"test",              required_argument, 0, 't'},
-  {"trmm_options",      required_argument, 0, 'o'},
-  {"trmm_alpha",        required_argument, 0, 'a'},
   {"loop_type",         required_argument, 0, 'l'},
   {"matrix_size_start", required_argument, 0, 'b'},
   {"matrix_size_stop",  required_argument, 0, 'e'},
@@ -61,6 +59,8 @@ static struct option long_options[] = {
   {"iter",              required_argument, 0, 'i'},
   {"csv",               required_argument, 0, 'c'},
   {"routines",          required_argument, 0, 'r'},
+  {"trmm_options",      required_argument, 0, 'o'},
+  {"trmm_alpha",        required_argument, 0, 'a'},
   {0, 0, 0, 0}
 };
 
@@ -85,11 +85,11 @@ static void __print_help_blas3_perf_test()
 
   printf("\t-o, --trmm_options=OPTION_STRING\n");
   printf("\t\tTRMM side, uplo, trans, and diag options.\n");
-  printf("\t\t\tValid format for OPTION_STRING is \"%%c%%c%%c%%c\". (default: LUNU)\n");
+  printf("\t\t\tValid format for OPTION_STRING is \"%%c%%c%%c%%c\". (default: %s)\n", DEFAULT_TRMM_ARGS);
   
   printf("\t-a, --trmm_alpha=SCALAR_VALUE\n");
   printf("\t\tTRMM alpha value.\n");
-  printf("\t\t\tThe value of alpha in floating point. (default: 1.0)\n");
+  printf("\t\t\tThe value of alpha in floating point. (default: %lf)\n", DEFAULT_TRMM_ALPHA);
 
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
@@ -105,11 +105,17 @@ static void __print_help_blas3_perf_test()
 
   printf("\t-b, --matrix_size_start=MxN,IxJ\n");
   printf("\t\tMatrix size selection where A is MxN and B is IxJ (start)\n");
-  printf("\t\t\tValid values for M and N are any non-negative 32-bit integers. (default: 10x10,10x10)\n\n");
+  printf("\t\t\tValid values for M and N are any non-negative 32-bit integers. (default: %dx%d,%dx%d)\n\n", DEFAULT_MATRIX_START
+                                                                                                          , DEFAULT_MATRIX_START
+                                                                                                          , DEFAULT_MATRIX_START
+                                                                                                          , DEFAULT_MATRIX_START);
 
   printf("\t-e, --matrix_size_stop=PxQ,SxT\n");
   printf("\t\tMatrix size selection where A is PxQ and B is SxT (stop)\n");
-  printf("\t\t\tValid values for P and Q are any non-negative 32-bit integers. (default: 2430x2430,2430x2430)\n\n");
+  printf("\t\t\tValid values for P and Q are any non-negative 32-bit integers. (default: %dx%d,%dx%d)\n\n", DEFAULT_MATRIX_STOP
+                                                                                                          , DEFAULT_MATRIX_STOP
+                                                                                                          , DEFAULT_MATRIX_STOP
+                                                                                                          , DEFAULT_MATRIX_STOP);
   
   printf("\t-s, --matrix_size_step=K\n");
   printf("\t\tMatrix step selection.\n");
@@ -270,7 +276,7 @@ int main(int argc, char **argv)
   for (int i = 0; i < BLAS_ROUTINES_N; i++) {
     if (options.blas_routines.find(blas_routines_e_str[TRMM]) != std::string::npos)
       do_trmm_invoke[options.loop][options.test](options);
-    //ADD MORE BLAS ROUTINES HERE
+    //ADD MORE BLAS3 ROUTINES HERE
   }
 
   if (out_file != nullptr)

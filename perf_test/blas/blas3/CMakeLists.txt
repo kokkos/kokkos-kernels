@@ -5,4 +5,3 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   KokkosBlas3_perf_test
   SOURCES KokkosBlas3_perf_test.cpp
   )
-#TESTONLYLIBS benchmark::benchmark
