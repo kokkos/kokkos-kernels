@@ -310,36 +310,46 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args)
   return;
 }
 
-template<class side, class uplo, class trans, class diag>
+template<class side, class uplo, class trans, class diag, class tag, class ExecutionSpace>
+struct parallel_batched_trmm {
+  trmm_args_t trmm_args_;
+
+  parallel_batched_trmm (trmm_args_t trmm_args) : trmm_args_(trmm_args) {}
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const int& i) const {
+    auto svA = Kokkos::subview(trmm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svB = Kokkos::subview(trmm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args_.alpha, svA, svB);
+  }
+};
+
+template<class side, class uplo, class trans, class diag, class device_type>
 void __do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_args)
 {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n = options.n;
   Kokkos::Timer timer;
   using tag   = Algo::Trmm::Unblocked;
+  using execution_space = typename device_type::execution_space;
+  using functor_type = parallel_batched_trmm<side, uplo, trans, diag, tag, execution_space>;
+  functor_type parallel_batched_trmm_functor(trmm_args);
 
   STATUS;
 
-#if 0
-  //for (int i = 0; i < warm_up_n; ++i) {
-  Kokkos::parallel_for("parallelBatchedWarmUpLoop", warm_up_n, KOKKOS_LAMBDA (const int& i) {
-    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
-    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
-
-    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
-  });
+  Kokkos::parallel_for("parallelBatchedWarmUpLoop", 
+                       Kokkos::RangePolicy<execution_space>(0, warm_up_n),
+                       parallel_batched_trmm_functor);
+  Kokkos::fence();
 
   timer.reset();
-  //for (int i = 0; i < n ; ++i) {
-  Kokkos::parallel_for("parallelBatchedTimedLoop", n, KOKKOS_LAMBDA (const int& i) {
-    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
-    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
-
-    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
-  });
+  Kokkos::parallel_for("parallelBatchedTimedLoop", 
+                       Kokkos::RangePolicy<execution_space>(0, n),
+                       parallel_batched_trmm_functor);
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
-#endif
+
   return;
 }
 
@@ -356,61 +366,61 @@ void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args)
   //// Lower non-transpose ////
   if (__side == 'l' && __uplo == 'l' && __trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
   if (__side == 'r' && __uplo == 'l' && __trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::NoTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
   //// Lower transpose /////
   // Transpose A by simply swapping the dimensions (extent) and stride parameters
   if (__side == 'l' && __uplo == 'l' && __trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::Transpose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::Transpose,Diag::Unit,device_type>(options, trmm_args);
   }
   if (__side == 'r' && __uplo == 'l' && __trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::Transpose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::Transpose,Diag::Unit,device_type>(options, trmm_args);
   }
   //// Lower conjugate-transpose ////
   // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
   if (__side == 'l' && __uplo == 'l' && __trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Lower,Trans::ConjTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
   if (__side == 'r' && __uplo == 'l' && __trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Lower,Trans::ConjTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
   //// Upper non-transpose ////
   if (__side == 'l' && __uplo == 'u' && __trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
   if (__side == 'r' && __uplo == 'u' && __trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
   //// Upper transpose
   // Transpose A by simply swapping the dimensions (extent) and stride parameters
   if (__side == 'l' && __uplo == 'u' && __trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::Transpose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::Transpose,Diag::Unit,device_type>(options, trmm_args);
   }
   if (__side == 'r' && __uplo == 'u' && __trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::Transpose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::Transpose,Diag::Unit,device_type>(options, trmm_args);
   }
 
   //// Upper conjugate-transpose ////
   // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride parameters
   if (__side == 'l' && __uplo == 'u' && __trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
   if (__side == 'r' && __uplo == 'u' && __trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::ConjTranspose,Diag::Unit>(options, trmm_args);
+    __do_trmm_parallel_batched_template<Side::Right,Uplo::Upper,Trans::ConjTranspose,Diag::Unit,device_type>(options, trmm_args);
   }
 
   return;
