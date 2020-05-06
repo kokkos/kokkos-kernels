@@ -97,11 +97,11 @@ static void __print_help_blas3_perf_test()
   printf("%c[1m",27);
   printf("\t\t\t\tserial:");
   printf("%c[0m",27);
-  printf(" invoke trmm in a serial for-loop. (default)\n");
+  printf(" invoke blas routine in a serial for-loop. (default)\n");
   printf("%c[1m",27);
   printf("\t\t\t\tparallel:");
   printf("%c[0m",27);
-  printf(" invoke trmm in a Kokkos::parallel_for-loop.\n\n");
+  printf(" invoke blas routine in a Kokkos::parallel_for-loop.\n\n");
 
   printf("\t-b, --matrix_size_start=MxN,IxJ\n");
   printf("\t\tMatrix size selection where A is MxN and B is IxJ (start)\n");

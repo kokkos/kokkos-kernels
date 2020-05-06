@@ -266,13 +266,11 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args)
   return;
 }
 
-template<class vta, class vtb, class ExecutionSpace>
+template<class ExecutionSpace>
 struct parallel_blas_trmm {
-  vta A_;
-  vtb B_;
   trmm_args_t trmm_args_;
 
-  parallel_blas_trmm (trmm_args_t trmm_args, const vta A, const vtb B) : trmm_args_(trmm_args), A_(A), B_(B) {}
+  parallel_blas_trmm (trmm_args_t trmm_args) : trmm_args_(trmm_args) {}
   
   KOKKOS_INLINE_FUNCTION
   void operator() (const int& i) const {
@@ -291,18 +289,18 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args)
   uint32_t n = options.n;
   Kokkos::Timer timer;
   using execution_space = typename device_type::execution_space;
-  using functor_type = parallel_blas_trmm<vta, vtb, execution_space>;
-  functor_type parallel_blas_trmm_functor(trmm_args, trmm_args.A, trmm_args.B);
+  using functor_type = parallel_blas_trmm<execution_space>;
+  functor_type parallel_blas_trmm_functor(trmm_args);
 
   STATUS;
 
-  Kokkos::parallel_for("parallelBlasWarmUpLoop", 
+  Kokkos::parallel_for("parallelBlasWarmUpLoopTrmm", 
                        Kokkos::RangePolicy<execution_space>(0, warm_up_n),
                        parallel_blas_trmm_functor);
   Kokkos::fence();
 
   timer.reset();
-  Kokkos::parallel_for("parallelBlasTimedLoop", 
+  Kokkos::parallel_for("parallelBlasTimedLoopTrmm", 
                        Kokkos::RangePolicy<execution_space>(0, n),
                        parallel_blas_trmm_functor);
   Kokkos::fence();
@@ -338,13 +336,13 @@ void __do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_arg
 
   STATUS;
 
-  Kokkos::parallel_for("parallelBatchedWarmUpLoop", 
+  Kokkos::parallel_for("parallelBatchedWarmUpLoopTrmm", 
                        Kokkos::RangePolicy<execution_space>(0, warm_up_n),
                        parallel_batched_trmm_functor);
   Kokkos::fence();
 
   timer.reset();
-  Kokkos::parallel_for("parallelBatchedTimedLoop", 
+  Kokkos::parallel_for("parallelBatchedTimedLoopTrmm", 
                        Kokkos::RangePolicy<execution_space>(0, n),
                        parallel_batched_trmm_functor);
   Kokkos::fence();

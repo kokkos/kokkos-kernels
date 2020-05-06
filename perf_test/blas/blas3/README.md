@@ -23,3 +23,4 @@ void (*do_ROUTINE_invoke[LOOP_N][TEST_N])(options_t) = {
    `KokkosBlas3_trmm_perf_test.hpp`, where the comment `//ADD MORE BLAS3 ROUTINES HERE` is.
 5. Update the commandline argument processing in
    `KokkosBlas3_trmm_perf_test.hpp` to specify how to run ROUTINE.
+6. Append `ROUTINE,` to `#define DEFAULT_BLAS_ROUTINES` in `KokkosBlas3_common.hpp`.
