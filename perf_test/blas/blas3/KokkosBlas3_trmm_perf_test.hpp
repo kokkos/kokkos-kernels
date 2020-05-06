@@ -266,33 +266,45 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args)
   return;
 }
 
+template<class vta, class vtb, class ExecutionSpace>
+struct parallel_blas_trmm {
+  vta A_;
+  vtb B_;
+  trmm_args_t trmm_args_;
+
+  parallel_blas_trmm (trmm_args_t trmm_args, const vta A, const vtb B) : trmm_args_(trmm_args), A_(A), B_(B) {}
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const int& i) const {
+    auto svA = Kokkos::subview(trmm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svB = Kokkos::subview(trmm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
+
+    KokkosBlas::trmm(&trmm_args_.side, &trmm_args_.uplo, &trmm_args_.trans, 
+                     &trmm_args_.diag, trmm_args_.alpha, svA, svB);
+  }
+};
+
 template<class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args)
 {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n = options.n;
   Kokkos::Timer timer;
+  using execution_space = typename device_type::execution_space;
+  using functor_type = parallel_blas_trmm<vta, vtb, execution_space>;
+  functor_type parallel_blas_trmm_functor(trmm_args, trmm_args.A, trmm_args.B);
 
   STATUS;
 
-  //for (int i = 0; i < warm_up_n; ++i) {
-  Kokkos::parallel_for("parallelBlasWarmUpLoop", warm_up_n, KOKKOS_LAMBDA (const int& i) {
-    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
-    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
-
-    KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans, 
-                     &trmm_args.diag, trmm_args.alpha, A, B);
-  });
+  Kokkos::parallel_for("parallelBlasWarmUpLoop", 
+                       Kokkos::RangePolicy<execution_space>(0, warm_up_n),
+                       parallel_blas_trmm_functor);
+  Kokkos::fence();
 
   timer.reset();
-  //for (int i = 0; i < n ; ++i) {
-  Kokkos::parallel_for("parallelBlasTimedLoop", n, KOKKOS_LAMBDA (const int& i) {
-    auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
-    auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
-
-    KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans, 
-                     &trmm_args.diag, trmm_args.alpha, A, B);
-  });
+  Kokkos::parallel_for("parallelBlasTimedLoop", 
+                       Kokkos::RangePolicy<execution_space>(0, n),
+                       parallel_blas_trmm_functor);
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
   return;
@@ -308,6 +320,7 @@ void __do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_arg
 
   STATUS;
 
+#if 0
   //for (int i = 0; i < warm_up_n; ++i) {
   Kokkos::parallel_for("parallelBatchedWarmUpLoop", warm_up_n, KOKKOS_LAMBDA (const int& i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
@@ -326,6 +339,7 @@ void __do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_arg
   });
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
+#endif
   return;
 }
 
