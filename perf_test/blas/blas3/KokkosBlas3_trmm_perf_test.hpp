@@ -65,10 +65,8 @@ void do_trmm_parallel_batched(options_t options);
 
 // trmm invoke table
 void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
-  do_trmm_serial_blas,
-  do_trmm_serial_batched,
-  do_trmm_parallel_blas,
-  do_trmm_parallel_batched
+  {do_trmm_serial_blas, do_trmm_serial_batched},
+  {do_trmm_parallel_blas, do_trmm_parallel_batched}
 };
 
 /*************************** Print macros **************************/
