@@ -266,7 +266,7 @@ int main(int argc, char **argv)
   for (int i = 0; i < BLAS_ROUTINES_N; i++) {
     if (options.blas_routines.find(blas_routines_e_str[TRTRI]) != std::string::npos)
       do_trtri_invoke[options.loop][options.test](options);
-    //ADD MORE BLAS3 ROUTINES HERE
+      //ADD MORE BLAS ROUTINES HERE
   }
 
   if (out_file != nullptr)

@@ -80,10 +80,10 @@
   #error "Expect at least one real-valued scalar type (double or float) to be enabled"
 #endif
 
-#if defined(KOKKOS_ENABLE_OPENMP)
-  typedef Kokkos::OpenMP default_device;
-#elif defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::Cuda default_device;
+#elif defined(KOKKOS_ENABLE_OPENMP)
+  typedef Kokkos::OpenMP default_device;
 #elif defined(KOKKOS_ENABLE_PTHREAD) || defined(KOKKOS_ENABLE_THREADS)
   typedef Kokkos::Threads default_device;
 #else
