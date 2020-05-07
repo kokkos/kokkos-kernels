@@ -59,7 +59,7 @@ static struct option long_options[] = {
   {"iter",              required_argument, 0, 'i'},
   {"csv",               required_argument, 0, 'c'},
   {"routines",          required_argument, 0, 'r'},
-  {"trtri_options",      required_argument, 0, 'o'},
+  {"trtri_options",     required_argument, 0, 'o'},
   {0, 0, 0, 0}
 };
 
@@ -84,7 +84,7 @@ static void __print_help_blas_perf_test()
 
   printf("\t-o, --trtri_options=OPTION_STRING\n");
   printf("\t\tTRTRI uplo and diag options.\n");
-  printf("\t\t\tValid format for OPTION_STRING is \"%%c%%c\". (default: %s)\n", DEFAULT_TRTRI_ARGS);
+  printf("\t\t\tValid format for OPTION_STRING is \"%%c%%c\". (default: %s)\n\n", DEFAULT_TRTRI_ARGS);
   
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
@@ -165,10 +165,9 @@ int main(int argc, char **argv)
   options.out                                     = DEFAULT_OUT;
   options.blas_routines                           = std::string(DEFAULT_BLAS_ROUTINES);
 
-  options.blas_args.trtri.trtri_args                = DEFAULT_TRTRI_ARGS;
-  options.blas_args.trtri.alpha                    = DEFAULT_TRTRI_ALPHA;
+  options.blas_args.trtri.trtri_args              = DEFAULT_TRTRI_ARGS;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:", long_options, &option_idx)) != -1) {
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:c:r:", long_options, &option_idx)) != -1) {
 
     switch(ret) {
       case 'h':
@@ -186,7 +185,7 @@ int main(int argc, char **argv)
         break;
       case 'o':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
-        if (strlen(optarg) != 4) {
+        if (strlen(optarg) != 2) {
           __blas_perf_test_input_error(argv, option_idx);
         }
         options.blas_args.trtri.trtri_args = optarg;

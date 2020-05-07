@@ -49,7 +49,7 @@
 
 #include <Kokkos_Random.hpp>
 
-#include <KokkosBlas3_trtri.hpp>
+#include <KokkosBlas_trtri.hpp>
 
 #include "KokkosBatched_Trtri_Decl.hpp"
 #include "KokkosBatched_Trtri_Serial_Impl.hpp"
@@ -65,10 +65,8 @@ void do_trtri_parallel_batched(options_t options);
 
 // trtri invoke table
 void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {
-  do_trtri_serial_blas,
-  do_trtri_serial_batched,
-  do_trtri_parallel_blas,
-  do_trtri_parallel_batched
+  {do_trtri_serial_blas, do_trtri_serial_batched},
+  {do_trtri_parallel_blas, do_trtri_parallel_batched}
 };
 
 /*************************** Print macros **************************/
@@ -96,7 +94,6 @@ static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args, d
 {
   options.out[0] << test_e_str[options.test] << "," <<
                   options.blas_args.trtri.trtri_args << "," <<
-                  options.blas_args.trtri.alpha << "," <<
                   loop_e_str[options.loop] << "," <<
                   trtri_args.A.extent(1) << "x" << trtri_args.A.extent(2) << "," <<
                   options.warm_up_n << "," <<
@@ -184,6 +181,22 @@ void __do_trtri_serial_batched(options_t options, trtri_args_t trtri_args)
 
   STATUS;
 
+  //// Lower ////
+  if (__uplo == 'l') {
+    if (__diag == 'u') {
+      __do_trtri_serial_batched_template<Uplo::Lower,Diag::Unit>(options, trtri_args);
+    } else {
+      __do_trtri_serial_batched_template<Uplo::Lower,Diag::NonUnit>(options, trtri_args);
+    }
+  } else {
+  //// Upper ////
+    if (__diag == 'u') {
+      __do_trtri_serial_batched_template<Uplo::Upper,Diag::Unit>(options, trtri_args);
+    } else {
+      __do_trtri_serial_batched_template<Uplo::Upper,Diag::NonUnit>(options, trtri_args);
+    }
+  }
+
   return;
 }
 
@@ -201,7 +214,7 @@ struct parallel_blas_trtri {
   }
 };
 
-template<class scalar_type, class vta, class vtb, class device_type>
+template<class scalar_type, class vta, class device_type>
 void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args)
 {
   uint32_t warm_up_n = options.warm_up_n;
@@ -277,6 +290,21 @@ void __do_trtri_parallel_batched(options_t options, trtri_args_t trtri_args)
 
   STATUS;
 
+    //// Lower ////
+  if (__uplo == 'l') {
+    if (__diag == 'u') {
+      __do_trtri_parallel_batched_template<Uplo::Lower,Diag::Unit,device_type>(options, trtri_args);
+    } else {
+      __do_trtri_parallel_batched_template<Uplo::Lower,Diag::NonUnit,device_type>(options, trtri_args);
+    }
+  } else {
+  //// Upper ////
+    if (__diag == 'u') {
+      __do_trtri_parallel_batched_template<Uplo::Upper,Diag::Unit,device_type>(options, trtri_args);
+    } else {
+      __do_trtri_parallel_batched_template<Uplo::Upper,Diag::NonUnit,device_type>(options, trtri_args);
+    }
+  }
 
   return;
 }
