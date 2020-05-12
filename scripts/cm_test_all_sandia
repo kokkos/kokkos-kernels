@@ -30,9 +30,21 @@ print_help() {
   echo "--opt-flag=FLAG: Optimization flag (default: -O3)"
   echo "--cxxflags-extra=FLAGS: Extra flags to be added to CXX_FLAGS"
   echo "--ldflags-extra=FLAGS: Extra flags to be added to LD_FLAGS"
+  echo ""
   echo "--arch=ARCHITECTURE: overwrite architecture flags"
+  echo "                     Provide a comma-separated list of arch codes (see available at link below):"
+  echo "                       https://github.com/kokkos/kokkos/wiki/Compiling#table-43-architecture-variables"
+  echo ""
   echo "--with-cuda-options=OPT: set KOKKOS_CUDA_OPTIONS"
+  echo "                         Provide a comma-separated list from the following valid items:"
+  echo "                           force_uvm,use_ldg,enable_lambda,rdc"
+  echo ""
   echo "--with-options=OPT: set KOKKOS_OPTIONS"
+  echo "                    Provide a comma-separated list from the following valid items:"
+  echo "                      compiler_warnings"
+  echo "                      aggressive_vectorization = add ivdep on loops"
+  echo "                      disable_profiling = do not compile with profiling hooks"
+  echo ""
   echo "--build-list=BUILD,BUILD,BUILD..."
   echo "    Provide a comma-separated list of builds instead of running all builds"
   echo "    Valid items:"
@@ -234,6 +246,12 @@ KOKKOSKERNELS_TPL_PATH_CMD=
 KOKKOSKERNELS_TPL_LIBS_CMD=
 KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD=
 
+# Enable double and complex_double in all builds by default
+KOKKOSKERNELS_SCALARS="double,complex_double"
+# Defaults for ordinals, offsets, and layouts match the CMake defaults
+KOKKOSKERNELS_ORDINALS="int"
+KOKKOSKERNELS_OFFSETS="int,size_t"
+KOKKOSKERNELS_LAYOUTS="LayoutLeft"
 #
 # Handle arguments.
 #
@@ -311,6 +329,7 @@ do
       LD_FLAGS_EXTRA="${key#*=}"
       ;;
     --with-scalars*)
+      # Overwrite the default double and complex_double types
       KOKKOSKERNELS_SCALARS="${key#*=}"
       ;;
     --with-ordinals*)
@@ -1154,12 +1173,6 @@ single_build_and_test() {
   local compiler_warning_flags=$(get_compiler_warning_flags $compiler)
   local compiler_exe=$(get_compiler_exe_name $compiler)
 
-  if [[ "$KOKKOS_OPTIONS" == "" ]]; then
-    local extra_args="--with-options=enable_large_mem_tests"
-  else 
-    local extra_args=
-  fi    
-
   if [[ "$build_type" = hwloc* ]]; then
     local extra_args="$extra_args --with-hwloc=$(dirname $(dirname $(which hwloc-info)))"
   fi
@@ -1212,9 +1225,17 @@ single_build_and_test() {
     if [[ "$LOCAL_KOKKOS_DEVICES" = *Cuda* ]]; then
        CUDA_ENABLE_CMD="--with-cuda=$CUDA_ROOT"
     fi
-    echo "kokkos options: ${KOKKOS_OPTIONS}"
+    local arch_code=$(echo $ARCH_FLAG | cut -d "=" -f 2)
     echo "kokkos devices: ${LOCAL_KOKKOS_DEVICES}"
-    echo "kokkos cxx: ${cxxflags}"
+    echo "kokkos arch: ${arch_code}"
+    echo "kokkos options: ${KOKKOS_OPTIONS}"
+    echo "kokkos cuda options: ${KOKKOS_CUDA_OPTIONS}"
+    echo "kokkos cxxflags: ${cxxflags}"
+    echo "extra_args: ${extra_args}"
+    echo "kokkoskernels scalars: ${kk_scalars}"
+    echo "kokkoskernels ordinals: ${KOKKOSKERNELS_ORDINALS}"
+    echo "kokkoskernels offsets: ${KOKKOSKERNELS_OFFSETS}"
+    echo "kokkoskernels layouts: ${KOKKOSKERNELS_LAYOUTS}"
 
     # KOKKOS_OPTIONS and KOKKOS_CUDA_OPTIONS are exported and detected by kokkos' generate_makefile.sh during install of kokkos; we pass them to the reproducer script instructions
     echo "  #   Use generate_makefile line below to call cmake which generates makefile for this build:" &> call_generate_makefile.sh
@@ -1223,7 +1244,7 @@ single_build_and_test() {
 
     run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
-    run_cmd make -j 48 all >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
+    run_cmd make -j 12 all >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)
     comment="build_time=$(($build_end_time-$build_start_time))"
 
