@@ -352,7 +352,7 @@ int main(int argc, char **argv)
  }
 
  Kokkos::initialize(argc,argv);
- for(int z = 6; z < 9; ++z){
+ for(int z = 6; z < 8; ++z){
 	 size = pow(10,z);
    int total_errors = test_crs_matrix_singlevec(size,size,test,filename,rows_per_thread,team_size,vector_length,schedule,loop);
  if(total_errors == 0)

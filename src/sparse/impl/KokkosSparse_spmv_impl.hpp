@@ -217,9 +217,15 @@ struct SPMV_Functor {
   }
 };
 
-struct SPMVTuner {
-  SPMVTuner(){
+// RE: CUDA: I think the only constraints are rows_per_team >= 1, 1 <= vector_length <= 32 , vector_length is a power of 2, and 1 <= team_size <= team_policy_t(1,1,vector_length).team_size_max(op, ParallelForTag()) . I don't think there's any easier way to know for sure how big the teams can be
 
+template<class Functor, class execution_space>
+struct SPMVTuner {
+  std::vector<std::tuple<int64_t, int64_t, int64_t>> configurations;
+  std::vector<Kokkos::Tools::VariableValue> configuration_indices;
+  constexpr static const int64_t max_rows_per_thread = 4096;
+  template<typename... Args>
+  SPMVTuner(Args... args){
     team_size_tuning_variable = Kokkos::Tools::getNewVariableId();
 
     Kokkos::Tools::VariableInfo team_size_info;
@@ -246,30 +252,38 @@ struct SPMVTuner {
     nnz_info.valueQuantity = kokkos_value_unbounded;
 
     Kokkos::Tools::declareContextVariable("kokkos.kernels.spmv.nnz", nnz_context_variable, nnz_info, Kokkos::Tools::SetOrRange()); // last argument is "possible values," something we don't know beforehand
+
+    int64_t index = 0;
+    configurations.push_back(std::make_tuple(-1,-1,-1));
+    configuration_indices.push_back(Kokkos::Tools::make_variable_value(team_size_tuning_variable,index++));
+    for(int64_t vector_size = 1 ; vector_size <= 32; vector_size*=2){
+      int64_t max_team_size = Kokkos::TeamPolicy<execution_space>(1,1,vector_size).team_size_max(Functor(args...), Kokkos::ParallelForTag());
+      for(int64_t team_size = max_team_size; team_size >=1; team_size /= 2){
+        for(int64_t rows_per_thread = max_rows_per_thread; rows_per_thread >= 1; rows_per_thread/=2){
+          configurations.push_back(std::make_tuple(vector_size,team_size,rows_per_thread)); 
+          configuration_indices.push_back(Kokkos::Tools::make_variable_value(team_size_tuning_variable,index++));
+        }
+      }
+    }
   }
 
-  int64_t begin(int64_t numRows, int64_t nnz, int64_t default_value){
+  std::tuple<int64_t, int64_t, int64_t> begin(int64_t numRows, int64_t nnz){
+    int64_t default_value = 0;
     Kokkos::Array<Kokkos::Tools::VariableValue,2> context_values = 
       { Kokkos::Tools::make_variable_value(num_rows_context_variable,numRows),
 	      Kokkos::Tools::make_variable_value(nnz_context_variable, nnz)};
 
     Kokkos::Tools::SetOrRange candidate_values;
-    Kokkos::Tools::VariableValue valid_values[] { 
-	    Kokkos::Tools::make_variable_value(team_size_tuning_variable,int64_t(32)) ,
-	    Kokkos::Tools::make_variable_value(team_size_tuning_variable,int64_t(64)), 
-	    Kokkos::Tools::make_variable_value(team_size_tuning_variable,int64_t(128)) , 
-	    Kokkos::Tools::make_variable_value(team_size_tuning_variable,int64_t(256)), 
-	    Kokkos::Tools::make_variable_value(team_size_tuning_variable,int64_t(512)), 
-	    Kokkos::Tools::make_variable_value(team_size_tuning_variable,int64_t(1024)) 
-    };
+    
     candidate_values.set.id = team_size_tuning_variable;
-    candidate_values.set.size = 6;
-    candidate_values.set.values = valid_values;
+    candidate_values.set.size = configuration_indices.size();
+
+    candidate_values.set.values = configuration_indices.data();
     context = Kokkos::Tools::getNewContextId();
     Kokkos::Tools::declareContextVariableValues(context, 2, context_values.data());
-    Kokkos::Tools::VariableValue rows_per_thread = Kokkos::Tools::make_variable_value(team_size_tuning_variable, default_value);
-    Kokkos::Tools::requestTuningVariableValues(context, 1, &rows_per_thread, &candidate_values);
-    return rows_per_thread.value.int_value;
+    Kokkos::Tools::VariableValue configuration = Kokkos::Tools::make_variable_value(team_size_tuning_variable, int64_t(default_value));
+    Kokkos::Tools::requestTuningVariableValues(context, 1, &configuration, &candidate_values);
+    return configurations[configuration.value.int_value];
   }
   void end(){
     Kokkos::Tools::endContext(context);
@@ -280,6 +294,8 @@ struct SPMVTuner {
   size_t nnz_context_variable;
    
 };
+
+
 template<class execution_space>
 int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_thread, int& team_size, int& vector_length) {
   int64_t rows_per_team;
@@ -330,56 +346,6 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
   return rows_per_team;
 }
 
-template<class execution_space>
-int64_t spmv_launch_parameters(SPMVTuner& tuner, int64_t numRows, int64_t nnz, int64_t rows_per_thread, int& team_size, int& vector_length) {
-  int64_t rows_per_team;
-  int64_t nnz_per_row = nnz/numRows;
-
-  if(nnz_per_row < 1) nnz_per_row = 1;
-
-  if(vector_length < 1) {
-    vector_length = 1;
-    while(vector_length<32 && vector_length*6 < nnz_per_row)
-      vector_length*=2;
-  }
-
-
-  // Determine rows per thread
-  if(rows_per_thread < 1) {
-    #ifdef KOKKOS_ENABLE_CUDA
-    if(std::is_same<Kokkos::Cuda,execution_space>::value)
-      rows_per_thread = 1;
-    else
-    #endif
-    {
-      if(nnz_per_row < 20 && nnz > 5000000 ) {
-        rows_per_thread = 256;
-      } else
-        rows_per_thread = 64;
-    }
-  }
-  rows_per_thread = tuner.begin(numRows, nnz, rows_per_thread);
-  #ifdef KOKKOS_ENABLE_CUDA
-  if(team_size < 1) {
-    if(std::is_same<Kokkos::Cuda,execution_space>::value)
-    { team_size = 256/vector_length; }
-    else
-    { team_size = 1; }
-  }
-  #endif
-
-  rows_per_team = rows_per_thread * team_size;
-
-  if(rows_per_team < 0) {
-    int64_t nnz_per_team = 4096;
-    int64_t conc = execution_space::concurrency();
-    while((conc * nnz_per_team * 4> nnz)&&(nnz_per_team>256)) nnz_per_team/=2;
-    rows_per_team = (nnz_per_team+nnz_per_row - 1)/nnz_per_row;
-  }
-
-
-  return rows_per_team;
-}
 #include <iostream>
 template<class AMatrix,
          class XVector,
@@ -415,17 +381,23 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
   int team_size = -1;
   int vector_length = -1;
   int64_t rows_per_thread = -1;
+  using FunctorType = SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate>;
+  using TunerType = SPMVTuner<FunctorType, execution_space>;
+  static TunerType* tuner;
+  if(tuner == nullptr){
+         tuner = new TunerType(alpha,A,x,beta,y,1);
+  }
+  //vector team rows_per_thread 
 
-  static SPMVTuner tuner;
-  int64_t rows_per_team = spmv_launch_parameters<execution_space>(tuner,A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
+  auto config = tuner->begin(A.numRows(), A.nnz());
+  vector_length = std::get<0>(config); 
+  team_size = std::get<1>(config); 
+  rows_per_thread = std::get<2>(config); 
+
+  int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
   int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
-  // std::cout << "worksets=" << worksets
-  //           << ", rows_per_team=" << rows_per_team
-  //           << ", team_size=" << team_size
-  //           << ", vector_length=" << vector_length << std::endl;
-
-  SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
+  FunctorType func (alpha,A,x,beta,y,rows_per_team);
 
   if(A.nnz()>10000000) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
@@ -442,7 +414,7 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
     Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",policy,func);
   }
-  tuner.end();
+  tuner->end();
 }
 
 template<class AMatrix,
