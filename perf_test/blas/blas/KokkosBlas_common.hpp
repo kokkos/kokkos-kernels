@@ -48,8 +48,7 @@
 #include <iostream>
 #include <fstream>
 
-/************************ perf test default value definitions
- * ************************/
+/************************ perf test default value definitions **********/
 #define DEFAULT_TEST BLAS
 #define DEFAULT_LOOP SERIAL
 #define DEFAULT_MATRIX_START 10
@@ -60,8 +59,7 @@
 #define DEFAULT_OUT &std::cout
 #define DEFAULT_BLAS_ROUTINES "trtri,"
 
-/************************ blas routine structure definitions
- * ************************/
+/************************ blas routine structure definitions **********/
 struct perf_test_trtri_args {
   std::string trtri_args;
 };
