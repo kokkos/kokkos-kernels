@@ -227,19 +227,19 @@ struct SPMVTuner {
   template<typename... Args>
   SPMVTuner(Args... args){
 
-    Kokkos::Tools::VariableInfo num_rows_info;
-    num_rows_info.category = Kokkos::Tools::StatisticalCategory::kokkos_value_interval;
-    num_rows_info.type = Kokkos::Tools::ValueType::kokkos_value_integer;
+    Kokkos::Tools::Experimental::VariableInfo num_rows_info;
+    num_rows_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_interval;
+    num_rows_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_integer;
     num_rows_info.valueQuantity = kokkos_value_unbounded;
 
-    num_rows_context_variable = Kokkos::Tools::declare_input_type("kokkos.kernels.spmv.num_rows", num_rows_info);
+    num_rows_context_variable = Kokkos::Tools::Experimental::declare_input_type("kokkos.kernels.spmv.num_rows", num_rows_info);
 
-    Kokkos::Tools::VariableInfo nnz_info;
-    nnz_info.category = Kokkos::Tools::StatisticalCategory::kokkos_value_interval;
-    nnz_info.type = Kokkos::Tools::ValueType::kokkos_value_integer;
+    Kokkos::Tools::Experimental::VariableInfo nnz_info;
+    nnz_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_interval;
+    nnz_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_integer;
     nnz_info.valueQuantity = kokkos_value_unbounded;
 
-    nnz_context_variable = Kokkos::Tools::declare_input_type("kokkos.kernels.spmv.nnz", nnz_info);
+    nnz_context_variable = Kokkos::Tools::Experimental::declare_input_type("kokkos.kernels.spmv.nnz", nnz_info);
 
     int64_t index = 0;
     configurations.push_back(std::make_tuple(-1,-1,-1));
@@ -254,29 +254,29 @@ struct SPMVTuner {
       }
     }
 
-    Kokkos::Tools::VariableInfo team_size_info;
-    team_size_info.type = Kokkos::Tools::ValueType::kokkos_value_integer;
-    team_size_info.category = Kokkos::Tools::StatisticalCategory::kokkos_value_interval;
+    Kokkos::Tools::Experimental::VariableInfo team_size_info;
+    team_size_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_integer;
+    team_size_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_interval;
     team_size_info.valueQuantity = kokkos_value_set;
-    team_size_info.candidates = Kokkos::Tools::make_candidate_set(configuration_indices.size(), configuration_indices.data());
-    team_size_tuning_variable = Kokkos::Tools::declare_output_type("kokkos.kernels.spmv.rows_per_thread", team_size_info);
+    team_size_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(configuration_indices.size(), configuration_indices.data());
+    team_size_tuning_variable = Kokkos::Tools::Experimental::declare_output_type("kokkos.kernels.spmv.rows_per_thread", team_size_info);
 
   }
 
   std::tuple<int64_t, int64_t, int64_t> begin(int64_t numRows, int64_t nnz){
     int64_t default_value = 0;
-    Kokkos::Array<Kokkos::Tools::VariableValue,2> context_values = 
-      { Kokkos::Tools::make_variable_value(num_rows_context_variable,numRows),
-	      Kokkos::Tools::make_variable_value(nnz_context_variable, nnz)};
+    Kokkos::Array<Kokkos::Tools::Experimental::VariableValue,2> context_values = 
+      { Kokkos::Tools::Experimental::make_variable_value(num_rows_context_variable,numRows),
+	      Kokkos::Tools::Experimental::make_variable_value(nnz_context_variable, nnz)};
 
-    context = Kokkos::Tools::get_new_context_id();
-    Kokkos::Tools::set_input_values(context, 2, context_values.data());
-    Kokkos::Tools::VariableValue configuration = Kokkos::Tools::make_variable_value(team_size_tuning_variable, int64_t(default_value));
-    Kokkos::Tools::request_output_values(context, 1, &configuration);
+    context = Kokkos::Tools::Experimental::get_new_context_id();
+    Kokkos::Tools::Experimental::set_input_values(context, 2, context_values.data());
+    Kokkos::Tools::Experimental::VariableValue configuration = Kokkos::Tools::Experimental::make_variable_value(team_size_tuning_variable, int64_t(default_value));
+    Kokkos::Tools::Experimental::request_output_values(context, 1, &configuration);
     return configurations[configuration.value.int_value];
   }
   void end(){
-    Kokkos::Tools::end_context(context);
+    Kokkos::Tools::Experimental::end_context(context);
   }
   size_t context;
   size_t team_size_tuning_variable;
