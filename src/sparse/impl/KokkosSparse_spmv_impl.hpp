@@ -222,49 +222,45 @@ struct SPMV_Functor {
 template<class Functor, class execution_space>
 struct SPMVTuner {
   std::vector<std::tuple<int64_t, int64_t, int64_t>> configurations;
-  std::vector<Kokkos::Tools::VariableValue> configuration_indices;
+  std::vector<int64_t> configuration_indices;
   constexpr static const int64_t max_rows_per_thread = 4096;
   template<typename... Args>
   SPMVTuner(Args... args){
-    team_size_tuning_variable = Kokkos::Tools::getNewVariableId();
-
-    Kokkos::Tools::VariableInfo team_size_info;
-    team_size_info.type = Kokkos::Tools::ValueType::kokkos_value_integer;
-    team_size_info.category = Kokkos::Tools::StatisticalCategory::kokkos_value_interval;
-    team_size_info.valueQuantity = kokkos_value_set;
-
-    Kokkos::Tools::declareTuningVariable("kokkos.kernels.spmv.rows_per_thread", team_size_tuning_variable, team_size_info);
-
-    num_rows_context_variable = Kokkos::Tools::getNewVariableId();
 
     Kokkos::Tools::VariableInfo num_rows_info;
     num_rows_info.category = Kokkos::Tools::StatisticalCategory::kokkos_value_interval;
     num_rows_info.type = Kokkos::Tools::ValueType::kokkos_value_integer;
     num_rows_info.valueQuantity = kokkos_value_unbounded;
 
-    Kokkos::Tools::declareContextVariable("kokkos.kernels.spmv.num_rows", num_rows_context_variable, num_rows_info, Kokkos::Tools::SetOrRange()); // last argument is "possible values," something we don't know beforehand
-
-    nnz_context_variable = Kokkos::Tools::getNewVariableId();
+    num_rows_context_variable = Kokkos::Tools::declare_input_type("kokkos.kernels.spmv.num_rows", num_rows_info);
 
     Kokkos::Tools::VariableInfo nnz_info;
     nnz_info.category = Kokkos::Tools::StatisticalCategory::kokkos_value_interval;
     nnz_info.type = Kokkos::Tools::ValueType::kokkos_value_integer;
     nnz_info.valueQuantity = kokkos_value_unbounded;
 
-    Kokkos::Tools::declareContextVariable("kokkos.kernels.spmv.nnz", nnz_context_variable, nnz_info, Kokkos::Tools::SetOrRange()); // last argument is "possible values," something we don't know beforehand
+    nnz_context_variable = Kokkos::Tools::declare_input_type("kokkos.kernels.spmv.nnz", nnz_info);
 
     int64_t index = 0;
     configurations.push_back(std::make_tuple(-1,-1,-1));
-    configuration_indices.push_back(Kokkos::Tools::make_variable_value(team_size_tuning_variable,index++));
+    configuration_indices.push_back(index++);
     for(int64_t vector_size = 1 ; vector_size <= 32; vector_size*=2){
       int64_t max_team_size = Kokkos::TeamPolicy<execution_space>(1,1,vector_size).team_size_max(Functor(args...), Kokkos::ParallelForTag());
       for(int64_t team_size = max_team_size; team_size >=1; team_size /= 2){
         for(int64_t rows_per_thread = max_rows_per_thread; rows_per_thread >= 1; rows_per_thread/=2){
           configurations.push_back(std::make_tuple(vector_size,team_size,rows_per_thread)); 
-          configuration_indices.push_back(Kokkos::Tools::make_variable_value(team_size_tuning_variable,index++));
+          configuration_indices.push_back(index++);
         }
       }
     }
+
+    Kokkos::Tools::VariableInfo team_size_info;
+    team_size_info.type = Kokkos::Tools::ValueType::kokkos_value_integer;
+    team_size_info.category = Kokkos::Tools::StatisticalCategory::kokkos_value_interval;
+    team_size_info.valueQuantity = kokkos_value_set;
+    team_size_info.candidates = Kokkos::Tools::make_candidate_set(configuration_indices.size(), configuration_indices.data());
+    team_size_tuning_variable = Kokkos::Tools::declare_output_type("kokkos.kernels.spmv.rows_per_thread", team_size_info);
+
   }
 
   std::tuple<int64_t, int64_t, int64_t> begin(int64_t numRows, int64_t nnz){
@@ -273,20 +269,14 @@ struct SPMVTuner {
       { Kokkos::Tools::make_variable_value(num_rows_context_variable,numRows),
 	      Kokkos::Tools::make_variable_value(nnz_context_variable, nnz)};
 
-    Kokkos::Tools::SetOrRange candidate_values;
-    
-    candidate_values.set.id = team_size_tuning_variable;
-    candidate_values.set.size = configuration_indices.size();
-
-    candidate_values.set.values = configuration_indices.data();
-    context = Kokkos::Tools::getNewContextId();
-    Kokkos::Tools::declareContextVariableValues(context, 2, context_values.data());
+    context = Kokkos::Tools::get_new_context_id();
+    Kokkos::Tools::set_input_values(context, 2, context_values.data());
     Kokkos::Tools::VariableValue configuration = Kokkos::Tools::make_variable_value(team_size_tuning_variable, int64_t(default_value));
-    Kokkos::Tools::requestTuningVariableValues(context, 1, &configuration, &candidate_values);
+    Kokkos::Tools::request_output_values(context, 1, &configuration);
     return configurations[configuration.value.int_value];
   }
   void end(){
-    Kokkos::Tools::endContext(context);
+    Kokkos::Tools::end_context(context);
   }
   size_t context;
   size_t team_size_tuning_variable;
@@ -393,7 +383,6 @@ spmv_beta_no_transpose (typename YVector::const_value_type& alpha,
   vector_length = std::get<0>(config); 
   team_size = std::get<1>(config); 
   rows_per_thread = std::get<2>(config); 
-
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
   int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
