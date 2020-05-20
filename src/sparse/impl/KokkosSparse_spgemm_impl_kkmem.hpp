@@ -325,7 +325,7 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(pow2_hash_size, pow2_hash_size,NULL, NULL, NULL, NULL);
+    hm2(pow2_hash_size,NULL, NULL, NULL, NULL);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -394,7 +394,7 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(pow2_hash_size, pow2_hash_size,NULL, NULL, NULL, NULL);
+    hm2(pow2_hash_size,NULL, NULL, NULL, NULL);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -499,10 +499,10 @@ struct KokkosSPGEMM
     scalar_t * vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm(thread_shmem_hash_size, thread_shmem_key_size, begins, nexts, keys, vals);
+    hm(thread_shmem_key_size, begins, nexts, keys, vals);
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(pow2_hash_size, pow2_hash_size,
+    hm2(pow2_hash_size,
         NULL, NULL, NULL, NULL);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
       const size_type c_row_begin = rowmapC[row_index];

@@ -257,8 +257,6 @@ struct KokkosSPGEMM
     //tmp += MaxRoughNonZero;
     //hm2.values = (nnz_lno_t *) (tmp);
 
-    hm2.hash_key_size = pow2_hash_size;
-
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t globally_used_hash_count = 0;
       nnz_lno_t used_hash_size = 0;
@@ -486,9 +484,9 @@ struct KokkosSPGEMM
     //return;
     //first level hashmap
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
+      hm(shmem_key_size, begins, nexts, keys, vals);
 
-    hashmapType hm2(pow2_hash_size, MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
@@ -577,8 +575,6 @@ struct KokkosSPGEMM
             hm2.keys = (nnz_lno_t *) (tmp);
             //tmp += MaxRoughNonZero;
             //hm2.values = (nnz_lno_t *) (tmp);
-
-            hm2.hash_key_size = pow2_hash_size;
           }
 
           nnz_lno_t hash_ = -1;
@@ -1006,7 +1002,7 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    hashmapType hm2(pow2_hash_size, MaxRoughNonZero, 
+    hashmapType hm2(MaxRoughNonZero, 
                     nullptr, nullptr, 
                     nullptr, nullptr);
 
@@ -1130,9 +1126,9 @@ struct KokkosSPGEMM
     //return;
     //first level hashmap
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
+      hm(shmem_key_size, begins, nexts, keys, vals);
 
-    hashmapType hm2(pow2_hash_size, MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
@@ -1221,8 +1217,6 @@ struct KokkosSPGEMM
             hm2.keys = (nnz_lno_t *) (tmp);
             tmp += MaxRoughNonZero;
             hm2.values = (nnz_lno_t *) (tmp);
-
-            hm2.hash_key_size = pow2_hash_size;
           }
 
           nnz_lno_t hash_ = -1;
@@ -2644,7 +2638,7 @@ struct KokkosSPGEMM
     nnz_lno_t *globally_used_hash_indices = NULL;
     nnz_lno_t globally_used_hash_count = 0;
     nnz_lno_t used_hash_size = 0;
-    hashmapType hm2(pow2_hash_size, MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
@@ -2668,8 +2662,6 @@ struct KokkosSPGEMM
     hm2.keys = (nnz_lno_t *) (tmp);
     tmp += MaxRoughNonZero;
     hm2.values = (nnz_lno_t *) (tmp);
-
-    hm2.hash_key_size = pow2_hash_size;
 
 
     {
@@ -2778,7 +2770,7 @@ struct KokkosSPGEMM
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
       hm(shared_memory_hash_size, shared_memory_hash_size, begins, nexts, keys, vals);
 
-    hashmapType hm2(pow2_hash_size, MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
@@ -2867,8 +2859,6 @@ struct KokkosSPGEMM
             hm2.keys = (nnz_lno_t *) (tmp);
             tmp += MaxRoughNonZero;
             hm2.values = (nnz_lno_t *) (tmp);
-
-            hm2.hash_key_size = pow2_hash_size;
           }
 
           nnz_lno_t hash_ = -1;

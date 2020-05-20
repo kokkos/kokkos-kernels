@@ -58,9 +58,6 @@ template <typename size_type, typename key_type, typename value_type>
  *   ( https://ieeexplore.ieee.org/abstract/document/7965111/ ) in section III.D
  * 
  * Public members:
- * \var hash_key_size: 
- * \var used_size:   Atomic counter to measure how full the hashmap is.
- * 
  * \var hash_begins: Holds the beginning indices of the linked lists
  *                   corresponding to hash values [Begins]
  * \var hash_nexts:  Holds the indicies of the next elements
@@ -68,8 +65,8 @@ template <typename size_type, typename key_type, typename value_type>
  * \var keys:        This stores the column indices of (??) [Ids]
  * \var values:      This store the (matrix element?) numerical value of (??) [Values]
  * 
- * \var INSERT_SUCCESS:
- * \var INSERT_FULL:
+ * \var INSERT_SUCCESS: Value to return upon insertion success.
+ * \var INSERT_FULL:    Value to return upon insertion failure.
  * 
  * Private members:
  * \var __max_value_size: The length of the two arrays (keys and hash_nexts)
@@ -77,7 +74,6 @@ template <typename size_type, typename key_type, typename value_type>
 struct HashmapAccumulator
 {
   // begin public members
-  size_type hash_key_size;
   // issue-508, TODO: It's best for used_size to be an internal member of this
   // class but the current use-cases rely on used_size to be a parameter to the
   // below insertion routines. One way to remove used_size as a parameter to the
@@ -113,7 +109,6 @@ struct HashmapAccumulator
    */
   KOKKOS_INLINE_FUNCTION
   HashmapAccumulator ():
-        hash_key_size(),
         hash_begins(),
         hash_nexts(),
         keys(),
@@ -127,32 +122,31 @@ struct HashmapAccumulator
    * \brief parameterized constructor HashmapAccumulator
    * Sets used_size to 0, INSERT_SUCCESS to 0, and INSERT_FULL to 1.
    * 
-   * /param hash_key_size_: 
-   * /param value_size_:
-   * /param hash_begins_:
-   * /param hash_nexts_:
-   * /param keys_:
-   * /param values_:
+   * /param max_value_size_: The length of the two arrays (keys and hash_nexts)
+   * /param hash_begins_:    Holds the beginning indices of the linked lists
+   *                         corresponding to hash values [Begins]
+   * /param hash_nexts_:     Holds the indicies of the next elements
+   *                         within the linked list [Nexts]
+   * /param keys_:           This stores the column indices of (??) [Ids]
+   * /param values_:         This store the (matrix element?) numerical value of (??) [Values]
    * 
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
   HashmapAccumulator (
-      const size_type hash_key_size_,
-      const size_type value_size_,
+      const size_type max_value_size_,
       size_type *hash_begins_,
       size_type *hash_nexts_,
       key_type *keys_,
       value_type *values_):
 
-        hash_key_size(hash_key_size_),
         hash_begins(hash_begins_),
         hash_nexts(hash_nexts_),
         keys(keys_),
         values(values_), 
         INSERT_SUCCESS(0), 
         INSERT_FULL(1),
-        __max_value_size(value_size_)
+        __max_value_size(max_value_size_)
         {}
 
 

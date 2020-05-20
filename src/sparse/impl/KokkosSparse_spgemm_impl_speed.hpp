@@ -355,13 +355,13 @@ struct KokkosSPGEMM
     scalar_t* vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
+    hm(shmem_key_size, begins, nexts, keys, vals);
 
     // TODO: understand below parallel_for loop.
     // GOAL: Inialize hm2 with correct __max_value_size.
 
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(0, 0,
+    hm2(0,
         NULL, NULL, NULL, NULL);
     /*
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
@@ -373,7 +373,6 @@ struct KokkosSPGEMM
       const size_type c_row_begin = rowmapC[row_index];
       const nnz_lno_t global_memory_hash_size = nnz_lno_t(rowmapC[row_index + 1] - c_row_begin);
 
-      hm2.hash_key_size = global_memory_hash_size;
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
       hm2.hash_begins = pbeginsC + c_row_begin;

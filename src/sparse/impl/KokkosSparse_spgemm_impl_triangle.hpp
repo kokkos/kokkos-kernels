@@ -883,7 +883,7 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2(pow2_hash_size, MaxRoughNonZero, nullptr, nullptr, nullptr, nullptr);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2(MaxRoughNonZero, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -1033,7 +1033,7 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2(pow2_hash_size, MaxRoughNonZero, nullptr, nullptr, nullptr, nullptr);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2(MaxRoughNonZero, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
