@@ -78,8 +78,24 @@ struct HashmapAccumulator
 {
   // begin public members
   size_type hash_key_size;
-  size_type used_size;
+  // issue-508, TODO: It's best for used_size to be an internal member of this
+  // class but the current use-cases rely on used_size to be a parameter to the
+  // below insertion routines. One way to remove used_size as a parameter to the
+  // insertion routines is to instantiate multiple HashmapAccumulator objects
+  // (one hashmap for each team of threads) instead of using a single 
+  // HashmapAccumulator object for multiple teams of threads; this entails 
+  // major refactoring throughout the kokkos-kernels code base.
+  // Making used_size a pointer and private member of this
+  // class still exposes access to this member outside of the class and is
+  // not a good option.
+  // size_type used_size;
 
+  // issue-508, TODO: The hash_begins, hash_nexts, keys, values, INSERT_SUCCESS,
+  // and INSERT_FULL members should all be private as well. They should be managed
+  // solely by this HashmapAccumulator class: initialized in the constructor(s)
+  // and only managed by HashmapAccumulator insertion routines. Making these
+  // members private requires major refactoring throughout the kokkos-kernels
+  // code base.
   size_type*  hash_begins;
   size_type*  hash_nexts;
   key_type*   keys;
@@ -98,7 +114,6 @@ struct HashmapAccumulator
   KOKKOS_INLINE_FUNCTION
   HashmapAccumulator ():
         hash_key_size(),
-        used_size(0),
         hash_begins(),
         hash_nexts(),
         keys(),
@@ -131,7 +146,6 @@ struct HashmapAccumulator
       value_type *values_):
 
         hash_key_size(hash_key_size_),
-        used_size(0),
         hash_begins(hash_begins_),
         hash_nexts(hash_nexts_),
         keys(keys_),
