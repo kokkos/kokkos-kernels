@@ -60,13 +60,15 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
-using Scalar    = default_scalar;
-using lno_t     = default_lno_t;
-using size_type = default_size_type;
-
 template <class matrix_type>
-matrix_type generate_unbalanced_matrix(const lno_t numRows, const lno_t numEntries,
-				       const lno_t numLongRows, const lno_t numLongEntries) {
+matrix_type generate_unbalanced_matrix(const typename matrix_type::ordinal_type numRows,
+				       const typename matrix_type::ordinal_type numEntries,
+				       const typename matrix_type::ordinal_type numLongRows,
+				       const typename matrix_type::ordinal_type numLongEntries) {
+
+  using Scalar = typename matrix_type::value_type;
+  using lno_t  = typename matrix_type::ordinal_type;
+
   using row_map_type = typename matrix_type::row_map_type::non_const_type;
   using entries_type = typename matrix_type::index_type::non_const_type;
   using values_type  = typename matrix_type::values_type::non_const_type;
@@ -171,6 +173,10 @@ void print_help() {
 }
 
 int main(int argc, char** argv) {
+
+  using Scalar    = default_scalar;
+  using lno_t     = default_lno_t;
+  using size_type = default_size_type;
 
   bool  compare        = false;
   lno_t loop           = 100;

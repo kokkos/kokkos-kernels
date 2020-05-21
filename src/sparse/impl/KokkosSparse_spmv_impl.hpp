@@ -308,13 +308,26 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
   // Note on 03/24/20, lbv: We can use the controls
   // here to allow the user to pass in some tunning
   // parameters.
+  if(controls.isParameter("team size"))       {team_size       = std::stoi(controls.getParameter("team size"));}
+  if(controls.isParameter("vector length"))   {vector_length   = std::stoi(controls.getParameter("vector length"));}
+  if(controls.isParameter("rows per thread")) {rows_per_thread = std::stoll(controls.getParameter("rows per thread"));}
+
+  bool use_dynamic_schedule = false; // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false; // Forces the use of a static schedule
+  if(controls.isParameter("schedule")) {
+    if(controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if(controls.getParameter("schedule") == "static") {
+      use_static_schedule  = true;
+    }
+  }
 
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
   int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
   SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
 
-  if(A.nnz()>10000000) {
+  if(((A.nnz()>10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
     if(team_size<0)
       policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);

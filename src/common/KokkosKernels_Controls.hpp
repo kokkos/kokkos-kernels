@@ -70,13 +70,26 @@ namespace Experimental{
   class Controls {
 
   public:
+    // Constructor
     Controls() = default;
 
+    // set a new parameter
     void setParameter(const std::string& name, const std::string& value) {
       kernel_parameters[name] = value;
     }
 
-    std::string getParameter(const std::string& name) {
+    // check if a parameter is already set
+    bool isParameter(const std::string& name) const {
+      bool return_value = false;
+
+      auto search = kernel_parameters.find(name);
+      if(search != kernel_parameters.end()) { return_value = true; }
+
+      return return_value;
+    }
+
+    // retrieve the value associated with a parameter if it is already set
+    std::string getParameter(const std::string& name) const {
       auto search = kernel_parameters.find(name);
       std::string value;
       if(search == kernel_parameters.end()) {
@@ -122,6 +135,7 @@ namespace Experimental{
 #endif
 
   private:
+    // storage for kernel parameters
     std::unordered_map<std::string, std::string> kernel_parameters;
   };
 
