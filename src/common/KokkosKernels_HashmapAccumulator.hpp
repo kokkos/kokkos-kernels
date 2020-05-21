@@ -50,7 +50,20 @@ namespace KokkosKernels {
 
 namespace Experimental {
 
-template <typename size_type, typename key_type, typename value_type>
+/**
+ * @brief types of hash operations supported by HashmapAccumulator.
+ * 
+ * /var bitwiseAnd: Performs key & hashOpRHS
+ * /var modulo:     Performs key % hashOpRHS
+ * /var pow2Modulo: Performs key & (hashOpRHS - 1)
+ */
+struct HashOpType {
+  struct bitwiseAnd {};
+  struct modulo {};
+  struct pow2Modulo {};
+};
+
+template <typename size_type, typename key_type, typename value_type, typename hash_type>
 /**
  * \brief HashmapAccumulator class
  * The use of this is described in the paper:
@@ -67,6 +80,7 @@ template <typename size_type, typename key_type, typename value_type>
  * 
  * Private members:
  * \var __max_value_size: The length of the two arrays (keys and hash_nexts)
+ * \var __hashOpRHS:      The right hand side of the requested hash operation.
  * \var __insert_success: Value to return upon insertion success.
  * \var __insert_full:    Value to return upon insertion failure.
  */
@@ -85,12 +99,15 @@ struct HashmapAccumulator
   // not a good option.
   // size_type used_size;
 
-  // issue-508, TODO: The hash_begins, hash_nexts, keys, values, INSERT_SUCCESS,
-  // and INSERT_FULL members should all be private as well. They should be managed
+  // issue-508, TODO: The hash_begins, hash_nexts, keys, values, __insert_success,
+  // and __insert_full members should all be private as well. They should be managed
   // solely by this HashmapAccumulator class: initialized in the constructor(s)
   // and only managed by HashmapAccumulator insertion routines. Making these
   // members private requires major refactoring throughout the kokkos-kernels
-  // code base.
+  // code base. If allocations for these members must really live outside this
+  // class, we need new members that break __max_value_size into:
+  // hash_begins_len, hash_nexts_len, keys_len, and values_len...!
+  
   size_type*  hash_begins;
   size_type*  hash_nexts;
   key_type*   keys;
@@ -98,7 +115,8 @@ struct HashmapAccumulator
 
   /**
    * \brief default constructor HashmapAccumulator
-   * Sets used_size to 0, INSERT_SUCCESS to 0, and INSERT_FULL to 1.
+   * Sets used_size to 0, __insert_success to 0, __insert_full to 1, and __hashOpRHS
+   * to 0.
    * 
    * Assumption: hash_begins_ are all initialized to -1.
    */
@@ -107,41 +125,45 @@ struct HashmapAccumulator
         hash_begins(),
         hash_nexts(),
         keys(),
-        values(), 
+        values(),
+        __max_value_size(),
+        __hashOpRHS(0),
         __insert_success(0), 
-        __insert_full(1),
-        __max_value_size()  {}
+        __insert_full(1)
+        {}
 
 
   /**
    * \brief parameterized constructor HashmapAccumulator
-   * Sets used_size to 0, INSERT_SUCCESS to 0, and INSERT_FULL to 1.
+   * Sets used_size to 0, __insert_success to 0, and __insert_full to 1.
    * 
-   * /param max_value_size_: The length of the two arrays (keys and hash_nexts)
-   * /param hash_begins_:    Holds the beginning indices of the linked lists
+   * \param max_value_size_: The length of the two arrays (keys and hash_nexts)
+   * \param hashOpRHS:       The right hand side of the requested hash operation.
+   * \param hash_begins_:    Holds the beginning indices of the linked lists
    *                         corresponding to hash values [Begins]
-   * /param hash_nexts_:     Holds the indicies of the next elements
+   * \param hash_nexts_:     Holds the indicies of the next elements
    *                         within the linked list [Nexts]
-   * /param keys_:           This stores the column indices of (??) [Ids]
-   * /param values_:         This store the (matrix element?) numerical value of (??) [Values]
+   * \param keys_:           This stores the column indices of (??) [Ids]
+   * \param values_:         This store the (matrix element?) numerical value of (??) [Values]
    * 
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
   HashmapAccumulator (
       const size_type max_value_size_,
+      const size_type hashOpRHS,
       size_type *hash_begins_,
       size_type *hash_nexts_,
       key_type *keys_,
       value_type *values_):
-
         hash_begins(hash_begins_),
         hash_nexts(hash_nexts_),
         keys(keys_),
-        values(values_), 
+        values(values_),
+        __max_value_size(max_value_size_),
+        __hashOpRHS(hashOpRHS),
         __insert_success(0), 
-        __insert_full(1),
-        __max_value_size(max_value_size_)
+        __insert_full(1)
         {}
 
 
@@ -232,7 +254,7 @@ struct HashmapAccumulator
       size_type *used_hashes)
   {
     //this function will only try to do an AND operation with
-    //existing keys. If the key is not there, returns INSERT_FULL.
+    //existing keys. If the key is not there, returns __insert_full.
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
@@ -254,7 +276,7 @@ struct HashmapAccumulator
       value_type value)
   {
     //this function will only try to do an AND operation with
-    //existing keys. If the key is not there, returns INSERT_FULL.
+    //existing keys. If the key is not there, returns __insert_full.
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i])
     {
@@ -337,6 +359,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    // issue-508, TODO: ensure that i < __max_value_size, but
+    // need information about length of keys, values, and hash_nexts first!
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
@@ -771,8 +795,30 @@ struct HashmapAccumulator
   // end public members
   private:
     size_type __max_value_size;
+    size_type __hashOpRHS;
     const int __insert_success;
     const int __insert_full;
+
+    template<typename U = hash_type, typename std::enable_if<std::is_same<U, HashOpType::bitwiseAnd>::value, std::size_t>::type = 0>
+    KOKKOS_INLINE_FUNCTION
+    int __compute_hash(size_type key, size_type bitmask) {
+      //std::cout << "bitwiseAnd" << std::endl;
+      return key & bitmask;
+    }
+
+    template<typename U = hash_type, typename std::enable_if<std::is_same<U, HashOpType::modulo>::value, std::size_t>::type = 0>
+    KOKKOS_INLINE_FUNCTION
+    int __compute_hash(size_type key, size_type divisor) {
+      //std::cout << "modulo" << std::endl;
+      return key % divisor;
+    }
+
+    template<typename U = hash_type, typename std::enable_if<std::is_same<U, HashOpType::pow2Modulo>::value, std::size_t>::type = 0>
+    KOKKOS_INLINE_FUNCTION
+    int __compute_hash(size_type key, size_type bitmask) {
+      //std::cout << "pow2Modulo" << std::endl;
+      return key & (bitmask - 1);
+    }
   // private
 };  // struct HashmapAccumulator
 

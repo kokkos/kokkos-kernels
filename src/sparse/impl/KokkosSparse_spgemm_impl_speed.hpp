@@ -354,14 +354,15 @@ struct KokkosSPGEMM
     all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
     scalar_t* vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm(shmem_key_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
-    // TODO: understand below parallel_for loop.
-    // GOAL: Inialize hm2 with correct __max_value_size.
+    // issue-508, TODO: understand and re-work below parallel_for loop.
+    // Inialize hm2 with correct max_value_size and hashOpRHS
+    // global_memory_hash_size is computed, per team of threads -- this is hashOpRHS.
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(0,
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::modulo>
+    hm2(0, 0,
         NULL, NULL, NULL, NULL);
     /*
     KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>

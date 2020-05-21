@@ -238,8 +238,8 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-    hm2(max_row_size,NULL, NULL, NULL, NULL);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(max_row_size, pow2_hash_func, NULL, NULL, NULL, NULL);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -311,8 +311,8 @@ struct KokkosSPGEMM
 
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-    hm2(max_row_size,NULL, NULL, NULL, NULL);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(max_row_size, pow2_hash_func, NULL, NULL, NULL, NULL);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -546,8 +546,8 @@ struct KokkosSPGEMM
     //the number of elements in a row, so the nnz_lno_t can be used instead of size_type here.
 
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_hash_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm(shmem_hash_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
     size_type rowBegin = row_map(row_ind);
     size_type rowBeginP = rowBegin;
@@ -557,11 +557,11 @@ struct KokkosSPGEMM
 #ifdef KOKKOSKERNELSMOREMEM
     //same as second level hash map.
     //second level hashmap.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::modulo>
       hm2(left_work, left_work, pset_index_begins + rowBegin, pset_index_nexts+ rowBegin, pset_index_entries+ rowBegin, pset_entries+ rowBegin);
 #else
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm2(left_work, /*pset_index_begins + rowBegin*/ NULL,
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm2(left_work, pow2_hash_func, /*pset_index_begins + rowBegin*/ NULL,
           NULL, //pset_index_nexts+ rowBegin,
           pset_index_entries+ rowBegin,
           pset_entries+ rowBegin);
@@ -667,7 +667,7 @@ struct KokkosSPGEMM
       //if one of the inserts was successfull, which means we run out shared memory
       if (overall_num_unsuccess){
         nnz_lno_t hash_ = -1;
-        if (num_unsuccess) hash_ = n_set_index % hm2.hash_key_size;
+        if (num_unsuccess) hash_ = n_set_index % left_work;
         hm2.vector_atomic_insert_into_hash_mergeOr(
             teamMember, vector_size, hash_,n_set_index,n_set, used_hash_sizes + 1);
       }

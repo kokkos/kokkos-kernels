@@ -883,7 +883,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2(MaxRoughNonZero, nullptr, nullptr, nullptr, nullptr);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd> 
+    hm2(MaxRoughNonZero, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -1033,7 +1034,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2(MaxRoughNonZero, nullptr, nullptr, nullptr, nullptr);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(MaxRoughNonZero, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -1116,13 +1118,14 @@ struct KokkosSPGEMM
   void operator()(const MultiCoreTag2&, const team_member_t & teamMember) const {
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
-
+    const nnz_lno_t chunk_size = 0;
 
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
     nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
     while (tmp == NULL){
       tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+      // issue-508, TODO: chunk_size = ??
     }
 
     //set first to globally used hash indices.
@@ -1130,7 +1133,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd> 
+    hm2(chunk_size, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);

@@ -229,13 +229,14 @@ struct KokkosSPGEMM
 
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
-
+    nnz_lno_t chunk_size = 0;
 
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
     while (tmp == NULL){
       tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
+      // issue-508, TODO: chunk_size = ??
     }
 
     //set first to globally used hash indices.
@@ -243,7 +244,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd> 
+    hm2(chunk_size, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -442,7 +444,8 @@ struct KokkosSPGEMM
     
     using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
                                                                         nnz_lno_t,
-                                                                        nnz_lno_t>;
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
 
     if (row_index >= numrows) return;
 
@@ -483,10 +486,10 @@ struct KokkosSPGEMM
     //printf("begins:%ld, nexts:%ld, keys:%ld, vals:%ld\n", begins, nexts, keys, vals);
     //return;
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_key_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
-    hashmapType hm2(MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
@@ -988,7 +991,8 @@ struct KokkosSPGEMM
     using hashmapType = 
       KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
                                                       nnz_lno_t,
-                                                      nnz_lno_t>;
+                                                      nnz_lno_t,
+                                                      KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
 
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
@@ -1002,7 +1006,7 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    hashmapType hm2(MaxRoughNonZero, 
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
                     nullptr, nullptr, 
                     nullptr, nullptr);
 
@@ -1083,7 +1087,8 @@ struct KokkosSPGEMM
     
     using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
                                                                         nnz_lno_t,
-                                                                        nnz_lno_t>;
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
     if (row_index >= numrows) return;
 
 
@@ -1125,10 +1130,10 @@ struct KokkosSPGEMM
     //printf("begins:%ld, nexts:%ld, keys:%ld, vals:%ld\n", begins, nexts, keys, vals);
     //return;
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_key_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
-    hashmapType hm2(MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
@@ -2631,14 +2636,15 @@ struct KokkosSPGEMM
     
     using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
                                                                         nnz_lno_t,
-                                                                        nnz_lno_t>;
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
     if (row_index >= numrows) return;
     //get row index.
 
     nnz_lno_t *globally_used_hash_indices = NULL;
     nnz_lno_t globally_used_hash_count = 0;
     nnz_lno_t used_hash_size = 0;
-    hashmapType hm2(MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
@@ -2724,7 +2730,8 @@ struct KokkosSPGEMM
     
     using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
                                                                         nnz_lno_t,
-                                                                        nnz_lno_t>;
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
     
     if (row_index >= numrows) return;
 
@@ -2767,10 +2774,10 @@ struct KokkosSPGEMM
     //printf("begins:%ld, nexts:%ld, keys:%ld, vals:%ld\n", begins, nexts, keys, vals);
     //return;
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::modulo>
       hm(shared_memory_hash_size, shared_memory_hash_size, begins, nexts, keys, vals);
 
-    hashmapType hm2(MaxRoughNonZero,
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
                     nullptr, nullptr,
                     nullptr, nullptr);
 
