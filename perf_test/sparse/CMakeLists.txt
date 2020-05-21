@@ -43,10 +43,12 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_spmv.cpp
   )
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-  sparse_spmv_merge
-  SOURCES KokkosSparse_spmv_merge.cpp
-  )
+IF(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  KOKKOSKERNELS_ADD_EXECUTABLE(
+    sparse_spmv_merge
+    SOURCES KokkosSparse_spmv_merge.cpp
+    )
+ENDIF()
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_sptrsv
