@@ -61,8 +61,6 @@
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
-#else
-blahblah
 #endif
 
 namespace KokkosKernels{
