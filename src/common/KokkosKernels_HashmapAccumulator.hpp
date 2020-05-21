@@ -179,6 +179,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
@@ -216,6 +218,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
@@ -253,6 +257,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
     size_type i = hash_begins[hash];
@@ -275,6 +281,8 @@ struct HashmapAccumulator
       key_type key,
       value_type value)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
     size_type i = hash_begins[hash];
@@ -300,6 +308,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     //this function will directly insert, won't check if it exists already.
     if (*used_size_ >= __max_value_size) return __insert_full;
     size_type my_index = (*used_size_)++;
@@ -329,6 +339,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes) // TODO figure out what this "used_hashes" is for
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     //this function will directly insert, won't check if it exists already.
     if (*used_size_ >= __max_value_size) return __insert_full;
     size_type my_index = (*used_size_)++;
@@ -359,6 +371,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     // issue-508, TODO: ensure that i < __max_value_size, but
     // need information about length of keys, values, and hash_nexts first!
     size_type i = hash_begins[hash];
@@ -394,6 +408,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
@@ -427,7 +443,7 @@ struct HashmapAccumulator
       const team_member_t & /* teamMember */,
       const int /* vector_size */,
 
-      size_type &hash,
+      size_type hash,
       const key_type key,
       const value_type value,
       volatile size_type *used_size_,
@@ -435,6 +451,8 @@ struct HashmapAccumulator
       size_type *used_hashes
       )
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     if (hash != -1) {
       size_type i = hash_begins[hash];
 
@@ -487,12 +505,14 @@ struct HashmapAccumulator
   int vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length (
       const team_member_t & /* teamMember */,
       const int /* vector_size */,
-      size_type &hash,
+      size_type hash,
       const key_type key,
       const value_type value,
       volatile size_type *used_size_,
       const size_type max_value_size_)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     if (hash != -1) {
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]) {
@@ -571,11 +591,13 @@ struct HashmapAccumulator
   int vector_atomic_insert_into_hash (
       const team_member_t & /* teamMember */,
       const int &/* vector_size */,
-      const size_type &hash,
+      size_type hash,
       const key_type &key,
       volatile size_type *used_size_
       )
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     if (hash != -1) {
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]) {
@@ -627,11 +649,13 @@ struct HashmapAccumulator
   int vector_atomic_insert_into_hash_mergeOr (
       const team_member_t & /* teamMember */,
       const int &/* vector_size */,
-      const size_type &hash,
+      size_type hash,
       const key_type &key,
       const value_type &value,
       volatile size_type *used_size_)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     if (hash != -1){
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]){
@@ -685,13 +709,15 @@ struct HashmapAccumulator
   int vector_atomic_insert_into_hash_mergeOr_TrackHashes (
       const team_member_t & /* teamMember */,
       const int &/* vector_size */,
-      const size_type &hash,
+      size_type hash,
       const key_type &key,
       const value_type &value,
       volatile size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    hash = __compute_hash(key, __hashOpRHS);
+
     if (hash != -1){
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]) {
@@ -744,12 +770,14 @@ struct HashmapAccumulator
       const team_member_t & /* teamMember */,
       const int &/* vector_size */,
 
-      const size_type &hash,
+      size_type hash,
       const key_type &key,
       volatile size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+   hash = __compute_hash(key, __hashOpRHS);
+
     if (hash != -1) {
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]) {
