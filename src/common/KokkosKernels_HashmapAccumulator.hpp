@@ -65,11 +65,10 @@ template <typename size_type, typename key_type, typename value_type>
  * \var keys:        This stores the column indices of (??) [Ids]
  * \var values:      This store the (matrix element?) numerical value of (??) [Values]
  * 
- * \var INSERT_SUCCESS: Value to return upon insertion success.
- * \var INSERT_FULL:    Value to return upon insertion failure.
- * 
  * Private members:
  * \var __max_value_size: The length of the two arrays (keys and hash_nexts)
+ * \var __insert_success: Value to return upon insertion success.
+ * \var __insert_full:    Value to return upon insertion failure.
  */
 struct HashmapAccumulator
 {
@@ -97,10 +96,6 @@ struct HashmapAccumulator
   key_type*   keys;
   value_type* values;
 
-  const int INSERT_SUCCESS;
-  const int INSERT_FULL;
-
-
   /**
    * \brief default constructor HashmapAccumulator
    * Sets used_size to 0, INSERT_SUCCESS to 0, and INSERT_FULL to 1.
@@ -113,8 +108,8 @@ struct HashmapAccumulator
         hash_nexts(),
         keys(),
         values(), 
-        INSERT_SUCCESS(0), 
-        INSERT_FULL(1),
+        __insert_success(0), 
+        __insert_full(1),
         __max_value_size()  {}
 
 
@@ -144,8 +139,8 @@ struct HashmapAccumulator
         hash_nexts(hash_nexts_),
         keys(keys_),
         values(values_), 
-        INSERT_SUCCESS(0), 
-        INSERT_FULL(1),
+        __insert_success(0), 
+        __insert_full(1),
         __max_value_size(max_value_size_)
         {}
 
@@ -166,11 +161,11 @@ struct HashmapAccumulator
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] | value;
-        return INSERT_SUCCESS;
+        return __insert_success;
       }
     }
 
-    if (*used_size_ >= __max_value_size) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return __insert_full;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
@@ -181,7 +176,7 @@ struct HashmapAccumulator
     hash_begins[hash] = my_index;
     keys[my_index] = key;
     values[my_index] = value;
-    return INSERT_SUCCESS;
+    return __insert_success;
   }
 
 
@@ -204,11 +199,11 @@ struct HashmapAccumulator
       if (keys[i] == key) {
         values2[i] = values2[i] | (values[i] & value);
         values[i] = values[i] | value;
-        return INSERT_SUCCESS;
+        return __insert_success;
       }
     }
 
-    if (*used_size_ >= __max_value_size) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return __insert_full;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
@@ -220,7 +215,7 @@ struct HashmapAccumulator
     keys[my_index] = key;
     values[my_index] = value;
     values2[my_index] = 0;
-    return INSERT_SUCCESS;
+    return __insert_success;
   }
 
 
@@ -244,10 +239,10 @@ struct HashmapAccumulator
         //values2[i] = values2[i] | (values[i] & value);
         values[i] = values[i] & value;
         ++values2[i];
-        return INSERT_SUCCESS;
+        return __insert_success;
       }
     }
-    return INSERT_FULL;
+    return __insert_full;
   }
 
 
@@ -284,7 +279,7 @@ struct HashmapAccumulator
       size_type *used_hashes)
   {
     //this function will directly insert, won't check if it exists already.
-    if (*used_size_ >= __max_value_size) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return __insert_full;
     size_type my_index = (*used_size_)++;
 
     keys[my_index] = key;
@@ -298,7 +293,7 @@ struct HashmapAccumulator
       hash_nexts[my_index] = hash_begins[hash];
       hash_begins[hash] = my_index;
     }
-    return INSERT_SUCCESS;
+    return __insert_success;
   }
 
 
@@ -313,7 +308,7 @@ struct HashmapAccumulator
       size_type *used_hashes) // TODO figure out what this "used_hashes" is for
   {
     //this function will directly insert, won't check if it exists already.
-    if (*used_size_ >= __max_value_size) return INSERT_FULL;
+    if (*used_size_ >= __max_value_size) return __insert_full;
     size_type my_index = (*used_size_)++;
 
     keys[my_index] = key;
@@ -326,7 +321,7 @@ struct HashmapAccumulator
       hash_nexts[my_index] = hash_begins[hash];
       hash_begins[hash] = my_index;
     }
-    return INSERT_SUCCESS;
+    return __insert_success;
   }
 
 
@@ -346,7 +341,7 @@ struct HashmapAccumulator
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] + value;
-        return INSERT_SUCCESS;
+        return __insert_success;
       }
     }
 
@@ -360,7 +355,7 @@ struct HashmapAccumulator
     hash_begins[hash] = my_index;
     keys[my_index] = key;
     values[my_index] = value;
-    return INSERT_SUCCESS;
+    return __insert_success;
   }
 
 
@@ -378,7 +373,7 @@ struct HashmapAccumulator
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
-        return INSERT_SUCCESS;
+        return __insert_success;
       }
     }
 
@@ -391,7 +386,7 @@ struct HashmapAccumulator
 
     hash_begins[hash] = my_index;
     keys[my_index] = key;
-    return INSERT_SUCCESS;
+    return __insert_success;
   }
 
 
@@ -422,17 +417,17 @@ struct HashmapAccumulator
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
           values[i] = values[i] + value;
-          return INSERT_SUCCESS;
+          return __insert_success;
         }
       }
     } else {
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
-      return INSERT_FULL;
+      return __insert_full;
     } else {
 
       keys[my_write_index] = key;
@@ -457,7 +452,7 @@ struct HashmapAccumulator
         used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
       hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
   }
 
@@ -479,23 +474,23 @@ struct HashmapAccumulator
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
           values[i] = values[i] + value;
-          return INSERT_SUCCESS;
+          return __insert_success;
         }
       }
     } else {
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
 
     // This appears to be redundant to the thread-safe atomic_fetch_add
     // conditional check below.
     // TODO: Remove this check?
     if (used_size_[0] >= max_value_size_) {
-      return INSERT_FULL;
+      return __insert_full;
     }
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= max_value_size_) {
-      return INSERT_FULL;
+      return __insert_full;
     } else {
       keys[my_write_index] = key;
       values[my_write_index] = value;
@@ -516,7 +511,7 @@ struct HashmapAccumulator
 
       size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
   }
 
@@ -561,17 +556,17 @@ struct HashmapAccumulator
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
-          return INSERT_SUCCESS;
+          return __insert_success;
         }
       }
     } else {
-        return INSERT_SUCCESS;
+        return __insert_success;
     }
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
-      return INSERT_FULL;
+      return __insert_full;
     } else {
 
       keys[my_write_index] = key;
@@ -592,7 +587,7 @@ struct HashmapAccumulator
 
       size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
   }
 
@@ -618,17 +613,17 @@ struct HashmapAccumulator
       for (; i != -1; i = hash_nexts[i]){
         if (keys[i] == key){
           values[i] = (key_type)values[i] | (key_type)value;
-          return INSERT_SUCCESS;
+          return __insert_success;
         }
       }
     } else {
-        return INSERT_SUCCESS;
+        return __insert_success;
     }
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
-      return INSERT_FULL;
+      return __insert_full;
     } else {
 
       keys[my_write_index] = key;
@@ -650,7 +645,7 @@ struct HashmapAccumulator
 
       size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
   }
 
@@ -678,17 +673,17 @@ struct HashmapAccumulator
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
           values[i] = (key_type)values[i] | (key_type)value;
-          return INSERT_SUCCESS;
+          return __insert_success;
         }
       }
     } else {
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
-      return INSERT_FULL;
+      return __insert_full;
     } else {
 
       keys[my_write_index] = key;
@@ -714,7 +709,7 @@ struct HashmapAccumulator
         used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
       hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
   }
 
@@ -736,17 +731,17 @@ struct HashmapAccumulator
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
           //values[i] = (key_type)values[i] | (key_type)value;
-          return INSERT_SUCCESS;
+          return __insert_success;
         }
       }
     } else {
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
-      return INSERT_FULL;
+      return __insert_full;
     } else {
 
       keys[my_write_index] = key;
@@ -770,12 +765,14 @@ struct HashmapAccumulator
         used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
       hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
+      return __insert_success;
     }
   }
   // end public members
   private:
     size_type __max_value_size;
+    const int __insert_success;
+    const int __insert_full;
   // private
 };  // struct HashmapAccumulator
 
