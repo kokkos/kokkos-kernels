@@ -106,8 +106,8 @@ namespace Experimental{
 
     cublasHandle_t getCublasHandle() {
       if(cublasHandle == 0) {
-	KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlas::singleton();
-	cublasHandle = s.cublasHandle;
+	KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();
+	cublasHandle = s.handle;
       }
       return cublasHandle;
     }

@@ -45,6 +45,8 @@
 #ifndef KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_
 #define KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_
 
+#include "KokkosBlas_tpl_spec.hpp"
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
 
