@@ -259,7 +259,9 @@ int main(int argc, char **argv) {
         out_file         = optarg;
         options.out_file = std::string(out_file);
         break;
-      case 'r': options.blas_routines = std::string(optarg);
+      case 'r': 
+        options.blas_routines = std::string(optarg);
+        break;
       case '?':
       default: __blas3_perf_test_input_error(argv, option_idx);
     }

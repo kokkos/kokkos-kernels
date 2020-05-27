@@ -494,6 +494,7 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   uint64_t seed = Kokkos::Impl::clock_tic();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
+  typename vta::HostMirror host_A;
   STATUS;
 
   trmm_args.side  = options.blas_args.trmm.trmm_args.c_str()[0];
@@ -502,14 +503,17 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   trmm_args.diag  = options.blas_args.trmm.trmm_args.c_str()[3];
   trmm_args.A     = vta("trmm_args.A", options.n, dim.a.m, dim.a.n);
   trmm_args.B     = vtb("trmm_args.B", options.n, dim.b.m, dim.b.n);
+  host_A = Kokkos::create_mirror_view(trmm_args.A);
 
   Kokkos::fill_random(trmm_args.A, rand_pool,
                       Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                    scalar_type>::max());
-  if (trmm_args.uplo == 'U' || trmm_args.uplo == 'u') {
+  Kokkos::deep_copy(host_A, trmm_args.A);
+
+  if (trmm_args.uplo == 'U' || trmm_args.uplo == 'u') {  
     // Make A upper triangular
     for (uint32_t k = 0; k < options.n; ++k) {
-      auto A = Kokkos::subview(trmm_args.A, k, Kokkos::ALL(), Kokkos::ALL());
+      auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 1; i < dim.a.m; i++) {
         for (int j = 0; j < i; j++) {
           A(i, j) = scalar_type(0);
@@ -521,7 +525,7 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
     // Kokkos::parallel_for("toLowerLoop", options.n, KOKKOS_LAMBDA (const int&
     // i) {
     for (uint32_t k = 0; k < options.n; ++k) {
-      auto A = Kokkos::subview(trmm_args.A, k, Kokkos::ALL(), Kokkos::ALL());
+      auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < dim.a.m - 1; i++) {
         for (int j = i + 1; j < dim.a.n; j++) {
           A(i, j) = scalar_type(0);
@@ -532,12 +536,13 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
 
   if (trmm_args.diag == 'U' || trmm_args.diag == 'u') {
     for (uint32_t k = 0; k < options.n; ++k) {
-      auto A = Kokkos::subview(trmm_args.A, k, Kokkos::ALL(), Kokkos::ALL());
+      auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < min_dim; i++) {
         A(i, i) = scalar_type(1);
       }
     }
   }
+  Kokkos::deep_copy(trmm_args.A, host_A);
 
   Kokkos::fill_random(trmm_args.B, rand_pool,
                       Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,

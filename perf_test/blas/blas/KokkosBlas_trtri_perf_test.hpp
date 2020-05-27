@@ -329,19 +329,23 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
   uint64_t seed = Kokkos::Impl::clock_tic();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
+  typename vta::HostMirror host_A;
   STATUS;
 
   trtri_args.uplo = options.blas_args.trtri.trtri_args.c_str()[0];
   trtri_args.diag = options.blas_args.trtri.trtri_args.c_str()[1];
   trtri_args.A    = vta("trtri_args.A", options.n, dim.a.m, dim.a.n);
+  host_A = Kokkos::create_mirror_view(trtri_args.A);
 
   Kokkos::fill_random(trtri_args.A, rand_pool,
                       Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                    scalar_type>::max());
+  Kokkos::deep_copy(host_A, trtri_args.A);
+
   if (trtri_args.uplo == 'U' || trtri_args.uplo == 'u') {
     // Make A upper triangular
     for (uint32_t k = 0; k < options.n; ++k) {
-      auto A = Kokkos::subview(trtri_args.A, k, Kokkos::ALL(), Kokkos::ALL());
+      auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 1; i < dim.a.m; i++) {
         for (int j = 0; j < i; j++) {
           A(i, j) = scalar_type(0);
@@ -353,7 +357,7 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
     // Kokkos::parallel_for("toLowerLoop", options.n, KOKKOS_LAMBDA (const int&
     // i) {
     for (uint32_t k = 0; k < options.n; ++k) {
-      auto A = Kokkos::subview(trtri_args.A, k, Kokkos::ALL(), Kokkos::ALL());
+      auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < dim.a.m - 1; i++) {
         for (int j = i + 1; j < dim.a.n; j++) {
           A(i, j) = scalar_type(0);
@@ -364,12 +368,14 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
 
   if (trtri_args.diag == 'U' || trtri_args.diag == 'u') {
     for (uint32_t k = 0; k < options.n; ++k) {
-      auto A = Kokkos::subview(trtri_args.A, k, Kokkos::ALL(), Kokkos::ALL());
+      auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < min_dim; i++) {
         A(i, i) = scalar_type(1);
       }
     }
   }
+
+  Kokkos::deep_copy(trtri_args.A, host_A);
 
   return trtri_args;
 }
