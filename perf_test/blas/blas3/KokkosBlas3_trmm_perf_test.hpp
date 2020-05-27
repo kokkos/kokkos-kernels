@@ -289,6 +289,7 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
   return;
 }
 
+#if !defined(KOKKOS_ENABLE_CUDA)
 template <class ExecutionSpace>
 struct parallel_blas_trmm {
   trmm_args_t trmm_args_;
@@ -304,9 +305,11 @@ struct parallel_blas_trmm {
                      &trmm_args_.diag, trmm_args_.alpha, svA, svB);
   }
 };
+#endif // !KOKKOS_ENABLE_CUDA
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
+  #if !defined(KOKKOS_ENABLE_CUDA)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -315,6 +318,7 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
   functor_type parallel_blas_trmm_functor(trmm_args);
 
   STATUS;
+
 
   Kokkos::parallel_for("parallelBlasWarmUpLoopTrmm",
                        Kokkos::RangePolicy<execution_space>(0, warm_up_n),
@@ -327,6 +331,12 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
                        parallel_blas_trmm_functor);
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
+  #else
+  std::cerr << std::string(__func__) << 
+    " disabled since KOKKOS_ENABLE_CUDA is defined." << 
+    std::endl;
+  __trmm_output_csv_row(options, trmm_args, -1);
+  #endif // !KOKKOS_ENABLE_CUDA
   return;
 }
 
