@@ -344,7 +344,6 @@ struct KokkosSPGEMM
       nnz_lno_t used_hash_sizes = 0;
 
       const size_type c_row_begin = rowmapC[row_index];
-      const size_type c_row_end = rowmapC[row_index + 1];
 
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
