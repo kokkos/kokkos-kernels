@@ -687,10 +687,7 @@ struct KokkosSPGEMM
 		      hm2.hash_nexts = (nnz_lno_t *) (globally_used_hash_indices + pow2_hash_size * 2);
 		      l2_allocated = true;
 	      }
-	      //then for those who failed we insert it again to L2-accumulator.
-	      nnz_lno_t hash = -1;
-	      if (num_unsuccess) hash = n_set_index & (pow2_hash_func);
-
+	      
 	      //this parallel_for is not really needed.
 	      //we just need a sync threads at the end of the insertion.
 	      //Basically, we do not want
@@ -702,9 +699,12 @@ struct KokkosSPGEMM
                  Kokkos::ThreadVectorRange(teamMember, vector_size),
 	          [&] (nnz_lno_t i) {
 #endif
+        //then for those who failed we insert it again to L2-accumulator.
+	      if (num_unsuccess) {
 		      hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-			      teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1,
+			      n_set_index,n_set, used_hash_sizes + 1,
 			      globally_used_hash_count, globally_used_hash_indices);
+        }
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
 		});
 #endif

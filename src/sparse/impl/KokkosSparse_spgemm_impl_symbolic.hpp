@@ -1222,17 +1222,14 @@ struct KokkosSPGEMM
             hm2.values = (nnz_lno_t *) (tmp);
           }
 
-          nnz_lno_t hash_ = -1;
-          if (num_unsuccess) hash_ = b_set_ind & pow2_hash_func;
-
-          //int insertion =
-          hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-              teamMember, vector_size,
-              hash_,b_set_ind,b_set,
-              used_hash_sizes + 1,
-              globally_used_hash_count, globally_used_hash_indices
-              );
-
+          if (num_unsuccess) {
+            //int insertion =
+            hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
+                b_set_ind,b_set,
+                used_hash_sizes + 1,
+                globally_used_hash_count, globally_used_hash_indices
+                );
+          }
         }
         left_work -= work_to_handle;
         rowBegin += work_to_handle;
@@ -2866,17 +2863,14 @@ struct KokkosSPGEMM
             hm2.values = (nnz_lno_t *) (tmp);
           }
 
-          nnz_lno_t hash_ = -1;
-          if (num_unsuccess) hash_ = b_set_ind & pow2_hash_func;
-
-          //int insertion =
-          hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-              teamMember, vector_size,
-              hash_,b_set_ind,b_set,
-              used_hash_sizes + 1,
-              globally_used_hash_count, globally_used_hash_indices
-              );
-
+          if (num_unsuccess) {
+            //int insertion =
+            hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
+                b_set_ind,b_set,
+                used_hash_sizes + 1,
+                globally_used_hash_count, globally_used_hash_indices
+                );
+          }
         }
         left_work -= work_to_handle;
         rowBegin += work_to_handle;

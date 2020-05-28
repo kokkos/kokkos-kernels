@@ -704,33 +704,27 @@ struct HashmapAccumulator
   //insertions will have the same key.
   //Insertion is simulteanous for the vector lanes of a thread.
   //used_size should be a shared pointer among the thread vectors
-  template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeOr_TrackHashes (
-      const team_member_t & /* teamMember */,
-      const int &/* vector_size */,
-      size_type hash,
       const key_type &key,
       const value_type &value,
       volatile size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
+    size_type i = hash_begins[hash];
+    size_type my_write_index;
+    size_type hashbeginning;
 
-    if (hash != -1){
-      size_type i = hash_begins[hash];
-      for (; i != -1; i = hash_nexts[i]) {
-        if (keys[i] == key) {
-          values[i] = (key_type)values[i] | (key_type)value;
-          return __insert_success;
-        }
+    for (; i != -1; i = hash_nexts[i]) {
+      if (keys[i] == key) {
+        values[i] = (key_type)values[i] | (key_type)value;
+        return __insert_success;
       }
-    } else {
-      return __insert_success;
     }
 
-    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
       return __insert_full;
@@ -753,8 +747,7 @@ struct HashmapAccumulator
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
-
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       if (hashbeginning == -1) {
         used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
@@ -772,6 +765,8 @@ struct HashmapAccumulator
       size_type *used_hashes)
   {
    size_type hash = __compute_hash(key, __hashOpRHS);
+   size_type my_write_index;
+   size_type hashbeginning;
 
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
@@ -781,7 +776,7 @@ struct HashmapAccumulator
       }
     }
 
-    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
       return __insert_full;
@@ -803,7 +798,7 @@ struct HashmapAccumulator
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       if (hashbeginning == -1) {
         used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
