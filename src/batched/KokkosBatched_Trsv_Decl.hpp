@@ -135,16 +135,16 @@ namespace KokkosBatched {
   KokkosBatched::TeamTrsvInternalLower<ALGOTYPE>::invoke(MEMBER,DIAG::use_unit_diag, N, ALPHA, A, AS1, AS0, B, BS) 
 
 #define KOKKOSBATCHED_TEAMVECTOR_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE,MEMBER,DIAG,M,N,ALPHA,A,AS0,AS1,B,BS) \
-  KokkosBatched::TeamVectorTrsvInternalLower::invoke(MEMBER,DIAG::use_unit_diag, M, ALPHA, A, AS0, AS1, B, BS)
+  KokkosBatched::TeamVectorTrsvInternalLower<ALGOTYPE>::invoke(MEMBER,DIAG::use_unit_diag, M, ALPHA, A, AS0, AS1, B, BS)
 
 #define KOKKOSBATCHED_TEAMVECTOR_TRSV_LOWER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE,MEMBER,DIAG,M,N,ALPHA,A,AS0,AS1,B,BS) \
-  KokkosBatched::TeamVectorTrsvInternalUpper::invoke(MEMBER,DIAG::use_unit_diag, N, ALPHA, A, AS1, AS0, B, BS)
+  KokkosBatched::TeamVectorTrsvInternalUpper<ALGOTYPE>::invoke(MEMBER,DIAG::use_unit_diag, N, ALPHA, A, AS1, AS0, B, BS)
 
 #define KOKKOSBATCHED_TEAMVECTOR_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE,MEMBER,DIAG,M,N,ALPHA,A,AS0,AS1,B,BS) \
-  KokkosBatched::TeamVectorTrsvInternalUpper::invoke(MEMBER,DIAG::use_unit_diag, M, ALPHA, A, AS0, AS1, B, BS)
+  KokkosBatched::TeamVectorTrsvInternalUpper<ALGOTYPE>::invoke(MEMBER,DIAG::use_unit_diag, M, ALPHA, A, AS0, AS1, B, BS)
 
 #define KOKKOSBATCHED_TEAMVECTOR_TRSV_UPPER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE,MEMBER,DIAG,M,N,ALPHA,A,AS0,AS1,B,BS) \
-  KokkosBatched::TeamVectorTrsvInternalLower::invoke(MEMBER,DIAG::use_unit_diag, N, ALPHA, A, AS1, AS0, B, BS) 
+  KokkosBatched::TeamVectorTrsvInternalLower<ALGOTYPE>::invoke(MEMBER,DIAG::use_unit_diag, N, ALPHA, A, AS1, AS0, B, BS) 
 
 #define KOKKOSBATCHED_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(MODETYPE,ALGOTYPE,MEMBER,DIAG,M,N,ALPHA,A,AS0,AS1,B,BS) \
   if (std::is_same<MODETYPE,KokkosBatched::Mode::Serial>::value) {      \
