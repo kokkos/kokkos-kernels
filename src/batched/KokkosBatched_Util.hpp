@@ -286,6 +286,14 @@ namespace KokkosBatched {
       struct CompactMKL {
         static const char* name() { return "CompactMKL"; }
       };
+
+      // When this is first developed, unblocked algorithm is a naive implementation 
+      // and blocked algorithm uses register blocking variant of algorithm (manual unrolling). 
+      // This distinction is almost meaningless and it just adds more complications. 
+      // Eventually, the blocked version will be removed and we only use the default 
+      // algorithm. For testing and development purpose, we still leave algorithm tag
+      // in the template arguments.
+      using Default = Unblocked;
     };
 
     using Gemm = Level3;
@@ -317,6 +325,14 @@ namespace KokkosBatched {
       };
       struct MKL {};
       struct CompactMKL {};
+
+      // When this is first developed, unblocked algorithm is a naive implementation 
+      // and blocked algorithm uses register blocking variant of algorithm (manual unrolling). 
+      // This distinction is almost meaningless and it just adds more complications. 
+      // Eventually, the blocked version will be removed and we only use the default 
+      // algorithm. For testing and development purpose, we still leave algorithm tag
+      // in the template arguments.
+      using Default = Unblocked;
     };
 
     using Gemv = Level2;
