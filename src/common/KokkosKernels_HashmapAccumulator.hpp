@@ -764,30 +764,21 @@ struct HashmapAccumulator
   }
 
 
-  template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_TrackHashes (
-      const team_member_t & /* teamMember */,
-      const int &/* vector_size */,
-
-      size_type hash,
       const key_type &key,
       volatile size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-   hash = __compute_hash(key, __hashOpRHS);
+   size_type hash = __compute_hash(key, __hashOpRHS);
 
-    if (hash != -1) {
-      size_type i = hash_begins[hash];
-      for (; i != -1; i = hash_nexts[i]) {
-        if (keys[i] == key) {
-          //values[i] = (key_type)values[i] | (key_type)value;
-          return __insert_success;
-        }
+    size_type i = hash_begins[hash];
+    for (; i != -1; i = hash_nexts[i]) {
+      if (keys[i] == key) {
+        //values[i] = (key_type)values[i] | (key_type)value;
+        return __insert_success;
       }
-    } else {
-      return __insert_success;
     }
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
