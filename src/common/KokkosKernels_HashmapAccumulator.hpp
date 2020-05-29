@@ -186,8 +186,7 @@ struct HashmapAccumulator
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]) {
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] | value;
         return __insert_success;
@@ -228,8 +227,7 @@ struct HashmapAccumulator
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]) {
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values2[i] = values2[i] | (values[i] & value);
         values[i] = values[i] | value;
@@ -272,8 +270,7 @@ struct HashmapAccumulator
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]) {
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         //values2[i] = values2[i] | (values[i] & value);
         values[i] = values[i] & value;
@@ -299,8 +296,7 @@ struct HashmapAccumulator
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i])
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i])
     {
       if (keys[i] == key) {
         return values[i] & value;
@@ -327,7 +323,6 @@ struct HashmapAccumulator
       return __insert_success;
 
     //this function will directly insert, won't check if it exists already.
-    hash = __compute_hash(key, __hashOpRHS);
     if (*used_size_ >= __max_value_size) return __insert_full;
     my_index = (*used_size_)++;
 
@@ -335,6 +330,7 @@ struct HashmapAccumulator
     values[my_index] = value;
     values2[my_index] = 1;
 
+    hash = __compute_hash(key, __hashOpRHS);
     if (hash_begins[hash] == -1) {
       hash_begins[hash] = my_index;
       used_hashes[used_hash_size[0]++] = hash;
@@ -361,13 +357,13 @@ struct HashmapAccumulator
       return __insert_success;
 
     //this function will directly insert, won't check if it exists already.
-    hash = __compute_hash(key, __hashOpRHS);
     if (*used_size_ >= __max_value_size) return __insert_full;
     my_index = (*used_size_)++;
 
     keys[my_index] = key;
     values[my_index] = value;
 
+    hash = __compute_hash(key, __hashOpRHS);
     if (hash_begins[hash] == -1) {
       hash_begins[hash] = my_index;
       used_hashes[used_hash_size[0]++] = hash;
@@ -398,8 +394,7 @@ struct HashmapAccumulator
     // issue-508, TODO: ensure that i < __max_value_size, but
     // need information about length of keys, values, and hash_nexts first!
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]) {
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] + value;
         return __insert_success;
@@ -436,8 +431,7 @@ struct HashmapAccumulator
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]) {
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         return __insert_success;
       }
@@ -625,8 +619,7 @@ struct HashmapAccumulator
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]) {
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         return __insert_success;
       }
@@ -679,8 +672,7 @@ struct HashmapAccumulator
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
-    i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]){
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]){
       if (keys[i] == key){
         values[i] = (key_type)values[i] | (key_type)value;
         return __insert_success;
@@ -737,7 +729,6 @@ struct HashmapAccumulator
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
-
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = (key_type)values[i] | (key_type)value;
@@ -791,7 +782,6 @@ struct HashmapAccumulator
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
-
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         //values[i] = (key_type)values[i] | (key_type)value;
