@@ -388,7 +388,6 @@ namespace KokkosSparse{
 			const size_type adjind = i + rowBegin;
 			nnz_lno_t b_col_ind = entriesB[adjind];
 			scalar_t b_val = valuesB[adjind] * valA;
-			nnz_lno_t hash = b_col_ind & pow2_hash_func;
 
 			hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
 			  b_col_ind, b_val,
