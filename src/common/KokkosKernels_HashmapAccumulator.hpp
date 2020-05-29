@@ -180,11 +180,13 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    size_type hash, i, my_index;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] | value;
@@ -193,7 +195,7 @@ struct HashmapAccumulator
     }
 
     if (*used_size_ >= __max_value_size) return __insert_full;
-    size_type my_index = (*used_size_)++;
+    my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
       used_hashes[used_hash_size[0]++] = hash;
@@ -220,11 +222,13 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    size_type hash, i, my_index;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values2[i] = values2[i] | (values[i] & value);
@@ -234,7 +238,7 @@ struct HashmapAccumulator
     }
 
     if (*used_size_ >= __max_value_size) return __insert_full;
-    size_type my_index = (*used_size_)++;
+    my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
       used_hashes[used_hash_size[0]++] = hash;
@@ -260,13 +264,15 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    size_type hash, i;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         //values2[i] = values2[i] | (values[i] & value);
@@ -285,13 +291,15 @@ struct HashmapAccumulator
       key_type key,
       value_type value)
   {
+    size_type hash, i;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i])
     {
       if (keys[i] == key) {
@@ -313,13 +321,15 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    size_type hash, my_index;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will directly insert, won't check if it exists already.
+    hash = __compute_hash(key, __hashOpRHS);
     if (*used_size_ >= __max_value_size) return __insert_full;
-    size_type my_index = (*used_size_)++;
+    my_index = (*used_size_)++;
 
     keys[my_index] = key;
     values[my_index] = value;
@@ -345,13 +355,15 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes) // TODO figure out what this "used_hashes" is for
   {
+    size_type hash, my_index;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will directly insert, won't check if it exists already.
+    hash = __compute_hash(key, __hashOpRHS);
     if (*used_size_ >= __max_value_size) return __insert_full;
-    size_type my_index = (*used_size_)++;
+    my_index = (*used_size_)++;
 
     keys[my_index] = key;
     values[my_index] = value;
@@ -378,13 +390,15 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    size_type hash, i, my_index;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
     // issue-508, TODO: ensure that i < __max_value_size, but
     // need information about length of keys, values, and hash_nexts first!
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] + value;
@@ -392,7 +406,7 @@ struct HashmapAccumulator
       }
     }
 
-    size_type my_index = (*used_size_)++;
+    my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
       used_hashes[used_hash_size[0]++] = hash;
@@ -416,18 +430,20 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    size_type hash, i, my_index;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         return __insert_success;
       }
     }
 
-    size_type my_index = (*used_size_)++;
+    my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1) {
       used_hashes[used_hash_size[0]++] = hash;
@@ -456,12 +472,14 @@ struct HashmapAccumulator
       size_type *used_hashes
       )
   {
+    size_type hash, i, my_write_index, hashbeginning;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
+    hash = __compute_hash(key, __hashOpRHS);
     if (hash != -1) {
-      size_type i = hash_begins[hash];
+      i = hash_begins[hash];
 
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
@@ -473,7 +491,7 @@ struct HashmapAccumulator
       return __insert_success;
     }
 
-    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
       return __insert_full;
@@ -496,7 +514,7 @@ struct HashmapAccumulator
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       if (hashbeginning == -1) {
         used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
@@ -518,10 +536,10 @@ struct HashmapAccumulator
       volatile size_type *used_size_,
       const size_type max_value_size_)
   {
-    if (key == -1)
-      return __insert_success;
     // Cannot compute hash here due to impl_speed use-case
     //hash = __compute_hash(key, __hashOpRHS);
+    if (key == -1)
+      return __insert_success;
 
     if (hash != -1) {
       size_type i = hash_begins[hash];
@@ -584,6 +602,7 @@ struct HashmapAccumulator
   {
     if (key == -1)
       return __insert_success;
+
     return vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(nullptr,
                                                                                0,
                                                                                __compute_hash(key, __hashOpRHS),
@@ -600,18 +619,20 @@ struct HashmapAccumulator
       volatile size_type *used_size_
       )
   {
+    size_type hash, i, my_write_index, hashbeginning;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         return __insert_success;
       }
     }
 
-    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
       return __insert_full;
@@ -633,7 +654,7 @@ struct HashmapAccumulator
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
       return __insert_success;
     }
@@ -652,11 +673,13 @@ struct HashmapAccumulator
       const value_type &value,
       volatile size_type *used_size_)
   {
+    size_type hash, i, my_write_index, hashbeginning;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
 
-    size_type i = hash_begins[hash];
+    hash = __compute_hash(key, __hashOpRHS);
+    i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]){
       if (keys[i] == key){
         values[i] = (key_type)values[i] | (key_type)value;
@@ -664,7 +687,7 @@ struct HashmapAccumulator
       }
     }
 
-    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
       return __insert_full;
@@ -687,7 +710,7 @@ struct HashmapAccumulator
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
       return __insert_success;
     }
@@ -708,14 +731,14 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    size_type hash, i, my_write_index, hashbeginning;
+
     if (key == -1)
       return __insert_success;
-    size_type hash = __compute_hash(key, __hashOpRHS);
-    size_type i = hash_begins[hash];
-    size_type my_write_index;
-    size_type hashbeginning;
 
-    for (; i != -1; i = hash_nexts[i]) {
+    hash = __compute_hash(key, __hashOpRHS);
+
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = (key_type)values[i] | (key_type)value;
         return __insert_success;
@@ -762,17 +785,14 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    size_type hash;
-    size_type my_write_index;
-    size_type hashbeginning;
+    size_type hash, i, my_write_index, hashbeginning;
 
     if (key == -1)
       return __insert_success;
 
     hash = __compute_hash(key, __hashOpRHS);
 
-    size_type i = hash_begins[hash];
-    for (; i != -1; i = hash_nexts[i]) {
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         //values[i] = (key_type)values[i] | (key_type)value;
         return __insert_success;
