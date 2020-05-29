@@ -180,6 +180,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
@@ -218,6 +220,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
@@ -256,6 +260,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will only try to do an AND operation with
@@ -279,6 +285,8 @@ struct HashmapAccumulator
       key_type key,
       value_type value)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will only try to do an AND operation with
@@ -305,6 +313,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will directly insert, won't check if it exists already.
@@ -335,6 +345,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes) // TODO figure out what this "used_hashes" is for
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will directly insert, won't check if it exists already.
@@ -366,6 +378,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     // issue-508, TODO: ensure that i < __max_value_size, but
@@ -402,6 +416,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
@@ -440,6 +456,8 @@ struct HashmapAccumulator
       size_type *used_hashes
       )
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     if (hash != -1) {
@@ -500,6 +518,8 @@ struct HashmapAccumulator
       volatile size_type *used_size_,
       const size_type max_value_size_)
   {
+    if (key == -1)
+      return __insert_success;
     // Cannot compute hash here due to impl_speed use-case
     //hash = __compute_hash(key, __hashOpRHS);
 
@@ -562,6 +582,8 @@ struct HashmapAccumulator
       const value_type value,
       volatile size_type *used_size_)
   {
+    if (key == -1)
+      return __insert_success;
     return vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(nullptr,
                                                                                0,
                                                                                __compute_hash(key, __hashOpRHS),
@@ -578,6 +600,8 @@ struct HashmapAccumulator
       volatile size_type *used_size_
       )
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
@@ -628,6 +652,8 @@ struct HashmapAccumulator
       const value_type &value,
       volatile size_type *used_size_)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
@@ -682,6 +708,8 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
+    if (key == -1)
+      return __insert_success;
     size_type hash = __compute_hash(key, __hashOpRHS);
     size_type i = hash_begins[hash];
     size_type my_write_index;
@@ -734,9 +762,14 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-   size_type hash = __compute_hash(key, __hashOpRHS);
-   size_type my_write_index;
-   size_type hashbeginning;
+    size_type hash;
+    size_type my_write_index;
+    size_type hashbeginning;
+
+    if (key == -1)
+      return __insert_success;
+
+    hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
