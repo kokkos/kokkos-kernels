@@ -160,24 +160,24 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgo
   return 0;
 }
 template <typename crsMat_t, typename device>
-bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
+bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
 
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  size_t nrows1 = output_mat1.numRows();
-  size_t nentries1 = output_mat1.graph.entries.extent(0) ;
-  size_t nvals1 = output_mat1.values.extent(0);
+  size_t nrows_actual = output_mat_actual.numRows();
+  size_t nentries_actual = output_mat_actual.graph.entries.extent(0) ;
+  size_t nvals_actual = output_mat_actual.values.extent(0);
 
-  size_t nrows2 = output_mat2.numRows();
-  size_t nentries2 = output_mat2.graph.entries.extent(0) ;
-  size_t nvals2 = output_mat2.values.extent(0);
+  size_t nrows_reference = output_mat_reference.numRows();
+  size_t nentries_reference = output_mat_reference.graph.entries.extent(0) ;
+  size_t nvals_reference = output_mat_reference.values.extent(0);
 
 
-  lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
-  scalar_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals1);
+  lno_nnz_view_t h_ent_actual (Kokkos::ViewAllocateWithoutInitializing("h_ent_actual"), nentries_actual);
+  scalar_view_t h_vals_actual (Kokkos::ViewAllocateWithoutInitializing("h_vals_actual"), nvals_actual);
 
 
   KokkosKernels::Impl::kk_sort_graph<typename graph_t::row_map_type,
@@ -187,23 +187,25 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
     scalar_view_t,
     typename device::execution_space
     >(
-    output_mat1.graph.row_map, output_mat1.graph.entries, output_mat1.values,
-    h_ent1, h_vals1
+    output_mat_actual.graph.row_map, 
+    output_mat_actual.graph.entries, 
+    output_mat_actual.values,
+    h_ent_actual, h_vals_actual
   );
 
-  lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
-  scalar_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals2);
+  lno_nnz_view_t h_ent_reference (Kokkos::ViewAllocateWithoutInitializing("h_ent_reference"), nentries_reference);
+  scalar_view_t h_vals_reference (Kokkos::ViewAllocateWithoutInitializing("h_vals_reference"), nvals_reference);
 
-  if (nrows1 != nrows2) { 
-     std::cout << "nrows1:" << nrows1 << " nrows2:" << nrows2 << std::endl;
+  if (nrows_actual != nrows_reference) { 
+     std::cout << "nrows_actual:" << nrows_actual << " nrows_reference:" << nrows_reference << std::endl;
      return false;
   }
-  if (nentries1 != nentries2) {
-    std::cout << "nentries1:" << nentries1 << " nentries2:" << nentries2 << std::endl;
+  if (nentries_actual != nentries_reference) {
+    std::cout << "nentries_actual:" << nentries_actual << " nentries_reference:" << nentries_reference << std::endl;
     return false;
   }
-  if (nvals1 != nvals2) {
-    std::cout << "nvals1:" << nvals1 << " nvals2:" << nvals2 << std::endl;
+  if (nvals_actual != nvals_reference) {
+    std::cout << "nvals_actual:" << nvals_actual << " nvals_reference:" << nvals_reference << std::endl;
     return false;
   }
 
@@ -215,32 +217,34 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
       scalar_view_t,
       typename device::execution_space
       >(
-      output_mat2.graph.row_map, output_mat2.graph.entries, output_mat2.values,
-      h_ent2, h_vals2
+      output_mat_reference.graph.row_map, 
+      output_mat_reference.graph.entries, 
+      output_mat_reference.values,
+      h_ent_reference, h_vals_reference
     );
 
   bool is_identical = true;
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <typename graph_t::row_map_type, typename graph_t::row_map_type, typename lno_view_t::value_type,
-      typename device::execution_space>(output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
+      typename device::execution_space>(output_mat1.graph.row_map, output_mat_reference.graph.row_map, 0);
 
   if (!is_identical) {
     std::cout << "rowmaps are different." << std::endl;
     std::cout << "Actual rowmap:\n";
-    KokkosKernels::Impl::kk_print_1Dview(output_mat1.graph.row_map);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.graph.row_map);
     std::cout << "Correct rowmap (SPGEMM_DEBUG):\n";
-    KokkosKernels::Impl::kk_print_1Dview(output_mat2.graph.row_map);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.graph.row_map);
     return false;
   }
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(h_ent1, h_ent2, 0 );
+      typename device::execution_space>(h_ent_actual, h_ent_reference, 0 );
 
   if (!is_identical) {
     std::cout << "entries are different." << std::endl;
-    KokkosKernels::Impl::kk_print_1Dview(h_ent1);
-    KokkosKernels::Impl::kk_print_1Dview(h_ent2);
+    KokkosKernels::Impl::kk_print_1Dview(h_ent_actual);
+    KokkosKernels::Impl::kk_print_1Dview(h_ent_reference);
     return false;
   }
 
@@ -251,12 +255,12 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <scalar_view_t, scalar_view_t, eps_type,
-      typename device::execution_space>(h_vals1, h_vals2, eps);
+      typename device::execution_space>(h_vals_actual, h_vals_reference, eps);
 
   if (!is_identical) {
     std::cout << "values are different." << std::endl;
-    KokkosKernels::Impl::kk_print_1Dview(output_mat1.values);
-    KokkosKernels::Impl::kk_print_1Dview(output_mat2.values);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.values);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.values);
 
     return false;
   }
