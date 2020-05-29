@@ -407,21 +407,18 @@ struct KokkosSPGEMM
           nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work_);
           nnz_lno_t b_col_ind = -1;
           scalar_t b_val = -1;
-          nnz_lno_t hash = -1;
           Kokkos::parallel_for(
               Kokkos::ThreadVectorRange(teamMember, work_to_handle),
               [&] (nnz_lno_t i) {
             const size_type adjind = i + rowBegin;
             b_col_ind = entriesB[adjind];
             b_val = valuesB[adjind] * valA;
-            //hash = b_col_ind % shmem_key_size;
-            hash = b_col_ind & shared_memory_hash_func;
           });
 
           int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAdd(
-              teamMember, vector_size,
-              hash, b_col_ind, b_val,
-              used_hash_sizes);
+                                b_col_ind, b_val,
+                                used_hash_sizes
+                              );
 
           int overall_num_unsuccess = 0;
 

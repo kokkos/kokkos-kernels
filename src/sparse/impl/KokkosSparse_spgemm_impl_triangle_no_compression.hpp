@@ -586,15 +586,13 @@ struct KokkosSPGEMM
 
           nnz_lno_t b_set_ind = entriesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
-          nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
           //insert it to first hash.
           hm2.sequential_insert_into_hash_mergeOr_TriangleCount_TrackHashes(
-              hash,
-              b_set_ind, b_set, values2,
-              &used_hash_size,
-              &globally_used_hash_count,
-              globally_used_hash_indices
+            b_set_ind, b_set, values2,
+            &used_hash_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
       }
@@ -735,19 +733,18 @@ struct KokkosSPGEMM
           const size_type adjind = i + min_row_begin;
           nnz_lno_t b_set_ind = entriesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
-          nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
 
           //std::cout << "\t union hash:" << hash << " bset:" << b_set << " b_set_ind:" << b_set_ind << std::endl;
 
           //insert it to first hash.
           // issue-508, TODO: this invocation is not correct.
+          
           hm2.sequential_insert_into_hash_TriangleCount_TrackHashes(
-              hash,
-              b_set_ind, b_set, values2,
-              &used_hash_size,
-              &globally_used_hash_count,
-              globally_used_hash_indices
+            b_set_ind, b_set, values2,
+            &used_hash_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
 
@@ -768,16 +765,14 @@ struct KokkosSPGEMM
 
             nnz_lno_t b_set_ind = entriesB[adjind];
             nnz_lno_t b_set = entriesSetsB[adjind];
-            nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
             //std::cout << "\t and hash:" << hash << " bset:" << b_set << " b_set_ind:" << b_set_ind << std::endl;
             //insert it to first hash.
             hm2.sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes(
-                hash,
-                b_set_ind, b_set, values2,
-                &used_hash_size,
-                hm2.max_value_size,&globally_used_hash_count,
-                globally_used_hash_indices
+              b_set_ind, b_set, values2,
+              &used_hash_size,
+              &globally_used_hash_count,
+              globally_used_hash_indices
             );
           }
         }

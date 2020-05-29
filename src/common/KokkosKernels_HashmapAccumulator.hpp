@@ -174,14 +174,13 @@ struct HashmapAccumulator
   //Insertion is sequential, no race condition for the insertion.
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_mergeOr_TrackHashes (
-      size_type hash,
       key_type key,
       value_type value,
       size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
@@ -212,7 +211,6 @@ struct HashmapAccumulator
   //Assume that there are 2 values for triangle count.
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_mergeOr_TriangleCount_TrackHashes (
-      size_type hash,
       key_type key,
       value_type value,
       value_type *values2,
@@ -220,7 +218,7 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
@@ -251,7 +249,6 @@ struct HashmapAccumulator
   //L x Incidence
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes (
-      size_type hash,
       key_type key,
       value_type value,
       value_type *values2,
@@ -259,7 +256,7 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
@@ -279,11 +276,10 @@ struct HashmapAccumulator
   //this is used in LxL or Incidence^T x L
   KOKKOS_INLINE_FUNCTION
   value_type sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes (
-      size_type hash,
       key_type key,
       value_type value)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will only try to do an AND operation with
     //existing keys. If the key is not there, returns __insert_full.
@@ -302,7 +298,6 @@ struct HashmapAccumulator
   //L x Incidence
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_TriangleCount_TrackHashes (
-      size_type hash,
       key_type key,
       value_type value,
       value_type *values2,
@@ -310,7 +305,7 @@ struct HashmapAccumulator
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will directly insert, won't check if it exists already.
     if (*used_size_ >= __max_value_size) return __insert_full;
@@ -334,14 +329,13 @@ struct HashmapAccumulator
   //this is used in LxL or Incidence^T x L
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_TriangleCount_TrackHashes (
-      size_type hash,
       key_type key,
       value_type value,
       size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes) // TODO figure out what this "used_hashes" is for
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     //this function will directly insert, won't check if it exists already.
     if (*used_size_ >= __max_value_size) return __insert_full;
@@ -366,14 +360,13 @@ struct HashmapAccumulator
   //the mergeadd used in the numeric of KKMEM.
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_mergeAdd_TrackHashes (
-      size_type hash,
       key_type key,
       value_type value,
       size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     // issue-508, TODO: ensure that i < __max_value_size, but
     // need information about length of keys, values, and hash_nexts first!
@@ -404,13 +397,12 @@ struct HashmapAccumulator
   //also used in the symbolic of spgemm if no compression is applied.
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_TrackHashes (
-      size_type hash,
       key_type key,
       size_type *used_size_,
       size_type *used_hash_size,
       size_type *used_hashes)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     size_type i = hash_begins[hash];
     for (; i != -1; i = hash_nexts[i]) {
@@ -439,13 +431,8 @@ struct HashmapAccumulator
   //insertions will have the same key.
   //Insertion is simulteanous for the vector lanes of a thread.
   //used_size should be a shared pointer among the thread vectors
-  template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd_TrackHashes (
-      const team_member_t & /* teamMember */,
-      const int /* vector_size */,
-
-      size_type hash,
       const key_type key,
       const value_type value,
       volatile size_type *used_size_,
@@ -453,7 +440,7 @@ struct HashmapAccumulator
       size_type *used_hashes
       )
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
     if (hash != -1) {
       size_type i = hash_begins[hash];
@@ -513,7 +500,8 @@ struct HashmapAccumulator
       volatile size_type *used_size_,
       const size_type max_value_size_)
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    // Cannot compute hash here due to impl_speed use-case
+    //hash = __compute_hash(key, __hashOpRHS);
 
     if (hash != -1) {
       size_type i = hash_begins[hash];
@@ -568,19 +556,15 @@ struct HashmapAccumulator
   //insertions will have the same key.
   //Insertion is simulteanous for the vector lanes of a thread.
   //used_size should be a shared pointer among the thread vectors
-  template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd (
-      const team_member_t & /* teamMember */,
-      const int /* vector_size */,
-      size_type &hash,
       const key_type key,
       const value_type value,
       volatile size_type *used_size_)
   {
     return vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(nullptr,
                                                                                0,
-                                                                               hash,
+                                                                               __compute_hash(key, __hashOpRHS),
                                                                                key,
                                                                                value,
                                                                                used_size_,
@@ -588,27 +572,19 @@ struct HashmapAccumulator
   }
 
   //used in symbolic of kkmem if the compression is not applied.
-  template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash (
-      const team_member_t & /* teamMember */,
-      const int &/* vector_size */,
-      size_type hash,
       const key_type &key,
       volatile size_type *used_size_
       )
   {
-    hash = __compute_hash(key, __hashOpRHS);
+    size_type hash = __compute_hash(key, __hashOpRHS);
 
-    if (hash != -1) {
-      size_type i = hash_begins[hash];
-      for (; i != -1; i = hash_nexts[i]) {
-        if (keys[i] == key) {
-          return __insert_success;
-        }
-      }
-    } else {
+    size_type i = hash_begins[hash];
+    for (; i != -1; i = hash_nexts[i]) {
+      if (keys[i] == key) {
         return __insert_success;
+      }
     }
 
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));

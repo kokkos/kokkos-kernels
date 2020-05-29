@@ -278,10 +278,10 @@ struct KokkosSPGEMM
           //std::cout << " pow2_hash_func:" << pow2_hash_func << " prev_nset_ind:" << prev_nset_ind << std::endl;
           //insert prev_nset_ind to hashmap
           hm2.sequential_insert_into_hash_TrackHashes(
-              prev_nset_ind & pow2_hash_func, prev_nset_ind,
-              &used_size,
-              &globally_used_hash_count,
-              globally_used_hash_indices
+            prev_nset_ind,
+            &used_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
           //++used_size;
           prev_nset_ind = n_set_index;
@@ -289,10 +289,10 @@ struct KokkosSPGEMM
       }
       //insert prev_nset_ind to hashmap
       hm2.sequential_insert_into_hash_TrackHashes(
-          prev_nset_ind & pow2_hash_func, prev_nset_ind,
-          &used_size,
-          &globally_used_hash_count,
-          globally_used_hash_indices
+        prev_nset_ind,
+        &used_size,
+        &globally_used_hash_count,
+        globally_used_hash_indices
       );
       //++used_size;
     }
@@ -363,10 +363,10 @@ struct KokkosSPGEMM
         prev_nset = prev_nset | n_set;
       } else {
         hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-            prev_nset_ind & pow2_hash_func, prev_nset_ind, prev_nset,
-            &used_size,
-            &globally_used_hash_count,
-            globally_used_hash_indices
+          prev_nset_ind, prev_nset,
+          &used_size,
+          &globally_used_hash_count,
+          globally_used_hash_indices
         );
 
         //pset_index_entries[used_size + outrowBegin] = prev_nset_ind ;
@@ -377,10 +377,10 @@ struct KokkosSPGEMM
       }
     }
     hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-        prev_nset_ind & pow2_hash_func, prev_nset_ind, prev_nset,
-        &used_size,
-        &globally_used_hash_count,
-        globally_used_hash_indices
+      prev_nset_ind, prev_nset,
+      &used_size,
+      &globally_used_hash_count,
+      globally_used_hash_indices
     );
     for (nnz_lno_t i = 0; i < globally_used_hash_count ; ++i){
       hm2.hash_begins[globally_used_hash_indices[i]] = -1;
@@ -666,10 +666,10 @@ struct KokkosSPGEMM
 #ifdef KOKKOSKERNELSMOREMEM
       //if one of the inserts was successfull, which means we run out shared memory
       if (overall_num_unsuccess){
-        nnz_lno_t hash_ = -1;
-        if (num_unsuccess) hash_ = n_set_index % left_work;
-        hm2.vector_atomic_insert_into_hash_mergeOr(
-            teamMember, vector_size, hash_,n_set_index,n_set, used_hash_sizes + 1);
+        if (num_unsuccess) {
+          hm2.vector_atomic_insert_into_hash_mergeOr(
+            n_set_index,n_set, used_hash_sizes + 1);
+        }
       }
 #else
       //if one of the inserts was successfull, which means we run out shared memory
