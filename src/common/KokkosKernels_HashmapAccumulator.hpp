@@ -791,6 +791,8 @@ struct HashmapAccumulator
       #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
         if (hash == -1)
           Kokkos::abort("__compute_hash: hash = -1");
+        if (key == -1)
+          Kokkos::abort("__compute_hash: key = -1");
       #endif // HASHMAPACCUMULATOR_ASSERT_ENABLED
       return hash;
     }
@@ -803,6 +805,8 @@ struct HashmapAccumulator
       #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
         if (hash == -1)
           Kokkos::abort("__compute_hash: hash = -1");
+        if (key == -1)
+          Kokkos::abort("__compute_hash: key = -1");
       #endif // HASHMAPACCUMULATOR_ASSERT_ENABLED
       return hash;
     }
@@ -815,6 +819,8 @@ struct HashmapAccumulator
       #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
         if (hash == -1)
           Kokkos::abort("__compute_hash: hash = -1");
+        if (key == -1)
+          Kokkos::abort("__compute_hash: key = -1");
       #endif // HASHMAPACCUMULATOR_ASSERT_ENABLED
       return hash;
     }
