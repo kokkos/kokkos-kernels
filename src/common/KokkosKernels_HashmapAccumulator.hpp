@@ -77,8 +77,8 @@ template <typename size_type, typename key_type, typename value_type, typename h
  *                   corresponding to hash values [Begins]
  * \var hash_nexts:  Holds the indicies of the next elements
  *                   within the linked list [Nexts]
- * \var keys:        This stores the column indices of (??) [Ids]
- * \var values:      This store the (matrix element?) numerical value of (??) [Values]
+ * \var keys:        This stores the column indices of the crs matrix [Ids]
+ * \var values:      This store the numerical values (matrix elements) [Values]
  * 
  * Private members:
  * \var __max_value_size: The length of the two arrays (keys and hash_nexts)
@@ -349,7 +349,7 @@ struct HashmapAccumulator
       value_type value,
       size_type *used_size_,
       size_type *used_hash_size,
-      size_type *used_hashes) // TODO figure out what this "used_hashes" is for
+      size_type *used_hashes) // issue-508, TODO figure out what this "used_hashes" is for
   {
     size_type hash, my_index;
 
@@ -549,7 +549,7 @@ struct HashmapAccumulator
 
     // This appears to be redundant to the thread-safe atomic_fetch_add
     // conditional check below.
-    // TODO: Remove this check?
+    // issue-508, TODO: Remove this check?
     if (used_size_[0] >= max_value_size_) {
       return __insert_full;
     }
