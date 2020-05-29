@@ -226,7 +226,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
   bool is_identical = true;
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <typename graph_t::row_map_type, typename graph_t::row_map_type, typename lno_view_t::value_type,
-      typename device::execution_space>(output_mat1.graph.row_map, output_mat_reference.graph.row_map, 0);
+      typename device::execution_space>(output_mat_actual.graph.row_map, output_mat_reference.graph.row_map, 0);
 
   if (!is_identical) {
     std::cout << "rowmaps are different." << std::endl;
@@ -283,6 +283,8 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 
 
   lno_t numCols = numRows;
+  // Generate random compressed sparse row matrix. Randomly generated (non-zero) values are
+  // stored in a 1-D (1 rank) array.
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
   crsMat_t output_mat2;

@@ -655,11 +655,11 @@ struct KokkosSPGEMM
           [&] (const int i, int &overall_num_unsuccess_) {
           n_set_index = result_keys[i];
           n_set = result_vals[i];
-          nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
-          if (n_set_index == -1) hash = -1;
-          num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-                            teamMember, vector_size, hash, n_set_index,
-                            n_set, used_hash_sizes);
+          if (n_set_index != -1) {
+            num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
+                              n_set_index,
+                              n_set, used_hash_sizes);
+          }
           overall_num_unsuccess_ += num_unsuccess;
       }, overall_num_unsuccess);
 
@@ -939,6 +939,7 @@ bool KokkosSPGEMM
       }
 
       Kokkos::Impl::Timer timer_count;
+      // HashmapAccumulator is populated here
       if(use_unordered_compress)
         Kokkos::parallel_for( "KokkosSparse::TwoStepZipMatrix::use_unordered_compress", team_count2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
       else

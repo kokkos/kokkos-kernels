@@ -1167,22 +1167,18 @@ struct KokkosSPGEMM
         nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work);
 
         nnz_lno_t b_set_ind = -1, b_set = -1;
-        nnz_lno_t hash = -1;
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(teamMember, work_to_handle),
             [&] (nnz_lno_t i) {
           const size_type adjind = i + rowBegin;
           b_set_ind = entriesSetIndicesB[adjind];
           b_set = entriesSetsB[adjind];
-          //hash = b_set_ind % shmem_key_size;
-          hash = b_set_ind & shared_memory_hash_func;
         });
 
 
         int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-            teamMember, vector_size,
-            hash, b_set_ind, b_set,
-            used_hash_sizes);
+                              b_set_ind, b_set, used_hash_sizes
+                            );
 
 
         int overall_num_unsuccess = 0;
@@ -2815,15 +2811,14 @@ struct KokkosSPGEMM
           const size_type adjind = i + rowBegin;
           b_set_ind = entriesSetIndicesB[adjind];
           b_set = entriesSetsB[adjind];
-          hash = b_set_ind % shared_memory_hash_size;
         });
 
 
         int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-            teamMember, vector_size,
-            hash, b_set_ind, b_set,
-            used_hash_sizes,
-            shared_memory_hash_size);
+                              b_set_ind, b_set,
+                              used_hash_sizes,
+                              shared_memory_hash_size
+                            );
 
 
         int overall_num_unsuccess = 0;
