@@ -46,7 +46,7 @@
 #include <Kokkos_Atomic.hpp>
 #include <atomic>
 
-#define HASHMAPACCUMULATOR_ASSERT_ENABLED
+//#define HASHMAPACCUMULATOR_ASSERT_ENABLED
 
 namespace KokkosKernels {
 
