@@ -166,7 +166,7 @@ static void __blas3_perf_test_input_error(char **argv, int option_idx) {
 int main(int argc, char **argv) {
   options_t options;
   int option_idx = 0, ret;
-  char *n_str    = nullptr;
+  char *n_str = nullptr, *adim = nullptr, *bdim = nullptr;
   std::filebuf fb;
   char *out_file = nullptr;
 
@@ -225,31 +225,43 @@ int main(int argc, char **argv) {
         }
         break;
       case 'b':
-        n_str = strcasestr(optarg, "x");
+        adim    = optarg;
+        bdim    = strcasestr(optarg, ",");
+        bdim[0] = '\0';
+        bdim    = &bdim[1];
+
+        n_str = strcasestr(adim, "x");
         if (n_str == NULL) __blas3_perf_test_input_error(argv, option_idx);
 
         n_str[0]          = '\0';
-        options.start.a.m = atoi(optarg);
+        options.start.a.m = atoi(adim);
         options.start.a.n = atoi(&n_str[1]);
 
-        n_str = strcasestr(&n_str[1], "x");
+        n_str = strcasestr(bdim, "x");
         if (n_str == NULL) __blas3_perf_test_input_error(argv, option_idx);
+
         n_str[0]          = '\0';
-        options.start.b.m = atoi(optarg);
+        options.start.b.m = atoi(bdim);
         options.start.b.n = atoi(&n_str[1]);
         break;
       case 'e':
-        n_str = strcasestr(optarg, "x");
+        adim    = optarg;
+        bdim    = strcasestr(optarg, ",");
+        bdim[0] = '\0';
+        bdim    = &bdim[1];
+
+        n_str = strcasestr(adim, "x");
         if (n_str == NULL) __blas3_perf_test_input_error(argv, option_idx);
 
         n_str[0]         = '\0';
-        options.stop.a.m = atoi(optarg);
+        options.stop.a.m = atoi(adim);
         options.stop.a.n = atoi(&n_str[1]);
 
-        n_str = strcasestr(&n_str[1], "x");
+        n_str = strcasestr(bdim, "x");
         if (n_str == NULL) __blas3_perf_test_input_error(argv, option_idx);
+
         n_str[0]         = '\0';
-        options.stop.b.m = atoi(optarg);
+        options.stop.b.m = atoi(bdim);
         options.stop.b.n = atoi(&n_str[1]);
         break;
       case 's': options.step = atoi(optarg); break;
@@ -259,9 +271,7 @@ int main(int argc, char **argv) {
         out_file         = optarg;
         options.out_file = std::string(out_file);
         break;
-      case 'r': 
-        options.blas_routines = std::string(optarg);
-        break;
+      case 'r': options.blas_routines = std::string(optarg); break;
       case '?':
       default: __blas3_perf_test_input_error(argv, option_idx);
     }

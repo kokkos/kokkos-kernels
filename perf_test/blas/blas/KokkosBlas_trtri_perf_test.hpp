@@ -125,6 +125,8 @@ static void __print_trtri_perf_test_options(options_t options) {
 /*************************** Internal templated fns **************************/
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
+// Need to take subviews on the device
+#if !defined(KOKKOS_ENABLE_CUDA)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -145,12 +147,18 @@ void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
   }
   Kokkos::fence();
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
+#else
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
+#endif  // !KOKKOS_ENABLE_CUDA
   return;
 }
 
 template <class uplo, class diag>
 void __do_trtri_serial_batched_template(options_t options,
                                         trtri_args_t trtri_args) {
+// Need to take subviews on the device
+#if !defined(KOKKOS_ENABLE_CUDA)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -170,6 +178,10 @@ void __do_trtri_serial_batched_template(options_t options,
   }
   Kokkos::fence();
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
+#else
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
+#endif  // !KOKKOS_ENABLE_CUDA
 }
 
 template <class scalar_type, class vta, class device_type>
@@ -215,11 +227,11 @@ struct parallel_blas_trtri {
     KokkosBlas::trtri(&trtri_args_.uplo, &trtri_args_.diag, svA);
   }
 };
-#endif // !KOKKOS_ENABLE_CUDA
+#endif  // !KOKKOS_ENABLE_CUDA
 
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
-  #if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -240,12 +252,11 @@ void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
                        parallel_blas_trtri_functor);
   Kokkos::fence();
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
-  #else
-  std::cerr << std::string(__func__) << 
-    " disabled since KOKKOS_ENABLE_CUDA is defined." << 
-    std::endl;
+#else
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
   __trtri_output_csv_row(options, trtri_args, -1);
-  #endif // !KOKKOS_ENABLE_CUDA
+#endif  // !KOKKOS_ENABLE_CUDA
   return;
 }
 
@@ -335,7 +346,7 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
   trtri_args.uplo = options.blas_args.trtri.trtri_args.c_str()[0];
   trtri_args.diag = options.blas_args.trtri.trtri_args.c_str()[1];
   trtri_args.A    = vta("trtri_args.A", options.n, dim.a.m, dim.a.n);
-  host_A = Kokkos::create_mirror_view(trtri_args.A);
+  host_A          = Kokkos::create_mirror_view(trtri_args.A);
 
   Kokkos::fill_random(trtri_args.A, rand_pool,
                       Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
@@ -388,6 +399,9 @@ void __do_loop_and_invoke(options_t options,
   STATUS;
 
   __print_trtri_perf_test_options(options);
+  std::cout << "SCALAR:" << typeid(default_scalar).name()
+            << ", LAYOUT:" << typeid(default_layout).name() << ", DEVICE:."
+            << typeid(default_device).name() << std::endl;
 
   options.out[0] << trtri_csv_header_str << std::endl;
 
