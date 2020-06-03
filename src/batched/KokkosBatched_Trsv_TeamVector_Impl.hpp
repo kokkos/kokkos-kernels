@@ -34,7 +34,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const bViewType &b) {
-      return TeamVectorTrsvInternalLower::
+      return TeamVectorTrsvInternalLower<Algo::Trsv::Unblocked>::
         invoke(member,
                ArgDiag::use_unit_diag,
                A.extent(0), 
@@ -59,7 +59,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const bViewType &b) {
-      return TeamVectorTrsvInternalUpper::
+      return TeamVectorTrsvInternalUpper<Algo::Trsv::Unblocked>::
         invoke(member,
                ArgDiag::use_unit_diag,
                A.extent(1), 
@@ -84,7 +84,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const bViewType &b) {
-      return TeamVectorTrsvInternalUpper::
+      return TeamVectorTrsvInternalUpper<Algo::Trsv::Unblocked>::
         invoke(member,
                ArgDiag::use_unit_diag,
                A.extent(0), 
@@ -110,7 +110,7 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const AViewType &A,
            const bViewType &b) {
-      return TeamVectorTrsvInternalLower::
+      return TeamVectorTrsvInternalLower<Algo::Trsv::Unblocked>::
         invoke(member,
                ArgDiag::use_unit_diag,
                A.extent(1), 
