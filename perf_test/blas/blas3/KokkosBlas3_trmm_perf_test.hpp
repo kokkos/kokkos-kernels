@@ -111,7 +111,7 @@ static void __print_trmm_perf_test_options(options_t options) {
   printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
   printf("options.start     = %dx%d,%dx%d\n", options.start.a.m,
          options.start.a.n, options.start.b.m, options.start.b.n);
-  printf("options.stop      = %dx%d,%d,%d\n", options.stop.a.m,
+  printf("options.stop      = %dx%d,%dx%d\n", options.stop.a.m,
          options.stop.a.n, options.stop.b.m, options.stop.b.n);
   printf("options.step      = %d\n", options.step);
   printf("options.warm_up_n = %d\n", options.warm_up_n);
@@ -123,15 +123,6 @@ static void __print_trmm_perf_test_options(options_t options) {
     printf("options.alpha     = %lf\n", options.blas_args.trmm.alpha);
   else if (std::is_same<float, default_scalar>::value)
     printf("options.alpha     = %f\n", options.blas_args.trmm.alpha);
-  // else if (std::is_same<Kokkos::complex<double>, default_scalar>::value)
-  //  printf("options.alpha     = %lf+%lfi\n", creal(options.alpha),
-  //  cimag(options.alpha));
-  // else if (std::is_same<Kokkos::complex<float>, default_scalar>::value)
-  //  printf("options.alpha     = %lf+%lfi\n", crealf(options.alpha),
-  //  cimagf(options.alpha));
-  std::cout << "SCALAR:" << typeid(default_scalar).name()
-            << ", LAYOUT:" << typeid(default_layout).name() << ", DEVICE:."
-            << typeid(default_device).name() << std::endl;
 #endif  // TRMM_PERF_TEST_DEBUG
   return;
 }
@@ -139,6 +130,8 @@ static void __print_trmm_perf_test_options(options_t options) {
 /*************************** Internal templated fns **************************/
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
+// Need to take subviews on the device
+#if !defined(KOKKOS_ENABLE_CUDA)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -163,12 +156,18 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
   }
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
+#else
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
+#endif  // !KOKKOS_ENABLE_CUDA
   return;
 }
 
 template <class side, class uplo, class trans, class diag>
 void __do_trmm_serial_batched_template(options_t options,
                                        trmm_args_t trmm_args) {
+// Need to take subviews on the device
+#if !defined(KOKKOS_ENABLE_CUDA)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -190,6 +189,10 @@ void __do_trmm_serial_batched_template(options_t options,
   }
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
+#else
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
+#endif  // !KOKKOS_ENABLE_CUDA
 }
 
 template <class scalar_type, class vta, class vtb, class device_type>
@@ -305,11 +308,11 @@ struct parallel_blas_trmm {
                      &trmm_args_.diag, trmm_args_.alpha, svA, svB);
   }
 };
-#endif // !KOKKOS_ENABLE_CUDA
+#endif  // !KOKKOS_ENABLE_CUDA
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
-  #if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -318,7 +321,6 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
   functor_type parallel_blas_trmm_functor(trmm_args);
 
   STATUS;
-
 
   Kokkos::parallel_for("parallelBlasWarmUpLoopTrmm",
                        Kokkos::RangePolicy<execution_space>(0, warm_up_n),
@@ -331,12 +333,11 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
                        parallel_blas_trmm_functor);
   Kokkos::fence();
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
-  #else
-  std::cerr << std::string(__func__) << 
-    " disabled since KOKKOS_ENABLE_CUDA is defined." << 
-    std::endl;
+#else
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
   __trmm_output_csv_row(options, trmm_args, -1);
-  #endif // !KOKKOS_ENABLE_CUDA
+#endif  // !KOKKOS_ENABLE_CUDA
   return;
 }
 
@@ -503,14 +504,15 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   trmm_args.diag  = options.blas_args.trmm.trmm_args.c_str()[3];
   trmm_args.A     = vta("trmm_args.A", options.n, dim.a.m, dim.a.n);
   trmm_args.B     = vtb("trmm_args.B", options.n, dim.b.m, dim.b.n);
-  host_A = Kokkos::create_mirror_view(trmm_args.A);
+  trmm_args.alpha = options.blas_args.trmm.alpha;
+  host_A          = Kokkos::create_mirror_view(trmm_args.A);
 
   Kokkos::fill_random(trmm_args.A, rand_pool,
                       Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                    scalar_type>::max());
   Kokkos::deep_copy(host_A, trmm_args.A);
 
-  if (trmm_args.uplo == 'U' || trmm_args.uplo == 'u') {  
+  if (trmm_args.uplo == 'U' || trmm_args.uplo == 'u') {
     // Make A upper triangular
     for (uint32_t k = 0; k < options.n; ++k) {
       auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
@@ -559,6 +561,9 @@ void __do_loop_and_invoke(options_t options,
   STATUS;
 
   __print_trmm_perf_test_options(options);
+  std::cout << "SCALAR:" << typeid(default_scalar).name()
+            << ", LAYOUT:" << typeid(default_layout).name()
+            << ", DEVICE:" << typeid(default_device).name() << std::endl;
 
   options.out[0] << trmm_csv_header_str << std::endl;
 
