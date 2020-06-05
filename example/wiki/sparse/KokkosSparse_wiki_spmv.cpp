@@ -81,4 +81,6 @@ int main(int argc, char* argv[]) {
   }
 
   Kokkos::finalize();
+
+  return 0;
 }
