@@ -404,6 +404,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khU.set_sptrsv_merge_supernodes (merge);
 
           // specify wheather to invert diagonal blocks
+          std::cout << " Invert diagonal    : " << invert_diag << std::endl;
           khL.set_sptrsv_invert_diagonal (invert_diag);
           khU.set_sptrsv_invert_diagonal (invert_diag);
           
