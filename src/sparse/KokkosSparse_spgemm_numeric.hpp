@@ -188,9 +188,9 @@ void spgemm_numeric(
       UniformDevice_t, //       typename bscalar_nnz_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_bscalar_nnz_view_t_;
 
-  //static assert clno_row_view_t_ cannot be const type.
+  //static assert clno_row_view_t_ can be const type (row map is fixed after symbolic phase).
   typedef Kokkos::View<
-      typename clno_row_view_t_::non_const_value_type*,
+      typename clno_row_view_t_::value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<clno_row_view_t_>::array_layout,
       UniformDevice_t, //       typename clno_row_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_clno_row_view_t_;
