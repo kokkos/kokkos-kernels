@@ -344,6 +344,7 @@ LIST(APPEND SOURCES
  batched/KokkosBatched_Util.cpp
  impl/tpls/KokkosBlas_Host_tpl.cpp
  impl/tpls/KokkosBlas_Cuda_tpl.cpp
+ impl/tpls/KokkosKernels_tpl_handles.cpp
 )
 
 # For now, don't add the ETI headers to complete list of headers

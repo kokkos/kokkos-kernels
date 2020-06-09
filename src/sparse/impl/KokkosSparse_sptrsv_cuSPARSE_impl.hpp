@@ -111,11 +111,11 @@ namespace Impl{
 
 
       // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
-      cudaError_t error_t;
-      error_t = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
+      cudaError_t my_error;
+      my_error = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
 
-      if (cudaSuccess != error_t)
-        std::cout << "cudmalloc pBuffer error_t error name " << cudaGetErrorString(error_t) << std::endl;
+      if (cudaSuccess != my_error)
+        std::cout << "cudmalloc pBuffer error_t error name " << cudaGetErrorString(my_error) << std::endl;
 
       status = cusparseDcsrsv2_analysis(
         h->handle, 
@@ -147,11 +147,11 @@ namespace Impl{
       &pBufferSize);
 
       // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
-      cudaError_t error_t;
-      error_t = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
+      cudaError_t my_error;
+      my_error = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
 
-      if (cudaSuccess != error_t)
-        std::cout << "cudmalloc pBuffer error_t error name " << cudaGetErrorString(error_t) << std::endl;
+      if (cudaSuccess != my_error)
+        std::cout << "cudmalloc pBuffer error_t error name " << cudaGetErrorString(my_error) << std::endl;
 
       status = cusparseZcsrsv2_analysis(
         h->handle, 

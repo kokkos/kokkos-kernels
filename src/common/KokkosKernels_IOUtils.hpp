@@ -95,7 +95,7 @@ void kk_sparseMatrix_generate(
   colInd = new OrdinalType[nnz];
   for(OrdinalType row=0;row<nrows;row++)
   {
-    for(SizeType k=rowPtr[row] ;k<rowPtr[row+1];k++)
+    for(SizeType k=rowPtr[row]; k<rowPtr[row+1]; ++k)
     {
       while (true){
         OrdinalType pos = (1.0*rand()/RAND_MAX-0.5)*bandwidth+row;
