@@ -393,6 +393,10 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khU.set_sptrsv_verbose (verbose);
           khL.set_sptrsv_verbose (verbose);
 
+          // specify if unit/non-unit diagonals
+          khU.set_sptrsv_unit_diagonal (false);
+          khL.set_sptrsv_unit_diagonal (true);
+
           // specify if U is stored in CSR or CSC
           std::cout << "=============================== " << std::endl;
           std::cout << " U in CSR           : " << u_in_csr << std::endl;
@@ -575,6 +579,10 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           std::cout << " > create handle for CuSparse (SUPERNODAL_NAIVE)" << std::endl << std::endl;
           khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
           khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, false);
+
+          // specify if unit/non-unit diagonals
+          khU.set_sptrsv_unit_diagonal (false);
+          khL.set_sptrsv_unit_diagonal (true);
 
           khU.set_sptrsv_column_major (!u_in_csr);
 

@@ -313,6 +313,9 @@ private:
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+  // specify if unit diagonal
+  bool unit_diag;
+
   // stored either in CSR or CSC
   bool col_major;
 
@@ -411,6 +414,7 @@ public:
     , cuSPARSEHandle(nullptr)
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+    , unit_diag (false)
     , merge_supernodes (false)
     , invert_diagonal (true)
     , invert_offdiagonal (false)
@@ -654,6 +658,14 @@ public:
 
   graph_t get_graph () {
     return this->graph;
+  }
+
+  // set if unit diagonal
+  void set_unit_diagonal(bool unit_diag_) {
+    this->unit_diag = unit_diag_;
+  }
+  bool is_unit_diagonal() {
+    return this->unit_diag;
   }
 
   // set CSR or CSC format
