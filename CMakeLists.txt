@@ -11,7 +11,7 @@ SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
   cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-  IF (Spack_WORKAROUND) 
+  IF (Spack_WORKAROUND)
     #if we are explicitly using Spack for development,
     #nuke the Spack compiler
     SET(SPACK_CXX $ENV{SPACK_CXX})
@@ -28,7 +28,7 @@ IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
   SET(KokkosKernels_VERSION_PATCH 0)
 ENDIF()
 
-IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
+IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
   MESSAGE(STATUS "Setting policy CMP0074 to use <Package>_ROOT variables")
   CMAKE_POLICY(SET CMP0074 NEW)
 ENDIF()
@@ -70,6 +70,7 @@ SET(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
 IF (KokkosKernels_INSTALL_TESTING)
   # Force testing on if we are doing intall testing
   SET(KOKKOSKERNELS_ENABLE_TESTS ON)
+  SET(KOKKOSKERNELS_ENABLE_EXAMPLES ON)
   # Don't build, load installed kernels
   FIND_PACKAGE(KokkosKernels REQUIRED)
   # Still need to figure out which backends
@@ -78,6 +79,7 @@ IF (KokkosKernels_INSTALL_TESTING)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(test_common)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
+  KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
 ELSE()
   # Regular build, not install testing
   # Do all the regular option processing
@@ -188,7 +190,7 @@ ELSE()
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(test_common)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
-  #KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
+  KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
 
   KOKKOSKERNELS_PACKAGE_POSTPROCESS()
 ENDIF()
