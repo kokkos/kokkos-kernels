@@ -153,7 +153,8 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
 
 /* ========================================================================================= */
 template<typename scalar_type>
-int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool invert_diag, int block_size, int loop) {
+int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_csr, bool invert_diag, bool invert_offdiag,
+                     int block_size, int loop) {
 
   using STS = Kokkos::Details::ArithTraits<scalar_type>;
   using mag_type = typename STS::mag_type;
@@ -266,10 +267,22 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool invert_
           khU.set_sptrsv_perm (perm);
 
           // ==============================================
+          // specify if U is stored in CSR or CSC
+          std::cout << "=============================== " << std::endl;
+          std::cout << " U in CSR           : " << u_in_csr << std::endl;
+          khU.set_sptrsv_column_major (!u_in_csr);
+
+          // ==============================================
           // specify wheather to invert diagonal blocks
           std::cout << " Invert diagonal    : " << invert_diag << std::endl;
           khL.set_sptrsv_invert_diagonal (invert_diag);
           khU.set_sptrsv_invert_diagonal (invert_diag);
+
+          // ==============================================
+          // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
+          std::cout << " Invert Off-diagonal: " << invert_offdiag << std::endl;
+          khL.set_sptrsv_invert_offdiagonal (invert_offdiag);
+          khU.set_sptrsv_invert_offdiagonal (invert_offdiag);
 
           // ==============================================
           // block size to switch to device call
@@ -278,6 +291,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool invert_
             khL.set_sptrsv_diag_supernode_sizes (block_size, block_size);
             khU.set_sptrsv_diag_supernode_sizes (block_size, block_size);
           }
+          std::cout << std::endl;
 
           // ==============================================
           // Do symbolic analysis
@@ -457,8 +471,12 @@ int main(int argc, char **argv)
   std::string filename;
 
   int loop = 1;
+  // store U in CSR, or CSC
+  bool u_in_csr = true;
   // invert diagonal of L-factor
   bool invert_diag = false;
+  // apply invert of diagonal to offdiagonal
+  bool invert_offdiag = false;
   // block size to switch to device call (default is 100)
   int block_size  = -1;
   // scalar type
@@ -493,8 +511,16 @@ int main(int argc, char **argv)
       loop = atoi(argv[++i]);
       continue;
     }
+    if((strcmp(argv[i],"--u-in-csc")==0)) {
+      u_in_csr = false;
+      continue;
+    }
     if((strcmp(argv[i],"--invert-diag")==0)) {
       invert_diag = true;
+      continue;
+    }
+    if((strcmp(argv[i],"--invert-offdiag")==0)) {
+      invert_offdiag = true;
       continue;
     }
     if((strcmp(argv[i],"--block-size")==0)) {
@@ -522,13 +548,13 @@ int main(int argc, char **argv)
     Kokkos::ScopeGuard kokkosScope (argc, argv);
     if (char_scalar == "z") {
       #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-      total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, invert_diag, block_size, loop);
+      total_errors = test_sptrsv_perf<Kokkos::complex<double>>(tests, filename, u_in_csr, invert_diag, invert_offdiag, block_size, loop);
       #else
       std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_DOUBLE  is not enabled ** " << std::endl << std::endl;
       #endif
     } else if (char_scalar == "d") {
       #if defined(KOKKOSKERNELS_INST_DOUBLE)
-      total_errors = test_sptrsv_perf<double>(tests, filename, invert_diag, block_size, loop);
+      total_errors = test_sptrsv_perf<double>(tests, filename, u_in_csr, invert_diag, invert_offdiag, block_size, loop);
       #else
       std::cout << std::endl << " KOKKOSKERNELS_INST_DOUBLE  is not enabled ** " << std::endl << std::endl;
       #endif

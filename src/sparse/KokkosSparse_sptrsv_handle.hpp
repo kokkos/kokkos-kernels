@@ -487,6 +487,11 @@ public:
     this->num_streams = 0;
   }
 
+  // set lower/upper triangular
+  void set_lower_tri(bool lower_tri_) {
+    lower_tri = lower_tri_;
+  }
+
   // set supernodal dag
   void set_supernodal_dag (host_graph_t dag_) {
     this->dag_host = dag_;

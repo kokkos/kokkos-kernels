@@ -66,13 +66,16 @@ namespace Experimental {
 
 /* ========================================================================================= */
 template <typename graph_t, typename KernelHandle>
-graph_t read_superlu_graphL(KernelHandle *kernelHandleL, SuperMatrix *L) {
+graph_t read_superlu_graphL(KernelHandle *kernelHandle, SuperMatrix *L) {
 
   /* ---------------------------------------------------------------------- */
   /* get inputs */
   /* ---------------------------------------------------------------------- */
   int n = L->nrow;
   SCformat *Lstore = (SCformat*)(L->Store);
+
+  // use unit diagonal for L
+  kernelHandle->set_sptrsv_unit_diagonal (true);
 
   int nsuper = 1 + Lstore->nsuper;     // # of supernodal columns
   int * mb = Lstore->rowind_colptr;
@@ -82,7 +85,7 @@ graph_t read_superlu_graphL(KernelHandle *kernelHandleL, SuperMatrix *L) {
 
   bool ptr_by_column = true;
   int nnzA = colptr[n] - colptr[0]; // overestimated if not block_diag
-  return read_supernodal_graphL<graph_t> (kernelHandleL, n, nsuper, nnzA, ptr_by_column, mb, nb, rowind);
+  return read_supernodal_graphL<graph_t> (kernelHandle, n, nsuper, nnzA, ptr_by_column, mb, nb, rowind);
 }
 
 
@@ -99,6 +102,9 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
   /* load options */
   auto *handle = kernelHandle->get_sptrsv_handle ();
   bool u_in_csc = handle->is_column_major ();
+
+  // use non-unit diagonal for U
+  kernelHandle->set_sptrsv_unit_diagonal (false);
 
   SCformat *Lstore = (SCformat*)(L->Store);
   NCformat *Ustore = (NCformat*)(U->Store);
@@ -343,10 +349,9 @@ crsmat_t read_superlu_valuesL(KernelHandle kernelHandle, SuperMatrix *L, graph_t
   int * colptr = Lstore->nzval_colptr;
   int * rowind = Lstore->rowind;
 
-  bool unit_diag = true;
   bool ptr_by_column = true;
-  return read_supernodal_valuesL<crsmat_t> (unit_diag, kernelHandle,
-                                            n, nsuper, ptr_by_column, mb, nb,
+  return read_supernodal_valuesL<crsmat_t> (kernelHandle, n, nsuper, 
+                                            ptr_by_column, mb, nb,
                                             colptr, rowind, Lx, static_graph);
 }
 
