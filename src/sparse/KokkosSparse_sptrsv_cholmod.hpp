@@ -122,77 +122,45 @@ namespace Experimental {
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
     auto *handleU = kernelHandleU->get_sptrsv_handle ();
 
-    // load options
-    int *etree = handleL->get_etree ();
-    bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-                      handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
-    if (needEtree && etree == nullptr) {
-      std::cout << std::endl
-                << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
-                << std::endl << std::endl;
-      return;
+    // ==============================================
+    // load supernodes
+    int nsuper = L->nsuper;
+    cholmod_int_type *supercols = (cholmod_int_type*)(L->super);
+    // convert supercols into internal-view type
+    using integer_view_host_t = typename KernelHandle::SPTRSVHandleType::integer_view_host_t;
+    integer_view_host_t supercols_view = integer_view_host_t ("supercols", 1+nsuper);
+    for (int i = 0; i <= nsuper; i++) {
+      supercols_view (i) = supercols[i];
     }
 
-    Kokkos::Timer timer;
     // ==============================================
-    // extract CrsGraph from Cholmod
-    using graph_t  = typename KernelHandle::SPTRSVHandleType::graph_t;
-    auto graph = read_cholmod_graphL<cholmod_int_type, graph_t>(kernelHandleL, L, cm);
-    auto row_map = graph.row_map;
-    auto entries = graph.entries;
+    // load etree (optional)
+    int *etree = handleL->get_etree ();
 
     // ==============================================
-    // setup supnodal info 
-    size_t nsuper = L->nsuper;
-    cholmod_int_type *supercols = (cholmod_int_type*)(L->super);
-    handleL->set_supernodes (nsuper, supercols, etree);
-    handleU->set_supernodes (nsuper, supercols, etree);
+    // extract CrsGraph for L from Cholmod
+    using host_graph_t = typename KernelHandle::SPTRSVHandleType::host_graph_t;
+    auto graphL = read_cholmod_graphL<cholmod_int_type, host_graph_t>(kernelHandleL, L, cm);
 
-    // ==============================================
-    // symbolic for L-solve on the host
-    timer.reset();
-    sptrsv_symbolic (kernelHandleL, row_map, entries);
-    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-    double timeL = timer.seconds ();
-    std::cout << " > Lower-TRI: " << std::endl;
-    std::cout << "   Symbolic Time: " << timeL << std::endl;
-    #endif
-
-    // ==============================================
-    // save L-graph
-    handleL->set_graph (graph);
-
-    // ==============================================
-    // symbolic for L^T-solve on the host
-    timer.reset ();
     if (handleU->is_column_major ()) {
-      // extract CrsGraph from Cholmod
+      // ==============================================
+      // extract CrsGraph for U from Cholmod
       handleU->set_column_major (false);
-      auto graphU = read_cholmod_graphL<cholmod_int_type, graph_t>(kernelHandleU, L, cm);
+      auto graphU = read_cholmod_graphL<cholmod_int_type, host_graph_t>(kernelHandleU, L, cm);
       handleU->set_column_major (true);
 
-      // symbolic for U-solve oon the host
-      auto row_mapU = graphU.row_map;
-      auto entriesU = graphU.entries;
-      sptrsv_symbolic (kernelHandleU, row_mapU, entriesU);
-
-      // save graphs
-      handleU->set_graph (graphU);
+      // ==============================================
+      // call supnodal symbolic
+      sptrsv_supernodal_symbolic (nsuper, supercols_view.data (), etree,
+                                  graphL, kernelHandleL,
+                                  graphU, kernelHandleU);
     } else {
-      sptrsv_symbolic (kernelHandleU, row_map, entries);
-
-      // save graphs
-      handleU->set_graph (graph);
+      // ==============================================
+      // call supnodal symbolic
+      sptrsv_supernodal_symbolic (nsuper, supercols_view.data (), etree,
+                                  graphL, kernelHandleL,
+                                  graphL, kernelHandleU);
     }
-    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-    double timeU = timer.seconds ();
-    std::cout << " > Upper-TRI: " << std::endl;
-    std::cout << "   Symbolic Time: " << timeU << std::endl;
-    #endif
-
-    // ===================================================================
-    handleU->set_symbolic_complete ();
-    handleU->set_symbolic_complete ();
   }
 
 
@@ -238,7 +206,7 @@ namespace Experimental {
       cholmod_factor *L,
       cholmod_common *cm)
   {
-    // ===================================================================
+    // ==============================================
     // load sptrsv-handles
     auto *handleL = kernelHandleL->get_sptrsv_handle ();
     auto *handleU = kernelHandleU->get_sptrsv_handle ();
@@ -252,6 +220,11 @@ namespace Experimental {
     }
 
     // ==============================================
+    // load options
+    bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                    handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+
+    // ==============================================
     // load crsGraph
     auto graph = handleL->get_graph ();
 
@@ -259,6 +232,12 @@ namespace Experimental {
     // read numerical values of L from Cholmod
     using crsmat_t = typename KernelHandle::SPTRSVHandleType::crsmat_t;
     auto cholmodL = read_cholmod_factor<cholmod_int_type, crsmat_t> (kernelHandleL, L, cm, graph);
+
+    // ==============================================
+    // split the matrix into submatrices for spmv at each level
+    if (useSpMV) {
+      split_crsmat<crsmat_t> (kernelHandleL, cholmodL);
+    }
 
     // ==============================================
     // save crsmat
@@ -272,12 +251,33 @@ namespace Experimental {
 
       handleU->set_lower_tri (false);
       handleU->set_column_major (true);
+      // ==============================================
+      // split the matrix into submatrices for spmv at each level
+      if (useSpMV) {
+        split_crsmat<crsmat_t> (kernelHandleU, cholmodU);
+      }
       handleU->set_crsmat (cholmodU);
     } else {
       handleU->set_crsmat (cholmodL);
+      if (useSpMV) {
+        if (!handleL->get_invert_offdiagonal ()) {
+          // copy submatrices to U for SpMV at each level
+          auto nlevels = handleL->get_num_levels();
+          std::vector <crsmat_t> sub_crsmats (nlevels);
+          std::vector <crsmat_t> diag_blocks (nlevels);
+          for (int lvl = 0; lvl < nlevels; lvl++) {
+            sub_crsmats[lvl] = handleL->get_submatrix (nlevels-lvl-1);
+            diag_blocks[lvl] = handleL->get_diagblock (nlevels-lvl-1);
+          }
+          handleU->set_submatrices (sub_crsmats);
+          handleU->set_diagblocks (diag_blocks);
+        } else {
+          // not supported
+        }
+      }
     }
 
-    // ===================================================================
+    // ==============================================
     handleL->set_numeric_complete ();
     handleU->set_numeric_complete ();
   }

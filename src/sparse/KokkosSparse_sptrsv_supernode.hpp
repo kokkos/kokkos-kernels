@@ -934,7 +934,8 @@ void sptrsv_supernodal_symbolic(
 
   // ===================================================================
   // > make a copy of supercols (merge needs both original and merged supercols)
-  typename KernelHandle::SPTRSVHandleType::integer_view_host_t supercols_view ("supercols view", 1+nsuper);
+  using integer_view_host_t = typename KernelHandle::SPTRSVHandleType::integer_view_host_t;
+  integer_view_host_t supercols_view ("supercols view", 1+nsuper);
   int *supercols_merged = supercols_view.data ();
   for (int i = 0; i <= nsuper; i++) {
     supercols_merged[i] = supercols[i];
@@ -1846,7 +1847,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
     // ==============================================
     // read numerical values of L from Cholmod
     using crsmat_t = typename KernelHandle::SPTRSVHandleType::crsmat_t;
-    bool unit_diag = false;
     bool ptr_by_column = true;
     auto crsmatL = read_supernodal_valuesL<crsmat_t> (kernelHandleL, nrows, nsuper, ptr_by_column, row_map.data (), supercols,
                                                       row_map.data (), entries.data (), values.data (), graph);

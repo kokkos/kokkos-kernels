@@ -64,7 +64,7 @@ using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
 using namespace KokkosSparse::PerfTest::Experimental;
 
-enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE};
+enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_SPMV};
 
 
 /* ========================================================================================= */
@@ -150,6 +150,13 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
 }
 
 
+/* ========================================================================================= */
+void free_cholmod(cholmod_factor *L, cholmod_common *cm) {
+  /* free matrices */
+  cholmod_free_factor (&L, cm);
+  cholmod_finish (cm);
+}
+
 
 /* ========================================================================================= */
 template<typename scalar_type>
@@ -226,9 +233,14 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
     L = factor_cholmod<cholmod_int_type, scalar_type>
          (nrows, Mtx.nnz(), values_host.data(), const_cast<size_type*> (row_map_host.data()), entries_host.data(),
           &cm, &etree);
-    std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
-    int* iperm = new int[nrows];
-    int*  perm = new int[nrows];
+    double factor_time = timer.seconds();
+    std::cout << "   Factorization Time: " << factor_time << std::endl << std::endl;
+    using integer_view_host_t = typename KernelHandle::SPTRSVHandleType::integer_view_host_t;
+    integer_view_host_t iperm_view ("perm view",  nrows);
+    integer_view_host_t  perm_view ("iperm view", nrows);
+
+    int* iperm = iperm_view.data ();
+    int*  perm =  perm_view.data ();
     for (int i = 0; i < nrows; i++) {
       iperm[i] = ((cholmod_int_type*)(L->Perm))[i];
       perm[iperm[i]] = i;
@@ -243,17 +255,22 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
       switch(test) {
         case SUPERNODAL_NAIVE:
         case SUPERNODAL_ETREE:
+        case SUPERNODAL_SPMV:
         {
           // ==============================================
           // Create handles for U and U^T solves
-          if (test == SUPERNODAL_NAIVE) {
-            std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl << std::endl;
-            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
-            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, false);
-          } else {
+          if (test == SUPERNODAL_ETREE) {
             std::cout << " > create handle for SUPERNODAL_ETREE" << std::endl << std::endl;
             khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, true);
             khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_ETREE, nrows, false);
+          } else if (test == SUPERNODAL_SPMV) {
+            std::cout << " > create handle for SUPERNODAL_SPMV" << std::endl << std::endl;
+            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, true);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_SPMV, nrows, false);
+          } else {
+            std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl << std::endl;
+            khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, true);
+            khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows, false);
           }
 
           // ==============================================
@@ -295,11 +312,17 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
 
           // ==============================================
           // Do symbolic analysis
+          timer.reset();
           sptrsv_symbolic<cholmod_int_type> (&khL, &khU, L, &cm);
+          double symbolic_time = timer.seconds();
+          std::cout << "   Symbolic Time   : " << symbolic_time << std::endl << std::endl;
 
           // ==============================================
           // Do numerical compute
+          timer.reset();
           sptrsv_compute<cholmod_int_type> (&khL, &khU, L, &cm);
+          double compute_time = timer.seconds();
+          std::cout << "   Numeric Time   : " << compute_time << std::endl << std::endl;
 
           // ==============================================
           // Create the known solution and set to all 1's ** on host **
@@ -352,6 +375,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
           // ==============================================
           // Error Check ** on host **
           Kokkos::fence();
+          std::cout << std::endl;
           if (!check_errors(tol, Mtx, rhs_host, sol_host)) {
             num_failed ++;
           }
@@ -443,6 +467,9 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
           exit(0);
       }
     }
+
+    // free cholmod data structures
+    free_cholmod(L, &cm);
   }
   std::cout << std::endl << std::endl;
 
@@ -494,11 +521,11 @@ int main(int argc, char **argv)
       i++;
       if((strcmp(argv[i],"cholmod-naive")==0)) {
         tests.push_back( SUPERNODAL_NAIVE );
-      }
-      if((strcmp(argv[i],"cholmod-etree")==0)) {
+      } else if((strcmp(argv[i],"cholmod-etree")==0)) {
         tests.push_back( SUPERNODAL_ETREE );
-      }
-      if((strcmp(argv[i],"cusparse")==0)) {
+      } else if((strcmp(argv[i],"cholmod-spmv")==0)) {
+        tests.push_back( SUPERNODAL_SPMV );
+      } else if((strcmp(argv[i],"cusparse")==0)) {
         tests.push_back( CUSPARSE );
       }
       continue;

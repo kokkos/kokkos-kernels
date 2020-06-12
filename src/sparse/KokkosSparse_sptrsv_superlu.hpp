@@ -269,9 +269,6 @@ void sptrsv_symbolic(
     SuperMatrix &L,
     SuperMatrix &U)
 {
-  using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
-  using host_graph_t  = typename KernelHandle::SPTRSVHandleType::host_graph_t;
-
   Kokkos::Timer timer;
   Kokkos::Timer tic;
   timer.reset();
@@ -279,18 +276,6 @@ void sptrsv_symbolic(
   // ===================================================================
   // load sptrsv-handles
   auto *handleL = kernelHandleL->get_sptrsv_handle ();
-  int *etree = handleL->get_etree ();
-
-  // ===================================================================
-  // load options
-  bool needEtree = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-                    handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE);
-  if (needEtree && etree == nullptr) {
-    std::cout << std::endl
-              << " ** etree needs to be set before calling sptrsv_symbolic with SuperLU **"
-              << std::endl << std::endl;
-    return;
-  }
 
   // ===================================================================
   // read CrsGraph from SuperLU factor
@@ -301,6 +286,7 @@ void sptrsv_symbolic(
     std::cout << " > Merge supernodes" << std::endl;
   }
   #endif
+  using host_graph_t = typename KernelHandle::SPTRSVHandleType::host_graph_t;
   host_graph_t graphL_host;
   host_graph_t graphU_host;
 
@@ -313,10 +299,14 @@ void sptrsv_symbolic(
   #endif
 
   // ===================================================================
-  // setup supnodal info
+  // load supnodal info
   SCformat *Lstore = (SCformat*)(L.Store);
   int nsuper = 1 + Lstore->nsuper;
   int *supercols = Lstore->sup_to_col;
+
+  // ===================================================================
+  // load etree info (optional)
+  int *etree = handleL->get_etree ();
 
   // ===================================================================
   // call supnodal symbolic
@@ -585,7 +575,8 @@ void sptrsv_compute(
     superluL_host = read_superlu_valuesL<host_crsmat_t> (kernelHandleL, &L, original_graphL_host);
     // 2) re-load L into merged crs
     bool unit_diag = true;
-    kernelHandleL->set_sptrsv_invert_diagonal (invert_diag);  // now invert, TODO: diagonals are always inverted
+    // reset invert option
+    kernelHandleL->set_sptrsv_invert_diagonal (invert_diag);
     if (useSpMV) {
       superluL_host = read_merged_supernodes<host_crsmat_t> (kernelHandleL, nsuper, supercols,
                                                              unit_diag, superluL_host, graphL_host);
@@ -603,7 +594,8 @@ void sptrsv_compute(
     superluU_host = read_superlu_valuesU<host_crsmat_t> (kernelHandleU, &L, &U, original_graphU_host);
     // 2) re-load U into merged crs
     unit_diag = false;
-    kernelHandleU->set_sptrsv_invert_diagonal (invert_diag);  // now invert, TODO: diagonals are always inverted
+    // reset invert option
+    kernelHandleU->set_sptrsv_invert_diagonal (invert_diag);
     if (useSpMV) {
       superluU_host = read_merged_supernodes<host_crsmat_t> (kernelHandleU, nsuper, supercols,
                                                              unit_diag, superluU_host, graphU_host);
@@ -658,7 +650,6 @@ void sptrsv_compute(
     std::cout << "   Time to Split to submatrix: " << time_seconds << std::endl;
     #endif
   }
-
 
   // ==============================================
   // save crsmat
