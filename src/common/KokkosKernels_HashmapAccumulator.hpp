@@ -129,9 +129,7 @@ struct HashmapAccumulator
         keys(),
         values(),
         __max_value_size(),
-        __hashOpRHS(0),
-        __insert_success(0), 
-        __insert_full(1)
+        __hashOpRHS(0)
         {}
 
 
@@ -163,10 +161,13 @@ struct HashmapAccumulator
         keys(keys_),
         values(values_),
         __max_value_size(max_value_size_),
-        __hashOpRHS(hashOpRHS),
-        __insert_success(0), 
-        __insert_full(1)
-        {}
+        __hashOpRHS(hashOpRHS)
+        {
+          // Substract 1 and use the bitwiseAnd __compute_hash member.
+          if (std::is_same<hash_type, HashOpType::pow2Modulo>::value) {
+            __hashOpRHS -= 1;
+          }
+        }
 
 
   //function to be called from device.
@@ -673,8 +674,8 @@ struct HashmapAccumulator
 
     hash = __compute_hash(key, __hashOpRHS);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]){
-      if (keys[i] == key){
-        values[i] = (key_type)values[i] | (key_type)value;
+      if (keys[i] == key) {
+        values[i] = values[i] | value;
         return __insert_success;
       }
     }
@@ -731,7 +732,7 @@ struct HashmapAccumulator
     hash = __compute_hash(key, __hashOpRHS);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
-        values[i] = (key_type)values[i] | (key_type)value;
+        values[i] = values[i] | value;
         return __insert_success;
       }
     }
@@ -784,7 +785,6 @@ struct HashmapAccumulator
     hash = __compute_hash(key, __hashOpRHS);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
-        //values[i] = (key_type)values[i] | (key_type)value;
         return __insert_success;
       }
     }
@@ -823,13 +823,18 @@ struct HashmapAccumulator
   private:
     size_type __max_value_size;
     size_type __hashOpRHS;
-    const int __insert_success;
-    const int __insert_full;
+    static constexpr
+    int __insert_success = 0;
+    static constexpr
+    int __insert_full = 1;
 
-    template<typename U = hash_type, typename std::enable_if<std::is_same<U, HashOpType::bitwiseAnd>::value, std::size_t>::type = 0>
+    template<typename U = hash_type, 
+             typename std::enable_if<std::is_same<U, 
+                                     HashOpType::bitwiseAnd>::value ||
+                                     std::is_same<U, HashOpType::pow2Modulo>::value, 
+                      std::size_t>::type = 0>
     KOKKOS_INLINE_FUNCTION
     int __compute_hash(size_type key, size_type bitmask) {
-      //std::cout << "bitwiseAnd" << std::endl;
       size_type hash = key & bitmask;
       #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
         if (hash == -1)
@@ -843,22 +848,7 @@ struct HashmapAccumulator
     template<typename U = hash_type, typename std::enable_if<std::is_same<U, HashOpType::modulo>::value, std::size_t>::type = 0>
     KOKKOS_INLINE_FUNCTION
     int __compute_hash(size_type key, size_type divisor) {
-      //std::cout << "modulo" << std::endl;
       size_type hash = key % divisor;
-      #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
-        if (hash == -1)
-          Kokkos::abort("__compute_hash: hash = -1");
-        if (key == -1)
-          Kokkos::abort("__compute_hash: key = -1");
-      #endif // HASHMAPACCUMULATOR_ASSERT_ENABLED
-      return hash;
-    }
-
-    template<typename U = hash_type, typename std::enable_if<std::is_same<U, HashOpType::pow2Modulo>::value, std::size_t>::type = 0>
-    KOKKOS_INLINE_FUNCTION
-    int __compute_hash(size_type key, size_type bitmask) {
-      //std::cout << "pow2Modulo" << std::endl;
-      size_type hash = key & (bitmask - 1);
       #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
         if (hash == -1)
           Kokkos::abort("__compute_hash: hash = -1");
