@@ -49,6 +49,7 @@
 #include <Kokkos_ArithTraits.hpp>
 
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosKernels_Controls.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
 #include <KokkosSparse_spmv_impl.hpp>
@@ -155,12 +156,13 @@ struct SPMV{
 
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv (const char mode[],
-      const coefficient_type& alpha,
-      const AMatrix& A,
-      const XVector& x,
-      const coefficient_type& beta,
-      const YVector& y);
+  static void spmv (const KokkosKernels::Experimental::Controls& controls,
+		    const char mode[],
+		    const coefficient_type& alpha,
+		    const AMatrix& A,
+		    const XVector& x,
+		    const coefficient_type& beta,
+		    const YVector& y);
 };
 
 // Unification layer
@@ -245,12 +247,13 @@ struct SPMV < AT, AO, AD, AM, AS,
   typedef typename YVector::non_const_value_type coefficient_type;
 
   static void
-  spmv (const char mode[],
-      const coefficient_type& alpha,
-      const AMatrix& A,
-      const XVector& x,
-      const coefficient_type& beta,
-      const YVector& y)
+  spmv (const KokkosKernels::Experimental::Controls& controls,
+	const char mode[],
+	const coefficient_type& alpha,
+	const AMatrix& A,
+	const XVector& x,
+	const coefficient_type& beta,
+	const YVector& y)
   {
     typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
 
@@ -264,16 +267,16 @@ struct SPMV < AT, AO, AD, AM, AS,
     }
 
     if (beta == KAT::zero ()) {
-      spmv_beta<AMatrix, XVector, YVector, 0> (mode, alpha, A, x, beta, y);
+      spmv_beta<AMatrix, XVector, YVector, 0> (controls, mode, alpha, A, x, beta, y);
     }
     else if (beta == KAT::one ()) {
-      spmv_beta<AMatrix, XVector, YVector, 1> (mode, alpha, A, x, beta, y);
+      spmv_beta<AMatrix, XVector, YVector, 1> (controls, mode, alpha, A, x, beta, y);
     }
     else if (beta == -KAT::one ()) {
-      spmv_beta<AMatrix, XVector, YVector, -1> (mode, alpha, A, x, beta, y);
+      spmv_beta<AMatrix, XVector, YVector, -1> (controls, mode, alpha, A, x, beta, y);
     }
     else {
-      spmv_beta<AMatrix, XVector, YVector, 2> (mode, alpha, A, x, beta, y);
+      spmv_beta<AMatrix, XVector, YVector, 2> (controls, mode, alpha, A, x, beta, y);
     }
   }
 };

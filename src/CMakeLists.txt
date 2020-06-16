@@ -235,6 +235,18 @@ KOKKOSKERNELS_GENERATE_ETI(Blas3_trsm trsm
   TYPE_LISTS FLOATS LAYOUTS DEVICES
 )
 
+KOKKOSKERNELS_GENERATE_ETI(Blas3_trmm trmm
+  HEADER_LIST ETI_HEADERS
+  SOURCE_LIST SOURCES
+  TYPE_LISTS FLOATS LAYOUTS DEVICES
+)
+
+KOKKOSKERNELS_GENERATE_ETI(Blas_trtri trtri
+  HEADER_LIST ETI_HEADERS
+  SOURCE_LIST SOURCES
+  TYPE_LISTS FLOATS LAYOUTS DEVICES
+)
+
 KOKKOSKERNELS_GENERATE_ETI(Sparse_sptrsv_solve sptrsv_solve
   HEADER_LIST ETI_HEADERS
   SOURCE_LIST SOURCES
@@ -332,10 +344,16 @@ LIST(APPEND SOURCES
  batched/KokkosBatched_Util.cpp
  impl/tpls/KokkosBlas_Host_tpl.cpp
  impl/tpls/KokkosBlas_Cuda_tpl.cpp
+ impl/tpls/KokkosKernels_tpl_handles.cpp
 )
 
-# Add the ETI headers to complete list of headers
-LIST(APPEND HEADERS ${ETI_HEADERS})
+# For now, don't add the ETI headers to complete list of headers
+# This will break some IDEs and won't properly display headers in the file list
+# However, because of the behavior of TRIBITS_ADD_LIBRARY
+# I can't add the ETI headers with them getting double-installed
+# with a bunch of headers in the wrong location
+# This doesn't change pre-existing behavior before the ETI changes
+#LIST(APPEND HEADERS ${ETI_HEADERS})
 #-----------------------------------------------------------------------------
 
 KOKKOSKERNELS_ADD_LIBRARY(
@@ -361,8 +379,9 @@ ELSE()
     $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
 ENDIF()
 
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC BLAS)
+
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC LAPACK)
+KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC BLAS)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CBLAS)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC LAPACKE)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC SUPERLU)
