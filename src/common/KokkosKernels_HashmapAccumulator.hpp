@@ -548,9 +548,8 @@ struct HashmapAccumulator
       return __insert_success;
     }
 
-    // This appears to be redundant to the thread-safe atomic_fetch_add
-    // conditional check below.
-    // issue-508, TODO: Remove this check?
+    // Ensure that threads don't continue incrementing used_size_ if the hashmap
+    // is full, used_size_ could overflow and result in undefined behavior.
     if (used_size_[0] >= max_value_size_) {
       return __insert_full;
     }
@@ -573,9 +572,14 @@ struct HashmapAccumulator
       //hash_nexts is updated second time as below.
       //but this is okay for spgemm,
       //because no two keys will be inserted into hashmap at the same time, as rows have unique columns.
+      
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
+      // Atomically:
+      // hashbeginning = hash_begins[hash]
+      // hash_begins[hash] = my_write_index
+      // hash_nexts[my_write_index] = hash_begins[hash]
       size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
       return __insert_success;
