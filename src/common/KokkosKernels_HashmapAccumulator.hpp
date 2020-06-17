@@ -506,6 +506,17 @@ struct HashmapAccumulator
       //hash_nexts is updated second time as below.
       //but this is okay for spgemm,
       //because no two keys will be inserted into hashmap at the same time, as rows have unique columns.
+      
+      // Neither the compiler nor the execution unit can re-order the line
+      // directly below with the next line performing the atomic_exchange as the
+      // atomic exchange writes to hash_begins[hash] and this line reads from
+      // hash_begins[hash].
+      // This line is needed such that threads of execution can still access the
+      // old linked list, after hash_begins+hash has been atomically overwritten
+      // with my_write_index but before hash_nexts[my_write_index] is
+      // overwritten with hashbeginning. If this line was not here, threads may
+      // not be able to access the dangling linked list since
+      // hash_nexts[my_write_index] would still be -1.
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
@@ -573,6 +584,16 @@ struct HashmapAccumulator
       //but this is okay for spgemm,
       //because no two keys will be inserted into hashmap at the same time, as rows have unique columns.
       
+      // Neither the compiler nor the execution unit can re-order the line
+      // directly below with the next line performing the atomic_exchange as the
+      // atomic exchange writes to hash_begins[hash] and this line reads from
+      // hash_begins[hash].
+      // This line is needed such that threads of execution can still access the
+      // old linked list, after hash_begins+hash has been atomically overwritten
+      // with my_write_index but before hash_nexts[my_write_index] is
+      // overwritten with hashbeginning. If this line was not here, threads may
+      // not be able to access the dangling linked list since
+      // hash_nexts[my_write_index] would still be -1.
       hash_nexts[my_write_index] = hash_begins[hash];
       #endif
 
