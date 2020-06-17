@@ -4,6 +4,8 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
 
+#include "KokkosKernels_Test_Structured_Matrix.hpp"
+
 using Scalar  = default_scalar;
 using Ordinal = default_lno_t;
 using Offset  = default_size_type;
@@ -33,9 +35,6 @@ int main(int argc, char* argv[]) {
   using matrix_type =
       typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
                                        Offset>;
-  using graph_type   = typename matrix_type::staticcrsgraph_type;
-  using row_map_type = typename graph_type::row_map_type;
-  using entries_type = typename graph_type::entries_type;
   using values_type  = typename matrix_type::values_type;
 
   int return_value = 0;
@@ -43,56 +42,25 @@ int main(int argc, char* argv[]) {
   {
     const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
 
-    Ordinal numRows = 10;
+    // The mat_structure view is used to generate a matrix using
+    // finite difference (FD) or finite element (FE) discretization
+    // on a cartesian grid.
+    // Each row corresponds to an axis (x, y and z)
+    // In each row the first entry is the number of grid point in
+    // that direction, the second and third entries are used to apply
+    // BCs in that direction.
+    Kokkos::View<Ordinal*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", 2);
+    mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
+    mat_structure(0, 1) = 1;   // Add BC to the left
+    mat_structure(0, 2) = 1;   // Add BC to the right
+    mat_structure(1, 0) = 10;  // Request 10 grid point in 'y' direction
+    mat_structure(1, 1) = 1;   // Add BC to the bottom
+    mat_structure(1, 2) = 1;   // Add BC to the top
 
-    // Build the row pointers and store numNNZ
-    typename row_map_type::non_const_type row_map("row pointers", numRows + 1);
-    typename row_map_type::HostMirror row_map_h =
-        Kokkos::create_mirror_view(row_map);
-    for (Ordinal rowIdx = 1; rowIdx < numRows + 1; ++rowIdx) {
-      if ((rowIdx == 1) || (rowIdx == numRows)) {
-        row_map_h(rowIdx) = row_map_h(rowIdx - 1) + 2;
-      } else {
-        row_map_h(rowIdx) = row_map_h(rowIdx - 1) + 3;
-      }
-    }
-    const Offset numNNZ = row_map_h(numRows);
-    Kokkos::deep_copy(row_map, row_map_h);
+    matrix_type myMatrix = Test::generate_structured_matrix2D<matrix_type>("FD",
+                                                                           mat_structure);
 
-    typename entries_type::non_const_type entries("column indices", numNNZ);
-    typename entries_type::HostMirror entries_h =
-        Kokkos::create_mirror_view(entries);
-    typename values_type::non_const_type values("values", numNNZ);
-    typename values_type::HostMirror values_h =
-        Kokkos::create_mirror_view(values);
-    for (Ordinal rowIdx = 0; rowIdx < numRows; ++rowIdx) {
-      if (rowIdx == 0) {
-        entries_h(0) = rowIdx;
-        entries_h(1) = rowIdx + 1;
-
-        values_h(0) = SC_ONE;
-        values_h(1) = -SC_ONE;
-      } else if (rowIdx == numRows - 1) {
-        entries_h(row_map_h(rowIdx))     = rowIdx - 1;
-        entries_h(row_map_h(rowIdx) + 1) = rowIdx;
-
-        values_h(row_map_h(rowIdx))     = -SC_ONE;
-        values_h(row_map_h(rowIdx) + 1) = SC_ONE;
-      } else {
-        entries_h(row_map_h(rowIdx))     = rowIdx - 1;
-        entries_h(row_map_h(rowIdx) + 1) = rowIdx;
-        entries_h(row_map_h(rowIdx) + 2) = rowIdx + 1;
-
-        values_h(row_map_h(rowIdx))     = -SC_ONE;
-        values_h(row_map_h(rowIdx) + 1) = SC_ONE + SC_ONE;
-        values_h(row_map_h(rowIdx) + 2) = -SC_ONE;
-      }
-    }
-    Kokkos::deep_copy(entries, entries_h);
-    Kokkos::deep_copy(values, values_h);
-
-    graph_type myGraph(entries, row_map);
-    matrix_type myMatrix("test matrix", numRows, values, myGraph);
+    const Ordinal numRows = myMatrix.numRows();
 
     const Scalar alpha = SC_ONE;
     const Scalar beta  = SC_ONE;
