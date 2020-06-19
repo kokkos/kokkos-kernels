@@ -48,14 +48,16 @@ int main(int argc, char* argv[]) {
     // Each row corresponds to an axis (x, y and z)
     // In each row the first entry is the number of grid point in
     // that direction, the second and third entries are used to apply
-    // BCs in that direction.
+    // BCs in that direction, BC=0 means Neumann BC is applied,
+    // BC=1 means Dirichlet BC is applied by zeroing out the row and putting
+    // one on the diagonal.
     Kokkos::View<Ordinal*[3], Kokkos::HostSpace> mat_structure("Matrix Structure", 2);
     mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
-    mat_structure(0, 1) = 1;   // Add BC to the left
-    mat_structure(0, 2) = 1;   // Add BC to the right
+    mat_structure(0, 1) = 0;   // Add BC to the left
+    mat_structure(0, 2) = 0;   // Add BC to the right
     mat_structure(1, 0) = 10;  // Request 10 grid point in 'y' direction
-    mat_structure(1, 1) = 1;   // Add BC to the bottom
-    mat_structure(1, 2) = 1;   // Add BC to the top
+    mat_structure(1, 1) = 0;   // Add BC to the bottom
+    mat_structure(1, 2) = 0;   // Add BC to the top
 
     matrix_type myMatrix = Test::generate_structured_matrix2D<matrix_type>("FD",
                                                                            mat_structure);
