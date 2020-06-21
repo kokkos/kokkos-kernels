@@ -615,10 +615,8 @@ namespace Experimental {
         "add_symbolic: A size_type must match KernelHandle size_type (const doesn't matter)");
     static_assert(SAME_TYPE(typename blno_row_view_t_::value_type, size_type),
         "add_symbolic: B size_type must match KernelHandle size_type (const doesn't matter)");
-    static_assert(SAME_TYPE(typename clno_row_view_t_::value_type, size_type),
+    static_assert(SAME_TYPE(typename clno_row_view_t_::non_const_value_type, size_type),
         "add_symbolic: C size_type must match KernelHandle size_type)");
-    static_assert(std::is_same<typename clno_row_view_t_::value_type, typename clno_row_view_t_::value_type>::value,
-        "add_symbolic: C size_type must not be const");
     static_assert(SAME_TYPE(typename alno_nnz_view_t_::value_type, ordinal_type),
         "add_symbolic: A entry type must match KernelHandle entry type (aka nnz_lno_t, and const doesn't matter)");
     static_assert(SAME_TYPE(typename blno_nnz_view_t_::value_type, ordinal_type),
