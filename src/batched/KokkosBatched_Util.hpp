@@ -26,21 +26,22 @@
 
 // TPL macros
 #if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
-#define __KOKKOSBATCHED_INTEL_MKL__ 1
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL__ 1
 #include "mkl_version.h"
 #if __INTEL_MKL__ >= 2018
-#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
-#define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ 1    
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ 1
 #include "mkl.h"
   //#include "mkl_types.h"
 #endif
 #endif
 
-namespace KokkosBatched {
-
-#if defined (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-#define __KOKKOSKERNELS_NVIDIA_CUBLAS__ 1
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE)
+#define __KOKKOSBATCHED_ENABLE_LAPACKE__ 1
+#include "lapacke.h"
 #endif
+
+namespace KokkosBatched {
 
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
