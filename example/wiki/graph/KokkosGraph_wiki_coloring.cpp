@@ -119,11 +119,11 @@ int main(int argc, char* argv[])
 {
   Kokkos::initialize();
   {
+    using ColoringDemo::numVertices;
     RowmapType rowmapDevice;
     ColindsType colindsDevice;
     //Step 1: Generate the graph on host, allocate space on device, and copy.
     //See function "generate9pt" below.
-    const Ordinal numVertices = gridX * gridY;
     ColoringDemo::generate9pt(numVertices, rowmapDevice, colindsDevice);
     //Step 2: Create handle and run distance-1 coloring.
     {

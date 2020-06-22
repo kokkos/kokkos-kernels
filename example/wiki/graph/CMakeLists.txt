@@ -5,6 +5,6 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../../test_c
 
 KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   wiki_coloring
-  SOURCES KokkosSparse_wiki_coloring.cpp
+  SOURCES KokkosGraph_wiki_coloring.cpp
   )
 
