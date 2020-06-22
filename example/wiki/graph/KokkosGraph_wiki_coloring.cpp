@@ -72,7 +72,7 @@ namespace ColoringDemo
 
   //Build the graph on host, allocate these views on device and copy the graph to them.
   //Both rowmapDevice and colindsDevice are output parameters and should default-initialized (empty) on input.
-  void generate9pt(Ordinal numVertices, RowmapType& rowmapDevice, ColindsType& colindsDevice)
+  void generate9pt(RowmapType& rowmapDevice, ColindsType& colindsDevice)
   {
     //Generate the graph on host (use std::vector to not need to know
     //how many entries ahead of time)
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
     ColindsType colindsDevice;
     //Step 1: Generate the graph on host, allocate space on device, and copy.
     //See function "generate9pt" below.
-    ColoringDemo::generate9pt(numVertices, rowmapDevice, colindsDevice);
+    ColoringDemo::generate9pt(rowmapDevice, colindsDevice);
     //Step 2: Create handle and run distance-1 coloring.
     {
       Handle handle;
