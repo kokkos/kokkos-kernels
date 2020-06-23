@@ -44,7 +44,6 @@
 #ifndef _KOKKOS_SPGEMM_HPP
 #define _KOKKOS_SPGEMM_HPP
 
-
 #include "KokkosSparse_spgemm_numeric.hpp"
 #include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_jacobi.hpp"
@@ -75,14 +74,14 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
     entriesC = entries_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"),
                             c_nnz_size);
     valuesC  = values_type(Kokkos::ViewAllocateWithoutInitializing("valuesC"),
-                           c_nnz_size);
+                          c_nnz_size);
   }
 
   graph_type graphC(entriesC, row_mapC);
   C = CMatrix("matrix", graphC);
 }
 
-  template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
+template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
 void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
                     const BMatrix& B, const bool Bmode, CMatrix& C) {
   // using row_map_type = typename CMatrix::index_type::non_const_type;

@@ -399,8 +399,8 @@ void spadd_symbolic(
         nrows + 1, c_rowmap);
   } else {
     // note: scoping individual parts of the process to free views sooner,
-    // minimizing peak memory usage run the unsorted c_rowmap upper bound functor
-    // (just adds together A and B entry counts row by row)
+    // minimizing peak memory usage run the unsorted c_rowmap upper bound
+    // functor (just adds together A and B entry counts row by row)
     clno_row_view_t_ c_rowmap_upperbound(
         NoInitialize("C row counts upper bound"), nrows + 1);
     size_type c_nnz_upperbound = 0;
