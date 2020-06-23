@@ -58,12 +58,16 @@ value_type computeResidual(const ManyMatrixType &A,
 		 Trans::NoTranspose,
 		 Algo::Level2::Unblocked>
 	  ::invoke(member, -one, AA, xx, one, rr);
-	Kokkos::parallel_for
+
+        value_type sum(0);
+	Kokkos::parallel_reduce
 	  (Kokkos::TeamThreadRange(member, rr.extent(0)),
-	   [&](const int &k) {
-	     const auto abs_rr = Kokkos::ArithTraits<value_type>::abs(rr(k));
-	     Kokkos::atomic_fetch_add(&update, abs_rr);
-	   });
+	   [&](const int &k, value_type &lsum) {
+            lsum += Kokkos::ArithTraits<value_type>::abs(rr(k));
+          }, sum);
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            update += sum;
+          });
       }, residual);
   }
   return residual;
@@ -190,7 +194,7 @@ int main(int argc, char* argv[]) {
 	  });      
 	Kokkos::fence();
 	const double t = timer.seconds();
-	printf("construction of jacobi time = %f , # of constructions per min = %.0f \n", t, 1.0/t*60);
+	printf("task 1: construction of jacobi time = %f , # of constructions per min = %.0f \n", t, 1.0/t*60);
       }
       
       /// apply block jacobi

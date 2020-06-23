@@ -63,10 +63,12 @@ namespace KokkosBatched {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
           ValueType t(0);
           const ValueType *__restrict__ tA = (A + i*as0);
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
-              t += tA[j*as1]*x[j*xs0];
+          Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(member,n),[&](const int &j, ValueType &update) {
+              update += tA[j*as1]*x[j*xs0];
+            }, t);
+          Kokkos::single(Kokkos::PerThread(member), [&]() {
+              y[i*ys0] += alpha*t;
             });
-          Kokkos::atomic_fetch_add(&y[i*ys0], alpha*t);
         });
     }
     return 0;
