@@ -538,7 +538,13 @@ void mkl_symbolic(
 
 
           //KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
-          idx nnz = row_mapC(m) =  rows_end[m - 1];
+          //idx nnz = row_mapC(m) = rows_end[m - 1];
+          idx nnz = rows_end[m - 1];
+          using ptr_type = decltype(row_mapC.data());
+          using rmptr_type = typename std::remove_pointer<ptr_type>::type;
+          using nonconst_rmptr_type = typename std::remove_const<rmptr_type>::type;
+          auto * tmpPtr = const_cast<nonconst_rmptr_type*>(row_mapC.data());
+          tmpPtr[m] = nnz;
 
           KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type , MyExecSpace> (nnz, columns, entriesC);
           KokkosKernels::Impl::copy_vector<float *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (nnz, values, valuesC);
@@ -627,7 +633,14 @@ void mkl_symbolic(
             Kokkos::Impl::Timer copy_time;
 
             //KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
-            idx nnz = row_mapC(m) =  rows_end[m - 1];
+            //idx nnz = row_mapC(m) = rows_end[m - 1];
+            idx nnz = rows_end[m - 1];
+            using ptr_type = decltype(row_mapC.data());
+            using rmptr_type = typename std::remove_pointer<ptr_type>::type;
+            using nonconst_rmptr_type = typename std::remove_const<rmptr_type>::type;
+            auto * tmpPtr = const_cast<nonconst_rmptr_type*>(row_mapC.data());
+
+            tmpPtr[m] = nnz;
 
             KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
             KokkosKernels::Impl::copy_vector<double *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (nnz, values, valuesC);
