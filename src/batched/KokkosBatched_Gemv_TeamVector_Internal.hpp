@@ -29,7 +29,10 @@ namespace KokkosBatched {
            const ValueType *__restrict__ A, const int as0, const int as1,
            const ValueType *__restrict__ x, const int xs0, 
            const ScalarType beta,
-           /**/  ValueType *__restrict__ y, const int ys0);
+           /**/  ValueType *__restrict__ y, const int ys0) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
     
   template<>
