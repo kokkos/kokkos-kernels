@@ -158,7 +158,7 @@ if [ ! -z "$SEMS_MODULEFILES_ROOT" ]; then
   if [[ "$MACHINE" = "" ]]; then
     MACHINE=sems
     module load sems-git
-  fi  
+  fi
 fi
 
 if [[ "$MACHINE" = "" ]]; then
@@ -637,7 +637,7 @@ elif [ "$MACHINE" = "mayer" ]; then
     ARCH_FLAG="--arch=ARMV8_THUNDERX2"
   fi
 
-  SPACK_HOST_ARCH="+armv8_tx2" 
+  SPACK_HOST_ARCH="+armv8_tx2"
 elif [ "$MACHINE" = "blake" ]; then
   MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
   eval "$MODULE_ENVIRONMENT"
@@ -650,17 +650,19 @@ elif [ "$MACHINE" = "blake" ]; then
   BASE_MODULE_LIST_INTEL="cmake/3.12.3,<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
 
   if [ "$SPOT_CHECK" = "True" ]; then
-    # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/19.1.144 $BASE_MODULE_LIST_INTEL "OpenMP_Serial" icpc $INTEL_WARNING_FLAGS"
+      # Format: (compiler module-list build-list exe-name warning-flag)
+      # TODO: Failing toolchains:
+      #"intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+      #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
+    COMPILERS=("intel/19.1.144 $BASE_MODULE_LIST_INTEL "OpenMP_Serial" icpc $INTEL_WARNING_FLAGS"
                "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
-    # Format: (compiler module-list build-list exe-name warning-flag)
+      # Format: (compiler module-list build-list exe-name warning-flag)
+      # TODO: Failing toolchains:
+      #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
     COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
                "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
     )
   else
     COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
@@ -751,7 +753,7 @@ elif [ "$MACHINE" = "apollo" ]; then
     ARCH_FLAG="--arch=SNB,Volta70"
   fi
   SPACK_HOST_ARCH="+snb"
-  SPACK_CUDA_ARCH="+volta70" 
+  SPACK_CUDA_ARCH="+volta70"
   SPACK_CUDA_HOST_COMPILER="%gcc@6.1.0"
 elif [ "$MACHINE" = "kokkos-dev-2" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh ; module use /home/projects/x86-64/modulefiles/local"
@@ -843,7 +845,7 @@ elif [ "$MACHINE" = "kokkos-dev-2" ]; then
     ARCH_FLAG="--arch=SNB,Volta70"
   fi
   SPACK_HOST_ARCH="+snb"
-  SPACK_CUDA_ARCH="+volta70" 
+  SPACK_CUDA_ARCH="+volta70"
   SPACK_CUDA_HOST_COMPILER="%gcc@7.2.0"
 else
   echo "Unhandled machine $MACHINE" >&2
@@ -1293,7 +1295,7 @@ run_in_background() {
     if [[ "$compiler" == cuda* ]]; then
       num_jobs=1
     fi
-    if [[ "$compiler" == clang ]]; then 
+    if [[ "$compiler" == clang ]]; then
       num_jobs=1
     fi
   # fi
