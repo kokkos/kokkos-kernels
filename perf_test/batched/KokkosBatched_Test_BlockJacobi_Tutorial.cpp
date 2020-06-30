@@ -3,6 +3,17 @@
 #include "impl/Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
+
+#if  defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
+#if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
+#if  defined(KOKKOS_ENABLE_CUDA_LAMBDA)
+#define KOKKOSBATCHED_TEST_BLOCKJACOBI 
+#endif 
+#endif
+#endif
+
+#if defined(KOKKOSBATCHED_TEST_BLOCKJACOBI) 
+
 /// KokkosKernels headers
 #include "KokkosBatched_Util.hpp"
 
@@ -306,4 +317,10 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
+
+#else
+int main() {
+  return 0;
+}
+#endif
 
