@@ -24,32 +24,33 @@
 #include "cuda_profiler_api.h"
 #endif
 
-using exec_space =  Kokkos::DefaultExecutionSpace;
-using memory_space = typename exec_space::memory_space;
+
+using exec_space_type =  Kokkos::DefaultExecutionSpace;
+using memory_space_type = typename exec_space_type::memory_space;
 using host_space = Kokkos::DefaultHostExecutionSpace;
 
-using value_type = double;
-using policy_type = Kokkos::TeamPolicy<exec_space>;
+using val_type = double;
+using policy_type = Kokkos::TeamPolicy<exec_space_type>;
 using member_type = typename policy_type::member_type;
 
 using namespace KokkosBatched;
 
 template<typename ManyMatrixType,
 	 typename ManyVectorType>
-value_type computeResidual(const ManyMatrixType &A,
+val_type computeResidual(const ManyMatrixType &A,
 			   const ManyVectorType &x,
 			   const ManyVectorType &b,
 			   const ManyVectorType &r) {
   /// compute residual
-  value_type residual(0);
+  val_type residual(0);
   {
     policy_type policy(A.extent(0), Kokkos::AUTO());	
     Kokkos::deep_copy(r, b);
     Kokkos::parallel_reduce
       ("compute-residual",
-       policy, KOKKOS_LAMBDA(const member_type &member, value_type &update) {
+       policy, KOKKOS_LAMBDA(const member_type &member, val_type &update) {
 	const int i = member.league_rank();
-	const value_type one(1);
+	const val_type one(1);
 	auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
 	auto xx = Kokkos::subview(x, i, Kokkos::ALL());
 	auto rr = Kokkos::subview(r, i, Kokkos::ALL());
@@ -59,11 +60,11 @@ value_type computeResidual(const ManyMatrixType &A,
 		 Algo::Level2::Unblocked>
 	  ::invoke(member, -one, AA, xx, one, rr);
 
-        value_type sum(0);
+        val_type sum(0);
 	Kokkos::parallel_reduce
 	  (Kokkos::TeamThreadRange(member, rr.extent(0)),
-	   [&](const int &k, value_type &lsum) {
-            lsum += Kokkos::ArithTraits<value_type>::abs(rr(k));
+	   [&](const int &k, val_type &lsum) {
+            lsum += Kokkos::ArithTraits<val_type>::abs(rr(k));
           }, sum);
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             update += sum;
@@ -104,27 +105,27 @@ int main(int argc, char* argv[]) {
     /// x - solution vector
     /// b - right hand side vector
     ///
-    Kokkos::View<value_type***,Kokkos::LayoutRight,exec_space> A("block diagonals", N, Blk, Blk);
-    Kokkos::View<value_type***,Kokkos::LayoutRight,exec_space> T("temporal block diagonals", N, Blk, Blk);    
-    Kokkos::View<value_type**,Kokkos::LayoutRight,exec_space> x("x", N, Blk);
-    Kokkos::View<value_type**,Kokkos::LayoutRight,exec_space> b("b", N, Blk);
+    Kokkos::View<val_type***,Kokkos::LayoutRight,exec_space_type> A("block diagonals", N, Blk, Blk);
+    Kokkos::View<val_type***,Kokkos::LayoutRight,exec_space_type> T("temporal block diagonals", N, Blk, Blk);    
+    Kokkos::View<val_type**,Kokkos::LayoutRight,exec_space_type> x("x", N, Blk);
+    Kokkos::View<val_type**,Kokkos::LayoutRight,exec_space_type> b("b", N, Blk);
 
     /// copy of A to check residual
-    Kokkos::View<value_type***,Kokkos::LayoutRight,exec_space> Acopy("Acopy",
+    Kokkos::View<val_type***,Kokkos::LayoutRight,exec_space_type> Acopy("Acopy",
 								     A.extent(0),
 								     A.extent(1),
 								     A.extent(2));
 
     /// residual vector
-    Kokkos::View<value_type**,Kokkos::LayoutRight,exec_space> r("r",
+    Kokkos::View<val_type**,Kokkos::LayoutRight,exec_space_type> r("r",
 								b.extent(0), 
 								b.extent(1));
 
     /// The block diagonal matrices are assumed to be extracted from a block sparse matrix.
     /// Here we set the blocks with random values
-    Kokkos::Random_XorShift64_Pool<exec_space> random(13245);
-    Kokkos::fill_random(A, random, value_type(1.0));
-    Kokkos::fill_random(b, random, value_type(1.0));
+    Kokkos::Random_XorShift64_Pool<exec_space_type> random(13245);
+    Kokkos::fill_random(A, random, val_type(1.0));
+    Kokkos::fill_random(b, random, val_type(1.0));
 
     Kokkos::deep_copy(Acopy, A);
 
@@ -171,7 +172,7 @@ int main(int argc, char* argv[]) {
 	  ("task1.solve-lower-triangular",
 	   policy, KOKKOS_LAMBDA(const member_type &member) {
 	    const int i = member.league_rank();
-	    const value_type one(1);
+	    const val_type one(1);
 	    auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
 	    auto TT = Kokkos::subview(T, i, Kokkos::ALL(), Kokkos::ALL());
 	    TeamTrsm<member_type,
@@ -184,7 +185,7 @@ int main(int argc, char* argv[]) {
 	  ("task1.solve-upper-triangular",
 	   policy, KOKKOS_LAMBDA(const member_type &member) {
 	    const int i = member.league_rank();
-	    const value_type one(1);
+	    const val_type one(1);
 	    auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
 	    auto TT = Kokkos::subview(T, i, Kokkos::ALL(), Kokkos::ALL());
 	    TeamTrsm<member_type,
@@ -205,7 +206,7 @@ int main(int argc, char* argv[]) {
 	  ("task1.apply-block-jacobi",
 	   policy, KOKKOS_LAMBDA(const member_type &member) {
 	    const int i = member.league_rank();
-	    const value_type one(1), zero(0);
+	    const val_type one(1), zero(0);
 	    auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
 	    auto xx = Kokkos::subview(x, i, Kokkos::ALL());
 	    auto bb = Kokkos::subview(b, i, Kokkos::ALL());
@@ -246,7 +247,7 @@ int main(int argc, char* argv[]) {
 	Kokkos::parallel_for
 	  ("task2.factorize-invert",
 	   policy, KOKKOS_LAMBDA(const member_type &member) {
-	    const value_type one(1);
+	    const val_type one(1);
 	    const int i = member.league_rank();
 	    auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
 	    auto TT = Kokkos::subview(T, i, Kokkos::ALL(), Kokkos::ALL());
@@ -276,7 +277,7 @@ int main(int argc, char* argv[]) {
 	  ("task2.apply-block-jacobi",
 	   policy, KOKKOS_LAMBDA(const member_type &member) {
 	    const int i = member.league_rank();
-	    const value_type one(1), zero(0);
+	    const val_type one(1), zero(0);
 	    auto AA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
 	    auto xx = Kokkos::subview(x, i, Kokkos::ALL());
 	    auto bb = Kokkos::subview(b, i, Kokkos::ALL());
