@@ -26,7 +26,10 @@ namespace KokkosBatched {
     static int
     invoke(const ScalarType alpha,
            const AViewType &A,
-           const bViewType &b);
+           const bViewType &b) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
     
@@ -49,7 +52,10 @@ namespace KokkosBatched {
     invoke(const MemberType &member,
            const ScalarType alpha,
            const AViewType &A,
-           const bViewType &b);
+           const bViewType &b) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
   ///
@@ -71,7 +77,10 @@ namespace KokkosBatched {
     invoke(const MemberType &member,
            const ScalarType alpha,
            const AViewType &A,
-           const bViewType &b);
+           const bViewType &b) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
 
