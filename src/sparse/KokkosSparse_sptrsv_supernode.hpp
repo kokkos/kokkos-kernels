@@ -57,8 +57,11 @@
 
 #include "KokkosBlas3_trmm.hpp"
 #include "KokkosBlas_trtri.hpp"
-#include "KokkosSparse_sptrsv.hpp"
 
+#include "KokkosBatched_Trtri_Decl.hpp"
+#include "KokkosBatched_Trtri_Serial_Impl.hpp"
+
+#include "KokkosSparse_sptrsv.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -1083,6 +1086,89 @@ void sptrsv_supernodal_symbolic(
 /* Auxiliary functions for numeric computation                                               */
 
 /* ========================================================================================= */
+  template <typename input_size_type, typename row_map_type, typename index_type, typename values_type>
+  struct TriSupernodalTrtriFunctor {
+
+    bool lower_tri;
+    bool unit_diag;
+    bool invert_offdiag;
+    const input_size_type *nb;
+    row_map_type hr;
+    index_type   hc;
+    values_type  hv;
+
+    KOKKOS_INLINE_FUNCTION
+    TriSupernodalTrtriFunctor(bool lower_tri_, bool unit_diag_, bool invert_offdiag_, const input_size_type *nb_, 
+                              row_map_type& hr_, index_type& hc_, values_type& hv_) :
+    lower_tri(lower_tri_),
+    unit_diag(unit_diag_),
+    invert_offdiag(invert_offdiag_),
+    nb(nb_),
+    hr(hr_),
+    hc(hc_),
+    hv(hv_)
+    {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const int s) const {
+      using execution_space = typename values_type::execution_space;
+      using memory_space    = typename execution_space::memory_space;
+      using values_view_t   = typename values_type::non_const_type;
+      using scalar_t        = typename values_view_t::value_type;
+
+      using range_type = Kokkos::pair<int, int>;
+      using TrtriAlgoType = KokkosBatched::Algo::Trtri::Unblocked;
+      using Uplo  = KokkosBatched::Uplo;
+      using Diag  = KokkosBatched::Diag;
+      using Side  = KokkosBatched::Side;
+      using Trans = KokkosBatched::Trans;
+
+      int j1 = nb[s];
+      int nsrow = hr(j1+1) - hr(j1);
+      int nscol = nb[s +1] - nb[s];
+
+      auto nnzD = hr (j1);
+      Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged>
+        viewL (&hv(nnzD), nsrow, nscol);
+      auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
+
+      if (lower_tri) {
+        if (unit_diag) {
+          KokkosBatched::SerialTrtri<Uplo::Lower, Diag::Unit, TrtriAlgoType>::invoke(Ljj);
+        } else {
+          KokkosBatched::SerialTrtri<Uplo::Lower, Diag::NonUnit, TrtriAlgoType>::invoke(Ljj);
+        }
+      } else {
+        if (unit_diag) {
+          KokkosBatched::SerialTrtri<Uplo::Upper, Diag::Unit, TrtriAlgoType>::invoke(Ljj);
+        } else {
+          KokkosBatched::SerialTrtri<Uplo::Upper, Diag::NonUnit, TrtriAlgoType>::invoke(Ljj);
+        }
+      }
+      if (nsrow > nscol && invert_offdiag) {
+        const scalar_t one (1.0);
+        auto Lij = Kokkos::subview (viewL, range_type (nscol, nsrow), Kokkos::ALL ());
+        if (lower_tri) {
+          if (unit_diag) {
+            KokkosBatched::SerialTrmm<Side::Right, Uplo::Lower, Trans::NoTranspose, Diag::Unit, TrtriAlgoType>::
+              invoke(one, Ljj, Lij);
+          } else {
+            KokkosBatched::SerialTrmm<Side::Right, Uplo::Lower, Trans::NoTranspose, Diag::NonUnit, TrtriAlgoType>::
+              invoke(one, Ljj, Lij);
+          }
+        } else {
+          if (unit_diag) {
+            KokkosBatched::SerialTrmm<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::Unit, TrtriAlgoType>::
+              invoke(one, Ljj, Lij);
+          } else {
+            KokkosBatched::SerialTrmm<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, TrtriAlgoType>::
+              invoke(one, Ljj, Lij);
+          }
+        }
+      }
+    }
+  };
+/* ========================================================================================= */
 template <typename KernelHandle, typename input_size_type,
           typename row_map_type, typename index_type, typename values_type>
 void
@@ -1090,9 +1176,9 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
                           row_map_type& hr, index_type& hc, values_type& hv) {
 
   using execution_space = typename values_type::execution_space;
-  using memory_space = typename execution_space::memory_space;
-  using values_view_t  = typename values_type::non_const_type;
-  using scalar_t = typename values_view_t::value_type;
+  using memory_space    = typename execution_space::memory_space;
+  using values_view_t   = typename values_type::non_const_type;
+  using scalar_t        = typename values_view_t::value_type;
   using range_type = Kokkos::pair<int, int>;
 
   const scalar_t one (1.0);
@@ -1115,6 +1201,12 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
 
   // ----------------------------------------------------------
   // now let's invert some blocks
+  #if 1
+  using range_policy = Kokkos::RangePolicy<execution_space>;
+  TriSupernodalTrtriFunctor<input_size_type, row_map_type, index_type, values_type>
+    sptrsv_tritri_functor (lower, unit_diag, invert_offdiag, nb, hr, hc, hv);
+  Kokkos::parallel_for("TriSupernodalTrtriFunctor", range_policy(0, nsuper), sptrsv_tritri_functor);
+  #else
   for (int s2 = 0; s2 < nsuper; s2++) {
     int j1 = nb[s2];
     int nsrow = hr(j1+1) - hr(j1);
@@ -1144,6 +1236,7 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
       time2 += timer.seconds ();
     }
   }
+  #endif
 
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "   invert_supernodes" << std::endl;
