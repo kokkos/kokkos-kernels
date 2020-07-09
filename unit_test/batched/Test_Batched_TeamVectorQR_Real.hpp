@@ -9,7 +9,7 @@ TEST_F( TestCategory, batched_scalar_team_vector_qr_float ) {
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F( TestCategory, batched_scalar_team_vector_qr_double ) {
-  typedef Algo::LU::Unblocked algo_tag_type;
+  typedef Algo::QR::Unblocked algo_tag_type;
   test_batched_qr<TestExecSpace,double,algo_tag_type>();
 }
 #endif
