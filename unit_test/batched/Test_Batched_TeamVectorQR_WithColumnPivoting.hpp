@@ -54,13 +54,18 @@ namespace Test {
       auto ww = Kokkos::subview(_w, k, Kokkos::ALL());
 
       // make diagonal dominant
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, aa.extent(0)),
+      const int m = aa.extent(0);
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
                            [&](const int &i) {
                              aa(i,i) += add_this;
                            });
-
-      /// xx = 1
-      TeamVectorSet<MemberType>::invoke(member, one, xx);
+      
+      /// xx = 1, 2,3,4
+      //TeamVectorSet<MemberType>::invoke(member, one, xx);
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
+                           [&](const int &i) {
+                             xx(i) = i+1;
+                           });
       member.team_barrier();
 
       /// bb = AA*xx
@@ -83,13 +88,9 @@ namespace Test {
       TeamVectorTrsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Unblocked>
         ::invoke(member, one, aa, xx);
       member.team_barrier();
-      
-      /// ww = xx
-      TeamVectorCopy<MemberType,Trans::NoTranspose>::invoke(member, bb, xx);
-      member.team_barrier();
-      
-      /// xx = P ww
-      TeamVectorApplyPivot<MemberType,Side::Left,Trans::NoTranspose>::invoke(member, pp, xx);
+
+      /// xx = P xx
+      TeamVectorApplyPivot<MemberType,Side::Left,Direct::Backward>::invoke(member, pp, xx);
       member.team_barrier();
     }
 
@@ -121,7 +122,7 @@ namespace Test {
   void impl_test_batched_qr_with_columnpivoting(const int N, const int BlkSize) {
     typedef typename MatrixViewType::non_const_value_type value_type;
     typedef Kokkos::Details::ArithTraits<value_type> ats;
-    const value_type one(1);
+    //const value_type one(1);
     /// randomized input testing views
     MatrixViewType a("a", N, BlkSize, BlkSize);
     VectorViewType x("x", N, BlkSize);
@@ -154,7 +155,7 @@ namespace Test {
     for (int k=0;k<N;++k) {
       for (int i=0;i<BlkSize;++i) {
         const mag_type sum  = ats::abs(x_host(k,i));
-        const mag_type diff = ats::abs(x_host(k,i)-one);
+        const mag_type diff = ats::abs(x_host(k,i)-value_type(i+1));
         EXPECT_NEAR_KK( diff/sum, mag_type(0), eps);
         //printf("k = %d, i = %d, sum %e diff %e \n", k, i, sum, diff );
       }
@@ -177,7 +178,7 @@ int test_batched_qr_with_columnpivoting() {
     Test::impl_test_batched_qr_with_columnpivoting
       <DeviceType,MatrixViewType,VectorViewType,
        PivotViewType,WorkViewType,AlgoTagType>(0, 10);
-    for (int i=1;i<10;++i) {                                                                                        
+    for (int i=1;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
       Test::impl_test_batched_qr_with_columnpivoting
 	<DeviceType,MatrixViewType,VectorViewType,

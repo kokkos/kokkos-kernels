@@ -13,7 +13,7 @@ namespace KokkosBatched {
   /// ==========
   template<typename MemberType,
 	   typename ArgSide,
-	   typename ArgTrans>
+	   typename ArgDirect>
   struct TeamVectorApplyPivot {
     template<typename AViewType>
     KOKKOS_INLINE_FUNCTION

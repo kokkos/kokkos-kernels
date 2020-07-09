@@ -46,20 +46,31 @@ namespace KokkosBatched {
            const int m,
            const ValueType *__restrict__ A, const int as0,
            /**/  IntType *__restrict__ idx) {
-      using reducer_value_type = typename Kokkos::MaxLoc<ValueType,IntType>::value_type;
-      reducer_value_type value;
-      Kokkos::MaxLoc<ValueType,IntType> reducer_value(value);
-      Kokkos::parallel_reduce
-	(Kokkos::TeamVectorRange(member, m),
-	 [&](const int &i, reducer_value_type &update) {
-	   const int idx_a = i*as0;
-	   if (A[idx_a] > update.val) {
-	     update.val = A[idx_a];
-	     update.loc = i;
-	   }
-	 }, reducer_value);
-      *idx = value.loc;
-
+      if (m > 0) {
+        using reducer_value_type = typename Kokkos::MaxLoc<ValueType,IntType>::value_type;
+        reducer_value_type value; 
+        Kokkos::MaxLoc<ValueType,IntType> reducer_value(value);
+        Kokkos::parallel_reduce
+          (Kokkos::TeamVectorRange(member, m),
+           [&](const int &i, reducer_value_type &update) {
+            const int idx_a = i*as0;
+            if (A[idx_a] > update.val) {
+              update.val = A[idx_a];
+              update.loc = i;
+            }
+          }, reducer_value);
+        Kokkos::single
+          (Kokkos::PerTeam(member),
+           [&]() {
+            *idx = value.loc;
+          });
+      } else {
+        Kokkos::single
+          (Kokkos::PerTeam(member),
+           [&]() {
+            *idx = 0;
+          });
+      }
       return 0;
     }
   };

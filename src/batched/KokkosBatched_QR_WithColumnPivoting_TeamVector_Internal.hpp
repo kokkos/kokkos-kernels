@@ -28,13 +28,13 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member, 
            const int n, 
-           const ValueType *__restrict__ a, const int as,
-	   /* */ ValueType *__restrict__ norm, const int ns) {
+           const ValueType *__restrict__ a, const int as0,
+	   /* */ ValueType *__restrict__ norm, const int ns0) {
       using ats = Kokkos::ArithTraits<ValueType>;
       Kokkos::parallel_for
 	(Kokkos::TeamVectorRange(member,n),
 	 [&](const int &j) {
-	   const int idx_a = j*as, idx_n = j*ns;
+	   const int idx_a = j*as0, idx_n = j*ns0;
 	   norm[idx_n] -= ats::conj(a[idx_a])*a[idx_a];
 	 });
       return 0;
@@ -51,8 +51,8 @@ namespace KokkosBatched {
            const int m, // m = NumRows(A)
            const int n, // n = NumCols(A)
            /* */ ValueType * A, const int as0, const int as1,
-           /* */ ValueType * t, const int ts,
-	   /* */ IntType   * p, const int ps,
+           /* */ ValueType * t, const int ts0,
+	   /* */ IntType   * p, const int ps0,
            /* */ ValueType * w) {
       typedef ValueType value_type;
       typedef IntType int_type;
@@ -65,12 +65,12 @@ namespace KokkosBatched {
       Partition3x3<value_type> A_part3x3(as0, as1);
 
       // column vector of tau (size of min_mn)
-      Partition2x1<value_type> t_part2x1(ts);
-      Partition3x1<value_type> t_part3x1(ts);
+      Partition2x1<value_type> t_part2x1(ts0);
+      Partition3x1<value_type> t_part3x1(ts0);
 
       // row vector for norm and p (size of n)
-      Partition1x2<int_type> p_part1x2(ps);
-      Partition1x3<int_type> p_part1x3(ps);      
+      Partition1x2<int_type> p_part1x2(ps0);
+      Partition1x3<int_type> p_part1x3(ps0);      
 
       Partition1x2<value_type> norm_part1x2(1);
       Partition1x3<value_type> norm_part1x3(1);      
@@ -94,13 +94,15 @@ namespace KokkosBatched {
 				    A, as0, as1,
 				    A, as0, as1,
 				    norm, 1);
-      
+
       for (int m_atl=0;m_atl<min_mn;++m_atl) {
+        const int n_AR = n - m_atl;
+
         // part 2x2 into 3x3
         A_part3x3.partWithABR(A_part2x2, 1, 1);
         const int m_A22 = m - m_atl - 1;
         const int n_A22 = n - m_atl - 1;
-          
+
         t_part3x1.partWithAB(t_part2x1, 1);
         value_type *tau = t_part3x1.A1;
 
@@ -110,21 +112,21 @@ namespace KokkosBatched {
 	norm_part1x3.partWithAR(norm_part1x2, 1);
 	
         /// -----------------------------------------------------
-
 	// find max location
 	TeamVectorFindAmaxInternal::invoke(member,
-					   n_A22, 
+                                           n_AR,
 					   norm_part1x2.AR, 1,
 					   pividx); 
-	
+	member.team_barrier();
+
 	// apply pivot
-	TeamVectorApplyPivotVectorInternal::invoke(member,
-						   *pividx,
-						   norm_part1x2.AR, 1);
-	TeamVectorApplyPivotMatrixInternal::invoke(member,
-						   m,
-						   *pividx,
-						   A_part2x2.ATR, as1, as0);
+	TeamVectorApplyPivotVectorForwardInternal::invoke(member,
+                                                          *pividx,
+                                                          norm_part1x2.AR, 1);
+	TeamVectorApplyPivotMatrixForwardInternal::invoke(member,
+                                                          m,
+                                                          *pividx,
+                                                          A_part2x2.ATR, as1, as0);
 	member.team_barrier();
 	
         // perform householder transformation
