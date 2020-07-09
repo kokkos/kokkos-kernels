@@ -1157,7 +1157,8 @@ int read_mtx (
   size_type nE = 0;
   lno_t numDiagonal = 0;
   for (size_type i = 0; i < nnz; ++i){
-    getline(mmf, fline);
+    bool isValid = getline(mmf, fline);
+    if(!isValid) continue;
     std::stringstream ss2 (fline);
     struct Edge<lno_t, scalar_t> tmp;
     //read source, dest (edge) and weight (value)
