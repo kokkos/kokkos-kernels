@@ -103,8 +103,8 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     static int
     invoke(const MemberType &member, 
-           const int m, const int n,
 	   const int matrix_rank,
+           const int m, const int nrhs,
            const ValueType * U, const int us0, const int us1,
 	   const ValueType * T, const int ts0, const int ts1,
 	   const ValueType * V, const int vs0, const int vs1,
@@ -116,41 +116,46 @@ namespace KokkosBatched {
       typedef IntType int_type;
 
       const value_type one(1), zero(0);
-      const int ws0 = n, ws1 = 1;
+
+      value_type * W = w; /// m x nrhs
+      const int ws0 = xs0 < xs1 ? 1 : nrhs, ws1 = xs0 < xs1 ? m : 1;
 
       if (matrix_rank < m) {
+	/// U is m x matrix_rank
+	/// T is matrix_rank x matrix_rank
+	/// V is matrix_rank m
 	/// W = U^T B
 	TeamVectorGemmInternal<Algo::Gemm::Unblocked>
 	  ::invoke(member,
-		   m, n, matrix_rank, 
+		   m, nrhs, matrix_rank,
 		   one,
 		   U, us1, us0,
 		   B, bs0, bs1,
 		   zero,
-		   w, ws0, ws1);
+		   W, ws0, ws1);
 
 	/// W = T^{-1} W
 	TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked>
 	  ::invoke(member,
 		   false,
-		   matrix_rank, n,
+		   matrix_rank, nrhs,
 		   one,
 		   T, ts0, ts1,
-		   w, ws0, ws1);
+		   W, ws0, ws1);
 	
 	/// X = V^T W
 	TeamVectorGemmInternal<Algo::Gemm::Unblocked>
 	  ::invoke(member,
-		   m, n, matrix_rank, 
+		   m, nrhs, matrix_rank, 
 		   one,
 		   V, vs1, vs0,
-		   w, ws0, ws1,
+		   W, ws0, ws1,
 		   zero,
 		   X, xs0, xs1);
       } else {
 	TeamVectorGemmInternal<Algo::Gemm::Unblocked>
 	  ::invoke(member,
-		   m, n, matrix_rank, 
+		   m, nrhs, matrix_rank, 
 		   one,
 		   U, us1, us0,
 		   B, bs0, bs1,
@@ -160,7 +165,7 @@ namespace KokkosBatched {
 	TeamVectorTrsmInternalLeftUpper<Algo::Trsm::Unblocked>
 	  ::invoke(member,
 		   false,
-		   matrix_rank, n,
+		   matrix_rank, nrhs,
 		   one,
 		   T, ts0, ts1,
 		   X, xs0, xs1);		
@@ -169,7 +174,7 @@ namespace KokkosBatched {
       /// X = P^T X
       TeamVectorApplyPivotMatrixBackwardInternal
       	::invoke(member,
-      		 n, m,
+      		 nrhs, m,
       		 p, ps0,
       		 X, xs0, xs1);
 
