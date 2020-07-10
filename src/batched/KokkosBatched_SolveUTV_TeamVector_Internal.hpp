@@ -34,7 +34,7 @@ namespace KokkosBatched {
 	   /* */ ValueType * b, const int bs0,
            /* */ ValueType * w) {
       typedef ValueType value_type;
-      typedef IntType int_type;
+      //typedef IntType int_type;
 
       const value_type one(1), zero(0);
       const int ws0 = 1;
@@ -113,7 +113,7 @@ namespace KokkosBatched {
 	   /* */ ValueType * B, const int bs0, const int bs1,
            /* */ ValueType * w) {
       typedef ValueType value_type;
-      typedef IntType int_type;
+      //typedef IntType int_type;
 
       const value_type one(1), zero(0);
 

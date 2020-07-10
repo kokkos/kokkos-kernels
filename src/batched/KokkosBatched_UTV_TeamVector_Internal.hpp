@@ -31,7 +31,7 @@ namespace KokkosBatched {
            /* */ ValueType * w, // 3*m, tau, norm, householder workspace
 	   /* */ int &matrix_rank) {
       typedef ValueType value_type;
-      typedef IntType int_type;
+      //typedef IntType int_type;
 
       value_type *t = w; w+= m;
       const int ts0(1);
