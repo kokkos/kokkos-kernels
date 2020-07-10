@@ -305,6 +305,7 @@ namespace KokkosBatched {
     using InverseLU = Level3;
     using SolveLU   = Level3;
     using QR = Level3;
+    using UTV = Level3;
 
     struct Level2 {
       struct Unblocked {};

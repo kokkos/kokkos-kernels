@@ -25,14 +25,16 @@ namespace KokkosBatched {
            const AViewType &A,
            const tViewType &t,
 	   const pViewType &p,
-           const wViewType &w) {
+           const wViewType &w,
+	   /* */ int &matrix_rank) {
       return TeamVectorQR_WithColumnPivotingInternal::
         invoke(member,
                A.extent(0), A.extent(1), 
                A.data(), A.stride_0(), A.stride_1(),
                t.data(), t.stride_0(),
 	       p.data(), p.stride_0(),
-               w.data());
+               w.data(),
+	       matrix_rank);
     }
   };
         

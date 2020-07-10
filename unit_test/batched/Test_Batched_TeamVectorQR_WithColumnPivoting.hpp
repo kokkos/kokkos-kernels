@@ -53,18 +53,12 @@ namespace Test {
       auto pp = Kokkos::subview(_p, k, Kokkos::ALL());
       auto ww = Kokkos::subview(_w, k, Kokkos::ALL());
 
-      // make diagonal dominant
+      // make diagonal dominant; xx = 1,2,3,4...
       const int m = aa.extent(0);
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
                            [&](const int &i) {
                              aa(i,i) += add_this;
-                           });
-      
-      /// xx = 1, 2,3,4
-      //TeamVectorSet<MemberType>::invoke(member, one, xx);
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
-                           [&](const int &i) {
-                             xx(i) = i+1;
+                             xx(i) = i+1;			     
                            });
       member.team_barrier();
 
@@ -73,7 +67,8 @@ namespace Test {
       member.team_barrier();
 
       /// AA P^T = QR
-      TeamVectorQR_WithColumnPivoting<MemberType,AlgoTagType>::invoke(member, aa, tt, pp, ww);
+      int matrix_rank(0);
+      TeamVectorQR_WithColumnPivoting<MemberType,AlgoTagType>::invoke(member, aa, tt, pp, ww, matrix_rank);
       member.team_barrier();
 
       /// xx = bb;

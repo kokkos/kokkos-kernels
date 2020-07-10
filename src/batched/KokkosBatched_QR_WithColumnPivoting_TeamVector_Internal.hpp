@@ -53,9 +53,11 @@ namespace KokkosBatched {
            /* */ ValueType * A, const int as0, const int as1,
            /* */ ValueType * t, const int ts0,
 	   /* */ IntType   * p, const int ps0,
-           /* */ ValueType * w) {
-      typedef ValueType value_type;
-      typedef IntType int_type;
+           /* */ ValueType * w,
+	   /* */ int &matrix_rank) {
+      using value_type = ValueType;
+      using int_type = IntType;
+      using ats = Kokkos::ArithTraits<value_type>;      
       
       /// Given a matrix A, it computes QR decomposition of the matrix
       ///  - t is to store tau and w is for workspace
@@ -95,6 +97,10 @@ namespace KokkosBatched {
 				    A, as0, as1,
 				    norm, 1);
 
+      const bool finish_when_rank_found = (matrix_rank == -1);
+      
+      matrix_rank = min_mn;
+      value_type max_diag(0);
       for (int m_atl=0;m_atl<min_mn;++m_atl) {
         const int n_AR = n - m_atl;
 
@@ -147,6 +153,19 @@ namespace KokkosBatched {
                                                        w);            
         member.team_barrier();
 
+	// break condition
+	if (matrix_rank == min_mn) {
+	  if (m_atl == 0) max_diag = ats::abs(A[0]);
+	  const value_type
+	    val_diag = ats::abs(A_part3x3.A11[0]),
+	    threshold(max_diag*ats::epsilon());
+	  if (val_diag < threshold) {
+	    matrix_rank = m_atl;
+	    if (finish_when_rank_found)
+	      break;
+	  }
+	}
+
 	// norm update
 	TeamVectorUpdateColumnNormsInternal::invoke(member,
 						    n_A22,
@@ -158,6 +177,7 @@ namespace KokkosBatched {
 	p_part1x2.mergeToAL   (p_part1x3);
 	norm_part1x2.mergeToAL(norm_part1x3);
       }
+
       return 0;
     }
   };

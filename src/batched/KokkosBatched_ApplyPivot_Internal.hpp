@@ -23,14 +23,16 @@ namespace KokkosBatched {
     invoke(const MemberType &member,
            const int piv,
            /* */ ValueType *__restrict__ A, const int as0) {
-      Kokkos::single
-	(Kokkos::PerTeam(member),
-	 [&]() {
-          const int idx_p = piv*as0;
-          ValueType tmp = A[0];
-          A[0] = A[idx_p];
-          A[idx_p] = tmp;
-        });
+      if (piv != 0) {
+	Kokkos::single
+	  (Kokkos::PerTeam(member),
+	   [&]() {
+	     const int idx_p = piv*as0;
+	     ValueType tmp = A[0];
+	     A[0] = A[idx_p];
+	     A[idx_p] = tmp;
+	   });
+      }
       return 0;
     }
 
@@ -41,18 +43,21 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member,
 	   const int plen,
-	   const IntType *__restrict__ piv, const int ps0,
+	   const IntType *__restrict__ p, const int ps0,
            /* */ ValueType *__restrict__ A, const int as0) {
       Kokkos::single
 	(Kokkos::PerTeam(member),
 	 [&]() {
-          for (int i=0;i<plen;++i) {
-            const int idx_i = i*as0, idx_p = (i+piv[i*ps0])*as0;
-            ValueType tmp = A[idx_i];
-            A[idx_i] = A[idx_p];
-            A[idx_p] = tmp;
-          }
-        });
+	   for (int i=0;i<plen;++i) {
+	     const int piv = p[i*ps0];
+	     if (piv != 0) {
+	       const int idx_i = i*as0, idx_p = (i+piv)*as0;
+	       ValueType tmp = A[idx_i];
+	       A[idx_i] = A[idx_p];
+	       A[idx_p] = tmp;
+	     }
+	   }
+	 });
       return 0;
     }
   };
@@ -67,14 +72,16 @@ namespace KokkosBatched {
 	   const int n,
            const int piv,
            /* */ ValueType *__restrict__ A, const int as0, const int as1) {
-      Kokkos::parallel_for
-	(Kokkos::TeamVectorRange(member, n),
-	 [&](const int &j) {
-          const int idx_j = j*as1, idx_p = idx_j + piv*as0;
-          ValueType tmp = A[idx_j];
-          A[idx_j] = A[idx_p];
-          A[idx_p] = tmp;	   
-        });
+      if (piv != 0) {
+	Kokkos::parallel_for
+	  (Kokkos::TeamVectorRange(member, n),
+	   [&](const int &j) {
+	     const int idx_j = j*as1, idx_p = idx_j + piv*as0;
+	     ValueType tmp = A[idx_j];
+	     A[idx_j] = A[idx_p];
+	     A[idx_p] = tmp;	   
+	   });
+      }
       return 0;
     }
 
@@ -85,19 +92,22 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member,
 	   const int n, const int plen,
-           const IntType *__restrict__ piv, const int ps0,
+           const IntType *__restrict__ p, const int ps0,
            /* */ ValueType *__restrict__ A, const int as0, const int as1) {
       Kokkos::parallel_for
 	(Kokkos::TeamVectorRange(member, n),
 	 [&](const int &j) {
-          for (int i=0;i<plen;++i) {
-            ValueType *__restrict__ A_at_i = A + i*as0;
-            const int idx_j = j*as1, idx_p = idx_j + piv[i*ps0]*as0;
-            ValueType tmp = A_at_i[idx_j];
-            A_at_i[idx_j] = A_at_i[idx_p];
-            A_at_i[idx_p] = tmp;	   
-          }
-        });
+	   for (int i=0;i<plen;++i) {
+	     ValueType *__restrict__ A_at_i = A + i*as0;
+	     const int piv = p[i*ps0];
+	     if (piv != 0) {
+	       const int idx_j = j*as1, idx_p = idx_j + piv*as0;
+	       ValueType tmp = A_at_i[idx_j];
+	       A_at_i[idx_j] = A_at_i[idx_p];
+	       A_at_i[idx_p] = tmp;
+	     }
+	   }
+	 });
       return 0;
     }
   };
@@ -114,14 +124,16 @@ namespace KokkosBatched {
     invoke(const MemberType &member,
            const int piv,
            /* */ ValueType *__restrict__ A, const int as0) {
-      Kokkos::single
-	(Kokkos::PerTeam(member),
-	 [&]() {
-          const int idx_p = piv*as0;
-          ValueType tmp = A[0];
-          A[0] = A[idx_p];
-          A[idx_p] = tmp;
-        });
+      if (piv != 0) {
+	Kokkos::single
+	  (Kokkos::PerTeam(member),
+	   [&]() {
+	     const int idx_p = piv*as0;
+	     ValueType tmp = A[0];
+	     A[0] = A[idx_p];
+	     A[idx_p] = tmp;
+	   });
+      }
       return 0;
     }
 
@@ -132,18 +144,21 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member,
 	   const int plen,
-	   const IntType *__restrict__ piv, const int ps0,
+	   const IntType *__restrict__ p, const int ps0,
            /* */ ValueType *__restrict__ A, const int as0) {
       Kokkos::single
 	(Kokkos::PerTeam(member),
 	 [&]() {
-          for (int i=(plen-1);i>=0;--i) {
-            const int idx_i = i*as0, idx_p = (i+piv[i*ps0])*as0;
-            const ValueType tmp = A[idx_i];
-            A[idx_i] = A[idx_p];
-            A[idx_p] = tmp;
-          }
-        });
+	   for (int i=(plen-1);i>=0;--i) {
+	     const int piv = p[i*ps0];
+	     if (piv != 0) {
+	       const int idx_i = i*as0, idx_p = (i+piv)*as0;
+	       const ValueType tmp = A[idx_i];
+	       A[idx_i] = A[idx_p];
+	       A[idx_p] = tmp;
+	     }
+	   }
+	 });
       return 0;
     }
   };
@@ -158,14 +173,16 @@ namespace KokkosBatched {
 	   const int n,
            const int piv,
            /* */ ValueType *__restrict__ A, const int as0, const int as1) {
-      Kokkos::parallel_for
-	(Kokkos::TeamVectorRange(member, n),
-	 [&](const int &j) {
-          const int idx_j = j*as1, idx_p = idx_j + piv*as0;
-          ValueType tmp = A[idx_j];
-          A[idx_j] = A[idx_p];
-          A[idx_p] = tmp;	   
-        });
+      if (piv != 0) {
+	Kokkos::parallel_for
+	  (Kokkos::TeamVectorRange(member, n),
+	   [&](const int &j) {
+	     const int idx_j = j*as1, idx_p = idx_j + piv*as0;
+	     ValueType tmp = A[idx_j];
+	     A[idx_j] = A[idx_p];
+	     A[idx_p] = tmp;	   
+	   });
+      }
       return 0;
     }
 
@@ -176,19 +193,22 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member,
 	   const int n, const int plen,
-           const IntType *__restrict__ piv, const int ps0,
+           const IntType *__restrict__ p, const int ps0,
            /* */ ValueType *__restrict__ A, const int as0, const int as1) {
       Kokkos::parallel_for
 	(Kokkos::TeamVectorRange(member, n),
 	 [&](const int &j) {
-          for (int i=(plen-1);i>=0;--i) {
-            ValueType *__restrict__ A_at_i = A + i*as0;
-            const int idx_j = j*as1, idx_p = idx_j + piv[i*ps0]*as0;
-            ValueType tmp = A_at_i[idx_j];
-            A_at_i[idx_j] = A_at_i[idx_p];
-            A_at_i[idx_p] = tmp;	   
-          }
-        });
+	   for (int i=(plen-1);i>=0;--i) {
+	     ValueType *__restrict__ A_at_i = A + i*as0;
+	     const int piv = p[i*ps0];
+	     if (piv != 0) {
+	       const int idx_j = j*as1, idx_p = idx_j + piv*as0;
+	       ValueType tmp = A_at_i[idx_j];
+	       A_at_i[idx_j] = A_at_i[idx_p];
+	       A_at_i[idx_p] = tmp;	   
+	     }
+	   }
+	 });
       return 0;
     }
   };
