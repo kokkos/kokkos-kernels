@@ -72,23 +72,19 @@ namespace Test {
 	   });
       } else {
 	Kokkos::parallel_for
-	  (Kokkos::TeamThreadRange(member, m),
+	  (Kokkos::TeamVectorRange(member, m*m),
+	   [&](const int &ij) {
+            const int i = ij/m, j = ij%m;
+            value_type tmp(0);
+            for (int l=0;l<r;++l)
+              tmp += rr(i,l)*rr(j,l);
+            aa(i,j) = tmp;
+          });
+	Kokkos::parallel_for
+	  (Kokkos::TeamVectorRange(member, m),
 	   [&](const int &i) {
-	     Kokkos::parallel_for
-	       (Kokkos::ThreadVectorRange(member, m),
-		[&](const int &j) {
-		  value_type tmp(0);
-		  for (int l=0;l<r;++l)
-		    tmp += rr(i,l)*rr(j,l);
-		  aa(i,j) = tmp;
-		});
-	     Kokkos::single
-	       (Kokkos::PerThread(member),
-		[&]() {
-		  xx(i) = (i+1);
-		});
-	     
-	   });
+            xx(i) = (i+1);
+          });
       }
 
       /// copy for verification

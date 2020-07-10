@@ -72,9 +72,6 @@ namespace KokkosBatched {
       Kokkos::parallel_for
         (Kokkos::TeamThreadRange(member,m),
          [&](const int &i) {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
 	   Kokkos::parallel_for
 	     (Kokkos::ThreadVectorRange(member,m),
 	      [&](const int &j) {
