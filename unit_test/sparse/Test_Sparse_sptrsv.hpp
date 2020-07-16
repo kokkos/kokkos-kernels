@@ -866,7 +866,6 @@ TEST_F( TestCategory, sparse ## _ ## sptrsv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
 #endif
 
-#if 0
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
@@ -916,4 +915,3 @@ TEST_F( TestCategory, sparse ## _ ## sptrsv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-#endif
