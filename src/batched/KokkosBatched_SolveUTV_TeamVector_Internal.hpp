@@ -127,7 +127,7 @@ namespace KokkosBatched {
 	/// W = U^T B
 	TeamVectorGemmInternal<Algo::Gemm::Unblocked>
 	  ::invoke(member,
-		   m, nrhs, matrix_rank,
+		   matrix_rank, nrhs, m,
 		   one,
 		   U, us1, us0,
 		   B, bs0, bs1,
