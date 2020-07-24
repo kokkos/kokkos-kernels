@@ -19,7 +19,6 @@ int main(int argc, char* argv[])
   using Mag     = Kokkos::ArithTraits<Scalar>::mag_type;
   using Ordinal = default_lno_t;
   using Offset  = default_size_type;
-  using Layout  = default_layout;
   using ExecSpace = Kokkos::DefaultExecutionSpace;
   using MemSpace = typename ExecSpace::memory_space;
   using Device  = Kokkos::Device<ExecSpace, MemSpace>;
