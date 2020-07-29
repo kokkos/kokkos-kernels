@@ -85,6 +85,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
 
   typedef Kokkos::ArithTraits<scalar_t> KAT;
+  typedef typename KAT::mag_type magnitude_t;
   typedef typename crsMat_t::row_map_type::non_const_type row_map_type;
   typedef typename crsMat_t::index_type::non_const_type entries_type;
   typedef typename crsMat_t::values_type::non_const_type values_type;
@@ -185,7 +186,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
       scalar_t Cval = Cvalues(i);
       lno_t Ccol = Centries(i);
       //Check that result is correct to 1 ULP
-      scalar_t maxError = (correct[Ccol] == KAT::zero()) ? eps : KAT::abs(correct[Ccol] * eps);
+      magnitude_t maxError = (correct[Ccol] == KAT::zero()) ? KAT::abs(eps) : KAT::abs(correct[Ccol] * eps);
       ASSERT_LE(KAT::abs(correct[Ccol] - Cval), maxError) << "A+B row " << row << ", column " << Ccol << " has value " << Cval << " but should be " << correct[Ccol];
     }
   }
