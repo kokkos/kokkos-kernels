@@ -517,7 +517,7 @@ struct SortedNumericSumFunctor {
       ordinal_type Ccol = (Acol < Bcol) ? Acol : Bcol;
       //Eat all entries in both A and B which have this column
       //This also results in Acol/Bcol being updated to following entries for next loop iter
-      CscalarT accum = {0};
+      CscalarT accum = Kokkos::ArithTraits<CscalarT>::zero();
       while(Acol == Ccol)
       {
         accum += static_cast<CscalarT>(alpha * Avalues(Arowstart + ai));
