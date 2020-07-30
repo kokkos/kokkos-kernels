@@ -47,6 +47,7 @@
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_Sorting.hpp"
+#include <limits>
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -84,7 +85,11 @@ struct SortedCountEntries {
         Browptrs(Browptrs_),
         Bcolinds(Bcolinds_),
         Crowcounts(Crowcounts_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
+
+  static constexpr ordinal_type ORDINAL_MAX = std::numeric_limits<ordinal_type>::max();
+
+  KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const
+  {
     // count the union of nonzeros in Arow and Brow
     size_type numEntries = 0;
     size_type ai         = 0;
@@ -93,24 +98,19 @@ struct SortedCountEntries {
     size_type Arowlen    = Arowptrs(i + 1) - Arowstart;
     size_type Browstart  = Browptrs(i);
     size_type Browlen    = Browptrs(i + 1) - Browstart;
-    while (ai < Arowlen && bi < Browlen) {
-      // have an entry in C's row
+    ordinal_type Acol = (Arowlen == 0) ? ORDINAL_MAX : Acolinds(Arowstart);
+    ordinal_type Bcol = (Browlen == 0) ? ORDINAL_MAX : Bcolinds(Browstart);
+    while (Acol != ORDINAL_MAX || Bcol != ORDINAL_MAX) {
+      ordinal_type Ccol = (Acol < Bcol) ? Acol : Bcol;
       numEntries++;
-      ordinal_type Acol = Acolinds(Arowstart + ai);
-      ordinal_type Bcol = Bcolinds(Browstart + bi);
-      if (Acol <= Bcol) ai++;
-      if (Acol >= Bcol) bi++;
+      //Eat all entries in both A and B which have this column
+      //This also results in Acol/Bcol being updated to following entries for next loop iter
+      while(Acol == Ccol)
+        Acol = (ai == Arowlen) ? ORDINAL_MAX : Acolinds(Arowstart + ai++);
+      while(Bcol == Ccol)
+        Bcol = (bi == Browlen) ? ORDINAL_MAX : Bcolinds(Browstart + bi++);
     }
-    // if a and b have different numbers of entries in row i,
-    // the next two lines will account for remaining entries in the longer one
-    numEntries += Arowlen - ai;
-    numEntries += Browlen - bi;
     Crowcounts(i) = numEntries;
-    if (i == nrows - 1) {
-      // last workitem also zeros the one-past-end entry of row counts, so
-      // that prefix sum is correct
-      Crowcounts(nrows) = 0;
-    }
   }
   ordinal_type nrows;
   const typename ARowPtrsT::const_type Arowptrs;
@@ -283,11 +283,22 @@ struct MergeEntriesFunctor {
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
     size_type CrowStart = Crowptrs(i);
     size_type CrowEnd   = Crowptrs(i + 1);
+    if(CrowEnd == CrowStart)
+    {
+      Crowcounts(i) = 0;
+      return;
+    }
     size_type ArowStart = Arowptrs(i);
     size_type ArowNum   = Arowptrs(i + 1) - ArowStart;
     size_type BrowStart = Browptrs(i);
     ordinal_type CFit   = 0;  // counting through merged C indices (within row)
     for (size_type Cit = CrowStart; Cit < CrowEnd; Cit++) {
+      if((Cit > CrowStart) && (Ccolinds(Cit) != Ccolinds(Cit - 1)))
+      {
+        //This is a different column than the previous entry, and is not the first entry.
+        //This means that this is the first occurence of a unique column.
+        CFit++;
+      }
       size_type permVal = ABperm(Cit);
       if (permVal < ArowNum) {
         // Entry belongs to A
@@ -302,15 +313,11 @@ struct MergeEntriesFunctor {
         // entry in C
         Bpos(BrowStart + Bindex) = CFit;
       }
-      // if NOT merging uncompressed entries Cit and Cit + 1, increment
-      // compressed index CFit
-      bool mergingWithNext =
-          Cit < CrowEnd - 1 && Ccolinds(Cit) == Ccolinds(Cit + 1);
-      if (!mergingWithNext) CFit++;
     }
-    // at end of the row, know how many entries are in merged C
-    Crowcounts(i) = CFit;
-    if (i == nrows - 1) Crowcounts(nrows) = 0;
+    // At end of the row, know how many entries are in merged C.
+    // Right now, CFit is the index of the last Apos/Bpos,
+    // so adding one gives the total number of entries.
+    Crowcounts(i) = CFit + 1;
   }
   ordinal_type nrows;
   const ArowptrsT Arowptrs;
@@ -376,7 +383,7 @@ void spadd_symbolic(
   auto addHandle = handle->get_spadd_handle();
   if (a_rowmap.extent(0) == 0 || a_rowmap.extent(0) == 1) {
     // Have 0 rows, so nothing to do except set #nnz to 0
-    addHandle->set_max_result_nnz(0);
+    addHandle->set_c_nnz(0);
     // If c_rowmap has a single entry, it must be 0
     if (c_rowmap.extent(0)) Kokkos::deep_copy(c_rowmap, (size_type)0);
     addHandle->set_call_symbolic();
@@ -457,7 +464,7 @@ void spadd_symbolic(
   // provide the number of NNZ in C to user through handle
   size_type cmax;
   Kokkos::deep_copy(cmax, Kokkos::subview(c_rowmap, nrows));
-  addHandle->set_max_result_nnz(cmax);
+  addHandle->set_c_nnz(cmax);
   addHandle->set_call_symbolic();
   addHandle->set_call_numeric(false);
   // this fence is for accurate timing from host
@@ -470,6 +477,9 @@ template <typename size_type, typename ordinal_type, typename ArowptrsT,
           typename BvaluesT, typename CvaluesT, typename AscalarT,
           typename BscalarT>
 struct SortedNumericSumFunctor {
+  using CscalarT = typename CvaluesT::non_const_value_type;
+  static constexpr ordinal_type ORDINAL_MAX = std::numeric_limits<ordinal_type>::max();
+
   SortedNumericSumFunctor(const ArowptrsT& Arowptrs_,
                           const BrowptrsT& Browptrs_,
                           const CrowptrsT& Crowptrs_,
@@ -489,48 +499,49 @@ struct SortedNumericSumFunctor {
         Cvalues(Cvalues_),
         alpha(alpha_),
         beta(beta_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
-    size_type CrowStart = Crowptrs(i);
-    size_type ArowStart = Arowptrs(i);
-    size_type ArowEnd   = Arowptrs(i + 1);
-    size_type Arowlen   = ArowEnd - ArowStart;
-    size_type BrowStart = Browptrs(i);
-    size_type BrowEnd   = Browptrs(i + 1);
-    size_type Browlen   = BrowEnd - BrowStart;
-    size_type ai        = 0;
-    size_type bi        = 0;
-    size_type ci        = 0;
-    // add in A entries, while setting C colinds
-    while (ai < Arowlen && bi < Browlen) {
-      ordinal_type Acol = Acolinds(ArowStart + ai);
-      ordinal_type Bcol = Bcolinds(BrowStart + bi);
-      if (Acol <= Bcol) {
-        Ccolinds(CrowStart + ci) = Acol;
-        Cvalues(CrowStart + ci) += alpha * Avalues(ArowStart + ai);
+
+  KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const
+  {
+    // count the union of nonzeros in Arow and Brow
+    size_type ai         = 0;
+    size_type bi         = 0;
+    size_type Arowstart  = Arowptrs(i);
+    size_type Arowlen    = Arowptrs(i + 1) - Arowstart;
+    size_type Browstart  = Browptrs(i);
+    size_type Browlen    = Browptrs(i + 1) - Browstart;
+    ordinal_type Acol = (Arowlen == 0) ? ORDINAL_MAX : Acolinds(Arowstart);
+    ordinal_type Bcol = (Browlen == 0) ? ORDINAL_MAX : Bcolinds(Browstart);
+    size_type Coffset = Crowptrs(i);
+    while (Acol != ORDINAL_MAX || Bcol != ORDINAL_MAX)
+    {
+      ordinal_type Ccol = (Acol < Bcol) ? Acol : Bcol;
+      //Eat all entries in both A and B which have this column
+      //This also results in Acol/Bcol being updated to following entries for next loop iter
+      CscalarT accum = Kokkos::ArithTraits<CscalarT>::zero();
+      while(Acol == Ccol)
+      {
+        accum += static_cast<CscalarT>(alpha * Avalues(Arowstart + ai));
         ai++;
+        if(ai == Arowlen)
+          Acol = ORDINAL_MAX;
+        else
+          Acol = Acolinds(Arowstart + ai);
       }
-      if (Acol >= Bcol) {
-        Ccolinds(CrowStart + ci) = Bcol;
-        Cvalues(CrowStart + ci) += beta * Bvalues(BrowStart + bi);
+      while(Bcol == Ccol)
+      {
+        accum += static_cast<CscalarT>(beta * Bvalues(Browstart + bi));
         bi++;
+        if(bi == Browlen)
+          Bcol = ORDINAL_MAX;
+        else
+          Bcol = Bcolinds(Browstart + bi);
       }
-      ci++;
-    }
-    // append remaining A entries (if any)
-    while (ai < Arowlen) {
-      Ccolinds(CrowStart + ci) = Acolinds(ArowStart + ai);
-      Cvalues(CrowStart + ci)  = alpha * Avalues(ArowStart + ai);
-      ai++;
-      ci++;
-    }
-    // append remaining B entries (if any)
-    while (bi < Browlen) {
-      Ccolinds(CrowStart + ci) = Bcolinds(BrowStart + bi);
-      Cvalues(CrowStart + ci)  = beta * Bvalues(BrowStart + bi);
-      bi++;
-      ci++;
+      Ccolinds(Coffset) = Ccol;
+      Cvalues(Coffset) = accum;
+      Coffset++;
     }
   }
+
   const ArowptrsT Arowptrs;
   const BrowptrsT Browptrs;
   const CrowptrsT Crowptrs;
@@ -550,6 +561,8 @@ template <typename size_type, typename ordinal_type, typename ArowptrsT,
           typename BvaluesT, typename CvaluesT, typename AscalarT,
           typename BscalarT>
 struct UnsortedNumericSumFunctor {
+  using CscalarT = typename CvaluesT::non_const_value_type;
+
   UnsortedNumericSumFunctor(
       const ArowptrsT Arowptrs_, const BrowptrsT Browptrs_,
       const CrowptrsT Crowptrs_, const AcolindsT Acolinds_,
@@ -572,10 +585,13 @@ struct UnsortedNumericSumFunctor {
 
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
     size_type CrowStart = Crowptrs(i);
+    size_type CrowEnd   = Crowptrs(i + 1);
     size_type ArowStart = Arowptrs(i);
     size_type ArowEnd   = Arowptrs(i + 1);
     size_type BrowStart = Browptrs(i);
     size_type BrowEnd   = Browptrs(i + 1);
+    for (size_type j = CrowStart; j < CrowEnd; j++)
+      Cvalues(j) = Kokkos::ArithTraits<CscalarT>::zero();
     // add in A entries, while setting C colinds
     for (size_type j = ArowStart; j < ArowEnd; j++) {
       Cvalues(CrowStart + Apos(j)) += alpha * Avalues(j);
@@ -729,14 +745,14 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   // and subsequently construct C.
   auto addHandle = handle->get_spadd_handle();
   entries_type entriesC(Kokkos::ViewAllocateWithoutInitializing("entries"),
-                        addHandle->get_max_result_nnz());
+                        addHandle->get_c_nnz());
   graph_type graphC(entriesC, row_mapC);
   C = CMatrix("matrix", graphC);
 
   // Finally since we already have the number of nnz handy
   // we can go ahead and allocate C's values and set them.
   values_type valuesC(Kokkos::ViewAllocateWithoutInitializing("values"),
-                      addHandle->get_max_result_nnz());
+                      addHandle->get_c_nnz());
 
   C.values = valuesC;
 }
