@@ -304,7 +304,7 @@ template<typename DeviceType,
          typename ScalarType,
          typename ParamTagType,
          typename AlgoTagType>
-int test_batched_trtri() {
+int test_batched_trtri(int batchSize = 512) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
@@ -312,8 +312,8 @@ int test_batched_trtri() {
     //Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     1, 2);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
+      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
     }
   }
 #endif
@@ -323,8 +323,8 @@ int test_batched_trtri() {
     Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);  
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
+      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
     }
   }
 #endif
