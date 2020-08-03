@@ -253,7 +253,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
   eps_type eps = std::is_same<eps_type,float>::value?2*1e-3:1e-7;
 
 
-  is_identical = KokkosKernels::Impl::kk_is_identical_view
+  is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view
       <scalar_view_t, scalar_view_t, eps_type,
       typename device::execution_space>(h_vals_actual, h_vals_reference, eps);
 
@@ -455,7 +455,7 @@ void test_issue402()
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## spgemm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 500, 10); \
+  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 20, 500, 10); \
   test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(0, 0, 10, 10); \
   test_issue402<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
 }
