@@ -579,8 +579,6 @@ if [ "${KOKKOS_PATH}" == "" ]; then
   CM_SCRIPT=$0
   KOKKOS_PATH=`dirname $CM_SCRIPT`
   KOKKOS_PATH="${KOKKOS_PATH}/../kokkos"
-  echo "CHECKING: $KOKKOS_PATH"
-  $(ls $KOKKOS_PATH)
   if [ ! -e ${KOKKOS_PATH}/CMakeLists.txt ]; then
      echo "Either kokkos repository is not in the same base directory as kokkos-kernels or ${KOKKOS_PATH} repository appears to not be complete.  Please verify or provide the path to kokkos and try again"
      exit 0
