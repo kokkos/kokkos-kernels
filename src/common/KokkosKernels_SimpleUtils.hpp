@@ -278,12 +278,9 @@ struct IsRelativelyIdenticalFunctor{
     typedef Kokkos::Details::ArithTraits<mag_type> KATM;
  
     mag_type val_diff = KAT::abs (view1(i) - view2(i));
-    mag_type denominator = KAT::abs(view1(i));
-    if(KAT::abs(view2(i)) > denominator)
-      denominator = KAT::abs(view2(i));
-    
-    if(denominator > KATM::zero() )
-      val_diff = val_diff / denominator;
+    if(KAT::abs(view1(i)) > KATM::zero() && KAT::abs(view2(i)) > KATM::zero()) {
+      val_diff = val_diff / KAT::abs(view2(i));
+    }
 
     if (val_diff > eps ) {
       is_equal+=1;
