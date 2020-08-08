@@ -105,6 +105,8 @@ struct RCM
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
+  typedef Kokkos::Device<MyExecSpace, MyTempMemorySpace> device_t;
+
   typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t ;
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
@@ -118,30 +120,6 @@ struct RCM
   nnz_lno_t numRows;
   const_lno_row_view_t rowmap;
   const_lno_nnz_view_t colinds;
-
-  template<typename Rowmap>
-  struct MaxDegreeFunctor
-  {
-    typedef typename std::remove_cv<typename Rowmap::value_type>::type size_type;
-    MaxDegreeFunctor(Rowmap& rowmap_) : r(rowmap_) {}
-    KOKKOS_INLINE_FUNCTION void operator()(const size_type i, size_type& lmax) const
-    {
-      size_type ideg = r(i + 1) - r(i);
-      if(ideg > lmax)
-        lmax = ideg;
-    }
-    Rowmap r;
-  };
-
-  //simple parallel reduction to find max degree in graph
-  size_type find_max_degree()
-  {
-    size_type maxDeg = 0;
-    Kokkos::parallel_reduce(range_policy_t(0, numRows), MaxDegreeFunctor<const_lno_row_view_t>(rowmap), Kokkos::Max<size_type>(maxDeg));
-    //max degree should be computed as an offset_t,
-    //but must fit in a nnz_lno_t
-    return maxDeg;
-  }
 
   //radix sort keys according to their corresponding values ascending.
   //keys are NOT preserved since the use of this in RCM doesn't care about degree after sorting
@@ -401,7 +379,7 @@ struct RCM
   nnz_lno_t parallel_bfs(nnz_lno_t start, nnz_view_t& xadj, nnz_view_t& adj, nnz_lno_t& maxDeg, nnz_lno_t nthreads)
   {
     //need to know maximum degree to allocate scratch space for threads
-    maxDeg = find_max_degree();
+    maxDeg = KokkosKernels::Impl::graph_max_degree<device_t, nnz_lno_t, const_lno_row_view_t>(rowmap);
     //view for storing the visit timestamps
     nnz_view_t visit("BFS visited nodes", numRows);
     const nnz_lno_t LNO_MAX = Kokkos::ArithTraits<nnz_lno_t>::max();
@@ -532,8 +510,10 @@ struct RCM
     nnz_lno_t maxDegree = 0;
     //parallel_bfs will compute maxDegree
     auto numLevels = parallel_bfs(start, xadj, adj, maxDegree, nthreads);
-    nnz_lno_t maxLevelSize = 0;
-    Kokkos::parallel_reduce(range_policy_t(0, numLevels), MaxDegreeFunctor<nnz_view_t>(xadj), Kokkos::Max<nnz_lno_t>(maxLevelSize));
+    //xadj determines where each level set starts and begins,
+    //so its max 'degree' gives the size of the largest level
+    nnz_lno_t maxLevelSize = KokkosKernels::Impl::graph_max_degree<device_t, nnz_lno_t, nnz_view_t>(xadj);
+    std::cout << "Maximum size of a level set: " << maxLevelSize << '\n';
     //visit (to be returned) contains the RCM numberings of each row
     nnz_view_t visit("RCM labels", numRows);
     //Populate visit wth LNO_MAX so that the "min-labeled neighbor"

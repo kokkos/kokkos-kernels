@@ -782,7 +782,10 @@ namespace KokkosSparse{
           raw_sym_adj = raw_colinds_t(sym_adj.data(), sym_adj.extent(0));
         }
         nnz_view_t vertClusters;
-        auto clusterAlgo = gsHandle->get_clustering_algo();
+        //auto clusterAlgo = gsHandle->get_clustering_algo();
+        BalloonClustering<HandleType, raw_rowmap_t, raw_colinds_t> balloon(num_rows, raw_sym_xadj, raw_sym_adj);
+        vertClusters = balloon.run(clusterSize);
+        /*
         if(clusterAlgo == CLUSTER_DEFAULT)
           clusterAlgo = CLUSTER_BALLOON;
         switch(clusterAlgo)
@@ -814,6 +817,7 @@ namespace KokkosSparse{
           default:
             throw std::runtime_error("Clustering algo " + std::to_string((int) clusterAlgo) + " is not implemented");
         }
+        */
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "Graph clustering: " << timer.seconds() << '\n';
         timer.reset();

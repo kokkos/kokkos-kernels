@@ -858,11 +858,82 @@ inline size_t kk_is_d1_coloring_valid(
 
   struct ColorChecker <in_row_view_t, in_nnz_view_t, in_color_view_t, team_member_t>  cc(num_rows, xadj, adj, v_colors, team_work_chunk_size);
   size_t num_conf = 0;
-  Kokkos::parallel_reduce( "KokkosKernels::Common::IsD1ColoringValie", dynamic_team_policy(num_rows / team_work_chunk_size + 1 ,
+  Kokkos::parallel_reduce( "KokkosKernels::Common::IsD1ColoringValid", dynamic_team_policy(num_rows / team_work_chunk_size + 1 ,
       suggested_team_size, vector_size), cc, num_conf);
 
   MyExecSpace().fence();
   return num_conf;
+}
+
+template<typename Reducer, typename ordinal_t, typename rowmap_t>
+struct MinMaxDegreeFunctor
+{
+  using ReducerVal = typename Reducer::value_type;
+  MinMaxDegreeFunctor(const rowmap_t& rowmap_)
+    : rowmap(rowmap_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i, ReducerVal& lminmax) const
+  {
+    ordinal_t deg = rowmap(i + 1) - rowmap(i);
+    if(deg < lminmax.min_val)
+      lminmax.min_val = deg;
+    if(deg > lminmax.max_val)
+      lminmax.max_val = deg;
+  }
+  rowmap_t rowmap;
+};
+
+template<typename Reducer, typename ordinal_t, typename rowmap_t>
+struct MaxDegreeFunctor
+{
+  using ReducerVal = typename Reducer::value_type;
+  MaxDegreeFunctor(const rowmap_t& rowmap_)
+    : rowmap(rowmap_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i, ReducerVal& lmax) const
+  {
+    ordinal_t deg = rowmap(i + 1) - rowmap(i);
+    if(deg > lmax)
+      lmax = deg;
+  }
+  rowmap_t rowmap;
+};
+
+template<typename device_t, typename ordinal_t, typename rowmap_t>
+ordinal_t graph_max_degree(const rowmap_t& rowmap)
+{
+  using Reducer = Kokkos::Max<ordinal_t>;
+  ordinal_t nrows = rowmap.extent(0);
+  if(nrows)
+    nrows--;
+  if(nrows == 0)
+    return 0;
+  ordinal_t val;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<typename device_t::execution_space>(0, nrows),
+      MaxDegreeFunctor<Reducer, ordinal_t, rowmap_t>(rowmap),
+      Reducer(val));
+  return val;
+}
+
+template<typename device_t, typename ordinal_t, typename rowmap_t>
+void graph_min_max_degree(const rowmap_t& rowmap, ordinal_t& min_degree, ordinal_t& max_degree)
+{
+  using Reducer = Kokkos::MinMax<ordinal_t>;
+  ordinal_t nrows = rowmap.extent(0);
+  if(nrows)
+    nrows--;
+  if(nrows == 0)
+  {
+    min_degree = 0;
+    max_degree = 0;
+    return;
+  }
+  typename Reducer::value_type result;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<typename device_t::execution_space>(0, nrows),
+      MinMaxDegreeFunctor<Reducer, ordinal_t, rowmap_t>(rowmap),
+      Reducer(result));
+  min_degree = result.min_val;
+  max_degree = result.max_val;
 }
 
 template<typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
