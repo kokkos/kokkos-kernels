@@ -240,9 +240,10 @@ display_help_text() {
       echo "--compiler=/Path/To/Compiler  Set the compiler."
       echo ""
       echo "--debug,-dbg:                 Enable KokkosKernels Debugging."
-      echo "--kokkos-debug,-kdbg:          Enable Kokkos Debugging."
+      echo "--kokkos-debug,-kdbg:         Enable Kokkos Debugging."
       echo "--release:                    Enable KokkosKernels Release Mode."
       echo "--kokkos-release:             Enable Kokkos Release Mode."
+      echo "--boundscheck:                Enable Kokkos_ENABLE_DEBUG_BOUNDS_CHECK to check View accesses within bounds."
       echo ""
       echo "--cxxflags=[FLAGS]            Overwrite CXXFLAGS for library build and test build"
       echo "                                This will still set certain required"
@@ -390,19 +391,22 @@ do
       KOKKOS_LDFLAGS="${key#*=}"
       ;;
     --kokkos-debug|-kdbg)
-      KOKKOS_DEBUG=yes
+      KOKKOS_DEBUG=ON
+      ;;
+    --boundscheck)
+      KOKKOS_BOUNDS_CHECK=ON
       ;;
     --debug|-dbg)
-      KOKKOSKERNELS_DEBUG=yes
+      KOKKOSKERNELS_DEBUG=ON
       ;;
     --no-default-eti)
       KERNELS_DEFAULT_ETI_OPTION="-DKokkosKernels_ADD_DEFAULT_ETI=OFF"
       ;;
     --kokkos-release)
-      KOKKOS_RELEASE=yes
+      KOKKOS_RELEASE=ON
       ;;
     --release)
-      KOKKOSKERNELS_RELEASE=yes
+      KOKKOSKERNELS_RELEASE=ON
       ;;
     --kokkos-make-j*)
       echo "${key} parallel level for kokkos install"
@@ -521,19 +525,23 @@ else
     COMPILER_CMD=-DCMAKE_CXX_COMPILER=$COMPILER
 fi
 
-if [ "$KOKKOS_DEBUG" == "yes" ]; then
-    KOKKOS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=DEBUG
+if [ "$KOKKOS_DEBUG" == "ON" ]; then
+    KOKKOS_BUILDTYPE_CMD="-DCMAKE_BUILD_TYPE=DEBUG -DKokkos_ENABLE_DEBUG=ON"
     echo "KOKKOS_DEBUG CHECK"
-elif [ "$KOKKOS_RELEASE" == "yes" ]; then
+elif [ "$KOKKOS_RELEASE" == "ON" ]; then
     KOKKOS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=RELEASE
 else
     KOKKOS_BUILDTYPE_CMD=
 fi
 
-if [ "$KOKKOSKERNELS_DEBUG" == "yes" ]; then
+if [ "$KOKKOS_BOUNDS_CHECK" == "ON" ]; then
+    KOKKOS_BC_CMD=-DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON
+fi
+
+if [ "$KOKKOSKERNELS_DEBUG" == "ON" ]; then
     KOKKOSKERNELS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=DEBUG
     echo "KOKKOSKERNELS_DEBUG CHECK"
-elif [ "$KOKKOSKERNELS_RELEASE" == "yes" ]; then
+elif [ "$KOKKOSKERNELS_RELEASE" == "ON" ]; then
     KOKKOSKERNELS_BUILDTYPE_CMD=-DCMAKE_BUILD_TYPE=RELEASE
 else
     KOKKOSKERNELS_BUILDTYPE_CMD=
@@ -563,7 +571,7 @@ if [ ! -e ${KOKKOSKERNELS_PATH}/CMakeLists.txt ]; then
    if [ "${KOKKOSKERNELS_PATH}" == "" ]; then
    echo "CHECKING: $KOKKOSKERNELS_PATH"
       CM_SCRIPT=$0
-      KOKKOSKERNELS_PATH=`dirname $CM_SCRIPT`
+      KOKKOSKERNELS_PATH=$(cd $(dirname $CM_SCRIPT); pwd -P)
       if [ ! -e ${KOKKOSKERNELS_PATH}/CMakeLists.txt ]; then
          echo "${KOKKOSKERNELS_PATH} repository appears to not be complete.  please verify and try again"
          exit 0
@@ -577,7 +585,7 @@ fi
 
 if [ "${KOKKOS_PATH}" == "" ]; then
   CM_SCRIPT=$0
-  KOKKOS_PATH=`dirname $CM_SCRIPT`
+  KOKKOS_PATH=$(cd $(dirname $CM_SCRIPT); pwd -P)
   KOKKOS_PATH="${KOKKOS_PATH}/../kokkos"
   if [ ! -e ${KOKKOS_PATH}/CMakeLists.txt ]; then
      echo "Either kokkos repository is not in the same base directory as kokkos-kernels or ${KOKKOS_PATH} repository appears to not be complete.  Please verify or provide the path to kokkos and try again"
@@ -647,9 +655,9 @@ cd ${KOKKOS_INSTALL_PATH}
 
 # Configure kokkos
 echo ""
-echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
+echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
 echo ""
-cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
+cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
 
 # Install kokkos library
 make install -j $KOKKOS_MAKEINSTALL_J
