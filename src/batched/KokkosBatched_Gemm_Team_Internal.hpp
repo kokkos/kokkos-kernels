@@ -49,7 +49,7 @@ namespace KokkosBatched {
 
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
-      
+
     const ScalarType one(1.0), zero(0.0);
         
     if      (beta == zero) TeamSetInternal  ::invoke(member, m, n, zero, C, cs0, cs1);

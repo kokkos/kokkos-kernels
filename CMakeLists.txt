@@ -160,7 +160,10 @@ ELSE()
   # Enable Layout Types for ETI
   # ==================================================================
   INCLUDE(cmake/kokkoskernels_eti_layouts.cmake)
-
+  # ==================================================================
+  # Determine half precision support
+  # ==================================================================
+  INCLUDE(cmake/HalfPrecisionSupport.cmake)
   # ==================================================================
   # Enable Third Party Libraries
   # ==================================================================
@@ -179,6 +182,12 @@ ELSE()
   MESSAGE("   Offsets:  ${OFFSET_LIST}")
   MESSAGE("   Layouts:  ${LAYOUT_LIST}")
   MESSAGE("")
+  IF(HAVE_KOKKOSKERNELS_HALFMATH)
+    MESSAGE("KokkosKernels Half Precision Types")
+    MESSAGE("   HAVE_FP16:      ${HAVE_FP16}")
+    MESSAGE("   HAVE_CUDA_FP16: ${HAVE_CUDA_FP16}")
+    MESSAGE("")
+  ENDIF()
   MESSAGE("KokkosKernels TPLs")
   FOREACH(TPL ${KOKKOSKERNELS_TPL_LIST})
     PAD_STRING("${TPL}:" TPL_PADDED 12)
