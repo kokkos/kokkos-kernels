@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "CALLING UPDATE_LIB"
+
 if [ "$1" = bowman ]; then
   ICPCVER="$(icpc --version | grep icpc | cut -d ' ' -f 3)"
   if [[ "${ICPCVER}" = 17.* || "${ICPCVER}" = 18.* ]]; then
@@ -25,8 +27,10 @@ if [ "$1" = kokkos-dev ]; then
 fi
 if [ "$1" = kokkos-dev-2 ]; then
   ICPCVER="$(icpc --version | grep icpc | cut -d ' ' -f 3)"
+  echo "KOKKOSDEV2"
+  echo "  ICPCVER=$ICPCVER"
   if [[ "${ICPCVER}" = 17.* ]]; then
-    module swap sems-gcc/4.8.4 sems-gcc/6.4.0
+    module swap sems-gcc/4.9.3 sems-gcc/6.4.0
     module list
   fi
 fi
