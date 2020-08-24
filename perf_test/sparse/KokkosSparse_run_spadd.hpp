@@ -54,7 +54,6 @@ template <typename crsMat_t>
 void run_experiment(Parameters params)
 {
   using namespace KokkosSparse;
-  using namespace KokkosSparse::Experimental;
 
   using size_type = typename crsMat_t::size_type;
   using lno_t = typename crsMat_t::ordinal_type;

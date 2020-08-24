@@ -104,7 +104,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   //Make sure that nothing relies on any specific entry of c_row_map being zero initialized
   Kokkos::deep_copy(c_row_map, (size_type) 5);
   auto addHandle = handle.get_spadd_handle();
-  KokkosSparse::Experimental::spadd_symbolic<
+  KokkosSparse::spadd_symbolic<
     KernelHandle,
     typename row_map_type::const_type,
     typename entries_type::const_type,
@@ -119,7 +119,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   Kokkos::deep_copy(c_values, ((typename KAT::mag_type) 5) * KAT::one());
   entries_type c_entries("C entries", c_nnz);
   Kokkos::deep_copy(c_entries, (lno_t) 5);
-  KokkosSparse::Experimental::spadd_numeric<
+  KokkosSparse::spadd_numeric<
     KernelHandle,
     typename row_map_type::const_type,
     typename entries_type::const_type,

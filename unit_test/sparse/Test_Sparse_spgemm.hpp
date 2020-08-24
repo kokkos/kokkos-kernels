@@ -68,7 +68,7 @@
 //const char *input_filename = "wathen_30_30.mtx";
 //const size_t expected_num_cols = 9906;
 using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
+// using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 

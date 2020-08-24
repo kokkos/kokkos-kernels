@@ -129,7 +129,7 @@ namespace KokkosKernels{
     crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
     {
       using namespace KokkosSparse;
-      using namespace KokkosSparse::Experimental;
+      // using namespace KokkosSparse::Experimental;
       using device_t = Kokkos::Device<ExecSpace, PersistentMemSpace>;
       using scalar_view_t = typename crsMat_t3::values_type::non_const_type;
       using lno_view_t = typename crsMat_t3::row_map_type::non_const_type;
@@ -172,7 +172,7 @@ namespace KokkosKernels{
       const lno_t n = crsMat2.numRows();
       const lno_t k = crsMat2.numCols();
 
-      if (verbose) 
+      if (verbose)
 	std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
       if (m != n){
 	std::cerr << "left.numCols():" << n << " left.numRows():" << m << std::endl;
@@ -227,12 +227,12 @@ namespace KokkosKernels{
       	entriesC_ref = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       	valuesC_ref = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
 
-      	spgemm_jacobi(&sequential_kh, m, n, k,
-		      crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, TRANSPOSEFIRST,
-		      crsMat2.graph.row_map, crsMat2.graph.entries, crsMat2.values, TRANSPOSESECOND,
-		      row_mapC_ref, entriesC_ref, valuesC_ref,
-		      omega, dinv);
-	
+        KokkosSparse::Experimental::spgemm_jacobi(&sequential_kh, m, n, k,
+                                                  crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, TRANSPOSEFIRST,
+                                                  crsMat2.graph.row_map, crsMat2.graph.entries, crsMat2.values, TRANSPOSESECOND,
+                                                  row_mapC_ref, entriesC_ref, valuesC_ref,
+                                                  omega, dinv);
+
       	ExecSpace().fence();
 
       	Ccrsmat_ref = crsMat_t3("CorrectC", m, k, valuesC_ref.extent(0), valuesC_ref, row_mapC_ref, entriesC_ref);
@@ -271,18 +271,18 @@ namespace KokkosKernels{
 
 	Kokkos::Impl::Timer timer2;
 	size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-	if (verbose)  
+	if (verbose)
 	  std::cout << "C SIZE:" << c_nnz_size << std::endl;
 	if (c_nnz_size){
 	  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
 	  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
 	}
 
-	spgemm_jacobi(&kh, m, n, k,
-		      crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, TRANSPOSEFIRST,
-		      crsMat2.graph.row_map, crsMat2.graph.entries, crsMat2.values, TRANSPOSESECOND,
-		      row_mapC, entriesC, valuesC,
-		      omega, dinv);
+	KokkosSparse::Experimental::spgemm_jacobi(&kh, m, n, k,
+                                                  crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, TRANSPOSEFIRST,
+                                                  crsMat2.graph.row_map, crsMat2.graph.entries, crsMat2.values, TRANSPOSESECOND,
+                                                  row_mapC, entriesC, valuesC,
+                                                  omega, dinv);
 
 	ExecSpace().fence();
 	double numeric_time = timer2.seconds();
@@ -509,7 +509,7 @@ namespace KokkosKernels{
 	  fast_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
 
 	  KokkosKernels::Impl::kk_sort_graph
-	    <const_fast_row_map_view_t, const_fast_cols_view_t, const_fast_values_view_t, 
+	    <const_fast_row_map_view_t, const_fast_cols_view_t, const_fast_values_view_t,
 	     fast_cols_view_t, fast_values_view_t, myExecSpace>(c_fast_crsmat.graph.row_map,
 								c_fast_crsmat.graph.entries,
 								c_fast_crsmat.values, sorted_adj, sorted_vals);
@@ -526,7 +526,7 @@ namespace KokkosKernels{
 	  slow_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
 
 	  KokkosKernels::Impl::kk_sort_graph
-	    <const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t, 
+	    <const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t,
 	     slow_cols_view_t, slow_values_view_t, myExecSpace>(c_slow_crsmat.graph.row_map,
 								c_slow_crsmat.graph.entries,
 								c_slow_crsmat.values, sorted_adj, sorted_vals);

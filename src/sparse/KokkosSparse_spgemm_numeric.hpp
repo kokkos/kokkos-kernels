@@ -50,8 +50,6 @@
 
 namespace KokkosSparse{
 
-namespace Experimental{
-
 
 template <typename KernelHandle,
 typename alno_row_view_t_,
@@ -241,7 +239,55 @@ void spgemm_numeric(
       nonconst_c_s);
 }
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+namespace Experimental{
 
+KOKKOS_DEPRECATED
+template <typename KernelHandle,
+typename alno_row_view_t_,
+typename alno_nnz_view_t_,
+typename ascalar_nnz_view_t_,
+typename blno_row_view_t_,
+typename blno_nnz_view_t_,
+typename bscalar_nnz_view_t_,
+typename clno_row_view_t_,
+typename clno_nnz_view_t_,
+typename cscalar_nnz_view_t_>
+void spgemm_numeric(KernelHandle *handle,
+                    typename KernelHandle::const_nnz_lno_t m,
+                    typename KernelHandle::const_nnz_lno_t n,
+                    typename KernelHandle::const_nnz_lno_t k,
+                    alno_row_view_t_ row_mapA,
+                    alno_nnz_view_t_ entriesA,
+                    ascalar_nnz_view_t_ valuesA,
+                    bool transposeA,
+                    blno_row_view_t_ row_mapB,
+                    blno_nnz_view_t_ entriesB,
+                    bscalar_nnz_view_t_ valuesB,
+                    bool transposeB,
+                    clno_row_view_t_ row_mapC,
+                    clno_nnz_view_t_ &entriesC,
+                    cscalar_nnz_view_t_ &valuesC) {
+
+  ::KokkosSparse::spgemm_numeric<KernelHandle,
+                                 alno_row_view_t_,
+                                 alno_nnz_view_t_,
+                                 ascalar_nnz_view_t_,
+                                 blno_row_view_t_,
+                                 blno_nnz_view_t_,
+                                 bscalar_nnz_view_t_,
+                                 clno_row_view_t_,
+                                 clno_nnz_view_t_,
+                                 cscalar_nnz_view_t_>(handle, m, n, k,
+                                                      row_mapA, entriesA, valuesA,
+                                                      transposeA,
+                                                      row_mapB, entriesB, valuesB,
+                                                      transposeB,
+                                                      row_mapC, entriesC, valuesC);
 }
-}
+
+} // namespace Experimental
+#endif
+
+} // namespace KokkosSparse
 #endif
