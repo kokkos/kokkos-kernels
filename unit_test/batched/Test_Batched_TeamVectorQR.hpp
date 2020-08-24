@@ -122,7 +122,7 @@ namespace Test {
     Kokkos::fence();
 
     Functor_TestBatchedTeamVectorQR
-      <DeviceType,MatrixViewType,VectorViewType,WorkViewType,Algo::LU::Unblocked>(a,x,b,t,w).run();
+      <DeviceType,MatrixViewType,VectorViewType,WorkViewType,AlgoTagType>(a,x,b,t,w).run();
 
     Kokkos::fence();
 

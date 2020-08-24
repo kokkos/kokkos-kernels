@@ -80,7 +80,31 @@ using namespace KokkosKernels::Experimental;
 namespace Test {
 
 template <typename crsMat_t, typename device>
-int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &result) {
+int run_spgemm(crsMat_t A, crsMat_t B, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C) {
+
+  typedef typename crsMat_t::size_type size_type;
+  typedef typename crsMat_t::ordinal_type lno_t;
+  typedef typename crsMat_t::value_type scalar_t;
+
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+      <size_type, lno_t, scalar_t,
+      typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
+
+  KernelHandle kh;
+  kh.set_team_work_size(16);
+  kh.set_dynamic_scheduling(true);
+
+  kh.create_spgemm_handle(spgemm_algorithm);
+
+  KokkosSparse::spgemm_symbolic(kh, A, false, B, false, C);
+  KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
+  kh.destroy_spgemm_handle();
+
+  return 0;
+}
+
+template <typename crsMat_t, typename device>
+int run_spgemm_old_interface(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &result) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
@@ -253,7 +277,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
   eps_type eps = std::is_same<eps_type,float>::value?2*1e-3:1e-7;
 
 
-  is_identical = KokkosKernels::Impl::kk_is_identical_view
+  is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view
       <scalar_view_t, scalar_view_t, eps_type,
       typename device::execution_space>(h_vals_actual, h_vals_reference, eps);
 
@@ -269,7 +293,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
+void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool oldInterface=false) {
 
   using namespace Test;
   //device::execution_space::initialize();
@@ -288,7 +312,10 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
   crsMat_t output_mat2;
-  run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
+  if(oldInterface)
+    run_spgemm_old_interface<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
+  else
+    run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
 
   std::vector<SPGEMMAlgorithm> algorithms = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED};
 
@@ -351,7 +378,10 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
     bool failed = false;
     int res = 0;
     try{
-      res = run_spgemm<crsMat_t, device>(input_mat, input_mat, spgemm_algorithm, output_mat);
+      if(oldInterface)
+	res = run_spgemm_old_interface<crsMat_t, device>(input_mat, input_mat, spgemm_algorithm, output_mat);
+      else
+	res = run_spgemm<crsMat_t, device>(input_mat, input_mat, spgemm_algorithm, output_mat);
     }
     catch (const char *message){
       EXPECT_TRUE(is_expected_to_fail) << algo;
@@ -455,9 +485,10 @@ void test_issue402()
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## spgemm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 30, 500, 10); \
+  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 20, 500, 10); \
   test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(0, 0, 10, 10); \
   test_issue402<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
+  test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 10000 * 20, 500, 10, true); \
 }
 
 //test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);

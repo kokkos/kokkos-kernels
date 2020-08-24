@@ -275,7 +275,7 @@ template<typename DeviceType,
          typename ScalarType,
          typename ParamTagType,
          typename AlgoTagType>
-int test_batched_trmm() {
+int test_batched_trmm(int batchSize = 512) {
   char trans = std::is_same<typename ParamTagType::trans,Trans::NoTranspose>::value ? 'N' :
                 std::is_same<typename ParamTagType::trans,Trans::Transpose>::value ? 'T' :
                 std::is_same<typename ParamTagType::trans,Trans::ConjTranspose>::value ? 'C' : 'E';
@@ -285,8 +285,8 @@ int test_batched_trmm() {
     Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4, &trans);
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1, &trans);
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 4, &trans);
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 1, &trans);
     }
   }
 #endif
@@ -296,8 +296,8 @@ int test_batched_trmm() {
     Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);  
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4, &trans);
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1, &trans);
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 4, &trans);
+      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 1, &trans);
     }
   }
 #endif

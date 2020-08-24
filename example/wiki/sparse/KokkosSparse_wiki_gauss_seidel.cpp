@@ -12,28 +12,25 @@
 //   and applies GS to each set in parallel
 //  -Here, use to solve a diagonally dominant linear system directly.
 
-using Scalar  = default_scalar;
-using Mag     = Kokkos::ArithTraits<Scalar>::mag_type;
-using Ordinal = default_lno_t;
-using Offset  = default_size_type;
-using Layout  = default_layout;
-using ExecSpace = Kokkos::DefaultExecutionSpace;
-using MemSpace = typename ExecSpace::memory_space;
-using Device  = Kokkos::Device<ExecSpace, MemSpace>;
-using Handle  = KokkosKernels::Experimental::
-  KokkosKernelsHandle<Offset, Ordinal, default_scalar, ExecSpace, MemSpace, MemSpace>;
-using Matrix  = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
-using Vector  = typename Matrix::values_type;
-
-constexpr Ordinal numRows = 10000;
-const Scalar one = Kokkos::ArithTraits<Scalar>::one();
-const Mag magOne = Kokkos::ArithTraits<Mag>::one();
-//Solve tolerance
-const Mag tolerance = 1e-6 * magOne;
-
 //Helper to print out colors in the shape of the grid
 int main(int argc, char* argv[])
 {
+  using Scalar  = default_scalar;
+  using Mag     = Kokkos::ArithTraits<Scalar>::mag_type;
+  using Ordinal = default_lno_t;
+  using Offset  = default_size_type;
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+  using MemSpace = typename ExecSpace::memory_space;
+  using Device  = Kokkos::Device<ExecSpace, MemSpace>;
+  using Handle  = KokkosKernels::Experimental::
+    KokkosKernelsHandle<Offset, Ordinal, default_scalar, ExecSpace, MemSpace, MemSpace>;
+  using Matrix  = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
+  using Vector  = typename Matrix::values_type;
+  constexpr Ordinal numRows = 10000;
+  const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+  const Mag magOne = Kokkos::ArithTraits<Mag>::one();
+  //Solve tolerance
+  const Mag tolerance = 1e-6 * magOne;
   Kokkos::initialize();
   {
     //Generate a square, strictly diagonally dominant, but nonsymmetric matrix on which Gauss-Seidel should converge.
