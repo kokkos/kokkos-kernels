@@ -76,7 +76,7 @@ struct sptrsv_solve_eti_spec_avail {
 #define KOKKOSSPARSE_SPTRSV_SOLVE_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
     template<> \
     struct sptrsv_solve_eti_spec_avail< \
-                  KokkosKernels::Experimental::KokkosKernelsHandle<\
+                  KokkosKernels::KokkosKernelsHandle<\
                                const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
                                EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
                   Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -216,7 +216,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
 #define KOKKOSSPARSE_SPTRSV_SOLVE_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
     extern template struct  \
     SPTRSV_SOLVE<\
-                  KokkosKernels::Experimental::KokkosKernelsHandle<\
+                  KokkosKernels::KokkosKernelsHandle<\
                                const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
                                EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
                   Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -238,7 +238,7 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType, XT
 #define KOKKOSSPARSE_SPTRSV_SOLVE_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
     template struct  \
     SPTRSV_SOLVE<\
-                  KokkosKernels::Experimental::KokkosKernelsHandle<\
+                  KokkosKernels::KokkosKernelsHandle<\
                                const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
                                EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
                   Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \

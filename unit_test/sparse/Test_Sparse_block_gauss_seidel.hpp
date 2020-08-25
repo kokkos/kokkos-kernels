@@ -92,9 +92,9 @@ int run_block_gauss_seidel_1(
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  typedef KokkosKernelsHandle
+  using  KernelHandle = KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
+      typename device::execution_space, typename device::memory_space,typename device::memory_space >;
   KernelHandle kh;
   kh.set_team_work_size(16);
   kh.set_shmem_size(shmem_size);

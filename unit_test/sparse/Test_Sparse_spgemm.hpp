@@ -70,7 +70,7 @@
 using namespace KokkosSparse;
 // using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
-using namespace KokkosKernels::Experimental;
+// using namespace KokkosKernels::Experimental;
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
@@ -86,7 +86,7 @@ int run_spgemm(crsMat_t A, crsMat_t B, KokkosSparse::SPGEMMAlgorithm spgemm_algo
   typedef typename crsMat_t::ordinal_type lno_t;
   typedef typename crsMat_t::value_type scalar_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
@@ -116,7 +116,7 @@ int run_spgemm_old_interface(crsMat_t input_mat, crsMat_t input_mat2, KokkosSpar
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 

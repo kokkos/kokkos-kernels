@@ -319,7 +319,7 @@ run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params)
     using lno_nnz_view_type = typename CrsGraph_type::entries_type::non_const_type;
     using size_type         = typename lno_view_type::non_const_value_type;
     using lno_type          = typename lno_nnz_view_type::non_const_value_type;
-    using KernelHandle_type = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_type, kk_scalar_type, ExecSpace, TempMemSpace, PersistentMemSpace>;
+    using KernelHandle_type = KokkosKernels::KokkosKernelsHandle<size_type, lno_type, kk_scalar_type, ExecSpace, TempMemSpace, PersistentMemSpace>;
 
 
     // Create a kernel handle

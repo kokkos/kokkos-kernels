@@ -90,7 +90,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   typedef typename crsMat_t::index_type::non_const_type entries_type;
   typedef typename crsMat_t::values_type::non_const_type values_type;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t,
+  typedef typename KokkosKernels::KokkosKernelsHandle<size_type, lno_t, scalar_t,
   typename Device::execution_space, typename Device::memory_space, typename Device::memory_space> KernelHandle;
 
   //Make the test deterministic on a given machine+compiler

@@ -111,7 +111,7 @@ void spgemm_symbolic(
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
   typedef typename Kokkos::Device<c_exec_t, c_temp_t> UniformDevice_t;
 
-  typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
+  typedef typename  KokkosKernels::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
   const_handle_type tmp_handle (*handle);
 
 

@@ -76,7 +76,7 @@ struct spiluk_symbolic_eti_spec_avail {
 #define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
     template<> \
     struct spiluk_symbolic_eti_spec_avail< \
-                  KokkosKernels::Experimental::KokkosKernelsHandle<\
+                  KokkosKernels::KokkosKernelsHandle<\
                                const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
                                EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
                   Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -187,7 +187,7 @@ struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType, LEn
 #define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
     extern template struct  \
     SPILUK_SYMBOLIC<\
-                  KokkosKernels::Experimental::KokkosKernelsHandle<\
+                  KokkosKernels::KokkosKernelsHandle<\
                                const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
                                EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
                   Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -213,7 +213,7 @@ struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType, LEn
 #define KOKKOSSPARSE_SPILUK_SYMBOLIC_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
     template struct  \
     SPILUK_SYMBOLIC<\
-                  KokkosKernels::Experimental::KokkosKernelsHandle<\
+                  KokkosKernels::KokkosKernelsHandle<\
                                const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
                                EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE> , \
                   Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \

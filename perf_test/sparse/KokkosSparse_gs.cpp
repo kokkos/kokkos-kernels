@@ -67,7 +67,7 @@ void runGS(string matrixPath, string devName, bool symmetric, bool twostage, boo
   typedef default_size_type size_type;
   typedef typename device_t::execution_space exec_space;
   typedef typename device_t::memory_space mem_space;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exec_space, mem_space, mem_space> KernelHandle;
+  typedef KokkosKernels::KokkosKernelsHandle<size_type, lno_t, scalar_t, exec_space, mem_space, mem_space> KernelHandle;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type> crsmat_t;
   //typedef typename crsmat_t::StaticCrsGraphType graph_t;
   typedef typename crsmat_t::values_type::non_const_type scalar_view_t;

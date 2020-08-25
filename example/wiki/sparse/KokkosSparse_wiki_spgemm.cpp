@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     matrix_type C;
 
     // Create KokkosKernelHandle
-    using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+    using KernelHandle = KokkosKernels::KokkosKernelsHandle<
         Offset, Ordinal, Scalar, execution_space, memory_space, memory_space>;
     KernelHandle kh;
     kh.set_team_work_size(16);

@@ -25,7 +25,7 @@ using DeviceSpace = typename ExecSpace::memory_space;
 using Kokkos::HostSpace;
 using RowmapType = Kokkos::View<Offset*, DeviceSpace>;
 using ColindsType = Kokkos::View<Ordinal*, DeviceSpace>;
-using Handle  = KokkosKernels::Experimental::
+using Handle  = KokkosKernels::
   KokkosKernelsHandle<Offset, Ordinal, default_scalar, ExecSpace, DeviceSpace, DeviceSpace>;
 
 namespace ColoringDemo

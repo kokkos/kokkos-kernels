@@ -137,7 +137,7 @@ namespace KokkosKernels{
       using lno_t = typename lno_nnz_view_t::value_type;
       using size_type = typename lno_view_t::value_type;
       using scalar_t = typename scalar_view_t::value_type;
-      using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t,
+      using KernelHandle = KokkosKernels::KokkosKernelsHandle<size_type, lno_t, scalar_t,
 									    ExecSpace, TempMemSpace, PersistentMemSpace>;
 
       int algorithm = params.algorithm;

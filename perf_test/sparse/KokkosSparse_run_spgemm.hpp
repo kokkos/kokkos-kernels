@@ -188,7 +188,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
   lno_nnz_view_t entriesC;
   scalar_view_t valuesC;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 

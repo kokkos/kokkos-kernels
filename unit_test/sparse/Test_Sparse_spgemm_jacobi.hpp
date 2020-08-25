@@ -64,7 +64,7 @@
 using namespace KokkosSparse;
 // using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
-using namespace KokkosKernels::Experimental;
+// using namespace KokkosKernels::Experimental;
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
@@ -84,7 +84,7 @@ namespace Test {
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 

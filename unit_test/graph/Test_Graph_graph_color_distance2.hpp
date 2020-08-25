@@ -165,7 +165,7 @@ void test_dist2_coloring(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t r
     using c_entries_t = typename graph_type::entries_type;
     using rowmap_t = typename c_rowmap_t::non_const_type;
     using entries_t = typename c_entries_t::non_const_type;
-    using KernelHandle = KokkosKernelsHandle<
+    using KernelHandle = KokkosKernels::KokkosKernelsHandle<
       size_type, lno_t, double,
       execution_space, memory_space, memory_space>;
     //Generate graph, and add some out-of-bounds columns
@@ -207,14 +207,14 @@ template<typename scalar_unused, typename lno_t, typename size_type, typename de
 void test_bipartite_symmetric(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
 {
     using execution_space = typename device::execution_space;
-    using memory_space = typename device::memory_space;
-    using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
-    using graph_type = typename crsMat::StaticCrsGraphType;
-    using c_rowmap_t = typename graph_type::row_map_type;
-    using c_entries_t = typename graph_type::entries_type;
-    using rowmap_t = typename c_rowmap_t::non_const_type;
-    using entries_t = typename c_entries_t::non_const_type;
-    using KernelHandle = KokkosKernelsHandle<
+    using memory_space    = typename device::memory_space;
+    using crsMat          = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+    using graph_type      = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t      = typename graph_type::row_map_type;
+    using c_entries_t     = typename graph_type::entries_type;
+    using rowmap_t        = typename c_rowmap_t::non_const_type;
+    using entries_t       = typename c_entries_t::non_const_type;
+    using KernelHandle    = KokkosKernels::KokkosKernelsHandle<
       size_type, lno_t, double,
       execution_space, memory_space, memory_space>;
     //Generate graph, and add some out-of-bounds columns
@@ -263,7 +263,7 @@ void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth
     using entries_t = typename graph_type::entries_type::non_const_type;
     using c_rowmap_t = typename graph_type::row_map_type;
     using c_entries_t = typename graph_type::entries_type;
-    using KernelHandle = KokkosKernelsHandle<
+    using KernelHandle = KokkosKernels::KokkosKernelsHandle<
       size_type, lno_t, double,
       execution_space, memory_space, memory_space>;
     //Generate graph
@@ -327,14 +327,14 @@ template<typename scalar_unused, typename lno_t, typename size_type, typename de
 void test_old_d2(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
 {
     using execution_space = typename device::execution_space;
-    using memory_space = typename device::memory_space;
-    using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
-    using graph_type = typename crsMat::StaticCrsGraphType;
-    using c_rowmap_t = typename graph_type::row_map_type;
-    using c_entries_t = typename graph_type::entries_type;
-    using rowmap_t = typename graph_type::row_map_type::non_const_type;
-    using entries_t = typename graph_type::entries_type::non_const_type;
-    using KernelHandle = KokkosKernelsHandle<
+    using memory_space    = typename device::memory_space;
+    using crsMat          = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+    using graph_type      = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t      = typename graph_type::row_map_type;
+    using c_entries_t     = typename graph_type::entries_type;
+    using rowmap_t        = typename graph_type::row_map_type::non_const_type;
+    using entries_t       = typename graph_type::entries_type::non_const_type;
+    using KernelHandle    = KokkosKernels::KokkosKernelsHandle<
       size_type, lno_t, double,
       execution_space, memory_space, memory_space>;
     //Generate graph

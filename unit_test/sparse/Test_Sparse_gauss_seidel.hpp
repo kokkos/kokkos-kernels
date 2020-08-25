@@ -84,18 +84,18 @@ int run_gauss_seidel(
     ClusteringAlgorithm cluster_algorithm = CLUSTER_DEFAULT,
     bool classic = false) // only with two-stage, true for sptrsv instead of richardson
 {
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type lno_view_t;
-  typedef typename graph_t::entries_type lno_nnz_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  using graph_t        = typename crsMat_t::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type;
+  using lno_nnz_view_t = typename graph_t::entries_type;
+  using scalar_view_t  = typename crsMat_t::values_type::non_const_type;
 
-  typedef typename lno_view_t::value_type size_type;
-  typedef typename lno_nnz_view_t::value_type lno_t;
-  typedef typename scalar_view_t::value_type scalar_t;
+  using size_type = typename lno_view_t::value_type;
+  using lno_t     = typename lno_nnz_view_t::value_type;
+  using scalar_t  = typename scalar_view_t::value_type;
 
-  typedef KokkosKernelsHandle
+  using KernelHandle = KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
+      typename device::execution_space, typename device::memory_space,typename device::memory_space >;
 
   KernelHandle kh;
   kh.set_team_work_size(16);
@@ -459,13 +459,13 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
 {
   using namespace Test;
-  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_row_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef KokkosKernelsHandle
+  using crsMat_t       = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using graph_t        = typename crsMat_t::StaticCrsGraphType;
+  using lno_row_view_t = typename graph_t::row_map_type::non_const_type;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using KernelHandle   = KokkosKernels::KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+      typename device::execution_space, typename device::memory_space,typename device::memory_space>;
   srand(245);
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance = nnzPerRow / 4;
@@ -564,15 +564,15 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_balloon_clustering(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
 {
   using namespace Test;
-  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type const_lno_row_view_t;
-  typedef typename graph_t::entries_type const_lno_nnz_view_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_row_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef KokkosKernelsHandle
+  using crsMat_t             = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using graph_t              = typename crsMat_t::StaticCrsGraphType;
+  using const_lno_row_view_t = typename graph_t::row_map_type;
+  using const_lno_nnz_view_t = typename graph_t::entries_type;
+  using lno_row_view_t       = typename graph_t::row_map_type::non_const_type;
+  using lno_nnz_view_t       = typename graph_t::entries_type::non_const_type;
+  using KernelHandle         = KokkosKernels::KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+      typename device::execution_space, typename device::memory_space,typename device::memory_space>;
   srand(245);
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance = nnzPerRow / 4;
@@ -606,14 +606,14 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_sgs_zero_rows()
 {
   using namespace Test;
-  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type row_map_type;
-  typedef typename graph_t::entries_type::non_const_type entries_type;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef KokkosKernelsHandle
+  using crsMat_t      = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using graph_t       = typename crsMat_t::StaticCrsGraphType;
+  using row_map_type  = typename graph_t::row_map_type::non_const_type;
+  using entries_type  = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t = typename crsMat_t::values_type::non_const_type;
+  using KernelHandle  = KokkosKernels::KokkosKernelsHandle
       <size_type, lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
+      typename device::execution_space, typename device::memory_space,typename device::memory_space>;
   //The rowmap of a zero-row matrix can be length 0 or 1, so Gauss-Seidel should work with both
   //(the setup and apply are essentially no-ops but they shouldn't crash or throw exceptions)
   //For this test, create size-0 and size-1 rowmaps separately, and make sure each work with both point and cluster

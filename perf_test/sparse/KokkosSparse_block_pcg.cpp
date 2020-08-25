@@ -117,7 +117,7 @@ void run_point_experiment(
 
 
 
-	  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+	  typedef KokkosKernels::KokkosKernelsHandle
 	        < size_type,
 			  lno_t,
 			  scalar_t,
@@ -223,7 +223,7 @@ void run_block_experiment(
 
 
 
-	  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+	  typedef KokkosKernels::KokkosKernelsHandle
 	        < size_type,
 			  lno_t,
 			  scalar_t,

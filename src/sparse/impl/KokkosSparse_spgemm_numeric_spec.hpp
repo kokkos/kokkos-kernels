@@ -80,7 +80,7 @@ struct spgemm_numeric_eti_spec_avail {
 #define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE ) \
     template<> \
     struct spgemm_numeric_eti_spec_avail< \
-        KokkosKernels::Experimental::KokkosKernelsHandle<\
+        KokkosKernels::KokkosKernelsHandle<\
         const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -114,7 +114,7 @@ struct spgemm_numeric_eti_spec_avail {
     \
     template<> \
     struct spgemm_numeric_eti_spec_avail< \
-        KokkosKernels::Experimental::KokkosKernelsHandle<\
+        KokkosKernels::KokkosKernelsHandle<\
         const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
         Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -356,7 +356,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
 #define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE ) \
     extern template struct  \
     SPGEMM_NUMERIC< \
-          typename KokkosKernels::Experimental::KokkosKernelsHandle<\
+          typename KokkosKernels::KokkosKernelsHandle<\
           	const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
             EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
           Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -389,7 +389,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
     \
     extern template struct  \
     SPGEMM_NUMERIC< \
-          typename KokkosKernels::Experimental::KokkosKernelsHandle<\
+          typename KokkosKernels::KokkosKernelsHandle<\
           	const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
             EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
           Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -423,7 +423,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
 #define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_INST( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE) \
     template struct  \
     SPGEMM_NUMERIC< \
-          KokkosKernels::Experimental::KokkosKernelsHandle<\
+          KokkosKernels::KokkosKernelsHandle<\
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
             EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
           Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
@@ -456,7 +456,7 @@ struct SPGEMM_NUMERIC<KernelHandle,
 \
     template struct  \
     SPGEMM_NUMERIC< \
-          KokkosKernels::Experimental::KokkosKernelsHandle<\
+          KokkosKernels::KokkosKernelsHandle<\
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,  \
             EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE> , \
           Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \

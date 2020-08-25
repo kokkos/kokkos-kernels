@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
   using ExecSpace = Kokkos::DefaultExecutionSpace;
   using MemSpace = typename ExecSpace::memory_space;
   using Device  = Kokkos::Device<ExecSpace, MemSpace>;
-  using Handle  = KokkosKernels::Experimental::
+  using Handle  = KokkosKernels::
     KokkosKernelsHandle<Offset, Ordinal, default_scalar, ExecSpace, MemSpace, MemSpace>;
   using Matrix  = KokkosSparse::CrsMatrix<Scalar, Ordinal, Device, void, Offset>;
   using Vector  = typename Matrix::values_type;
