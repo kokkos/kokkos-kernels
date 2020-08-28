@@ -51,8 +51,6 @@
 
 namespace KokkosSparse{
 
-namespace Experimental{
-
 template <typename KernelHandle,
 typename alno_row_view_t_,
 typename alno_nnz_view_t_,
@@ -113,7 +111,7 @@ void spgemm_symbolic(
   typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
   typedef typename Kokkos::Device<c_exec_t, c_temp_t> UniformDevice_t;
 
-  typedef typename  KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
+  typedef typename  KokkosKernels::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t> const_handle_type;
   const_handle_type tmp_handle (*handle);
 
 
@@ -178,6 +176,45 @@ void spgemm_symbolic(
 
 }
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+namespace Experimental{
+
+KOKKOS_DEPRECATED
+template <typename KernelHandle,
+typename alno_row_view_t_,
+typename alno_nnz_view_t_,
+typename blno_row_view_t_,
+typename blno_nnz_view_t_,
+typename clno_row_view_t_>
+void spgemm_symbolic(
+    KernelHandle *handle,
+    typename KernelHandle::const_nnz_lno_t m,
+    typename KernelHandle::const_nnz_lno_t n,
+    typename KernelHandle::const_nnz_lno_t k,
+    alno_row_view_t_ row_mapA,
+    alno_nnz_view_t_ entriesA,
+    bool transposeA,
+    blno_row_view_t_ row_mapB,
+    blno_nnz_view_t_ entriesB,
+    bool transposeB,
+    clno_row_view_t_ row_mapC){
+
+  ::KokkosSparse::spgemm_symbolic<KernelHandle,
+                                  alno_row_view_t_,
+                                  alno_nnz_view_t_,
+                                  blno_row_view_t_,
+                                  blno_nnz_view_t_,
+                                  clno_row_view_t_>(handle, m, n, k,
+                                                    row_mapA, entriesA,
+                                                    transposeA,
+                                                    row_mapB, entriesB,
+                                                    transposeB,
+                                                    row_mapC);
+
 }
-}
+
+} // namespace Experimental
+#endif
+
+} // namespace KokkosSparse
 #endif

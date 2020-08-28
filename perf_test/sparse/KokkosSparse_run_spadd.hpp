@@ -54,7 +54,6 @@ template <typename crsMat_t>
 void run_experiment(Parameters params)
 {
   using namespace KokkosSparse;
-  using namespace KokkosSparse::Experimental;
 
   using size_type = typename crsMat_t::size_type;
   using lno_t = typename crsMat_t::ordinal_type;
@@ -63,7 +62,7 @@ void run_experiment(Parameters params)
   using exec_space = typename device_t::execution_space;
   using mem_space = typename device_t::memory_space;
 
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
+  using KernelHandle = KokkosKernels::KokkosKernelsHandle
       <size_type, lno_t, scalar_t, exec_space, mem_space, mem_space>;
 
   std::cout << "************************************* \n";

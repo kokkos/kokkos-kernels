@@ -315,7 +315,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, const D2Parameters& param
 
     int verbose = params.verbose;
 
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, exec_space, mem_space, mem_space> KernelHandle;
+    typedef KokkosKernels::KokkosKernelsHandle<size_type, lno_t, kk_scalar_t, exec_space, mem_space, mem_space> KernelHandle;
 
     std::cout << "Num verts: " << crsGraph.numRows()         << std::endl
               << "Num edges: " << crsGraph.entries.extent(0) << std::endl;

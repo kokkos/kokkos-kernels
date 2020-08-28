@@ -50,7 +50,6 @@
 #include <limits>
 
 namespace KokkosSparse {
-namespace Experimental {
 
 /*
 Unsorted symbolic algorithm notes:
@@ -716,7 +715,6 @@ void spadd_numeric(KernelHandle* kernel_handle, const alno_row_view_t_ a_rowmap,
   // this fence is for accurate timing from host
   execution_space().fence();
 }
-}  // namespace Experimental
 
 // Symbolic: count entries in each row in C to produce rowmap
 // kernel handle has information about whether it is sorted add or not.
@@ -732,7 +730,7 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   // Create the row_map of C, no need to initialize it
   row_map_type row_mapC(Kokkos::ViewAllocateWithoutInitializing("row map"),
                         A.numRows() + 1);
-  KokkosSparse::Experimental::spadd_symbolic<
+  KokkosSparse::spadd_symbolic<
       KernelHandle, typename AMatrix::row_map_type::const_type,
       typename AMatrix::index_type::const_type,
       typename BMatrix::row_map_type::const_type,
@@ -763,11 +761,77 @@ template <typename KernelHandle, typename AScalar, typename AMatrix,
           typename BScalar, typename BMatrix, typename CMatrix>
 void spadd_numeric(KernelHandle* handle, const AScalar alpha, const AMatrix& A,
                    const BScalar beta, const BMatrix& B, CMatrix& C) {
-  KokkosSparse::Experimental::spadd_numeric(
+  KokkosSparse::spadd_numeric(
       handle, A.graph.row_map, A.graph.entries, A.values, alpha,
       B.graph.row_map, B.graph.entries, B.values, beta, C.graph.row_map,
       C.graph.entries, C.values);
 }
+
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+namespace Experimental {
+
+KOKKOS_DEPRECATED
+template <typename KernelHandle, typename alno_row_view_t_,
+          typename alno_nnz_view_t_, typename blno_row_view_t_,
+          typename blno_nnz_view_t_, typename clno_row_view_t_,
+          typename clno_nnz_view_t_>
+void spadd_symbolic(
+    KernelHandle* handle, const alno_row_view_t_ a_rowmap,
+    const alno_nnz_view_t_ a_entries, const blno_row_view_t_ b_rowmap,
+    const blno_nnz_view_t_ b_entries,
+    clno_row_view_t_ c_rowmap) {
+  ::KokkosSparse::spadd_symbolic<KernelHandle,
+                                 alno_row_view_t_,
+                                 alno_nnz_view_t_,
+                                 blno_row_view_t_,
+                                 blno_nnz_view_t_,
+                                 clno_row_view_t_,
+                                 clno_nnz_view_t_>(handle, a_rowmap, a_entries,
+                                                   b_rowmap, b_entries, c_rowmap);
+}
+
+KOKKOS_DEPRECATED
+template <typename KernelHandle, typename alno_row_view_t_,
+          typename alno_nnz_view_t_, typename ascalar_t_,
+          typename ascalar_nnz_view_t_, typename blno_row_view_t_,
+          typename blno_nnz_view_t_, typename bscalar_t_,
+          typename bscalar_nnz_view_t_, typename clno_row_view_t_,
+          typename clno_nnz_view_t_, typename cscalar_nnz_view_t_>
+void spadd_numeric(KernelHandle* kernel_handle, const alno_row_view_t_ a_rowmap,
+                   const alno_nnz_view_t_ a_entries,
+                   const ascalar_nnz_view_t_ a_values, const ascalar_t_ alpha,
+                   const blno_row_view_t_ b_rowmap,
+                   const blno_nnz_view_t_ b_entries,
+                   const bscalar_nnz_view_t_ b_values, const bscalar_t_ beta,
+                   const clno_row_view_t_ c_rowmap, clno_nnz_view_t_ c_entries,
+                   cscalar_nnz_view_t_ c_values) {
+  ::KokkosSparse::spadd_numeric<KernelHandle,
+                                alno_row_view_t_,
+                                alno_nnz_view_t_,
+                                ascalar_t_,
+                                ascalar_nnz_view_t_,
+                                blno_row_view_t_,
+                                blno_nnz_view_t_,
+                                bscalar_t_,
+                                bscalar_nnz_view_t_,
+                                clno_row_view_t_,
+                                clno_nnz_view_t_,
+                                cscalar_nnz_view_t_>(kernel_handle,
+                                                     a_rowmap,
+                                                     a_entries,
+                                                     a_values,
+                                                     alpha,
+                                                     b_rowmap,
+                                                     b_entries,
+                                                     b_values,
+                                                     beta,
+                                                     c_rowmap,
+                                                     c_entries,
+                                                     c_values);
+}
+
+}  // namespace Experimental
+#endif
 
 }  // namespace KokkosSparse
 

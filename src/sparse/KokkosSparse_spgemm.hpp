@@ -64,7 +64,7 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
   entries_type entriesC;
   values_type valuesC;
 
-  KokkosSparse::Experimental::spgemm_symbolic(
+  KokkosSparse::spgemm_symbolic(
       &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
       A.graph.entries, Amode, B.graph.row_map, B.graph.entries, Bmode,
       row_mapC);
@@ -88,7 +88,7 @@ void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
   // using entries_type = typename CMatrix::row_map_type::non_const_type;
   // using values_type  = typename CMatrix::values_type::non_const_type;
 
-  KokkosSparse::Experimental::spgemm_numeric(
+  KokkosSparse::spgemm_numeric(
       &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
       A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values);

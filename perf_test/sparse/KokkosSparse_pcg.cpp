@@ -111,7 +111,7 @@ void run_experiment(
 
   KokkosKernels::Experimental::Example::CGSolveResult cg_result ;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
         < size_type,
 		  lno_t,
 		  scalar_t,

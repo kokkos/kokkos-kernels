@@ -892,7 +892,7 @@ namespace KokkosSparse{
         Kokkos::deep_copy(colors, h_colors);
 #else
         //Create a handle that uses nnz_lno_t as the size_type, since the cluster graph should never be larger than 2^31 entries.
-        KokkosKernels::Experimental::KokkosKernelsHandle<nnz_lno_t, nnz_lno_t, double, MyExecSpace, MyPersistentMemorySpace, MyPersistentMemorySpace> kh;
+        KokkosKernels::KokkosKernelsHandle<nnz_lno_t, nnz_lno_t, double, MyExecSpace, MyPersistentMemorySpace, MyPersistentMemorySpace> kh;
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
         KokkosGraph::Experimental::graph_color_symbolic(&kh, numClusters, numClusters, clusterRowmap, clusterEntries);
         //retrieve colors

@@ -298,7 +298,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
   using host_memory_space = typename host_execution_space::memory_space;
 
   //
-  using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle
+  using KernelHandle =  KokkosKernels::KokkosKernelsHandle
                         <size_type, ordinal_type, scalar_type, execution_space, memory_space, memory_space >;
 
   //

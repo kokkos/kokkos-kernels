@@ -161,7 +161,7 @@ template <typename ExecSpace, typename crsMat_t, typename crsMat_t2 , typename c
 crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
 {
   using namespace KokkosSparse;
-  using namespace KokkosSparse::Experimental;
+  // using namespace KokkosSparse::Experimental;
   using device_t = Kokkos::Device<ExecSpace, PersistentMemSpace>;
   int algorithm = params.algorithm;
   int repeat = params.repeat;
@@ -188,7 +188,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
   lno_nnz_view_t entriesC;
   scalar_view_t valuesC;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 

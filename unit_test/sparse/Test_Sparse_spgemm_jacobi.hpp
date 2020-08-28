@@ -62,9 +62,9 @@
 
 
 using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
+// using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
-using namespace KokkosKernels::Experimental;
+// using namespace KokkosKernels::Experimental;
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
@@ -84,7 +84,7 @@ namespace Test {
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
@@ -129,25 +129,25 @@ namespace Test {
     entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
     valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
   }
-  spgemm_jacobi(
-      &kh,
-      num_rows_1,
-      num_rows_2,
-      num_cols_2,
-      input_mat.graph.row_map,
-      input_mat.graph.entries,
-      input_mat.values,
-      false,
-      input_mat2.graph.row_map,
-      input_mat2.graph.entries,
-      input_mat2.values,
-      false,
-      row_mapC,
-      entriesC,
-      valuesC,
-      omega,
-      dinv
-  );
+  KokkosSparse::Experimental::spgemm_jacobi(
+                                            &kh,
+                                            num_rows_1,
+                                            num_rows_2,
+                                            num_cols_2,
+                                            input_mat.graph.row_map,
+                                            input_mat.graph.entries,
+                                            input_mat.values,
+                                            false,
+                                            input_mat2.graph.row_map,
+                                            input_mat2.graph.entries,
+                                            input_mat2.values,
+                                            false,
+                                            row_mapC,
+                                            entriesC,
+                                            valuesC,
+                                            omega,
+                                            dinv
+                                            );
 
 
   graph_t static_graph (entriesC, row_mapC);

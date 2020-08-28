@@ -128,7 +128,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string& lfilename, const
 
   typedef Kokkos::View< scalar_t*, memory_space >     ValuesType;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
+  typedef KokkosKernels::KokkosKernelsHandle <size_type, lno_t, scalar_t,
     execution_space, memory_space, memory_space > KernelHandle;
 
   const scalar_t ZERO = scalar_t(0);

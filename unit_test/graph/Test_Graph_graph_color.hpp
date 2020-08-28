@@ -52,7 +52,7 @@
 #include "KokkosKernels_Handle.hpp"
 
 using namespace KokkosKernels;
-using namespace KokkosKernels::Experimental;
+// using namespace KokkosKernels::Experimental;
 
 using namespace KokkosGraph;
 using namespace KokkosGraph::Experimental;
@@ -64,19 +64,19 @@ int run_graphcolor(
     ColoringAlgorithm coloring_algorithm,
     size_t &num_colors,
     typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type & vertex_colors){
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type lno_view_t;
-  typedef typename graph_t::entries_type   lno_nnz_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  using graph_t        = typename crsMat_t::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type;
+  using lno_nnz_view_t = typename graph_t::entries_type;
+  using scalar_view_t  = typename crsMat_t::values_type::non_const_type;
 
-  typedef typename lno_view_t::value_type size_type;
-  typedef typename lno_nnz_view_t::value_type lno_t;
-  typedef typename scalar_view_t::value_type scalar_t;
+  using size_type = typename lno_view_t::value_type;
+  using lno_t     = typename lno_nnz_view_t::value_type;
+  using scalar_t  = typename scalar_view_t::value_type;
 
 
-  typedef KokkosKernelsHandle
+  using KernelHandle = KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
+      typename device::execution_space, typename device::memory_space,typename device::memory_space >;
 
   KernelHandle kh;
   kh.set_team_work_size(16);

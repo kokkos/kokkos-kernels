@@ -112,7 +112,7 @@ void run_test_sptrsv_mtx() {
     scalar_t ZERO = scalar_t(0);
     scalar_t ONE = scalar_t(1);
 
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
+    typedef KokkosKernels::KokkosKernelsHandle <size_type, lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
     std::cout << "UnitTest nrows = " << nrows << std::endl;
@@ -229,7 +229,7 @@ void run_test_sptrsv_mtx() {
     scalar_t ZERO = scalar_t(0);
     scalar_t ONE = scalar_t(1);
 
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
+    typedef KokkosKernels::KokkosKernelsHandle <size_type, lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
     std::cout << "UnitTest nrows = " << nrows << std::endl;
@@ -361,7 +361,7 @@ void run_test_sptrsv() {
   const size_type nrows = 5;
   const size_type nnz   = 10;
 
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
+  using KernelHandle = KokkosKernels::KokkosKernelsHandle <size_type, lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space, typename device::memory_space>;
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)

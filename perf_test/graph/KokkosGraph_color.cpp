@@ -252,7 +252,7 @@ void run_experiment(
   typedef typename lno_view_t::non_const_value_type size_type;
   typedef typename lno_nnz_view_t::non_const_value_type lno_t;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle
+  typedef KokkosKernels::KokkosKernelsHandle
       <size_type,lno_t, lno_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 

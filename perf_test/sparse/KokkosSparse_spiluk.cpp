@@ -89,7 +89,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin, int
 
   typedef Kokkos::View< scalar_t*, memory_space >  ValuesType;
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
+  typedef KokkosKernels::KokkosKernelsHandle <size_type, lno_t, scalar_t,
                               execution_space, memory_space, memory_space > KernelHandle;
   printf("Execution space: %s, Memory space: %s\n", typeid(execution_space).name(), typeid(memory_space).name());
   scalar_t ZERO = scalar_t(0);

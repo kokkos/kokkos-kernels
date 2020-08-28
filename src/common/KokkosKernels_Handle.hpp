@@ -55,8 +55,6 @@
 
 namespace KokkosKernels{
 
-namespace Experimental{
-
 template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class KokkosKernelsHandle
@@ -791,10 +789,54 @@ public:
       this->spilukHandle = nullptr;
     }
   }
-  
+
 };    // end class KokkosKernelsHandle
 
-}
-}
+
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+namespace Experimental{
+
+KOKKOS_DEPRECATED
+template <class size_type_, class lno_t_, class scalar_t_,
+          class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
+class KokkosKernelsHandle : public KokkosKernels::KokkosKernelsHandle<size_type_,
+                                                                      lno_t_,
+                                                                      scalar_t_,
+                                                                      ExecutionSpace,
+                                                                      TemporaryMemorySpace,
+                                                                      PersistentMemorySpace> {
+
+public:
+
+  KokkosKernelsHandle() : KokkosKernels::KokkosKernelsHandle<size_type_, lno_t_, scalar_t_,
+                                                             ExecutionSpace, TemporaryMemorySpace,
+                                                             PersistentMemorySpace>() {}
+
+  template <typename right_size_type_, typename right_lno_t_, typename right_scalar_t_,
+            typename right_ExecutionSpace, typename right_TemporaryMemorySpace,
+            typename right_PersistentMemorySpace>
+  KokkosKernelsHandle(KokkosKernelsHandle<right_size_type_, right_lno_t_, right_scalar_t_,
+                      right_ExecutionSpace, right_TemporaryMemorySpace,
+                      right_PersistentMemorySpace> & right_side_handle)
+    : KokkosKernels::KokkosKernelsHandle<size_type_, lno_t_, scalar_t_,
+      ExecutionSpace, TemporaryMemorySpace,
+      PersistentMemorySpace> (right_side_handle) {}
+
+  template <typename right_size_type_, typename right_lno_t_, typename right_scalar_t_,
+            typename right_ExecutionSpace, typename right_TemporaryMemorySpace,
+            typename right_PersistentMemorySpace>
+  KokkosKernelsHandle(KokkosKernels::KokkosKernelsHandle<right_size_type_, right_lno_t_,
+                      right_scalar_t_, right_ExecutionSpace, right_TemporaryMemorySpace,
+                      right_PersistentMemorySpace> & right_side_handle)
+    : KokkosKernels::KokkosKernelsHandle<size_type_, lno_t_, scalar_t_,
+      ExecutionSpace, TemporaryMemorySpace,
+      PersistentMemorySpace> (right_side_handle) {}
+
+}; // KokkosKernelsHandle
+
+} // namespace Experimental
+#endif
+
+} // namespace KokkosKernels
 
 #endif //_KOKKOSKERNELHANDLE_HPP
