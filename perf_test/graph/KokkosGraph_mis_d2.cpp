@@ -44,6 +44,7 @@
 
 #include <stdlib.h>
 #include <string>
+#include <set>
 #include <unistd.h>
 
 #include <iostream>
@@ -78,6 +79,67 @@ struct MIS2Parameters
   const char* mtx_file = NULL;
   MIS2_Algorithm algo = MIS2_FAST;
 };
+
+template<typename lno_t, typename size_type, typename rowmap_t, typename entries_t, typename mis_t>
+bool verifyD2MIS(
+    lno_t numVerts,
+    const rowmap_t& rowmap, const entries_t& entries,
+    const mis_t& misArray)
+{
+  //set a std::set of the mis, for fast membership test
+  std::set<lno_t> mis;
+  for(size_t i = 0; i < misArray.extent(0); i++)
+    mis.insert(misArray(i));
+  for(lno_t i = 0; i < numVerts; i++)
+  {
+    //determine whether another vertex in the set is
+    //within 2 hops of i.
+    bool misIn2Hops = false;
+    for(size_type j = rowmap(i); j < rowmap(i + 1); j++)
+    {
+      lno_t nei1 = entries(j);
+      if(nei1 == i || nei1 >= numVerts)
+        continue;
+      if(mis.find(nei1) != mis.end())
+      {
+        misIn2Hops = true;
+        break;
+      }
+      for(size_type k = rowmap(nei1); k < rowmap(nei1 + 1); k++)
+      {
+        lno_t nei2 = entries(k);
+        if(nei2 == i || nei2 >= numVerts)
+          continue;
+        if(mis.find(nei2) != mis.end())
+        {
+          misIn2Hops = true;
+          break;
+        }
+      }
+    }
+    if(mis.find(i) == mis.end())
+    {
+      //i is not in the set
+      if(!misIn2Hops)
+      {
+        std::cout << "INVALID D2 MIS: vertex " << i << " is not in the set,\n";
+        std::cout << "but there are no vertices in the set within 2 hops.\n";
+        return false;
+      }
+    }
+    else
+    {
+      //i is in the set
+      if(misIn2Hops)
+      {
+        std::cout << "INVALID D2 MIS: vertex " << i << " is in the set,\n";
+        std::cout << "but there is another vertex within 2 hops which is also in the set.\n";
+        return false;
+      }
+    }
+  }
+  return true;
+}
 
 void print_options(std::ostream &os, const char *app_name, unsigned int indent = 0)
 {
@@ -245,6 +307,15 @@ void run_mis2(const MIS2Parameters& params)
     {
       std::cout << "Vertices in independent set:\n";
       KokkosKernels::Impl::print_1Dview(mis);
+      auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowmap);
+      auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries);
+      auto misHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mis);
+      if(verifyD2MIS
+        <lno_t, size_type, decltype(rowmapHost), decltype(entriesHost), decltype(misHost)>
+        (numVerts, rowmapHost, entriesHost, misHost))
+        std::cout << "MIS-2 is correct.\n";
+      else
+        std::cout << "*** MIS-2 not correct! ***\n";
     }
 }
 
