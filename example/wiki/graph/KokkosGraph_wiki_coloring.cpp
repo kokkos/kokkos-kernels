@@ -1,4 +1,5 @@
 #include <vector>
+#include <set>
 #include <cstdio>
 #include <cmath>
 #include <sstream>
@@ -7,6 +8,7 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosGraph_Distance2Color.hpp"
+#include "KokkosGraph_MIS2.hpp"
 
 //Greedy Graph Coloring
 //  -Generate the graph for a rectangular grid, with a 9-point stencil
@@ -65,6 +67,28 @@ namespace ColoringDemo
         Ordinal vertex = getVertexID(x, y);
         int color = colorsHost(vertex);
         printf(numFmt.c_str(), color);
+      }
+      putchar('\n');
+    }
+  }
+
+  template<typename MISView>
+  void printMIS(MISView misList)
+  {
+    //Read colors on host
+    auto misHost = Kokkos::create_mirror_view_and_copy(HostSpace(), misList);
+    std::set<Ordinal> mis;
+    for(Offset i = 0; i < (Offset) misList.extent(0); i++)
+      mis.insert(misHost(i));
+    for(Ordinal y = 0; y < gridY; y++)
+    {
+      for(Ordinal x = 0; x < gridX; x++)
+      {
+        Ordinal vertex = getVertexID(x, y);
+        if(mis.find(vertex) == mis.end())
+          printf(". ");
+        else
+          printf("# ");
       }
       putchar('\n');
     }
@@ -156,6 +180,15 @@ int main(int argc, char* argv[])
       putchar('\n');
       //Clean up
       handle.destroy_distance2_graph_coloring_handle();
+    }
+    //Step 4: Run distance-2 MIS.
+    {
+      //Run coloring
+      auto misDevice = KokkosGraph::Experimental::graph_d2_mis<ExecSpace, RowmapType, ColindsType>(rowmapDevice, colindsDevice);
+      std::cout << "9-pt stencil: Distance-2 MIS: contains "
+        << misDevice.extent(0) << " out of " << ColoringDemo::numVertices << " vertices.\n";
+      ColoringDemo::printMIS(misDevice);
+      putchar('\n');
     }
   }
   Kokkos::finalize();
