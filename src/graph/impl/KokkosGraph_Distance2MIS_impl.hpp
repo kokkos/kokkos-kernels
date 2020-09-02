@@ -1072,8 +1072,7 @@ struct D2_MIS_Coarsening
   D2_MIS_Coarsening(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_)
     : rowmap(rowmap_), entries(entries_), mis2(mis2_),
       numVerts(rowmap.extent(0) - 1),
-      labels(Kokkos::ViewAllocateWithoutInitializing("Cluster Labels"), numVerts),
-      clusterSizes(Kokkos::ViewAllocateWithoutInitializing("Cluster Sizes"), mis2.extent(0))
+      labels(Kokkos::ViewAllocateWithoutInitializing("Cluster Labels"), numVerts)
   {
     Kokkos::deep_copy(labels, (lno_t) -1);
   }
@@ -1081,8 +1080,8 @@ struct D2_MIS_Coarsening
   //Phase 1 (over 0...numClusters) labels roots and immediate neighbors of roots.
   struct Phase1Functor
   {
-    Phase1Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_, const lno_view_t& clusterSizes_)
-      : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_), clusterSizes(clusterSizes_)
+    Phase1Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_)
+      : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_)
     {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const
@@ -1090,7 +1089,6 @@ struct D2_MIS_Coarsening
       lno_t root = mis2(i);
       size_type rowBegin = rowmap(root);
       size_type rowEnd = rowmap(root + 1);
-      clusterSizes(i) = (rowEnd - rowBegin);
       labels(root) = i;
       for(size_type j = rowBegin; j < rowEnd; j++)
       {
@@ -1107,14 +1105,22 @@ struct D2_MIS_Coarsening
     lno_view_t mis2;
     lno_t numVerts;
     lno_view_t labels;
-    lno_view_t clusterSizes;
   };
+
+  KOKKOS_INLINE_FUNCTION static uint32_t xorshiftHash(uint32_t in)
+  {
+    uint32_t x = in;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return x;
+  }
 
   //Phase 2 (over 0...numVerts) joins unlabeled vertices to the smallest adjacent cluster
   struct Phase2Functor
   {
-    Phase2Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_, const lno_view_t& clusterSizes_)
-      : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_), clusterSizes(clusterSizes_)
+    Phase2Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_)
+      : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_)
     {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const
@@ -1123,9 +1129,8 @@ struct D2_MIS_Coarsening
         return;
       size_type rowBegin = rowmap(i);
       size_type rowEnd = rowmap(i + 1);
-      //smallest cluster and 
       lno_t cluster = -1;
-      lno_t clusterSize = numVerts + 1;
+      uint32_t minScore = ~(uint32_t) 0;
       for(size_type j = rowBegin; j < rowEnd; j++)
       {
         lno_t nei = entries(j);
@@ -1135,11 +1140,11 @@ struct D2_MIS_Coarsening
         if(neiCluster != -1 && neiCluster != cluster)
         {
           //check if this cluster is smaller
-          lno_t neiClusterSize = clusterSizes(neiCluster);
-          if(neiClusterSize < clusterSize)
+          uint32_t score = xorshiftHash(i + xorshiftHash(neiCluster));
+          if(score < minScore)
           {
             cluster = neiCluster;
-            clusterSize = neiClusterSize;
+            minScore = score;
           }
         }
       }
@@ -1151,25 +1156,21 @@ struct D2_MIS_Coarsening
     lno_view_t mis2;
     lno_t numVerts;
     lno_view_t labels;
-    lno_view_t clusterSizes;
   };
 
   lno_view_t compute()
   {
     lno_t numClusters = mis2.extent(0);
-    Kokkos::parallel_for(range_pol(0, numClusters), Phase1Functor(rowmap, entries, mis2, numVerts, labels, clusterSizes));
-    Kokkos::parallel_for(range_pol(0, numVerts), Phase2Functor(rowmap, entries, mis2, numVerts, labels, clusterSizes));
+    Kokkos::parallel_for(range_pol(0, numClusters), Phase1Functor(rowmap, entries, mis2, numVerts, labels));
+    Kokkos::parallel_for(range_pol(0, numVerts), Phase2Functor(rowmap, entries, mis2, numVerts, labels));
     return labels;
   }
-
-  //Phase 2 joins remaining vertices to the smallest neighboring 
 
   rowmap_t rowmap;
   entries_t entries;
   lno_view_t mis2;
   lno_t numVerts;
   lno_view_t labels;
-  lno_view_t clusterSizes;
 };
 
 }}}

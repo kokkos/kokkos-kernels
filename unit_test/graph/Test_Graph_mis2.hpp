@@ -124,7 +124,7 @@ bool verifyD2MIS(
 }
 
 template<typename scalar_unused, typename lno_t, typename size_type, typename device>
-void test_dist2_mis(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
+void test_mis2(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
 {
   using execution_space = typename device::execution_space;
   using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
@@ -159,12 +159,56 @@ void test_dist2_mis(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_si
   }
 }
 
+template<typename scalar_unused, typename lno_t, typename size_type, typename device>
+void test_mis2_coarsening(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_size_variance)
+{
+  using execution_space = typename device::execution_space;
+  using crsMat = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+  using graph_type = typename crsMat::StaticCrsGraphType;
+  using c_rowmap_t = typename graph_type::row_map_type;
+  using c_entries_t = typename graph_type::entries_type;
+  using rowmap_t = typename c_rowmap_t::non_const_type;
+  using entries_t = typename c_entries_t::non_const_type;
+  //Generate graph, and add some out-of-bounds columns
+  crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(numVerts, numVerts, nnz, row_size_variance, bandwidth);
+  auto G = A.graph;
+  //Symmetrize the graph
+  rowmap_t symRowmap;
+  entries_t symEntries;
+  KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
+    <c_rowmap_t, c_entries_t,
+    rowmap_t, entries_t, execution_space>
+      (numVerts, G.row_map, G.entries, symRowmap, symEntries);
+  auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symRowmap);
+  auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symEntries);
+  //For each algorithm, compute and verify the MIS
+  std::vector<MIS2_Algorithm> algos
+    = {MIS2_FAST, MIS2_BALANCED, MIS2_QUALITY};
+  for(auto algo : algos)
+  {
+    lno_t numClusters = 0;
+    auto labels = graph_mis2_coarsen<device, rowmap_t, entries_t>(symRowmap, symEntries, numClusters, algo);
+    auto labelsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), labels);
+    //Not a strong test, but sanity check the number of clusters returned
+    EXPECT_TRUE(numClusters >= 1 && numClusters <= numVerts);
+    //Check that every label is in the range [0, numClusters)
+    for(lno_t i = 0; i < numVerts; i++)
+      EXPECT_TRUE(0 <= labelsHost(i) && labelsHost(i) < numClusters);
+  }
+}
+
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-    TEST_F(TestCategory, graph##_##graph_color_mis2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
+    TEST_F(TestCategory, graph##_##graph_mis2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
     { \
-      test_dist2_mis<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10); \
-      test_dist2_mis<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10); \
-      test_dist2_mis<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5 * 3, 5, 0); \
+      test_mis2<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10); \
+      test_mis2<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10); \
+      test_mis2<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5 * 3, 5, 0); \
+    } \
+    TEST_F(TestCategory, graph##_##graph_mis2_coarsening##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
+    { \
+      test_mis2_coarsening<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10); \
+      test_mis2_coarsening<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10); \
+      test_mis2_coarsening<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5 * 3, 5, 0); \
     }
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
