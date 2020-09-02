@@ -63,48 +63,48 @@ namespace Experimental{
 //
 // Column indices >= num_verts are ignored.
 
-template <typename device_t, typename rowmap_t, typename colinds_t>
-typename colinds_t::non_const_type
+template <typename device_t, typename rowmap_t, typename colinds_t, typename lno_view_t = typename colinds_t::non_const_type>
+lno_view_t
 graph_d2_mis(const rowmap_t& rowmap, const colinds_t& colinds, MIS2_Algorithm algo = MIS2_FAST)
 {
   if(rowmap.extent(0) <= 1)
   {
     //zero vertices means the MIS is empty.
-    return typename colinds_t::non_const_type();
+    return lno_view_t();
   }
   switch(algo)
   {
     case MIS2_QUALITY:
     {
-      Impl::D2_MIS_FixedPriority<device_t, rowmap_t, colinds_t> mis(rowmap, colinds);
+      Impl::D2_MIS_FixedPriority<device_t, rowmap_t, colinds_t, lno_view_t> mis(rowmap, colinds);
       return mis.compute();
     }
     case MIS2_FAST:
     {
-      Impl::D2_MIS_RandomPriority<device_t, rowmap_t, colinds_t> mis(rowmap, colinds);
+      Impl::D2_MIS_RandomPriority<device_t, rowmap_t, colinds_t, lno_view_t> mis(rowmap, colinds);
       return mis.compute();
     }
     case MIS2_BALANCED:
     {
-      Impl::D2_MIS_BlendedPriority<device_t, rowmap_t, colinds_t> mis(rowmap, colinds);
+      Impl::D2_MIS_BlendedPriority<device_t, rowmap_t, colinds_t, lno_view_t> mis(rowmap, colinds);
       return mis.compute();
     }
   }
   throw std::invalid_argument("graph_d2_mis: invalid algorithm");
 }
 
-template <typename device_t, typename rowmap_t, typename colinds_t>
-typename colinds_t::non_const_type
+template <typename device_t, typename rowmap_t, typename colinds_t, typename labels_t = typename colinds_t::non_const_type>
+labels_t
 graph_mis2_coarsen(const rowmap_t& rowmap, const colinds_t& colinds, typename colinds_t::non_const_value_type& numClusters, MIS2_Algorithm algo = MIS2_FAST)
 {
   if(rowmap.extent(0) <= 1)
   {
     //there are no vertices to label
-    return typename colinds_t::non_const_type();
+    return labels_t();
   }
-  auto mis2 = graph_d2_mis<device_t, rowmap_t, colinds_t>(rowmap, colinds, algo);
+  labels_t mis2 = graph_d2_mis<device_t, rowmap_t, colinds_t, labels_t>(rowmap, colinds, algo);
   numClusters = mis2.extent(0);
-  Impl::D2_MIS_Coarsening<device_t, rowmap_t, colinds_t> coarsening(rowmap, colinds, mis2);
+  Impl::D2_MIS_Coarsening<device_t, rowmap_t, colinds_t, labels_t> coarsening(rowmap, colinds, mis2);
   return coarsening.compute();
 }
 

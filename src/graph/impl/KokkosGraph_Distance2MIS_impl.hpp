@@ -80,7 +80,7 @@ namespace Impl {
  *  independently, but still have globally consistent rounds where row statuses change.
  */
 
-template<typename device_t, typename rowmap_t, typename entries_t>
+template<typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
 struct D2_MIS_RandomPriority
 {
   using exec_space = typename device_t::execution_space;
@@ -89,13 +89,14 @@ struct D2_MIS_RandomPriority
   using const_bitset_t = Kokkos::ConstBitset<device_t>;
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t = typename entries_t::non_const_value_type;
-  using lno_view_t = typename entries_t::non_const_type;
   //The type of status/priority values.
   using status_t = typename std::make_unsigned<lno_t>::type;
   using status_view_t = Kokkos::View<status_t*, mem_space>;
   using range_pol = Kokkos::RangePolicy<exec_space>;
   using team_pol = Kokkos::TeamPolicy<exec_space>;
   using team_mem = typename team_pol::member_type;
+  using all_worklists_t = Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space>;
+  using worklist_t = Kokkos::View<lno_t*, Kokkos::LayoutLeft, mem_space>;
 
   KOKKOS_INLINE_FUNCTION static uint32_t xorshiftHash(uint32_t in)
   {
@@ -135,7 +136,7 @@ struct D2_MIS_RandomPriority
 
   struct RefreshRowStatus
   {
-    RefreshRowStatus(const status_view_t& rowStatus_, const lno_view_t& worklist_, lno_t nvBits_, int round)
+    RefreshRowStatus(const status_view_t& rowStatus_, const worklist_t& worklist_, lno_t nvBits_, int round)
       : rowStatus(rowStatus_), worklist(worklist_), nvBits(nvBits_)
     {
       hashedRound = xorshiftHash(round);
@@ -158,14 +159,14 @@ struct D2_MIS_RandomPriority
     }
 
     status_view_t rowStatus;
-    lno_view_t worklist;
+    worklist_t worklist;
     int nvBits;
     uint32_t hashedRound;
   };
 
   struct RefreshColStatus
   {
-    RefreshColStatus(const status_view_t& colStatus_, const lno_view_t& worklist_, const status_view_t& rowStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_)
+    RefreshColStatus(const status_view_t& colStatus_, const worklist_t& worklist_, const status_view_t& rowStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_)
       : colStatus(colStatus_), worklist(worklist_), rowStatus(rowStatus_), rowmap(rowmap_), entries(entries_), nv(nv_)
     {}
 
@@ -193,7 +194,7 @@ struct D2_MIS_RandomPriority
     }
 
     status_view_t colStatus;
-    lno_view_t worklist;
+    worklist_t worklist;
     status_view_t rowStatus;
     rowmap_t rowmap;
     entries_t entries;
@@ -202,7 +203,7 @@ struct D2_MIS_RandomPriority
 
   struct DecideSetFunctor
   {
-    DecideSetFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, const lno_view_t& worklist_)
+    DecideSetFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, const worklist_t& worklist_)
       : rowStatus(rowStatus_), colStatus(colStatus_), rowmap(rowmap_), entries(entries_), nv(nv_), worklist(worklist_)
     {}
 
@@ -253,7 +254,7 @@ struct D2_MIS_RandomPriority
     rowmap_t rowmap;
     entries_t entries;
     lno_t nv;
-    lno_view_t worklist;
+    worklist_t worklist;
   };
 
   struct CountInSet
@@ -289,19 +290,19 @@ struct D2_MIS_RandomPriority
 
   struct InitWorklistFunctor
   {
-    InitWorklistFunctor(const lno_view_t& worklist_)
+    InitWorklistFunctor(const worklist_t& worklist_)
       : worklist(worklist_)
     {}
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const
     {
       worklist(i) = i;
     }
-    lno_view_t worklist;
+    worklist_t worklist;
   };
 
   struct CompactWorklistFunctor
   {
-    CompactWorklistFunctor(const lno_view_t& src_, const lno_view_t& dst_, const status_view_t& status_)
+    CompactWorklistFunctor(const worklist_t& src_, const worklist_t& dst_, const status_view_t& status_)
       : src(src_), dst(dst_), status(status_)
     {}
 
@@ -318,19 +319,19 @@ struct D2_MIS_RandomPriority
       }
     }
 
-    lno_view_t src;
-    lno_view_t dst;
+    worklist_t src;
+    worklist_t dst;
     status_view_t status;
   };
 
   lno_view_t compute()
   {
     //Initialize first worklist to 0...numVerts
-    lno_view_t rowWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 0);
+    worklist_t rowWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 0);
     Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(rowWorklist));
-    lno_view_t colWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 1);
+    worklist_t colWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 1);
     Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(colWorklist));
-    lno_view_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
+    worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
     int round = 0;
     lno_t rowWorkLen = numVerts;
     lno_t colWorkLen = numVerts;
@@ -366,7 +367,7 @@ struct D2_MIS_RandomPriority
   lno_t numVerts;
   status_view_t rowStatus;
   status_view_t colStatus;
-  Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space> allWorklists;
+  all_worklists_t allWorklists;
   //The number of bits required to represent vertex IDs, in the ECL-MIS tiebreak scheme:
   //  ceil(log_2(numVerts + 1))
   int nvBits;
@@ -374,7 +375,7 @@ struct D2_MIS_RandomPriority
   lno_t maxDegree;
 };
 
-template<typename device_t, typename rowmap_t, typename entries_t>
+template<typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
 struct D2_MIS_BlendedPriority
 {
   using exec_space = typename device_t::execution_space;
@@ -383,13 +384,14 @@ struct D2_MIS_BlendedPriority
   using const_bitset_t = Kokkos::ConstBitset<device_t>;
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t = typename entries_t::non_const_value_type;
-  using lno_view_t = typename entries_t::non_const_type;
   //The type of status/priority values.
   using status_t = typename std::make_unsigned<lno_t>::type;
   using status_view_t = Kokkos::View<status_t*, mem_space>;
   using range_pol = Kokkos::RangePolicy<exec_space>;
   using team_pol = Kokkos::TeamPolicy<exec_space>;
   using team_mem = typename team_pol::member_type;
+  using all_worklists_t = Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space>;
+  using worklist_t = Kokkos::View<lno_t*, Kokkos::LayoutLeft, mem_space>;
 
   KOKKOS_INLINE_FUNCTION static uint32_t xorshiftHash(uint32_t in)
   {
@@ -424,12 +426,12 @@ struct D2_MIS_BlendedPriority
     //  This counts up monotonically as vertices are eliminated (given status OUT_SET)
     rowStatus = status_view_t(Kokkos::ViewAllocateWithoutInitializing("RowStatus"), numVerts);
     colStatus = status_view_t(Kokkos::ViewAllocateWithoutInitializing("ColStatus"), numVerts);
-    allWorklists = Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space>(Kokkos::ViewAllocateWithoutInitializing("AllWorklists"), numVerts, 3);
+    allWorklists = all_worklists_t(Kokkos::ViewAllocateWithoutInitializing("AllWorklists"), numVerts, 3);
   }
 
   struct RefreshRowStatus
   {
-    RefreshRowStatus(const status_view_t& rowStatus_, const rowmap_t& rowmap_, const lno_view_t& worklist_, lno_t nvBits_, int round, float k_, lno_t minDeg_, lno_t maxDeg_)
+    RefreshRowStatus(const status_view_t& rowStatus_, const rowmap_t& rowmap_, const worklist_t& worklist_, lno_t nvBits_, int round, float k_, lno_t minDeg_, lno_t maxDeg_)
       : rowStatus(rowStatus_), rowmap(rowmap_), worklist(worklist_), nvBits(nvBits_), k(k_), minDeg(minDeg_)
     {
       hashedRound = xorshiftHash(round);
@@ -468,7 +470,7 @@ struct D2_MIS_BlendedPriority
 
     status_view_t rowStatus;
     rowmap_t rowmap;
-    lno_view_t worklist;
+    worklist_t worklist;
     int nvBits;
     uint32_t hashedRound;
     float k;
@@ -478,7 +480,7 @@ struct D2_MIS_BlendedPriority
 
   struct RefreshColStatus
   {
-    RefreshColStatus(const status_view_t& colStatus_, const lno_view_t& worklist_, const status_view_t& rowStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_)
+    RefreshColStatus(const status_view_t& colStatus_, const worklist_t& worklist_, const status_view_t& rowStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_)
       : colStatus(colStatus_), worklist(worklist_), rowStatus(rowStatus_), rowmap(rowmap_), entries(entries_), nv(nv_)
     {}
 
@@ -506,7 +508,7 @@ struct D2_MIS_BlendedPriority
     }
 
     status_view_t colStatus;
-    lno_view_t worklist;
+    worklist_t worklist;
     status_view_t rowStatus;
     rowmap_t rowmap;
     entries_t entries;
@@ -515,7 +517,7 @@ struct D2_MIS_BlendedPriority
 
   struct DecideSetFunctor
   {
-    DecideSetFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, const lno_view_t& worklist_)
+    DecideSetFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, const worklist_t& worklist_)
       : rowStatus(rowStatus_), colStatus(colStatus_), rowmap(rowmap_), entries(entries_), nv(nv_), worklist(worklist_)
     {}
 
@@ -566,7 +568,7 @@ struct D2_MIS_BlendedPriority
     rowmap_t rowmap;
     entries_t entries;
     lno_t nv;
-    lno_view_t worklist;
+    worklist_t worklist;
   };
 
   struct CountInSet
@@ -602,19 +604,19 @@ struct D2_MIS_BlendedPriority
 
   struct InitWorklistFunctor
   {
-    InitWorklistFunctor(const lno_view_t& worklist_)
+    InitWorklistFunctor(const worklist_t& worklist_)
       : worklist(worklist_)
     {}
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const
     {
       worklist(i) = i;
     }
-    lno_view_t worklist;
+    worklist_t worklist;
   };
 
   struct CompactWorklistFunctor
   {
-    CompactWorklistFunctor(const lno_view_t& src_, const lno_view_t& dst_, const status_view_t& status_)
+    CompactWorklistFunctor(const worklist_t& src_, const worklist_t& dst_, const status_view_t& status_)
       : src(src_), dst(dst_), status(status_)
     {}
 
@@ -631,8 +633,8 @@ struct D2_MIS_BlendedPriority
       }
     }
 
-    lno_view_t src;
-    lno_view_t dst;
+    worklist_t src;
+    worklist_t dst;
     status_view_t status;
   };
 
@@ -643,11 +645,11 @@ struct D2_MIS_BlendedPriority
     lno_t maxDegree;
     KokkosKernels::Impl::graph_min_max_degree<device_t, lno_t, rowmap_t>(rowmap, minDegree, maxDegree);
     //Initialize first worklist to 0...numVerts
-    lno_view_t rowWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 0);
+    worklist_t rowWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 0);
     Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(rowWorklist));
-    lno_view_t colWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 1);
+    worklist_t colWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 1);
     Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(colWorklist));
-    lno_view_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
+    worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
     int round = 0;
     lno_t rowWorkLen = numVerts;
     lno_t colWorkLen = numVerts;
@@ -688,7 +690,7 @@ struct D2_MIS_BlendedPriority
   lno_t numVerts;
   status_view_t rowStatus;
   status_view_t colStatus;
-  Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space> allWorklists;
+  all_worklists_t allWorklists;
   //The number of bits required to represent vertex IDs, in the ECL-MIS tiebreak scheme:
   //  ceil(log_2(numVerts + 1))
   int nvBits;
@@ -696,7 +698,7 @@ struct D2_MIS_BlendedPriority
   lno_t maxDegree;
 };
 
-template<typename device_t, typename rowmap_t, typename entries_t>
+template<typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
 struct D2_MIS_FixedPriority
 {
   using exec_space = typename device_t::execution_space;
@@ -705,7 +707,6 @@ struct D2_MIS_FixedPriority
   using const_bitset_t = Kokkos::ConstBitset<device_t>;
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t = typename entries_t::non_const_value_type;
-  using lno_view_t = typename entries_t::non_const_type;
   //The type of status/priority values.
   using status_t = typename std::make_unsigned<lno_t>::type;
   using status_view_t = Kokkos::View<status_t*, mem_space>;
@@ -1054,7 +1055,7 @@ struct D2_MIS_FixedPriority
   lno_view_t worklist2;
 };
 
-template<typename device_t, typename rowmap_t, typename entries_t>
+template<typename device_t, typename rowmap_t, typename entries_t, typename labels_t>
 struct D2_MIS_Coarsening
 {
   using exec_space = typename device_t::execution_space;
@@ -1069,7 +1070,7 @@ struct D2_MIS_Coarsening
   using status_view_t = Kokkos::View<status_t*, mem_space>;
   using range_pol = Kokkos::RangePolicy<exec_space>;
 
-  D2_MIS_Coarsening(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_)
+  D2_MIS_Coarsening(const rowmap_t& rowmap_, const entries_t& entries_, const labels_t& mis2_)
     : rowmap(rowmap_), entries(entries_), mis2(mis2_),
       numVerts(rowmap.extent(0) - 1),
       labels(Kokkos::ViewAllocateWithoutInitializing("Cluster Labels"), numVerts)
@@ -1080,7 +1081,7 @@ struct D2_MIS_Coarsening
   //Phase 1 (over 0...numClusters) labels roots and immediate neighbors of roots.
   struct Phase1Functor
   {
-    Phase1Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_)
+    Phase1Functor(const rowmap_t& rowmap_, const entries_t& entries_, const labels_t& mis2_, lno_t numVerts_, const labels_t& labels_)
       : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_)
     {}
 
@@ -1102,9 +1103,9 @@ struct D2_MIS_Coarsening
 
     rowmap_t rowmap;
     entries_t entries;
-    lno_view_t mis2;
+    labels_t mis2;
     lno_t numVerts;
-    lno_view_t labels;
+    labels_t labels;
   };
 
   KOKKOS_INLINE_FUNCTION static uint32_t xorshiftHash(uint32_t in)
@@ -1119,7 +1120,7 @@ struct D2_MIS_Coarsening
   //Phase 2 (over 0...numVerts) joins unlabeled vertices to the smallest adjacent cluster
   struct Phase2Functor
   {
-    Phase2Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_)
+    Phase2Functor(const rowmap_t& rowmap_, const entries_t& entries_, const labels_t& mis2_, lno_t numVerts_, const labels_t& labels_)
       : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_)
     {}
 
@@ -1153,12 +1154,12 @@ struct D2_MIS_Coarsening
 
     rowmap_t rowmap;
     entries_t entries;
-    lno_view_t mis2;
+    labels_t mis2;
     lno_t numVerts;
-    lno_view_t labels;
+    labels_t labels;
   };
 
-  lno_view_t compute()
+  labels_t compute()
   {
     lno_t numClusters = mis2.extent(0);
     Kokkos::parallel_for(range_pol(0, numClusters), Phase1Functor(rowmap, entries, mis2, numVerts, labels));
@@ -1168,9 +1169,9 @@ struct D2_MIS_Coarsening
 
   rowmap_t rowmap;
   entries_t entries;
-  lno_view_t mis2;
+  labels_t mis2;
   lno_t numVerts;
-  lno_view_t labels;
+  labels_t labels;
 };
 
 }}}

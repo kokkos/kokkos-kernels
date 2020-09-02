@@ -56,6 +56,7 @@
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosSparse_partitioning_impl.hpp"
+#include "KokkosGraph_MIS2.hpp"
 
 namespace KokkosSparse{
   namespace Impl{
@@ -782,32 +783,21 @@ namespace KokkosSparse{
           raw_sym_adj = raw_colinds_t(sym_adj.data(), sym_adj.extent(0));
         }
         nnz_view_t vertClusters;
-        //auto clusterAlgo = gsHandle->get_clustering_algo();
-        BalloonClustering<HandleType, raw_rowmap_t, raw_colinds_t> balloon(num_rows, raw_sym_xadj, raw_sym_adj);
-        vertClusters = balloon.run(clusterSize);
-        /*
+        auto clusterAlgo = gsHandle->get_clustering_algo();
         if(clusterAlgo == CLUSTER_DEFAULT)
-          clusterAlgo = CLUSTER_BALLOON;
+          clusterAlgo = CLUSTER_MIS2;
         switch(clusterAlgo)
         {
-          case CLUSTER_CUTHILL_MCKEE:
+          case CLUSTER_MIS2:
           {
-            RCM<HandleType, raw_rowmap_t, raw_colinds_t> rcm(num_rows, raw_sym_xadj, raw_sym_adj);
-            nnz_view_t cmOrder = rcm.cuthill_mckee();
-            vertClusters = nnz_view_t("Cluster labels", num_rows);
-            Kokkos::parallel_for(my_exec_space(0, num_rows), ReorderedClusteringFunctor<nnz_view_t>(vertClusters, cmOrder, clusterSize));
+            vertClusters = KokkosGraph::Experimental::graph_mis2_coarsen<MyExecSpace, raw_rowmap_t, raw_colinds_t, nnz_view_t>
+              (raw_sym_xadj, raw_sym_adj, numClusters, KokkosGraph::MIS2_FAST);
             break;
           }
           case CLUSTER_BALLOON:
           {
             BalloonClustering<HandleType, raw_rowmap_t, raw_colinds_t> balloon(num_rows, raw_sym_xadj, raw_sym_adj);
             vertClusters = balloon.run(clusterSize);
-            break;
-          }
-          case CLUSTER_DO_NOTHING:
-          {
-            vertClusters = nnz_view_t("Cluster labels", num_rows);
-            Kokkos::parallel_for(my_exec_space(0, num_rows), NopVertClusteringFunctor<nnz_view_t>(vertClusters, clusterSize));
             break;
           }
           case CLUSTER_DEFAULT:
@@ -817,7 +807,6 @@ namespace KokkosSparse{
           default:
             throw std::runtime_error("Clustering algo " + std::to_string((int) clusterAlgo) + " is not implemented");
         }
-        */
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         std::cout << "Graph clustering: " << timer.seconds() << '\n';
         timer.reset();

@@ -81,7 +81,8 @@ int run_gauss_seidel(
     bool is_symmetric_graph,
     int apply_type = 0, // 0 for symmetric, 1 for forward, 2 for backward.
     int cluster_size = 1,
-    bool classic = false) // only with two-stage, true for sptrsv instead of richardson
+    bool classic = false, // only with two-stage, true for sptrsv instead of richardson
+    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT) 
 {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
@@ -100,7 +101,7 @@ int run_gauss_seidel(
   kh.set_team_work_size(16);
   kh.set_dynamic_scheduling(true);
   if(gs_algorithm == GS_CLUSTER)
-    kh.create_gs_handle(KokkosSparse::CLUSTER_BALLOON, cluster_size);
+    kh.create_gs_handle(clusterAlgo, cluster_size);
   else if(gs_algorithm == GS_TWOSTAGE) {
     // test for two-stage/classical gs
     kh.create_gs_handle(gs_algorithm);
@@ -281,18 +282,22 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
+  std::vector<ClusteringAlgorithm> clusteringAlgos = {CLUSTER_MIS2, CLUSTER_BALLOON};
   for(int csize = 0; csize < 3; csize++)
   {
-    for(int apply_type = 0; apply_type < apply_count; ++apply_type)
+    for(auto clusterAlgo : clusteringAlgos)
     {
-      Kokkos::Impl::Timer timer1;
-      //Zero out X before solving
-      Kokkos::deep_copy(x_vector, zero);
-      run_gauss_seidel<crsMat_t, scalar_view_t, device>(
-          input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize]);
-      KokkosBlas::axpby(one, solution_x, -one, x_vector);
-      mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
-      EXPECT_LT(result_norm_res, initial_norm_res);
+      for(int apply_type = 0; apply_type < apply_count; ++apply_type)
+      {
+        Kokkos::Impl::Timer timer1;
+        //Zero out X before solving
+        Kokkos::deep_copy(x_vector, zero);
+        run_gauss_seidel<crsMat_t, scalar_view_t, device>(
+            input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize], false, clusterAlgo);
+        KokkosBlas::axpby(one, solution_x, -one, x_vector);
+        mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
+        EXPECT_LT(result_norm_res, initial_norm_res);
+      }
     }
   }
   //*** Two-stage version ****
