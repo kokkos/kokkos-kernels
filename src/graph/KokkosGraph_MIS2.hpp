@@ -93,6 +93,21 @@ graph_d2_mis(const rowmap_t& rowmap, const colinds_t& colinds, MIS2_Algorithm al
   throw std::invalid_argument("graph_d2_mis: invalid algorithm");
 }
 
+template <typename device_t, typename rowmap_t, typename colinds_t>
+typename colinds_t::non_const_type
+graph_mis2_coarsen(const rowmap_t& rowmap, const colinds_t& colinds, typename colinds_t::non_const_value_type& numClusters, MIS2_Algorithm algo = MIS2_FAST)
+{
+  if(rowmap.extent(0) <= 1)
+  {
+    //there are no vertices to label
+    return typename colinds_t::non_const_type();
+  }
+  auto mis2 = graph_d2_mis<device_t, rowmap_t, colinds_t>(rowmap, colinds, algo);
+  numClusters = mis2.extent(0);
+  Impl::D2_MIS_Coarsening<device_t, rowmap_t, colinds_t> coarsening(rowmap, colinds, mis2);
+  return coarsening.compute();
+}
+
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
 

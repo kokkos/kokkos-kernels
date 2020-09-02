@@ -1054,6 +1054,124 @@ struct D2_MIS_FixedPriority
   lno_view_t worklist2;
 };
 
+template<typename device_t, typename rowmap_t, typename entries_t>
+struct D2_MIS_Coarsening
+{
+  using exec_space = typename device_t::execution_space;
+  using mem_space = typename device_t::memory_space;
+  using bitset_t = Kokkos::Bitset<device_t>;
+  using const_bitset_t = Kokkos::ConstBitset<device_t>;
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+  using lno_view_t = typename entries_t::non_const_type;
+  //The type of status/priority values.
+  using status_t = typename std::make_unsigned<lno_t>::type;
+  using status_view_t = Kokkos::View<status_t*, mem_space>;
+  using range_pol = Kokkos::RangePolicy<exec_space>;
+
+  D2_MIS_Coarsening(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_)
+    : rowmap(rowmap_), entries(entries_), mis2(mis2_),
+      numVerts(rowmap.extent(0) - 1),
+      labels(Kokkos::ViewAllocateWithoutInitializing("Cluster Labels"), numVerts),
+      clusterSizes(Kokkos::ViewAllocateWithoutInitializing("Cluster Sizes"), mis2.extent(0))
+  {
+    Kokkos::deep_copy(labels, (lno_t) -1);
+  }
+
+  //Phase 1 (over 0...numClusters) labels roots and immediate neighbors of roots.
+  struct Phase1Functor
+  {
+    Phase1Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_, const lno_view_t& clusterSizes_)
+      : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_), clusterSizes(clusterSizes_)
+    {}
+
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const
+    {
+      lno_t root = mis2(i);
+      size_type rowBegin = rowmap(root);
+      size_type rowEnd = rowmap(root + 1);
+      clusterSizes(i) = (rowEnd - rowBegin);
+      labels(root) = i;
+      for(size_type j = rowBegin; j < rowEnd; j++)
+      {
+        lno_t nei = entries(j);
+        if(nei != root && nei < numVerts)
+        {
+          labels(nei) = i;
+        }
+      }
+    }
+
+    rowmap_t rowmap;
+    entries_t entries;
+    lno_view_t mis2;
+    lno_t numVerts;
+    lno_view_t labels;
+    lno_view_t clusterSizes;
+  };
+
+  //Phase 2 (over 0...numVerts) joins unlabeled vertices to the smallest adjacent cluster
+  struct Phase2Functor
+  {
+    Phase2Functor(const rowmap_t& rowmap_, const entries_t& entries_, const lno_view_t& mis2_, lno_t numVerts_, const lno_view_t& labels_, const lno_view_t& clusterSizes_)
+      : rowmap(rowmap_), entries(entries_), mis2(mis2_), numVerts(numVerts_), labels(labels_), clusterSizes(clusterSizes_)
+    {}
+
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const
+    {
+      if(labels(i) != (lno_t) -1)
+        return;
+      size_type rowBegin = rowmap(i);
+      size_type rowEnd = rowmap(i + 1);
+      //smallest cluster and 
+      lno_t cluster = -1;
+      lno_t clusterSize = numVerts + 1;
+      for(size_type j = rowBegin; j < rowEnd; j++)
+      {
+        lno_t nei = entries(j);
+        if(nei == i || nei >= numVerts)
+          continue;
+        lno_t neiCluster = labels(nei);
+        if(neiCluster != -1 && neiCluster != cluster)
+        {
+          //check if this cluster is smaller
+          lno_t neiClusterSize = clusterSizes(neiCluster);
+          if(neiClusterSize < clusterSize)
+          {
+            cluster = neiCluster;
+            clusterSize = neiClusterSize;
+          }
+        }
+      }
+      labels(i) = cluster;
+    }
+
+    rowmap_t rowmap;
+    entries_t entries;
+    lno_view_t mis2;
+    lno_t numVerts;
+    lno_view_t labels;
+    lno_view_t clusterSizes;
+  };
+
+  lno_view_t compute()
+  {
+    lno_t numClusters = mis2.extent(0);
+    Kokkos::parallel_for(range_pol(0, numClusters), Phase1Functor(rowmap, entries, mis2, numVerts, labels, clusterSizes));
+    Kokkos::parallel_for(range_pol(0, numVerts), Phase2Functor(rowmap, entries, mis2, numVerts, labels, clusterSizes));
+    return labels;
+  }
+
+  //Phase 2 joins remaining vertices to the smallest neighboring 
+
+  rowmap_t rowmap;
+  entries_t entries;
+  lno_view_t mis2;
+  lno_t numVerts;
+  lno_view_t labels;
+  lno_view_t clusterSizes;
+};
+
 }}}
 
 #endif

@@ -13,3 +13,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   SOURCES KokkosGraph_wiki_mis2.cpp
   )
 
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+  wiki_coarsening
+  SOURCES KokkosGraph_wiki_coarsening.cpp
+  )
+
