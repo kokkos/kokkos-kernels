@@ -371,8 +371,6 @@ struct D2_MIS_RandomPriority
   //The number of bits required to represent vertex IDs, in the ECL-MIS tiebreak scheme:
   //  ceil(log_2(numVerts + 1))
   int nvBits;
-  lno_t minDegree;
-  lno_t maxDegree;
 };
 
 template<typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
@@ -694,8 +692,6 @@ struct D2_MIS_BlendedPriority
   //The number of bits required to represent vertex IDs, in the ECL-MIS tiebreak scheme:
   //  ceil(log_2(numVerts + 1))
   int nvBits;
-  lno_t minDegree;
-  lno_t maxDegree;
 };
 
 template<typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
