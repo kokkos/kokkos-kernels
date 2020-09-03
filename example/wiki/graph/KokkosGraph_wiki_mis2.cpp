@@ -21,12 +21,6 @@ int main(int argc, char* argv[])
       GraphDemo::printMIS(misDevice);
       putchar('\n');
       misDevice = KokkosGraph::Experimental::graph_d2_mis<ExecSpace, RowmapType, ColindsType>(
-          rowmapDevice, colindsDevice, KokkosGraph::MIS2_BALANCED);
-      std::cout << "Distance-2 MIS, BALANCED algorithm: contains "
-        << misDevice.extent(0) << " out of " << GraphDemo::numVertices << " vertices.\n";
-      GraphDemo::printMIS(misDevice);
-      putchar('\n');
-      misDevice = KokkosGraph::Experimental::graph_d2_mis<ExecSpace, RowmapType, ColindsType>(
           rowmapDevice, colindsDevice, KokkosGraph::MIS2_QUALITY);
       std::cout << "Distance-2 MIS, QUALITY algorithm: contains "
         << misDevice.extent(0) << " out of " << GraphDemo::numVertices << " vertices.\n";

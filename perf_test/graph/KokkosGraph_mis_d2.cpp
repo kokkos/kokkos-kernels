@@ -226,8 +226,6 @@ int parse_inputs(MIS2Parameters &params, int argc, char **argv)
               params.algo = MIS2_FAST;
             else if(!strcasecmp(algName, "quality"))
               params.algo = MIS2_QUALITY;
-            else if(!strcasecmp(algName, "balanced"))
-              params.algo = MIS2_BALANCED;
             else
               throw std::invalid_argument("Algorithm not valid: must be 'fast' or 'quality'");
         }

@@ -183,7 +183,7 @@ void test_mis2_coarsening(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t 
   auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symEntries);
   //For each algorithm, compute and verify the MIS
   std::vector<MIS2_Algorithm> algos
-    = {MIS2_FAST, MIS2_BALANCED, MIS2_QUALITY};
+    = {MIS2_FAST, MIS2_QUALITY};
   for(auto algo : algos)
   {
     lno_t numClusters = 0;

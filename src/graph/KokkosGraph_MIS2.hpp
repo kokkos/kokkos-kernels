@@ -52,8 +52,7 @@ namespace KokkosGraph{
 enum MIS2_Algorithm
 {
   MIS2_QUALITY,
-  MIS2_FAST,
-  MIS2_BALANCED
+  MIS2_FAST
 };
 
 namespace Experimental{
@@ -82,11 +81,6 @@ graph_d2_mis(const rowmap_t& rowmap, const colinds_t& colinds, MIS2_Algorithm al
     case MIS2_FAST:
     {
       Impl::D2_MIS_RandomPriority<device_t, rowmap_t, colinds_t, lno_view_t> mis(rowmap, colinds);
-      return mis.compute();
-    }
-    case MIS2_BALANCED:
-    {
-      Impl::D2_MIS_BlendedPriority<device_t, rowmap_t, colinds_t, lno_view_t> mis(rowmap, colinds);
       return mis.compute();
     }
   }
