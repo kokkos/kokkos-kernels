@@ -99,7 +99,7 @@ void KokkosSPGEMM
 		Kokkos::Impl::Timer timer1;
 		auto new_row_mapB_begin = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(0), b_row_cnt));
 		auto new_row_mapB_end = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(1), b_row_cnt + 1));
-		row_lno_persistent_work_view_t flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
+		row_lno_persistent_work_view_t flops_per_row(Kokkos::ViewAllocateWithoutInitializing("original row flops"), a_row_cnt);
 
 		//get maximum row flops.
 		maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA,

@@ -47,6 +47,7 @@
 
 //#define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
+#include "KokkosKernels_Controls.hpp"
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #endif
@@ -78,10 +79,9 @@ namespace Impl{
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-    typedef typename ain_row_index_view_type::device_type device1;
-    typedef typename ain_nonzero_index_view_type::device_type device2;
-
-    typedef typename KernelHandle::nnz_lno_t idx;
+    using device1 = typename ain_row_index_view_type::device_type;
+    using device2 = typename ain_nonzero_index_view_type::device_type;
+    using idx     = typename KernelHandle::nnz_lno_t;
 
 
     //TODO this is not correct, check memory space.
@@ -93,6 +93,10 @@ namespace Impl{
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       //return;
     }
+
+#if defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
+      throw std::runtime_error ("SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
+#else
 
     if (std::is_same<idx, int>::value){
 
@@ -143,6 +147,7 @@ namespace Impl{
       throw std::runtime_error ("CUSPARSE requires local ordinals to be integer.\n");
       //return;
     }
+#endif
 #else
     (void)handle;
     (void)m;          (void)n;          (void)k;
@@ -186,6 +191,9 @@ namespace Impl{
       cin_nonzero_value_view_type valuesC){
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#if defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
+      throw std::runtime_error ("SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
+#else
     typedef typename KernelHandle::nnz_lno_t idx;
 
     typedef typename KernelHandle::nnz_scalar_t value_type;
@@ -289,6 +297,7 @@ namespace Impl{
       throw std::runtime_error ("CUSPARSE requires local ordinals to be integer.\n");
       //return;
     }
+#endif
 #else
     (void)handle;
     (void)m;        (void)n;        (void)k;
