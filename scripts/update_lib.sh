@@ -4,7 +4,10 @@ echo "CALLING UPDATE_LIB"
 
 if [ "$1" = bowman ]; then
   ICPCVER="$(icpc --version | grep icpc | cut -d ' ' -f 3)"
-  if [[ "${ICPCVER}" = 17.* || "${ICPCVER}" = 18.* ]]; then
+  if [[ "${ICPCVER}" = 17.0.* ]]; then
+    module swap gcc/4.7.4 gcc/6.2.0
+    module list
+  elif [[ "${ICPCVER}" = 17.* || "${ICPCVER}" = 18.* ]]; then
     module swap gcc/4.9.3 gcc/6.2.0
     module list
   fi
