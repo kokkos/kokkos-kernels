@@ -3064,8 +3064,8 @@ public:
 #endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    using std::cbrtl;
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::cbrtl;
     return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
 #else
     return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
@@ -3194,9 +3194,9 @@ public:
     return intPowSigned<val_type> (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::sqrt;
     using std::abs;
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     // IEEE 754 promises that long double has at least 64 significand
     // bits, so we can use it to represent any signed or unsigned
     // 64-bit integer type exactly.  However, CUDA does not implement
@@ -3213,16 +3213,16 @@ public:
     // which it has to be, so we don't have to check) to ensure
     // correctness.  It actually should suffice to check numbers
     // within 1 of the result.
-    return static_cast<val_type> ( sqrt (static_cast<double> (abs (x))));
+    return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
 #endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::cbrtl;
     using std::abs;
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     return static_cast<val_type> ( cbrtl (static_cast<long double> (abs (x))));
 #else
-    return static_cast<val_type> ( cbrt (static_cast<double> (abs (x))));
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
 #endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
@@ -3348,19 +3348,19 @@ public:
     return intPowUnsigned<val_type> (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-    using std::sqrt;
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    return static_cast<val_type> ( ::sqrt (static_cast<long double> (x)));
+    using std::sqrt;
+    return static_cast<val_type> ( sqrt (static_cast<long double> (x)));
 #else
     return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
 #endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    using std::cbrtl;
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::cbrtl;
     return static_cast<val_type> ( cbrtl (static_cast<long double> (x)));
 #else
-    return static_cast<val_type> ( cbrt (static_cast<double> (x)));
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
 #endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
