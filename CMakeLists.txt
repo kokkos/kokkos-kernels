@@ -83,7 +83,8 @@ IF (KokkosKernels_INSTALL_TESTING)
 ELSE()
   # Regular build, not install testing
   # Do all the regular option processing
-  IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
+  IF (NOT KOKKOSKERNELS_HAS_TRILINOS AND NOT KOKKOSKERNELS_HAS_PARENT)
+   # This is a standalone build
    FIND_PACKAGE(Kokkos REQUIRED)
    MESSAGE(STATUS "Found Kokkos at ${Kokkos_DIR}")
    KOKKOS_CHECK(OPTIONS CUDA_UVM RETURN_VALUE KOKKOS_ENABLE_CUDA_UVM)
