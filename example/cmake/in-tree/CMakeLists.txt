@@ -9,6 +9,7 @@ project (MyProgram)
 # This assumes you have copied the source, sym-linked to source,
 # or have kokkos available as a git submodule
 add_subdirectory(kokkos)
+set(Kokkos_DIR ${CMAKE_BINARY_DIR}/kokkos)
 
 # This assumes you have copied the source, sym-linked to source,
 # or have kokkos-kernels available as a git submodule
