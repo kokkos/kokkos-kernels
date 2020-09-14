@@ -805,7 +805,7 @@ public:
     return CUDART_NAN_F;
     //return nan (); //this returns 0???
 #elif defined(__HIP_DEVICE_COMPILE__)
-    return nanf("");
+    return ::nanf("");
 #else
     return std::numeric_limits<float>::quiet_NaN();
 #endif // __CUDA_ARCH__
@@ -1132,7 +1132,7 @@ public:
     return CUDART_NAN;
     //return nan (); // this returns 0 ???
 #elif defined(__HIP_DEVICE_COMPILE__)
-    return nan("");
+    return ::nan("");
 #else
     return std::numeric_limits<val_type>::quiet_NaN();
 #endif // __CUDA_ARCH__
