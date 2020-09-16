@@ -1598,7 +1598,7 @@ int runAllArithTraitsHostTests (std::ostream& out, const int verbose)
 
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<float, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<double, DeviceType> (out, verbose);
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined( KOKKOS_ENABLE_CUDA ) && !defined( KOKKOS_ENABLE_HIP )
   // This would spill tons of warnings about host device stuff otherwise
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<long double, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<float>, DeviceType> (out, verbose);
