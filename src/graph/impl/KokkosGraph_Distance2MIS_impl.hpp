@@ -47,38 +47,12 @@
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Bitset.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_Utils.hpp"
 #include <cstdint>
 
 namespace KokkosGraph {
 namespace Experimental {
 namespace Impl {
-
-/*
- *  100% asynchronous algorithm ideas:
- *    -For each row in team worklist:
- *      -Determine if any neighboring columns are OUT_SET, as well as whether all col statuses match my row status exactly
- *      -If any neighbors are OUT_SET:
- *        -Mark row permanently as OUT_SET.
- *        -Mark all neighboring columns for status update, since their minimum status may now have increased.
- *      -If all neighbor statuses match this row's status, mark this row permanently as IN_SET. Then mark all neighboring columns as OUT_SET.
- *    -Process all pending column updates (atomic_maxing the status with new one, if multiple threads may get the same column)
- *
- *    -Invariants:
- *      -Row status changes exactly once (to either IN_SET or OUT_SET). After this, it never needs to be proccessed again.
- *      -Col status can change multiple times, but it can only increase (up to OUT_SET)
- *        -Therefore, when a column is updated, it converges to the true minimum status over rows
- *
- *    What if a row R 2 hops away becomes IN_SET, and this row doesn't observe the columns changing to OUT_SET?
- *      -It's OK, since at no time can this row observe a mutual neighbor exactly matching its status. It will match R's status, and then it will be OUT_SET).
- *    What if a column's updated status is based on out of date information?
- *      -The minimum is computed as: any are IN_SET? OUT_SET : min(neighbors)
- *      -This quantity may only increase, since rows can only change to IN_SET or OUT_SET, and in either case it increases
- *      -So it's OK, since if it's out of date, it can only be _lower_ than it should be, never allowing a vertex to become IN_SET that shouldn't
- *
- *  Problem still to solve: with priorities chosen only once, will still converge slowly. Need a way to have teams working
- *  independently, but still have globally consistent rounds where row statuses change.
- */
 
 template<typename device_t, typename rowmap_t, typename entries_t, typename lno_view_t>
 struct D2_MIS_RandomPriority
@@ -166,8 +140,8 @@ struct D2_MIS_RandomPriority
 
   struct RefreshColStatus
   {
-    RefreshColStatus(const status_view_t& colStatus_, const worklist_t& worklist_, const status_view_t& rowStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_)
-      : colStatus(colStatus_), worklist(worklist_), rowStatus(rowStatus_), rowmap(rowmap_), entries(entries_), nv(nv_)
+    RefreshColStatus(const status_view_t& colStatus_, const worklist_t& worklist_, const status_view_t& rowStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, lno_t worklistLen_)
+      : colStatus(colStatus_), worklist(worklist_), rowStatus(rowStatus_), rowmap(rowmap_), entries(entries_), nv(nv_), worklistLen(worklistLen_)
     {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t w) const
@@ -181,7 +155,7 @@ struct D2_MIS_RandomPriority
       for(size_type j = rowBegin; j <= rowEnd; j++)
       {
         lno_t nei = (j == rowEnd) ? i : entries(j);
-        if(nei <= nv)
+        if(nei < nv)
         {
           status_t neiStat = rowStatus(nei);
           if(neiStat < s)
@@ -193,19 +167,61 @@ struct D2_MIS_RandomPriority
       colStatus(i) = s;
     }
 
+    KOKKOS_INLINE_FUNCTION void operator()(const team_mem& t) const
+    {
+      using MinReducer = Kokkos::Min<status_t>;
+      lno_t w = t.league_rank() * t.team_size() + t.team_rank();
+      if(w >= worklistLen)
+        return;
+      lno_t i = worklist(w);
+      size_type rowBegin = rowmap(i);
+      size_type rowEnd = rowmap(i + 1);
+      lno_t rowLen = rowEnd - rowBegin;
+      //iterate over {i} union the neighbors of i, to find
+      //minimum status.
+      status_t s;
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, rowLen + 1),
+      [&](lno_t j, status_t& ls)
+      {
+        lno_t nei = (j == rowLen) ? i : entries(rowBegin + j);
+        if(nei < nv)
+        {
+          status_t neiStat = rowStatus(nei);
+          if(neiStat < ls)
+            ls = neiStat;
+        }
+      }, MinReducer(s));
+      Kokkos::single(Kokkos::PerThread(t),
+      [&]()
+      {
+        if(s == IN_SET)
+          s = OUT_SET;
+        colStatus(i) = s;
+      });
+    }
+
     status_view_t colStatus;
     worklist_t worklist;
     status_view_t rowStatus;
     rowmap_t rowmap;
     entries_t entries;
     lno_t nv;
+    lno_t worklistLen;
   };
 
   struct DecideSetFunctor
   {
-    DecideSetFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, const worklist_t& worklist_)
-      : rowStatus(rowStatus_), colStatus(colStatus_), rowmap(rowmap_), entries(entries_), nv(nv_), worklist(worklist_)
+    DecideSetFunctor(const status_view_t& rowStatus_, const status_view_t& colStatus_, const rowmap_t& rowmap_, const entries_t& entries_, lno_t nv_, const worklist_t& worklist_, lno_t worklistLen_)
+      : rowStatus(rowStatus_), colStatus(colStatus_), rowmap(rowmap_), entries(entries_), nv(nv_), worklist(worklist_), worklistLen(worklistLen_)
     {}
+
+    //Enum values to be used as flags, so that the team policy version can
+    //express the neighbor checking as an OR-reduction
+    enum
+    {
+      NEI_OUT_SET = 1,
+      NEI_DIFFERENT_STATUS = 2
+    };
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t w) const
     {
@@ -249,12 +265,59 @@ struct D2_MIS_RandomPriority
       }
     }
 
+    KOKKOS_INLINE_FUNCTION void operator()(const team_mem& t) const
+    {
+      using OrReducer = Kokkos::BOr<int>;
+      lno_t w = t.league_rank() * t.team_size() + t.team_rank();
+      if(w >= worklistLen)
+        return;
+      lno_t i = worklist(w);
+      //Processing row i.
+      status_t s = rowStatus(i);
+      if(s == IN_SET || s == OUT_SET)
+        return;
+      //s is the status which must be the minimum among all neighbors
+      //to decide that i is IN_SET.
+      size_type rowBegin = rowmap(i);
+      size_type rowEnd = rowmap(i + 1);
+      lno_t rowLen = rowEnd - rowBegin;
+      int flags = 0;
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, rowLen + 1),
+      [&](lno_t j, int& lflags)
+      {
+        lno_t nei = (j == rowLen) ? i : entries(rowBegin + j);
+        if(nei >= nv)
+          return;
+        status_t neiStat = colStatus(nei);
+        if(neiStat == OUT_SET)
+          lflags |= NEI_OUT_SET;
+        else if(neiStat != s)
+          lflags |= NEI_DIFFERENT_STATUS;
+      }, OrReducer(flags));
+      Kokkos::single(Kokkos::PerThread(t),
+      [&]()
+      {
+        if(flags & NEI_OUT_SET)
+        {
+          //In order to make future progress, need to update the
+          //col statuses for all neighbors of i.
+          rowStatus(i) = OUT_SET;
+        }
+        else if(!(flags & NEI_DIFFERENT_STATUS))
+        {
+          //all neighboring col statuses match s, therefore s is the minimum status among all d2 neighbors
+          rowStatus(i) = IN_SET;
+        }
+      });
+    }
+
     status_view_t rowStatus;
     status_view_t colStatus;
     rowmap_t rowmap;
     entries_t entries;
     lno_t nv;
     worklist_t worklist;
+    lno_t worklistLen;
   };
 
   struct CountInSet
@@ -332,17 +395,46 @@ struct D2_MIS_RandomPriority
     worklist_t colWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 1);
     Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(colWorklist));
     worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
+    auto execSpaceEnum = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
+    bool useTeams = execSpaceEnum == KokkosKernels::Impl::Exec_CUDA;
+    int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
     int round = 0;
     lno_t rowWorkLen = numVerts;
     lno_t colWorkLen = numVerts;
+    int refreshColTeamSize = 0;
+    int decideSetTeamSize = 0;
+    if(useTeams)
+    {
+      //Compute the recommended team size for RefreshColStatus and DecideSetFunctor (will be constant)
+      {
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
+        refreshColTeamSize = KokkosKernels::Impl::get_suggested_team_size<team_pol, RefreshColStatus>(refreshCol, vectorLength);
+      }
+      {
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
+        decideSetTeamSize = KokkosKernels::Impl::get_suggested_team_size<team_pol, DecideSetFunctor>(decideSet, vectorLength);
+      }
+    }
     while(true)
     {
       //Compute new row statuses
       Kokkos::parallel_for(range_pol(0, rowWorkLen), RefreshRowStatus(rowStatus, rowWorklist, nvBits, round));
       //Compute new col statuses
-      Kokkos::parallel_for(range_pol(0, colWorkLen), RefreshColStatus(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts));
-      //Decide row statuses
-      Kokkos::parallel_for(range_pol(0, rowWorkLen), DecideSetFunctor(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist));
+      {
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
+        if(useTeams)
+          Kokkos::parallel_for(team_pol((colWorkLen + refreshColTeamSize - 1) / refreshColTeamSize, refreshColTeamSize, vectorLength), refreshCol);
+        else
+          Kokkos::parallel_for(range_pol(0, colWorkLen), refreshCol);
+      }
+      //Decide row statuses where enough information is available
+      {
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
+        if(useTeams)
+          Kokkos::parallel_for(team_pol((rowWorkLen + decideSetTeamSize - 1) / decideSetTeamSize, decideSetTeamSize, vectorLength), decideSet);
+        else
+          Kokkos::parallel_for(range_pol(0, rowWorkLen), decideSet);
+      }
       //Compact row worklist
       Kokkos::parallel_scan(range_pol(0, rowWorkLen), CompactWorklistFunctor(rowWorklist, thirdWorklist, rowStatus), rowWorkLen);
       if(rowWorkLen == 0)
