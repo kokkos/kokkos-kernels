@@ -405,15 +405,15 @@ struct D2_MIS_RandomPriority
     int decideSetTeamSize = 0;
     if(useTeams)
     {
-      team_pol temp(1, 1, vectorLength);
+      team_pol dummyPolicy(1, 1, vectorLength);
       //Compute the recommended team size for RefreshColStatus and DecideSetFunctor (will be constant)
       {
         RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
-        refreshColTeamSize = temp.team_size_max(refreshCol, Kokkos::ParallelForTag());
+        refreshColTeamSize = dummyPolicy.team_size_max(refreshCol, Kokkos::ParallelForTag());
       }
       {
         DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
-        decideSetTeamSize = temp.team_size_max(decideSet, Kokkos::ParallelForTag());
+        decideSetTeamSize = dummyPolicy.team_size_max(decideSet, Kokkos::ParallelForTag());
       }
     }
     while(true)
