@@ -396,7 +396,7 @@ struct D2_MIS_RandomPriority
     Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(colWorklist));
     worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
     auto execSpaceEnum = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
-    bool useTeams = execSpaceEnum == KokkosKernels::Impl::Exec_CUDA;
+    bool useTeams = (execSpaceEnum == KokkosKernels::Impl::Exec_CUDA) && (entries.extent(0) / numVerts >= 16);
     int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
     int round = 0;
     lno_t rowWorkLen = numVerts;
@@ -405,14 +405,15 @@ struct D2_MIS_RandomPriority
     int decideSetTeamSize = 0;
     if(useTeams)
     {
+      team_pol temp(1, 1, vectorLength);
       //Compute the recommended team size for RefreshColStatus and DecideSetFunctor (will be constant)
       {
         RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
-        refreshColTeamSize = KokkosKernels::Impl::get_suggested_team_size<team_pol, RefreshColStatus>(refreshCol, vectorLength);
+        refreshColTeamSize = temp.team_size_max(refreshCol, Kokkos::ParallelForTag());
       }
       {
         DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
-        decideSetTeamSize = KokkosKernels::Impl::get_suggested_team_size<team_pol, DecideSetFunctor>(decideSet, vectorLength);
+        decideSetTeamSize = temp.team_size_max(decideSet, Kokkos::ParallelForTag());
       }
     }
     while(true)
