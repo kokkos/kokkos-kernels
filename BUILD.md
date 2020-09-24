@@ -10,11 +10,11 @@ for C++.  Applications heavily leveraging Kokkos are strongly encouraged to use 
 You can either use Kokkos Kernels as an installed package (encouraged) or use Kokkos in-tree in your project.
 Modern CMake is exceedingly simple at a high-level (with the devil in the details).
 Once Kokkos Kernels is installed In your `CMakeLists.txt` simply use:
-````
+````cmake
 find_package(KokkosKernels REQUIRED)
 ````
 Then for every executable or library in your project:
-````
+````cmake
 target_link_libraries(myTarget Kokkos::kokkoskernels)
 ````
 There is no checking Kokkos preprocessor, compiler, or linker flags.
@@ -27,8 +27,8 @@ Linking to Kokkos Kernels transitively provides Kokkos.
 
 ## Configuring CMake
 A very basic installation is done with:
-````
-cmake ${srcdir} \
+````bash
+> cmake ${srcdir} \
  -DCMAKE_CXX_COMPILER=g++ \
  -DCMAKE_INSTALL_PREFIX=${my_install_folder}
  -DKokkos_ROOT=${kokkos_install_prefix}
@@ -36,8 +36,8 @@ cmake ${srcdir} \
 which builds and installs a default Kokkos Kernels when you run `make install`.
 
 There are also option Third-party Libraries (TPLs)
-````
-cmake ${srcdir} \
+````bash
+> cmake ${srcdir} \
  -DCMAKE_CXX_COMPILER=g++ \
  -DCMAKE_INSTALL_PREFIX=${my_install_folder} \
  -DKokkosKernels_ENABLE_TPL_BLAS=ON
@@ -47,17 +47,23 @@ The full keyword listing is below.
 
 ## Spack
 An alternative to manually building with the CMake is to use the Spack package manager.
-To do so, download the `kokkos-spack` git repo and add to the package list:
+Make sure you have downloaded [Spack](https://github.com/spack/spack).
+The easiest way to configure the Spack environment is:
+````bash
+> source spack/share/spack/setup-env.sh
 ````
-spack repo add $path-to-kokkos-spack
+with other scripts available for other shells.
+You can display information about how to install packages with:
+````bash
+> spack info kokkos-kernels
 ````
 A basic installation would be done as:
-````
-spack install kokkos-kernels
+````bash
+> spack install kokkos-kernels
 ````
 Spack allows options and and compilers to be tuned in the install command.
-````
-spack install kokkos-kernels@3.0 %gcc@7.3.0 +openmp
+````bash
+> spack install kokkos-kernels@3.0 %gcc@7.3.0 +openmp
 ````
 This example illustrates the three most common parameters to Spack:
 * Variants: specified with, e.g. `+openmp`, this activates (or deactivates with, e.g. `~openmp`) certain options.
@@ -65,37 +71,37 @@ This example illustrates the three most common parameters to Spack:
 * Compiler: a default compiler will be chosen if not specified, but an exact compiler version can be given with the `%`option.
 
 For a complete list of Kokkos Kernels options, run:
-````
-spack info kokkos-kernels
+````bash
+> spack info kokkos-kernels
 ````
 
 #### Spack Development
 Spack currently installs packages to a location determined by a unique hash. This hash name is not really "human readable".
 Generally, Spack usage should never really require you to reference the computer-generated unique install folder. 
 If you must know, you can locate Spack Kokkos installations with:
-````
-spack find -p kokkos-kernels ...
+````bash
+> spack find -p kokkos-kernels ...
 ````
 where `...` is the unique spec identifying the particular Kokkos configuration and version.
 
 A better way to use Spack for doing Kokkos development is the DIY feature of Spack.
 If you wish to develop Kokkos Kernels itself, go to the Kokkos source folder:
-````
-spack diy -u cmake kokkos-kernels +diy ... 
+````bash
+> spack diy -u cmake kokkos-kernels +diy ... 
 ````
 where `...` is a Spack spec identifying the exact Kokkos Kernels configuration.
 This then creates a `spack-build` directory where you can run `make`.
 
 If you want more control on the underlying Kokkos, you can do:
-````
-spack diy -u cmake ${myproject}@${myversion} ... ^kokkos...
+````bash
+> spack diy -u cmake ${myproject}@${myversion} ... ^kokkos...
 ````
 where the `...` are the specs for your project and the desired underlying Kokkos configuration.
 Again, a `spack-build` directory will be created where you can run `make`.
 
 Spack has a few idiosyncracies that make building outside of Spack annoying related to Spack forcing use of a compiler wrapper. This can be worked around by having a `-DSpack_WORKAROUND=On` given in your CMake. Then add the block of code to your CMakeLists.txt:
 
-````
+````cmake
 if (Spack_WORKAROUND)
  set(SPACK_CXX $ENV{SPACK_CXX})
  if(SPACK_CXX)
