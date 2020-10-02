@@ -63,6 +63,36 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
     BOOL
     "Whether to build tests. Default: OFF"
   )
+  KOKKOSKERNELS_ADD_OPTION(
+    "DISABLE_BATCHED_TESTS"
+    OFF
+    BOOL
+    "Whether to build batched DLA tests. Default: OFF"
+  )
+  KOKKOSKERNELS_ADD_OPTION(
+    "DISABLE_BLAS_TESTS"
+    OFF
+    BOOL
+    "Whether to build BLAS tests. Default: OFF"
+  )
+  KOKKOSKERNELS_ADD_OPTION(
+    "DISABLE_COMMON_TESTS"
+    OFF
+    BOOL
+    "Whether to build common tests. Default: OFF"
+  )
+  KOKKOSKERNELS_ADD_OPTION(
+    "DISABLE_GRAPH_TESTS"
+    OFF
+    BOOL
+    "Whether to build graph tests. Default: OFF"
+  )
+  KOKKOSKERNELS_ADD_OPTION(
+    "DISABLE_SPARSE_TESTS"
+    OFF
+    BOOL
+    "Whether to build sparse tests. Default: OFF"
+  )
 ENDIF()
 
 SET(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
