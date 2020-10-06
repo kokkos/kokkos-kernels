@@ -75,6 +75,7 @@ struct MIS2Parameters
   int use_threads = 0;
   int use_openmp = 0;
   int use_cuda = 0;
+  int use_hip = 0;
   int use_serial = 0;
   const char* mtx_file = NULL;
   MIS2_Algorithm algo = MIS2_FAST;
@@ -164,6 +165,9 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
 #ifdef KOKKOS_ENABLE_CUDA
        << spaces << "          --cuda              Use CUDA.\n"
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+       << spaces << "          --hip               Use HIP.\n"
+#endif
        << std::endl
        << spaces << "  Optional Parameters:" << std::endl
        << spaces << "      --algo alg          alg: fast, quality" << std::endl
@@ -204,6 +208,10 @@ int parse_inputs(MIS2Parameters &params, int argc, char **argv)
         else if(0 == strcasecmp(argv[i], "--cuda"))
         {
             params.use_cuda = 1;
+        }
+        else if(0 == strcasecmp(argv[i], "--hip"))
+        {
+            params.use_hip = 1;
         }
         else if(0 == strcasecmp(argv[i], "--repeat"))
         {
@@ -252,7 +260,7 @@ int parse_inputs(MIS2Parameters &params, int argc, char **argv)
         print_options(std::cout, argv[0]);
         return 1;
     }
-    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda && !params.use_hip)
     {
         print_options(std::cout, argv[0]);
         return 1;
@@ -358,6 +366,14 @@ int main(int argc, char *argv[])
     if(params.use_cuda)
     {
       run_mis2<Kokkos::Cuda>(params);
+      run = true;
+    }
+    #endif
+
+    #if defined(KOKKOS_ENABLE_HIP)
+    if(params.use_hip)
+    {
+      run_mis2<Kokkos::Experimental::HIP>(params);
       run = true;
     }
     #endif

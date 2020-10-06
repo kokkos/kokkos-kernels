@@ -74,6 +74,13 @@ struct impl_gemm_choose_copy_layout<Kokkos::Cuda,LayoutA,LayoutAScratch> {
 };
 #endif
 
+#ifdef KOKKOS_ENABLE_HIP
+template<class LayoutA, class LayoutAScratch>
+struct impl_gemm_choose_copy_layout<Kokkos::Experimental::HIP,LayoutA,LayoutAScratch> {
+  typedef LayoutA type;
+};
+#endif
+
 // DeepCopy matrix block into scratch
 template<class TeamHandle, class ViewTypeScratch, class ViewType, class Layout, int blockDim_i, int blockDim_j, int Transpose>
 struct impl_deep_copy_matrix_block;

@@ -396,7 +396,7 @@ struct D2_MIS_RandomPriority
     Kokkos::parallel_for(range_pol(0, numVerts), InitWorklistFunctor(colWorklist));
     worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
     auto execSpaceEnum = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
-    bool useTeams = (execSpaceEnum == KokkosKernels::Impl::Exec_CUDA) && (entries.extent(0) / numVerts >= 16);
+    bool useTeams = KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() && (entries.extent(0) / numVerts >= 16);
     int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
     int round = 0;
     lno_t rowWorkLen = numVerts;

@@ -104,6 +104,12 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
   return 1;
 }
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+template<>
+inline int RowsPerThread<Kokkos::HIP>(const int NNZPerRow) {
+  return 1;
+}
+#endif
 
 // A simple struct for storing a kernel launch configuration.
 // This is currently used by CrsMatrix to allow the user to have some control

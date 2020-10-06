@@ -51,6 +51,7 @@ namespace KokkosKernels{
 namespace Impl{
 
 // POP COUNT function returns the number of set bits
+// Note BMK: HIP also defines __CUDA_ARCH__, and provides the same intrinsics.
 #if defined( __CUDA_ARCH__ )
 KOKKOS_FORCEINLINE_FUNCTION
 int pop_count( unsigned i ){

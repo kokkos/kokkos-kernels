@@ -202,67 +202,6 @@ struct UnmergedSumFunctor {
   CcolindsT ABperm;
 };
 
-template <typename ExecSpace, typename size_type, typename ordinal_type,
-          typename CrowptrsT, typename CcolindsT>
-struct SortEntriesFunctor {
-  SortEntriesFunctor(const CrowptrsT& Crowptrs_, const CcolindsT& Ccolinds_,
-                     const CcolindsT& ABperm_)
-      : Crowptrs(Crowptrs_),
-        Ccolinds(Ccolinds_),
-        CcolindsAux("C colind aux", Ccolinds_.extent(0)),
-        ABperm(ABperm_),
-        ABpermAux("AB perm aux", ABperm_.extent(0)) {}
-  typedef typename Kokkos::TeamPolicy<ExecSpace>::member_type TeamMember;
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const {
-    // 3: Sort each row's colinds (permuting values at same time), then count
-    // unique colinds (write that to Crowptr(i)) CrowptrTemp tells how many
-    // entries in each oversized row
-    ordinal_type i       = t.league_rank();
-    size_type rowStart   = Crowptrs(i);
-    size_type rowEnd     = Crowptrs(i + 1);
-    size_type rowNum     = rowEnd - rowStart;
-    using lno_t          = typename CcolindsT::non_const_value_type;
-    using unsigned_lno_t = typename std::make_unsigned<lno_t>::type;
-    KokkosKernels::Impl::SerialRadixSort2<size_type, unsigned_lno_t, lno_t>(
-        (unsigned_lno_t*)Ccolinds.data() + rowStart,
-        (unsigned_lno_t*)CcolindsAux.data() + rowStart,
-        ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum);
-  }
-  CrowptrsT Crowptrs;
-  CcolindsT Ccolinds;
-  CcolindsT CcolindsAux;
-  CcolindsT ABperm;
-  CcolindsT ABpermAux;
-};
-
-#ifdef KOKKOS_ENABLE_CUDA
-template <typename size_type, typename ordinal_type, typename CrowptrsT,
-          typename CcolindsT>
-struct SortEntriesFunctor<Kokkos::Cuda, size_type, ordinal_type, CrowptrsT,
-                          CcolindsT> {
-  SortEntriesFunctor(const CrowptrsT& Crowptrs_, CcolindsT& Ccolinds_,
-                     CcolindsT& ABperm_)
-      : Crowptrs(Crowptrs_), Ccolinds(Ccolinds_), ABperm(ABperm_) {}
-  typedef typename Kokkos::TeamPolicy<Kokkos::Cuda>::member_type TeamMember;
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const {
-    // 3: Sort each row's colinds (permuting values at same time), then count
-    // unique colinds (write that to Crowptr(i)) CrowptrTemp tells how many
-    // entries in each oversized row
-    size_type i        = t.league_rank();
-    size_type rowStart = Crowptrs(i);
-    size_type rowEnd   = Crowptrs(i + 1);
-    size_type rowNum   = rowEnd - rowStart;
-    KokkosKernels::Impl::TeamBitonicSort2<
-        size_type, typename CcolindsT::non_const_value_type,
-        typename CcolindsT::non_const_value_type, TeamMember>(
-        Ccolinds.data() + rowStart, ABperm.data() + rowStart, rowNum, t);
-  }
-  CrowptrsT Crowptrs;
-  CcolindsT Ccolinds;
-  CcolindsT ABperm;
-};
-#endif
-
 template <typename size_type, typename ordinal_type, typename ArowptrsT,
           typename BrowptrsT, typename CrowptrsT, typename CcolindsT>
 struct MergeEntriesFunctor {

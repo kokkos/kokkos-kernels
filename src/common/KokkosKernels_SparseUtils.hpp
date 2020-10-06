@@ -1041,12 +1041,7 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const val
 {
   using lno_t = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-#ifdef KOKKOS_ENABLE_CUDA
-  //only CUDA benefits from using team-based bitonic
-  bool useRadix = std::is_same<execution_space, Kokkos::Cuda>::value ? false : true;
-#else
-  bool useRadix = true;
-#endif
+  bool useRadix = !kk_is_gpu_exec_space<execution_space>();
   SortCrsMatrixFunctor<execution_space, rowmap_t, entries_t, values_t>
     funct(useRadix, rowmap, entries, values);
   lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
@@ -1094,12 +1089,7 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
 {
   using lno_t = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-#ifdef KOKKOS_ENABLE_CUDA
-  //only CUDA benefits from using team-based bitonic
-  bool useRadix = std::is_same<execution_space, Kokkos::Cuda>::value ? false : true;
-#else
-  bool useRadix = true;
-#endif
+  bool useRadix = !kk_is_gpu_exec_space<execution_space>();
   SortCrsGraphFunctor<execution_space, rowmap_t, entries_t>
     funct(useRadix, rowmap, entries);
   lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
@@ -1353,74 +1343,45 @@ void kk_sort_graph(
     out_scalar_view_t out_vals){
   ExecSpaceType exec = kk_get_exec_space_type<MyExecSpace>();
 
-  if (exec == Exec_CUDA){
-    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
-    Kokkos::deep_copy (hr, in_xadj);
-    typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
-    Kokkos::deep_copy (he, in_adj);
-    typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
-    Kokkos::deep_copy (hv, in_vals);
-    MyExecSpace().fence();
+  // If possible, sort on host and avoid a deep copy
+  // TODO BMK: can this function be deprecated?
+  typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
+  Kokkos::deep_copy (hr, in_xadj);
+  typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
+  Kokkos::deep_copy (he, in_adj);
+  typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
+  Kokkos::deep_copy (hv, in_vals);
+  MyExecSpace().fence();
 
-    typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
-    typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
+  typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
+  typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
 
+  typedef typename lno_view_t::non_const_value_type size_type;
+  typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+  typedef typename scalar_view_t::non_const_value_type scalar_t;
 
-    typedef typename lno_view_t::non_const_value_type size_type;
-    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
-    typedef typename scalar_view_t::non_const_value_type scalar_t;
+  lno_t nrows = in_xadj.extent(0) - 1;
+  std::vector <Edge<lno_t, scalar_t> > edges(in_adj.extent(0));
 
-    lno_t nrows = in_xadj.extent(0) - 1;
-    std::vector <Edge<lno_t, scalar_t> > edges(in_adj.extent(0));
-
-    size_type row_size = 0;
-    for (lno_t i = 0; i < nrows; ++i){
-      for (size_type j = hr(i); j < hr(i + 1); ++j){
-        edges[row_size].src = i;
-        edges[row_size].dst = he(j);
-        edges[row_size++].ew = hv(j);
-      }
+  size_type row_size = 0;
+  for (lno_t i = 0; i < nrows; ++i){
+    for (size_type j = hr(i); j < hr(i + 1); ++j){
+      edges[row_size].src = i;
+      edges[row_size].dst = he(j);
+      edges[row_size++].ew = hv(j);
     }
-    std::sort (edges.begin(), edges.begin() + row_size);
-    size_type ne = in_adj.extent(0);
-    for(size_type i = 0; i < ne; ++i){
-      heo(i) = edges[i].dst;
-      hvo(i) = edges[i].ew;
-    }
-
-
-    Kokkos::deep_copy (out_adj, heo);
-    Kokkos::deep_copy (out_vals, hvo);
-    MyExecSpace().fence();
   }
-  else {
-
-
-    typedef typename lno_view_t::non_const_value_type size_type;
-    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
-    typedef typename scalar_view_t::non_const_value_type scalar_t;
-
-    lno_t nrows = in_xadj.extent(0) - 1;
-    std::vector <Edge<lno_t, scalar_t> > edges(in_adj.extent(0));
-
-    size_type row_size = 0;
-    for (lno_t i = 0; i < nrows; ++i){
-      for (size_type j = in_xadj(i); j < in_xadj(i + 1); ++j){
-        edges[row_size].src = i;
-        edges[row_size].dst = in_adj(j);
-        edges[row_size++].ew = in_vals(j);
-      }
-    }
-    std::sort (edges.begin(), edges.begin() + row_size);
-    size_type ne = in_adj.extent(0);
-    for(size_type i = 0; i < ne; ++i){
-      out_adj(i) = edges[i].dst;
-      out_vals(i) = edges[i].ew;
-    }
-
-
-
+  std::sort (edges.begin(), edges.begin() + row_size);
+  size_type ne = in_adj.extent(0);
+  for(size_type i = 0; i < ne; ++i){
+    heo(i) = edges[i].dst;
+    hvo(i) = edges[i].ew;
   }
+
+
+  Kokkos::deep_copy (out_adj, heo);
+  Kokkos::deep_copy (out_vals, hvo);
+  MyExecSpace().fence();
 }
 
 /*
@@ -1714,47 +1675,46 @@ struct LowerTriangularMatrix{
       const size_type write_end = t_xadj[row_index + 1];
       const lno_t write_left_work = write_end - write_begin;
 
-      switch (exec_space){
-      case Exec_CUDA:
-        //TODO: Write cuda version here.
-        /*
+      //TODO: Write GPU (vector-level) version here:
+      /*
+      if(kk_is_gpu_exec_space<ExecutionSpace>())
+      {
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(teamMember, read_left_work),
             [&] (lno_t i) {
           const size_type adjind = i + col_begin;
           const lno_t colIndex = adj[adjind];
-
         });
-        */
+      }
+      else
+      ...
+      */
 
-      default:
-        for (lno_t r = 0 , w = 0; r <  read_left_work && w < write_left_work; ++r){
-          const size_type adjind = r + col_begin;
-          const lno_t colIndex = adj[adjind];
-          lno_t colperm = colIndex;
-          if (permutation != NULL){
-            colperm = permutation[colIndex];
-          }
-          if (is_lower){
-            if (row_perm > colperm){
-              if (in_vals != NULL){
-                t_vals[write_begin + w] = in_vals[adjind];
-              }
-              t_adj[write_begin + w++] = colIndex;
-            }
-          }
-          else {
-            if (row_perm < colperm){
-              if (in_vals != NULL){
-                t_vals[write_begin + w] = in_vals[adjind];
-              }
-              t_adj[write_begin + w++] = colIndex;
-            }
-          }
-
-
+      for (lno_t r = 0 , w = 0; r <  read_left_work && w < write_left_work; ++r){
+        const size_type adjind = r + col_begin;
+        const lno_t colIndex = adj[adjind];
+        lno_t colperm = colIndex;
+        if (permutation != NULL){
+          colperm = permutation[colIndex];
         }
-        break;
+        if (is_lower){
+          if (row_perm > colperm){
+            if (in_vals != NULL){
+              t_vals[write_begin + w] = in_vals[adjind];
+            }
+            t_adj[write_begin + w++] = colIndex;
+          }
+        }
+        else {
+          if (row_perm < colperm){
+            if (in_vals != NULL){
+              t_vals[write_begin + w] = in_vals[adjind];
+            }
+            t_adj[write_begin + w++] = colIndex;
+          }
+        }
+
+
       }
     });
   }
@@ -2340,7 +2300,6 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
 
-#ifndef KOKKOS_ENABLE_CUDA
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
 
@@ -2381,7 +2340,6 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     }
 
     });
-#endif
   }
 
 template <typename row_map_view_t,
@@ -2398,7 +2356,6 @@ void kk_create_incidence_matrix_from_lower_triangle(
     out_cols_view_t &out_entries,
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
-#ifndef KOKKOS_ENABLE_CUDA
 
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
@@ -2470,8 +2427,7 @@ void kk_create_incidence_matrix_from_lower_triangle(
       tmp);
 
       out_entries = outcols;
-#endif
-  }
+}
 
 
 
@@ -2491,7 +2447,6 @@ void kk_create_incidence_matrix_from_original_matrix(
     permutation_view_t permutation,
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
-#ifndef KOKKOS_ENABLE_CUDA
 
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
@@ -2612,7 +2567,6 @@ void kk_create_incidence_matrix_from_original_matrix(
       tmp);
 
       out_entries = outcols;*/
-#endif
   }
 
 

@@ -274,53 +274,11 @@ namespace KokkosSparse{
     void set_block_size(nnz_lno_t bs){this->block_size = bs; }
     nnz_lno_t get_block_size() const {return this->block_size;}
 
-    /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
-     */
     void choose_default_algorithm(){
-#if defined( KOKKOS_ENABLE_SERIAL )
-      if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
-        this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "Serial Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_THREADS )
-      if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
-        this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "PTHREAD Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_OPENMP )
-      if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-        this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "OpenMP Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_CUDA )
-      if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+      if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
         this->algorithm_type = GS_TEAM;
-#ifdef VERBOSE
-        std::cout << "Cuda Execution Space, Default Algorithm: GS_TEAM" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_QTHREAD)
-      if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+      else
         this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "Qthread Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
     }
 
     ~PointGaussSeidelHandle() = default;
@@ -559,33 +517,7 @@ namespace KokkosSparse{
     
     bool use_teams() const
     {
-      bool return_value = false;
-#if defined( KOKKOS_ENABLE_SERIAL )
-      if (std::is_same< Kokkos::Serial , ExecutionSpace >::value) {
-        return_value = false;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_THREADS )
-      if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
-        return_value = false;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_OPENMP )
-      if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-        return_value = false;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_CUDA )
-      if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-        return_value = true;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_QTHREAD)
-      if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-        return_value = false;
-      }
-#endif
-      return return_value;
+      return KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>();
     }
 
     ~ClusterGaussSeidelHandle() = default;
