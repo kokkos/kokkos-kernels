@@ -323,17 +323,11 @@ void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth
     }
 }
 
-#define DO_DEPRECATED_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)
-
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
     TEST_F(TestCategory, graph##_##graph_color_distance2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
     { \
       test_dist2_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10); \
       test_dist2_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10); \
-    } \
-    TEST_F(TestCategory, graph##_##graph_color_deprecated_distance2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
-    { \
-      DO_DEPRECATED_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
     } \
     TEST_F(TestCategory, graph##_##graph_color_bipartite_sym##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) \
     { \
