@@ -385,11 +385,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
   OpType op (alpha, A, x, beta, y, RowsPerThread<typename AMatrix::execution_space> (NNZPerRow));
 
   const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space > (NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>::team_size_recommended (op, vector_length);
-#else
   const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
   const int rows_per_team = rows_per_thread * team_size;
   const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
   Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
@@ -948,11 +944,7 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
+    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
@@ -973,11 +965,7 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
+    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
@@ -1037,11 +1025,7 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
+    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for ("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
@@ -1062,11 +1046,7 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
     // team_size is a hardware resource thing so it might legitimately
     // be int.
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
+    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
     const int rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
