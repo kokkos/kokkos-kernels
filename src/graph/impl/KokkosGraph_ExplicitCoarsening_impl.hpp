@@ -272,7 +272,7 @@ struct ExplicitGraphCoarsening
     Kokkos::parallel_for(range_pol(0, numFineVerts), ClusterSizeFunctor(clusterOffsets, labels));
     KokkosKernels::Impl::exclusive_parallel_prefix_sum<ordinal_view_t, exec_space>(numCoarseVerts + 1, clusterOffsets);
     {
-      coarse_entries_t tempInsertCounts("Temporary cluster insert counts", numCoarseVerts);
+      ordinal_view_t tempInsertCounts("Temporary cluster insert counts", numCoarseVerts);
       Kokkos::parallel_for(range_pol(0, numFineVerts), FillClusterVertsFunctor(clusterOffsets, clusterVerts, labels, tempInsertCounts));
     }
     //Determine the set of edges (in the point graph) that cross between two distinct clusters
