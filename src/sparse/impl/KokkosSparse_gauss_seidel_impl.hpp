@@ -826,7 +826,6 @@ namespace KokkosSparse{
           nnz_lno_t num_values_in_l2 = 0;
           nnz_lno_t num_big_rows = 0;
 
-          KokkosKernels::Impl::ExecSpaceType ex_sp = this->handle->get_handle_exec_space();
           if (!KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
             //again, if it is on CPUs, we make L1 as big as we need.
             size_t l1mem = 1;

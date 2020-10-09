@@ -121,7 +121,6 @@ void KokkosSPGEMM
     //number of rows and nnzs
     nnz_lno_t n = this->row_mapB.extent(0) - 1;
     size_type nnz = this->entriesB.extent(0);
-    KokkosKernels::Impl::ExecSpaceType my_exec_space_ = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
 
     bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
     //compress in single step if it is GPU.

@@ -366,7 +366,8 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
   const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / A.numRows ());
 
   int vector_length = 1;
-  while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<32) ) vector_length*=2;
+  if(KokkosKernels::Impl::kk_is_gpu_exec_space<typename AMatrix::execution_space>())
+    while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<32) ) vector_length*=2;
 
   typedef SPMV_Transpose_Functor<AMatrix, XVector, YVector, dobeta, conjugate> OpType;
 
@@ -627,7 +628,7 @@ struct SPMV_MV_LayoutLeft_Functor {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, UNROLL),
       [&](ordinal_type k)
       {
-        m_y(iRow, kk + k) = sum[k];
+        m_y(iRow, kk + k) = m_y(iRow, kk + k) + sum[k];
       });
     } else if (dobeta == -1) {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, UNROLL),
@@ -662,7 +663,7 @@ struct SPMV_MV_LayoutLeft_Functor {
           Kokkos::Details::ArithTraits<A_value_type>::conj (row.value(iEntry)) :
           row.value(iEntry);
       lsum += val * m_x(row.colidx(iEntry),0);
-    });
+    }, sum);
     Kokkos::single(Kokkos::PerThread(dev),
     [&]()
     {
@@ -703,14 +704,97 @@ struct SPMV_MV_LayoutLeft_Functor {
       // needs to have the same type as n.
       ordinal_type kk = 0;
 
-//#ifdef KOKKOS_FAST_COMPILE
+#ifdef KOKKOS_FAST_COMPILE
       for (; kk + 4 <= n; kk += 4) {
         strip_mine<4>(dev, iRow, kk);
       }
       for( ; kk < n; ++kk) {
         strip_mine<1>(dev, iRow, kk);
       }
-      //BMK: HERE
+#else
+#  ifdef __CUDA_ARCH__
+      if ((n > 8) && (n % 8 == 1)) {
+        strip_mine<9>(dev, iRow, kk);
+        kk += 9;
+      }
+      for(; kk + 8 <= n; kk += 8)
+        strip_mine<8>(dev, iRow, kk);
+      if(kk < n) {
+        switch(n - kk) {
+#  else // NOT a CUDA device
+      if ((n > 16) && (n % 16 == 1)) {
+        strip_mine<17>(dev, iRow, kk);
+        kk += 17;
+      }
+
+      for (; kk + 16 <= n; kk += 16) {
+        strip_mine<16>(dev, iRow, kk);
+      }
+
+      if(kk < n) {
+        switch(n - kk) {
+        case 15:
+          strip_mine<15>(dev, iRow, kk);
+          break;
+
+        case 14:
+          strip_mine<14>(dev, iRow, kk);
+          break;
+
+        case 13:
+          strip_mine<13>(dev, iRow, kk);
+          break;
+
+        case 12:
+          strip_mine<12>(dev, iRow, kk);
+          break;
+
+        case 11:
+          strip_mine<11>(dev, iRow, kk);
+          break;
+
+        case 10:
+          strip_mine<10>(dev, iRow, kk);
+          break;
+
+        case 9:
+          strip_mine<9>(dev, iRow, kk);
+          break;
+
+        case 8:
+          strip_mine<8>(dev, iRow, kk);
+          break;
+#  endif // __CUDA_ARCH__
+        case 7:
+          strip_mine<7>(dev, iRow, kk);
+          break;
+
+        case 6:
+          strip_mine<6>(dev, iRow, kk);
+          break;
+
+        case 5:
+          strip_mine<5>(dev, iRow, kk);
+          break;
+
+        case 4:
+          strip_mine<4>(dev, iRow, kk);
+          break;
+
+        case 3:
+          strip_mine<3>(dev, iRow, kk);
+          break;
+
+        case 2:
+          strip_mine<2>(dev, iRow, kk);
+          break;
+
+        case 1:
+          strip_mine_1(dev, iRow);
+          break;
+        }
+      }
+#endif // KOKKOS_FAST_COMPILE
     }
   }
 };
@@ -749,7 +833,8 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / A.numRows ());
 
     int vector_length = 1;
-    while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<8) ) vector_length*=2;
+    if(KokkosKernels::Impl::kk_is_gpu_exec_space<typename AMatrix::execution_space>())
+      while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<8) ) vector_length*=2;
 
 #ifndef KOKKOS_FAST_COMPILE // This uses templated functions on doalpha and dobeta and will produce 16 kernels
 
@@ -939,88 +1024,3 @@ spmv_alpha_mv (const char mode[],
 }}  //namespace KokkosSparse::Impl
 
 #endif // KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
-      /*
-#else
-#  ifdef __CUDA_ARCH__
-      if ((n > 8) && (n % 8 == 1)) {
-        strip_mine<9>(dev, iRow, kk);
-        kk += 9;
-      }
-      for(; kk + 8 <= n; kk += 8)
-        strip_mine<8>(dev, iRow, kk);
-      if(kk < n) {
-        switch(n - kk) {
-#  else // NOT a CUDA device
-      if ((n > 16) && (n % 16 == 1)) {
-        strip_mine<17>(dev, iRow, kk);
-        kk += 17;
-      }
-
-      for (; kk + 16 <= n; kk += 16) {
-        strip_mine<16>(dev, iRow, kk);
-      }
-
-      if(kk < n) {
-        switch(n - kk) {
-        case 15:
-          strip_mine<15>(dev, iRow, kk);
-          break;
-
-        case 14:
-          strip_mine<14>(dev, iRow, kk);
-          break;
-
-        case 13:
-          strip_mine<13>(dev, iRow, kk);
-          break;
-
-        case 12:
-          strip_mine<12>(dev, iRow, kk);
-          break;
-
-        case 11:
-          strip_mine<11>(dev, iRow, kk);
-          break;
-
-        case 10:
-          strip_mine<10>(dev, iRow, kk);
-          break;
-
-        case 9:
-          strip_mine<9>(dev, iRow, kk);
-          break;
-
-        case 8:
-          strip_mine<8>(dev, iRow, kk);
-          break;
-#  endif // __CUDA_ARCH__
-        case 7:
-          strip_mine<7>(dev, iRow, kk);
-          break;
-
-        case 6:
-          strip_mine<6>(dev, iRow, kk);
-          break;
-
-        case 5:
-          strip_mine<5>(dev, iRow, kk);
-          break;
-
-        case 4:
-          strip_mine<4>(dev, iRow, kk);
-          break;
-
-        case 3:
-          strip_mine<3>(dev, iRow, kk);
-          break;
-
-        case 2:
-          strip_mine<2>(dev, iRow, kk);
-          break;
-
-        case 1:
-          strip_mine_1(dev, iRow);
-          break;
-        }
-#endif // KOKKOS_FAST_COMPILE
-  */

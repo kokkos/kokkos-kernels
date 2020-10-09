@@ -1118,14 +1118,99 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
       // needs to have the same type as n.
       ordinal_type kk = 0;
 
-//#ifdef KOKKOS_FAST_COMPILE
+#ifdef KOKKOS_FAST_COMPILE
       for (; kk + 4 <= n; kk += 4) {
         strip_mine<4>(dev, iRow, kk);
       }
       for( ; kk < n; ++kk) {
         strip_mine<1>(dev, iRow, kk);
       }
-      //BMK: HERE
+#else
+#  ifdef __CUDA_ARCH__
+      if ((n > 8) && (n % 8 == 1)) {
+        strip_mine<9>(dev, iRow, kk);
+        kk += 9;
+      }
+      for(; kk + 8 <= n; kk += 8)
+        strip_mine<8>(dev, iRow, kk);
+      if(kk < n)
+      {
+        switch(n - kk) {
+#  else // NOT a CUDA device
+      if ((n > 16) && (n % 16 == 1)) {
+        strip_mine<17>(dev, iRow, kk);
+        kk += 17;
+      }
+
+      for (; kk + 16 <= n; kk += 16) {
+        strip_mine<16>(dev, iRow, kk);
+      }
+
+      if(kk < n)
+      {
+        switch(n - kk) {
+          case 15:
+            strip_mine<15>(dev, iRow, kk);
+            break;
+
+          case 14:
+            strip_mine<14>(dev, iRow, kk);
+            break;
+
+          case 13:
+            strip_mine<13>(dev, iRow, kk);
+            break;
+
+          case 12:
+            strip_mine<12>(dev, iRow, kk);
+            break;
+
+          case 11:
+            strip_mine<11>(dev, iRow, kk);
+            break;
+
+          case 10:
+            strip_mine<10>(dev, iRow, kk);
+            break;
+
+          case 9:
+            strip_mine<9>(dev, iRow, kk);
+            break;
+
+          case 8:
+            strip_mine<8>(dev, iRow, kk);
+            break;
+  #endif // __CUDA_ARCH__
+          case 7:
+            strip_mine<7>(dev, iRow, kk);
+            break;
+
+          case 6:
+            strip_mine<6>(dev, iRow, kk);
+            break;
+
+          case 5:
+            strip_mine<5>(dev, iRow, kk);
+            break;
+
+          case 4:
+            strip_mine<4>(dev, iRow, kk);
+            break;
+
+          case 3:
+            strip_mine<3>(dev, iRow, kk);
+            break;
+
+          case 2:
+            strip_mine<2>(dev, iRow, kk);
+            break;
+
+          case 1:
+            strip_mine_1(dev, iRow);
+            break;
+        }
+      }
+#endif // KOKKOS_FAST_COMPILE
     }
   }
 };
@@ -1427,91 +1512,3 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
 }
 
 #endif // KOKKOSSPARSE_IMPL_SPMV_STRUCT_DEF_HPP_
-      /*
-#else
-#  ifdef __CUDA_ARCH__
-      if ((n > 8) && (n % 8 == 1)) {
-        strip_mine<9>(dev, iRow, kk);
-        kk += 9;
-      }
-      for(; kk + 8 <= n; kk += 8)
-        strip_mine<8>(dev, iRow, kk);
-      if(kk < n)
-      {
-        switch(n - kk) {
-#  else // NOT a CUDA device
-      if ((n > 16) && (n % 16 == 1)) {
-        strip_mine<17>(dev, iRow, kk);
-        kk += 17;
-      }
-
-      for (; kk + 16 <= n; kk += 16) {
-        strip_mine<16>(dev, iRow, kk);
-      }
-
-      if(kk < n)
-      {
-        switch(n - kk) {
-          case 15:
-            strip_mine<15>(dev, iRow, kk);
-            break;
-
-          case 14:
-            strip_mine<14>(dev, iRow, kk);
-            break;
-
-          case 13:
-            strip_mine<13>(dev, iRow, kk);
-            break;
-
-          case 12:
-            strip_mine<12>(dev, iRow, kk);
-            break;
-
-          case 11:
-            strip_mine<11>(dev, iRow, kk);
-            break;
-
-          case 10:
-            strip_mine<10>(dev, iRow, kk);
-            break;
-
-          case 9:
-            strip_mine<9>(dev, iRow, kk);
-            break;
-
-          case 8:
-            strip_mine<8>(dev, iRow, kk);
-            break;
-  #endif // __CUDA_ARCH__
-          case 7:
-            strip_mine<7>(dev, iRow, kk);
-            break;
-
-          case 6:
-            strip_mine<6>(dev, iRow, kk);
-            break;
-
-          case 5:
-            strip_mine<5>(dev, iRow, kk);
-            break;
-
-          case 4:
-            strip_mine<4>(dev, iRow, kk);
-            break;
-
-          case 3:
-            strip_mine<3>(dev, iRow, kk);
-            break;
-
-          case 2:
-            strip_mine<2>(dev, iRow, kk);
-            break;
-
-          case 1:
-            strip_mine_1(dev, iRow);
-            break;
-        }
-      }
-#endif // KOKKOS_FAST_COMPILE
-    */
