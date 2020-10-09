@@ -82,6 +82,10 @@ namespace KokkosSparse{
       typedef typename HandleType::nnz_lno_t nnz_lno_t;
       typedef typename HandleType::nnz_scalar_t nnz_scalar_t;
 
+      static_assert(std::is_same<size_type, typename in_lno_row_view_t::non_const_value_type>::value,
+          "ClusterGaussSeidel: Handle's size_type does not match input rowmap's element type.");
+      static_assert(std::is_same<nnz_lno_t, typename in_lno_nnz_view_t::non_const_value_type>::value,
+          "ClusterGaussSeidel: Handle's nnz_lno_t does not match input entries's element type.");
 
       typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
       typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
@@ -540,9 +544,9 @@ namespace KokkosSparse{
         using nnz_view_t   = nnz_lno_persistent_work_view_t;
         using in_rowmap_t  = const_lno_row_view_t;
         using in_colinds_t = const_lno_nnz_view_t;
-        using rowmap_t     = Kokkos::View<row_lno_t*, MyTempMemorySpace>;
+        using rowmap_t     = Kokkos::View<size_type*, MyTempMemorySpace>;
         using colinds_t    = Kokkos::View<nnz_lno_t*, MyTempMemorySpace>;
-        using raw_rowmap_t = Kokkos::View<const row_lno_t*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+        using raw_rowmap_t = Kokkos::View<const size_type*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
         using raw_colinds_t = Kokkos::View<const nnz_lno_t*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
         auto gsHandle = get_gs_handle();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
@@ -648,7 +652,7 @@ namespace KokkosSparse{
         Kokkos::deep_copy(colors, h_colors);
 #else
         //Create a handle that uses nnz_lno_t as the size_type, since the cluster graph should never be larger than 2^31 entries.
-        KokkosKernels::Experimental::KokkosKernelsHandle<nnz_lno_t, nnz_lno_t, double, MyExecSpace, MyPersistentMemorySpace, MyPersistentMemorySpace> kh;
+        HandleType kh;
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
         KokkosGraph::Experimental::graph_color_symbolic(&kh, numClusters, numClusters, clusterRowmap, clusterEntries);
         //retrieve colors
