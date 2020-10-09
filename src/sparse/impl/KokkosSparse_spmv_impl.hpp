@@ -565,15 +565,6 @@ struct SPMV_MV_LayoutLeft_Functor {
     // assume either that rows have no duplicate entries, or that rows
     // never have enough duplicate entries to overflow ordinal_type.
 
-#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
-#pragma unroll
-#endif
-#ifdef KOKKOS_ENABLE_PRAGMA_LOOPCOUNT
-#pragma loop count (15)
-#endif
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, row.length),
     [&](ordinal_type iEntry)
     {
