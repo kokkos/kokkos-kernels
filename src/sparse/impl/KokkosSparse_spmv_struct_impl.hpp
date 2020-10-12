@@ -1259,7 +1259,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
 
       typename AMatrix::const_ordinal_type nrow = A.numRows();
 
-<<<<<<< c079fe8700c4ab2b00626d70c76e4aa46f828acb
         // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
         // instead of int?  For example, if the number of threads is 1,
         // then this is just the number of rows.  Ditto for rows_per_team.
@@ -1271,23 +1270,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
         const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
         Kokkos::parallel_for("KokkosSparse::spmv_struct<MV,NoTranspose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
                              ( nteams , team_size , vector_length ) , op );
-=======
-      // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-      // instead of int?  For example, if the number of threads is 1,
-      // then this is just the number of rows.  Ditto for rows_per_team.
-      // team_size is a hardware resource thing so it might legitimately
-      // be int.
-      const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-      const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
-      const int rows_per_team = rows_per_thread * team_size;
-      const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-      Kokkos::parallel_for("KokkosSparse::spmv_struct<MV,NoTranspose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
-                           ( nteams , team_size , vector_length ) , op );
->>>>>>> WIP: adding HIP codepaths in preparation for tests/ETI
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta
 
@@ -1298,7 +1280,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
 
       OpType op (alpha, A, x, beta, y, RowsPerThread<typename AMatrix::execution_space> (NNZPerRow), vector_length);
 
-<<<<<<< c079fe8700c4ab2b00626d70c76e4aa46f828acb
         // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
         // instead of int?  For example, if the number of threads is 1,
         // then this is just the number of rows.  Ditto for rows_per_team.
@@ -1310,24 +1291,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
         const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
         Kokkos::parallel_for("KokkosSparse::spmv_struct<MV,NoTranspose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
                              ( nteams , team_size , vector_length ) , op );
-=======
-      // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-      // instead of int?  For example, if the number of threads is 1,
-      // then this is just the number of rows.  Ditto for rows_per_team.
-      // team_size is a hardware resource thing so it might legitimately
-      // be int.
-      const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-      const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
-      const int rows_per_team = rows_per_thread * team_size;
-      const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-      Kokkos::parallel_for("KokkosSparse::spmv_struct<MV,NoTranspose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
-                           ( nteams , team_size , vector_length ) , op );
->>>>>>> WIP: adding HIP codepaths in preparation for tests/ETI
-
 #endif // KOKKOS_FAST_COMPILE
     }
   }
@@ -1376,7 +1339,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
 
       typename AMatrix::const_ordinal_type nrow = A.numRows();
 
-<<<<<<< c079fe8700c4ab2b00626d70c76e4aa46f828acb
         // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
         // instead of int?  For example, if the number of threads is 1,
         // then this is just the number of rows.  Ditto for rows_per_team.
@@ -1388,23 +1350,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
         const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
         Kokkos::parallel_for ("KokkosSparse::spmv_struct<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
                               ( nteams , team_size , vector_length ) , op );
-=======
-      // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-      // instead of int?  For example, if the number of threads is 1,
-      // then this is just the number of rows.  Ditto for rows_per_team.
-      // team_size is a hardware resource thing so it might legitimately
-      // be int.
-      const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-      const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
-      const int rows_per_team = rows_per_thread * team_size;
-      const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-      Kokkos::parallel_for ("KokkosSparse::spmv_struct<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
-                            ( nteams , team_size , vector_length ) , op );
->>>>>>> WIP: adding HIP codepaths in preparation for tests/ETI
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta
 
@@ -1415,7 +1360,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
 
       OpType op (alpha, A, x, beta, y, RowsPerThread<typename AMatrix::execution_space> (NNZPerRow));
 
-<<<<<<< c079fe8700c4ab2b00626d70c76e4aa46f828acb
         // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
         // instead of int?  For example, if the number of threads is 1,
         // then this is just the number of rows.  Ditto for rows_per_team.
@@ -1427,23 +1371,6 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
         const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
         Kokkos::parallel_for("KokkosSparse::spmv_struct<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
                              ( nteams , team_size , vector_length ) , op );
-=======
-      // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-      // instead of int?  For example, if the number of threads is 1,
-      // then this is just the number of rows.  Ditto for rows_per_team.
-      // team_size is a hardware resource thing so it might legitimately
-      // be int.
-      const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
-#else
-      const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-#endif
-      const int rows_per_team = rows_per_thread * team_size;
-      const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-      Kokkos::parallel_for("KokkosSparse::spmv_struct<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
-                           ( nteams , team_size , vector_length ) , op );
->>>>>>> WIP: adding HIP codepaths in preparation for tests/ETI
 
 #endif // KOKKOS_FAST_COMPILE
     }
