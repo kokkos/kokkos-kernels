@@ -5,6 +5,12 @@ IF (KOKKOSKERNELS_HAS_TRILINOS)
 INCLUDE(TribitsETISupport)
 ENDIF()
 
+FUNCTION(VERIFY_EMPTY CONTEXT)
+  IF(${ARGN})
+    MESSAGE(FATAL_ERROR "Kokkos does not support all of Tribits. Unhandled arguments in ${CONTEXT}:\n${ARGN}")
+  ENDIF()
+ENDFUNCTION()
+
 #MESSAGE(STATUS "The project name is: ${PROJECT_NAME}")
 
 MACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
