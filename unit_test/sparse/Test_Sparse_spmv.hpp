@@ -126,7 +126,6 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
   const y_value_mag_type eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
-  const size_t nr = input_mat.numRows();
   bool transposed = (mode == 'T') || (mode == 'H');
   y_vector_type expected_y("expected", transposed ? input_mat.numCols() : input_mat.numRows());
   Kokkos::deep_copy(expected_y, y);
