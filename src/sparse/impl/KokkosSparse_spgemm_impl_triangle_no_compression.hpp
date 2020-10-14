@@ -967,7 +967,7 @@ void KokkosSPGEMM
   if (exec_gpu) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
-  nnz_lno_t num_chunks = KokkosSparse::Impl::compute_num_pool_chunks<pool_memory_space>
+  nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
     (accumulator_chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
   if (KOKKOSKERNELS_VERBOSE){

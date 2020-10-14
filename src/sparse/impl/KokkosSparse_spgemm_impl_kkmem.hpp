@@ -1422,7 +1422,7 @@ void
 	  chunksize += max_nnz; //this is for hash nexts
   }
 
-  nnz_lno_t num_chunks = KokkosSparse::Impl::compute_num_pool_chunks<pool_memory_space>
+  nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
     (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
   // END SIZE CALCULATIONS FOR MEMORYPOOL
