@@ -1508,7 +1508,7 @@ void KokkosSPGEMM
 		current_spgemm_algorithm = SPGEMM_KK_MEMORY;
 	}
 	maxNumRoughNonzeros = KOKKOSKERNELS_MACRO_MIN(this->b_col_cnt, maxNumRoughNonzeros);
-        int shmem_size_to_use = shmem_size;
+	int shmem_size_to_use = shmem_size;
 
 	typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
 
