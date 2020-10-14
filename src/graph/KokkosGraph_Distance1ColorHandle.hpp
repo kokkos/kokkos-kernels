@@ -237,9 +237,19 @@ private:
   {
     auto exec = KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>();
     if(exec == KokkosKernels::Impl::Exec_SERIAL)
+    {
       this->coloring_algorithm_type = COLORING_SERIAL;
+#ifdef VERBOSE 
+      std:cout << "Serial Execution Space, Default Algorithm: COLORING_SERIAL\n";
+#endif
+    }
     else
+    {
       this->coloring_algorithm_type = COLORING_VBBIT;
+#ifdef VERBOSE 
+      std:cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_VBBIT\n";
+#endif
+    }
   }
 
   template<typename v1, typename v2, typename v3>
