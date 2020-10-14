@@ -206,9 +206,19 @@ class GraphColorDistance2Handle
     void choose_default_algorithm()
     {
         if(KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>() == KokkosKernels::Impl::Exec_SERIAL)
+        {
             this->coloring_algorithm_type = COLORING_D2_SERIAL;
+#ifdef VERBOSE 
+            std:cout << "Serial Execution Space, Default Algorithm: COLORING_D2_SERIAL\n";
+#endif
+        }
         else
+        {
             this->coloring_algorithm_type = COLORING_D2_NB_BIT;
+#ifdef VERBOSE 
+            std:cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_D2_NB_BIT\n";
+#endif
+        }
     }
 
 
