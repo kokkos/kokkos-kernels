@@ -1126,7 +1126,7 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
         strip_mine<1>(dev, iRow, kk);
       }
 #else
-#  ifdef __CUDA_ARCH__
+#  if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
       if ((n > 8) && (n % 8 == 1)) {
         strip_mine<9>(dev, iRow, kk);
         kk += 9;
@@ -1180,7 +1180,7 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
           case 8:
             strip_mine<8>(dev, iRow, kk);
             break;
-  #endif // __CUDA_ARCH__
+  #endif // __CUDA_ARCH__ or __HIP_DEVICE_COMPILE__
           case 7:
             strip_mine<7>(dev, iRow, kk);
             break;

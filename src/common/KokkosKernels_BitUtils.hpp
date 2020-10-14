@@ -51,8 +51,7 @@ namespace KokkosKernels{
 namespace Impl{
 
 // POP COUNT function returns the number of set bits
-// Note BMK: HIP also defines __CUDA_ARCH__, and provides the same intrinsics.
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) || defined(__HIP_DEVICE_COMPILE__)
 KOKKOS_FORCEINLINE_FUNCTION
 int pop_count( unsigned i ){
   return __popc(i);
@@ -182,7 +181,7 @@ int pop_count(  long long i ){
 
 // least_set_bit function returns the position of right most set bit
 
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) || defined(__HIP_DEVICE_COMPILE__)
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit( unsigned i ){
   return __ffs(i);

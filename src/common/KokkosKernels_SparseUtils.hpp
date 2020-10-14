@@ -1341,7 +1341,6 @@ void kk_sort_graph(
 
     out_nnz_view_t out_adj,
     out_scalar_view_t out_vals){
-  // If possible, sort on host and avoid a deep copy
   // TODO BMK: can this function be deprecated?
   typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
   Kokkos::deep_copy (hr, in_xadj);

@@ -6,7 +6,7 @@
 #include <Kokkos_Complex.hpp>
 #include <KokkosBatched_Vector.hpp>
 
-#if defined(__CUDA_ARCH__) 
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
 #undef  __KOKKOSBATCHED_ENABLE_AVX__
 #else
 // compiler bug with AVX in some architectures
@@ -129,7 +129,7 @@ namespace KokkosBatched {
 }
 
 
-#if defined(__CUDA_ARCH__) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
 namespace KokkosBatched {
 
   template<>
