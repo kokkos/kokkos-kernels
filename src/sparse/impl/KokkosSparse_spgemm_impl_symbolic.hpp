@@ -1642,30 +1642,13 @@ void KokkosSPGEMM
 	}
 
 	//initizalize value for the mem pool
-	nnz_lno_t num_chunks = concurrency / suggested_vector_size;
 	KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
 	if (exec_gpu) {
 		my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
 	}
 
-
-	if (exec_gpu) {
-            size_t free_byte, total_byte;
-            KokkosKernels::Impl::kk_get_free_total_memory<typename pool_memory_space::memory_space>(free_byte, total_byte);
-            size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-            if (KOKKOSKERNELS_VERBOSE)
-                    std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-            if (required_size + num_chunks > free_byte){
-                    num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-            }
-            {
-                    nnz_lno_t min_chunk_size = 1;
-                    while (min_chunk_size * 2 <= num_chunks) {
-                            min_chunk_size *= 2;
-                    }
-                    num_chunks = min_chunk_size;
-            }
-	}
+        nnz_lno_t num_chunks = KokkosSparse::Impl::compute_num_pool_chunks<pool_memory_space>
+          (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
 	if (KOKKOSKERNELS_VERBOSE){
 		std::cout << "\tPool Size (MB):" << (num_chunks * chunksize * sizeof(nnz_lno_t)) / 1024. / 1024. << " num_chunks:" << num_chunks << " chunksize:" << chunksize << std::endl;
@@ -1970,31 +1953,13 @@ void KokkosSPGEMM
       std::cout << "\tDense Acc - COLS:" << col_size << " max_row_size:" << max_row_size << std::endl;
     }
   }
-  nnz_lno_t num_chunks = concurrency / suggested_vector_size;
-
   KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
   if (exec_gpu) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
-
-  if (exec_gpu) {
-    size_t free_byte, total_byte;
-    KokkosKernels::Impl::kk_get_free_total_memory<typename pool_memory_space::memory_space>(free_byte, total_byte);
-    size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-    if (KOKKOSKERNELS_VERBOSE)
-      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-    if (required_size + num_chunks > free_byte){
-      num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-    }
-    {
-      nnz_lno_t min_chunk_size = 1;
-      while (min_chunk_size * 2 <= num_chunks) {
-        min_chunk_size *= 2;
-      }
-      num_chunks = min_chunk_size;
-    }
-  }
+  nnz_lno_t num_chunks = KokkosSparse::Impl::compute_num_pool_chunks<pool_memory_space>
+    (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tPool Size (MB):" << (num_chunks * chunksize * sizeof(nnz_lno_t)) / 1024. / 1024. << " num_chunks:" << num_chunks << " chunksize:" << chunksize << std::endl;
