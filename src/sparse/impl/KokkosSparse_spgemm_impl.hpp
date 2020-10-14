@@ -808,7 +808,7 @@ private:
       num_chunks = (free_byte / 2) / chunk_bytes;
     }
     //then take the largest power of 2 smaller than that
-    nnz_lno_t po2_num_chunks = 1;
+    size_t po2_num_chunks = 1;
     while (po2_num_chunks * 2 < num_chunks) {
       po2_num_chunks *= 2;
     }
