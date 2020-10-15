@@ -79,9 +79,10 @@ namespace Impl{
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-    using device1 = typename ain_row_index_view_type::device_type;
-    using device2 = typename ain_nonzero_index_view_type::device_type;
-    using idx     = typename KernelHandle::nnz_lno_t;
+    using device1   = typename ain_row_index_view_type::device_type;
+    using device2   = typename ain_nonzero_index_view_type::device_type;
+    using idx       = typename KernelHandle::nnz_lno_t;
+    using size_type = typename KernelHandle::size_type;
 
 
     //TODO this is not correct, check memory space.
@@ -98,11 +99,10 @@ namespace Impl{
       throw std::runtime_error ("SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
 #else
 
-    if (std::is_same<idx, int>::value){
-
-      const idx *a_xadj = (int *)row_mapA.data();
-      const idx *b_xadj = (int *)row_mapB.data();
-      idx *c_xadj = (int *)row_mapC.data();
+    if (std::is_same<idx, int>::value && std::is_same<size_type, int>::value){
+      const idx *a_xadj = (const idx*) row_mapA.data();
+      const idx *b_xadj = (const idx*) row_mapB.data();
+      idx *c_xadj = (idx*) row_mapC.data();
 
       const idx *a_adj = entriesA.data();
       const idx *b_adj = entriesB.data();
