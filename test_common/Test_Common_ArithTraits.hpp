@@ -65,7 +65,7 @@
 
 #define FAILURE() {printf("%s:%s:%d: Failure\n", __FILE__, __func__, __LINE__); success = 0;}
 
-#if 1
+#if 0
 #define TRACE() printf("%s:%s:%d: Trace\n", __FILE__, __func__, __LINE__);
 #else
 #define TRACE()
@@ -1037,13 +1037,22 @@ public:
 
     // Apparently, std::numeric_limits<ScalarType>::is_signed is 1
     // only for real numbers.
-    if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
-      printf(
-          "AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed "
-          "= 0x%x\n",
-          AT::is_signed, std::numeric_limits<ScalarType>::is_signed);
-      FAILURE();
+#if defined(HAVE_KOKKOS_HALFMATH)
+    if (std::is_same<ScalarType, Kokkos::Experimental::half_t>::value) {
+      if (AT::is_signed != 0x1)
+        FAILURE();
+    } else
+#else
+    {
+      if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
+        printf(
+            "AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed "
+            "= 0x%x\n",
+            AT::is_signed, std::numeric_limits<ScalarType>::is_signed);
+        FAILURE();
+      }
     }
+#endif // HAVE_KOKKOS_HALFMATH
 
     if (AT::is_complex) {
       FAILURE();
