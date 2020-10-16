@@ -50,7 +50,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Complex.hpp>
-#include <Kokkos_HalfPrecision.hpp>
+#include <KokkosKernels_Half.hpp>
 
 #ifdef HAVE_KOKKOSKERNELS_QUADMATH
 #  include <quadmath.h>
@@ -675,15 +675,15 @@ public:
   //@}
 };
 
-/**
- * Currently, all the ArithTraits<half> member will only work on either the host
- * due toolchain support of half precision types.
- */
-#if defined(HAVE_KOKKOSKERNELS_HALFMATH)
+// Since Kokkos::Experimental::half_t falls back to float, only define
+// ArithTraits on supported execution spaces
+#if defined(HAVE_KOKKOS_HALFMATH) &&\
+    defined(KOKKOS_ENABLE_CUDA)
+// defined(Kokkos::Experimental::HALF_IMPL_TYPE)
 template<>
-class ArithTraits<KokkosKernels::Experimental::half> {
+class ArithTraits<Kokkos::Experimental::half_t> {
 public:
-  typedef KokkosKernels::Experimental::half val_type;
+  typedef Kokkos::Experimental::half_t val_type;
   typedef val_type mag_type;
 
   static const bool is_specialized = true;
@@ -693,92 +693,93 @@ public:
   static const bool is_complex = false;
 
   static constexpr bool has_infinity = true;
-  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return KokkosKernels::Experimental::__cast2half(HUGE_VALF); }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return HUGE_VALF; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     #ifndef __CUDA_ARCH__
     using std::isinf;
     #endif
-    return isinf (KokkosKernels::Experimental::__cast2float(x));
+    return isinf (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     #ifndef __CUDA_ARCH__
     using std::isnan;
     #endif
-    return isnan(KokkosKernels::Experimental::__cast2float(x));
+    return isnan(Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(fabs(KokkosKernels::Experimental::__cast2float(x)));
+    return fabs(Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
-    return KokkosKernels::Experimental::__cast2float(0.0F);
+    return 0.0F;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
-    return KokkosKernels::Experimental::__cast2float(1.0F);
+    return 1.0F;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
-    return KokkosKernels::Experimental::__cast2float(-FP16_MAX);
+    return -FP16_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
-    return KokkosKernels::Experimental::__cast2float(FP16_MAX);
+    return FP16_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type) {
-    return KokkosKernels::Experimental::__cast2float(0.0F);
+    return 0.0F;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
-    return KokkosKernels::Experimental::__cast2float(::pow (KokkosKernels::Experimental::__cast2float(x), KokkosKernels::Experimental::__cast2float(y)));
+    return ::pow(Kokkos::Experimental::cast_from_half<float>(x),
+                 Kokkos::Experimental::cast_from_half<float>(y));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::sqrt (KokkosKernels::Experimental::__cast2float(x)));
+    return ::sqrt (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::cbrt (KokkosKernels::Experimental::__cast2float(x)));
+    return ::cbrt (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::exp (KokkosKernels::Experimental::__cast2float(x)));
+    return ::exp (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::log (KokkosKernels::Experimental::__cast2float(x)));
+    return ::log (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::log10 (KokkosKernels::Experimental::__cast2float(x)));
+    return ::log10 (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::sin (KokkosKernels::Experimental::__cast2float(x)));
+    return ::sin (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::cos (KokkosKernels::Experimental::__cast2float(x)));
+    return ::cos (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::tan (KokkosKernels::Experimental::__cast2float(x)));
+    return ::tan (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::sinh (KokkosKernels::Experimental::__cast2float(x)));
+    return ::sinh (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::cosh (KokkosKernels::Experimental::__cast2float(x)));
+    return ::cosh (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::tanh (KokkosKernels::Experimental::__cast2float(x)));
+    return ::tanh (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::asin (KokkosKernels::Experimental::__cast2float(x)));
+    return ::asin (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::acos (KokkosKernels::Experimental::__cast2float(x)));
+    return ::acos (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(::atan (KokkosKernels::Experimental::__cast2float(x)));
+    return ::atan (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     //return ::pow(2, -FP16_SIGNIFICAND_BITS);
-    return KokkosKernels::Experimental::__cast2half(FP16_EPSILON);
+    return FP16_EPSILON;
   }
   // Backwards compatibility with Teuchos::ScalarTraits.
   typedef mag_type magnitudeType;
@@ -794,22 +795,22 @@ public:
     return isNan (x) || isInf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(abs (KokkosKernels::Experimental::__cast2float(x)));
+    return abs (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(conj (KokkosKernels::Experimental::__cast2float(x)));
+    return conj (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static std::string name () {
     return "half";
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
-    return KokkosKernels::Experimental::__cast2float(sqrt (KokkosKernels::Experimental::__cast2float(x)));
+    return sqrt (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
 #ifdef __CUDA_ARCH__
-    return KokkosKernels::Experimental::__cast2half(CUDART_NAN_F);
+    return CUDART_NAN_F;
 #else
-    return KokkosKernels::Experimental::__cast2half(std::numeric_limits<float>::quiet_NaN());
+    return std::numeric_limits<float>::quiet_NaN();
 #endif // __CUDA_ARCH__
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type eps () {
@@ -847,7 +848,7 @@ public:
     return FP16_MAX;
   }
 };
-#endif // HAVE_KOKKOSKERNELS_HALFMATH
+#endif // HAVE_KOKKOS_HALFMATH && KOKKOS_ENABLE_CUDA
 
 template<>
 class ArithTraits<float> {
@@ -1015,7 +1016,6 @@ public:
     return FLT_MAX; // ??? // should be (base^emax)*(1-eps)
   }
 };
-
 
 /// \brief Partial specialization for std::complex<RealFloatType>.
 ///

@@ -1,4 +1,4 @@
-#if defined(HAVE_KOKKOSKERNELS_HALFMATH)
+#if defined(HAVE_KOKKOS_HALFMATH)
 TEST_F( TestCategory, batched_scalar_team_vector_gemm_nt_nt_half_half ) {
   typedef ::Test::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
 
@@ -23,7 +23,7 @@ TEST_F( TestCategory, batched_scalar_team_vector_gemm_t_t_half_half ) {
   //test_batched_teamvectorgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Blocked>();
   test_batched_teamvectorgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Unblocked>();
 }
-#endif
+#endif // HAVE_KOKKOS_HALFMATH
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F( TestCategory, batched_scalar_team_vector_gemm_nt_nt_float_float ) {

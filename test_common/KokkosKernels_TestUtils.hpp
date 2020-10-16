@@ -106,11 +106,9 @@ namespace Test {
     }
   }
 
-  #if defined(KOKKOS_ENABLE_CUDA)
-  using halfScalarType = typename std::conditional<std::is_same<TestExecSpace, Kokkos::Cuda>::value, KokkosKernels::Experimental::device_fp16_t, KokkosKernels::Experimental::host_fp16_t>::type;
-  #else
-  using halfScalarType = KokkosKernels::Experimental::host_fp16_t;
-  #endif // KOKKOS_ENABLE_CUDA
+  #if defined(HAVE_KOKKOS_HALFMATH)
+  using halfScalarType = Kokkos::Experimental::half_t;
+  #endif // HAVE_KOKKOS_HALFMATH
 
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
   struct SharedVanillaGEMM {

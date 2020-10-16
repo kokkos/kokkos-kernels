@@ -65,7 +65,7 @@
 
 #define FAILURE() {printf("%s:%s:%d: Failure\n", __FILE__, __func__, __LINE__); success = 0;}
 
-#if 0
+#if 1
 #define TRACE() printf("%s:%s:%d: Trace\n", __FILE__, __func__, __LINE__);
 #else
 #define TRACE()
@@ -1034,23 +1034,15 @@ public:
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable
     int success = 1;
-    
-#if defined(HAVE_KOKKOSKERNELS_CUDA_FP16) &&\
-    defined(__CUDA_ARCH__)
-    if(std::is_same<ScalarType,KokkosKernels::Experimental::device_fp16_t>::value) {
-      if (AT::is_signed != 0x1)
-	FAILURE();
-    } else
-#endif // HAVE_KOKKOSKERNELS_CUDA_FP16
-    {
-      // Apparently, std::numeric_limits<ScalarType>::is_signed is 1
-      // only for real numbers.
-      if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
-	printf("AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed = 0x%x\n", 
-	       AT::is_signed,
-	       std::numeric_limits<ScalarType>::is_signed);
-	FAILURE();
-      }
+
+    // Apparently, std::numeric_limits<ScalarType>::is_signed is 1
+    // only for real numbers.
+    if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
+      printf(
+          "AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed "
+          "= 0x%x\n",
+          AT::is_signed, std::numeric_limits<ScalarType>::is_signed);
+      FAILURE();
     }
 
     if (AT::is_complex) {
@@ -1560,24 +1552,13 @@ int runAllArithTraitsDeviceTests (std::ostream& out, const int verbose)
   // Built-in real floating-point types
   //
 
-#if defined(HAVE_KOKKOSKERNELS_HALFMATH) &&\
-    defined(KOKKOS_ENABLE_CUDA) && defined(HAVE_KOKKOSKERNELS_CUDA_FP16)
-  if (std::is_same<DeviceType, Kokkos::Cuda>::value) {
-    TRACE();
-    success = success && curSuccess;
-    curSuccess =
-      testArithTraitsOnDevice<KokkosKernels::Experimental::device_fp16_t,
-                              DeviceType>(out, verbose);
-  } else {
-#if defined(HAVE_KOKKOSKERNELS_FP16)
-    TRACE();
-    success = success && curSuccess;
-    curSuccess =
-      testArithTraitsOnDevice<KokkosKernels::Experimental::host_fp16_t,
-                              DeviceType>(out, verbose);
-#endif // HAVE_KOKKOSKERNELS_FP16
-  }
-#endif // HAVE_KOKKOSKERNELS_HALFMATH
+#if defined(HAVE_KOKKOS_HALFMATH)
+  TRACE();
+  success = success && curSuccess;
+  curSuccess =
+      testArithTraitsOnDevice<Kokkos::Experimental::half_t, DeviceType>(
+          out, verbose);
+#endif // HAVE_KOKKOS_HALFMATH
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<float, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<double, DeviceType> (out, verbose);
 
@@ -1655,12 +1636,12 @@ int runAllArithTraitsHostTests (std::ostream& out, const int verbose)
   // Kokkos' complex floating-point types
   //
 
-#if defined(HAVE_KOKKOSKERNELS_HALFMATH) && defined(HAVE_KOKKOSKERNELS_FP16)
-  success    = success && curSuccess;
+#if defined(HAVE_KOKKOS_HALFMATH)
+  success = success && curSuccess;
   TRACE();
-  curSuccess = testArithTraitsOnHost<KokkosKernels::Experimental::host_fp16_t,
-                                       DeviceType>(out, verbose);
-#endif // HAVE_KOKKOSKERNELS_HALFMATH
+  curSuccess = testArithTraitsOnHost<Kokkos::Experimental::half_t, DeviceType>(
+      out, verbose);
+#endif // HAVE_KOKKOS_HALFMATH
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<float>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<double>, DeviceType> (out, verbose);
   //success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<long double>, DeviceType> (out, verbose);
