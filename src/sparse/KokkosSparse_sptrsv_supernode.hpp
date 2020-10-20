@@ -1122,8 +1122,6 @@ void sptrsv_supernodal_symbolic(
 
       using range_type = Kokkos::pair<int, int>;
       using TrtriAlgoType = KokkosBatched::Algo::Trtri::Unblocked;
-      using Side  = KokkosBatched::Side;
-      using Trans = KokkosBatched::Trans;
 
       int s = supernode_ids(i);
       int j1 = nb[s];
