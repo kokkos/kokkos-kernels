@@ -357,7 +357,7 @@ private:
         }
       }, new_edge_count);
 
-      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+      Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
         lower_xadj_counts(ii + 1) = new_edge_count;
       });
     }

@@ -253,7 +253,7 @@ struct RCM
       int next = 1;
       nnz_lno_t visitCounter = 0;
       Kokkos::single(Kokkos::PerTeam(mem),
-      [=]()
+      [&]()
       {
         workQueue(active, 0) = start;
         visit(start) = QUEUED;
@@ -337,7 +337,7 @@ struct RCM
         if(visitCounter < numRows && activeQSize == 0)
         {
           Kokkos::single(Kokkos::PerTeam(mem),
-          [=]()
+          [&]()
           {
             //Some nodes are unreachable from start (graph not connected)
             //Find an unvisited node to resume BFS
@@ -356,7 +356,7 @@ struct RCM
         level++;
       }
       Kokkos::single(Kokkos::PerTeam(mem),
-      [=]
+      [&]
       {
         numLevels() = level - 1;
       });
@@ -447,7 +447,7 @@ struct RCM
         }
         mem.team_barrier();
         Kokkos::single(Kokkos::PerTeam(mem),
-        [=]()
+        [&]()
         {
           radixSortKeysAndValues<size_type, offset_t, nnz_lno_t, nnz_lno_t, team_member_t>
             (scores.data(), scoresAux.data(), adj.data() + levelOffset, adjAux.data(), levelSize, mem);

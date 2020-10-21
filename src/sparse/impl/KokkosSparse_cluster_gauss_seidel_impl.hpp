@@ -312,7 +312,7 @@ namespace KokkosSparse{
               for(int j = 0; j < N; j++)
                 lsum.data[j] += val * _Xvector(colIndex, colStart + j);
             }, sum);
-          Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+          Kokkos::single(Kokkos::PerThread(teamMember),[&] ()
           {
             nnz_scalar_t invDiagonalVal = _inverse_diagonal(row);
             for(int i = 0; i < N; i++)

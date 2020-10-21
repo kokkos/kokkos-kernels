@@ -431,7 +431,7 @@ struct BitonicPhase1Functor
     Ordinal workStart = work * (t.league_rank() % teamsPerBox);
     Ordinal workReflect = boxSize - workStart - 1;
     Kokkos::parallel_for(Kokkos::TeamThreadRange(t, work),
-      [=](const Ordinal i)
+      [&](const Ordinal i)
       {
         Ordinal elem1 = boxStart + workStart + i;
         Ordinal elem2 = boxStart + workReflect - i;
@@ -471,7 +471,7 @@ struct BitonicPhase2Functor
     Ordinal workStart = boxStart + work * (t.league_rank() % teamsPerBox);
     Ordinal jump = boxSize / 2;
     Kokkos::parallel_for(Kokkos::TeamThreadRange(t, work),
-      [=](const Ordinal i)
+      [&](const Ordinal i)
       {
         Ordinal elem1 = workStart + i;
         Ordinal elem2 = workStart + jump + i;
@@ -495,7 +495,7 @@ struct BitonicPhase2Functor
         Ordinal logSubBoxSize = logBoxSize - subLevel;
         Ordinal subBoxSize = Ordinal(1) << logSubBoxSize;
         Kokkos::parallel_for(Kokkos::TeamThreadRange(t, work),
-          [=](const Ordinal i)
+          [&](const Ordinal i)
           {
             Ordinal globalThread = i + t.league_rank() * work;
             Ordinal subBox = globalThread >> (logSubBoxSize - 1);
