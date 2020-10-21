@@ -276,7 +276,7 @@ namespace KokkosSparse{
               for(int j = 0; j < N; j++)
                 lsum.data[j] += val * _Xvector(colIndex, colStart + j);
             }, sum);
-          Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+          Kokkos::single(Kokkos::PerThread(teamMember),[&] ()
           {
             nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(row);
             for(int i = 0; i < N; i++)
@@ -420,7 +420,7 @@ namespace KokkosSparse{
 
                   product += product2;
                   //update the new vector entries.
-                  Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+                  Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
                       nnz_lno_t block_row_index = ii * block_size + i;
                       nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(block_row_index);
                       _Xvector(block_row_index, vec) += omega * (_Yvector(block_row_index, vec) - product) * invDiagonalVal;
@@ -484,7 +484,7 @@ namespace KokkosSparse{
 
           Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& ii) {
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
-              Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+              Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
                   for(nnz_lno_t i = 0; i < block_size; diagonal_positions[i++] = -1);
                 });
 #endif
@@ -542,7 +542,7 @@ namespace KokkosSparse{
                       valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
                     }, product);
 
-                  Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+                  Kokkos::single(Kokkos::PerThread(teamMember),[&] ()
                   {
                     nnz_lno_t block_row_index = ii * block_size + i;
                     nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(block_row_index);

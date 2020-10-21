@@ -654,7 +654,7 @@ struct KokkosSPGEMM
       if (c_row_size > max_first_level_hash_size){
     	  {
     		  while (tmp == NULL){
-    			  Kokkos::single(Kokkos::PerTeam(teamMember),[=] (volatile nnz_lno_t * &memptr) {
+    			  Kokkos::single(Kokkos::PerTeam(teamMember),[&] (volatile nnz_lno_t * &memptr) {
     				  memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(row_index));
     			  }, tmp);
     		  }
