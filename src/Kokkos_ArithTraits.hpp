@@ -676,11 +676,9 @@ public:
 };
 
 // Since Kokkos::Experimental::half_t falls back to float, only define
-// ArithTraits on supported execution spaces
-#if defined(HAVE_KOKKOS_HALFMATH) &&\
-    defined(KOKKOS_ENABLE_CUDA)
-// defined(Kokkos::Experimental::HALF_IMPL_TYPE)
-template<>
+// ArithTraits if an IMPL type exists
+#if defined(HAVE_KOKKOS_HALFMATH) && defined(HALF_IMPL_TYPE)
+template <>
 class ArithTraits<Kokkos::Experimental::half_t> {
 public:
   typedef Kokkos::Experimental::half_t val_type;
