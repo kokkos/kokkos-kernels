@@ -715,10 +715,10 @@ public:
     return 1.0F;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
-    return -FP16_MAX;
+    return -KOKKOSKERNELS_IMPL_FP16_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
-    return FP16_MAX;
+    return KOKKOSKERNELS_IMPL_FP16_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
@@ -776,8 +776,8 @@ public:
     return ::atan (Kokkos::Experimental::cast_from_half<float>(x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
-    //return ::pow(2, -FP16_SIGNIFICAND_BITS);
-    return FP16_EPSILON;
+    //return ::pow(2, -KOKKOSKERNELS_IMPL_FP16_SIGNIFICAND_BITS);
+    return KOKKOSKERNELS_IMPL_FP16_EPSILON;
   }
   // Backwards compatibility with Teuchos::ScalarTraits.
   typedef mag_type magnitudeType;
@@ -815,35 +815,35 @@ public:
     return epsilon ();
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin () {
-    return FP16_MIN;
+    return KOKKOSKERNELS_IMPL_FP16_MIN;
   }
   static KOKKOS_FORCEINLINE_FUNCTION int base () {
-    return FP16_RADIX;
+    return KOKKOSKERNELS_IMPL_FP16_RADIX;
   }
   // Use float to allow running on both host and device
   static KOKKOS_FORCEINLINE_FUNCTION float prec () {
-    float e = FP16_EPSILON;
+    float e = KOKKOSKERNELS_IMPL_FP16_EPSILON;
     float b = (float) base();
     float r = e * b;
     return r;
   }
   static KOKKOS_FORCEINLINE_FUNCTION int t () {
-    return FP16_MANT_DIG;
+    return KOKKOSKERNELS_IMPL_FP16_MANT_DIG;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd () {
     return 1.0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION int emin () {
-    return FP16_MIN_EXP;
+    return KOKKOSKERNELS_IMPL_FP16_MIN_EXP;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin () {
-    return FP16_MIN;
+    return KOKKOSKERNELS_IMPL_FP16_MIN;
   }
   static KOKKOS_FORCEINLINE_FUNCTION int emax () {
-    return FP16_MAX_EXP;
+    return KOKKOSKERNELS_IMPL_FP16_MAX_EXP;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax () {
-    return FP16_MAX;
+    return KOKKOSKERNELS_IMPL_FP16_MAX;
   }
 };
 #endif // HAVE_KOKKOS_HALFMATH && KOKKOS_ENABLE_CUDA

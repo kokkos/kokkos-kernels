@@ -146,7 +146,7 @@ template<typename DeviceType,
     using mag_type = host_value_type;
     mag_type sum(1), diff(0);
 
-    mag_type eps = (mag_type) (1 << 1) * FP16_EPSILON;
+    mag_type eps = (mag_type) (1 << 1) * KOKKOSKERNELS_IMPL_FP16_EPSILON;
 
     for (int k=0;k<N;++k)
       for (int i=0;i<matCdim1;++i) 

@@ -52,15 +52,15 @@
 namespace KokkosKernels {
     namespace Experimental {
         ////////////// BEGIN FP16/binary16 limits //////////////
-        #define FP16_MAX 65504.0F           // Maximum normalized number
-        #define FP16_MIN 0.000000059604645F // Minimum normalized positive half precision number
-        #define FP16_RADIX 2                // Value of the base of the exponent representation. TODO: Confirm this
-        #define FP16_MANT_DIG 15            // Number of digits in the matissa that can be represented without losing precision. TODO: Confirm this
-        #define FP16_MIN_EXP -14            // This is the smallest possible exponent value
-        #define FP16_MAX_EXP 15             // This is the largest possible exponent value
-        #define FP16_SIGNIFICAND_BITS 10
-        #define FP16_EPSILON 0.0009765625F
-        #define HUGE_VALH 0x7c00            // bits [10,14] set.
+        #define KOKKOSKERNELS_IMPL_FP16_MAX 65504.0F           // Maximum normalized number
+        #define KOKKOSKERNELS_IMPL_FP16_MIN 0.000000059604645F // Minimum normalized positive half precision number
+        #define KOKKOSKERNELS_IMPL_FP16_RADIX 2                // Value of the base of the exponent representation. TODO: Confirm this
+        #define KOKKOSKERNELS_IMPL_FP16_MANT_DIG 15            // Number of digits in the matissa that can be represented without losing precision. TODO: Confirm this
+        #define KOKKOSKERNELS_IMPL_FP16_MIN_EXP -14            // This is the smallest possible exponent value
+        #define KOKKOSKERNELS_IMPL_FP16_MAX_EXP 15             // This is the largest possible exponent value
+        #define KOKKOSKERNELS_IMPL_FP16_SIGNIFICAND_BITS 10
+        #define KOKKOSKERNELS_IMPL_FP16_EPSILON 0.0009765625F
+        #define KOKKOSKERNELS_IMPL_HUGE_VALH 0x7c00            // bits [10,14] set.
         ////////////// END FP16/binary16 limits //////////////
     } // Experimental
 } // KokkosKernels
