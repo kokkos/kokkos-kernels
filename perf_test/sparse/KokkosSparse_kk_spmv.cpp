@@ -80,7 +80,6 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop, 
   }
   numRows = A.numRows();
   numCols = A.numCols();
-  Offset nnz = A.nnz();
   mv_type x("X", numCols, num_vecs);
   mv_type y("Y", numRows, num_vecs);
   h_mv_type h_x = Kokkos::create_mirror_view(x);
