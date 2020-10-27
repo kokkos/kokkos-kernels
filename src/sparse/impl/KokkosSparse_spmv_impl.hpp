@@ -406,6 +406,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
 {
   using ordinal_type = typename AMatrix::non_const_ordinal_type;
   using size_type = typename AMatrix::non_const_size_type;
+  using execution_space = typename AMatrix::execution_space;
 
   if (A.numRows () <= static_cast<ordinal_type> (0)) {
     return;
@@ -423,7 +424,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
   const ordinal_type NNZPerRow = A.nnz () / A.numRows ();
 
   int vector_length = 1;
-  bool use_teams = KokkosKernels::Impl::kk_is_gpu_exec_space<typename AMatrix::execution_space>();
+  bool use_teams = KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
   int max_vector_length = 1;
 #ifdef KOKKOS_ENABLE_CUDA
   if(std::is_same<execution_space, Kokkos::Cuda>::value)
@@ -445,16 +446,16 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
   OpType op (alpha, A, x, y);
 
   if(use_teams) {
-    const ordinal_type rows_per_thread = RowsPerThread<typename AMatrix::execution_space > (NNZPerRow);
-    const ordinal_type team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+    const ordinal_type rows_per_thread = RowsPerThread<execution_space > (NNZPerRow);
+    const ordinal_type team_size = Kokkos::TeamPolicy<execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
     const ordinal_type rows_per_team = rows_per_thread * team_size;
     op.rows_per_team = rows_per_team;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::TeamPolicy< execution_space >
        ( nteams , team_size , vector_length ) , op );
   }
   else {
-    Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::RangePolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::RangePolicy< execution_space >
        ( 0 , nrow ) , op );
   }
 }
