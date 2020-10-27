@@ -1199,7 +1199,6 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
   }
 
   if (doalpha != 0) {
-    typedef typename AMatrix::size_type size_type;
 
     // Assuming that no row contains duplicate entries, NNZPerRow
     // cannot be more than the number of columns of the matrix.  Thus,
