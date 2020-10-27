@@ -727,8 +727,6 @@ struct SPMV_MV_LayoutLeft_Functor {
       }
     }
 
-    if(doalpha == -1)
-
     if (dobeta == 0) {
       for(ordinal_type k = 0; k < UNROLL; k++)
         m_y(iRow, kk + k) = sum[k];
