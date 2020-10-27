@@ -677,7 +677,8 @@ public:
 
 // Since Kokkos::Experimental::half_t falls back to float, only define
 // ArithTraits if an IMPL type exists
-#if defined(HAVE_KOKKOS_HALFMATH) && defined(HALF_IMPL_TYPE)
+#if defined(HAVE_KOKKOS_HALFMATH) &&\
+    defined(KOKKOS_ENABLE_CUDA_HALF) // TODO: Check for other backends
 template <>
 class ArithTraits<Kokkos::Experimental::half_t> {
 public:
