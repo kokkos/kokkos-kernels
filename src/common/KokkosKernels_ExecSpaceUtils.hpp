@@ -55,7 +55,7 @@ namespace Impl{
 
 enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA, Exec_HIP};
 template <typename ExecutionSpace>
-constexpr KOKKOS_INLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
+KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
   ExecSpaceType exec_space = Exec_SERIAL;
 #if defined( KOKKOS_ENABLE_SERIAL )
   if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
@@ -98,10 +98,22 @@ constexpr KOKKOS_INLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
 
 template <typename ExecutionSpace>
 constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space() {
-  auto exec = kk_get_exec_space_type<ExecutionSpace>();
-  //TODO BMK: Add OpenMPTarget and any other future GPU exec spaces
-  return exec == Exec_CUDA || exec == Exec_HIP;
+  return false;
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Cuda>() {
+  return true;
+}
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+  return true;
+}
+#endif
 
 //Host function to determine free and total device memory.
 //Will throw if execution space doesn't support this.

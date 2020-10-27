@@ -172,9 +172,37 @@ struct SPMV_Functor {
   }
 
   KOKKOS_INLINE_FUNCTION
+  void operator() (const ordinal_type iRow) const
+  {
+    using y_value_type = typename YVector::non_const_value_type;
+    if (iRow >= m_A.numRows ()) {
+      return;
+    }
+    const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
+    const ordinal_type row_length = static_cast<ordinal_type> (row.length);
+    y_value_type sum = 0;
+
+    for(ordinal_type iEntry = 0; iEntry < row_length; iEntry++)
+    {
+      const value_type val = conjugate ?
+              ATV::conj (row.value(iEntry)) :
+              row.value(iEntry);
+      sum += val * m_x(row.colidx(iEntry));
+    }
+
+    sum *= alpha;
+
+    if (dobeta == 0) {
+      m_y(iRow) = sum ;
+    } else {
+      m_y(iRow) = beta * m_y(iRow) + sum;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
   void operator() (const team_member& dev) const
   {
-    typedef typename YVector::non_const_value_type y_value_type;
+    using y_value_type = typename YVector::non_const_value_type;
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rows_per_team), [&] (const ordinal_type& loop) {
 
@@ -213,9 +241,19 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
 
   if(nnz_per_row < 1) nnz_per_row = 1;
 
+  int max_vector_length = 1;
+#ifdef KOKKOS_ENABLE_CUDA
+  if(std::is_same<execution_space, Kokkos::Cuda>::value)
+    max_vector_length = 32;
+#endif
+#ifdef KOKKOS_ENABLE_HIP
+  if(std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
+    max_vector_length = 64;
+#endif
+
   if(vector_length < 1) {
     vector_length = 1;
-    while(vector_length<32 && vector_length*6 < nnz_per_row)
+    while(vector_length < max_vector_length && vector_length * 6 < nnz_per_row)
       vector_length*=2;
   }
 
@@ -280,21 +318,14 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
      ((int) A.graph.row_block_offsets.extent(0) == (int) omp_get_max_threads()+1) &&
      (((uintptr_t)(const void*)(x.data())%64)==0) && (((uintptr_t)(const void*)(y.data())%64)==0)
      ) {
+    //Note BMK: this case is typically not called in practice even for OpenMP, since
+    //it requires row_block_offsets to have been computed in the graph.
     spmv_raw_openmp_no_transpose<AMatrix,XVector,YVector>(alpha,A,x,beta,y);
     return;
   }
   #endif
-  int team_size = -1;
-  int vector_length = -1;
-  int64_t rows_per_thread = -1;
 
-  // Note on 03/24/20, lbv: We can use the controls
-  // here to allow the user to pass in some tunning
-  // parameters.
-  if(controls.isParameter("team size"))       {team_size       = std::stoi(controls.getParameter("team size"));}
-  if(controls.isParameter("vector length"))   {vector_length   = std::stoi(controls.getParameter("vector length"));}
-  if(controls.isParameter("rows per thread")) {rows_per_thread = std::stoll(controls.getParameter("rows per thread"));}
-
+  bool use_teams = KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
   bool use_dynamic_schedule = false; // Forces the use of a dynamic schedule
   bool use_static_schedule  = false; // Forces the use of a static schedule
   if(controls.isParameter("schedule")) {
@@ -304,26 +335,45 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
       use_static_schedule  = true;
     }
   }
+  if(use_teams) {
+    int team_size = -1;
+    int vector_length = -1;
+    int64_t rows_per_thread = -1;
 
-  int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
-  int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
+    // Note on 03/24/20, lbv: We can use the controls
+    // here to allow the user to pass in some tunning
+    // parameters.
+    if(controls.isParameter("team size"))       {team_size       = std::stoi(controls.getParameter("team size"));}
+    if(controls.isParameter("vector length"))   {vector_length   = std::stoi(controls.getParameter("vector length"));}
+    if(controls.isParameter("rows per thread")) {rows_per_thread = std::stoll(controls.getParameter("rows per thread"));}
 
-  SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
+    int64_t rows_per_team = spmv_launch_parameters<execution_space>(A.numRows(),A.nnz(),rows_per_thread,team_size,vector_length);
+    int64_t worksets = (y.extent(0)+rows_per_team-1)/rows_per_team;
 
-  if(((A.nnz()>10000000) || use_dynamic_schedule) && !use_static_schedule) {
-    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
-    if(team_size<0)
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
+    SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,rows_per_team);
+
+    if(((A.nnz()>10000000) || use_dynamic_schedule) && !use_static_schedule) {
+      Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
+      if(team_size<0)
+        policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
+      else
+        policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
+      Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>",policy,func);
+    } else {
+      Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
+      if(team_size<0)
+        policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
+      else
+        policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
+      Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",policy,func);
+    }
+  }
+  else {
+    SPMV_Functor<AMatrix,XVector,YVector,dobeta,conjugate> func (alpha,A,x,beta,y,1);
+    if(((A.nnz()>10000000) || use_dynamic_schedule) && !use_static_schedule)
+      Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>",Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(0, A.numRows()),func);
     else
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>",policy,func);
-  } else {
-    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
-    if(team_size<0)
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
-    else
-      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
-    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",policy,func);
+      Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(0, A.numRows()),func);
   }
 }
 
@@ -339,7 +389,8 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
                            typename YVector::const_value_type& beta,
                            const YVector& y)
 {
-  typedef typename AMatrix::ordinal_type ordinal_type;
+  using ordinal_type = typename AMatrix::non_const_ordinal_type;
+  using size_type = typename AMatrix::non_const_size_type;
 
   if (A.numRows () <= static_cast<ordinal_type> (0)) {
     return;
@@ -351,15 +402,23 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
     KokkosBlas::scal (y, beta, y);
   }
 
-  typedef typename AMatrix::size_type size_type;
-
   // Assuming that no row contains duplicate entries, NNZPerRow
   // cannot be more than the number of columns of the matrix.  Thus,
   // the appropriate type is ordinal_type.
-  const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / A.numRows ());
+  const ordinal_type NNZPerRow = A.nnz () / A.numRows ();
 
   int vector_length = 1;
-  while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<32) ) vector_length*=2;
+  int max_vector_length = 1;
+#ifdef KOKKOS_ENABLE_CUDA
+  if(std::is_same<execution_space, Kokkos::Cuda>::value)
+    max_vector_length = 32;
+#endif
+#ifdef KOKKOS_ENABLE_HIP
+  if(std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
+    max_vector_length = 64;
+#endif
+  while( (vector_length*2*3 <= NNZPerRow) && (vector_length < max_vector_length) )
+    vector_length*=2;
 
   typedef SPMV_Transpose_Functor<AMatrix, XVector, YVector, conjugate> OpType;
 
@@ -367,9 +426,9 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
 
   OpType op (alpha, A, x, y);
 
-  const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space > (NNZPerRow);
-  const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-  const int rows_per_team = rows_per_thread * team_size;
+  const ordinal_type rows_per_thread = RowsPerThread<typename AMatrix::execution_space > (NNZPerRow);
+  const ordinal_type team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+  const ordinal_type rows_per_team = rows_per_thread * team_size;
   op.rows_per_team = rows_per_team;
   const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
   Kokkos::parallel_for("KokkosSparse::spmv<Transpose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
@@ -626,6 +685,65 @@ struct SPMV_MV_LayoutLeft_Functor {
     }
   }
 
+  template<int UNROLL>
+  KOKKOS_INLINE_FUNCTION void
+  strip_mine (const ordinal_type& iRow, const ordinal_type& kk) const
+  {
+    y_value_type sum[UNROLL];
+
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+    for (int k = 0; k < UNROLL; ++k) {
+      sum[k] = Kokkos::Details::ArithTraits<y_value_type>::zero ();
+    }
+
+    const auto row = m_A.rowConst (iRow);
+
+    // The correct type of iEntry is ordinal_type, the type of the
+    // number of columns in the (local) matrix.  This is because we
+    // assume either that rows have no duplicate entries, or that rows
+    // never have enough duplicate entries to overflow ordinal_type.
+
+    for(ordinal_type iEntry = 0; iEntry < row.length; iEntry++)
+    {
+      const A_value_type val = conjugate ?
+        Kokkos::Details::ArithTraits<A_value_type>::conj (row.value(iEntry)) :
+        row.value(iEntry);
+      const ordinal_type ind = row.colidx(iEntry);
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        if(doalpha == 1)
+          sum[k] += val * m_x(ind, kk + k);
+        else if(doalpha == -1)
+          sum[k] -= val * m_x(ind, kk + k);
+        else
+          sum[k] += alpha * val * m_x(ind, kk + k);
+      }
+    }
+
+    if(doalpha == -1)
+
+    if (dobeta == 0) {
+      for(ordinal_type k = 0; k < UNROLL; k++)
+        m_y(iRow, kk + k) = sum[k];
+    } else if (dobeta == 1) {
+      for(ordinal_type k = 0; k < UNROLL; k++)
+        m_y(iRow, kk + k) = m_y(iRow, kk + k) + sum[k];
+    } else if (dobeta == -1) {
+      for(ordinal_type k = 0; k < UNROLL; k++)
+        m_y(iRow, kk + k) = -m_y(iRow, kk + k) + sum[k];
+    } else {
+      for(ordinal_type k = 0; k < UNROLL; k++)
+        m_y(iRow, kk + k) = beta * m_y(iRow, kk + k) + sum[k];
+    }
+  }
+
   KOKKOS_INLINE_FUNCTION void
   strip_mine_1 (const team_member& dev, const ordinal_type& iRow) const
   {
@@ -665,6 +783,141 @@ struct SPMV_MV_LayoutLeft_Functor {
       }
     });
   }
+
+  KOKKOS_INLINE_FUNCTION void
+  strip_mine_1 (const ordinal_type& iRow) const
+  {
+    const auto row = m_A.rowConst (iRow);
+
+    // The correct type of iEntry is ordinal_type, the type of the
+    // number of columns in the (local) matrix.  This is because we
+    // assume either that rows have no duplicate entries, or that rows
+    // never have enough duplicate entries to overflow ordinal_type.
+
+    y_value_type sum = y_value_type();
+    for(ordinal_type iEntry = 0; iEntry < row.length; iEntry++)
+    {
+      const A_value_type val = conjugate ?
+          Kokkos::Details::ArithTraits<A_value_type>::conj (row.value(iEntry)) :
+          row.value(iEntry);
+      sum += val * m_x(row.colidx(iEntry),0);
+    }
+    if (doalpha == -1) {
+      sum = -sum;
+    } else if (doalpha != 1) {
+      sum *= alpha;
+    }
+
+    if (dobeta == 0) {
+      m_y(iRow, 0) = sum ;
+    } else if (dobeta == 1) {
+      m_y(iRow, 0) += sum ;
+    } else if (dobeta == -1) {
+      m_y(iRow, 0) = -m_y(iRow, 0) +  sum;
+    } else {
+      m_y(iRow, 0) = beta * m_y(iRow, 0) + sum;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const ordinal_type& iRow) const
+  {
+    // mfh 20 Mar 2015, 07 Jun 2016: This is ordinal_type because it
+    // needs to have the same type as n.
+    ordinal_type kk = 0;
+
+#ifdef KOKKOS_FAST_COMPILE
+    for (; kk + 4 <= n; kk += 4) {
+      strip_mine<4>(dev, iRow, kk);
+    }
+    for( ; kk < n; ++kk) {
+      strip_mine<1>(dev, iRow, kk);
+    }
+#else
+#  if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+      if ((n > 8) && (n % 8 == 1)) {
+        strip_mine<9>(iRow, kk);
+        kk += 9;
+      }
+      for(; kk + 8 <= n; kk += 8)
+        strip_mine<8>(iRow, kk);
+      if(kk < n) {
+        switch(n - kk) {
+#  else // NOT a GPU
+      if ((n > 16) && (n % 16 == 1)) {
+        strip_mine<17>(iRow, kk);
+        kk += 17;
+      }
+
+      for (; kk + 16 <= n; kk += 16) {
+        strip_mine<16>(iRow, kk);
+      }
+
+      if(kk < n) {
+        switch(n - kk) {
+        case 15:
+          strip_mine<15>(iRow, kk);
+          break;
+
+        case 14:
+          strip_mine<14>(iRow, kk);
+          break;
+
+        case 13:
+          strip_mine<13>(iRow, kk);
+          break;
+
+        case 12:
+          strip_mine<12>(iRow, kk);
+          break;
+
+        case 11:
+          strip_mine<11>(iRow, kk);
+          break;
+
+        case 10:
+          strip_mine<10>(iRow, kk);
+          break;
+
+        case 9:
+          strip_mine<9>(iRow, kk);
+          break;
+
+        case 8:
+          strip_mine<8>(iRow, kk);
+          break;
+#  endif // if/else: __CUDA_ARCH__ or __HIP_DEVICE_COMPILE__
+        case 7:
+          strip_mine<7>(iRow, kk);
+          break;
+
+        case 6:
+          strip_mine<6>(iRow, kk);
+          break;
+
+        case 5:
+          strip_mine<5>(iRow, kk);
+          break;
+
+        case 4:
+          strip_mine<4>(iRow, kk);
+          break;
+
+        case 3:
+          strip_mine<3>(iRow, kk);
+          break;
+
+        case 2:
+          strip_mine<2>(iRow, kk);
+          break;
+
+        case 1:
+          strip_mine_1(iRow);
+          break;
+        }
+      }
+#endif // KOKKOS_FAST_COMPILE
+    }
 
 
   KOKKOS_INLINE_FUNCTION void
@@ -794,7 +1047,8 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
                                  const typename YVector::non_const_value_type& beta,
                                  const YVector& y)
 {
-  typedef typename AMatrix::ordinal_type ordinal_type;
+  using ordinal_type = typename AMatrix::non_const_ordinal_type;
+  using size_type = typename AMatrix::non_const_size_type;
 
   if (A.numRows () <= static_cast<ordinal_type> (0)) {
     return;
@@ -806,16 +1060,18 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
     return;
   }
   else {
-    typedef typename AMatrix::size_type size_type;
 
     // Assuming that no row contains duplicate entries, NNZPerRow
     // cannot be more than the number of columns of the matrix.  Thus,
     // the appropriate type is ordinal_type.
-    const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / A.numRows ());
+    const ordinal_type NNZPerRow = A.nnz () / A.numRows ();
 
-    int vector_length = 1;
-    if(KokkosKernels::Impl::kk_is_gpu_exec_space<typename AMatrix::execution_space>())
-      while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<8) ) vector_length*=2;
+    bool use_teams = KokkosKernels::Impl::kk_is_gpu_exec_space<typename AMatrix::execution_space>();
+    ordinal_type vector_length = 1;
+    if(use_teams) {
+      while( (vector_length*2*3 <= NNZPerRow) && (vector_length<8) )
+        vector_length *= 2;
+    }
 
 #ifndef KOKKOS_FAST_COMPILE // This uses templated functions on doalpha and dobeta and will produce 16 kernels
 
@@ -825,17 +1081,17 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
 
     typename AMatrix::const_ordinal_type nrow = A.numRows();
 
-    // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-    // instead of int?  For example, if the number of threads is 1,
-    // then this is just the number of rows.  Ditto for rows_per_team.
-    // team_size is a hardware resource thing so it might legitimately
-    // be int.
-    const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-    const int rows_per_team = rows_per_thread * team_size;
-    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
-       ( nteams , team_size , vector_length ) , op );
+    if(use_teams) {
+      const ordinal_type rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+      const ordinal_type team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+      const ordinal_type rows_per_team = rows_per_thread * team_size;
+      const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
+      Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>", Kokkos::TeamPolicy< typename AMatrix::execution_space >
+         ( nteams , team_size , vector_length ) , op );
+    }
+    else {
+      Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>", Kokkos::RangePolicy< typename AMatrix::execution_space >( 0, nrow ), op );
+    }
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta
 
@@ -846,18 +1102,18 @@ spmv_alpha_beta_mv_no_transpose (const typename YVector::non_const_value_type& a
 
     OpType op (alpha, A, x, beta, y, RowsPerThread<typename AMatrix::execution_space> (NNZPerRow), vector_length);
 
-    // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-    // instead of int?  For example, if the number of threads is 1,
-    // then this is just the number of rows.  Ditto for rows_per_team.
-    // team_size is a hardware resource thing so it might legitimately
-    // be int.
-    const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-    const int rows_per_team = rows_per_thread * team_size;
-    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
-       ( nteams , team_size , vector_length ) , op );
-
+    if(use_teams) {
+      const ordinal_type rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+      const ordinal_type team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+      const ordinal_type rows_per_team = rows_per_thread * team_size;
+      const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
+      Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
+         ( nteams , team_size , vector_length ) , op );
+    }
+    else {
+      Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",  Kokkos::RangePolicy< typename AMatrix::execution_space >
+         ( 0, nrow ) , op );
+    }
 #endif // KOKKOS_FAST_COMPILE
   }
 }
@@ -875,7 +1131,8 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
                               const typename YVector::non_const_value_type& beta,
                               const YVector& y)
 {
-  typedef typename AMatrix::ordinal_type ordinal_type;
+  using ordinal_type = typename AMatrix::non_const_ordinal_type;
+  using size_type = typename AMatrix::non_const_size_type;
 
   if (A.numRows () <= static_cast<ordinal_type> (0)) {
     return;
@@ -895,10 +1152,12 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
     // the appropriate type is ordinal_type.
     const ordinal_type NNZPerRow = static_cast<ordinal_type> (A.nnz () / A.numRows ());
 
-    int vector_length = 1;
+    ordinal_type vector_length = 1;
     //Transpose functor uses atomics which can't be vectorized on CPU
-    if(KokkosKernels::Impl::kk_is_gpu_exec_space<typename AMatrix::execution_space>())
-      while( (static_cast<ordinal_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<8) ) vector_length*=2;
+    if(KokkosKernels::Impl::kk_is_gpu_exec_space<typename AMatrix::execution_space>()) {
+      while( (vector_length*2*3 <= NNZPerRow) && (vector_length<8) )
+        vector_length*=2;
+    }
 
 #ifndef KOKKOS_FAST_COMPILE // This uses templated functions on doalpha and dobeta and will produce 16 kernels
 
@@ -906,16 +1165,11 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
       doalpha, dobeta, conjugate> OpType;
     OpType op (alpha, A, x, beta, y);
 
-    typename AMatrix::const_ordinal_type nrow = A.numRows();
+    const ordinal_type nrow = A.numRows();
 
-    // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-    // instead of int?  For example, if the number of threads is 1,
-    // then this is just the number of rows.  Ditto for rows_per_team.
-    // team_size is a hardware resource thing so it might legitimately
-    // be int.
-    const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-    const int rows_per_team = rows_per_thread * team_size;
+    const ordinal_type rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+    const ordinal_type team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+    const ordinal_type rows_per_team = rows_per_thread * team_size;
     op.rows_per_team = rows_per_team;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for ("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
@@ -930,14 +1184,9 @@ spmv_alpha_beta_mv_transpose (const typename YVector::non_const_value_type& alph
 
     OpType op (alpha, A, x, beta, y);
 
-    // FIXME (mfh 07 Jun 2016) Shouldn't we use ordinal_type here
-    // instead of int?  For example, if the number of threads is 1,
-    // then this is just the number of rows.  Ditto for rows_per_team.
-    // team_size is a hardware resource thing so it might legitimately
-    // be int.
-    const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
-    const int team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
-    const int rows_per_team = rows_per_thread * team_size;
+    const ordinal_type rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
+    const ordinal_type team_size = Kokkos::TeamPolicy<typename AMatrix::execution_space>(rows_per_thread, Kokkos::AUTO, vector_length).team_size_recommended(op, Kokkos::ParallelForTag());
+    const ordinal_type rows_per_team = rows_per_thread * team_size;
     op.rows_per_team = rows_per_team;
     const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",  Kokkos::TeamPolicy< typename AMatrix::execution_space >
