@@ -50,6 +50,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Complex.hpp>
+#include <Kokkos_Macros.hpp>
 
 #ifdef HAVE_KOKKOSKERNELS_QUADMATH
 #  include <quadmath.h>
@@ -63,16 +64,6 @@
 #ifdef __CUDACC__
 #  include <math_constants.h>
 #endif
-//
-// mfh 24 Dec 2013: Temporary measure for testing; will go away.
-//
-#ifndef KOKKOS_FORCEINLINE_FUNCTION
-#  ifdef __CUDA_ARCH__
-#    define KOKKOS_FORCEINLINE_FUNCTION inline __host__ __device__
-#  else
-#    define KOKKOS_FORCEINLINE_FUNCTION
-#  endif // __CUDA_ARCH__
-#endif // KOKKOS_FORCEINLINE_FUNCTION
 
 namespace { // anonymous
 
