@@ -189,7 +189,11 @@ int least_set_bit( unsigned i ){
 
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit( unsigned long i ){
+#if defined(__HIP_DEVICE_COMPILE__)
+  return __ffsll(static_cast<unsigned long long>(i));
+#else
   return __ffsll(i);
+#endif
 }
 
 
@@ -207,7 +211,11 @@ int least_set_bit( int i ){
 
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit( long i ){
+#if defined(__HIP_DEVICE_COMPILE__)
+  return __ffsll(static_cast<long long>(i));
+#else
   return __ffsll(i);
+#endif
 }
 
 KOKKOS_FORCEINLINE_FUNCTION
