@@ -371,7 +371,7 @@ public:
       return this->team_work_size;
     }
     else {
-      if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+      if (my_exec_space == KokkosKernels::Impl::Exec_CUDA || my_exec_space == KokkosKernels::Impl::Exec_HIP) {
         return team_size;
       }
       else {

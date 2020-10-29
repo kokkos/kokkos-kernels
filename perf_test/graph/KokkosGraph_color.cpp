@@ -579,6 +579,15 @@ int main (int argc, char ** argv){
 
 #endif
 
+#if defined( KOKKOS_ENABLE_HIP )
+  if (params.use_hip) {
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace, Kokkos::Experimental::HIPSpace>(
+        params
+        );
+  }
+#endif
+
 #if defined( KOKKOS_ENABLE_SERIAL )
   if (params.use_serial) {
 #ifdef KOKKOSKERNELS_MULTI_MEM

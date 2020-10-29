@@ -64,13 +64,20 @@ namespace Impl {
 // On GPUs it is more important to not jump around in global memory, i.e. have coallesced loads
 template<class ExecSpace, class LayoutA, class LayoutAScratch>
 struct impl_gemm_choose_copy_layout {
-  typedef LayoutAScratch type;
+  using type = LayoutAScratch;
 };
 
 #ifdef KOKKOS_ENABLE_CUDA
 template<class LayoutA, class LayoutAScratch>
 struct impl_gemm_choose_copy_layout<Kokkos::Cuda,LayoutA,LayoutAScratch> {
-  typedef LayoutA type;
+  using type = LayoutA;
+};
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template<class LayoutA, class LayoutAScratch>
+struct impl_gemm_choose_copy_layout<Kokkos::Experimental::HIP,LayoutA,LayoutAScratch> {
+  using type = LayoutA;
 };
 #endif
 
@@ -392,7 +399,7 @@ KOKKOS_INLINE_FUNCTION
 void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const ViewTypeA& A, const ViewTypeB& B) {
   typedef typename ViewTypeC::non_const_value_type ScalarC;
 // GNU COMPILER BUG WORKAROUND
-#if defined(KOKKOS_COMPILER_GNU) || !defined(__CUDA_ARCH__)
+#if defined(KOKKOS_COMPILER_GNU) && (!defined(__CUDA_ARCH__) || !defined(__HIP_DEVICE_COMPILE__))
   int blockA0 = A.extent_int(0);
   int blockA1 = A.extent_int(1);
   int blockB1 = B.extent_int(1);

@@ -144,6 +144,10 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
+      return row_index;
+#endif
     }
   }
 
@@ -481,7 +485,7 @@ struct KokkosSPGEMM
 //
 //  Policy typedefs with tags found in: KokkosSparse_spgemm_impl.hpp
 //
-//  if Cuda enabled :
+//  if GPU:
 //    "KokkosSparse::NumericCMEM::KKSPEED::GPU" : gpu_team_policy_t,  i.e. GPUTag
 //
 //  else :
@@ -519,7 +523,7 @@ void
 
   Kokkos::Impl::Timer numeric_speed_timer_with_free;
 
-  if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
     //allocate memory for begins and next to be used by the hashmap
     nnz_lno_temp_work_view_t beginsC
     (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.extent(0));

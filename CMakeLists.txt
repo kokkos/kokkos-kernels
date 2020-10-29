@@ -140,6 +140,15 @@ ELSE()
     BOOL
     "Whether to restrict testing to ETI types. Default: ON"
     )
+
+  KOKKOSKERNELS_ADD_OPTION(
+    ENABLED_COMPONENTS
+    "ALL"
+    STRING
+    "A list of components to enable in testing and building"
+    VALID_ENTRIES BATCHED BLAS GRAPH SPARSE ALL
+  )
+
   # ==================================================================
   # Enable Device Types for ETI (exec- + mem-space)
   # ==================================================================

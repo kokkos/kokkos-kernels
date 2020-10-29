@@ -51,7 +51,7 @@ namespace KokkosKernels{
 namespace Impl{
 
 // POP COUNT function returns the number of set bits
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) || defined(__HIP_DEVICE_COMPILE__)
 KOKKOS_FORCEINLINE_FUNCTION
 int pop_count( unsigned i ){
   return __popc(i);
@@ -181,7 +181,7 @@ int pop_count(  long long i ){
 
 // least_set_bit function returns the position of right most set bit
 
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) || defined(__HIP_DEVICE_COMPILE__)
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit( unsigned i ){
   return __ffs(i);
@@ -189,7 +189,11 @@ int least_set_bit( unsigned i ){
 
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit( unsigned long i ){
+#if defined(__HIP_DEVICE_COMPILE__)
+  return __ffsll(static_cast<unsigned long long>(i));
+#else
   return __ffsll(i);
+#endif
 }
 
 
@@ -207,7 +211,11 @@ int least_set_bit( int i ){
 
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit( long i ){
+#if defined(__HIP_DEVICE_COMPILE__)
+  return __ffsll(static_cast<long long>(i));
+#else
   return __ffsll(i);
+#endif
 }
 
 KOKKOS_FORCEINLINE_FUNCTION
