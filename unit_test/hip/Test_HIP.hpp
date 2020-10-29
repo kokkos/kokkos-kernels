@@ -18,4 +18,4 @@ protected:
 };
 
 #define TestCategory hip
-#define TestExecSpace Kokkos::Experimental::HIPSpace
+#define TestExecSpace Kokkos::Experimental::HIP

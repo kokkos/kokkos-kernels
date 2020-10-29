@@ -137,26 +137,23 @@ IF (KOKKOS_ENABLE_HIP)
     COMPONENTS sparse
   )
   
-  # APPEND_GLOB(HIP_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Graph*.cpp)
-
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   graph_hip
-  #   SOURCES
-  #     Test_Main.cpp
-  #     ${HIP_GRAPH_SOURCES}
-  #   COMPONENTS graph
-  # )
+  APPEND_GLOB(HIP_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Graph*.cpp)
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    graph_hip
+    SOURCES
+      Test_Main.cpp
+      ${HIP_GRAPH_SOURCES}
+    COMPONENTS graph
+  )
   
-  # #currently float 128 test is not working. So common tests are explicitly added.  
-  # APPEND_GLOB(HIP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Common*.cpp)
-  
-
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   common_hip
-  #   SOURCES
-  #     Test_Main.cpp
-  #     ${HIP_COMMON_SOURCES}
-  # )
+  #currently float 128 test is not working. So common tests are explicitly added.  
+  APPEND_GLOB(HIP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Common*.cpp)
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    common_hip
+    SOURCES
+      Test_Main.cpp
+      ${HIP_COMMON_SOURCES}
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMP)
