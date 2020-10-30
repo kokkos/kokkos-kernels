@@ -517,7 +517,17 @@ struct GEMMImpl {
       ViewTypeBScratch::shmem_size() +
       ViewTypeCScratch::shmem_size();
 
+#if defined(KOKKOS_ENABLE_HIP)
+    // Note lbv, 10/29/20: The LaunchBounds<384,2> leads
+    // to an error with HIP as the heuristics on that platform
+    // yield an optimal_num_blocks=0 which means no ressources
+    // are allocated... Switching to LaunchBounds<384,2> fixes
+    // that problem but I'm not sure if that it a good perf
+    // parameter or why it is set to 2 for Cuda?
+    Kokkos::TeamPolicy<ExecSpace,Kokkos::LaunchBounds<384,0>> policy(num_blocks_0*num_blocks_1,team_size,vector_length);
+#else
     Kokkos::TeamPolicy<ExecSpace,Kokkos::LaunchBounds<384,2>> policy(num_blocks_0*num_blocks_1,team_size,vector_length);
+#endif
 
     Kokkos::parallel_for(impl_gemm_label<TransposeA,TransposeB>::label,policy.set_scratch_size(scratch_level,Kokkos::PerTeam(scratch_memory_size)),*this);
   }
