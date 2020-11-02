@@ -73,7 +73,7 @@ IF (KokkosKernels_INSTALL_TESTING)
   SET(KOKKOSKERNELS_ENABLE_EXAMPLES ON)
   # Don't build, load installed kernels
   FIND_PACKAGE(KokkosKernels REQUIRED)
-  # Still need to figure out which backends
+  # Still need to figure out which backends and components
   INCLUDE(cmake/kokkos_backends.cmake)
   # Only build the tests
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(test_common)
@@ -90,14 +90,14 @@ ELSE()
    KOKKOS_CHECK(OPTIONS CUDA_UVM RETURN_VALUE KOKKOS_ENABLE_CUDA_UVM)
   ENDIF()
 
-  INCLUDE(cmake/kokkos_backends.cmake)
-
   #This will collect imported TPLs we need to export
   #in our config file
   GLOBAL_SET(KOKKOSKERNELS_TPL_EXPORTS)
 
   # If building in debug mode, define the HAVE_KOKKOSKERNELS_DEBUG macro.
   KOKKOSKERNELS_ADD_DEBUG_OPTION()
+
+  INCLUDE(cmake/kokkos_backends.cmake)
 
   #
   # "Optimization level" for KokkosKernels computational kernels.  The
@@ -141,13 +141,6 @@ ELSE()
     "Whether to restrict testing to ETI types. Default: ON"
     )
 
-  KOKKOSKERNELS_ADD_OPTION(
-    ENABLED_COMPONENTS
-    "ALL"
-    STRING
-    "A list of components to enable in testing and building"
-    VALID_ENTRIES BATCHED BLAS GRAPH SPARSE ALL
-  )
 
   # ==================================================================
   # Enable Device Types for ETI (exec- + mem-space)
@@ -176,6 +169,14 @@ ELSE()
   INCLUDE(cmake/kokkoskernels_tpls.cmake)
   INCLUDE(cmake/kokkoskernels_features.cmake)
   INCLUDE(cmake/kokkos_requirements.cmake)
+  # Skip building Kokkos Kernels if we are doing an installation test
+  ADD_SUBDIRECTORY(src)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(test_common)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
+  KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
+
+  KOKKOSKERNELS_PACKAGE_POSTPROCESS()
   # ==================================================================
   # CMake Summary
   # ==================================================================
@@ -193,14 +194,8 @@ ELSE()
     PAD_STRING("${TPL}:" TPL_PADDED 12)
     MESSAGE("   ${TPL_PADDED} ${${TPL}_FOUND_INFO}")
   ENDFOREACH()
+  MESSAGE("")
+  MESSAGE("KokkosKernels Components: ${KOKKOSKERNELS_ENABLED_COMPONENTS}")
   MESSAGE("=======================")
   MESSAGE("")
-  # Skip building Kokkos Kernels if we are doing an installation test
-  ADD_SUBDIRECTORY(src)
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(test_common)
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
-  KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
-
-  KOKKOSKERNELS_PACKAGE_POSTPROCESS()
 ENDIF()
