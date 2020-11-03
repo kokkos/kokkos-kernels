@@ -1385,17 +1385,25 @@ public:
   static constexpr bool has_infinity = true;
   static KOKKOS_FORCEINLINE_FUNCTION long double infinity() { return HUGE_VALL; }
 
-  static bool isInf (const val_type& x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type& x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
     #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    return isinf (static_cast<double>(x));
+#else
     return isinf (x);
+#endif
   }
-  static bool isNan (const val_type& x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type& x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
     #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    return isnan (static_cast<double>(x));
+#else
     return isnan (x);
+#endif
   }
   static mag_type abs (const val_type& x) {
     return ::fabsl (x);
