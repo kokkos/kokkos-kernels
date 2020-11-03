@@ -1037,7 +1037,7 @@ public:
 
     // Apparently, std::numeric_limits<ScalarType>::is_signed is 1
     // only for real numbers.
-#if defined(HAVE_KOKKOS_HALFMATH)
+#if defined(KOKKOS_HALF_T_IS_FLOAT)
     if (std::is_same<ScalarType, Kokkos::Experimental::half_t>::value) {
       if (AT::is_signed != 0x1)
         FAILURE();
@@ -1052,7 +1052,7 @@ public:
         FAILURE();
       }
     }
-#endif // HAVE_KOKKOS_HALFMATH
+#endif // KOKKOS_HALF_T_IS_FLOAT
 
     if (AT::is_complex) {
       FAILURE();
@@ -1561,13 +1561,13 @@ int runAllArithTraitsDeviceTests (std::ostream& out, const int verbose)
   // Built-in real floating-point types
   //
 
-#if defined(HAVE_KOKKOS_HALFMATH)
+#if defined(KOKKOS_HALF_T_IS_FLOAT)
   TRACE();
   success = success && curSuccess;
   curSuccess =
       testArithTraitsOnDevice<Kokkos::Experimental::half_t, DeviceType>(
           out, verbose);
-#endif // HAVE_KOKKOS_HALFMATH
+#endif // KOKKOS_HALF_T_IS_FLOAT
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<float, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<double, DeviceType> (out, verbose);
 
@@ -1645,12 +1645,12 @@ int runAllArithTraitsHostTests (std::ostream& out, const int verbose)
   // Kokkos' complex floating-point types
   //
 
-#if defined(HAVE_KOKKOS_HALFMATH)
+#if defined(KOKKOS_HALF_T_IS_FLOAT)
   success = success && curSuccess;
   TRACE();
   curSuccess = testArithTraitsOnHost<Kokkos::Experimental::half_t, DeviceType>(
       out, verbose);
-#endif // HAVE_KOKKOS_HALFMATH
+#endif // KOKKOS_HALF_T_IS_FLOAT
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<float>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<double>, DeviceType> (out, verbose);
   //success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<long double>, DeviceType> (out, verbose);

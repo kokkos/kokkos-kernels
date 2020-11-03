@@ -170,10 +170,6 @@ ELSE()
   # ==================================================================
   INCLUDE(cmake/kokkoskernels_eti_layouts.cmake)
   # ==================================================================
-  # Determine half precision support
-  # ==================================================================
-  INCLUDE(cmake/HalfPrecisionSupport.cmake)
-  # ==================================================================
   # Enable Third Party Libraries
   # ==================================================================
   INCLUDE(cmake/kokkoskernels_tpls.cmake)
@@ -190,9 +186,6 @@ ELSE()
   MESSAGE("   Ordinals: ${ORDINAL_LIST}")
   MESSAGE("   Offsets:  ${OFFSET_LIST}")
   MESSAGE("   Layouts:  ${LAYOUT_LIST}")
-  MESSAGE("")
-  MESSAGE("KokkosKernels Half Precision Types")
-  MESSAGE("   HAVE_KOKKOS_HALFMATH: ${HAVE_KOKKOS_HALFMATH}")
   MESSAGE("")
   MESSAGE("KokkosKernels TPLs")
   FOREACH(TPL ${KOKKOSKERNELS_TPL_LIST})

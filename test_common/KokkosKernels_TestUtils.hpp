@@ -106,9 +106,9 @@ namespace Test {
     }
   }
 
-  #if defined(HAVE_KOKKOS_HALFMATH)
+  #if defined(KOKKOS_HALF_T_IS_FLOAT)
   using halfScalarType = Kokkos::Experimental::half_t;
-  #endif // HAVE_KOKKOS_HALFMATH
+  #endif // KOKKOS_HALF_T_IS_FLOAT
 
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
   struct SharedVanillaGEMM {

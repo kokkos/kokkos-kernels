@@ -45,9 +45,9 @@
 #ifndef KOKKOSKERNELS_HALF_HPP
 #define KOKKOSKERNELS_HALF_HPP
 
-#if defined(HAVE_KOKKOS_HALFMATH)
+#if defined(KOKKOS_HALF_T_IS_FLOAT)
 #include "Kokkos_Half.hpp"
-#endif // HAVE_KOKKOS_HALFMATH
+#endif // KOKKOS_HALF_T_IS_FLOAT
 
 namespace KokkosKernels {
     namespace Experimental {
