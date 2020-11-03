@@ -292,7 +292,7 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
   return;
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class ExecutionSpace>
 struct parallel_blas_trmm {
   trmm_args_t trmm_args_;
@@ -312,7 +312,7 @@ struct parallel_blas_trmm {
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
-#if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -335,7 +335,7 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
+            << " disabled since KOKKOS_ENABLE_CUDA and/or KOKKOS_ENABLE_HIP is defined." << std::endl;
   __trmm_output_csv_row(options, trmm_args, -1);
 #endif  // !KOKKOS_ENABLE_CUDA
   return;

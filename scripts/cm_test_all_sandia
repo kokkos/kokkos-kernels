@@ -640,7 +640,7 @@ elif [ "$MACHINE" = "mayer" ]; then
   SPACK_HOST_ARCH="+armv8_tx2"
 elif [ "$MACHINE" = "caraway" ]; then
   SKIP_HWLOC=True
-  BUILD_ONLY=True
+  # BUILD_ONLY=True
   # report_and_log_test_result: only testing compilation of code for now,
   #   output description and success based only on build succes; build time output (no run-time)
 
