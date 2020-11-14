@@ -83,7 +83,8 @@ template<typename DeviceType,
     using ats = Kokkos::Details::ArithTraits<host_value_type>;
 
     /// randomized input testing views
-    ScalarType alpha = 1.5, beta = 3.0;
+    ScalarType alpha = ScalarType(1.5);
+    ScalarType beta = ScalarType(3.0);
 
     ViewType
       a_expected("a_expected", N, matAdim1, matAdim2), a1("a1", N, matAdim1, matAdim2),
