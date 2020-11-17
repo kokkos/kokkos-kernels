@@ -69,7 +69,7 @@ namespace KokkosBatched {
             *__restrict__ pA = A+i*as0,
             *__restrict__ pB = B+j*bs1;
             
-          ValueType c = 0;
+          ValueType c = ValueType(0);
           for (int p=0;p<k;++p) 
             c += pA[p*as1]*pB[p*bs0];
           C[i*cs0+j*cs1] += alpha*c;
