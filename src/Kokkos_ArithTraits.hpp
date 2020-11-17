@@ -1370,6 +1370,7 @@ public:
 // CUDA does not support long double in device functions, so none of
 // the class methods in this specialization are marked as device
 // functions.
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 template<>
 class ArithTraits<long double> {
 public:
@@ -1383,27 +1384,15 @@ public:
   static const bool is_complex = false;
 
   static constexpr bool has_infinity = true;
-  static KOKKOS_FORCEINLINE_FUNCTION long double infinity() { return HUGE_VALL; }
+  static long double infinity() { return HUGE_VALL; }
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type& x) {
-    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+  static bool isInf (const val_type& x) {
     using std::isinf;
-    #endif
-#if defined(KOKKOS_ENABLE_HIP)
-    return isinf (static_cast<double>(x));
-#else
     return isinf (x);
-#endif
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type& x) {
-    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+  static bool isNan (const val_type& x) {
     using std::isnan;
-    #endif
-#if defined(KOKKOS_ENABLE_HIP)
-    return isnan (static_cast<double>(x));
-#else
     return isnan (x);
-#endif
   }
   static mag_type abs (const val_type& x) {
     return ::fabsl (x);
@@ -1537,7 +1526,8 @@ public:
   static mag_type rmax () {
     return LDBL_MAX;
   }
-};
+}; // long double specialization
+#endif // KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 
 #ifdef HAVE_KOKKOSKERNELS_QUADMATH
 
