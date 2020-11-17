@@ -1367,9 +1367,9 @@ public:
 };
 
 
-// CUDA does not support long double in device functions, so none of
-// the class methods in this specialization are marked as device
-// functions.
+// CUDA and HIP do not support long double in device functions,
+// so none of the class methods in this specialization are marked
+// as device functions.
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 template<>
 class ArithTraits<long double> {
