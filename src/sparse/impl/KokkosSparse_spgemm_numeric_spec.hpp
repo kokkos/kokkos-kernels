@@ -55,6 +55,7 @@
 #include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
+#include "KokkosSparse_new_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"
 #include "KokkosSparse_spgemm_mkl_impl.hpp"
 #include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
@@ -313,12 +314,21 @@ struct SPGEMM_NUMERIC<KernelHandle,
     default:
 
     {
-      KokkosSPGEMM
-      <KernelHandle,
-      a_size_view_t_, a_lno_view_t, a_scalar_view_t,
-      b_size_view_t_, b_lno_view_t,  b_scalar_view_t>
-      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
-      kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
+
+      if(const char* env_p = std::getenv("NEW_SPGEMM")){
+	SPGEMM<KernelHandle> spgemm(handle, m, n, k, 
+				    row_mapA, entriesA, valuesA, transposeA, 
+				    row_mapB, entriesB, valuesB, transposeB);
+	spgemm.numeric(row_mapC, entriesC, valuesC);
+      }
+      else {
+	KokkosSPGEMM
+	  <KernelHandle,
+	   a_size_view_t_, a_lno_view_t, a_scalar_view_t,
+	   b_size_view_t_, b_lno_view_t,  b_scalar_view_t>
+	  kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
+	kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
+      }
     }
     break;
     case SPGEMM_SERIAL:

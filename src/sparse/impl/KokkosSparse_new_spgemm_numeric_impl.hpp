@@ -1,0 +1,95 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
+
+
+#include "KokkosKernels_Utils.hpp"
+
+namespace KokkosSparse{
+
+  namespace Impl{
+
+    template <typename HandleType>
+    struct SPGEMM <HandleType>::NumericFunctor
+    {
+ 
+      ordinal_t numRowsA;
+      ordinal_t numColsB;
+ 
+      const_row_map_t row_mapA;
+      const_entries_t entriesA;
+      const_values_t valuesA;
+
+      const_row_map_t row_mapB;
+      const_entries_t entriesB;
+      const_values_t valuesB;
+
+      NumericFunctor(ordinal_t numRowsA_, ordinal_t numColsB_,
+		     const_row_map_t row_mapA_, const_entries_t entriesA_, const_values_t valuesA_,
+		     const_row_map_t row_mapB_, const_entries_t entriesB_, const_values_t valuesB_):
+	numRowsA(numRowsA_), numColsB(numColsB_), 
+	row_mapA(row_mapA_), entriesA(entriesA_), valuesA(valuesA_), 
+	row_mapB(row_mapB_), entriesB(entriesB_), valuesB(valuesB_)
+      {
+	std::cout << "New SpGEMM Numeric Functor" << std::endl;
+      }
+
+    };
+
+    template <typename HandleType>
+    template <typename c_row_map_t>
+    void
+    SPGEMM<HandleType>::numeric_impl(c_row_map_t rowmapC_,
+				     entries_t entriesC_,
+				     values_t valuesC_)
+    {
+      std::cout << "New SpGEMM Numeric Implementation" << std::endl;
+
+      NumericFunctor(a_row_cnt, b_col_cnt,
+		     row_mapA, entriesA, valuesA,
+		     row_mapB, entriesB, valuesB);
+      
+    }
+
+  }
+}
