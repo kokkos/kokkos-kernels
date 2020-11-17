@@ -24,7 +24,7 @@ IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
     PROJECT(KokkosKernels CXX)
   ENDIF()
   SET(KokkosKernels_VERSION_MAJOR 3)
-  SET(KokkosKernels_VERSION_MINOR 1)
+  SET(KokkosKernels_VERSION_MINOR 2)
   SET(KokkosKernels_VERSION_PATCH 1)
 ENDIF()
 
