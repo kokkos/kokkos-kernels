@@ -25,7 +25,7 @@ void printReorderedMatrix(const rowmap_t& rowmapIn, const entries_t& entriesIn, 
       neighbors.push_back(nei);
     }
     std::sort(neighbors.begin(), neighbors.end());
-    lno_t it = 0;
+    size_t it = 0;
     for(lno_t j = 0; j < numVerts; j++)
     {
       if(it < neighbors.size() && j == neighbors[it])
