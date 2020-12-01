@@ -55,7 +55,7 @@ namespace Experimental {
 namespace Impl {
 
 template<typename rowmap_t, typename entries_t, typename lno_view_t>
-struct SerialBFS
+struct SerialRCM
 {
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t = typename entries_t::non_const_value_type;
@@ -67,7 +67,7 @@ struct SerialBFS
   host_rowmap_t rowmap;
   host_lno_view_t entries;
 
-  SerialBFS(const rowmap_t& rowmap_, const entries_t& entries_) :
+  SerialRCM(const rowmap_t& rowmap_, const entries_t& entries_) :
     numVerts(rowmap_.extent(0) - 1),
     rowmap(Kokkos::ViewAllocateWithoutInitializing("HostRowmap"), rowmap_.extent(0)),
     entries(Kokkos::ViewAllocateWithoutInitializing("HostEntries"), entries_.extent(0))

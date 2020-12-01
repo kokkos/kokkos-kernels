@@ -69,8 +69,8 @@ graph_rcm(const rowmap_t& rowmap, const colinds_t& colinds)
       numVerts--;
     return labels_t("RCM Labels", numVerts);
   }
-  Impl::SerialBFS<rowmap_t, colinds_t, labels_t> bfs(rowmap, colinds);
-  return bfs.rcm();
+  Impl::SerialRCM<rowmap_t, colinds_t, labels_t> algo(rowmap, colinds);
+  return algo.rcm();
 }
 
 }}  //namespace KokkosGraph::Experimental
