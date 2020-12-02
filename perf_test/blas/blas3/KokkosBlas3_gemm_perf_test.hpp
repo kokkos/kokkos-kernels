@@ -293,7 +293,7 @@ struct parallel_blas_gemm {
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_gemm_parallel_blas(options_t options, gemm_args_t gemm_args) {
-#if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -680,7 +680,7 @@ void __do_gemm_parallel_experiment3(options_t options, gemm_args_t gemm_args) {
   Kokkos::Timer timer;
   STATUS;
 
-  functor_type experiment4_functor(gemm_args);
+  functor_type experiment3_functor(gemm_args);
 
   auto team_size  = gemm_args.bp.team_size;
   auto vector_len = gemm_args.bp.vector_len;
@@ -688,7 +688,7 @@ void __do_gemm_parallel_experiment3(options_t options, gemm_args_t gemm_args) {
   for (uint32_t i = 0; i < warm_up_n; ++i) {
     Kokkos::parallel_for("parallelBatchedUntimedExperiment3Gemm",
                          policy_type(league_size, team_size, vector_len),
-                         experiment4_functor);
+                         experiment3_functor);
   }
   Kokkos::fence();
 
@@ -697,7 +697,7 @@ void __do_gemm_parallel_experiment3(options_t options, gemm_args_t gemm_args) {
   for (uint32_t i = 0; i < n; ++i) {
     Kokkos::parallel_for("parallelBatchedTimedExperiment3Gemm",
                          policy_type(league_size, team_size, vector_len),
-                         experiment4_functor);
+                         experiment3_functor);
   }
   Kokkos::fence();
 
