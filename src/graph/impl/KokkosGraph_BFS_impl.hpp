@@ -61,7 +61,6 @@ struct SerialRCM
   using lno_t = typename entries_t::non_const_value_type;
   using host_rowmap_t = Kokkos::View<size_type*, Kokkos::HostSpace>;
   using host_lno_view_t = Kokkos::View<lno_t*, Kokkos::HostSpace>;
-  using host_lno_2D_view_t = Kokkos::View<lno_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>;
 
   lno_t numVerts;
   host_rowmap_t rowmap;
@@ -123,7 +122,7 @@ struct SerialRCM
       std::sort(neighbors.begin(), neighbors.end(),
       [&](lno_t n1, lno_t n2) -> bool
       {
-        //return true of n1 has a lower degree than n2
+        //return true if n1 has a lower degree than n2
         return (rowmap(n1 + 1) - rowmap(n1)) < (rowmap(n2 + 1) - rowmap(n2));
       });
       //label and enqueue all unlabeled neighbors
