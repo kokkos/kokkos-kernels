@@ -660,7 +660,7 @@ void __do_gemm_parallel_experiment2(options_t options, gemm_args_t gemm_args) {
  * VectorGemm has not been implemented!
  * I think this experiment can be removed. TeamGemm calls TeamThreadRange
  * internally! TeamVectorGemm calls both TeamThreadRange and ThreadVectorRange
- * internnally!
+ * internally!
  */
 template <class TransAType, class TransBType, class BlockingType,
           class device_type>
