@@ -87,6 +87,8 @@ struct SerialRCM
       {
         periph = i;
         periphDeg = deg;
+        if(deg == 0)
+          break;
       }
     }
     return periph;
