@@ -23,9 +23,16 @@ using Handle  = KokkosKernels::Experimental::
 
 namespace GraphDemo
 {
-  constexpr Ordinal gridX = 15;
-  constexpr Ordinal gridY = 25;
-  constexpr Ordinal numVertices = gridX * gridY;
+  Ordinal gridX = 15;
+  Ordinal gridY = 25;
+  Ordinal numVertices = gridX * gridY;
+
+  void setGridDimensions(Ordinal newX, Ordinal newY)
+  {
+    gridX = newX;
+    gridY = newY;
+    numVertices = gridX * gridY;
+  }
 
   //Helper to get the vertex ID given grid coordinates
   Ordinal getVertexID(Ordinal x, Ordinal y)
