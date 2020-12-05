@@ -181,7 +181,7 @@ namespace KokkosBatched {
       /// X = P^T X
       TeamVectorApplyPivotMatrixBackwardInternal
       	::invoke(member,
-      		 nrhs, matrix_rank,
+      		 nrhs, n,
       		 p, ps0,
       		 X, xs0, xs1);
 
