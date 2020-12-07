@@ -49,8 +49,8 @@ namespace KokkosSparse{
 
   namespace Impl{
 
-    template <typename HandleType>
-    struct SPGEMM <HandleType>::NumericFunctor
+    template <typename HandleType, typename LayoutType>
+    struct SPGEMM <HandleType, LayoutType>::NumericFunctor
     {
  
       ordinal_t numRowsA;
@@ -76,12 +76,12 @@ namespace KokkosSparse{
 
     };
 
-    template <typename HandleType>
+    template <typename HandleType, typename LayoutType>
     template <typename c_row_map_t>
     void
-    SPGEMM<HandleType>::numeric_impl(c_row_map_t rowmapC_,
-				     entries_t entriesC_,
-				     values_t valuesC_)
+    SPGEMM<HandleType,LayoutType>::numeric_impl(c_row_map_t rowmapC_,
+						entries_t entriesC_,
+						values_t valuesC_)
     {
       std::cout << "New SpGEMM Numeric Implementation" << std::endl;
 

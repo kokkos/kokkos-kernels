@@ -62,16 +62,13 @@ namespace KokkosSparse{
 
   namespace Impl{
 
-    template <typename HandleType>
+    template <typename HandleType, typename Layout>
     class SPGEMM{
     public:
 
       using ExecSpace = typename HandleType::HandleExecSpace;
       using MemSpace = typename HandleType::HandleTempMemorySpace;
       using Device = Kokkos::Device<ExecSpace, MemSpace>;
-      using Layout = Kokkos::LayoutLeft;  // This is a harsh assumption.
-                                          // What is the best way of getting layout info 
-                                          //    without templating on view types? 
 
       using ordinal_t = typename HandleType::nnz_lno_t;
       using offset_t = typename HandleType::size_type;

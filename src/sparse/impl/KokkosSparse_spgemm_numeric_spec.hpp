@@ -316,9 +316,10 @@ struct SPGEMM_NUMERIC<KernelHandle,
     {
 
       if(const char* env_p = std::getenv("NEW_SPGEMM")){
-	SPGEMM<KernelHandle> spgemm(handle, m, n, k, 
-				    row_mapA, entriesA, valuesA,
-				    row_mapB, entriesB, valuesB);
+	using Layout = typename decltype(row_mapA)::array_layout;
+	SPGEMM<KernelHandle, Layout> spgemm(handle, m, n, k, 
+					    row_mapA, entriesA, valuesA,
+					    row_mapB, entriesB, valuesB);
 	spgemm.numeric(row_mapC, entriesC, valuesC);
       }
       else {
