@@ -94,12 +94,10 @@ namespace KokkosSparse{
       const_row_map_t row_mapA;
       const_entries_t entriesA;
       const_values_t valuesA;
-      bool transposeA;
 
       const_row_map_t row_mapB;
       const_entries_t entriesB;
       const_values_t valuesB;
-      bool transposeB;
 
       struct NumericFunctor;
 
@@ -125,13 +123,12 @@ namespace KokkosSparse{
 	     const_row_map_t row_mapA_,
 	     const_entries_t entriesA_,
 	     const_values_t valuesA_,
-	     bool transposeA_,
 	     const_row_map_t row_mapB_,
 	     const_entries_t entriesB_,
-	     const_values_t valuesB_,
-	     bool transposeB_):handle (handle_), a_row_cnt(m_), b_row_cnt(n_), b_col_cnt(k_),
-			       row_mapA(row_mapA_), entriesA(entriesA_), valuesA(valuesA_), transposeA(transposeA_),
-			       row_mapB(row_mapB_), entriesB(entriesB_), valuesB(valuesB_), transposeB(transposeB_)
+	     const_values_t valuesB_)
+	:handle (handle_), a_row_cnt(m_), b_row_cnt(n_), b_col_cnt(k_),
+	 row_mapA(row_mapA_), entriesA(entriesA_), valuesA(valuesA_),
+	 row_mapB(row_mapB_), entriesB(entriesB_), valuesB(valuesB_)
       {}
 
     };
