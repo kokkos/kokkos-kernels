@@ -96,6 +96,10 @@ namespace KokkosSparse{
       const_entries_t entriesB;
       const_values_t valuesB;
 
+      struct SymbolicFunctor;
+
+      void symbolic_impl(row_map_t rowmapC_);
+
       struct NumericFunctor;
 
       template<typename c_row_map_t>
@@ -104,6 +108,11 @@ namespace KokkosSparse{
 			values_t valuesC_);
 
     public:
+
+      void symbolic(row_map_t &rowmapC_) {
+	symbolic_impl(rowmapC_);
+      };
+
       void numeric(row_map_t &rowmapC_, entries_t &entriesC_, values_t &valuesC_) {
 	numeric_impl(rowmapC_, entriesC_, valuesC_);
       };
@@ -112,6 +121,19 @@ namespace KokkosSparse{
       	numeric_impl(rowmapC_, entriesC_, valuesC_);
       };
 
+
+      SPGEMM(HandleType *handle_,
+	     ordinal_t m_,
+	     ordinal_t n_,
+	     ordinal_t k_,
+	     const_row_map_t row_mapA_,
+	     const_entries_t entriesA_,
+	     const_row_map_t row_mapB_,
+	     const_entries_t entriesB_)
+	:handle (handle_), a_row_cnt(m_), b_row_cnt(n_), b_col_cnt(k_),
+	 row_mapA(row_mapA_), entriesA(entriesA_),
+	 row_mapB(row_mapB_), entriesB(entriesB_)
+      {}
 
       SPGEMM(HandleType *handle_,
 	     ordinal_t m_,
@@ -131,5 +153,6 @@ namespace KokkosSparse{
     };
   }
 }
+#include "KokkosSparse_new_spgemm_symbolic_impl.hpp"
 #include "KokkosSparse_new_spgemm_numeric_impl.hpp"
 #endif
