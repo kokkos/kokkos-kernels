@@ -47,7 +47,7 @@
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_Sorting.hpp"
-#include <limits>
+#include "Kokkos_ArithTraits.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -86,10 +86,10 @@ struct SortedCountEntries {
         Bcolinds(Bcolinds_),
         Crowcounts(Crowcounts_) {}
 
-  static constexpr ordinal_type ORDINAL_MAX = std::numeric_limits<ordinal_type>::max();
-
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const
   {
+    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+
     // count the union of nonzeros in Arow and Brow
     size_type numEntries = 0;
     size_type ai         = 0;
@@ -417,7 +417,6 @@ template <typename size_type, typename ordinal_type, typename ArowptrsT,
           typename BscalarT>
 struct SortedNumericSumFunctor {
   using CscalarT = typename CvaluesT::non_const_value_type;
-  static constexpr ordinal_type ORDINAL_MAX = std::numeric_limits<ordinal_type>::max();
 
   SortedNumericSumFunctor(const ArowptrsT& Arowptrs_,
                           const BrowptrsT& Browptrs_,
@@ -441,6 +440,8 @@ struct SortedNumericSumFunctor {
 
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const
   {
+    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+
     // count the union of nonzeros in Arow and Brow
     size_type ai         = 0;
     size_type bi         = 0;
