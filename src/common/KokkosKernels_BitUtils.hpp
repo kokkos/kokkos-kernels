@@ -112,39 +112,6 @@ int pop_count( long long i ){
   return _popcnt64(i);
 }
 
-#elif defined( KOKKOS_COMPILER_IBM )
-KOKKOS_FORCEINLINE_FUNCTION
-int pop_count( unsigned i ){
-  return __popcnt4(i);
-}
-KOKKOS_FORCEINLINE_FUNCTION
-int pop_count( unsigned long i ){
-  return __popcnt8(i);
-}
-
-KOKKOS_FORCEINLINE_FUNCTION
-int pop_count( unsigned long long i ){
-  return __popcnt8(i);
-}
-
-
-
-
-KOKKOS_FORCEINLINE_FUNCTION
-int pop_count( int i ){
-  return __popcnt4(i);
-}
-
-KOKKOS_FORCEINLINE_FUNCTION
-int pop_count( long i ){
-  return __popcnt8(i);
-}
-
-KOKKOS_FORCEINLINE_FUNCTION
-int pop_count( long long i ){
-  return __popcnt8(i);
-}
-
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
 KOKKOS_FORCEINLINE_FUNCTION
 int pop_count( unsigned i ){
@@ -172,6 +139,68 @@ int pop_count(  long i ){
 KOKKOS_FORCEINLINE_FUNCTION
 int pop_count(  long long i ){
   return __builtin_popcountll(i);
+}
+
+#elif defined(__ibmxl_vrm__)
+// See https://www.ibm.com/support/knowledgecenter/SSGH3R_16.1.0/com.ibm.xlcpp161.aix.doc/compiler_ref/compiler_builtins.html
+// link gives info about builtin names for xlclang++
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned i ){
+  return __builtin_popcnt4(i);
+}
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned long i ){
+  return __builtin_popcnt8(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned long long i ){
+  return __builtin_popcnt8(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( int i ){
+  return __builtin_popcnt4(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( long i ){
+  return __builtin_popcnt8(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( long long i ){
+  return __builtin_popcnt8(i);
+}
+
+#elif defined(__IBMCPP__) || defined(__IBMC__)
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned i ){
+  return __popcnt4(i);
+}
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned long i ){
+  return __popcnt8(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned long long i ){
+  return __popcnt8(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( int i ){
+  return __popcnt4(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( long i ){
+  return __popcnt8(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( long long i ){
+  return __popcnt8(i);
 }
 
 #else
