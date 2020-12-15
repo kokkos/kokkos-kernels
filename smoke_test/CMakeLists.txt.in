@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.13)
+project(kokkoskernels_smoke_test CXX)
+
+find_package(KokkosKernels REQUIRED)
+
+add_executable(kokkoskernels_smoke_test KokkosSparse_block_pcg.cpp)
+target_link_libraries(kokkoskernels_smoke_test PRIVATE Kokkos::kokkoskernels)

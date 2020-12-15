@@ -1,0 +1,11 @@
+#!/bin/bash
+
+KOKKOSKERNELS_INTALL="@CMAKE_BINARY_DIR@"
+SMOKE_TEST_SOURCE="@CMAKE_CURRENT_BINARY_DIR@/source"
+SMOKE_TEST_BUILD="@CMAKE_CURRENT_BINARY_DIR@/build"
+
+cd "${SMOKE_TEST_BUILD}"
+rm -rf CMake*
+
+cmake "${SMOKE_TEST_SOURCE}" \
+  -D KokkosKernels_ROOT:PATH="@CMAKE_BINARY_DIR@/lib/cmake/KokkosKernels"
