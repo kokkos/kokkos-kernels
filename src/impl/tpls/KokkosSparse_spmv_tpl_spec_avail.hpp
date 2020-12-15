@@ -71,117 +71,22 @@ struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::C
 
 #if (9000 <= CUDA_VERSION)
 
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_INT)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
 
 //CUDA_VERSION by itself cannot determine whether the generic cuSPARSE API is available:
 //cuSPARSE version 10.1.105 does not have the generic API, but it comes with the same CUDA_VERSION (10010) as 10.1.243 which does.
@@ -190,117 +95,22 @@ struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::C
 //Can enable int64/size_t.
 //TODO: if Nvidia ever supports int/size_t, add that too.
 
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(float, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(double, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<float>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
-  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
-  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
-  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t, size_t, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
 
 #endif  // CUSPARSE >= 10.3 (nested, implies >= 9.0)
 #endif  // CUDA/CUSPARSE >= 9.0?
