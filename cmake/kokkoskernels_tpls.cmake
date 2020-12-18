@@ -339,9 +339,7 @@ MACRO(kokkoskernels_export_imported_tpl NAME)
       ENDIF()
 
       SET(TPL_LINK_OPTIONS)
-      IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
-        GET_TARGET_PROPERTY(TPL_LINK_OPTIONS ${TPL_IMPORTED_NAME} INTERFACE_LINK_OPTIONS)
-      ENDIF()
+      GET_TARGET_PROPERTY(TPL_LINK_OPTIONS ${TPL_IMPORTED_NAME} INTERFACE_LINK_OPTIONS)
       IF(TPL_LINK_OPTIONS)
         KOKKOSKERNELS_APPEND_CONFIG_LINE("INTERFACE_LINK_OPTIONS ${TPL_LINK_OPTIONS}")
       ENDIF()
@@ -371,9 +369,7 @@ MACRO(kokkoskernels_import_tpl NAME)
   # I have still been getting errors about ROOT variables being ignored
   # I'm not sure if this is a scope issue - but make sure
   # the policy is set before we do any find_package calls
-  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-    CMAKE_POLICY(SET CMP0074 NEW)
-  ENDIF()
+  CMAKE_POLICY(SET CMP0074 NEW)
 
   IF (KOKKOSKERNELS_ENABLE_TPL_${NAME})
     #Tack on a TPL here to make sure we avoid using anyone else's find
@@ -390,16 +386,6 @@ MACRO(kokkoskernels_import_tpl NAME)
     ENDIF()
   ENDIF()
 ENDMACRO(kokkoskernels_import_tpl)
-
-FUNCTION(TARGET_LINK_FLAGS_PORTABLE LIBRARY)
-  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
-    #great, this works the "right" way
-    TARGET_LINK_OPTIONS(${LIBRARY} ${ARGN})
-  ELSE()
-    #bummer, this works the "hacky" way
-    TARGET_LINK_LIBRARIES(${LIBRARY} ${ARGN})
-  ENDIF()
-ENDFUNCTION(TARGET_LINK_FLAGS_PORTABLE)
 
 FUNCTION(kokkoskernels_link_tpl TARGET)
   CMAKE_PARSE_ARGUMENTS(TPL
