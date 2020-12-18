@@ -51,8 +51,12 @@ namespace KokkosGraph{
 
 enum MIS2_Algorithm
 {
-  MIS2_QUALITY,
-  MIS2_FAST
+  MIS2_QUALITY,       //KokkosKernels highest quality (but slow) algorithm, based on ECL-MIS
+  MIS2_BELL,          //Bell/Dalton/Olson original algorithm
+  MIS2_RANDOMIZED,    //Above plus randomization every round
+  MIS2_WORKLIST,      //Above plus worklists
+  MIS2_PACKEDSTATUS,  //Above plus packing the (status, random, index) tuple into a single value
+  MIS2_FAST           //KokkosKernels fastest algorithm (Above plus TeamPolicy if degree is high enough)
 };
 
 namespace Experimental{
@@ -64,7 +68,7 @@ namespace Experimental{
 
 template <typename device_t, typename rowmap_t, typename colinds_t, typename lno_view_t = typename colinds_t::non_const_type>
 lno_view_t
-graph_d2_mis(const rowmap_t& rowmap, const colinds_t& colinds, MIS2_Algorithm algo = MIS2_FAST)
+graph_d2_mis(const rowmap_t& rowmap, const colinds_t& colinds, MIS2_Algorithm algo = MIS2_FAST, int* numRounds = nullptr)
 {
   if(rowmap.extent(0) <= 1)
   {
@@ -76,13 +80,35 @@ graph_d2_mis(const rowmap_t& rowmap, const colinds_t& colinds, MIS2_Algorithm al
     case MIS2_QUALITY:
     {
       Impl::D2_MIS_FixedPriority<device_t, rowmap_t, colinds_t, lno_view_t> mis(rowmap, colinds);
-      return mis.compute();
+      return mis.compute(numRounds);
     }
     case MIS2_FAST:
     {
-      Impl::D2_MIS_RandomPriority<device_t, rowmap_t, colinds_t, lno_view_t> mis(rowmap, colinds);
-      return mis.compute();
+      Impl::D2_MIS_RandomPriority<device_t, rowmap_t, colinds_t, lno_view_t, true> mis(rowmap, colinds);
+      return mis.compute(numRounds);
     }
+    case MIS2_BELL:
+    {
+      Impl::D2_MIS_Bell<device_t, rowmap_t, colinds_t, lno_view_t> mis;
+      return mis.compute(rowmap, colinds, numRounds);
+    }
+    case MIS2_RANDOMIZED:
+    {
+      Impl::D2_MIS_Randomized<device_t, rowmap_t, colinds_t, lno_view_t> mis;
+      return mis.compute(rowmap, colinds, numRounds);
+    }
+    case MIS2_WORKLIST:
+    {
+      Impl::D2_MIS_Worklist<device_t, rowmap_t, colinds_t, lno_view_t> mis;
+      return mis.compute(rowmap, colinds, numRounds);
+    }
+    case MIS2_PACKEDSTATUS:
+    {
+      Impl::D2_MIS_RandomPriority<device_t, rowmap_t, colinds_t, lno_view_t, false> mis(rowmap, colinds);
+      return mis.compute(numRounds);
+    }
+    default:
+      throw std::runtime_error("MIS2 alg not imlemented yet");
   }
   throw std::invalid_argument("graph_d2_mis: invalid algorithm");
 }
@@ -100,6 +126,26 @@ graph_mis2_coarsen(const rowmap_t& rowmap, const colinds_t& colinds, typename co
   numClusters = mis2.extent(0);
   Impl::D2_MIS_Coarsening<device_t, rowmap_t, colinds_t, labels_t> coarsening(rowmap, colinds, mis2);
   return coarsening.compute();
+}
+
+inline const char* mis2_algorithm_name(MIS2_Algorithm algo)
+{
+  switch(algo)
+  {
+    case MIS2_QUALITY:
+      return "MIS2_QUALITY";
+    case MIS2_BELL:
+      return "MIS2_BELL";
+    case MIS2_RANDOMIZED:
+      return "MIS2_RANDOMIZED";
+    case MIS2_WORKLIST:
+      return "MIS2_WORKLIST";
+    case MIS2_PACKEDSTATUS:
+      return "MIS2_PACKEDSTATUS";
+    case MIS2_FAST:
+      return "MIS2_FAST";
+  }
+  return "*** Invalid MIS2 algo enum value.\n";
 }
 
 }  // end namespace Experimental
