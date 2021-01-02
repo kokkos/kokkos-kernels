@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.13)
+project(kokkoskernels_install_test CXX)
+
+include(CTest)
+
+find_package(KokkosKernels REQUIRED)
+
+add_executable(kokkoskernels_install_test KokkosSparse_block_pcg.cpp)
+target_link_libraries(kokkoskernels_install_test PRIVATE Kokkos::kokkoskernels)
+
+if(BUILD_TESTING)
+  add_test(NAME cg_test COMMAND kokkoskernels_install_test)
+endif()
