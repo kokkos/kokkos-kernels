@@ -66,6 +66,7 @@ namespace KokkosSparse{
     class SPGEMM{
     public:
 
+      // Typedefs related to input. Derived from HandleType and Layout. 
       using ExecSpace = typename HandleType::HandleExecSpace;
       using MemSpace = typename HandleType::HandleTempMemorySpace;
       using Device = Kokkos::Device<ExecSpace, MemSpace>;
@@ -81,6 +82,14 @@ namespace KokkosSparse{
       using row_map_t = Kokkos::View<offset_t *, Layout, Device, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
       using entries_t = Kokkos::View<ordinal_t *, Layout, Device, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
       using values_t = Kokkos::View<scalar_t *, Layout, Device, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      
+      // Typedefs for the internal data structures
+      using minmax_view_t = Kokkos::View<ordinal_t *[2], Kokkos::LayoutRight, Device>; 
+      using size_view_t = Kokkos::View<size_t *, Layout, Device>;
+      using ord_view_t = Kokkos::View<ordinal_t *, Layout, Device>;
+
+      using zero_view_t = Kokkos::View<ordinal_t, Device>;
+      struct SymbolicFunctor;
 
     private:
       HandleType *handle;
@@ -96,7 +105,6 @@ namespace KokkosSparse{
       const_entries_t entriesB;
       const_values_t valuesB;
 
-      struct SymbolicFunctor;
 
       void symbolic_impl(row_map_t rowmapC_);
 
