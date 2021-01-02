@@ -204,12 +204,6 @@ namespace KokkosSparse{
 	Kokkos::deep_copy(h_ptrSingleEntryRowsA, ptrSingleEntryRowsA);
 
 
-	std::cout << "DetermineRowLimits: -1  MaxNnzInArow: " << maxNnzInArow << " #DenseRowsA: " << h_numDenseRowsB()+1 
-		  << " numRowsA: "<< numRowsA
-		  << " ptrSingleEntryRowsA: "<< h_ptrSingleEntryRowsA()+1 << std::endl;
-
-
-
 
 
 	///////////////////////////////////////////////////////////////
@@ -224,7 +218,7 @@ namespace KokkosSparse{
 	ExecSpace().fence();
 	if(h_numDenseRowsA() >= 0)
 	  Kokkos::parallel_for("AnalyzeRowLimitsAdense", pAnalyzeRowLimitsAdense, *this);
-	//Kokkos::parallel_for("AnalyzeRowLimitsAsparse", pAnalyzeRowLimitsAsparse, *this);
+	Kokkos::parallel_for("AnalyzeRowLimitsAsparse", pAnalyzeRowLimitsAsparse, *this);
 	ExecSpace().fence();
 	rowLimitsTime = timer.seconds();
 	
@@ -336,9 +330,22 @@ namespace KokkosSparse{
       }
 
 
-      void symbolic(row_map_t row_mapC) {
-	
-	
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const tAnalyzeRowLimitsAsparse&, const ordinal_t &i) const {
+
+      	ordinal_t myMinCol = minCol, myMaxCol = maxCol;
+	ordinal_t row_index = denseRowsA[i];
+	size_t rowFlop = 0;
+      	for(offset_t j = row_mapA[row_index]; j < row_mapA[row_index+1]; j++){
+	  ordinal_t rowB = entriesA[j];
+      	  myMinCol = KOKKOSKERNELS_MACRO_MIN(myMinCol, rowLimitsB(rowB, 0));
+      	  myMaxCol = KOKKOSKERNELS_MACRO_MAX(myMaxCol, rowLimitsB(rowB, 1));
+	  rowFlop += (row_mapB[rowB+1] - row_mapB[rowB]);
+      	}
+
+      	rowLimitsB(row_index,0) = myMinCol;
+      	rowLimitsB(row_index,1) = myMaxCol;
+	rowFlopsA(row_index) = rowFlop;
       }
 
     };
@@ -364,8 +371,6 @@ namespace KokkosSparse{
 			 vectorSize); // vectorSize is not currently used
 
       sf.analyze();
-
-      sf.symbolic(row_mapC);
 
     }
 
