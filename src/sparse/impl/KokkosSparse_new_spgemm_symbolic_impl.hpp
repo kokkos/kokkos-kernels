@@ -80,18 +80,18 @@ namespace KokkosSparse{
       ord_view_t denseRowsA;
       ord_view_t denseRowsB;
 
-      int vectorSize;
-      int teamSize;
+      ord_view_t ptrDenseSparse; // length: 5, covers the following 5 variables on device
+      ordinal_t ptrDenseRowsB; 
+      ordinal_t ptrSparseRowsB;
+      ordinal_t ptrDenseRowsA;
+      ordinal_t ptrSparseRowsA;
+      ordinal_t ptrSingleEntryRowsA; 
 
-      zero_view_t numDenseRowsB;
-      zero_view_t ptrSparseRowsB;
-
-      zero_view_t numDenseRowsA;
-      zero_view_t ptrSparseRowsA;
-      zero_view_t ptrSingleEntryRowsA; 
-      
       ordinal_t minCol;
       ordinal_t maxCol;
+
+      int vectorSize;
+      int teamSize;
 
       SymbolicFunctor(ordinal_t numRowsA_, ordinal_t numRowsB_, ordinal_t numColsB_,
 		      const_row_map_t row_mapA_, const_entries_t entriesA_, const_values_t valuesA_,
@@ -107,18 +107,7 @@ namespace KokkosSparse{
 	vectorSize(vectorSize_) // not currently used
 	
       {
-	numDenseRowsB = zero_view_t("numDenseRowsB");
-	ptrSparseRowsB = zero_view_t("ptrSparseRowsB");
-
-	numDenseRowsA = zero_view_t("numDenseRowsA");
-	ptrSparseRowsA = zero_view_t("ptrSparseRowsA");
-	ptrSingleEntryRowsA = zero_view_t("ptrSingleEntryRowsA");
-
-      }
-
-      void analyze() {
-
-        typedef Kokkos::Details::ArithTraits<ordinal_t> AT;
+	typedef Kokkos::Details::ArithTraits<ordinal_t> AT;
       	minCol = AT::max();
       	maxCol = AT::min(); 
 
@@ -126,7 +115,24 @@ namespace KokkosSparse{
 	teamSize = 1024 / vectorSize;
 	int numTeams = numRowsB/teamSize + 1;
 
-	Kokkos::Timer timer;
+      }
+
+      void analyze() {
+
+	///////////////////////////////////////////////////////////////
+	// Set the pointers for sparse and dense rows in A and B as follows
+	// First two entries are about B and last three entries are about A
+	///////////////////////////////////////////////////////////////
+  
+	ptrDenseSparse = ord_view_t(Kokkos::ViewAllocateWithoutInitializing("ptrDenseSparse"), 5);
+	auto h_ptrDenseSparse = Kokkos::create_mirror(ptrDenseSparse);
+	h_ptrDenseSparse[0] = -1;         //points to where to write dense B rows after incrementing
+	h_ptrDenseSparse[1] = numRowsB;   //points to where to write sparse B rows after decrementing
+	h_ptrDenseSparse[2] = -1;         //points to where to write dense A rows after incrementing
+	h_ptrDenseSparse[3] = numRowsA;   //points to where to write dense A rows after decrementing
+	h_ptrDenseSparse[4] = numRowsA-1; //points to where to write single-entry A rows after incrementing
+	Kokkos::deep_copy(ptrDenseSparse, h_ptrDenseSparse);
+
 
 	///////////////////////////////////////////////////////////////
 	// 1. Find the max # nonzeros in B rows
@@ -137,73 +143,65 @@ namespace KokkosSparse{
 	///////////////////////////////////////////////////////////////
 
 	ordinal_t maxNnzInBrow = 0;
-	Kokkos::deep_copy(numDenseRowsB, -1);
-	Kokkos::deep_copy(ptrSparseRowsB, numRowsB);
 	Kokkos::RangePolicy<tAnalyzeDenseSparseB, ExecSpace> pAnalyzeDenseSparseB(0, numRowsB);
 	Kokkos::parallel_reduce ("AnalyzeDenseSparseB", pAnalyzeDenseSparseB, *this, Kokkos::Max<ordinal_t>(maxNnzInBrow));
-	auto h_numDenseRowsB = Kokkos::create_mirror_view(numDenseRowsB);
-	Kokkos::deep_copy(h_numDenseRowsB, numDenseRowsB);
-
-	// //print dense rows
-	//auto h_denseRowsB = Kokkos::create_mirror_view(denseRowsB);
-	//Kokkos::deep_copy(h_denseRowsB, denseRowsB);
-	//for(ordinal_t i = 0; i < h_numDenseRowsB(); i++)
-	//  std::cout << i << ": " << h_denseRowsB(i) << std::endl;
 
 
-
-
-	///////////////////////////////////////////////////////////////
-	// Determine row limits (min and max column indices in each row) in B
-	///////////////////////////////////////////////////////////////
-	
-	timer.reset();
-	Kokkos::TeamPolicy<tAnalyzeRowLimitsBdense, ExecSpace> pAnalyzeRowLimitsBdense(h_numDenseRowsB()+1, Kokkos::AUTO);
-	Kokkos::RangePolicy<tAnalyzeRowLimitsBsparse, ExecSpace> pAnalyzeRowLimitsBsparse(h_numDenseRowsB()+1, numRowsB);
-
-	ExecSpace().fence();
-	if(h_numDenseRowsB() >= 0)
-	  Kokkos::parallel_for("AnalyzeRowLimitsBdense", pAnalyzeRowLimitsBdense, *this);
-	Kokkos::parallel_for("AnalyzeRowLimitsBsparse", pAnalyzeRowLimitsBsparse, *this);
-	ExecSpace().fence();
-	double rowLimitsTime = timer.seconds();
-	
-	/*
-	//print row limits
-	auto h_rowLimitsB = Kokkos::create_mirror_view(rowLimitsB);
-	Kokkos::deep_copy(h_rowLimitsB, rowLimitsB);
-	for(ordinal_t i = 0; i < numRowsB; i++)
-	  std::cout << i << ": " << h_rowLimitsB(i,0) << " " << h_rowLimitsB(i,1) << std::endl; 
-	*/
-	
-	std::cout << "DetermineRowLimits: " << rowLimitsTime << " MaxNnzInBrow: " << maxNnzInBrow << " #DenseRows: " << h_numDenseRowsB()+1 << std::endl;
-
-
-
-	
-	
 	///////////////////////////////////////////////////////////////
 	// 1. Find the max # nonzeros in A rows
 	// 2. Find the # of dense A rows: numDenseRowsA 
-	// 2. Find the # of single entry A rows: ptrSingleEntryRowsA + 1 - numRowsA 
-	// 3. Write indices of dense/sparse/single-entry A rows in denseRowsA so that
+	// 3. Find the # of single entry A rows: ptrSingleEntryRowsA + 1 - numRowsA 
+	// 4. Write indices of dense/sparse/single-entry A rows in denseRowsA so that
 	//  -rows with >256 entries are in positions 0 .. numDenseRowsA-1
 	//  -rows with <=256 entries are in ptrSparseRowsA ... numRowsA-1
 	//  -rows with 1 entry are in numRowsA .. ptrSingleEntryRowsA
 	///////////////////////////////////////////////////////////////
 
 	ordinal_t maxNnzInArow = 0;
-	Kokkos::deep_copy(numDenseRowsA, -1);
-	Kokkos::deep_copy(ptrSparseRowsA, numRowsA);
-	Kokkos::deep_copy(ptrSingleEntryRowsA,numRowsA-1);
 	Kokkos::RangePolicy<tAnalyzeDenseSparseA, ExecSpace> pAnalyzeDenseSparseA(0, numRowsA);
 	Kokkos::parallel_reduce ("AnalyzeDenseSparseA", pAnalyzeDenseSparseA, *this, Kokkos::Max<ordinal_t>(maxNnzInArow));
-	auto h_numDenseRowsA = Kokkos::create_mirror_view(numDenseRowsA);
-	Kokkos::deep_copy(h_numDenseRowsA, numDenseRowsA);
-	auto h_ptrSingleEntryRowsA = Kokkos::create_mirror_view(ptrSingleEntryRowsA);
-	Kokkos::deep_copy(h_ptrSingleEntryRowsA, ptrSingleEntryRowsA);
 
 
+	///////////////////////////////////////////////////////////////
+	// Transfer dense-sparse analysis results
+	///////////////////////////////////////////////////////////////
+	ExecSpace().fence();
+	Kokkos::deep_copy(h_ptrDenseSparse, ptrDenseSparse);
+	ptrDenseRowsB = h_ptrDenseSparse[0];
+	ptrSparseRowsB = h_ptrDenseSparse[1];
+	ptrDenseRowsA = h_ptrDenseSparse[2];
+	ptrSparseRowsA = h_ptrDenseSparse[3];
+	ptrSingleEntryRowsA = h_ptrDenseSparse[4];
+	
+	/*//print dense rows
+	auto h_denseRowsB = Kokkos::create_mirror_view(denseRowsB);
+	Kokkos::deep_copy(h_denseRowsB, denseRowsB);
+	for(ordinal_t i = 0; i < ptrDenseRowsB; i++)
+	std::cout << i << ": " << h_denseRowsB(i) << std::endl;*/
+
+
+	///////////////////////////////////////////////////////////////
+	// Determine row limits (min and max column indices in each row) in B
+	///////////////////////////////////////////////////////////////
+	
+	Kokkos::Timer timer;
+	Kokkos::TeamPolicy<tAnalyzeRowLimitsBdense, ExecSpace> pAnalyzeRowLimitsBdense(ptrDenseRowsB+1, Kokkos::AUTO);
+	Kokkos::RangePolicy<tAnalyzeRowLimitsBsparse, ExecSpace> pAnalyzeRowLimitsBsparse(ptrDenseRowsB+1, numRowsB);
+
+	if(ptrDenseRowsB >= 0)
+	  Kokkos::parallel_for("AnalyzeRowLimitsBdense", pAnalyzeRowLimitsBdense, *this);
+	Kokkos::parallel_for("AnalyzeRowLimitsBsparse", pAnalyzeRowLimitsBsparse, *this);
+	ExecSpace().fence();
+	double rowLimitsTime = timer.seconds();
+	
+	/*//print row limits
+	auto h_rowLimitsB = Kokkos::create_mirror_view(rowLimitsB);
+	Kokkos::deep_copy(h_rowLimitsB, rowLimitsB);
+	for(ordinal_t i = 0; i < numRowsB; i++)
+	std::cout << i << ": " << h_rowLimitsB(i,0) << " " << h_rowLimitsB(i,1) << std::endl;*/ 
+	
+	
+	std::cout << "DetermineRowLimits: " << rowLimitsTime << " MaxNnzInBrow: " << maxNnzInBrow << " #DenseRows: " <<ptrDenseRowsB+1 << std::endl;
 
 
 	///////////////////////////////////////////////////////////////
@@ -212,22 +210,23 @@ namespace KokkosSparse{
 	///////////////////////////////////////////////////////////////
 	
 	timer.reset();
-	Kokkos::TeamPolicy<tAnalyzeRowLimitsAdense, ExecSpace> pAnalyzeRowLimitsAdense(h_numDenseRowsA()+1, Kokkos::AUTO);
-	Kokkos::RangePolicy<tAnalyzeRowLimitsAsparse, ExecSpace> pAnalyzeRowLimitsAsparse(h_numDenseRowsA()+1, numRowsA);
+	Kokkos::TeamPolicy<tAnalyzeRowLimitsAdense, ExecSpace> pAnalyzeRowLimitsAdense(ptrDenseRowsA+1, Kokkos::AUTO);
+	Kokkos::RangePolicy<tAnalyzeRowLimitsAsparse, ExecSpace> pAnalyzeRowLimitsAsparse(ptrDenseRowsA+1, numRowsA);
 
 	ExecSpace().fence();
-	if(h_numDenseRowsA() >= 0)
+	if(ptrDenseRowsA >= 0)
 	  Kokkos::parallel_for("AnalyzeRowLimitsAdense", pAnalyzeRowLimitsAdense, *this);
 	Kokkos::parallel_for("AnalyzeRowLimitsAsparse", pAnalyzeRowLimitsAsparse, *this);
 	ExecSpace().fence();
 	rowLimitsTime = timer.seconds();
 	
-	std::cout << "DetermineRowLimits: " << rowLimitsTime << " MaxNnzInArow: " << maxNnzInArow << " #DenseRowsA: " << h_numDenseRowsA()+1
+	std::cout << "DetermineRowLimits: " << rowLimitsTime << " MaxNnzInArow: " << maxNnzInArow << " #DenseRowsA: " << ptrDenseRowsA+1
 		  << " numRowsA: "<< numRowsA
-		  << " ptrSingleEntryRowsA: "<< h_ptrSingleEntryRowsA()+1 << std::endl;
+		  << " ptrSingleEntryRowsA: "<< ptrSingleEntryRowsA+1 << std::endl;
        
 
       }
+
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const tAnalyzeDenseSparseB&, const ordinal_t &row_index, ordinal_t &update) const {
@@ -236,12 +235,32 @@ namespace KokkosSparse{
 	if(myNnz > update) update = myNnz;
 
 	if(myNnz > 256) {
-	  int index = Kokkos::atomic_fetch_add(&numDenseRowsB(), 1);
+	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[0], 1);
 	  denseRowsB[index] = row_index;
 	}
 	else {
-	  int index = Kokkos::atomic_fetch_add(&ptrSparseRowsB(), -1);
+	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[1], -1);
 	  denseRowsB[index] = row_index;
+	}
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const tAnalyzeDenseSparseA&, const ordinal_t &row_index, ordinal_t &update) const {
+
+	ordinal_t myNnz = row_mapA[row_index+1]-row_mapA[row_index]; 
+	if(myNnz > update) update = myNnz;
+
+	if(myNnz > 256) {
+	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[2], 1);
+	  denseRowsA[index] = row_index;
+	}
+	else if(myNnz > 1){
+	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[3], -1);
+	  denseRowsB[index] = row_index;
+	}
+	else{
+	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[4], 1);
+	  denseRowsA[index] = row_index;
 	}
       }
 
@@ -276,26 +295,6 @@ namespace KokkosSparse{
       	rowLimitsB(row_index,1) = myMaxCol;
       }
       
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const tAnalyzeDenseSparseA&, const ordinal_t &row_index, ordinal_t &update) const {
-
-	ordinal_t myNnz = row_mapA[row_index+1]-row_mapA[row_index]; 
-	if(myNnz > update) update = myNnz;
-
-	if(myNnz > 256) {
-	  int index = Kokkos::atomic_fetch_add(&numDenseRowsA(), 1);
-	  denseRowsA[index] = row_index;
-	}
-	else if (myNnz <= 1){
-	  int index = Kokkos::atomic_fetch_add(&ptrSingleEntryRowsA(), 1);
-	  denseRowsA[index] = row_index;
-	}
-	else {
-	  int index = Kokkos::atomic_fetch_add(&ptrSparseRowsA(), -1);
-	  denseRowsB[index] = row_index;
-	}
-      }
 
 
       KOKKOS_INLINE_FUNCTION

@@ -88,7 +88,6 @@ namespace KokkosSparse{
       using size_view_t = Kokkos::View<size_t *, Layout, Device>;
       using ord_view_t = Kokkos::View<ordinal_t *, Layout, Device>;
 
-      using zero_view_t = Kokkos::View<ordinal_t, Device>;
       struct SymbolicFunctor;
 
     private:
