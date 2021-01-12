@@ -8,6 +8,29 @@ cd "${INSTALL_TEST_BUILD}"
 rm -rf CMake*
 
 cmake "${INSTALL_TEST_SOURCE}" \
-  -D KokkosKernels_ROOT:PATH="@CMAKE_BINARY_DIR@/lib/cmake/KokkosKernels" | tee configure_install_test.log
+  -D KokkosKernels_ROOT:PATH="@CMAKE_BINARY_DIR@/lib/cmake/KokkosKernels"
 
-make -j 4 | tee make_install_test.log
+if [ $? -eq 0 ]; then
+    echo "*** install test: cmake configure SUCCESSFUL ***"
+else
+    echo "*** install test: cmake configure FAILED ***"
+    exit 1;
+fi
+
+make -j 4
+
+if [ $? -eq 0 ]; then
+    echo "*** install test: build SUCCESSFUL ***"
+else
+    echo "*** install test: build FAILED ***"
+    exit 1;
+fi
+
+ctest -V -R
+
+if [ $? -eq 0 ]; then
+    echo "*** install test: run SUCCESSFUL ***"
+else
+    echo "*** install test: run FAILED ***"
+    exit 1;
+fi
