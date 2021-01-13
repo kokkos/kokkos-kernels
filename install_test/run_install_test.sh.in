@@ -7,8 +7,11 @@ INSTALL_TEST_BUILD="@CMAKE_CURRENT_BINARY_DIR@/build"
 cd "${INSTALL_TEST_BUILD}"
 rm -rf CMake*
 
+echo "Kokkos at: @CMAKE_CXX_COMPILER@"
+
 cmake "${INSTALL_TEST_SOURCE}" \
-  -D KokkosKernels_ROOT:PATH="@CMAKE_BINARY_DIR@/lib/cmake/KokkosKernels"
+  -D CMAKE_CXX_COMPILER="@CMAKE_CXX_COMPILER@" \
+  -D KokkosKernels_ROOT:PATH="@CMAKE_BINARY_DIR@/lib64/cmake/KokkosKernels"
 
 if [ $? -eq 0 ]; then
     echo "*** install test: cmake configure SUCCESSFUL ***"

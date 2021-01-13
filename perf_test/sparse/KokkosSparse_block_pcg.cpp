@@ -510,6 +510,7 @@ int main (int argc, char ** argv){
 
       using crsMat_t = typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE >;
       crsMat_t crsmat = create_crs_matrix<crsMat_t>(mtx_bin_file);
+      INDEX_TYPE nv = crsmat.numRows();
 
       using values_view_t  = typename crsMat_t::values_type::non_const_type;
       values_view_t kok_x_original = create_x_vector<values_view_t>(((nv /block_size) + 1) * block_size, MAXVAL);
@@ -524,11 +525,12 @@ int main (int argc, char ** argv){
 #if defined( KOKKOS_ENABLE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
-      using myExecSpace = Kokkos::Cuda myExecSpace;
+      using myExecSpace = Kokkos::Cuda;
       Kokkos::Cuda::print_configuration(std::cout);
 
       using crsMat_t = typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE >;
       crsMat_t crsmat = create_crs_matrix<crsMat_t>(mtx_bin_file);
+      INDEX_TYPE nv = crsmat.numRows();
 
       using values_view_t  = typename crsMat_t::values_type::non_const_type;
       values_view_t kok_x_original = create_x_vector<values_view_t>(((nv /block_size) + 1) * block_size, MAXVAL);
