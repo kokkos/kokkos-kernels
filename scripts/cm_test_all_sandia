@@ -1078,7 +1078,7 @@ setup_env() {
 
     if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
       # Some machines will require explicitly setting include dirs and libs
-      if ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = weaver* ]]) && [[ "$mod" = openblas* ]]; then
+      if ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = weaver* ]] || [[ "$MACHINE" = blake* ]]) && [[ "$mod" = openblas* ]]; then
         BLAS_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
         LAPACK_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
   #      BLAS_LIBRARIES="openblas"
