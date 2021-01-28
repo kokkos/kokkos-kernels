@@ -313,7 +313,7 @@ display_help_text() {
       echo "--with-tpls=[TPLS]:           Set tpls to be instantiated (Proper support requies that appropriate compiler and device must be enabled)."
       echo "                              This may require providing paths and the library name if using custom installs not on a default path"
       echo "                              that CMake searches"
-      echo "                                Options: blas, mkl, cublas, cusparse, magma"
+      echo "                                Options: blas, mkl, cublas, cusparse, magma, armpl"
       echo "--user-blas-path=[PATH]:      Set path to location of user-specified BLAS library."
       echo "--user-blas-lib=[LIB]:        Library name of desired BLAS install."
       echo "                                Example: For the typical \"libblas.a\" provide \"blas\""

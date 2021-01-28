@@ -660,10 +660,12 @@ elif [ "$MACHINE" = "blake" ]; then
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
-  module load cmake/3.12.3
+  module load cmake/3.19.3
 
-  BASE_MODULE_LIST="cmake/3.12.3,<COMPILER_NAME>/<COMPILER_VERSION>"
-  BASE_MODULE_LIST_INTEL="cmake/3.12.3,<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
+  BASE_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  BASE_MODULE_LIST_INTEL="cmake/3.19.3,<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
+
+  GCC72_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.2.20/gcc/7.2.0"
 
   if [ "$SPOT_CHECK" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
@@ -671,14 +673,14 @@ elif [ "$MACHINE" = "blake" ]; then
       #"intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
       #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
     COMPILERS=("intel/19.1.144 $BASE_MODULE_LIST_INTEL "OpenMP_Serial" icpc $INTEL_WARNING_FLAGS"
-               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST "Pthread_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
       # TODO: Failing toolchains:
       #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
-    COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL "OpenMP,Pthread" icpc $INTEL_WARNING_FLAGS"
+               "gcc/7.2.0 $GCC72_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
     )
   else
     COMPILERS=("intel/17.4.196 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
@@ -1076,7 +1078,7 @@ setup_env() {
 
     if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
       # Some machines will require explicitly setting include dirs and libs
-      if ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = weaver* ]]) && [[ "$mod" = openblas* ]]; then
+      if ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = weaver* ]] || [[ "$MACHINE" = blake* ]]) && [[ "$mod" = openblas* ]]; then
         BLAS_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
         LAPACK_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
   #      BLAS_LIBRARIES="openblas"
