@@ -122,7 +122,7 @@ static void __print_help_blas3_perf_test() {
   printf("\t-k, --batch_size=LEN\n");
   printf("\t\tBatch size. Adds third dimension to matrices A, B, and C.\n");
   printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
-         DEFAULT_VECTOR_LEN);
+         DEFAULT_K);
 
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
