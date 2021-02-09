@@ -505,7 +505,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
       typename YVector::value_type *__restrict__  y_ptr = y.data();
       typename XVector::value_type *__restrict__  x_ptr = x.data();
       
-      const value_type one(1), zero(0);
+      const value_type zero(0);
       const ordinal_type nrow = A.numRows();
       if (alpha == zero) {
         /// do nothing
