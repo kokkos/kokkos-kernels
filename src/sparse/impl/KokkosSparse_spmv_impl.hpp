@@ -493,6 +493,10 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
     if (std::is_same<execution_space,Kokkos::OpenMP>::value) 
       impl_thread_pool_size = Kokkos::OpenMP::impl_thread_pool_size();
 #endif
+#if defined(KOKKOS_ENABLE_THREADS)
+    if (std::is_same<execution_space,Kokkos::Threads>::value) 
+      impl_thread_pool_size = Kokkos::Threads::impl_thread_pool_size();
+#endif
 
     if (impl_thread_pool_size == 1) {
       /// serial impl                                                                                         
@@ -539,6 +543,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
           }
         }
       }    
+      return;
     }
   }
 #endif
