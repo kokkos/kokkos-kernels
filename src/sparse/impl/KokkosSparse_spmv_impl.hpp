@@ -340,14 +340,14 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
     const typename YVector::non_const_value_type one(1), zero(0);
     const ordinal_type nrow = A.numRows();
     if (alpha == zero) {
-      if (beta == zero) {
-	memset(y_ptr, 0, sizeof(typename YVector::value_type)*nrow);
-      } else if (beta == one) {
-	/// do nothing
+      if (dobeta == 0) {
+        memset(y_ptr, 0, sizeof(typename YVector::value_type)*nrow);
+      } else if (dobeta == 1) {
+        /// so nothing
       } else {
-	for (int i=0;i<nrow;++i) 
-	  y_ptr[i] *= beta;
-      }
+        for (int i=0;i<nrow;++i) 
+          y_ptr[i] *= beta;
+      }        
     } else {
       for (int i=0;i<nrow;++i) {
       	const int jbeg = row_map_ptr[i];
@@ -381,7 +381,16 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
 	    const int col_idx = col_idx_ptr[j];
 	    tmp1 += value*x_ptr[col_idx];
 	  }
-	  y_ptr[i] = y_ptr[i]*beta + alpha*(tmp1 + tmp2 + tmp3 + tmp4);
+          if (dobeta == 0) {
+            y_ptr[i] = alpha*(tmp1 + tmp2 + tmp3 + tmp4);
+          } else if (dobeta == -1) {
+            y_ptr[i] -= alpha*(tmp1 + tmp2 + tmp3 + tmp4);
+          } else if (dobeta == 1) {
+            y_ptr[i] += alpha*(tmp1 + tmp2 + tmp3 + tmp4);
+          } else {
+            const auto y_val = y_ptr[i]*beta;
+            y_ptr[i] = y_val + alpha*(tmp1 + tmp2 + tmp3 + tmp4);
+          } 
 	}
       }
     }
