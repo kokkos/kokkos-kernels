@@ -318,24 +318,24 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
 			typename YVector::const_value_type& beta,
 			const YVector& y)
 {
-  typedef typename AMatrix::ordinal_type ordinal_type;
+  typedef typename AMatrix::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix::execution_space execution_space;
 
   if (A.numRows () <= static_cast<ordinal_type> (0)) {
     return;
   }
-  #ifdef KOKKOS_ENABLE_SERIAL
+#if defined(KOKKOS_ENABLE_SERIAL)
   if(std::is_same<execution_space,Kokkos::Serial>::value) {
     /// serial impl                                                                                         
     typedef typename AMatrix::non_const_value_type value_type;
-    typedef typename AMatrix::size_type size_type;
+    typedef typename AMatrix::non_const_size_type size_type;
 
     const size_type *__restrict__ row_map_ptr = A.graph.row_map.data();
     const ordinal_type *__restrict__ col_idx_ptr = A.graph.entries.data();
     const value_type *__restrict__ values_ptr = A.values.data();
 
-    typename YVector::value_type *__restrict__  y_ptr = y.data();
-    typename XVector::value_type *__restrict__  x_ptr = x.data();
+    typename YVector::non_const_value_type *__restrict__  y_ptr = y.data();
+    typename XVector::const_value_type *__restrict__  x_ptr = x.data();
 
     const value_type one(1), zero(0);
     const ordinal_type nrow = A.numRows();
@@ -356,7 +356,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
 
 	{
 	  const int jdist = (jend-jbeg)/4;
-	  typename YVector::value_type tmp1(0), tmp2(0), tmp3(0), tmp4(0);
+	  typename YVector::non_const_value_type tmp1(0), tmp2(0), tmp3(0), tmp4(0);
 	  for (int jj=0;jj<jdist;++jj) {
 	    const value_type value1 = values_ptr[j];
 	    const value_type value2 = values_ptr[j+1];
@@ -519,7 +519,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
           const int jend = row_map_ptr[i+1];
           const int jdist = (jend-jbeg)/4;
           
-          const typename XVector::value_type x_val = alpha*x_ptr[i];
+          const typename XVector::const_value_type x_val = alpha*x_ptr[i];
           int j = jbeg;
           for (int jj=0;jj<jdist;++jj) {
             const value_type value1 = conjugate ? ATV::conj(values_ptr[j]) : values_ptr[j];
