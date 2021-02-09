@@ -324,7 +324,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
   if (A.numRows () <= static_cast<ordinal_type> (0)) {
     return;
   }
-#if defined(KOKKOS_ENABLE_SERIAL)
+#if defined(KOKKOS_ENABLE_SERIAL) 
   if(std::is_same<execution_space,Kokkos::Serial>::value) {
     /// serial impl                                                                                         
     typedef typename AMatrix::non_const_value_type value_type;
@@ -381,7 +381,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
 	    const int col_idx = col_idx_ptr[j];
 	    tmp1 += value*x_ptr[col_idx];
 	  }
-	  y_ptr[i] = y_ptr[i]*beta + tmp1 + tmp2 + tmp3 + tmp4;
+	  y_ptr[i] = y_ptr[i]*beta + alpha*(tmp1 + tmp2 + tmp3 + tmp4);
 	}
       }
     }
@@ -482,7 +482,7 @@ spmv_beta_transpose (typename YVector::const_value_type& alpha,
     KokkosBlas::scal (y, beta, y);
   }
 
-#if defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP)
+#if defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) || defined(KOKKOS_ENABLE_THREADS) 
   {
     int impl_thread_pool_size(0);
 #if defined(KOKKOS_ENABLE_SERIAL)
