@@ -128,14 +128,23 @@ typedef struct gemm_args gemm_args_t;
 static std::string gemm_csv_header_str =
     "algorithm,transAtransB,alpha,beta,team_size,vector_len,loop_type,A_dims,B_"
     "dims,C_dims,warm_up_n,"
-    "iter,total_time(s),average_time(s)";
+    "iter,total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
 
 /*************************** Internal helper fns **************************/
+// Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
+static inline int __gemm_flop_count(int a_m, int a_n, int b_k) {
+  return 2 * a_m * b_k * a_n;
+}
 static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                                   double time_in_seconds,
                                   const char *experiment_name = nullptr) {
   std::string algo_name = test_e_str[options.test];
   if (experiment_name) algo_name = std::string(experiment_name);
+
+  double flops = gemm_args.A.extent(0) * __gemm_flop_count(gemm_args.A.extent(1), gemm_args.A.extent(2),
+                                                           gemm_args.B.extent(2));
+  double gflops = flops / 10e9;
+  double average_time = time_in_seconds / options.n;
 
   options.out[0] << algo_name << "," << options.blas_args.gemm.gemm_args << ","
                  << options.blas_args.gemm.alpha << ","
@@ -147,7 +156,10 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                  << "x" << gemm_args.B.extent(2) << "," << gemm_args.C.extent(0)
                  << "x" << gemm_args.C.extent(1) << "x" << gemm_args.C.extent(2)
                  << "," << options.warm_up_n << "," << options.n << ","
-                 << time_in_seconds << "," << time_in_seconds / options.n
+                 << time_in_seconds << ","
+                 << time_in_seconds / options.n << ","
+                 << flops << ","
+                 << gflops / average_time
                  << std::endl;
 }
 
