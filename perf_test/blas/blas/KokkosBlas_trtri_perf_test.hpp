@@ -84,12 +84,27 @@ void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {
    */
 static inline int trtri_flop_count(int a_m, int a_n) {
   int flop_count = 0;
+  int flops_per_div, flops_per_mul, flops_per_add;
+
+    if (std::is_same<double, default_scalar>::value ||
+        std::is_same<float, default_scalar>::value ||
+        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+      flops_per_div = 1;
+      flops_per_mul = 1;
+      flops_per_add = 1;
+    } else {
+      // For complex, we need to count 2 flops for each add and 6 flops for each multiply or divide.
+      flops_per_div = 6;
+      flops_per_mul = 6;
+      flops_per_add = 2;
+    }
 
   for (int i = 0; i < a_m; i++) {
-    flop_count++;                // 1 / A[i,j]
-    flop_count += (i * (i + 1)); // TRMM FLOPS
-    flop_count += i;             // SCAL FLOPS
+    flop_count += flops_per_div;                                         // 1 / A[i,j]
+    flop_count += ((i * (i + 1)) / 2) * (flops_per_mul + flops_per_add); // TRMM FLOPS
+    flop_count += i * flops_per_mul;                                     // SCAL FLOPS
   }
+
   return flop_count;
 }
 

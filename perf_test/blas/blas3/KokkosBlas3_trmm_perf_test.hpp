@@ -85,11 +85,23 @@ void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
  *  flops = flops * rows_LHS
  */
 static inline int trmm_flop_count(char side, int b_m, int b_n, int a_m, int a_n) {
+  int flops;
+
   if (side == 'L' || side == 'l') {
-    return (a_n * (a_n + 1)) * a_m;
+      flops = (a_n * (a_n + 1)) * a_m;
   } else {
-    return (b_n * (b_n + 1)) * b_m;
+      flops = (b_n * (b_n + 1)) * b_m;
   }
+
+  if (std::is_same<double, default_scalar>::value ||
+        std::is_same<float, default_scalar>::value ||
+        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+      return flops;
+
+  // Account for 6 additional flops when complex numbers are used.
+  // Above we have counted 1 flop for each add and 1 flop for each multiply.
+  // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+  return flops * 4;
 }
 
 using view_type_3d =
@@ -348,6 +360,7 @@ struct parallel_blas_trmm {
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
+// TODO: Note why this is disabled on CUDA and HIP
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
