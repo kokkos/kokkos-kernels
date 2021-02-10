@@ -959,9 +959,9 @@ void __do_loop_and_invoke(options_t options,
        cur_dims.a.m <= options.stop.a.m && cur_dims.a.n <= options.stop.a.n &&
        cur_dims.b.m <= options.stop.b.m && cur_dims.b.n <= options.stop.b.n &&
        cur_dims.c.m <= options.stop.c.m && cur_dims.c.n <= options.stop.c.n;
-       cur_dims.a.m *= options.step, cur_dims.a.n *= options.step,
-      cur_dims.b.m *= options.step, cur_dims.b.n *= options.step,
-      cur_dims.c.m *= options.step, cur_dims.c.n *= options.step) {
+       cur_dims.a.m += options.step, cur_dims.a.n += options.step,
+      cur_dims.b.m += options.step, cur_dims.b.n += options.step,
+      cur_dims.c.m += options.step, cur_dims.c.n += options.step) {
     gemm_args = __do_setup<default_scalar, view_type_3d, view_type_3d,
                            view_type_3d, default_device>(options, cur_dims);
     fn(options, gemm_args);
