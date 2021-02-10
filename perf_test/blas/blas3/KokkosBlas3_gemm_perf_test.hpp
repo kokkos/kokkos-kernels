@@ -58,6 +58,7 @@
 #include "KokkosBatched_Util.hpp"
 
 //#define GEMM_PERF_TEST_DEBUG
+#define KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY
 
 // Forward declarations
 void do_gemm_serial_blas(options_t options);
@@ -322,6 +323,24 @@ void __do_gemm_parallel_blas(options_t options, gemm_args_t gemm_args) {
   return;
 }
 
+template <class TransAType, class TransBType,
+          class BlockingType>
+struct parallel_batched_gemm_range_policy {
+  gemm_args_t gemm_args_;
+
+  parallel_batched_gemm_range_policy(gemm_args_t gemm_args) : gemm_args_(gemm_args) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int &i) const {
+    auto svA = Kokkos::subview(gemm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
+
+    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+  }
+};
+
 template <class MemberType, class TransAType, class TransBType,
           class BlockingType>
 struct parallel_batched_gemm {
@@ -375,36 +394,59 @@ template <class TransAType, class TransBType, class BlockingType, class AlgoTag,
 void __do_gemm_parallel_batched_template(options_t options,
                                          gemm_args_t gemm_args) {
   using execution_space = typename device_type::execution_space;
+#if defined(KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY)
+  printf("Using RangePolicy!\n");
+  using policy_type     = Kokkos::RangePolicy<execution_space>;
+  using functor_type =
+      parallel_batched_gemm_range_policy<TransAType, TransBType, BlockingType>;
+#else
   using policy_type     = Kokkos::TeamPolicy<AlgoTag, execution_space>;
   using member_type     = typename policy_type::member_type;
   using functor_type =
       parallel_batched_gemm<member_type, TransAType, TransBType, BlockingType>;
+#endif
 
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
+#if !defined(KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY)
   auto league_size   = options.start.c.k;
+#endif
   Kokkos::Timer timer;
 
   STATUS;
 
   functor_type parallel_batched_gemm_functor(gemm_args);
+#if !defined(KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY)
   auto team_size  = gemm_args.bp.team_size;
   auto vector_len = gemm_args.bp.vector_len;
+#endif
 
   for (uint32_t i = 0; i < warm_up_n; i++) {
+#if defined(KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY)
+    Kokkos::parallel_for("parallelBatchedWarmUpLoopGemm",
+                         policy_type(0, options.start.c.k),
+                         parallel_batched_gemm_functor);
+#else
     Kokkos::parallel_for("parallelBatchedWarmUpLoopGemm",
                          policy_type(league_size, team_size, vector_len),
                          parallel_batched_gemm_functor);
+#endif
+    Kokkos::fence();
   }
-  Kokkos::fence();
 
   timer.reset();
   for (uint32_t i = 0; i < n; i++) {
+#if defined(KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY)
+    Kokkos::parallel_for("parallelBatchedTimedLoopGemm",
+                         policy_type(0, options.start.c.k),
+                         parallel_batched_gemm_functor);
+#else
     Kokkos::parallel_for("parallelBatchedTimedLoopGemm",
                          policy_type(league_size, team_size, vector_len),
                          parallel_batched_gemm_functor);
+#endif
+    Kokkos::fence();
   }
-  Kokkos::fence();
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds());
 
