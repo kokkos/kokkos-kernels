@@ -82,7 +82,7 @@ void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {
    * The KokkosBatched::SerialTrtri implementation performs trmm and scal on subblocks
    * of the A matrix. a_m subblocks are selected.
    */
-static inline int trtri_flop_count(int a_m, int a_n) {
+static inline int trtri_impl_flop_count(int a_m, int a_n) {
   int flop_count = 0;
   int flops_per_div, flops_per_mul, flops_per_add;
 
@@ -108,6 +108,34 @@ static inline int trtri_flop_count(int a_m, int a_n) {
   return flop_count;
 }
 
+// Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
+static inline int trtri_flop_count(int a_m, int a_n) {
+  int flops;
+  int flops_per_mul;
+  int flops_per_add;
+
+  if (a_m != a_n) {
+    fprintf(stderr, "%s:%d:ERROR: a_m != a_n.\n", __FILE__, __LINE__);
+    exit(255);
+  }
+
+  if (std::is_same<double, default_scalar>::value ||
+        std::is_same<float, default_scalar>::value ||
+        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+    flops_per_mul = 1;
+    flops_per_add = 1;
+  } else {
+    // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+    flops_per_mul = 6;
+    flops_per_add = 2;
+  }
+  
+  flops = (1./6.*a_n*a_n*a_n + 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_mul +
+          (1./6.*a_n*a_n*a_n - 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_add;
+
+  return flops;
+}
+
 using view_type_3d =
     Kokkos::View<default_scalar***, default_layout, default_device>;
 struct trtri_args {
@@ -118,7 +146,7 @@ typedef struct trtri_args trtri_args_t;
 
 static std::string trtri_csv_header_str =
     "algorithm,side-uplo-trans-diag,loop_type,A_dims,warm_up_n,iter,"
-    "total_time(s),average_time(s),GFLOPS,GFLOP/average_time(s)";
+    "total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
 
 /*************************** Internal helper fns **************************/
 static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args,
@@ -133,7 +161,7 @@ static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args,
                  << "x" << trtri_args.A.extent(2) << "," << options.warm_up_n
                  << "," << options.n << "," << time_in_seconds << ","
                  << average_time << ","
-                 << gflops << ","
+                 << flops << ","
                  << gflops / average_time
                  << std::endl;
 }
