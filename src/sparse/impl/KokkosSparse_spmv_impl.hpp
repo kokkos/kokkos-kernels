@@ -337,7 +337,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
     typename YVector::non_const_value_type *__restrict__  y_ptr = y.data();
     typename XVector::const_value_type *__restrict__  x_ptr = x.data();
 
-    const typename YVector::non_const_value_type one(1), zero(0);
+    const typename YVector::non_const_value_type zero(0);
     const ordinal_type nrow = A.numRows();
     if (alpha == zero) {
       if (dobeta == 0) {
