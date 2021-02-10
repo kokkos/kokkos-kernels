@@ -84,13 +84,34 @@ void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
  *  flops = (flops / 2) * 2
  *  flops = flops * rows_LHS
  */
+static inline int trmm_impl_flop_count(char side, int b_m, int b_n, int a_m, int a_n) {
+  int flops;
+
+  if (side == 'L' || side == 'l') {
+      flops = (b_m * (b_m + 1)) * b_n;
+  } else {
+      flops = (b_n * (b_n + 1)) * b_m;
+  }
+
+  if (std::is_same<double, default_scalar>::value ||
+        std::is_same<float, default_scalar>::value ||
+        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+      return flops;
+
+  // Account for 6 additional flops when complex numbers are used.
+  // Above we have counted 1 flop for each add and 1 flop for each multiply.
+  // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+  return flops * 4;
+}
+
+// Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
 static inline int trmm_flop_count(char side, int b_m, int b_n, int a_m, int a_n) {
   int flops;
 
   if (side == 'L' || side == 'l') {
-      flops = (a_n * (a_n + 1)) * a_m;
+    flops = b_m * b_m * b_n;
   } else {
-      flops = (b_n * (b_n + 1)) * b_m;
+    flops = b_n * b_n * b_m;
   }
 
   if (std::is_same<double, default_scalar>::value ||
@@ -115,7 +136,7 @@ typedef struct trmm_args trmm_args_t;
 
 static std::string trmm_csv_header_str =
     "algorithm,side-uplo-trans-diag,alpha,loop_type,A_dims,B_dims,warm_up_n,"
-    "iter,total_time(s),average_time(s),GFLOPS,GFLOP/average_time(s)";
+    "iter,total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
 
 /*************************** Internal helper fns **************************/
 static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
@@ -134,7 +155,7 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
                  << "x" << trmm_args.B.extent(2) << "," << options.warm_up_n
                  << "," << options.n << "," << time_in_seconds << ","
                  << time_in_seconds / options.n << ","
-                 << gflops << ","
+                 << flops << ","
                  << gflops / average_time
                  << std::endl;
 }
