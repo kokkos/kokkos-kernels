@@ -143,7 +143,7 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
 
   double flops = gemm_args.A.extent(0) * __gemm_flop_count(gemm_args.A.extent(1), gemm_args.A.extent(2),
                                                            gemm_args.B.extent(2));
-  double gflops = flops / 10e9;
+  double gflops = flops / 1e9;
   double average_time = time_in_seconds / options.n;
 
   options.out[0] << algo_name << "," << options.blas_args.gemm.gemm_args << ","

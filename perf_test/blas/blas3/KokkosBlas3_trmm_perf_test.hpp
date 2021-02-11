@@ -144,7 +144,7 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
   double flops = trmm_args.A.extent(0) * trmm_flop_count(trmm_args.side,
                                                          trmm_args.B.extent(1), trmm_args.B.extent(2),
                                                          trmm_args.A.extent(1), trmm_args.A.extent(2));
-  double gflops = flops / 10e9;
+  double gflops = flops / 1e9;
   double average_time = time_in_seconds / options.n;
 
   options.out[0] << test_e_str[options.test] << ","

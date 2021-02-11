@@ -129,7 +129,7 @@ static inline int trtri_flop_count(int a_m, int a_n) {
     flops_per_mul = 6;
     flops_per_add = 2;
   }
-  
+
   flops = (1./6.*a_n*a_n*a_n + 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_mul +
           (1./6.*a_n*a_n*a_n - 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_add;
 
@@ -152,7 +152,7 @@ static std::string trtri_csv_header_str =
 static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args,
                                    double time_in_seconds) {
   double flops = trtri_args.A.extent(0) * trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
-  double gflops = flops / 10e9;
+  double gflops = flops / 1e9;
   double average_time = time_in_seconds / options.n;
 
   options.out[0] << test_e_str[options.test] << ","
