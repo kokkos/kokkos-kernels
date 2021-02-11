@@ -58,7 +58,7 @@
 #include "KokkosBatched_Util.hpp"
 
 //#define GEMM_PERF_TEST_DEBUG
-#define KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY
+//#define KOKKOSKERNELS_GEMM_PERF_TEST_USE_RANGE_POLICY
 
 // Forward declarations
 void do_gemm_serial_blas(options_t options);
