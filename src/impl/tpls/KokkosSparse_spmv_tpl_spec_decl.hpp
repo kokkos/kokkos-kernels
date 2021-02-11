@@ -414,7 +414,6 @@ namespace Impl
 		      const XVector& x,					\
 		      const coefficient_type& beta,			\
 		      const YVector& y) {				\
-    std::cout << "Hello from MKL SpMV wrapper for " << Kokkos::ArithTraits<SCALAR>::name() << '\n'; \
       std::string label = "KokkosSparse::spmv[TPL_MKL," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);				\
       spmv_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), A.numCols(), \
