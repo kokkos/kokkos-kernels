@@ -121,6 +121,8 @@ namespace Test {
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeB::value_type ScalarB;
     typedef typename ViewTypeC::value_type ScalarC;
+    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, typename ViewTypeA::device_type> SubviewTypeA;
+    typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, typename ViewTypeB::device_type> SubviewTypeB;
     typedef Kokkos::Details::ArithTraits<ScalarC> APT;
     typedef typename APT::mag_type mag_type;
     ScalarA alpha;
@@ -130,11 +132,19 @@ namespace Test {
     void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,C_rows), [&] (const int& i) {
         // Give each kokkos thread a vector of A
-        auto a_vec = A_t ? Kokkos::subview(A, Kokkos::ALL(), i) : Kokkos::subview(A, i, Kokkos::ALL());
+        SubviewTypeA a_vec;
+        if(A_t)
+          a_vec = Kokkos::subview(A, Kokkos::ALL(), i);
+        else
+          a_vec = Kokkos::subview(A, i, Kokkos::ALL());
 
         // Have all vector lanes perform the dot product
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,C_cols), [&] (const int& j) {
-          auto b_vec = B_t ? Kokkos::subview(B, j, Kokkos::ALL()) : Kokkos::subview(B, Kokkos::ALL(), j);
+          SubviewTypeB b_vec;
+          if(B_t)
+            b_vec = Kokkos::subview(B, j, Kokkos::ALL());
+          else
+            b_vec = Kokkos::subview(B, Kokkos::ALL(), j);
           ScalarC ab = ScalarC(0);
           for (int k = 0; k < A_cols; k++) {
             auto a = A_c ? APT::conj(a_vec(k)) : a_vec(k);
