@@ -116,6 +116,31 @@ struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::C
 #endif  // CUDA/CUSPARSE >= 9.0?
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE) \
+template <> \
+struct spmv_tpl_spec_avail<const SCALAR, const int, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int, \
+			   const SCALAR*,       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, \
+			   SCALAR*,             Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged> > { \
+  enum : bool { value = true }; \
+};
+
+#ifdef KOKKOS_ENABLE_SERIAL
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(float, Kokkos::Serial)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(double, Kokkos::Serial)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::Serial)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::Serial)
+#endif
+
+#ifdef KOKKOS_ENABLE_OPENMP
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(float, Kokkos::OpenMP)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(double, Kokkos::OpenMP)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::OpenMP)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
+#endif
+
+#endif
+
 // Specialization struct which defines whether a specialization exists
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
