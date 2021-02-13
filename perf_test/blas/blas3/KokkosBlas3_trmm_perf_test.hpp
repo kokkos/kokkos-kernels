@@ -136,7 +136,7 @@ typedef struct trmm_args trmm_args_t;
 
 static std::string trmm_csv_header_str =
     "algorithm,side-uplo-trans-diag,alpha,loop_type,A_dims,B_dims,warm_up_n,"
-    "iter,total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
+    "iter,total_time(s),average_time(s),FLOPS,GFLOP/average_time(s),min_achieved_bandwidth(GB/s),max_achieved_bandwidth(GB/s)";
 
 /*************************** Internal helper fns **************************/
 static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
@@ -146,6 +146,23 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
                                                          trmm_args.A.extent(1), trmm_args.A.extent(2));
   double gflops = flops / 1e9;
   double average_time = time_in_seconds / options.n;
+  double gbytes_in_matrix = (trmm_args.B.extent(0) * trmm_args.B.extent(1) * trmm_args.B.extent(2) * sizeof(default_scalar)) / 1e9;
+  double min_memory_transactions, max_memory_transactions;
+
+  // Assuming infinite cache size
+  // We have to read A and B into the cache once and then write
+  // B back out to main memory once.
+  min_memory_transactions = 3;
+
+  // Assuming no register or real caching
+  // We have to go out to memory for every element we read from A and B as well as
+  // every element we write to B.
+  // We use the trmm flops from lapack note 41 and multiple by 3/2 to account for the
+  // write to B since this flop count is for one multiply and one add.
+  if (trmm_args.side == 'l' || trmm_args.side == 'L')
+    max_memory_transactions = trmm_args.B.extent(1) * trmm_args.B.extent(1) * trmm_args.B.extent(2) * (3./2.);
+  else
+    max_memory_transactions = trmm_args.B.extent(2) * trmm_args.B.extent(2) * trmm_args.B.extent(1) * (3./2.);
 
   options.out[0] << test_e_str[options.test] << ","
                  << options.blas_args.trmm.trmm_args << ","
@@ -154,9 +171,11 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
                  << "x" << trmm_args.A.extent(2) << "," << trmm_args.B.extent(0) << "x" << trmm_args.B.extent(1)
                  << "x" << trmm_args.B.extent(2) << "," << options.warm_up_n
                  << "," << options.n << "," << time_in_seconds << ","
-                 << time_in_seconds / options.n << ","
+                 << average_time << ","
                  << flops << ","
-                 << gflops / average_time
+                 << gflops / average_time << ","
+                 << (gbytes_in_matrix * min_memory_transactions) / average_time << ","
+                 << (gbytes_in_matrix * max_memory_transactions) / average_time
                  << std::endl;
 }
 
