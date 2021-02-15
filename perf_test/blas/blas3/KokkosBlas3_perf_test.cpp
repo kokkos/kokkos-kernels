@@ -119,6 +119,11 @@ static void __print_help_blas3_perf_test() {
   printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
          DEFAULT_VECTOR_LEN);
 
+  printf("\t-u, --use_auto={0,1}\n");
+  printf("\t\tWhether to use Kokkos::AUTO for vector_len and team_size (Heirarchical parallelism).\n");
+  printf("\t\t\t1 to use Kokkos::AUTO, otherwise --vector_len and --team_size will be used. (default: %d)\n",
+         DEFAULT_USE_AUTO);
+
   printf("\t-k, --batch_size=LEN\n");
   printf("\t\tBatch size. Adds third dimension to matrices A, B, and C.\n");
   printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
@@ -238,6 +243,7 @@ int main(int argc, char **argv) {
   options.blas_routines        = std::string(DEFAULT_BLAS_ROUTINES);
   options.blas_args.team_size  = DEFAULT_TEAM_SIZE;
   options.blas_args.vector_len = DEFAULT_VECTOR_LEN;
+  options.blas_args.use_auto   = DEFAULT_USE_AUTO;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;
@@ -245,7 +251,7 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.gemm_args = DEFAULT_GEMM_ARGS;
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:",
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:",
                             long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
@@ -363,6 +369,7 @@ int main(int argc, char **argv) {
         break;
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
+      case 'u': options.blas_args.use_auto = atoi(optarg); break;
       case 'c':
         out_file         = optarg;
         options.out_file = std::string(out_file);
