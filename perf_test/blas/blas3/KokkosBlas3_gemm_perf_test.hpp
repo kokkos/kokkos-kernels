@@ -133,7 +133,13 @@ static std::string gemm_csv_header_str =
 /*************************** Internal helper fns **************************/
 // Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
 static inline int __gemm_flop_count(int a_m, int a_n, int b_k) {
-  return 2 * a_m * b_k * a_n;
+    if (std::is_same<double, default_scalar>::value ||
+        std::is_same<float, default_scalar>::value ||
+        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+      return 2 * a_m * b_k * a_n;
+    else
+      // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+      return (2 + 6) * a_m * b_k * a_n;
 }
 static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                                   double time_in_seconds,
