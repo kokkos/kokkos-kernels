@@ -63,7 +63,7 @@ static struct option long_options[] = {
     {"trmm_options", required_argument, 0, 'o'},
     {"trmm_alpha", required_argument, 0, 'a'},
     {"gemm_options", required_argument, 0, 'g'},
-    {"gemm_alpha", required_argument, 0, 'p'},
+    {"gemm_scalars", required_argument, 0, 'p'},
     {"team_size", required_argument, 0, 'z'},
     {"vector_len", required_argument, 0, 'n'},
     {"batch_size", required_argument, 0, 'k'},
@@ -104,10 +104,10 @@ static void __print_help_blas3_perf_test() {
       "%s)\n",
       DEFAULT_GEMM_ARGS);
 
-  printf("\t-p, --gemm_alpha=SCALAR_VALUE\n");
-  printf("\t\tGEMM alpha value.\n");
-  printf("\t\t\tThe value of alpha in floating point. (default: %lf)\n",
-         DEFAULT_GEMM_ALPHA);
+  printf("\t-p, --gemm_scalars=ALPHA_SCALAR_VALUE,BETA_SCALAR_VALUE\n");
+  printf("\t\tGEMM alpha and beta values.\n");
+  printf("\t\t\tThe value of alpha and beta in floating point. (default: %lf,%lf)\n",
+         DEFAULT_GEMM_ALPHA, DEFAULT_GEMM_BETA);
 
   printf("\t-z, --team_size=SIZE\n");
   printf("\t\tKokkos team size.\n");
@@ -250,8 +250,9 @@ int main(int argc, char **argv) {
 
   options.blas_args.gemm.gemm_args = DEFAULT_GEMM_ARGS;
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
+  options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:",
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:",
                             long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
@@ -275,14 +276,19 @@ int main(int argc, char **argv) {
         break;
       case 'g':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
-        if (strlen(optarg) != 3) {
+        if (strlen(optarg) != 2) {
           __blas3_perf_test_input_error(argv, ret, optarg);
         }
         options.blas_args.gemm.gemm_args = optarg;
         break;
       case 'p':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
-        options.blas_args.gemm.alpha = (default_scalar)atof(optarg);
+        double alpha, beta;
+        if (sscanf(optarg, "%lf,%lf", &alpha, &beta) != 2)
+          __blas3_perf_test_input_error(argv, ret, optarg);
+
+        options.blas_args.gemm.alpha = static_cast<default_scalar>(alpha);
+        options.blas_args.gemm.beta = static_cast<default_scalar>(beta);
         break;
       case 'a':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));

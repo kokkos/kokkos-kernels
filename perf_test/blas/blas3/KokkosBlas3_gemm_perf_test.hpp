@@ -105,6 +105,7 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
 /*************************** Test types and defaults **************************/
 #define DEFAULT_GEMM_ARGS "NN"
 #define DEFAULT_GEMM_ALPHA 1.0
+#define DEFAULT_GEMM_BETA  1.0
 
 using view_type_3d =
     Kokkos::View<default_scalar ***, default_layout, default_device>;
@@ -963,7 +964,7 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   gemm_args.B             = vtb("gemm_args.B", dim.b.k, dim.b.m, dim.b.n);
   gemm_args.C             = vtc("gemm_args.C", dim.c.k, dim.c.m, dim.c.n);
   gemm_args.alpha         = options.blas_args.gemm.alpha;
-  gemm_args.alpha         = options.blas_args.gemm.beta;
+  gemm_args.beta          = options.blas_args.gemm.beta;
   gemm_args.bp.team_size  = options.blas_args.team_size;
   gemm_args.bp.vector_len = options.blas_args.vector_len;
 
