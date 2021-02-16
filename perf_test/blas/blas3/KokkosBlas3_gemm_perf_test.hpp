@@ -145,7 +145,10 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                                   double time_in_seconds,
                                   const char *experiment_name = nullptr) {
   std::string algo_name = test_e_str[options.test];
+  std::string ts = std::to_string(gemm_args.bp.team_size);
+  std::string vlen = std::to_string(gemm_args.bp.vector_len);
   if (experiment_name) algo_name = std::string(experiment_name);
+  if (options.blas_args.use_auto) ts = vlen = "Kokkos::AUTO";
 
   double flops = gemm_args.A.extent(0) * __gemm_flop_count(gemm_args.A.extent(1), gemm_args.A.extent(2),
                                                            gemm_args.B.extent(2));
@@ -154,8 +157,9 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
 
   options.out[0] << algo_name << "," << options.blas_args.gemm.gemm_args << ","
                  << options.blas_args.gemm.alpha << ","
-                 << options.blas_args.gemm.beta << "," << gemm_args.bp.team_size
-                 << "," << gemm_args.bp.vector_len << ","
+                 << options.blas_args.gemm.beta << ","
+                 << ts << ","
+                 << vlen << ","
                  << loop_e_str[options.loop] << "," << gemm_args.A.extent(0)
                  << "x" << gemm_args.A.extent(1) << "x" << gemm_args.A.extent(2)
                  << "," << gemm_args.B.extent(0) << "x" << gemm_args.B.extent(1)
