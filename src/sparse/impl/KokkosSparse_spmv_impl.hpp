@@ -341,7 +341,10 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
     const ordinal_type nrow = A.numRows();
     if (alpha == zero) {
       if (dobeta == 0) {
-        memset(y_ptr, 0, sizeof(typename YVector::value_type)*nrow);
+        /// not working with kkosDev2_CUDA110_GCC92_cpp17/
+        ///memset(y_ptr, 0, sizeof(typename YVector::value_type)*nrow);
+        for (int i=0;i<nrow;++i) 
+          y_ptr[i] = zero;
       } else if (dobeta == 1) {
         /// so nothing
       } else {
