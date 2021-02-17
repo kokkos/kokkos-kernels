@@ -67,6 +67,7 @@ static struct option long_options[] = {
     {"team_size", required_argument, 0, 'z'},
     {"vector_len", required_argument, 0, 'n'},
     {"batch_size", required_argument, 0, 'k'},
+    {"batch_size_last_dim", required_argument, 0, 'd'},
     {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
@@ -128,6 +129,11 @@ static void __print_help_blas3_perf_test() {
   printf("\t\tBatch size. Adds third dimension to matrices A, B, and C.\n");
   printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
          DEFAULT_K);
+
+  printf("\t-d, --batch_size_last_dim={0,1}\n");
+  printf("\t\tHow to allocate the batch_size in the matrices.\n");
+  printf("\t\t\t1 make the batch_size the last dimension, otherwise batch_size is the first dimension (default: %d)\n",
+         DEFAULT_BATCH_SIZE_LAST_DIM);
 
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
@@ -252,7 +258,7 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:",
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:",
                             long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
@@ -373,6 +379,7 @@ int main(int argc, char **argv) {
             options.stop.a.k = options.stop.b.k = options.stop.c.k =
                 atoi(optarg);
         break;
+      case 'd': options.blas_args.batch_size_last_dim = atoi(optarg); break;
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
       case 'u': options.blas_args.use_auto = atoi(optarg); break;

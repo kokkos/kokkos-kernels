@@ -62,6 +62,7 @@
 #define DEFAULT_TEAM_SIZE 1
 #define DEFAULT_VECTOR_LEN 1
 #define DEFAULT_USE_AUTO 0
+#define DEFAULT_BATCH_SIZE_LAST_DIM 0
 
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
@@ -84,7 +85,7 @@ struct blas_args {
   // ADD MORE BLAS3 ROUTINES HERE
   int team_size;
   int vector_len;
-  bool use_auto;
+  bool use_auto, batch_size_last_dim;
   // ADD MORE COMMON BLAS3 OPTIONS HERE
 };
 typedef struct blas_args blas_args_t;

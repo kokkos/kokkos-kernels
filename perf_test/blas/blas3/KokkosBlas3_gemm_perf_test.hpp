@@ -82,6 +82,8 @@ struct TeamVectorTag {};
 struct LayoutLeftTag {};
 struct LayoutRightTag {};
 struct SimdCpuTag {};
+struct LastDimTag {};
+struct FirstDimTag {};
 
 // gemm invoke table
 void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
@@ -150,10 +152,19 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
   if (experiment_name) algo_name = std::string(experiment_name);
   if (options.blas_args.use_auto) ts = vlen = "Kokkos::AUTO";
 
-  double flops = gemm_args.A.extent(0) * __gemm_flop_count(gemm_args.A.extent(1), gemm_args.A.extent(2),
-                                                           gemm_args.B.extent(2));
-  double gflops = flops / 1e9;
+  double flops;
+  double gflops;
   double average_time = time_in_seconds / options.n;
+
+  if (options.blas_args.batch_size_last_dim) {
+    flops = gemm_args.A.extent(2) * __gemm_flop_count(gemm_args.A.extent(0), gemm_args.A.extent(1),
+                                                      gemm_args.B.extent(1));
+  } else {
+    flops = gemm_args.A.extent(0) * __gemm_flop_count(gemm_args.A.extent(1), gemm_args.A.extent(2),
+                                                      gemm_args.B.extent(2));
+  }
+
+  gflops = flops / 1e9;
 
   options.out[0] << algo_name << "," << options.blas_args.gemm.gemm_args << ","
                  << options.blas_args.gemm.alpha << ","
@@ -353,10 +364,20 @@ struct parallel_batched_gemm_range_policy {
   parallel_batched_gemm_range_policy(gemm_args_t gemm_args) : gemm_args_(gemm_args) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const int &i) const {
+  void operator()(const FirstDimTag &, const int &i) const {
     auto svA = Kokkos::subview(gemm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
+
+    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LastDimTag &, const int &i) const {
+    auto svA = Kokkos::subview(gemm_args_.A, Kokkos::ALL(), Kokkos::ALL(), i);
+    auto svB = Kokkos::subview(gemm_args_.B, Kokkos::ALL(), Kokkos::ALL(), i);
+    auto svC = Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), i);
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
@@ -415,7 +436,8 @@ template <class TransAType, class TransBType, class BlockingType, class AlgoTag,
           class device_type>
 void __do_gemm_parallel_batched_template_range_policy(options_t options, gemm_args_t gemm_args) {
   using execution_space = typename device_type::execution_space;
-  using policy_type     = Kokkos::RangePolicy<execution_space>;
+  using policy_type     = Kokkos::RangePolicy<FirstDimTag, execution_space>;
+  using policy_type_last_dim = Kokkos::RangePolicy<LastDimTag, execution_space>;
   using functor_type =
       parallel_batched_gemm_range_policy<TransAType, TransBType, BlockingType>;
 
@@ -427,19 +449,38 @@ void __do_gemm_parallel_batched_template_range_policy(options_t options, gemm_ar
 
   functor_type parallel_batched_gemm_functor(gemm_args);
 
-  for (uint32_t i = 0; i < warm_up_n; i++) {
-    Kokkos::parallel_for("parallelBatchedWarmUpLoopGemm",
-                         policy_type(0, options.start.c.k),
-                         parallel_batched_gemm_functor);
-    Kokkos::fence();
+  if (options.blas_args.batch_size_last_dim) {
+    for (uint32_t i = 0; i < warm_up_n; i++) {
+      Kokkos::parallel_for("parallelBatchedWarmUpLoopGemm",
+                          policy_type_last_dim(0, options.start.c.k),
+                          parallel_batched_gemm_functor);
+      Kokkos::fence();
+    }
+  } else {
+    for (uint32_t i = 0; i < warm_up_n; i++) {
+      Kokkos::parallel_for("parallelBatchedWarmUpLoopGemm",
+                          policy_type(0, options.start.c.k),
+                          parallel_batched_gemm_functor);
+      Kokkos::fence();
+    }
   }
 
-  timer.reset();
-  for (uint32_t i = 0; i < n; i++) {
-    Kokkos::parallel_for("parallelBatchedTimedLoopGemm",
-                         policy_type(0, options.start.c.k),
-                         parallel_batched_gemm_functor);
-    Kokkos::fence();
+  if (options.blas_args.batch_size_last_dim) {
+    timer.reset();
+    for (uint32_t i = 0; i < n; i++) {
+      Kokkos::parallel_for("parallelBatchedTimedLoopGemm",
+                          policy_type_last_dim(0, options.start.c.k),
+                          parallel_batched_gemm_functor);
+      Kokkos::fence();
+    }
+  } else {
+    timer.reset();
+    for (uint32_t i = 0; i < n; i++) {
+      Kokkos::parallel_for("parallelBatchedTimedLoopGemm",
+                          policy_type(0, options.start.c.k),
+                          parallel_batched_gemm_functor);
+      Kokkos::fence();
+    }
   }
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds());
@@ -964,9 +1005,15 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dim) {
 
   gemm_args.transA        = options.blas_args.gemm.gemm_args.c_str()[0];
   gemm_args.transB        = options.blas_args.gemm.gemm_args.c_str()[1];
-  gemm_args.A             = vta("gemm_args.A", dim.a.k, dim.a.m, dim.a.n);
-  gemm_args.B             = vtb("gemm_args.B", dim.b.k, dim.b.m, dim.b.n);
-  gemm_args.C             = vtc("gemm_args.C", dim.c.k, dim.c.m, dim.c.n);
+  if (options.blas_args.batch_size_last_dim) {
+    gemm_args.A             = vta("gemm_args.A", dim.a.m, dim.a.n, dim.a.k);
+    gemm_args.B             = vtb("gemm_args.B", dim.b.m, dim.b.n, dim.b.k);
+    gemm_args.C             = vtc("gemm_args.C", dim.c.m, dim.c.n, dim.c.k);
+  } else {
+    gemm_args.A             = vta("gemm_args.A", dim.a.k, dim.a.m, dim.a.n);
+    gemm_args.B             = vtb("gemm_args.B", dim.b.k, dim.b.m, dim.b.n);
+    gemm_args.C             = vtc("gemm_args.C", dim.c.k, dim.c.m, dim.c.n);
+  }
   gemm_args.alpha         = options.blas_args.gemm.alpha;
   gemm_args.beta          = options.blas_args.gemm.beta;
   gemm_args.bp.team_size  = options.blas_args.team_size;
