@@ -1023,6 +1023,99 @@ void __do_gemm_parallel_experiment5(options_t options, gemm_args_t gemm_args) {
   return;
 }
 
+template <class MemberType, class SimdViewType, class TransAType, class TransBType,
+          class BlockingType>
+class parallel_batched_gemm_experiment6 {
+ private:
+  SimdViewType &A, &B, &C;
+  gemm_args_t gemm_args;
+
+ public:
+  parallel_batched_gemm_experiment6(SimdViewType &_A, SimdViewType &_B,
+                                    SimdViewType &_C, gemm_args_t _gemm_args)
+      : A(_A), B(_B), C(_C), gemm_args(_gemm_args) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const MemberType &member) const {
+    auto i = member.league_rank();
+    auto svA = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svB = Kokkos::subview(B, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svC = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
+
+    // Uses two serial for-loops internally
+    KokkosBatched::TeamVectorGemm<MemberType, TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args.alpha, svA, svB, gemm_args.beta, svC);
+  }
+};
+
+template <class TransAType, class TransBType, class BlockingType,
+          class device_type>
+void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
+  using execution_space = typename device_type::execution_space;
+  using policy_type     = Kokkos::TeamPolicy<execution_space>;
+  using member_type     = typename policy_type::member_type;
+
+  // Construct the vector type
+  using scalar_type = typename view_type_3d::value_type;
+  constexpr int vl =
+      KokkosBatched::DefaultVectorLength<scalar_type, execution_space>::value;
+  constexpr int il = 
+      KokkosBatched::DefaultInternalVectorLength<scalar_type, execution_space>::value;
+  using vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, vl>;
+  using internal_vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, il>;
+  using view_type = Kokkos::View<scalar_type***[vl], default_layout, default_device>;
+  using vector_view_type = Kokkos::View<vector_type***, default_layout, default_device>;
+  using internal_vector_view_type = Kokkos::View<internal_vector_type***, default_layout, default_device>;
+  using functor_type =
+      parallel_batched_gemm_experiment6<member_type, internal_vector_view_type,
+                                        TransAType, TransBType, BlockingType>;
+
+  uint32_t warm_up_n = options.warm_up_n;
+  uint32_t n         = options.n;
+  auto k             = options.start.c.k;
+  Kokkos::Timer timer;
+  auto simd_batch_size = k / vl + (k % vl > 0);
+  STATUS;
+
+  // Construct matrices
+  vector_view_type A_vector("A_vector", simd_batch_size, gemm_args.A.extent(0), gemm_args.A.extent(1));
+  view_type A((scalar_type *)A_vector.data(), simd_batch_size, gemm_args.A.extent(0), gemm_args.A.extent(1));
+  internal_vector_view_type A_vector_internal(A_vector.data(), simd_batch_size, gemm_args.A.extent(0), gemm_args.A.extent(1));
+
+  vector_view_type B_vector("B_vector", simd_batch_size, gemm_args.B.extent(0), gemm_args.B.extent(1));
+  view_type B((scalar_type *)B_vector.data(), simd_batch_size, gemm_args.B.extent(0), gemm_args.B.extent(1));
+  internal_vector_view_type B_vector_internal(B_vector.data(), simd_batch_size, gemm_args.B.extent(0), gemm_args.B.extent(1));
+
+  vector_view_type C_vector("C_vector", simd_batch_size, gemm_args.C.extent(0), gemm_args.C.extent(1));
+  view_type C((scalar_type *)C_vector.data(), simd_batch_size, gemm_args.C.extent(0), gemm_args.C.extent(1));
+  internal_vector_view_type C_vector_internal(C_vector.data(), simd_batch_size, gemm_args.C.extent(0), gemm_args.C.extent(1));
+
+  uint64_t seed = Kokkos::Impl::clock_tic();
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
+  Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
+  Kokkos::fill_random(B, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
+  Kokkos::fill_random(C, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
+  Kokkos::fence();
+
+  functor_type experiment6_functor(A_vector_internal, B_vector_internal, C_vector_internal, gemm_args);
+
+  for (uint32_t i = 0; i < warm_up_n; ++i) {
+    Kokkos::parallel_for("parallelBatchedUntimedExperiment6Gemm",
+                         policy_type(simd_batch_size, Kokkos::AUTO, vl/il), experiment6_functor);
+    Kokkos::fence();
+  }
+
+  timer.reset();
+  for (uint32_t i = 0; i < n; ++i) {
+    Kokkos::parallel_for("parallelBatchedTimedExperiment6Gemm",
+                         policy_type(simd_batch_size, Kokkos::AUTO, vl/il), experiment6_functor);
+    Kokkos::fence();
+  }
+
+  __gemm_output_csv_row(options, gemm_args, timer.seconds(), "experiment6");
+  return;
+}
+
 /*************************** Internal setup fns **************************/
 template <class scalar_type, class vta, class vtb, class vtc, class device_type>
 gemm_args_t __do_setup(options_t options, matrix_dims_t dim) {
@@ -1195,7 +1288,7 @@ void do_gemm_experiment_parallel(options_t options) {
   using TransBType   = Trans::NoTranspose;
   using BlockingType = Algo::Gemm::Unblocked;
 
-  __do_loop_and_invoke(
+/*   __do_loop_and_invoke(
       options, __do_gemm_parallel_experiment1<TransAType, TransBType,
                                               BlockingType, default_device>);
   __do_loop_and_invoke(
@@ -1209,6 +1302,9 @@ void do_gemm_experiment_parallel(options_t options) {
                                               BlockingType, default_device>);
   __do_loop_and_invoke(
       options, __do_gemm_parallel_experiment5<TransAType, TransBType,
+                                              BlockingType, default_device>); */
+  __do_loop_and_invoke(
+      options, __do_gemm_parallel_experiment6<TransAType, TransBType,
                                               BlockingType, default_device>);
 }
 
