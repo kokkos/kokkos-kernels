@@ -42,25 +42,39 @@
 //@HEADER
 */
 
-
+// This implementation consists of two major steps: analyze and symbolic. 
+//
+// The analyze step
+//    - first computes the max FLOPS for each row of A and
+//    - then categorizes the rows of A into 6 different categories as follows:
+//         1) rows with 0 or 1 entry,
+//         2-5) sparse rows whose computations fits into shared memory, and
+//         6) dense rows whose computations may not fit into the shared memory.
+// The analyze step writes the number of rows in these categories into an array of size 6.
+// It also writes those rows in each different category into a 2D array of size numRowsA x 6.
+// 
+// The symbolic step, for each category c,
+//    - checks the numbers of rows in category c and launches the parallel_for specialized for 
+//      category c if that number is greater than zero.
+  
 #include "KokkosKernels_Utils.hpp"
 
 namespace KokkosSparse{
 
   namespace Impl{
 
-
-    struct tAnalyzeDenseSparseB{};
-    struct tAnalyzeRowLimitsBdense{};
-    struct tAnalyzeRowLimitsBsparse{};
-    struct tAnalyzeDenseSparseA{};
-    struct tAnalyzeRowLimitsAdense{};
-    struct tAnalyzeRowLimitsAsparse{};
-
+    // Tags to be used by different parallel_fors
+    struct tAnalyze{};
+    struct tSymbolicSparse{};
+    struct tSymbolicDense{};
+    struct tSymbolicSingleEntry{};
+    
+    // The functor
     template <typename HandleType, typename LayoutType>
     struct SPGEMM <HandleType, LayoutType>::SymbolicFunctor
     {
  
+      // User-provided data members
       ordinal_t numRowsA;
       ordinal_t numRowsB;
       ordinal_t numColsB;
@@ -73,280 +87,395 @@ namespace KokkosSparse{
       const_entries_t entriesB;
       const_values_t valuesB;
 
-      size_view_t rowFlopsA;
-      minmax_view_t rowLimitsA;
-      minmax_view_t rowLimitsB;
+      row_map_t row_mapC;
 
-      ord_view_t denseRowsA;
-      ord_view_t denseRowsB;
+      // Algorithm-internal members
+      ord_view_t rowCountsA;         // #rows in each category 
+      host_view_t h_rowCountsA; 
+      two_view_t rowOrderA;          // actual row ids in different categories 
+      
+      pool_t pool;                   // memory pool which will be used by the dense rows
+      size_t maxFlop;                // max flop needed to compute a row
+      size_t maxBeginsSize;          // smallest power of 2 greater than maxFlops 
 
-      ord_view_t ptrDenseSparse; // length: 5, covers the following 5 variables on device
-      ordinal_t ptrDenseRowsB; 
-      ordinal_t ptrSparseRowsB;
-      ordinal_t ptrDenseRowsA;
-      ordinal_t ptrSparseRowsA;
-      ordinal_t ptrSingleEntryRowsA; 
+      int vectorSize;                // used by the dense rows (suggested vector size)
+      size_t shmemSize;              // this is set by user, currently it is not used 
 
-      ordinal_t minCol;
-      ordinal_t maxCol;
-
-      int vectorSize;
-      int teamSize;
-
+      
+      bool verbose;
+      
       SymbolicFunctor(ordinal_t numRowsA_, ordinal_t numRowsB_, ordinal_t numColsB_,
 		      const_row_map_t row_mapA_, const_entries_t entriesA_, const_values_t valuesA_,
 		      const_row_map_t row_mapB_, const_entries_t entriesB_, const_values_t valuesB_,
-		      size_view_t rowFlopsA_, minmax_view_t rowLimitsA_, minmax_view_t rowLimitsB_, 
-		      ord_view_t denseRowsA_, ord_view_t denseRowsB_,
-		      int vectorSize_):
+		      row_map_t row_mapC_,
+		      two_view_t rowOrderA_,
+		      int shmemSize_, int vectorSize_,
+		      bool verbose_):
 	numRowsA(numRowsA_), numRowsB(numRowsB_), numColsB(numColsB_), 
 	row_mapA(row_mapA_), entriesA(entriesA_), valuesA(valuesA_), 
 	row_mapB(row_mapB_), entriesB(entriesB_), valuesB(valuesB_),
-	rowFlopsA(rowFlopsA_), rowLimitsA(rowLimitsA_), rowLimitsB(rowLimitsB_), 
-	denseRowsA(denseRowsA_), denseRowsB(denseRowsB_),
-	vectorSize(vectorSize_) // not currently used
-	
+	row_mapC(row_mapC_),
+	rowOrderA(rowOrderA_),
+	shmemSize(shmemSize_), vectorSize(vectorSize_),
+	verbose(verbose_)
       {
-	typedef Kokkos::Details::ArithTraits<ordinal_t> AT;
-      	minCol = AT::max();
-      	maxCol = AT::min(); 
-
-	// These might be useless
-	teamSize = 1024 / vectorSize;
-	int numTeams = numRowsB/teamSize + 1;
-
       }
 
       void analyze() {
+	rowCountsA = ord_view_t("rowCountsA", 6);
 
-	///////////////////////////////////////////////////////////////
-	// Set the pointers for sparse and dense rows in A and B as follows
-	// First two entries are about B and last three entries are about A
-	///////////////////////////////////////////////////////////////
-  
-	ptrDenseSparse = ord_view_t(Kokkos::ViewAllocateWithoutInitializing("ptrDenseSparse"), 5);
-	auto h_ptrDenseSparse = Kokkos::create_mirror(ptrDenseSparse);
-	h_ptrDenseSparse[0] = -1;         //points to where to write dense B rows after incrementing
-	h_ptrDenseSparse[1] = numRowsB;   //points to where to write sparse B rows after decrementing
-	h_ptrDenseSparse[2] = -1;         //points to where to write dense A rows after incrementing
-	h_ptrDenseSparse[3] = numRowsA;   //points to where to write dense A rows after decrementing
-	h_ptrDenseSparse[4] = numRowsA-1; //points to where to write single-entry A rows after incrementing
-	Kokkos::deep_copy(ptrDenseSparse, h_ptrDenseSparse);
-
-
-	///////////////////////////////////////////////////////////////
-	// 1. Find the max # nonzeros in B rows
-	// 2. Find the # of dense B rows: numDenseRowsB 
-	// 3. Write indices of dense/sparse B rows in denseRowsB so that
-	//  -rows with >256 entries are in positions 0 .. numDenseRowsB-1
-	//  -rows with <=256 entries are in numDenseRowsB ... numRowsB-1
-	///////////////////////////////////////////////////////////////
-
-	ordinal_t maxNnzInBrow = 0;
-	Kokkos::RangePolicy<tAnalyzeDenseSparseB, ExecSpace> pAnalyzeDenseSparseB(0, numRowsB);
-	Kokkos::parallel_reduce ("AnalyzeDenseSparseB", pAnalyzeDenseSparseB, *this, Kokkos::Max<ordinal_t>(maxNnzInBrow));
-
-
-	///////////////////////////////////////////////////////////////
-	// 1. Find the max # nonzeros in A rows
-	// 2. Find the # of dense A rows: numDenseRowsA 
-	// 3. Find the # of single entry A rows: ptrSingleEntryRowsA + 1 - numRowsA 
-	// 4. Write indices of dense/sparse/single-entry A rows in denseRowsA so that
-	//  -rows with >256 entries are in positions 0 .. numDenseRowsA-1
-	//  -rows with <=256 entries are in ptrSparseRowsA ... numRowsA-1
-	//  -rows with 1 entry are in numRowsA .. ptrSingleEntryRowsA
-	///////////////////////////////////////////////////////////////
-
-	ordinal_t maxNnzInArow = 0;
-	Kokkos::RangePolicy<tAnalyzeDenseSparseA, ExecSpace> pAnalyzeDenseSparseA(0, numRowsA);
-	Kokkos::parallel_reduce ("AnalyzeDenseSparseA", pAnalyzeDenseSparseA, *this, Kokkos::Max<ordinal_t>(maxNnzInArow));
-
-
-	///////////////////////////////////////////////////////////////
-	// Transfer dense-sparse analysis results
-	///////////////////////////////////////////////////////////////
+ 	Kokkos::RangePolicy<tAnalyze, ExecSpace> pAnalyze(0, numRowsA);
+	Kokkos::parallel_reduce("Analyze", pAnalyze, *this, Kokkos::Max<size_t>(maxFlop));
 	ExecSpace().fence();
-	Kokkos::deep_copy(h_ptrDenseSparse, ptrDenseSparse);
-	ptrDenseRowsB = h_ptrDenseSparse[0];
-	ptrSparseRowsB = h_ptrDenseSparse[1];
-	ptrDenseRowsA = h_ptrDenseSparse[2];
-	ptrSparseRowsA = h_ptrDenseSparse[3];
-	ptrSingleEntryRowsA = h_ptrDenseSparse[4];
-	
-	/*//print dense rows
-	auto h_denseRowsB = Kokkos::create_mirror_view(denseRowsB);
-	Kokkos::deep_copy(h_denseRowsB, denseRowsB);
-	for(ordinal_t i = 0; i < ptrDenseRowsB; i++)
-	std::cout << i << ": " << h_denseRowsB(i) << std::endl;*/
 
+	h_rowCountsA = Kokkos::create_mirror_view(rowCountsA);
+	Kokkos::deep_copy(h_rowCountsA, rowCountsA);
 
-	///////////////////////////////////////////////////////////////
-	// Determine row limits (min and max column indices in each row) in B
-	///////////////////////////////////////////////////////////////
-	
-	Kokkos::Timer timer;
-	Kokkos::TeamPolicy<tAnalyzeRowLimitsBdense, ExecSpace> pAnalyzeRowLimitsBdense(ptrDenseRowsB+1, Kokkos::AUTO);
-	Kokkos::RangePolicy<tAnalyzeRowLimitsBsparse, ExecSpace> pAnalyzeRowLimitsBsparse(ptrDenseRowsB+1, numRowsB);
-
-	if(ptrDenseRowsB >= 0)
-	  Kokkos::parallel_for("AnalyzeRowLimitsBdense", pAnalyzeRowLimitsBdense, *this);
-	Kokkos::parallel_for("AnalyzeRowLimitsBsparse", pAnalyzeRowLimitsBsparse, *this);
-	ExecSpace().fence();
-	double rowLimitsTime = timer.seconds();
-	
-	/*//print row limits
-	auto h_rowLimitsB = Kokkos::create_mirror_view(rowLimitsB);
-	Kokkos::deep_copy(h_rowLimitsB, rowLimitsB);
-	for(ordinal_t i = 0; i < numRowsB; i++)
-	std::cout << i << ": " << h_rowLimitsB(i,0) << " " << h_rowLimitsB(i,1) << std::endl;*/ 
-	
-	
-	std::cout << "DetermineRowLimits: " << rowLimitsTime << " MaxNnzInBrow: " << maxNnzInBrow << " #DenseRows: " <<ptrDenseRowsB+1 << std::endl;
-
-
-	///////////////////////////////////////////////////////////////
-	// Determine row limits (min and max column indices in each row) in A
-	// Determine flop count for each row of A
-	///////////////////////////////////////////////////////////////
-	
-	timer.reset();
-	Kokkos::TeamPolicy<tAnalyzeRowLimitsAdense, ExecSpace> pAnalyzeRowLimitsAdense(ptrDenseRowsA+1, Kokkos::AUTO);
-	Kokkos::RangePolicy<tAnalyzeRowLimitsAsparse, ExecSpace> pAnalyzeRowLimitsAsparse(ptrDenseRowsA+1, numRowsA);
-
-	ExecSpace().fence();
-	if(ptrDenseRowsA >= 0)
-	  Kokkos::parallel_for("AnalyzeRowLimitsAdense", pAnalyzeRowLimitsAdense, *this);
-	Kokkos::parallel_for("AnalyzeRowLimitsAsparse", pAnalyzeRowLimitsAsparse, *this);
-	ExecSpace().fence();
-	rowLimitsTime = timer.seconds();
-	
-	std::cout << "DetermineRowLimits: " << rowLimitsTime << " MaxNnzInArow: " << maxNnzInArow << " #DenseRowsA: " << ptrDenseRowsA+1
-		  << " numRowsA: "<< numRowsA
-		  << " ptrSingleEntryRowsA: "<< ptrSingleEntryRowsA+1 << std::endl;
-       
-
+	if(verbose)
+	std::cout << "Numrows: " << numRowsA 
+		  << "\n Single: " << h_rowCountsA(0) 
+		  << "\n   <=25: " << h_rowCountsA(1) 
+		  << "\n   <=50: " << h_rowCountsA(2) 
+		  << "\n  <=100: " << h_rowCountsA(3) 
+		  << "\n  <=200: " << h_rowCountsA(4) 
+		  << "\n   >200: " << h_rowCountsA(5)
+		  << "\n MAX FLOPS: " << maxFlop
+		  << std::endl;
       }
 
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const tAnalyzeDenseSparseB&, const ordinal_t &row_index, ordinal_t &update) const {
-
-	ordinal_t myNnz = row_mapB[row_index+1]-row_mapB[row_index]; 
-	if(myNnz > update) update = myNnz;
-
-	if(myNnz > 256) {
-	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[0], 1);
-	  denseRowsB[index] = row_index;
-	}
-	else {
-	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[1], -1);
-	  denseRowsB[index] = row_index;
-	}
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const tAnalyzeDenseSparseA&, const ordinal_t &row_index, ordinal_t &update) const {
-
-	ordinal_t myNnz = row_mapA[row_index+1]-row_mapA[row_index]; 
-	if(myNnz > update) update = myNnz;
-
-	if(myNnz > 256) {
-	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[2], 1);
-	  denseRowsA[index] = row_index;
-	}
-	else if(myNnz > 1){
-	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[3], -1);
-	  denseRowsB[index] = row_index;
-	}
-	else{
-	  int index = Kokkos::atomic_fetch_add(&ptrDenseSparse[4], 1);
-	  denseRowsA[index] = row_index;
-	}
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const tAnalyzeRowLimitsBdense&, const typename Kokkos::TeamPolicy<ExecSpace>::member_type& teamMember ) const {
-
-	ordinal_t row_index = denseRowsB[teamMember.league_rank()] ;
-	Kokkos::MinMaxScalar<ordinal_t> result;
-	Kokkos::MinMax<ordinal_t> reducer(result);
-	Kokkos::parallel_reduce(Kokkos::TeamVectorRange(teamMember, row_mapB[row_index], row_mapB[row_index+1]), [&] (const offset_t& i, Kokkos::MinMaxScalar<ordinal_t> &update) {
-			  if(entriesB[i] < update.min_val) update.min_val = entriesB[i];
-			  if(entriesB[i] > update.max_val) update.max_val = entriesB[i];
-			}, reducer);
-	Kokkos::single(Kokkos::PerTeam(teamMember),[&] () {
-	    rowLimitsB(row_index, 0) = result.min_val;
-	    rowLimitsB(row_index, 1) = result.max_val;	    
-	  });
+      void symbolic(){
 	
-      }
+	// Single-entry rows (rows with 0 or 1 nonzero)
+	if(h_rowCountsA(0) > 0) {
+	  Kokkos::RangePolicy<tSymbolicSingleEntry, ExecSpace> pSymbolicSingleEntry(0, h_rowCountsA(0));
+	  Kokkos::parallel_for("SymbolicSingleEntry", pSymbolicSingleEntry, *this);
+	}
 
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const tAnalyzeRowLimitsBsparse&, const ordinal_t &i) const {
+	// Sparse rows
+	size_t threadSharedSize = 21248;
+	for(int i = 1; i < 5; i++) {
+	  if(h_rowCountsA(i) > 0) {
+	    int curTeamSize = 64 >> (i-1);	    
+	    int curNumTeams = h_rowCountsA(i)/curTeamSize+1;
+	    if(verbose)
+	      std::cout << "TEAMSIZE: " << curTeamSize << " for " << h_rowCountsA(i) << std::endl;
+	    Kokkos::TeamPolicy<tSymbolicSparse, ExecSpace> pSymbolicSparse(curNumTeams, curTeamSize);
+	    pSymbolicSparse = pSymbolicSparse.set_scratch_size(0, Kokkos::PerTeam(threadSharedSize));
+	    Kokkos::parallel_for("SymbolicSparse", pSymbolicSparse, *this);
+	  }
+	}
 
-      	ordinal_t myMinCol = minCol, myMaxCol = maxCol;
-	ordinal_t row_index = denseRowsB[i];
-      	for(offset_t j = row_mapB[row_index]; j < row_mapB[row_index+1]; j++){
-      	  myMinCol = KOKKOSKERNELS_MACRO_MIN(myMinCol, entriesB[j]);
-      	  myMaxCol = KOKKOSKERNELS_MACRO_MAX(myMaxCol, entriesB[j]);
-      	}
+	// Dense rows
+	if(h_rowCountsA(5) > 0) {
 
-      	rowLimitsB(row_index,0) = myMinCol;
-      	rowLimitsB(row_index,1) = myMaxCol;
-      }
+	  Kokkos::Timer timer;
+
+	  // Compute the chunk size for the memory pool
+	  maxBeginsSize = 1;
+	  while(maxBeginsSize < maxFlop) maxBeginsSize = maxBeginsSize << 1;	    
+	  size_t chunkSize = (maxBeginsSize + maxFlop) * 2;
+	  if(verbose)
+	    std::cout << "ChunkSize: " << chunkSize << " maxBeginsSize: " << maxBeginsSize << std::endl;
+
+	  // Create the memory pool. I am not sure if we want to use 1024 or 4096 chunks
+	  KokkosKernels::Impl::PoolType myPoolType = KokkosKernels::Impl::ManyThread2OneChunk; // this may change for CPU execution
+	  pool = pool_t(1024, chunkSize, -1,  myPoolType);
+
+	  // Launch the parallel_for for the dense rows
+	  int curTeamSize = 8;
+	  int curNumTeams = h_rowCountsA(5)/curTeamSize+1;
+	  if(verbose)
+	    std::cout << "TEAMSIZE: " << curTeamSize << " for " << h_rowCountsA(5) << std::endl;
+	  Kokkos::TeamPolicy<tSymbolicDense, ExecSpace> pSymbolicDense(curNumTeams, curTeamSize, vectorSize);
+	  Kokkos::parallel_for("SymbolicDense", pSymbolicDense.set_scratch_size(0, Kokkos::PerTeam(21760)), *this);
       
+	  if(verbose) {
+	    double denseTime = timer.seconds();
+	    std::cout << "Dense: " << denseTime <<  std::endl;
+	  }
+	}
+	ExecSpace().fence();
 
+	// Prefix sum the entries in row_mapC 
+	KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_t, ExecSpace>(numRowsA+1, row_mapC);
+      }
 
+      // The following analyzes all rows of A in terms of the FLOPs that they will require in A*B.
+      // It writes the id of the each row into the category they fall in.
+      // It also computes the maxFlops.
       KOKKOS_INLINE_FUNCTION
-      void operator()(const tAnalyzeRowLimitsAdense&, const typename Kokkos::TeamPolicy<ExecSpace>::member_type& teamMember ) const {
+      void operator()(const tAnalyze&, const ordinal_t &row_index, size_t &update) const {
 
-	ordinal_t row_index = denseRowsA[teamMember.league_rank()] ;
-
-	size_t rowFlop = 0;
-	Kokkos::parallel_reduce(Kokkos::TeamVectorRange(teamMember, row_mapA[row_index], row_mapA[row_index+1]), [&] (const offset_t& i, size_t &update) {
-	    ordinal_t rowB = entriesA[i];
-	    update += (row_mapB[rowB+1] - row_mapB[rowB]);
-	  }, Kokkos::Sum<size_t, ExecSpace>(rowFlop));
-
-	Kokkos::single(Kokkos::PerTeam(teamMember),[&] () {
-	    rowFlopsA(row_index) = rowFlop;
-	  });
-
-
-	Kokkos::MinMaxScalar<ordinal_t> result;
-	Kokkos::MinMax<ordinal_t, ExecSpace> reducer(result);
-	Kokkos::parallel_reduce(Kokkos::TeamVectorRange(teamMember, row_mapA[row_index], row_mapA[row_index+1]), [&] (const offset_t& i, Kokkos::MinMaxScalar<ordinal_t> &update) {
-	    ordinal_t rowB = entriesA[i];
-	    if(rowLimitsB(rowB, 0) < update.min_val) update.min_val = rowLimitsB(rowB, 0);
-	    if(rowLimitsB(rowB, 1) > update.max_val) update.max_val = rowLimitsB(rowB, 1);
-	  }, reducer);
-
-	Kokkos::single(Kokkos::PerTeam(teamMember),[&] () {
-	    rowLimitsA(row_index, 0) = result.min_val;
-	    rowLimitsA(row_index, 1) = result.max_val;	    
-	  });
+	// Single-entry rows (rows with 1 or 0 nonzeros)
+	if(row_mapA[row_index+1] < row_mapA[row_index] + 2) {
+	  int index = Kokkos::atomic_fetch_add(&rowCountsA[0], 1);
+	  rowOrderA(index,0) = row_index;
+	  return;
+	}
 	
-      }
-
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const tAnalyzeRowLimitsAsparse&, const ordinal_t &i) const {
-
-      	ordinal_t myMinCol = minCol, myMaxCol = maxCol;
-	ordinal_t row_index = denseRowsA[i];
+	// Compute the FLOPs required by the current row
 	size_t rowFlop = 0;
-      	for(offset_t j = row_mapA[row_index]; j < row_mapA[row_index+1]; j++){
+	for(offset_t j = row_mapA[row_index]; j < row_mapA[row_index+1]; j++){
 	  ordinal_t rowB = entriesA[j];
-      	  myMinCol = KOKKOSKERNELS_MACRO_MIN(myMinCol, rowLimitsB(rowB, 0));
-      	  myMaxCol = KOKKOSKERNELS_MACRO_MAX(myMaxCol, rowLimitsB(rowB, 1));
 	  rowFlop += (row_mapB[rowB+1] - row_mapB[rowB]);
-      	}
+	}
 
-      	rowLimitsB(row_index,0) = myMinCol;
-      	rowLimitsB(row_index,1) = myMaxCol;
-	rowFlopsA(row_index) = rowFlop;
+	// If the FLOP exceeds numColsB, set it to numColsB.
+	// We will use the FLOP information to estimate the maximm usage of the hashmap accumulators.
+	rowFlop = rowFlop > size_t(numColsB) ? size_t(numColsB) : rowFlop;
+
+	// Keep track of the max FLOP as well
+	if(rowFlop > update) update = rowFlop;
+
+	// Sparse rows with FLOPs <= 25
+	if(rowFlop <= 25){
+	  int index = Kokkos::atomic_fetch_add(&rowCountsA[1], 1);
+	  rowOrderA(index, 1) = row_index;
+	}
+	// Sparse rows with FLOPs <= 50 and > 25
+	else if (rowFlop <= 50){
+	  int index = Kokkos::atomic_fetch_add(&rowCountsA[2], 1);
+	  rowOrderA(index, 2) = row_index;	  
+	}
+	// Sparse rows with FLOPs <= 100 and > 50
+	else if (rowFlop <= 100){
+	  int index = Kokkos::atomic_fetch_add(&rowCountsA[3], 1);
+	  rowOrderA(index, 3) = row_index;	  
+	}
+	// Sparse rows with FLOPs <= 200 and > 100
+	else if (rowFlop <= 200){
+	  int index = Kokkos::atomic_fetch_add(&rowCountsA[4], 1);
+	  rowOrderA(index, 4) = row_index;	  
+	}
+	// Dense rows (rows with FLOPs > 200)
+	else{
+	  int index = Kokkos::atomic_fetch_add(&rowCountsA[5], 1);
+	  rowOrderA(index, 5) = row_index;	  
+	}
       }
 
+      // The following performs the symbolic phase for the single-entry rows
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const tSymbolicSingleEntry&, const ordinal_t &i) const {
+
+	ordinal_t row_index = rowOrderA(i,0);
+	if(row_mapA[row_index] == row_mapA[row_index+1])
+	  row_mapC(row_index+1) = 0;
+	else {
+	  ordinal_t row = entriesA[row_mapA[row_index]];
+	  row_mapC(row_index+1) = row_mapB[row+1]-row_mapB[row];
+	}
+      }
+
+      // The following performs the symbolic phase for the sparse rows.
+      // It only uses the level-1 hashmap.
+      // The max FLOPs required by those rows guarantee that the level-1 hashmap will not overflow.
+      // The number of threads per team varies (8, 16, 32,anf 64).
+      // The size of the hashmaps (which exist in each thread) is adjusted according to the team size.
+      // Shared memory size used by each team is fixed (21248 bytes). 
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const tSymbolicSparse&, const typename Kokkos::TeamPolicy<ExecSpace>::member_type& teamMember ) const {
+
+	int curTeamSize = teamMember.team_size();
+	ordinal_t rank = teamMember.league_rank() * curTeamSize + teamMember.team_rank();
+
+	int kernel = 1;   // teamSize = 64
+	if(curTeamSize == 32) 
+	  kernel = 2;
+	else if(curTeamSize == 16)
+	  kernel = 3;
+	else if(curTeamSize == 8)
+	  kernel = 4;
+
+	if(rank >= rowCountsA(kernel))
+	  return;
+
+	// These values are correct when teamSize=64
+	ordinal_t threadMem = 83*sizeof(ordinal_t);
+	ordinal_t beginsSize = 32;
+	ordinal_t keysSize = 25;
+
+	// Increase the hashmap size if there are fewer threads than 64 
+	threadMem = threadMem * (64/curTeamSize);
+	beginsSize = beginsSize * (64/curTeamSize);
+	keysSize = keysSize * (64/curTeamSize);
+	
+	// Go to the thread-private region of the shared memory
+	ordinal_t threadRank = teamMember.team_rank();
+	char *shared_memory = (char *) (teamMember.team_shmem().get_shmem(21248));
+	shared_memory += threadMem*threadRank;;
+
+	// Set the pointers to be used by the hashmap
+	ordinal_t *begins = (ordinal_t *)shared_memory;
+	shared_memory += beginsSize*sizeof(ordinal_t);
+	ordinal_t *nexts = (ordinal_t *)shared_memory;
+	shared_memory += keysSize*sizeof(ordinal_t);
+	ordinal_t *keys = (ordinal_t *)shared_memory;
+	shared_memory += keysSize*sizeof(ordinal_t);
+	ordinal_t *used_hash_sizes = (ordinal_t *)shared_memory;
+
+	// Initialize begins.
+	Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, beginsSize), [&](const ordinal_t &i){
+	    begins[i] = -1;
+	  });
+
+	// Initialize the number of keys to zero
+	Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+	    used_hash_sizes[0] = 0;
+	  });
+
+	// Create the hashmap
+	hmap_t hmfast(keysSize, beginsSize-1, begins, nexts, keys, nullptr);
+
+	// Insert the entries into the hashmap
+	size_t failed = 0;
+	ordinal_t row_index = rowOrderA(rank, kernel);
+	Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, row_mapA[row_index], row_mapA[row_index+1]), [&] (const offset_t &i, size_t &update) {
+	    ordinal_t rowB = entriesA[i];
+	    for(offset_t j = row_mapB[rowB]; j < row_mapB[rowB+1]; j++) {
+	      ordinal_t colB = entriesB[j];
+	      int err = hmfast.vector_atomic_insert_into_hash(colB, used_hash_sizes);
+	      update += err;
+	    }
+	  }, Kokkos::Sum<size_t>(failed));
+
+	// Set the size of the row
+	Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+	    row_mapC(row_index+1) = used_hash_sizes[0];
+	  });
+      }
+
+      // The following performs the symbolic phase for the dense rows.
+      // It uses both level-1 and level-2 hashmaps.
+      // A chunk from the memory pool is requested when level-1 hashmap overflows.
+      // teemSize=8 is picked based on experiments on a limited dataset.
+      // Shared memory size used by each team (21760 bytes) is slightly larger than that of the sparse one (21248 bytes).
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const tSymbolicDense&, const typename Kokkos::TeamPolicy<ExecSpace>::member_type& teamMember ) const {
+
+	int curTeamSize = teamMember.team_size();
+	ordinal_t rank = teamMember.league_rank() * curTeamSize + teamMember.team_rank();
+	
+	if(rank >= rowCountsA(5))
+	  return;
+
+	// Using slightly more shared memory than the sparse one
+	ordinal_t threadMem = 85*sizeof(ordinal_t);
+	ordinal_t beginsSize = 32;
+	ordinal_t keysSize = 25;
+	threadMem = threadMem * (64/curTeamSize);
+	beginsSize = beginsSize * (64/curTeamSize);
+	keysSize = keysSize * (64/curTeamSize);
+
+	// Go to the thread-private region of the shared memory
+	ordinal_t threadRank = teamMember.team_rank();
+	char *shared_memory = (char *) (teamMember.team_shmem().get_shmem(21248));
+	shared_memory += threadMem*threadRank;;
+
+	// Set the pointers for the level-1 hashmap
+	ordinal_t *begins = (ordinal_t *)shared_memory;
+	shared_memory += beginsSize*sizeof(ordinal_t);
+	ordinal_t *nexts = (ordinal_t *)shared_memory;
+	shared_memory += keysSize*sizeof(ordinal_t);
+	ordinal_t *keys = (ordinal_t *)shared_memory;
+	shared_memory += keysSize*sizeof(ordinal_t);
+	ordinal_t *used_hash_sizes = (ordinal_t *)shared_memory;
+	shared_memory += 2*sizeof(ordinal_t);
+	ordinal_t *globally_used_hash_count = (ordinal_t *)shared_memory;
+
+	// Initialize begins
+	Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, beginsSize),[&](const ordinal_t &i){
+	    begins[i] = -1;
+	  });
+
+	// Initialize the number of used keys and hashes 
+	Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+	    used_hash_sizes[0] = 0;   // level-1
+	    used_hash_sizes[1] = 0;   // level-2
+	    globally_used_hash_count[0] = 0;
+	  });
+
+	// Create both hashmaps. The arrays of the level-2 hashmap are not allocated yet.
+	hmap_t hmfast(keysSize, beginsSize-1, begins, nexts, keys, nullptr);
+	hmap_t hmslow(maxFlop, maxBeginsSize-1, NULL, NULL, NULL, NULL);
+
+	// Try to insert the entries in the level-1 hashmap
+	size_t failed = 0;
+	bool slowAllocated = false;
+	ordinal_t *globally_used_hash_indices = NULL;
+	ordinal_t row_index = rowOrderA(rank,5);
+	for(offset_t i = row_mapA[row_index]; i < row_mapA[row_index+1]; i++) {
+	  size_t iterfailed = 0;
+	  ordinal_t rowB = entriesA[i];
+	  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, row_mapB[rowB], row_mapB[rowB+1]), [&] (const offset_t &j, size_t &update) {
+	      ordinal_t colB = entriesB[j];
+	      int err = hmfast.vector_atomic_insert_into_hash(colB, used_hash_sizes);
+	      update += err;
+	    }, Kokkos::Sum<size_t>(iterfailed));
+	  failed += iterfailed;
+	  if(failed > 0)
+	    break;
+	}
+
+	// Use the level-2 hashmap if the level-1 hashmap overflowed
+	volatile ordinal_t * tmp = NULL;
+	if(failed) {
+	  if(!slowAllocated) {
+	    
+	    // Request a chunk from the memory pool
+            while (tmp == NULL){
+	      Kokkos::single(Kokkos::PerThread(teamMember),[&] (volatile ordinal_t * &memptr) {
+		  memptr = (volatile ordinal_t * )( pool.allocate_chunk(rank));
+		}, tmp);
+	    }
+
+	    // Set the pointers of the level-2 hashmap in the allocated chunk
+	    slowAllocated = true;
+	    globally_used_hash_indices = (ordinal_t *)tmp;
+	    tmp += maxBeginsSize;
+	    hmslow.hash_begins = (ordinal_t *)tmp;
+	    tmp += maxBeginsSize;
+	    hmslow.hash_nexts = (ordinal_t *)tmp;
+	    tmp += maxFlop;
+	    hmslow.keys = (ordinal_t *)tmp;
+	  }
+
+	  // Insert the entries which don't exist in the level-1 hashmap into the level-2 hashmap
+	  for(offset_t i = row_mapA[row_index]; i < row_mapA[row_index+1]; i++) {
+	    ordinal_t rowB = entriesA[i]; 
+	    Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, row_mapB[rowB], row_mapB[rowB+1]), [&] (const offset_t &j) {
+		ordinal_t colB = entriesB[j];
+		int err = hmfast.vector_atomic_insert_into_hash(colB, used_hash_sizes);	      
+		if(err) hmslow.vector_atomic_insert_into_hash_TrackHashes(colB, used_hash_sizes+1,
+									  globally_used_hash_count,
+									  globally_used_hash_indices
+									  );
+	      });
+	  }
+	}
+
+	// Clean the hashes used in the memory pool chunk and release it
+	if(slowAllocated) {
+	  
+	  ordinal_t dirty_hashes = globally_used_hash_count[0];
+	  Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, dirty_hashes),[&] (ordinal_t i) {
+	      ordinal_t dirty_hash = globally_used_hash_indices[i];
+	      hmslow.hash_begins[dirty_hash] = -1;
+	    });
+
+	  Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+	      pool.release_chunk((const ordinal_t *)globally_used_hash_indices);
+	    });
+	}
+	
+	// Set the size of the row
+	Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
+
+	    if(used_hash_sizes[0] > keysSize)
+	      used_hash_sizes[0] = keysSize;
+	    row_mapC(row_index+1) = used_hash_sizes[0] + used_hash_sizes[1];
+	  });	
+      }
     };
 
     template <typename HandleType, typename LayoutType>
@@ -354,22 +483,42 @@ namespace KokkosSparse{
     SPGEMM<HandleType,LayoutType>::symbolic_impl(row_map_t row_mapC)
     {
 
-      size_view_t rowFlopsA(Kokkos::ViewAllocateWithoutInitializing("rowFlopsA"), a_row_cnt);
-      minmax_view_t rowLimitsA(Kokkos::ViewAllocateWithoutInitializing("rowLimitsA"), a_row_cnt);
-      minmax_view_t rowLimitsB(Kokkos::ViewAllocateWithoutInitializing("rowLimitsB"), b_row_cnt);
+      Kokkos::Timer timer;
 
-      ord_view_t denseRowsA(Kokkos::ViewAllocateWithoutInitializing("denseRowsA"), a_row_cnt*2);
-      ord_view_t denseRowsB(Kokkos::ViewAllocateWithoutInitializing("denseRowsB"), b_row_cnt);
+      // This 2D array will hold the indices of the rows in each category
+      two_view_t rowOrderA(Kokkos::ViewAllocateWithoutInitializing("rowOrderA"), a_row_cnt);
+      double allocTime = timer.seconds();
 
-      int vectorSize = this->handle->get_suggested_vector_size(b_row_cnt, entriesB.extent(0));
+      // Suggested vector size is only used for the dense rows
+      int vectorSize = handle->get_suggested_vector_size(b_row_cnt, entriesB.extent(0));
+      int shmemSize = handle->get_shmem_size();  // curently not used 
 
+      // Create the functor
+      timer.reset();
       SymbolicFunctor sf(a_row_cnt, b_row_cnt, b_col_cnt,
 			 row_mapA, entriesA, valuesA,
 			 row_mapB, entriesB, valuesB,
-			 rowFlopsA, rowLimitsA, rowLimitsB, denseRowsA, denseRowsB,
-			 vectorSize); // vectorSize is not currently used
+			 row_mapC,
+			 rowOrderA,
+			 shmemSize, vectorSize,
+			 handle->get_verbose());
+      double structTime = timer.seconds();
 
+      // Perform the analysis
+      // NOTE: The arrays/scalars created/used by this function can also be useful in the numeric phase.
+      // SpGEMM handle can be used to transfer those arrays into the numeric phase.
+      // Candidates to be transferred: rowOrderA, rowCountsA, maxFlops, etc.
+      timer.reset();
       sf.analyze();
+      double analyzeTime = timer.seconds();
+      
+      // Perform the symbolic phase
+      timer.reset();
+      sf.symbolic();
+      double symbolicTime = timer.seconds();
+
+      if(handle->get_verbose())
+	std::cout << "Alloc: " << allocTime << " Struct: " << structTime << " Analyze: " << analyzeTime << " Symbolic: " << symbolicTime << std::endl;
 
     }
 

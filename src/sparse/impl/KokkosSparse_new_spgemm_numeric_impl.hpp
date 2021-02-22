@@ -71,7 +71,6 @@ namespace KokkosSparse{
 	row_mapA(row_mapA_), entriesA(entriesA_), valuesA(valuesA_), 
 	row_mapB(row_mapB_), entriesB(entriesB_), valuesB(valuesB_)
       {
-	std::cout << "New SpGEMM Numeric Functor" << std::endl;
       }
 
     };
@@ -83,7 +82,7 @@ namespace KokkosSparse{
 						entries_t entriesC_,
 						values_t valuesC_)
     {
-      std::cout << "New SpGEMM Numeric Implementation" << std::endl;
+      std::cout << "New SpGEMM Numeric: NOT implemented yet" << std::endl;
 
       NumericFunctor(a_row_cnt, b_col_cnt,
 		     row_mapA, entriesA, valuesA,

@@ -45,14 +45,6 @@
 #ifndef _KOKKOSNEWSPGEMMIMPL_HPP
 #define _KOKKOSNEWSPGEMMIMPL_HPP
 
-#include <KokkosKernels_Utils.hpp>
-#include <KokkosKernels_SimpleUtils.hpp>
-#include <KokkosKernels_SparseUtils.hpp>
-#include <KokkosKernels_VectorUtils.hpp>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
 
 #include "KokkosKernels_HashmapAccumulator.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
@@ -84,13 +76,20 @@ namespace KokkosSparse{
       using values_t = Kokkos::View<scalar_t *, Layout, Device, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
       
       // Typedefs for the internal data structures
-      using minmax_view_t = Kokkos::View<ordinal_t *[2], Kokkos::LayoutRight, Device>; 
+      using two_view_t = Kokkos::View<ordinal_t *[6], Kokkos::LayoutRight, Device>; 
       using size_view_t = Kokkos::View<size_t *, Layout, Device>;
       using ord_view_t = Kokkos::View<ordinal_t *, Layout, Device>;
+      using host_view_t = typename ord_view_t::HostMirror;
+      using hmap_t = KokkosKernels::Experimental::HashmapAccumulator<ordinal_t,
+								     ordinal_t,
+								     ordinal_t,
+								     KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+      using pool_t =  KokkosKernels::Impl::UniformMemoryPool<MemSpace, ordinal_t>;
 
       struct SymbolicFunctor;
 
     private:
+
       HandleType *handle;
       ordinal_t a_row_cnt;
       ordinal_t b_row_cnt;
@@ -103,7 +102,6 @@ namespace KokkosSparse{
       const_row_map_t row_mapB;
       const_entries_t entriesB;
       const_values_t valuesB;
-
 
       void symbolic_impl(row_map_t rowmapC_);
 
