@@ -107,8 +107,9 @@
 
 #cmakedefine KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
-/* if MKL, BLAS is also defined */
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) 
+/* if MKL or ARMPL, BLAS is also defined */
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) ||\
+    defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif
