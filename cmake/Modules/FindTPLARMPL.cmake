@@ -34,8 +34,14 @@ ENDIF()
 TRY_COMPILE(KOKKOSKERNELS_TRY_COMPILE_ARMPL
   ${KOKKOSKERNELS_TOP_BUILD_DIR}/tpl_tests
   ${KOKKOSKERNELS_TOP_SOURCE_DIR}/cmake/compile_tests/armpl.cpp
-  LINK_LIBRARIES -larmpl -lgfortran -lamath -lm
+  LINK_LIBRARIES -l${ARMPL_LIB} -lgfortran -lamath -lm
   OUTPUT_VARIABLE KOKKOSKERNELS_TRY_COMPILE_ARMPL_OUT)
 IF(NOT KOKKOSKERNELS_TRY_COMPILE_ARMPL)
   MESSAGE(FATAL_ERROR "KOKKOSKERNELS_TRY_COMPILE_ARMPL_OUT=${KOKKOSKERNELS_TRY_COMPILE_ARMPL_OUT}")
+ELSE()
+  # Check with Jeremy. It looks like the defacto standard is to
+  # have the user set BLAS_LIBRARIES. However, we've done the work
+  # of finding the armpl blas lib here, so let's go ahead and set it
+  # in BLAS_LIBRARIES.
+  SET(BLAS_LIBRARIES "${ARMPL_LIB};gfortran;amath;m")
 ENDIF()
