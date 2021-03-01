@@ -39,9 +39,9 @@ TRY_COMPILE(KOKKOSKERNELS_TRY_COMPILE_ARMPL
 IF(NOT KOKKOSKERNELS_TRY_COMPILE_ARMPL)
   MESSAGE(FATAL_ERROR "KOKKOSKERNELS_TRY_COMPILE_ARMPL_OUT=${KOKKOSKERNELS_TRY_COMPILE_ARMPL_OUT}")
 ELSE()
-  # Check with Jeremy. It looks like the defacto standard is to
-  # have the user set BLAS_LIBRARIES. However, we've done the work
-  # of finding the armpl blas lib here, so let's go ahead and set it
-  # in BLAS_LIBRARIES.
-  SET(BLAS_LIBRARIES "${ARMPL_LIB};gfortran;amath;m")
+  # KokkosKernels::ARMPL is an alias to the ARMPL target.
+  # Let's add in the libgfortran and libm dependencies for users here.
+  GET_TARGET_PROPERTY(ARMPL_INTERFACE_LINK_LIBRARIES KokkosKernels::ARMPL INTERFACE_LINK_LIBRARIES)
+  SET(ARMPL_INTERFACE_LINK_LIBRARIES "${ARMPL_INTERFACE_LINK_LIBRARIES};-lgfortran;-lm")
+  SET_TARGET_PROPERTIES(ARMPL PROPERTIES INTERFACE_LINK_LIBRARIES "${ARMPL_INTERFACE_LINK_LIBRARIES}")
 ENDIF()
