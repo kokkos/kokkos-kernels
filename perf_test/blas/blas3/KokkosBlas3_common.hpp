@@ -130,9 +130,10 @@ static std::string loop_e_str[LOOP_N] = {"serial", "parallel"};
  *                                     KokkosBatched namespace.
  * @var BATCHED_TEAM_VECTOR{_BLOCKED}: Run the team vector blas routine through
  *                                     the KokkosBatched namespace.
- * @var BATCHED_TEAM_SIMD{_BLOCKED}:   Run the team vector blas routine through the
- *                                     KokkosBatched namespace using SIMD views.
- * @var EXPERIMENT:                    Run the blas routine as a custom experiment.
+ * @var BATCHED_TEAM_SIMD{_BLOCKED}:   Run the team vector blas routine through
+ * the KokkosBatched namespace using SIMD views.
+ * @var EXPERIMENT:                    Run the blas routine as a custom
+ * experiment.
  */
 typedef enum TEST {
   BLAS,
@@ -153,13 +154,11 @@ typedef enum TEST {
 } test_e;
 
 static std::string test_e_str[TEST_N]{
-    "blas", 
-    "batched_serial", "batched_serial_blocked",
-    "batched_serial_simd", "batched_serial_simd_blocked",
-    "batched_serial_compact_mkl",
-    "batched_team", "batched_team_blocked", 
-    "batched_team_vector", "batched_team_vector_blocked", 
-    "batched_team_simd", "batched_team_simd_blocked",
+    "blas", "batched_serial", "batched_serial_blocked", "batched_serial_simd",
+    "batched_serial_simd_blocked", "batched_serial_compact_mkl", "batched_team",
+    "batched_team_blocked", "batched_team_vector",
+    "batched_team_vector_blocked", "batched_team_simd",
+    "batched_team_simd_blocked",
     // ADD MORE TEST TYPES HERE
     "experiment"};
 

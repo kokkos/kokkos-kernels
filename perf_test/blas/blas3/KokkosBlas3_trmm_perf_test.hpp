@@ -78,34 +78,36 @@ void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
  * assumes KokkosBatched::SerialTrmm is being used. Since the dot products
  * do a multiply and add we can calculate the flops for any element in the last
  * column of the LHS to be 2*columns_LHS, any element in the last-1 column of
- * the LHS to be 2*(columns_LHS-1), and so on. We do this for every row of the LHS
- * giving us this flop count:
- *  flops = columns_LHS * (columns_LHS + 1)
- *  flops = (flops / 2) * 2
- *  flops = flops * rows_LHS
+ * the LHS to be 2*(columns_LHS-1), and so on. We do this for every row of the
+ * LHS giving us this flop count: flops = columns_LHS * (columns_LHS + 1) flops
+ * = (flops / 2) * 2 flops = flops * rows_LHS
  */
-static inline int trmm_impl_flop_count(char side, int b_m, int b_n, int a_m, int a_n) {
+static inline int trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
+                                       int a_n) {
   int flops;
 
   if (side == 'L' || side == 'l') {
-      flops = (b_m * (b_m + 1)) * b_n;
+    flops = (b_m * (b_m + 1)) * b_n;
   } else {
-      flops = (b_n * (b_n + 1)) * b_m;
+    flops = (b_n * (b_n + 1)) * b_m;
   }
 
   if (std::is_same<double, default_scalar>::value ||
-        std::is_same<float, default_scalar>::value ||
-        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
-      return flops;
+      std::is_same<float, default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+    return flops;
 
   // Account for 6 additional flops when complex numbers are used.
   // Above we have counted 1 flop for each add and 1 flop for each multiply.
-  // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+  // For complex, we need to count 2 flops for each add and 6 flops for each
+  // multiply.
   return flops * 4;
 }
 
-// Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline int trmm_flop_count(char side, int b_m, int b_n, int a_m, int a_n) {
+// Flop count formula from lapack working note 41:
+// http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
+static inline int trmm_flop_count(char side, int b_m, int b_n, int a_m,
+                                  int a_n) {
   int flops;
 
   if (side == 'L' || side == 'l') {
@@ -115,13 +117,14 @@ static inline int trmm_flop_count(char side, int b_m, int b_n, int a_m, int a_n)
   }
 
   if (std::is_same<double, default_scalar>::value ||
-        std::is_same<float, default_scalar>::value ||
-        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
-      return flops;
+      std::is_same<float, default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+    return flops;
 
   // Account for 6 additional flops when complex numbers are used.
   // Above we have counted 1 flop for each add and 1 flop for each multiply.
-  // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+  // For complex, we need to count 2 flops for each add and 6 flops for each
+  // multiply.
   return flops * 4;
 }
 
@@ -136,17 +139,21 @@ typedef struct trmm_args trmm_args_t;
 
 static std::string trmm_csv_header_str =
     "algorithm,side-uplo-trans-diag,alpha,loop_type,A_dims,B_dims,warm_up_n,"
-    "iter,total_time(s),average_time(s),FLOPS,GFLOP/average_time(s),min_achieved_bandwidth(GB/s),max_achieved_bandwidth(GB/s)";
+    "iter,total_time(s),average_time(s),FLOPS,GFLOP/"
+    "average_time(s),min_achieved_bandwidth(GB/s),max_achieved_bandwidth(GB/s)";
 
 /*************************** Internal helper fns **************************/
 static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
                                   double time_in_seconds) {
-  double flops = trmm_args.A.extent(0) * trmm_flop_count(trmm_args.side,
-                                                         trmm_args.B.extent(1), trmm_args.B.extent(2),
-                                                         trmm_args.A.extent(1), trmm_args.A.extent(2));
-  double gflops = flops / 1e9;
-  double average_time = time_in_seconds / options.n;
-  double gbytes_in_matrix = (trmm_args.B.extent(0) * trmm_args.B.extent(1) * trmm_args.B.extent(2) * sizeof(default_scalar)) / 1e9;
+  double flops = trmm_args.A.extent(0) *
+                 trmm_flop_count(trmm_args.side, trmm_args.B.extent(1),
+                                 trmm_args.B.extent(2), trmm_args.A.extent(1),
+                                 trmm_args.A.extent(2));
+  double gflops           = flops / 1e9;
+  double average_time     = time_in_seconds / options.n;
+  double gbytes_in_matrix = (trmm_args.B.extent(0) * trmm_args.B.extent(1) *
+                             trmm_args.B.extent(2) * sizeof(default_scalar)) /
+                            1e9;
   double min_memory_transactions, max_memory_transactions;
 
   // Assuming infinite cache size
@@ -155,26 +162,29 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
   min_memory_transactions = 3;
 
   // Assuming no register or real caching
-  // We have to go out to memory for every element we read from A and B as well as
-  // every element we write to B.
-  // We use the trmm flops from lapack note 41 and multiple by 3/2 to account for the
-  // write to B since this flop count is for one multiply and one add.
+  // We have to go out to memory for every element we read from A and B as well
+  // as every element we write to B. We use the trmm flops from lapack note 41
+  // and multiple by 3/2 to account for the write to B since this flop count is
+  // for one multiply and one add.
   if (trmm_args.side == 'l' || trmm_args.side == 'L')
-    max_memory_transactions = trmm_args.B.extent(1) * trmm_args.B.extent(1) * trmm_args.B.extent(2) * (3./2.);
+    max_memory_transactions = trmm_args.B.extent(1) * trmm_args.B.extent(1) *
+                              trmm_args.B.extent(2) * (3. / 2.);
   else
-    max_memory_transactions = trmm_args.B.extent(2) * trmm_args.B.extent(2) * trmm_args.B.extent(1) * (3./2.);
+    max_memory_transactions = trmm_args.B.extent(2) * trmm_args.B.extent(2) *
+                              trmm_args.B.extent(1) * (3. / 2.);
 
   options.out[0] << test_e_str[options.test] << ","
                  << options.blas_args.trmm.trmm_args << ","
                  << options.blas_args.trmm.alpha << ","
-                 << loop_e_str[options.loop] << "," << trmm_args.A.extent(0) << "x" << trmm_args.A.extent(1)
-                 << "x" << trmm_args.A.extent(2) << "," << trmm_args.B.extent(0) << "x" << trmm_args.B.extent(1)
+                 << loop_e_str[options.loop] << "," << trmm_args.A.extent(0)
+                 << "x" << trmm_args.A.extent(1) << "x" << trmm_args.A.extent(2)
+                 << "," << trmm_args.B.extent(0) << "x" << trmm_args.B.extent(1)
                  << "x" << trmm_args.B.extent(2) << "," << options.warm_up_n
                  << "," << options.n << "," << time_in_seconds << ","
-                 << average_time << ","
-                 << flops << ","
-                 << gflops / average_time << ","
-                 << (gbytes_in_matrix * min_memory_transactions) / average_time << ","
+                 << average_time << "," << flops << "," << gflops / average_time
+                 << ","
+                 << (gbytes_in_matrix * min_memory_transactions) / average_time
+                 << ","
                  << (gbytes_in_matrix * max_memory_transactions) / average_time
                  << std::endl;
 }
@@ -218,7 +228,7 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
       auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
       KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans,
-                      &trmm_args.diag, trmm_args.alpha, A, B);
+                       &trmm_args.diag, trmm_args.alpha, A, B);
     }
     // Fence after submitting each batch operation
     Kokkos::fence();
@@ -231,7 +241,7 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
       auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
       KokkosBlas::trmm(&trmm_args.side, &trmm_args.uplo, &trmm_args.trans,
-                      &trmm_args.diag, trmm_args.alpha, A, B);
+                       &trmm_args.diag, trmm_args.alpha, A, B);
     }
     // Fence after submitting each batch operation
     Kokkos::fence();
@@ -412,18 +422,20 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
   STATUS;
 
   for (uint32_t j = 0; j < warm_up_n; ++j) {
-    Kokkos::parallel_for("parallelBlasWarmUpLoopTrmm",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_blas_trmm_functor);
+    Kokkos::parallel_for(
+        "parallelBlasWarmUpLoopTrmm",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_blas_trmm_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }
 
   timer.reset();
   for (uint32_t j = 0; j < n; ++j) {
-    Kokkos::parallel_for("parallelBlasTimedLoopTrmm",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_blas_trmm_functor);
+    Kokkos::parallel_for(
+        "parallelBlasTimedLoopTrmm",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_blas_trmm_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }
@@ -470,18 +482,20 @@ void __do_trmm_parallel_batched_template(options_t options,
   STATUS;
 
   for (uint32_t j = 0; j < warm_up_n; ++j) {
-    Kokkos::parallel_for("parallelBatchedWarmUpLoopTrmm",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_batched_trmm_functor);
+    Kokkos::parallel_for(
+        "parallelBatchedWarmUpLoopTrmm",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_batched_trmm_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }
 
   timer.reset();
   for (uint32_t j = 0; j < n; ++j) {
-    Kokkos::parallel_for("parallelBatchedTimedLoopTrmm",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_batched_trmm_functor);
+    Kokkos::parallel_for(
+        "parallelBatchedTimedLoopTrmm",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_batched_trmm_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }

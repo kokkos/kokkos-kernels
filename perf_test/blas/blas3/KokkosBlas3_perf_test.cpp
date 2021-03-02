@@ -107,8 +107,10 @@ static void __print_help_blas3_perf_test() {
 
   printf("\t-p, --gemm_scalars=ALPHA_SCALAR_VALUE,BETA_SCALAR_VALUE\n");
   printf("\t\tGEMM alpha and beta values.\n");
-  printf("\t\t\tThe value of alpha and beta in floating point. (default: %lf,%lf)\n",
-         DEFAULT_GEMM_ALPHA, DEFAULT_GEMM_BETA);
+  printf(
+      "\t\t\tThe value of alpha and beta in floating point. (default: "
+      "%lf,%lf)\n",
+      DEFAULT_GEMM_ALPHA, DEFAULT_GEMM_BETA);
 
   printf("\t-z, --team_size=SIZE\n");
   printf("\t\tKokkos team size.\n");
@@ -121,19 +123,24 @@ static void __print_help_blas3_perf_test() {
          DEFAULT_VECTOR_LEN);
 
   printf("\t-u, --use_auto={0,1}\n");
-  printf("\t\tWhether to use Kokkos::AUTO for vector_len and team_size (Heirarchical parallelism).\n");
-  printf("\t\t\t1 to use Kokkos::AUTO, otherwise --vector_len and --team_size will be used. (default: %d)\n",
-         DEFAULT_USE_AUTO);
+  printf(
+      "\t\tWhether to use Kokkos::AUTO for vector_len and team_size "
+      "(Heirarchical parallelism).\n");
+  printf(
+      "\t\t\t1 to use Kokkos::AUTO, otherwise --vector_len and --team_size "
+      "will be used. (default: %d)\n",
+      DEFAULT_USE_AUTO);
 
   printf("\t-k, --batch_size=LEN\n");
   printf("\t\tBatch size. Adds third dimension to matrices A, B, and C.\n");
-  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
-         DEFAULT_K);
+  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n", DEFAULT_K);
 
   printf("\t-d, --batch_size_last_dim={0,1}\n");
   printf("\t\tHow to allocate the batch_size in the matrices.\n");
-  printf("\t\t\t1 make the batch_size the last dimension, otherwise batch_size is the first dimension (default: %d)\n",
-         DEFAULT_BATCH_SIZE_LAST_DIM);
+  printf(
+      "\t\t\t1 make the batch_size the last dimension, otherwise batch_size is "
+      "the first dimension (default: %d)\n",
+      DEFAULT_BATCH_SIZE_LAST_DIM);
 
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
@@ -222,34 +229,34 @@ int main(int argc, char **argv) {
   };
 
   /* set default options */
-  options.test                 = DEFAULT_TEST;
-  options.loop                 = DEFAULT_LOOP;
-  options.start.a.k            = DEFAULT_K;
-  options.start.a.m            = DEFAULT_MATRIX_START;
-  options.start.a.n            = DEFAULT_MATRIX_START;
-  options.stop.a.k             = DEFAULT_K;
-  options.stop.a.m             = DEFAULT_MATRIX_STOP;
-  options.stop.a.n             = DEFAULT_MATRIX_STOP;
-  options.start.b.k            = DEFAULT_K;
-  options.start.b.m            = DEFAULT_MATRIX_START;
-  options.start.b.n            = DEFAULT_MATRIX_START;
-  options.stop.b.k             = DEFAULT_K;
-  options.stop.b.m             = DEFAULT_MATRIX_STOP;
-  options.stop.b.n             = DEFAULT_MATRIX_STOP;
-  options.start.c.k            = DEFAULT_K;
-  options.start.c.m            = DEFAULT_MATRIX_START;
-  options.start.c.n            = DEFAULT_MATRIX_START;
-  options.stop.c.k             = DEFAULT_K;
-  options.stop.c.m             = DEFAULT_MATRIX_STOP;
-  options.stop.c.n             = DEFAULT_MATRIX_STOP;
-  options.step                 = DEFAULT_STEP;
-  options.warm_up_n            = DEFAULT_WARM_UP_N;
-  options.n                    = DEFAULT_N;
-  options.out                  = DEFAULT_OUT;
-  options.blas_routines        = std::string(DEFAULT_BLAS_ROUTINES);
-  options.blas_args.team_size  = DEFAULT_TEAM_SIZE;
-  options.blas_args.vector_len = DEFAULT_VECTOR_LEN;
-  options.blas_args.use_auto   = DEFAULT_USE_AUTO;
+  options.test                          = DEFAULT_TEST;
+  options.loop                          = DEFAULT_LOOP;
+  options.start.a.k                     = DEFAULT_K;
+  options.start.a.m                     = DEFAULT_MATRIX_START;
+  options.start.a.n                     = DEFAULT_MATRIX_START;
+  options.stop.a.k                      = DEFAULT_K;
+  options.stop.a.m                      = DEFAULT_MATRIX_STOP;
+  options.stop.a.n                      = DEFAULT_MATRIX_STOP;
+  options.start.b.k                     = DEFAULT_K;
+  options.start.b.m                     = DEFAULT_MATRIX_START;
+  options.start.b.n                     = DEFAULT_MATRIX_START;
+  options.stop.b.k                      = DEFAULT_K;
+  options.stop.b.m                      = DEFAULT_MATRIX_STOP;
+  options.stop.b.n                      = DEFAULT_MATRIX_STOP;
+  options.start.c.k                     = DEFAULT_K;
+  options.start.c.m                     = DEFAULT_MATRIX_START;
+  options.start.c.n                     = DEFAULT_MATRIX_START;
+  options.stop.c.k                      = DEFAULT_K;
+  options.stop.c.m                      = DEFAULT_MATRIX_STOP;
+  options.stop.c.n                      = DEFAULT_MATRIX_STOP;
+  options.step                          = DEFAULT_STEP;
+  options.warm_up_n                     = DEFAULT_WARM_UP_N;
+  options.n                             = DEFAULT_N;
+  options.out                           = DEFAULT_OUT;
+  options.blas_routines                 = std::string(DEFAULT_BLAS_ROUTINES);
+  options.blas_args.team_size           = DEFAULT_TEAM_SIZE;
+  options.blas_args.vector_len          = DEFAULT_VECTOR_LEN;
+  options.blas_args.use_auto            = DEFAULT_USE_AUTO;
   options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
@@ -295,7 +302,7 @@ int main(int argc, char **argv) {
           __blas3_perf_test_input_error(argv, ret, optarg);
 
         options.blas_args.gemm.alpha = static_cast<default_scalar>(alpha);
-        options.blas_args.gemm.beta = static_cast<default_scalar>(beta);
+        options.blas_args.gemm.beta  = static_cast<default_scalar>(beta);
         break;
       case 'a':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
