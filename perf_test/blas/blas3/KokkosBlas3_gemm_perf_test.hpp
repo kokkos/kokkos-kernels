@@ -1300,7 +1300,9 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
   gemm_args.transA = options.blas_args.gemm.gemm_args.c_str()[0];
   gemm_args.transB = options.blas_args.gemm.gemm_args.c_str()[1];
   if (options.test == BATCHED_TEAM_SIMD ||
-      options.test == BATCHED_TEAM_SIMD_BLOCKED) {
+      options.test == BATCHED_TEAM_SIMD_BLOCKED ||
+      options.test == BATCHED_SERIAL_SIMD ||
+      options.test == BATCHED_SERIAL_SIMD_BLOCKED) {
     // Calculate the batch size for simd views
     auto a_simd_batch_size =
         dims.a.k / simd_vector_size + (dims.a.k % simd_vector_size > 0);
