@@ -137,6 +137,8 @@ typedef enum TEST {
   BATCHED_TEAM_BLOCKED,
   BATCHED_TEAM_VECTOR,
   BATCHED_TEAM_VECTOR_BLOCKED,
+  BATCHED_TEAM_SIMD,
+  BATCHED_TEAM_SIMD_BLOCKED,
   // ADD MORE TEST TYPES HERE
   EXPERIMENT,
   TEST_N
@@ -145,7 +147,8 @@ typedef enum TEST {
 static std::string test_e_str[TEST_N]{
     "blas", "batched_serial", "batched_serial_blocked", "batched_team",
     "batched_team_blocked", "batched_team_vector",
-    "batched_team_vector_blocked",
+    "batched_team_vector_blocked", "batched_team_simd",
+    "batched_team_simd_blocked",
     // ADD MORE TEST TYPES HERE
     "experiment"};
 

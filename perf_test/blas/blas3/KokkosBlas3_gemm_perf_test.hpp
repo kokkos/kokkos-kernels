@@ -74,6 +74,8 @@ void do_gemm_team_batched_parallel(options_t options);
 void do_gemm_team_batched_blocked_parallel(options_t options);
 void do_gemm_team_vector_batched_parallel(options_t options);
 void do_gemm_team_vector_batched_blocked_parallel(options_t options);
+void do_gemm_team_simd_batched_parallel(options_t options);
+void do_gemm_team_simd_batched_blocked_parallel(options_t options);
 void do_gemm_experiment_parallel(options_t options);
 
 struct SerialTag {};
@@ -82,6 +84,10 @@ struct TeamTag {};
 struct TeamBatchDim3Tag {};
 struct TeamVectorTag {};
 struct TeamVectorBatchDim3Tag {};
+struct TeamSimdTag {};
+struct TeamSimdBatchDim4Tag {};
+// TODO: struct SerialSimdTag {};
+// TODO: struct SerialSimdBatchDim4Tag {};
 struct LayoutLeftTag {};
 struct LayoutRightTag {};
 struct SimdCpuTag {};
@@ -93,6 +99,7 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
         do_gemm_serial_batched, do_gemm_serial_batched_blocked,  // Serial
         NULL, NULL,                                              // Team
         NULL, NULL,                                              // TeamVector
+        NULL, NULL,                                              // TeamSimd
         NULL  // Serial Experiment
     },
     {
@@ -102,6 +109,8 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
         do_gemm_team_batched_parallel,
         do_gemm_team_batched_blocked_parallel,       // Team
         do_gemm_team_vector_batched_parallel, NULL,  // TeamVector
+        do_gemm_team_simd_batched_parallel, 
+        do_gemm_team_simd_batched_blocked_parallel,  // TeamSimd
         do_gemm_experiment_parallel                  // Parallel Experiment
     }};
 
@@ -112,6 +121,18 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
 
 using view_type_3d =
     Kokkos::View<default_scalar ***, default_layout, default_device>;
+using view_type_4d = Kokkos::View<default_scalar****, default_layout, default_device>;
+
+// Construct the vector type
+using memory_space = typename default_device::execution_space::memory_space;
+constexpr int simd_vector_size =
+    KokkosBatched::DefaultVectorLength<default_scalar, memory_space>::value;
+constexpr int simd_internal_vector_size = 
+    KokkosBatched::DefaultInternalVectorLength<default_scalar, memory_space>::value;
+using vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<default_scalar>, simd_vector_size>;
+using internal_vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<default_scalar>, simd_internal_vector_size>;
+using vector_view_type_3d = Kokkos::View<vector_type***, default_layout, default_device>;
+using internal_vector_view_type_4d = Kokkos::View<internal_vector_type****, default_layout, default_device>;
 
 struct batched_params {
   int team_size;
@@ -119,12 +140,58 @@ struct batched_params {
 };
 typedef struct batched_params batched_params_t;
 
+/**
+ * @brief struct gemm_simd_args encapsulates the data types required
+ * for allocating and passing a single matrix to the KokkosBatched gemm
+ * kernels. To invoke gemm on a batch of matrices, three instances of this
+ * struct are required, one for each matrix, A, B, and C.
+ * 
+ * @var  vec_3d: 3-rank view type used for allocating the underlying data.
+ *               A reference must be kept to this object to ensure the
+ *               data is not free'd by the C++ runtime.
+ * @var  mat_4d: 4-rank view type used for populating the simd view with
+                 random values.
+ * @var ivec_4d: 4-rank view type used for passing to math kernels. This
+ *               view type is used for leveraging simd instructions on 
+ *               both the host and device.
+ */
+struct gemm_simd_args {
+  vector_view_type_3d vec_3d;
+  view_type_4d mat_4d;
+  internal_vector_view_type_4d ivec_4d;
+};
+typedef struct gemm_simd_args gemm_simd_args_t;
+
+/**
+ * @brief struct gemm_args are common arguments passed to
+ * both gemm implementations in the KokkosBlas and KokkosBatched
+ * namespaces throughout these performance tests.
+ *
+ * @var transA: transpose type for A matrix.
+ *              supported types:   'n' - no transpose, 't' - transpose.
+ *              unsupported types: 'c' - conjugate transpose.
+ * @var transB: transpose type for B matrix.
+ *              supported types:   'n' - no transpose, 't' - transpose.
+ *              unsupported types: 'c' - conjugate transpose.
+ * @var alpha: scalar applied to A matrix.
+ * @var beta:  scalar applied to B matrix.
+ * @var A:     3-rank view type used in all non-simd tests.
+ * @var B:     3-rank view type used in all non-simd tests.
+ * @var C:     3-rank view type used in all non-simd tests.
+ * @var bp:    team_size and vector_length for tests that use Kokkos::TeamPolicy.
+ * @var Av:    3-rank and 4-rank vector view types for simd tests.
+ * @var Bv:    3-rank and 4-rank vector view types for simd tests.
+ * @var Cv:    3-rank and 4-rank vector view types for simd tests.
+ */ 
 struct gemm_args {
   char transA, transB;
   default_scalar alpha;
   default_scalar beta;
   view_type_3d A, B, C;
   batched_params_t bp;
+  // Below are matrices for simd tests
+  gemm_simd_args_t Av, Bv, Cv;
+  matrix_dims_t dims;
 };
 typedef struct gemm_args gemm_args_t;
 
@@ -135,15 +202,26 @@ static std::string gemm_csv_header_str =
 
 /*************************** Internal helper fns **************************/
 // Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline int __gemm_flop_count(int a_m, int a_n, int b_k) {
+static inline int __gemm_flop_count(int a_m, int a_n, int b_n) {
     if (std::is_same<double, default_scalar>::value ||
         std::is_same<float, default_scalar>::value ||
         std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
-      return 2 * a_m * b_k * a_n;
+      return 2 * a_m * b_n * a_n;
     else
       // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
-      return (2 + 6) * a_m * b_k * a_n;
+      return (2 + 6) * a_m * b_n * a_n;
 }
+
+static inline std::string __gemm_output_dim_string(options_t options, matrix_dim_t dim) {
+  std::string x = "x";
+  std::string ret = std::to_string(dim.m) + x + std::to_string(dim.n);
+
+  if (options.blas_args.batch_size_last_dim)
+    return ret + x + std::to_string(dim.k);
+  else
+    return std::to_string(dim.k) + x + ret;
+}
+
 static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                                   double time_in_seconds,
                                   const char *experiment_name = nullptr) {
@@ -157,13 +235,8 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
   double gflops;
   double average_time = time_in_seconds / options.n;
 
-  if (options.blas_args.batch_size_last_dim) {
-    flops = gemm_args.A.extent(2) * __gemm_flop_count(gemm_args.A.extent(0), gemm_args.A.extent(1),
-                                                      gemm_args.B.extent(1));
-  } else {
-    flops = gemm_args.A.extent(0) * __gemm_flop_count(gemm_args.A.extent(1), gemm_args.A.extent(2),
-                                                      gemm_args.B.extent(2));
-  }
+  flops = gemm_args.dims.a.k * __gemm_flop_count(gemm_args.dims.a.m, gemm_args.dims.a.n,
+						 gemm_args.dims.b.n);
 
   gflops = flops / 1e9;
 
@@ -172,12 +245,11 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                  << options.blas_args.gemm.beta << ","
                  << ts << ","
                  << vlen << ","
-                 << loop_e_str[options.loop] << "," << gemm_args.A.extent(0)
-                 << "x" << gemm_args.A.extent(1) << "x" << gemm_args.A.extent(2)
-                 << "," << gemm_args.B.extent(0) << "x" << gemm_args.B.extent(1)
-                 << "x" << gemm_args.B.extent(2) << "," << gemm_args.C.extent(0)
-                 << "x" << gemm_args.C.extent(1) << "x" << gemm_args.C.extent(2)
-                 << "," << options.warm_up_n << "," << options.n << ","
+                 << loop_e_str[options.loop] << "," 
+		 << __gemm_output_dim_string(options, gemm_args.dims.a) << ","
+		 << __gemm_output_dim_string(options, gemm_args.dims.b) << ","
+		 << __gemm_output_dim_string(options, gemm_args.dims.c) << ","
+		 << options.warm_up_n << "," << options.n << ","
                  << time_in_seconds << ","
                  << time_in_seconds / options.n << ","
                  << flops << ","
@@ -385,13 +457,34 @@ struct parallel_batched_gemm_range_policy {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamTag &, const int &i) const {}
+  void operator()(const TeamTag &, const int &i) const {
+    Kokkos::abort("TeamTag not supported using RangePolicy.");
+  }
+
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamBatchDim3Tag &, const int &i) const {}
+  void operator()(const TeamBatchDim3Tag &, const int &i) const {
+    Kokkos::abort("TeamBatchDim3Tag not supported using RangePolicy.");
+      }
+
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamVectorTag &, const int &i) const {}
+  void operator()(const TeamVectorTag &, const int &i) const {
+    Kokkos::abort("TeamVectorTag not supported using RangePolicy.");
+      }
+
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamVectorBatchDim3Tag &, const int &i) const {}
+  void operator()(const TeamVectorBatchDim3Tag &, const int &i) const {
+    Kokkos::abort("TeamVectorBatchDim3Tag not supported using RangePolicy.");
+      }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const TeamSimdTag &, const int &i) const {
+    Kokkos::abort("TeamSimdTag not supported using RangePolicy.");
+      }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const TeamSimdBatchDim4Tag &, const int &i) const {
+    Kokkos::abort("TeamSimdBatchDim4Tag not supported using RangePolicy.");
+      }
 };
 
 template <class MemberType, class TransAType, class TransBType,
@@ -480,6 +573,30 @@ struct parallel_batched_gemm {
                                                         svB, gemm_args_.beta,
                                                         svC);
   }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const TeamSimdTag &, const MemberType &member) const {
+    auto i = member.league_rank();
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, gemm_args_.Cv.ivec_4d.extent(3)),[&](const int &vector_lane) {
+      auto svA = Kokkos::subview(gemm_args_.Av.ivec_4d, i, Kokkos::ALL(), Kokkos::ALL(), vector_lane);
+      auto svB = Kokkos::subview(gemm_args_.Bv.ivec_4d, i, Kokkos::ALL(), Kokkos::ALL(), vector_lane);
+      auto svC = Kokkos::subview(gemm_args_.Cv.ivec_4d, i, Kokkos::ALL(), Kokkos::ALL(), vector_lane);
+
+      KokkosBatched::TeamGemm<MemberType, TransAType, TransBType, BlockingType>::invoke(member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+   });
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const TeamSimdBatchDim4Tag &, const MemberType &member) const {
+    auto i = member.league_rank();
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, simd_vector_size),[&](const int &vector_lane) {
+      auto svA = Kokkos::subview(gemm_args_.Av.ivec_4d, vector_lane, Kokkos::ALL(), Kokkos::ALL(), i);
+      auto svB = Kokkos::subview(gemm_args_.Bv.ivec_4d, vector_lane, Kokkos::ALL(), Kokkos::ALL(), i);
+      auto svC = Kokkos::subview(gemm_args_.Cv.ivec_4d, vector_lane, Kokkos::ALL(), Kokkos::ALL(), i);
+
+      KokkosBatched::TeamGemm<MemberType, TransAType, TransBType, BlockingType>::invoke(member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+   });
+  }
 };
 
 template <class TransAType, class TransBType, class BlockingType, class AlgoTag,
@@ -531,17 +648,22 @@ void __do_gemm_parallel_batched_template(options_t options,
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   auto league_size   = options.start.c.k;
+  auto team_size  = gemm_args.bp.team_size;
+  auto vector_len = gemm_args.bp.vector_len;
   Kokkos::Timer timer;
 
   if (std::is_same<AlgoTag, SerialTag>::value || std::is_same<AlgoTag, SerialBatchDim3Tag>::value) {
     return __do_gemm_parallel_batched_template_range_policy<TransAType, TransBType, BlockingType, AlgoTag, device_type>(options, gemm_args);
   }
 
+  if (std::is_same<AlgoTag, TeamSimdTag>::value || std::is_same<AlgoTag, TeamSimdBatchDim4Tag>::value) {
+    league_size = options.blas_args.batch_size_last_dim ? gemm_args.Cv.ivec_4d.extent(3) : gemm_args.Cv.ivec_4d.extent(0);
+    vector_len = simd_vector_size/simd_internal_vector_size; // TODO: use bp.vector_len?
+  }
+
   STATUS;
 
   functor_type parallel_batched_gemm_functor(gemm_args);
-  auto team_size  = gemm_args.bp.team_size;
-  auto vector_len = gemm_args.bp.vector_len;
 
   if (options.blas_args.use_auto) {
     for (uint32_t i = 0; i < warm_up_n; i++) {
@@ -965,7 +1087,7 @@ void __do_gemm_parallel_experiment5(options_t options, gemm_args_t gemm_args) {
   using scalar_type = typename view_type_3d::value_type;
   constexpr int vl =
       KokkosBatched::DefaultVectorLength<scalar_type, execution_space>::value;
-  using simd_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, vl>;
+  using simd_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, simd_vector_size>;
   using simd_view_type =
       Kokkos::View<simd_type ***, default_layout, default_device>;
   using functor_type =
@@ -1051,6 +1173,7 @@ class parallel_batched_gemm_experiment6 {
 template <class TransAType, class TransBType, class BlockingType,
           class device_type>
 void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
+#if 0
   using execution_space = typename device_type::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
   using member_type     = typename policy_type::member_type;
@@ -1061,8 +1184,6 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
       KokkosBatched::DefaultVectorLength<scalar_type, execution_space>::value;
   constexpr int il = 
       KokkosBatched::DefaultInternalVectorLength<scalar_type, execution_space>::value;
-  using vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, vl>;
-  using internal_vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, il>;
   using view_type = Kokkos::View<scalar_type***[vl], default_layout, default_device>;
   using vector_view_type = Kokkos::View<vector_type***, default_layout, default_device>;
   using internal_vector_view_type = Kokkos::View<internal_vector_type***, default_layout, default_device>;
@@ -1113,112 +1234,13 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
   }
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds(), "experiment6");
-  return;
-}
-
-template <class MemberType, class SimdViewType, class TransAType, class TransBType,
-          class BlockingType>
-class parallel_batched_gemm_experiment7 {
- private:
-  SimdViewType &A, &B, &C;
-  gemm_args_t gemm_args;
-
- public:
-  parallel_batched_gemm_experiment7(SimdViewType &_A, SimdViewType &_B,
-                                    SimdViewType &_C, gemm_args_t _gemm_args)
-      : A(_A), B(_B), C(_C), gemm_args(_gemm_args) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const MemberType &member) const {
-    auto i = member.league_rank();
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, A.extent(0)),[&](const int &vector_lane) {
-	auto svA = Kokkos::subview(A, vector_lane, Kokkos::ALL(), Kokkos::ALL(), i);
-	auto svB = Kokkos::subview(B, vector_lane, Kokkos::ALL(), Kokkos::ALL(), i);
-	auto svC = Kokkos::subview(C, vector_lane, Kokkos::ALL(), Kokkos::ALL(), i);
-
-	KokkosBatched::TeamGemm<MemberType, TransAType, TransBType, BlockingType>::invoke(member, gemm_args.alpha, svA, svB, gemm_args.beta, svC);
-   });
-  }
-};
-
-template <class TransAType, class TransBType, class BlockingType,
-          class device_type>
-void __do_gemm_parallel_experiment7(options_t options, gemm_args_t gemm_args) {
-  using execution_space = typename device_type::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
-  using member_type     = typename policy_type::member_type;
-
-  // Construct the vector type
-  using scalar_type = typename view_type_3d::value_type;
-  constexpr int vl =
-      KokkosBatched::DefaultVectorLength<scalar_type, execution_space>::value;
-  constexpr int il = 
-      KokkosBatched::DefaultInternalVectorLength<scalar_type, execution_space>::value;
-  using vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, vl>;
-  using internal_vector_type = KokkosBatched::Vector<KokkosBatched::SIMD<scalar_type>, il>;
-  using view_type = Kokkos::View<scalar_type****, default_layout, default_device>;
-  using vector_view_type = Kokkos::View<vector_type***, default_layout, default_device>;
-  using internal_vector_view_type = Kokkos::View<internal_vector_type****, default_layout, default_device>;
-
-  uint32_t warm_up_n = options.warm_up_n;
-  uint32_t n         = options.n;
-  auto k             = options.start.c.k;
-  Kokkos::Timer timer;
-  auto simd_batch_size = k / vl + (k % vl > 0);
-  STATUS;
-
-  // Construct matrices
-  vector_view_type A_vector("A_vector", gemm_args.A.extent(0), gemm_args.A.extent(1), simd_batch_size);
-  view_type A((scalar_type *)A_vector.data(), vl, gemm_args.A.extent(0), gemm_args.A.extent(1), simd_batch_size);
-  internal_vector_view_type A_vector_internal(A_vector.data(), il/vl, gemm_args.A.extent(0), gemm_args.A.extent(1), simd_batch_size);
-
-  vector_view_type B_vector("B_vector", gemm_args.B.extent(0), gemm_args.B.extent(1), simd_batch_size);
-  view_type B((scalar_type *)B_vector.data(), vl, gemm_args.B.extent(0), gemm_args.B.extent(1), simd_batch_size);
-  internal_vector_view_type B_vector_internal(B_vector.data(), il/vl, gemm_args.B.extent(0), gemm_args.B.extent(1), simd_batch_size);
-
-  vector_view_type C_vector("C_vector", gemm_args.C.extent(0), gemm_args.C.extent(1), simd_batch_size);
-  view_type C((scalar_type *)C_vector.data(), vl, gemm_args.C.extent(0), gemm_args.C.extent(1), simd_batch_size);
-  internal_vector_view_type C_vector_internal(C_vector.data(), il/vl, gemm_args.C.extent(0), gemm_args.C.extent(1), simd_batch_size);
-
-  uint64_t seed = Kokkos::Impl::clock_tic();
-  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
-  Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
-  Kokkos::fill_random(B, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
-  Kokkos::fill_random(C, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, scalar_type>::max());
-  Kokkos::fence();
-
-   using functor_type =
-       parallel_batched_gemm_experiment7<member_type, internal_vector_view_type,
-                                         TransAType, TransBType, BlockingType>;
-    functor_type experiment7_functor(A_vector_internal, B_vector_internal, C_vector_internal, gemm_args);
-
-  //using functor_type =
-  //    parallel_batched_gemm_experiment7<member_type, view_type,
-  //                                      TransAType, TransBType, BlockingType>;
-  // functor_type experiment7_functor(A, B, C, gemm_args);
-
-  for (uint32_t i = 0; i < warm_up_n; ++i) {
-    Kokkos::parallel_for("parallelBatchedUntimedExperiment7Gemm",
-                         policy_type(simd_batch_size, Kokkos::AUTO, vl/il), experiment7_functor);
-                         //policy_type(simd_batch_size, Kokkos::AUTO, vl), experiment7_functor);
-    Kokkos::fence();
-  }
-
-  timer.reset();
-  for (uint32_t i = 0; i < n; ++i) {
-    Kokkos::parallel_for("parallelBatchedTimedExperiment7Gemm",
-                         policy_type(simd_batch_size, Kokkos::AUTO, vl/il), experiment7_functor);
-                         //policy_type(simd_batch_size, Kokkos::AUTO, vl), experiment7_functor);
-    Kokkos::fence();
-  }
-
-  __gemm_output_csv_row(options, gemm_args, timer.seconds(), "experiment7");
+#endif
   return;
 }
 
 /*************************** Internal setup fns **************************/
 template <class scalar_type, class vta, class vtb, class vtc, class device_type>
-gemm_args_t __do_setup(options_t options, matrix_dims_t dim) {
+gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
   using execution_space = typename device_type::execution_space;
 
   gemm_args_t gemm_args;
@@ -1226,31 +1248,82 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   STATUS;
 
+  gemm_args.dims = dims;
   gemm_args.transA        = options.blas_args.gemm.gemm_args.c_str()[0];
   gemm_args.transB        = options.blas_args.gemm.gemm_args.c_str()[1];
-  if (options.blas_args.batch_size_last_dim) {
-    gemm_args.A             = vta("gemm_args.A", dim.a.m, dim.a.n, dim.a.k);
-    gemm_args.B             = vtb("gemm_args.B", dim.b.m, dim.b.n, dim.b.k);
-    gemm_args.C             = vtc("gemm_args.C", dim.c.m, dim.c.n, dim.c.k);
+  if (options.test == BATCHED_TEAM_SIMD || options.test == BATCHED_TEAM_SIMD_BLOCKED) {
+    // Calculate the batch size for simd views
+    auto a_simd_batch_size = dims.a.k / simd_vector_size + (dims.a.k % simd_vector_size > 0);
+    auto b_simd_batch_size = dims.b.k / simd_vector_size + (dims.b.k % simd_vector_size > 0);
+    auto c_simd_batch_size = dims.c.k / simd_vector_size + (dims.c.k % simd_vector_size > 0);
+
+    // Reference gemm simd arguments for allocating A, B, and C matrices
+    gemm_simd_args_t &A = gemm_args.Av, &B = gemm_args.Bv, &C = gemm_args.Cv;
+
+    if (options.blas_args.batch_size_last_dim) {
+      // Construct simd matrices with batch_size in the last dimension (better for LayoutLeft views)
+      A.vec_3d = vector_view_type_3d ("A_vector", dims.a.m, dims.a.n, a_simd_batch_size);
+      A.mat_4d = view_type_4d ((scalar_type *)A.vec_3d.data(), simd_vector_size, dims.a.m, dims.a.n, a_simd_batch_size);
+      A.ivec_4d = internal_vector_view_type_4d ((internal_vector_type *)A.mat_4d.data(), simd_vector_size/simd_internal_vector_size, dims.a.m, dims.a.n, a_simd_batch_size);
+
+      B.vec_3d = vector_view_type_3d ("B_vector", dims.b.m, dims.b.n, b_simd_batch_size);
+      B.mat_4d = view_type_4d ((scalar_type *)B.vec_3d.data(), simd_vector_size, dims.b.m, dims.b.n, b_simd_batch_size);
+      B.ivec_4d = internal_vector_view_type_4d ((internal_vector_type *)B.mat_4d.data(), simd_vector_size/simd_internal_vector_size, dims.b.m, dims.b.n, b_simd_batch_size);
+
+      C.vec_3d = vector_view_type_3d ("C_vector", dims.c.m, dims.c.n, c_simd_batch_size);
+      C.mat_4d = view_type_4d ((scalar_type *)C.vec_3d.data(), simd_vector_size, dims.c.m, dims.c.n, c_simd_batch_size);
+      C.ivec_4d = internal_vector_view_type_4d ((internal_vector_type *)C.mat_4d.data(), simd_vector_size/simd_internal_vector_size, dims.c.m, dims.c.n, c_simd_batch_size);
+
+    } else {
+      // Construct simd matrices with batch_size in the first dimension (better for LayoutRight views)
+      A.vec_3d = vector_view_type_3d ("A_vector", a_simd_batch_size, dims.a.m, dims.a.n);
+      A.mat_4d = view_type_4d ((scalar_type *)A.vec_3d.data(), a_simd_batch_size, dims.a.m, dims.a.n, simd_vector_size);
+      A.ivec_4d = internal_vector_view_type_4d ((internal_vector_type *)A.mat_4d.data(), a_simd_batch_size, dims.a.m, dims.a.n, simd_vector_size/simd_internal_vector_size);
+
+      B.vec_3d = vector_view_type_3d ("B_vector", b_simd_batch_size, dims.b.m, dims.b.n);
+      B.mat_4d = view_type_4d ((scalar_type *)B.vec_3d.data(), b_simd_batch_size, dims.b.m, dims.b.n, simd_vector_size);
+      B.ivec_4d = internal_vector_view_type_4d ((internal_vector_type *)B.mat_4d.data(), b_simd_batch_size, dims.b.m, dims.b.n, simd_vector_size/simd_internal_vector_size);
+
+      C.vec_3d = vector_view_type_3d ("C_vector", c_simd_batch_size, dims.c.m, dims.c.n);
+      C.mat_4d = view_type_4d ((scalar_type *)C.vec_3d.data(), c_simd_batch_size, dims.c.m, dims.c.n, simd_vector_size);
+      C.ivec_4d = internal_vector_view_type_4d ((internal_vector_type *)C.mat_4d.data(), c_simd_batch_size, dims.c.m, dims.c.n, simd_vector_size/simd_internal_vector_size);
+    }
+
+    // Use the non-simd 4-rank view type to randomly populate the gemm simd arguments
+    Kokkos::fill_random(gemm_args.Av.mat_4d, rand_pool,
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                    scalar_type>::max());
+    Kokkos::fill_random(gemm_args.Bv.mat_4d, rand_pool,
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                    scalar_type>::max());
+    Kokkos::fill_random(gemm_args.Cv.mat_4d, rand_pool,
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                    scalar_type>::max());
   } else {
-    gemm_args.A             = vta("gemm_args.A", dim.a.k, dim.a.m, dim.a.n);
-    gemm_args.B             = vtb("gemm_args.B", dim.b.k, dim.b.m, dim.b.n);
-    gemm_args.C             = vtc("gemm_args.C", dim.c.k, dim.c.m, dim.c.n);
+    if (options.blas_args.batch_size_last_dim) {
+      gemm_args.A             = vta("gemm_args.A", dims.a.m, dims.a.n, dims.a.k);
+      gemm_args.B             = vtb("gemm_args.B", dims.b.m, dims.b.n, dims.b.k);
+      gemm_args.C             = vtc("gemm_args.C", dims.c.m, dims.c.n, dims.c.k);
+    } else {
+      gemm_args.A             = vta("gemm_args.A", dims.a.k, dims.a.m, dims.a.n);
+      gemm_args.B             = vtb("gemm_args.B", dims.b.k, dims.b.m, dims.b.n);
+      gemm_args.C             = vtc("gemm_args.C", dims.c.k, dims.c.m, dims.c.n);
+    }
+
+    Kokkos::fill_random(gemm_args.A, rand_pool,
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                    scalar_type>::max());
+    Kokkos::fill_random(gemm_args.B, rand_pool,
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                    scalar_type>::max());
+    Kokkos::fill_random(gemm_args.C, rand_pool,
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                    scalar_type>::max());
   }
   gemm_args.alpha         = options.blas_args.gemm.alpha;
   gemm_args.beta          = options.blas_args.gemm.beta;
   gemm_args.bp.team_size  = options.blas_args.team_size;
   gemm_args.bp.vector_len = options.blas_args.vector_len;
-
-  Kokkos::fill_random(gemm_args.A, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                   scalar_type>::max());
-  Kokkos::fill_random(gemm_args.B, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                   scalar_type>::max());
-  Kokkos::fill_random(gemm_args.C, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                   scalar_type>::max());
 
   return gemm_args;
 }
@@ -1265,7 +1338,8 @@ void __do_loop_and_invoke(options_t options,
   __print_gemm_perf_test_options(options);
   std::cout << "SCALAR:" << typeid(default_scalar).name()
             << ", LAYOUT:" << typeid(default_layout).name()
-            << ", DEVICE:" << typeid(default_device).name() << std::endl;
+            << ", DEVICE:" << typeid(default_device).name() 
+            << ", SPACE:" << typeid(memory_space).name() << std::endl;
 
   options.out[0] << gemm_csv_header_str << std::endl;
 
@@ -1375,6 +1449,34 @@ void do_gemm_team_vector_batched_parallel(options_t options) {
   return;
 }
 
+void do_gemm_team_simd_batched_parallel(options_t options) {
+  STATUS;
+  if (options.blas_args.batch_size_last_dim)
+      __do_loop_and_invoke(
+        options, __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, Algo::Gemm::Unblocked,
+                                            default_device>);
+  else
+    __do_loop_and_invoke(
+        options, __do_gemm_parallel_batched<TeamSimdTag, Algo::Gemm::Unblocked,
+                                            default_device>);
+  return;
+}
+
+void do_gemm_team_simd_batched_blocked_parallel(options_t options) {
+  STATUS;
+  if (options.blas_args.batch_size_last_dim)
+      __do_loop_and_invoke(
+        options, __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, Algo::Gemm::Blocked,
+                                            default_device>);
+  else
+    __do_loop_and_invoke(
+        options, __do_gemm_parallel_batched<TeamSimdTag, Algo::Gemm::Blocked,
+                                            default_device>);
+  return;
+}
+
+
+// Blocked algo not yet implemented for TeamVectorGemm.
 /* void do_gemm_team_vector_batched_blocked_parallel(options_t options) {
   STATUS;
   __do_loop_and_invoke(
@@ -1388,7 +1490,7 @@ void do_gemm_experiment_parallel(options_t options) {
   using TransBType   = Trans::NoTranspose;
   using BlockingType = Algo::Gemm::Unblocked;
 
-/*   __do_loop_and_invoke(
+  __do_loop_and_invoke(
       options, __do_gemm_parallel_experiment1<TransAType, TransBType,
                                               BlockingType, default_device>);
   __do_loop_and_invoke(
@@ -1405,9 +1507,6 @@ void do_gemm_experiment_parallel(options_t options) {
                                               BlockingType, default_device>);
   __do_loop_and_invoke(
       options, __do_gemm_parallel_experiment6<TransAType, TransBType,
-      BlockingType, default_device>); */
-  __do_loop_and_invoke(
-      options, __do_gemm_parallel_experiment7<TransAType, TransBType,
                                               BlockingType, default_device>);
 }
 

@@ -74,7 +74,7 @@ static void __print_help_blas3_perf_test() {
   printf("Options:\n");
 
   printf("\t-h, --help\n");
-  printf("\t\tPrint this help menu.\n\n");
+  printf("\t\tPrint this help menu.\n");
 
   printf("\t-t, --test=OPTION\n");
   printf("\t\tAlgorithm selection.\n");
@@ -145,7 +145,7 @@ static void __print_help_blas3_perf_test() {
   printf("%c[1m", 27);
   printf("\t\t\t\tparallel:");
   printf("%c[0m", 27);
-  printf(" invoke blas routine in a Kokkos::parallel_for-loop.\n\n");
+  printf(" invoke blas routine in a Kokkos::parallel_for-loop.\n");
 
   printf("\t-b, --matrix_size_start=MxN,IxJ,PxQ\n");
   printf(
@@ -153,7 +153,7 @@ static void __print_help_blas3_perf_test() {
       "(start)\n");
   printf(
       "\t\t\tValid values for M and N are any non-negative 32-bit integers. "
-      "(default: %dx%d,%dx%d,%dx%d)\n\n",
+      "(default: %dx%d,%dx%d,%dx%d)\n",
       DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START,
       DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START);
 
@@ -163,7 +163,7 @@ static void __print_help_blas3_perf_test() {
       "(stop)\n");
   printf(
       "\t\t\tValid dimension values are any non-negative 32-bit integers. "
-      "(default: %dx%d,%dx%d,%dx%d)\n\n",
+      "(default: %dx%d,%dx%d,%dx%d)\n",
       DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP,
       DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP);
 
@@ -171,34 +171,34 @@ static void __print_help_blas3_perf_test() {
   printf("\t\tMatrix step selection.\n");
   printf(
       "\t\t\tValid value for K is any non-negative 32-bit integer. (default: "
-      "%d)\n\n",
+      "%d)\n",
       DEFAULT_STEP);
 
   printf("\t-w, --warm_up_loop=LOOP\n");
   printf("\t\tWarm up loop selection. (untimed)\n");
   printf(
       "\t\t\tValid value for LOOP is any non-negative 32-bit integer that's <= "
-      "ITER. (default: %d)\n\n",
+      "ITER. (default: %d)\n",
       DEFAULT_WARM_UP_N);
 
   printf("\t-i, --iter=ITER\n");
   printf("\t\tIteration selection. (timed)\n");
   printf(
       "\t\t\tValid value for ITER is any non-negative 32-bit integer. "
-      "(default: %d)\n\n",
+      "(default: %d)\n",
       DEFAULT_N);
 
   printf("\t-c, --csv=/path/to/file.csv\n");
   printf("\t\tCsv output file selection.\n");
   printf(
       "\t\t\tValid value for /path/to/file.csv is any valid file name. "
-      "(default: stdout)\n\n");
+      "(default: stdout)\n");
 
   printf("\t-r, --routines=ROUTINES\n");
   printf("\t\tRoutine selection.\n");
   printf(
       "\t\t\tValid value for ROUTINES is one of more valid blas3 routines "
-      "delimited by a comma. (default: %s)\n\n",
+      "delimited by a comma. (default: %s)\n",
       DEFAULT_BLAS_ROUTINES);
 }
 
@@ -250,6 +250,7 @@ int main(int argc, char **argv) {
   options.blas_args.team_size  = DEFAULT_TEAM_SIZE;
   options.blas_args.vector_len = DEFAULT_VECTOR_LEN;
   options.blas_args.use_auto   = DEFAULT_USE_AUTO;
+  options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;
