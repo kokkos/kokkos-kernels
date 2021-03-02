@@ -119,20 +119,28 @@ static std::string loop_e_str[LOOP_N] = {"serial", "parallel"};
 
 /**
  * @var BLAS:                          Run the blas routine through the
- * KokkosBlas namespace.
+ *                                     KokkosBlas namespace.
  * @var BATCHED_SERIAL{_BLOCKED}:      Run the serial blas routine through the
  *                                     KokkosBatched namespace.
+ * @var BATCHED_SERIAL_SIMD{_BLOCKED}: Run the serial blas routine through the
+ *                                     KokkosBatched namespace using SIMD views.
+ * @var BATCHED_SERIAL_COMPACT_MKL:    Run the serial blas mkl routine through
+ *                                     the KokkosBatched namespace.
  * @var BATCHED_TEAM{_BLOCKED}:        Run the team blas routine through the
- * KokkosBatched namespace.
+ *                                     KokkosBatched namespace.
  * @var BATCHED_TEAM_VECTOR{_BLOCKED}: Run the team vector blas routine through
- * the KokkosBatched namespace.
- * @var EXPERIMENT:                    Run the blas routine as a custom
- * experiment.
+ *                                     the KokkosBatched namespace.
+ * @var BATCHED_TEAM_SIMD{_BLOCKED}:   Run the team vector blas routine through the
+ *                                     KokkosBatched namespace using SIMD views.
+ * @var EXPERIMENT:                    Run the blas routine as a custom experiment.
  */
 typedef enum TEST {
   BLAS,
   BATCHED_SERIAL,
   BATCHED_SERIAL_BLOCKED,
+  BATCHED_SERIAL_SIMD,
+  BATCHED_SERIAL_SIMD_BLOCKED,
+  BATCHED_SERIAL_COMPACT_MKL,
   BATCHED_TEAM,
   BATCHED_TEAM_BLOCKED,
   BATCHED_TEAM_VECTOR,
@@ -145,10 +153,13 @@ typedef enum TEST {
 } test_e;
 
 static std::string test_e_str[TEST_N]{
-    "blas", "batched_serial", "batched_serial_blocked", "batched_team",
-    "batched_team_blocked", "batched_team_vector",
-    "batched_team_vector_blocked", "batched_team_simd",
-    "batched_team_simd_blocked",
+    "blas", 
+    "batched_serial", "batched_serial_blocked",
+    "batched_serial_simd", "batched_serial_simd_blocked",
+    "batched_serial_compact_mkl",
+    "batched_team", "batched_team_blocked", 
+    "batched_team_vector", "batched_team_vector_blocked", 
+    "batched_team_simd", "batched_team_simd_blocked",
     // ADD MORE TEST TYPES HERE
     "experiment"};
 
