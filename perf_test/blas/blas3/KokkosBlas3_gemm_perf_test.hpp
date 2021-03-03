@@ -654,6 +654,16 @@ struct parallel_batched_gemm {
                                                     svC);
         });
   }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const SerialSimdTag &, const MemberType &member) const {
+    Kokkos::abort("SerialSimdTag not supported using RangePolicy.");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const SerialSimdBatchDim3Tag &, const MemberType &member) const {
+    Kokkos::abort("SerialSimdBatchDim3Tag not supported using RangePolicy.");
+  }
 };
 
 template <class TransAType, class TransBType, class BlockingType, class AlgoTag,
