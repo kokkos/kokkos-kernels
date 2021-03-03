@@ -82,7 +82,7 @@ void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
  * LHS giving us this flop count: flops = columns_LHS * (columns_LHS + 1) flops
  * = (flops / 2) * 2 flops = flops * rows_LHS
  */
-static inline int trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
+static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
                                        int a_n) {
   int flops;
 
@@ -106,7 +106,7 @@ static inline int trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
 
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline int trmm_flop_count(char side, int b_m, int b_n, int a_m,
+static inline int __trmm_flop_count(char side, int b_m, int b_n, int a_m,
                                   int a_n) {
   int flops;
 
@@ -146,7 +146,7 @@ static std::string trmm_csv_header_str =
 static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
                                   double time_in_seconds) {
   double flops = trmm_args.A.extent(0) *
-                 trmm_flop_count(trmm_args.side, trmm_args.B.extent(1),
+                 __trmm_flop_count(trmm_args.side, trmm_args.B.extent(1),
                                  trmm_args.B.extent(2), trmm_args.A.extent(1),
                                  trmm_args.A.extent(2));
   double gflops           = flops / 1e9;

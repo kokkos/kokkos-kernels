@@ -82,7 +82,7 @@ void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {
    * The KokkosBatched::SerialTrtri implementation performs trmm and scal on subblocks
    * of the A matrix. a_m subblocks are selected.
    */
-static inline int trtri_impl_flop_count(int a_m, int a_n) {
+static inline int __trtri_impl_flop_count(int a_m, int a_n) {
   int flop_count = 0;
   int flops_per_div, flops_per_mul, flops_per_add;
 
@@ -109,7 +109,7 @@ static inline int trtri_impl_flop_count(int a_m, int a_n) {
 }
 
 // Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline int trtri_flop_count(int a_m, int a_n) {
+static inline int __trtri_flop_count(int a_m, int a_n) {
   int flops;
   int flops_per_mul;
   int flops_per_add;
@@ -151,7 +151,7 @@ static std::string trtri_csv_header_str =
 /*************************** Internal helper fns **************************/
 static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args,
                                    double time_in_seconds) {
-  double flops = trtri_args.A.extent(0) * trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
+  double flops = trtri_args.A.extent(0) * __trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
   double gflops = flops / 1e9;
   double average_time = time_in_seconds / options.n;
 
