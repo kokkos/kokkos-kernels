@@ -677,15 +677,23 @@ void __do_gemm_parallel_batched_template_range_policy(options_t options,
 
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
+  auto batch_size = options.start.c.k;
   Kokkos::Timer timer;
 
   STATUS;
 
   functor_type parallel_batched_gemm_functor(gemm_args);
 
+  if (std::is_same<AlgoTag, SerialSimdTag>::value ||
+      std::is_same<AlgoTag, SerialSimdBatchDim3Tag>::value) {
+    batch_size = options.blas_args.batch_size_last_dim
+      ? gemm_args.Cv.vec_3d.extent(2)
+      : gemm_args.Cv.vec_3d.extent(0);
+  }	
+
   for (uint32_t i = 0; i < warm_up_n; i++) {
     Kokkos::parallel_for("parallelBatchedWarmUpLoopGemm",
-                         policy_type(0, options.start.c.k),
+                         policy_type(0, batch_size),
                          parallel_batched_gemm_functor);
     Kokkos::fence();
   }
@@ -693,7 +701,7 @@ void __do_gemm_parallel_batched_template_range_policy(options_t options,
   timer.reset();
   for (uint32_t i = 0; i < n; i++) {
     Kokkos::parallel_for("parallelBatchedTimedLoopGemm",
-                         policy_type(0, options.start.c.k),
+                         policy_type(0, batch_size),
                          parallel_batched_gemm_functor);
     Kokkos::fence();
   }
