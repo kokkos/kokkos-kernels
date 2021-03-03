@@ -471,12 +471,12 @@ struct parallel_batched_gemm_range_policy {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const SerialSimdTag &, const int &i) const {
-    auto svA = Kokkos::subview(gemm_args_.Av.vec_3d, i, Kokkos::ALL(),
-                                Kokkos::ALL());
-    auto svB = Kokkos::subview(gemm_args_.Bv.vec_3d, i, Kokkos::ALL(),
-                                Kokkos::ALL());
-    auto svC = Kokkos::subview(gemm_args_.Cv.vec_3d, i, Kokkos::ALL(),
-                                Kokkos::ALL());
+    auto svA =
+        Kokkos::subview(gemm_args_.Av.vec_3d, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svB =
+        Kokkos::subview(gemm_args_.Bv.vec_3d, i, Kokkos::ALL(), Kokkos::ALL());
+    auto svC =
+        Kokkos::subview(gemm_args_.Cv.vec_3d, i, Kokkos::ALL(), Kokkos::ALL());
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
@@ -484,12 +484,12 @@ struct parallel_batched_gemm_range_policy {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const SerialSimdBatchDim3Tag &, const int &i) const {
-    auto svA = Kokkos::subview(gemm_args_.Av.vec_3d,
-                                Kokkos::ALL(), Kokkos::ALL(), i);
-    auto svB = Kokkos::subview(gemm_args_.Bv.vec_3d,
-                                Kokkos::ALL(), Kokkos::ALL(), i);
-    auto svC = Kokkos::subview(gemm_args_.Cv.vec_3d,
-                                Kokkos::ALL(), Kokkos::ALL(), i);
+    auto svA =
+        Kokkos::subview(gemm_args_.Av.vec_3d, Kokkos::ALL(), Kokkos::ALL(), i);
+    auto svB =
+        Kokkos::subview(gemm_args_.Bv.vec_3d, Kokkos::ALL(), Kokkos::ALL(), i);
+    auto svC =
+        Kokkos::subview(gemm_args_.Cv.vec_3d, Kokkos::ALL(), Kokkos::ALL(), i);
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
@@ -661,7 +661,8 @@ struct parallel_batched_gemm {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const SerialSimdBatchDim3Tag &, const MemberType &member) const {
+  void operator()(const SerialSimdBatchDim3Tag &,
+                  const MemberType &member) const {
     Kokkos::abort("SerialSimdBatchDim3Tag not supported using RangePolicy.");
   }
 };
@@ -677,7 +678,7 @@ void __do_gemm_parallel_batched_template_range_policy(options_t options,
 
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
-  auto batch_size = options.start.c.k;
+  auto batch_size    = options.start.c.k;
   Kokkos::Timer timer;
 
   STATUS;
@@ -687,9 +688,9 @@ void __do_gemm_parallel_batched_template_range_policy(options_t options,
   if (std::is_same<AlgoTag, SerialSimdTag>::value ||
       std::is_same<AlgoTag, SerialSimdBatchDim3Tag>::value) {
     batch_size = options.blas_args.batch_size_last_dim
-      ? gemm_args.Cv.vec_3d.extent(2)
-      : gemm_args.Cv.vec_3d.extent(0);
-  }	
+                     ? gemm_args.Cv.vec_3d.extent(2)
+                     : gemm_args.Cv.vec_3d.extent(0);
+  }
 
   for (uint32_t i = 0; i < warm_up_n; i++) {
     Kokkos::parallel_for("parallelBatchedWarmUpLoopGemm",
@@ -1579,12 +1580,13 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
-        __do_gemm_parallel_batched<SerialSimdBatchDim3Tag, Algo::Gemm::CompactMKL,
-                                   default_device>);
+        __do_gemm_parallel_batched<SerialSimdBatchDim3Tag,
+                                   Algo::Gemm::CompactMKL, default_device>);
   else
     __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<SerialSimdTag, Algo::Gemm::CompactMKL,
-                                            default_device>);
+        options,
+        __do_gemm_parallel_batched<SerialSimdTag, Algo::Gemm::CompactMKL,
+                                   default_device>);
 #else
 #if !defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
   std::cerr
