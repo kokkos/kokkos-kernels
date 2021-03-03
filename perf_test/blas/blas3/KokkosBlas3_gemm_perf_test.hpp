@@ -83,14 +83,14 @@ void do_gemm_experiment_parallel(options_t options);
 
 struct SerialTag {};
 struct SerialBatchDim3Tag {};
+struct SerialSimdTag {};
+struct SerialSimdBatchDim3Tag {};
 struct TeamTag {};
 struct TeamBatchDim3Tag {};
 struct TeamVectorTag {};
 struct TeamVectorBatchDim3Tag {};
 struct TeamSimdTag {};
 struct TeamSimdBatchDim4Tag {};
-// TODO: struct SerialSimdTag {};
-// TODO: struct SerialSimdBatchDim4Tag {};
 struct LayoutLeftTag {};
 struct LayoutRightTag {};
 struct SimdCpuTag {};
@@ -470,6 +470,32 @@ struct parallel_batched_gemm_range_policy {
   }
 
   KOKKOS_INLINE_FUNCTION
+  void operator()(const SerialSimdTag &, const int &i) const {
+    auto svA = Kokkos::subview(gemm_args_.Av.vec_3d, i, Kokkos::ALL(),
+                                Kokkos::ALL());
+    auto svB = Kokkos::subview(gemm_args_.Bv.vec_3d, i, Kokkos::ALL(),
+                                Kokkos::ALL());
+    auto svC = Kokkos::subview(gemm_args_.Cv.vec_3d, i, Kokkos::ALL(),
+                                Kokkos::ALL());
+
+    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const SerialSimdBatchDim3Tag &, const int &i) const {
+    auto svA = Kokkos::subview(gemm_args_.Av.vec_3d,
+                                Kokkos::ALL(), Kokkos::ALL(), i);
+    auto svB = Kokkos::subview(gemm_args_.Bv.vec_3d,
+                                Kokkos::ALL(), Kokkos::ALL(), i);
+    auto svC = Kokkos::subview(gemm_args_.Cv.vec_3d,
+                                Kokkos::ALL(), Kokkos::ALL(), i);
+
+    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+  }
+
+  KOKKOS_INLINE_FUNCTION
   void operator()(const TeamTag &, const int &i) const {
     Kokkos::abort("TeamTag not supported using RangePolicy.");
   }
@@ -686,7 +712,9 @@ void __do_gemm_parallel_batched_template(options_t options,
   Kokkos::Timer timer;
 
   if (std::is_same<AlgoTag, SerialTag>::value ||
-      std::is_same<AlgoTag, SerialBatchDim3Tag>::value) {
+      std::is_same<AlgoTag, SerialBatchDim3Tag>::value ||
+      std::is_same<AlgoTag, SerialSimdTag>::value ||
+      std::is_same<AlgoTag, SerialSimdBatchDim3Tag>::value) {
     return __do_gemm_parallel_batched_template_range_policy<
         TransAType, TransBType, BlockingType, AlgoTag, device_type>(options,
                                                                     gemm_args);
@@ -1302,7 +1330,8 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
   if (options.test == BATCHED_TEAM_SIMD ||
       options.test == BATCHED_TEAM_SIMD_BLOCKED ||
       options.test == BATCHED_SERIAL_SIMD ||
-      options.test == BATCHED_SERIAL_SIMD_BLOCKED) {
+      options.test == BATCHED_SERIAL_SIMD_BLOCKED ||
+      options.test == BATCHED_SERIAL_COMPACT_MKL) {
     // Calculate the batch size for simd views
     auto a_simd_batch_size =
         dims.a.k / simd_vector_size + (dims.a.k % simd_vector_size > 0);
@@ -1532,11 +1561,11 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
-        __do_gemm_parallel_batched<SerialBatchDim3Tag, Algo::Gemm::CompactMKL,
+        __do_gemm_parallel_batched<SerialSimdBatchDim3Tag, Algo::Gemm::CompactMKL,
                                    default_device>);
   else
     __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<SerialTag, Algo::Gemm::CompactMKL,
+        options, __do_gemm_parallel_batched<SerialSimdTag, Algo::Gemm::CompactMKL,
                                             default_device>);
 #else
 #if !defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
