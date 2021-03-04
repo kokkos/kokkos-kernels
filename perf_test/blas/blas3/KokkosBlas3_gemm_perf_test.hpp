@@ -639,7 +639,7 @@ struct parallel_batched_gemm {
                   const MemberType &member) const {
     auto i = member.league_rank();
     Kokkos::parallel_for(
-        Kokkos::ThreadVectorRange(member, simd_vector_size),
+        Kokkos::ThreadVectorRange(member, gemm_args_.Cv.ivec_4d.extent(0)),
         [&](const int &vector_lane) {
           auto svA = Kokkos::subview(gemm_args_.Av.ivec_4d, vector_lane,
                                      Kokkos::ALL(), Kokkos::ALL(), i);
