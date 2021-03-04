@@ -82,9 +82,9 @@ void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {
    * The KokkosBatched::SerialTrtri implementation performs trmm and scal on subblocks
    * of the A matrix. a_m subblocks are selected.
    */
-static inline int __trtri_impl_flop_count(int a_m, int a_n) {
-  int flop_count = 0;
-  int flops_per_div, flops_per_mul, flops_per_add;
+static inline double __trtri_impl_flop_count(double a_m, double a_n) {
+  double flop_count = 0;
+  double flops_per_div, flops_per_mul, flops_per_add;
 
     if (std::is_same<double, default_scalar>::value ||
         std::is_same<float, default_scalar>::value ||
@@ -109,10 +109,10 @@ static inline int __trtri_impl_flop_count(int a_m, int a_n) {
 }
 
 // Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline int __trtri_flop_count(int a_m, int a_n) {
-  int flops;
-  int flops_per_mul;
-  int flops_per_add;
+static inline double __trtri_flop_count(double a_m, double a_n) {
+  double flops;
+  double flops_per_mul;
+  double flops_per_add;
 
   if (a_m != a_n) {
     fprintf(stderr, "%s:%d:ERROR: a_m != a_n.\n", __FILE__, __LINE__);

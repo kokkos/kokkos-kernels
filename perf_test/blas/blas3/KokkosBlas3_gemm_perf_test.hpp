@@ -217,7 +217,7 @@ static std::string gemm_csv_header_str =
 /*************************** Internal helper fns **************************/
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline int __gemm_flop_count(int a_m, int a_n, int b_n) {
+static inline double __gemm_flop_count(double a_m, double a_n, double b_n) {
   if (std::is_same<double, default_scalar>::value ||
       std::is_same<float, default_scalar>::value ||
       std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)

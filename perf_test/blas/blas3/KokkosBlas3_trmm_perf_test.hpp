@@ -106,9 +106,9 @@ static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
 
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline int __trmm_flop_count(char side, int b_m, int b_n, int a_m,
-                                    int a_n) {
-  int flops;
+static inline double __trmm_flop_count(char side, double b_m, double b_n, double a_m,
+                                      double a_n) {
+  double flops;
 
   if (side == 'L' || side == 'l') {
     flops = b_m * b_m * b_n;
