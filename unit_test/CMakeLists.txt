@@ -1,4 +1,7 @@
 
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../test_common)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
+
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -14,8 +17,8 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched)
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../test_common)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/graph)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 # Kyungjoo: when kokkoskernels and kokkos are symbolic link and their src directories are overrided
 #           the following relative path does not work or users should put kokkoskernels and kokkos
@@ -33,6 +36,47 @@ TARGET_INCLUDE_DIRECTORIES(kokkoskernels_gtest PUBLIC $<BUILD_INTERFACE:${GTEST_
 
 #Gtest minimally requires C++11
 TARGET_COMPILE_FEATURES(kokkoskernels_gtest PUBLIC cxx_std_11)
+
+
+
+#
+#
+#  Making some CMake experiments to design a more automated
+#  unit-test framework that generates automatically cpp files
+#  needed by each backend to generate the unit-test executables.
+#
+#
+
+set(MY_COMPS Common)
+set(MY_BACKENDS Serial OpenMP)
+
+foreach(COMP ${MY_COMPS})
+  string(TOLOWER ${COMP} COMP_LOWER)
+  file(GLOB COMP_CPP ${COMP_LOWER}/*.hpp)
+  message(STATUS "List of Test_${COMP}_.cpp files:")
+  foreach(BACKEND ${MY_BACKENDS})
+    string(TOLOWER ${BACKEND} BACKEND_LOWER)
+    string(TOUPPER ${BACKEND} BACKEND_UPPER)
+    if(KOKKOS_ENABLE_${BACKEND_UPPER})
+      foreach(COMP_FILE ${COMP_CPP})
+        get_filename_component(COMP_NAME ${COMP_FILE} NAME_WE)
+        string(REPLACE "Test_${COMP}_" "" COMP_TEST ${COMP_NAME})
+        message(STATUS "  ${COMP_TEST}")
+        string(COMPARE EQUAL ${COMP_TEST} float128 CHECK_FLOAT)
+        if(${CHECK_FLOAT})
+          file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${BACKEND_LOWER}/${COMP_LOWER}/Test_${BACKEND}_${COMP}_${COMP_TEST}.cpp "/*/n#include<Test_${BACKEND}.hpp>\n#include<Test_${COMP}_${COMP_TEST}.hpp>\n*/")
+        else()
+          file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${BACKEND_LOWER}/${COMP_LOWER}/Test_${BACKEND}_${COMP}_${COMP_TEST}.cpp "#include<Test_${BACKEND}.hpp>\n#include<Test_${COMP}_${COMP_TEST}.hpp>")
+        endif()
+      endforeach(COMP_FILE)
+    endif()
+  endforeach(BACKEND)
+endforeach(COMP)
+
+
+
+
+
 
 IF (KOKKOS_ENABLE_CUDA)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/cuda)
@@ -261,7 +305,8 @@ IF (KOKKOS_ENABLE_SERIAL)
     COMPONENTS graph
   )
   
-  APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Common*.cpp)
+  # APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Common*.cpp)
+  APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/serial/common/Test_Serial_Common*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_serial
