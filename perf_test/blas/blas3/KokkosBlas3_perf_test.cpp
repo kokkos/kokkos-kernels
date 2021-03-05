@@ -68,6 +68,7 @@ static struct option long_options[] = {
     {"vector_len", required_argument, 0, 'n'},
     {"batch_size", required_argument, 0, 'k'},
     {"batch_size_last_dim", required_argument, 0, 'd'},
+    {"verify", required_argument, 0, 'v'},
     {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
@@ -122,23 +123,23 @@ static void __print_help_blas3_perf_test() {
   printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
          DEFAULT_VECTOR_LEN);
 
-  printf("\t-u, --use_auto={0,1}\n");
+  printf("\t-u, --use_auto=AUTO\n");
   printf(
       "\t\tWhether to use Kokkos::AUTO for vector_len and team_size "
       "(Heirarchical parallelism).\n");
   printf(
-      "\t\t\t1 to use Kokkos::AUTO, otherwise --vector_len and --team_size "
-      "will be used. (default: %d)\n",
+      "\t\t\tValid values for AUTO are 1 to use Kokkos::AUTO and 0 to use --vector_len and --team_size "
+      "instead. (default: %d)\n",
       DEFAULT_USE_AUTO);
 
   printf("\t-k, --batch_size=LEN\n");
   printf("\t\tBatch size. Adds third dimension to matrices A, B, and C.\n");
   printf("\t\t\tThe value of LEN as an integer. (default: %d)\n", DEFAULT_K);
 
-  printf("\t-d, --batch_size_last_dim={0,1}\n");
+  printf("\t-d, --batch_size_last_dim=LAST_DIM\n");
   printf("\t\tHow to allocate the batch_size in the matrices.\n");
   printf(
-      "\t\t\t1 make the batch_size the last dimension, otherwise batch_size is "
+      "\t\t\tValid values for LAST_DIM are 1 make the batch_size the last dimension and 0 to make the batch_size "
       "the first dimension (default: %d)\n",
       DEFAULT_BATCH_SIZE_LAST_DIM);
 
@@ -207,6 +208,13 @@ static void __print_help_blas3_perf_test() {
       "\t\t\tValid value for ROUTINES is one of more valid blas3 routines "
       "delimited by a comma. (default: %s)\n",
       DEFAULT_BLAS_ROUTINES);
+
+  printf("\t-v, --verify=VERIFY\n");
+  printf("\t\tVerification selection. (untimed)\n");
+  printf(
+      "\t\t\tValid values for VERIFY are either 0 to skip verification or 1 to verify before timing. "
+      "(default: %d)\n",
+      DEFAULT_VERIFY);
 }
 
 static void __blas3_perf_test_input_error(char **argv, char short_opt,
@@ -258,6 +266,7 @@ int main(int argc, char **argv) {
   options.blas_args.vector_len          = DEFAULT_VECTOR_LEN;
   options.blas_args.use_auto            = DEFAULT_USE_AUTO;
   options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
+  options.verify                        = DEFAULT_VERIFY;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;

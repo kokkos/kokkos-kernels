@@ -63,6 +63,7 @@
 #define DEFAULT_VECTOR_LEN 1
 #define DEFAULT_USE_AUTO 0
 #define DEFAULT_BATCH_SIZE_LAST_DIM 0
+#define DEFAULT_VERIFY 1
 
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
@@ -192,6 +193,8 @@ typedef struct matrix_dims matrix_dims_t;
  * @var out_file:      The file to write csv data to. Defaults to stdout.
  * @var blas_args:     Arguments for each supported blas routine.
  * @var blas_routines: Selects which supported blas routines to test.
+ * @var verify:        Performs verification of the blas routine for each input
+ *                     before timing it.
  */
 struct perf_test_options {
   test_e test;
@@ -205,6 +208,7 @@ struct perf_test_options {
   std::string out_file;
   blas_args_t blas_args;
   std::string blas_routines;
+  bool verify;
 };
 typedef struct perf_test_options options_t;
 

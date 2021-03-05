@@ -56,6 +56,8 @@
 //#include "KokkosBatched_Gemm_Team_Impl.hpp"
 //#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
+#include "gtest/gtest.h" // EXPECT_NEAR
+#include "KokkosKernels_TestUtils.hpp"
 
 //#define GEMM_PERF_TEST_DEBUG
 
@@ -252,6 +254,9 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
   double gflops;
   double average_time = time_in_seconds / options.n;
 
+  if (options.verify)
+    return;
+
   flops = gemm_args.dims.a.k * __gemm_flop_count(gemm_args.dims.a.m,
                                                  gemm_args.dims.a.n,
                                                  gemm_args.dims.b.n);
@@ -360,8 +365,8 @@ void __do_gemm_serial_batched_template(options_t options,
 template <class scalar_type, class vta, class vtb, class vtc, class device_type,
           class algo_type>
 void __do_gemm_serial_batched(options_t options, gemm_args_t gemm_args) {
-  char a  = gemm_args.transA;
-  char b  = gemm_args.transB;
+  char a  = toupper(gemm_args.transA);
+  char b  = toupper(gemm_args.transB);
   using N = Trans::NoTranspose;
   using T = Trans::Transpose;
   // using C = Trans::ConjTranspose;
@@ -1333,6 +1338,154 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
   return;
 }
 
+/**
+ * Check difference of scalars expected and actual at indexes i,j,k
+ * @var expected: The expected result.
+ * @var actual:   The actual result.
+ * @var epsilon:  The tolerance to use when comparing.
+ * @return true if the comparison fails and false if the comparison succeeds.
+ */
+static inline bool __gemm_print_compare_failure(view_type_3d expected, view_type_3d actual, int i, int j, int k, double epsilon) {
+  STATUS;
+  auto diff = static_cast<double>(Kokkos::Experimental::fabs(expected(i,j,k) - actual(i,j,k)));
+
+  if (diff > epsilon) {
+    printf("fabs(expected(%d,%d,%d):%g - actual(%d,%d,%d):%g):%g > epsilon:%g\n", 
+            i,j,k,static_cast<double>(expected(i,j,k)), 
+            i,j,k,static_cast<double>(actual(i,j,k)), 
+            diff,
+            epsilon);
+    FATAL_ERROR("Comparison failure!");
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Compare all values of expected with all values of actual.
+ * @var expected: the expected results
+ * @var actual:   the actual results
+ * @return false if expected matches actual within epsilon, otherwise true.
+ */
+template <class ScalarType, class LayoutType>
+static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual) {
+  double epsilon = Test::epsilon<ScalarType>::value;
+  STATUS;
+
+  for (size_t i = 0; i < expected.extent(0); i++) {
+    for (size_t j = 0; j < expected.extent(1); j++) {
+      for (size_t k = 0; k < expected.extent(2); k++) {
+        if (std::is_same<LayoutType, Kokkos::LayoutRight>::value) {
+          return __gemm_print_compare_failure(expected, actual, i, j, k, epsilon);
+        }
+        if (std::is_same<LayoutType, Kokkos::LayoutLeft>::value) {
+          return __gemm_print_compare_failure(expected, actual, k, j, i, epsilon);
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Compare all values of expected with all values of actual.
+ * @var expected: the expected results
+ * @var actual:   the actual results
+ * @return false if expected matches actual within epsilon, otherwise true.
+ */
+template <class ScalarType, class LayoutType>
+static inline bool __gemm_do_compare(view_type_3d expected, gemm_simd_args_t actual) {
+  std::cout << actual.mat_4d.extent(0) << "x" << actual.mat_4d.extent(1) << "x" << actual.mat_4d.extent(2) << "x" << actual.mat_4d.extent(3) << std::endl;
+  decltype(expected) actual_data(actual.mat_4d.data(), expected.extent(0), expected.extent(1), expected.extent(2));
+  STATUS;
+  return __gemm_do_compare<ScalarType, LayoutType>(expected, actual_data);
+}
+
+template <class ScalarType, class LayoutType, class DeviceType>
+static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, void (*fn)(options_t, gemm_args_t)) {
+  using execution_space = typename DeviceType::execution_space;
+  // Just create "expected" types using non-simd types.
+  decltype(gemm_args.C) C_expected;
+  decltype(gemm_args.A) A_expected;
+  decltype(gemm_args.B) B_expected;
+  STATUS;
+
+  if (options.blas_args.batch_size_last_dim) {
+    C_expected = decltype(C_expected)("C_expected", gemm_args.dims.c.m, gemm_args.dims.c.n, gemm_args.dims.c.k);
+    A_expected = decltype(A_expected)("A_expected", gemm_args.dims.a.m, gemm_args.dims.a.n, gemm_args.dims.a.k);
+    B_expected = decltype(B_expected)("B_expected", gemm_args.dims.b.m, gemm_args.dims.b.n, gemm_args.dims.b.k);
+  } else {
+    C_expected = decltype(C_expected)("C_expected", gemm_args.dims.c.k, gemm_args.dims.c.m, gemm_args.dims.c.n);
+    A_expected = decltype(A_expected)("A_expected", gemm_args.dims.a.k, gemm_args.dims.a.m, gemm_args.dims.a.n);
+    B_expected = decltype(B_expected)("B_expected", gemm_args.dims.b.k, gemm_args.dims.b.m, gemm_args.dims.b.n);
+  }
+
+  // Initialize "expected" matrices.
+  if (gemm_args.C.data() != nullptr) {
+    Kokkos::deep_copy(C_expected, gemm_args.C);
+    Kokkos::deep_copy(A_expected, gemm_args.A);
+    Kokkos::deep_copy(B_expected, gemm_args.B);
+
+    Kokkos::fence(); // Ensure that deep_copy has completed
+
+    // Check that initial values match
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.C))
+      FATAL_ERROR("Inital values mismatch!");
+  } else if (gemm_args.Cv.vec_3d.data() != nullptr) {
+    // TODO: Debug this when batch_size % simd_vector_len != 0.
+    memcpy(C_expected.data(), gemm_args.Cv.vec_3d.data(), sizeof(default_scalar) * gemm_args.dims.c.k * gemm_args.dims.c.m * gemm_args.dims.c.n);
+    memcpy(A_expected.data(), gemm_args.Av.vec_3d.data(), sizeof(default_scalar) * gemm_args.dims.a.k * gemm_args.dims.a.m * gemm_args.dims.a.n);
+    memcpy(B_expected.data(), gemm_args.Bv.vec_3d.data(), sizeof(default_scalar) * gemm_args.dims.b.k * gemm_args.dims.b.m * gemm_args.dims.b.n);
+
+    // Check that initial values match
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv))
+      FATAL_ERROR("Inital values mismatch!");
+  } else {
+    FATAL_ERROR("Input arguments are empty!");
+  }
+
+  // Populate "expected" matrices via VanillaGemm
+  Test::Functor_BatchedVanillaGEMM<decltype(A_expected), decltype(B_expected), decltype(C_expected), execution_space> vgemm;
+  vgemm.A_t = toupper(gemm_args.transA) == 'T';
+  vgemm.B_t = toupper(gemm_args.transB) == 'T';
+  vgemm.A_c = vgemm.B_c = false;
+  vgemm.A = A_expected;
+  vgemm.B = B_expected;
+  vgemm.C = C_expected;
+  vgemm.alpha = gemm_args.alpha;
+  vgemm.beta = gemm_args.beta;
+  vgemm.run(); // Compute C_expected
+
+  // Run routine with warm_up_n = 1 and n = 0. 
+  auto warm_up_n_bak = options.warm_up_n;
+  options.warm_up_n = 1;
+  auto n_bak = options.n;
+  options.n = 0;
+  fn(options, gemm_args);
+
+  Kokkos::fence(); // Redundant fence.
+
+  // Check the result
+  if (gemm_args.C.data() != nullptr) {
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.C))
+      FATAL_ERROR("Result value mismatch!");
+  }
+
+  if (gemm_args.Cv.vec_3d.data() != nullptr) {
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv))
+      FATAL_ERROR("Result value mismatch!");
+  }
+
+  // Run actual timed test.
+  options.verify = false; // Set verify to false for csv output.
+  options.warm_up_n = warm_up_n_bak;
+  options.n = n_bak;
+  fn(options, gemm_args);
+
+  // Reset verify for next matrix size.
+  options.verify = true;
+}
+
 /*************************** Internal setup fns **************************/
 template <class scalar_type, class vta, class vtb, class vtc, class device_type>
 gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
@@ -1457,6 +1610,8 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
   gemm_args.bp.team_size  = options.blas_args.team_size;
   gemm_args.bp.vector_len = options.blas_args.vector_len;
 
+  Kokkos::fence(); // Ensure that fill_random has completed.
+
   return gemm_args;
 }
 
@@ -1484,7 +1639,12 @@ void __do_loop_and_invoke(options_t options,
       cur_dims.c.m += options.step, cur_dims.c.n += options.step) {
     gemm_args = __do_setup<default_scalar, view_type_3d, view_type_3d,
                            view_type_3d, default_device>(options, cur_dims);
-    fn(options, gemm_args);
+
+    if (options.verify) {
+      __gemm_do_verify<default_scalar, default_layout, default_device>(options, gemm_args, fn);
+    } else {
+      fn(options, gemm_args);
+    }
   }
   return;
 }

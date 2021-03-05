@@ -202,5 +202,20 @@ namespace Test {
           *this);
     }
   };
+
+  template<class T>
+  class epsilon {
+    public:
+      constexpr static double value = std::numeric_limits<T>::epsilon();
+  };
+
+  // explicit epsilon specializations
+  #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  template<Kokkos::Experimental::half_t>
+  class epsilon {
+    public:
+      constexpr static double value = 0009765625F;
+  };
+  #endif // KOKKOS_HALF_T_IS_FLOAT
 }
 #endif
