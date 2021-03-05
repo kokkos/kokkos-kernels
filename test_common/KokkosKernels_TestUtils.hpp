@@ -211,8 +211,8 @@ namespace Test {
 
   // explicit epsilon specializations
   #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
-  template<Kokkos::Experimental::half_t>
-  class epsilon {
+  template<>
+  class epsilon<Kokkos::Experimental::half_t> {
     public:
       constexpr static double value = 0009765625F;
   };
