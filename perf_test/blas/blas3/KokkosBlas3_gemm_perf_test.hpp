@@ -1706,28 +1706,32 @@ void do_gemm_serial_batched_blocked_parallel(options_t options) {
 
 void do_gemm_serial_simd_batched_parallel(options_t options) {
   STATUS;
+  // SerialBatchDim3Tag
+  // SerialSimdTag
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
-        __do_gemm_parallel_batched<SerialBatchDim3Tag, Algo::Gemm::Unblocked,
+        __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, Algo::Gemm::Unblocked,
                                    default_device, Mode::Serial>);
   else
     __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<SerialSimdTag, Algo::Gemm::Unblocked,
+        options, __do_gemm_parallel_batched<TeamSimdTag, Algo::Gemm::Unblocked,
                                             default_device, Mode::Serial>);
   return;
 }
 
 void do_gemm_serial_simd_batched_blocked_parallel(options_t options) {
   STATUS;
+  // SerialBatchDim3Tag
+  // SerialSimdTag
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
-        __do_gemm_parallel_batched<SerialBatchDim3Tag, Algo::Gemm::Blocked,
+        __do_gemm_parallel_batched<TeamSimdBatchDim4Tag, Algo::Gemm::Blocked,
                                    default_device, Mode::Serial>);
   else
     __do_loop_and_invoke(
-        options, __do_gemm_parallel_batched<SerialSimdTag, Algo::Gemm::Blocked,
+        options, __do_gemm_parallel_batched<TeamSimdTag, Algo::Gemm::Blocked,
                                             default_device, Mode::Serial>);
   return;
 }
