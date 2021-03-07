@@ -339,6 +339,25 @@ struct D2_MIS_RandomPriority
     lno_view_t setList;
   };
 
+  struct MaskedWorklist
+  {
+    MaskedWorklist(const lno_view_t& mask_, const lno_view_t& worklist_)
+      : mask(mask_), worklist(worklist_)
+    {}
+
+    KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lNumInList, bool finalPass) const
+    {
+      if(mask(i) < 0)
+      {
+        if(finalPass)
+          worklist(lNumInList) = i;
+        lNumInList++;
+      }
+    }
+    lno_view_t mask;
+    lno_view_t worklist;
+  };
+
   struct CompactWorklistFunctor
   {
     CompactWorklistFunctor(const worklist_t& src_, const worklist_t& dst_, const status_view_t& status_)
@@ -424,6 +443,79 @@ struct D2_MIS_RandomPriority
     }
     if(numRounds)
       *numRounds = round;
+    //now that every vertex has been decided IN_SET/OUT_SET,
+    //build a compact list of the vertices which are IN_SET.
+    lno_t numInSet = 0;
+    Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus), numInSet);
+    lno_view_t setList(Kokkos::ViewAllocateWithoutInitializing("D2MIS"), numInSet);
+    Kokkos::parallel_scan(range_pol(0, numVerts), CompactInSet(rowStatus, setList));
+    return setList;
+  }
+
+  //Compute with an initial mask: vertices with mask value < 0 are completely ignored
+  lno_view_t compute(const lno_view_t& mask)
+  {
+    //Initialize first worklist to 0...numVerts
+    worklist_t rowWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 0);
+    worklist_t colWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 1);
+    lno_t rowWorkLen = numVerts;
+    lno_t colWorkLen = numVerts;
+    //Row worklist: initially only the non-masked vertices
+    Kokkos::parallel_scan(range_pol(0, numVerts), MaskedWorklist(mask, rowWorklist), rowWorkLen);
+    //TODO: set up col worklist as the union of neighbors row worklist. But all columns is correct for now.
+    KokkosKernels::Impl::sequential_fill(colWorklist);
+    //Need to fill rowStatus with OUT_SET initially so that vertices not in the worklist don't affect algorithm
+    Kokkos::deep_copy(rowStatus, ~(status_t(0)));
+    worklist_t thirdWorklist = Kokkos::subview(allWorklists, Kokkos::ALL(), 2);
+    auto execSpaceEnum = KokkosKernels::Impl::kk_get_exec_space_type<exec_space>();
+    bool useTeams = allowTeams && KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>() && (entries.extent(0) / numVerts >= 16);
+    int vectorLength = KokkosKernels::Impl::kk_get_suggested_vector_size(numVerts, entries.extent(0), execSpaceEnum);
+    int round = 0;
+    int refreshColTeamSize = 0;
+    int decideSetTeamSize = 0;
+    if(useTeams)
+    {
+      team_pol dummyPolicy(1, 1, vectorLength);
+      //Compute the recommended team size for RefreshColStatus and DecideSetFunctor (will be constant)
+      {
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
+        refreshColTeamSize = dummyPolicy.team_size_max(refreshCol, Kokkos::ParallelForTag());
+      }
+      {
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
+        decideSetTeamSize = dummyPolicy.team_size_max(decideSet, Kokkos::ParallelForTag());
+      }
+    }
+    while(true)
+    {
+      //Compute new row statuses
+      Kokkos::parallel_for(range_pol(0, rowWorkLen), RefreshRowStatus(rowStatus, rowWorklist, nvBits, round));
+      //Compute new col statuses
+      {
+        RefreshColStatus refreshCol(colStatus, colWorklist, rowStatus, rowmap, entries, numVerts, colWorkLen);
+        if(useTeams)
+          Kokkos::parallel_for(team_pol((colWorkLen + refreshColTeamSize - 1) / refreshColTeamSize, refreshColTeamSize, vectorLength), refreshCol);
+        else
+          Kokkos::parallel_for(range_pol(0, colWorkLen), refreshCol);
+      }
+      //Decide row statuses where enough information is available
+      {
+        DecideSetFunctor decideSet(rowStatus, colStatus, rowmap, entries, numVerts, rowWorklist, rowWorkLen);
+        if(useTeams)
+          Kokkos::parallel_for(team_pol((rowWorkLen + decideSetTeamSize - 1) / decideSetTeamSize, decideSetTeamSize, vectorLength), decideSet);
+        else
+          Kokkos::parallel_for(range_pol(0, rowWorkLen), decideSet);
+      }
+      round++;
+      //Compact row worklist
+      Kokkos::parallel_scan(range_pol(0, rowWorkLen), CompactWorklistFunctor(rowWorklist, thirdWorklist, rowStatus), rowWorkLen);
+      if(rowWorkLen == 0)
+        break;
+      std::swap(rowWorklist, thirdWorklist);
+      //Compact col worklist
+      Kokkos::parallel_scan(range_pol(0, colWorkLen), CompactWorklistFunctor(colWorklist, thirdWorklist, colStatus), colWorkLen);
+      std::swap(colWorklist, thirdWorklist);
+    }
     //now that every vertex has been decided IN_SET/OUT_SET,
     //build a compact list of the vertices which are IN_SET.
     lno_t numInSet = 0;
@@ -927,6 +1019,200 @@ struct D2_MIS_Coarsening
   entries_t entries;
   labels_t mis2;
   lno_t numVerts;
+  labels_t labels;
+};
+
+template<typename device_t, typename rowmap_t, typename entries_t, typename labels_t>
+struct D2_MIS_Aggregation
+{
+  using exec_space = typename device_t::execution_space;
+  using mem_space = typename device_t::memory_space;
+  using bitset_t = Kokkos::Bitset<device_t>;
+  using const_bitset_t = Kokkos::ConstBitset<device_t>;
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+  using lno_view_t = typename entries_t::non_const_type;
+  //The type of status/priority values.
+  using status_t = typename std::make_unsigned<lno_t>::type;
+  using status_view_t = Kokkos::View<status_t*, mem_space>;
+  using range_pol = Kokkos::RangePolicy<exec_space>;
+
+  D2_MIS_Aggregation(const rowmap_t& rowmap_, const entries_t& entries_)
+    : rowmap(rowmap_), entries(entries_), numVerts(rowmap.extent(0) - 1),
+      labels(Kokkos::ViewAllocateWithoutInitializing("AggregateLabels"), numVerts)
+  {
+    Kokkos::deep_copy(labels, (lno_t) -1);
+  }
+
+  void phase1()
+  {
+    //Compute an MIS-2
+    D2_MIS_RandomPriority<device_t, rowmap_t, entries_t, labels_t, true> d2mis(rowmap, entries);
+    auto mis2 = d2mis.compute(nullptr);
+    auto rowmap_ = rowmap;
+    auto entries_ = entries;
+    auto numVerts_ = numVerts;
+    auto labels_ = labels;
+    //Construct initial aggregates using roots and all direct neighbors
+    Kokkos::parallel_for(range_pol(0, mis2.extent(0)),
+      KOKKOS_LAMBDA(lno_t agg)
+      {
+        lno_t root = mis2(agg);
+        size_type rowBegin = rowmap_(root);
+        size_type rowEnd = rowmap_(root + 1);
+        labels_(root) = agg;
+        for(size_type j = rowBegin; j < rowEnd; j++)
+        {
+          lno_t nei = entries_(j);
+          if(nei < numVerts_)
+            labels_(nei) = agg;
+        }
+      });
+    numAggs = mis2.extent(0);
+  }
+
+  void phase2()
+  {
+    int iter = 0;
+    auto rowmap_ = rowmap;
+    auto entries_ = entries;
+    auto numVerts_ = numVerts;
+    auto labels_ = labels;
+    labels_t candAggSizes(Kokkos::ViewAllocateWithoutInitializing("Phase2 Candidate Agg Sizes"), numVerts);
+    auto numAggs_ = numAggs;
+    while(true)
+    {
+      //Compute a new MIS-2 from only unaggregated nodes
+      D2_MIS_RandomPriority<device_t, rowmap_t, entries_t, labels_t, true> d2mis(rowmap, entries);
+      auto mis2 = d2mis.compute(labels);
+      std::cout << "Iter " << iter++ << ": phase2 aggregation MIS contains " << mis2.extent(0) << " root candidates.\n";
+      if(mis2.extent(0) == 0)
+        break;
+      lno_t numCandRoots = mis2.extent(0);
+      //Compute the sizes of would-be aggregates.
+      Kokkos::parallel_for(range_pol(0, numCandRoots),
+        KOKKOS_LAMBDA(lno_t i)
+        {
+          lno_t candRoot = mis2(i);
+          //Count the number of non-aggregated neighbors, including self
+          lno_t aggSize = 1;
+          size_type rowBegin = rowmap_(candRoot);
+          size_type rowEnd = rowmap_(candRoot + 1);
+          for(size_type j = rowBegin; j < rowEnd; j++)
+          {
+            lno_t nei = entries_(j);
+            if(nei == candRoot || nei >= numVerts_)
+              continue;
+            if(labels_(nei) == -1)
+              aggSize++;
+          }
+          candAggSizes(i) = aggSize;
+        });
+      //Now, filter out the candidate aggs which are big enough, and create those aggregates.
+      //Using a scan for this assigns IDs deterministically (unlike an atomic counter).
+      lno_t numNewAggs;
+      Kokkos::parallel_scan(range_pol(0, numCandRoots),
+        KOKKOS_LAMBDA(lno_t i, lno_t& lid, bool finalPass)
+        {
+          lno_t aggSize = candAggSizes(i);
+          if(aggSize < 3)
+            return;
+          if(finalPass)
+          {
+            //Build the aggregate
+            lno_t root = mis2(i);
+            lno_t aggID = numAggs_ + lid;
+            labels_(root) = aggID;
+            size_type rowBegin = rowmap_(root);
+            size_type rowEnd = rowmap_(root + 1);
+            for(size_type j = rowBegin; j < rowEnd; j++)
+            {
+              lno_t nei = entries_(j);
+              if(nei == root || nei >= numVerts_)
+                continue;
+              if(labels_(nei) == -1)
+                labels_(nei) = aggID;
+            }
+          }
+          lid++;
+        }, numNewAggs);
+      std::cout << "                           Of those, " << numNewAggs << " became new aggregates.\n";
+      if(numNewAggs == 0)
+        break;
+      numAggs_ += numNewAggs;
+    }
+    numAggs = numAggs_;
+  }
+
+  void phase3()
+  {
+    //Phase3 is cleanup. All aggregates have already been created, but some vertices might be unaggregated.
+    //Compute the current size of each aggregate, and then join each unaggregated node to the smallest neighboring aggregate.
+    auto rowmap_ = rowmap;
+    auto entries_ = entries;
+    auto numVerts_ = numVerts;
+    auto labels_ = labels;
+    labels_t aggSizes(Kokkos::ViewAllocateWithoutInitializing("Phase3 Agg Sizes"), numAggs);
+    Kokkos::parallel_for(range_pol(0, numVerts),
+      KOKKOS_LAMBDA(lno_t i)
+      {
+        lno_t agg = labels_(i);
+        if(agg != -1)
+          Kokkos::atomic_increment(&aggSizes(agg));
+      });
+    //Now, join vertices to aggregates
+    Kokkos::parallel_for(range_pol(0, numVerts),
+      KOKKOS_LAMBDA(lno_t i)
+      {
+        lno_t agg = labels_(i);
+        if(agg != -1)
+          return;
+        lno_t smallestAgg = 0;
+        lno_t smallestAggSize = numVerts_ + 1;
+        size_type rowBegin = rowmap_(i);
+        size_type rowEnd = rowmap_(i + 1);
+        for(size_type j = rowBegin; j < rowEnd; j++)
+        {
+          lno_t nei = entries_(j);
+          if(nei == i || nei >= numVerts_)
+            continue;
+          lno_t neiAgg = labels_(nei);
+          if(neiAgg == -1)
+            continue;
+          lno_t neiAggSize = aggSizes(neiAgg);
+          if(neiAggSize < smallestAggSize)
+          {
+            smallestAgg = neiAgg;
+            smallestAggSize = neiAggSize;
+          }
+        }
+        labels_(i) = smallestAgg;
+      });
+  }
+
+  void compute()
+  {
+    //Pseudocode:
+    //
+    //  -Phase 1: compute MIS-2, construct an aggregate from each in-set point and its neighbors
+    //  -Phase 2: Until no new aggregates can be formed this way:
+    //    -Compute an MIS-2 that excludes all aggregated nodes
+    //    -For each in-set point:
+    //      -Count unaggregated neighbors.
+    //      -If total agg size would be >= 3, make the aggregate.
+    //  -Phase 3: join still unaggregated nodes to a neighboring aggregate
+    //    -Ideally, the smallest neighboring aggregate.
+    //    -To remain deterministic, could simply use the agg sizes from end of phase 2 and not update them during phase 3.
+    phase1();
+    phase2();
+    phase3();
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  labels_t mis2;
+  lno_t numVerts;
+  lno_t numAggs;
   labels_t labels;
 };
 

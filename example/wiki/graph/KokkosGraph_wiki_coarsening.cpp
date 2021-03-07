@@ -13,10 +13,10 @@ int main(int argc, char* argv[])
     GraphDemo::generate9pt(rowmapDevice, colindsDevice);
     //Step 2: Run MIS-2 based coarsening and print the result
     {
-      std::cout << "Coarsened vertex labels:\n";
       Ordinal numClusters = 0;
-      auto labels = KokkosGraph::Experimental::graph_mis2_coarsen<ExecSpace, RowmapType, ColindsType>(
-          rowmapDevice, colindsDevice, numClusters, KokkosGraph::MIS2_FAST);
+      auto labels = KokkosGraph::Experimental::graph_mis2_aggregate<ExecSpace, RowmapType, ColindsType>(
+          rowmapDevice, colindsDevice, numClusters);
+      std::cout << "Coarsened into " << numClusters << " clusters:\n";
       //coarsening labels can be printed in the same way as colors
       GraphDemo::printColoring(labels, numClusters);
       putchar('\n');

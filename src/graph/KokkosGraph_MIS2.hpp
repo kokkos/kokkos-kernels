@@ -120,12 +120,29 @@ graph_mis2_coarsen(const rowmap_t& rowmap, const colinds_t& colinds, typename co
   if(rowmap.extent(0) <= 1)
   {
     //there are no vertices to label
+    numClusters = 0;
     return labels_t();
   }
   labels_t mis2 = graph_d2_mis<device_t, rowmap_t, colinds_t, labels_t>(rowmap, colinds, algo);
   numClusters = mis2.extent(0);
   Impl::D2_MIS_Coarsening<device_t, rowmap_t, colinds_t, labels_t> coarsening(rowmap, colinds, mis2);
   return coarsening.compute();
+}
+
+template <typename device_t, typename rowmap_t, typename colinds_t, typename labels_t = typename colinds_t::non_const_type>
+labels_t
+graph_mis2_aggregate(const rowmap_t& rowmap, const colinds_t& colinds, typename colinds_t::non_const_value_type& numAggregates)
+{
+  if(rowmap.extent(0) <= 1)
+  {
+    //there are no vertices to label
+    numAggregates = 0;
+    return labels_t();
+  }
+  Impl::D2_MIS_Aggregation<device_t, rowmap_t, colinds_t, labels_t> aggregation(rowmap, colinds);
+  aggregation.compute();
+  numAggregates = aggregation.numAggs;
+  return aggregation.labels;
 }
 
 inline const char* mis2_algorithm_name(MIS2_Algorithm algo)
