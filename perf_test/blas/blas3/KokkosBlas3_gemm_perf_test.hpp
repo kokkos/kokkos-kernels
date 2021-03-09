@@ -312,6 +312,7 @@ void __do_gemm_serial_blas(options_t options, gemm_args_t gemm_args) {
       auto B = Kokkos::subview(_gemm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
       auto C = Kokkos::subview(_gemm_args.C, i, Kokkos::ALL(), Kokkos::ALL());
 
+      // TODO: Debug this when starting a matrix sizes <= 10x10
       KokkosBlas::gemm(&_gemm_args.transA, &_gemm_args.transB, _gemm_args.alpha,
                        A, B, _gemm_args.beta, C);
     }
