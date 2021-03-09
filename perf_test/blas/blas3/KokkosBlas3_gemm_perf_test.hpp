@@ -1369,7 +1369,7 @@ static inline bool __gemm_print_compare_failure(view_type_3d expected, view_type
  */
 template <class ScalarType, class LayoutType>
 static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual) {
-  double epsilon = Test::epsilon<ScalarType>::value;
+  double epsilon = Test::epsilon<ScalarType>::value * 1e3;
   STATUS;
 
   for (size_t i = 0; i < expected.extent(0); i++) {
