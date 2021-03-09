@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:",
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:",
                             long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
@@ -397,6 +397,7 @@ int main(int argc, char **argv) {
                 atoi(optarg);
         break;
       case 'd': options.blas_args.batch_size_last_dim = atoi(optarg); break;
+      case 'v': options.verify = atoi(optarg); break;
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
       case 'u': options.blas_args.use_auto = atoi(optarg); break;
