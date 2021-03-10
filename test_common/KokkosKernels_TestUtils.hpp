@@ -219,7 +219,7 @@ namespace Test {
   template<>
   class epsilon<Kokkos::Experimental::half_t> {
     public:
-      constexpr static double value = 0009765625F;
+      constexpr static double value = 0.0009765625F;
   };
   #endif // KOKKOS_HALF_T_IS_FLOAT
 }
