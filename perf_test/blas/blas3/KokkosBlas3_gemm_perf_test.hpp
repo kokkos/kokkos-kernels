@@ -308,22 +308,28 @@ void __do_gemm_serial_blas(options_t options, gemm_args_t gemm_args) {
 
   STATUS;
 
-  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args) {
+  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args, bool batch_size_last_dim) {
     for (uint32_t i = 0; i < n; ++i) {
-      auto A = Kokkos::subview(_gemm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
-      auto B = Kokkos::subview(_gemm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
-      auto C = Kokkos::subview(_gemm_args.C, i, Kokkos::ALL(), Kokkos::ALL());
+      for (int j = 0; j < _gemm_args.dims.c.k; j++) {
+        auto A = Kokkos::subview(_gemm_args.A, j, Kokkos::ALL(), Kokkos::ALL());
+        auto B = Kokkos::subview(_gemm_args.B, j, Kokkos::ALL(), Kokkos::ALL());
+        auto C = Kokkos::subview(_gemm_args.C, j, Kokkos::ALL(), Kokkos::ALL());
+        if (batch_size_last_dim) {
+          A = Kokkos::subview(_gemm_args.A, Kokkos::ALL(), Kokkos::ALL(), j);
+          B = Kokkos::subview(_gemm_args.B, Kokkos::ALL(), Kokkos::ALL(), j);
+          C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);  
+        }
 
-      // TODO: Debug this when starting a matrix sizes <= 10x10
-      KokkosBlas::gemm(&_gemm_args.transA, &_gemm_args.transB, _gemm_args.alpha,
-                       A, B, _gemm_args.beta, C);
+        KokkosBlas::gemm(&_gemm_args.transA, &_gemm_args.transB, _gemm_args.alpha,
+                        A, B, _gemm_args.beta, C);
+      }
     }
   };
-  __do_loop(options.warm_up_n, gemm_args);
+  __do_loop(options.warm_up_n, gemm_args, options.blas_args.batch_size_last_dim);
   Kokkos::fence();
 
   timer.reset();
-  __do_loop(options.n, gemm_args);
+  __do_loop(options.n, gemm_args, options.blas_args.batch_size_last_dim);
   Kokkos::fence();
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds());
@@ -341,22 +347,29 @@ void __do_gemm_serial_batched_template(options_t options,
 #if !defined(KOKKOS_ENABLE_CUDA)
   Kokkos::Timer timer;
 
-  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args) {
+  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args, bool batch_size_last_dim) {
     for (uint32_t i = 0; i < n; ++i) {
-      auto A = Kokkos::subview(_gemm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
-      auto B = Kokkos::subview(_gemm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
-      auto C = Kokkos::subview(_gemm_args.C, i, Kokkos::ALL(), Kokkos::ALL());
+      for (int j = 0; j < _gemm_args.dims.c.k; j++) {
+        auto A = Kokkos::subview(_gemm_args.A, j, Kokkos::ALL(), Kokkos::ALL());
+        auto B = Kokkos::subview(_gemm_args.B, j, Kokkos::ALL(), Kokkos::ALL());
+        auto C = Kokkos::subview(_gemm_args.C, j, Kokkos::ALL(), Kokkos::ALL());
+        if (batch_size_last_dim) {
+          A = Kokkos::subview(_gemm_args.A, Kokkos::ALL(), Kokkos::ALL(), j);
+          B = Kokkos::subview(_gemm_args.B, Kokkos::ALL(), Kokkos::ALL(), j);
+          C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);  
+        }
 
-      SerialGemm<TransAType, TransBType, AlgoType>::invoke(
-          _gemm_args.alpha, A, B, _gemm_args.beta, C);
+        SerialGemm<TransAType, TransBType, AlgoType>::invoke(
+            _gemm_args.alpha, A, B, _gemm_args.beta, C);
+      }
     }
   };
 
-  __do_loop(options.warm_up_n, gemm_args);
+  __do_loop(options.warm_up_n, gemm_args, options.blas_args.batch_size_last_dim);
   Kokkos::fence();
 
   timer.reset();
-  __do_loop(options.n, gemm_args);
+  __do_loop(options.n, gemm_args, options.blas_args.batch_size_last_dim);
   Kokkos::fence();
   __gemm_output_csv_row(options, gemm_args, timer.seconds());
 #else
@@ -397,56 +410,6 @@ void __do_gemm_serial_batched(options_t options, gemm_args_t gemm_args) {
   } else {
     FATAL_ERROR("Bad gemm_args TransA or TransB value");
   }
-  return;
-}
-
-#if !defined(KOKKOS_ENABLE_CUDA)
-template <class ExecutionSpace>
-struct parallel_blas_gemm {
-  gemm_args_t gemm_args_;
-
-  parallel_blas_gemm(gemm_args_t gemm_args) : gemm_args_(gemm_args) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const int &i) const {
-    auto svA = Kokkos::subview(gemm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
-    auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
-    auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
-
-    KokkosBlas::gemm(&gemm_args_.transA, &gemm_args_.transB, gemm_args_.alpha,
-                     svA, svB, gemm_args_.beta, svC);
-  }
-};
-#endif  // !KOKKOS_ENABLE_CUDA
-
-template <class scalar_type, class vta, class vtb, class device_type>
-void __do_gemm_parallel_blas(options_t options, gemm_args_t gemm_args) {
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
-  uint32_t warm_up_n = options.warm_up_n;
-  uint32_t n         = options.n;
-  Kokkos::Timer timer;
-  using execution_space = typename device_type::execution_space;
-  using functor_type    = parallel_blas_gemm<execution_space>;
-  functor_type parallel_blas_gemm_functor(gemm_args);
-
-  STATUS;
-
-  Kokkos::parallel_for("parallelBlasWarmUpLoopGemm",
-                       Kokkos::RangePolicy<execution_space>(0, warm_up_n),
-                       parallel_blas_gemm_functor);
-  Kokkos::fence();
-
-  timer.reset();
-  Kokkos::parallel_for("parallelBlasTimedLoopGemm",
-                       Kokkos::RangePolicy<execution_space>(0, n),
-                       parallel_blas_gemm_functor);
-  Kokkos::fence();
-  __gemm_output_csv_row(options, gemm_args, timer.seconds());
-#else
-  std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
-  __gemm_output_csv_row(options, gemm_args, -1);
-#endif  // !KOKKOS_ENABLE_CUDA
   return;
 }
 
