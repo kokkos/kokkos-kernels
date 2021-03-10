@@ -1375,33 +1375,29 @@ static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual)
   double epsilon = Test::epsilon<ScalarType>::value * 1e3;
   STATUS;
 
-  for (size_t i = 0; i < expected.extent(0); i++) {
-    for (size_t j = 0; j < expected.extent(1); j++) {
-      for (size_t k = 0; k < expected.extent(2); k++) {
-        if (std::is_same<LayoutType, Kokkos::LayoutRight>::value) {
-          return __gemm_print_compare_failure(expected, actual, i, j, k, epsilon);
-        }
-        if (std::is_same<LayoutType, Kokkos::LayoutLeft>::value) {
-          return __gemm_print_compare_failure(expected, actual, k, j, i, epsilon);
+  if (std::is_same<LayoutType, Kokkos::LayoutRight>::value) {
+    for (size_t i = 0; i < expected.extent(0); i++) {
+      for (size_t j = 0; j < expected.extent(1); j++) {
+        for (size_t k = 0; k < expected.extent(2); k++) {
+          if (__gemm_print_compare_failure(expected, actual, i, j, k, epsilon))
+            return true;
         }
       }
     }
   }
-  return false;
-}
 
-/**
- * Compare all values of expected with all values of actual.
- * @var expected: the expected results
- * @var actual:   the actual results
- * @return false if expected matches actual within epsilon, otherwise true.
- */
-template <class ScalarType, class LayoutType>
-static inline bool __gemm_do_compare(view_type_3d expected, gemm_simd_args_t actual) {
-  std::cout << actual.mat_4d.extent(0) << "x" << actual.mat_4d.extent(1) << "x" << actual.mat_4d.extent(2) << "x" << actual.mat_4d.extent(3) << std::endl;
-  decltype(expected) actual_data(actual.mat_4d.data(), expected.extent(0), expected.extent(1), expected.extent(2));
-  STATUS;
-  return __gemm_do_compare<ScalarType, LayoutType>(expected, actual_data);
+  if (std::is_same<LayoutType, Kokkos::LayoutLeft>::value) {
+    for (size_t k = 0; k < expected.extent(2); k++) {
+      for (size_t j = 0; j < expected.extent(1); j++) {
+          for (size_t i = 0; i < expected.extent(0); i++) {
+          if (__gemm_print_compare_failure(expected, actual, i, j, k, epsilon))
+            return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 template <class dstViewType>
@@ -1414,7 +1410,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
   } else {
     size_t remainder = dst.extent(0) % simd_vector_size;
     if (remainder > 0) {
-      // The below loops map a given 2-rank gemm within the simd view back to the
+      // The below loops copies each corresponding 2-rank matrix within the simd view back to the
       // 3-rank view.
       for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder; simd_internal_vec_idx++) {
         auto sv0 = Kokkos::subview(src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1431,9 +1427,32 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
         }
       }
     } else {
+      // When the batch_size is a multiple of the simd_vector_size, each 2-rank matrix lies in the correct location
+      // and the data can simply be copied.
       memcpy(dst.data(), src.ivec_4d.data(), sizeof(scalar_type) * dst.extent(0) * dst.extent(1) * dst.extent(2));
     }
   }
+}
+
+/**
+ * Compare all values of expected with all values of actual.
+ * @var expected: the expected results
+ * @var actual:   the actual results
+ * @return false if expected matches actual within epsilon, otherwise true.
+ */
+template <class ScalarType, class LayoutType>
+static inline bool __gemm_do_compare(view_type_3d expected, gemm_simd_args_t actual, options_t options) {
+  decltype(expected) actual_data("actual_data", expected.extent(0), expected.extent(1), expected.extent(2));
+
+  STATUS;
+
+  // Copy the simd view to a 3d view for comparision.
+  // NOTE: The raw results are different when batch_size % simd_vector_size != 0.
+  // Also note that when batch_size % simd_vector_size != 0, the simd operation
+  // calculates results that we do not require.
+  // So, we end up running an extra batch_size % simd_vector_size GEMMs!
+  __gemm_copy_simd_view_to_3d_view(actual, actual_data, options);
+  return __gemm_do_compare<ScalarType, LayoutType>(expected, actual_data);
 }
 
 template <class ScalarType, class LayoutType, class DeviceType>
@@ -1472,7 +1491,7 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
     __gemm_copy_simd_view_to_3d_view<decltype(B_expected)>(gemm_args.Bv, B_expected, options);
 
     // Check that initial values match
-    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv))
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv, options))
       FATAL_ERROR("Inital values mismatch!");
   } else {
     FATAL_ERROR("Input arguments are empty!");
@@ -1506,7 +1525,7 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
   }
 
   if (gemm_args.Cv.vec_3d.data() != nullptr) {
-    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv))
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv, options))
       FATAL_ERROR("Result value mismatch!");
   }
 
