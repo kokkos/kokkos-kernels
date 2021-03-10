@@ -131,6 +131,8 @@ using view_type_3d =
     Kokkos::View<default_scalar ***, default_layout, default_device>;
 using view_type_4d =
     Kokkos::View<default_scalar ****, default_layout, default_device>;
+using view_type_5d =
+    Kokkos::View<default_scalar *****, default_layout, default_device>;
 
 // Construct the vector type
 using memory_space = typename default_device::execution_space::memory_space;
@@ -1402,6 +1404,38 @@ static inline bool __gemm_do_compare(view_type_3d expected, gemm_simd_args_t act
   return __gemm_do_compare<ScalarType, LayoutType>(expected, actual_data);
 }
 
+template <class dstViewType>
+static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstViewType dst, options_t options) {
+  using scalar_type = typename dstViewType::value_type;
+  view_type_5d src_raw((double *)src.ivec_4d.data(), simd_internal_vector_size, src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3));
+
+  if (options.blas_args.batch_size_last_dim) {
+    exit(255); // TODO
+  } else {
+    size_t remainder = dst.extent(0) % simd_vector_size;
+    if (remainder > 0) {
+      // The below loops map a given 2-rank gemm within the simd view back to the
+      // 3-rank view.
+      for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder; simd_internal_vec_idx++) {
+        auto sv0 = Kokkos::subview(src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        for (size_t simd_batch_size_idx = 0; simd_batch_size_idx < src.ivec_4d.extent(0); simd_batch_size_idx++) {
+          auto sv1 = Kokkos::subview(sv0, simd_batch_size_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+          for (size_t vector_batch_idx = 0; vector_batch_idx < src.ivec_4d.extent(3); vector_batch_idx++) {
+            auto sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(), vector_batch_idx);
+            for (size_t m = 0; m < src.ivec_4d.extent(1); m++) {
+              for (size_t n = 0; n < src.ivec_4d.extent(2); n++) {
+                dst(simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx, m, n) = sv2(m, n);
+              }
+            }
+          }
+        }
+      }
+    } else {
+      memcpy(dst.data(), src.ivec_4d.data(), sizeof(scalar_type) * dst.extent(0) * dst.extent(1) * dst.extent(2));
+    }
+  }
+}
+
 template <class ScalarType, class LayoutType, class DeviceType>
 static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, void (*fn)(options_t, gemm_args_t)) {
   using execution_space = typename DeviceType::execution_space;
@@ -1433,10 +1467,9 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
     if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.C))
       FATAL_ERROR("Inital values mismatch!");
   } else if (gemm_args.Cv.vec_3d.data() != nullptr) {
-    // TODO: Debug this when batch_size % simd_vector_len != 0.
-    memcpy(C_expected.data(), gemm_args.Cv.vec_3d.data(), sizeof(default_scalar) * gemm_args.dims.c.k * gemm_args.dims.c.m * gemm_args.dims.c.n);
-    memcpy(A_expected.data(), gemm_args.Av.vec_3d.data(), sizeof(default_scalar) * gemm_args.dims.a.k * gemm_args.dims.a.m * gemm_args.dims.a.n);
-    memcpy(B_expected.data(), gemm_args.Bv.vec_3d.data(), sizeof(default_scalar) * gemm_args.dims.b.k * gemm_args.dims.b.m * gemm_args.dims.b.n);
+    __gemm_copy_simd_view_to_3d_view<decltype(C_expected)>(gemm_args.Cv, C_expected, options);
+    __gemm_copy_simd_view_to_3d_view<decltype(A_expected)>(gemm_args.Av, A_expected, options);
+    __gemm_copy_simd_view_to_3d_view<decltype(B_expected)>(gemm_args.Bv, B_expected, options);
 
     // Check that initial values match
     if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv))
