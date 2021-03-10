@@ -159,7 +159,7 @@ namespace Test {
   // C(i,:,:) = alpha * (A(i,:,:) * B(i,:,:)) + beta * C(i,:,:)
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
   struct Functor_BatchedVanillaGEMM {
-    bool A_t, B_t, A_c, B_c;
+    bool A_t, B_t, A_c, B_c, batch_size_last_dim = false;
     ViewTypeA A;
     ViewTypeB B;
     ViewTypeC C;
@@ -177,15 +177,20 @@ namespace Test {
       auto _A = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
       auto _B = Kokkos::subview(B, i, Kokkos::ALL(), Kokkos::ALL());
       auto _C = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
+      if (batch_size_last_dim) {
+        _A = Kokkos::subview(A, Kokkos::ALL(), Kokkos::ALL(), i);
+        _B = Kokkos::subview(B, Kokkos::ALL(), Kokkos::ALL(), i);
+        _C = Kokkos::subview(C, Kokkos::ALL(), Kokkos::ALL(), i);
+      }
       using SubviewTypeA = decltype(_A);
       using SubviewTypeB = decltype(_B);
       using SubviewTypeC = decltype(_C);
       struct SharedVanillaGEMM<SubviewTypeA,SubviewTypeB,SubviewTypeC,ExecutionSpace> vgemm;
       vgemm.A_t = A_t; vgemm.B_t = B_t;
       vgemm.A_c = A_c; vgemm.B_c = B_c;
-      vgemm.C_rows = C.extent(1);
-      vgemm.C_cols = C.extent(2);    
-      vgemm.A_cols = A_t?A.extent(1):A.extent(2);
+      vgemm.C_rows = batch_size_last_dim ? C.extent(0) : C.extent(1);
+      vgemm.C_cols = batch_size_last_dim ? C.extent(1) : C.extent(2);
+      vgemm.A_cols = batch_size_last_dim ? (A_t?A.extent(0):A.extent(1)) : (A_t?A.extent(1):A.extent(2));
       vgemm.A = _A;
       vgemm.B = _B;
       vgemm.C = _C;
@@ -198,7 +203,7 @@ namespace Test {
     void run() {
       Kokkos::parallel_for(
           "Test::VanillaGEMM",
-          Kokkos::TeamPolicy<ExecutionSpace>(C.extent(0), Kokkos::AUTO, 16),
+          Kokkos::TeamPolicy<ExecutionSpace>(batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO, 16),
           *this);
     }
   };
