@@ -106,8 +106,8 @@ static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
 
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline double __trmm_flop_count(char side, double b_m, double b_n, double a_m,
-                                      double a_n) {
+static inline double __trmm_flop_count(char side, double b_m, double b_n,
+                                       double a_m, double a_n) {
   double flops;
 
   if (side == 'L' || side == 'l') {
@@ -624,12 +624,13 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   trmm_args.alpha = options.blas_args.trmm.alpha;
   host_A          = Kokkos::create_mirror_view(trmm_args.A);
 
-
   {
-    Kokkos::View<double ***, default_layout, default_device> tmp("tmp", trmm_args.A.extent(0), trmm_args.A.extent(1), trmm_args.A.extent(2));
+    Kokkos::View<double***, default_layout, default_device> tmp(
+        "tmp", trmm_args.A.extent(0), trmm_args.A.extent(1),
+        trmm_args.A.extent(2));
     Kokkos::fill_random(tmp, rand_pool,
-			Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-			double>::max());
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                     double>::max());
     Kokkos::deep_copy(host_A, tmp);
   }
 
@@ -668,10 +669,12 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   Kokkos::deep_copy(trmm_args.A, host_A);
 
   {
-    Kokkos::View<double ***, default_layout, default_device> tmp("tmp", trmm_args.B.extent(0), trmm_args.B.extent(1), trmm_args.B.extent(2));
+    Kokkos::View<double***, default_layout, default_device> tmp(
+        "tmp", trmm_args.B.extent(0), trmm_args.B.extent(1),
+        trmm_args.B.extent(2));
     Kokkos::fill_random(tmp, rand_pool,
-			Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-			double>::max());
+                        Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+                                     double>::max());
     Kokkos::deep_copy(trmm_args.B, tmp);
   }
 

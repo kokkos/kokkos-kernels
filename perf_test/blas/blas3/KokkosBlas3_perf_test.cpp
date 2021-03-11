@@ -128,7 +128,8 @@ static void __print_help_blas3_perf_test() {
       "\t\tWhether to use Kokkos::AUTO for vector_len and team_size "
       "(Heirarchical parallelism).\n");
   printf(
-      "\t\t\tValid values for AUTO are 1 to use Kokkos::AUTO and 0 to use --vector_len and --team_size "
+      "\t\t\tValid values for AUTO are 1 to use Kokkos::AUTO and 0 to use "
+      "--vector_len and --team_size "
       "instead. (default: %d)\n",
       DEFAULT_USE_AUTO);
 
@@ -139,7 +140,8 @@ static void __print_help_blas3_perf_test() {
   printf("\t-d, --batch_size_last_dim=LAST_DIM\n");
   printf("\t\tHow to allocate the batch_size in the matrices.\n");
   printf(
-      "\t\t\tValid values for LAST_DIM are 1 make the batch_size the last dimension and 0 to make the batch_size "
+      "\t\t\tValid values for LAST_DIM are 1 make the batch_size the last "
+      "dimension and 0 to make the batch_size "
       "the first dimension (default: %d)\n",
       DEFAULT_BATCH_SIZE_LAST_DIM);
 
@@ -212,7 +214,8 @@ static void __print_help_blas3_perf_test() {
   printf("\t-v, --verify=VERIFY\n");
   printf("\t\tVerification selection. (untimed)\n");
   printf(
-      "\t\t\tValid values for VERIFY are either 0 to skip verification or 1 to verify before timing. "
+      "\t\t\tValid values for VERIFY are either 0 to skip verification or 1 to "
+      "verify before timing. "
       "(default: %d)\n",
       DEFAULT_VERIFY);
 }
@@ -275,8 +278,9 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:",
-                            long_options, &option_idx)) != -1) {
+  while (
+      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:",
+                         long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
       case 't':

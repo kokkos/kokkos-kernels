@@ -56,7 +56,7 @@
 //#include "KokkosBatched_Gemm_Team_Impl.hpp"
 //#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
-#include "gtest/gtest.h" // EXPECT_NEAR
+#include "gtest/gtest.h"  // EXPECT_NEAR
 #include "KokkosKernels_TestUtils.hpp"
 
 //#define GEMM_PERF_TEST_DEBUG
@@ -256,8 +256,7 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
   double gflops;
   double average_time = time_in_seconds / options.n;
 
-  if (options.verify)
-    return;
+  if (options.verify) return;
 
   flops = gemm_args.dims.a.k * __gemm_flop_count(gemm_args.dims.a.m,
                                                  gemm_args.dims.a.n,
@@ -267,8 +266,8 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
 
   options.out[0] << algo_name << "," << options.blas_args.gemm.gemm_args << ","
                  << static_cast<double>(options.blas_args.gemm.alpha) << ","
-                 << static_cast<double>(options.blas_args.gemm.beta) << "," << ts << "," << vlen
-                 << "," << loop_e_str[options.loop] << ","
+                 << static_cast<double>(options.blas_args.gemm.beta) << ","
+                 << ts << "," << vlen << "," << loop_e_str[options.loop] << ","
                  << __gemm_output_dim_string(options, gemm_args.dims.a) << ","
                  << __gemm_output_dim_string(options, gemm_args.dims.b) << ","
                  << __gemm_output_dim_string(options, gemm_args.dims.c) << ","
@@ -308,7 +307,8 @@ void __do_gemm_serial_blas(options_t options, gemm_args_t gemm_args) {
 
   STATUS;
 
-  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args, bool batch_size_last_dim) {
+  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args,
+                      bool batch_size_last_dim) {
     for (uint32_t i = 0; i < n; ++i) {
       for (int j = 0; j < _gemm_args.dims.c.k; j++) {
         auto A = Kokkos::subview(_gemm_args.A, j, Kokkos::ALL(), Kokkos::ALL());
@@ -317,15 +317,16 @@ void __do_gemm_serial_blas(options_t options, gemm_args_t gemm_args) {
         if (batch_size_last_dim) {
           A = Kokkos::subview(_gemm_args.A, Kokkos::ALL(), Kokkos::ALL(), j);
           B = Kokkos::subview(_gemm_args.B, Kokkos::ALL(), Kokkos::ALL(), j);
-          C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);  
+          C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);
         }
 
-        KokkosBlas::gemm(&_gemm_args.transA, &_gemm_args.transB, _gemm_args.alpha,
-                        A, B, _gemm_args.beta, C);
+        KokkosBlas::gemm(&_gemm_args.transA, &_gemm_args.transB,
+                         _gemm_args.alpha, A, B, _gemm_args.beta, C);
       }
     }
   };
-  __do_loop(options.warm_up_n, gemm_args, options.blas_args.batch_size_last_dim);
+  __do_loop(options.warm_up_n, gemm_args,
+            options.blas_args.batch_size_last_dim);
   Kokkos::fence();
 
   timer.reset();
@@ -347,7 +348,8 @@ void __do_gemm_serial_batched_template(options_t options,
 #if !defined(KOKKOS_ENABLE_CUDA)
   Kokkos::Timer timer;
 
-  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args, bool batch_size_last_dim) {
+  auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args,
+                      bool batch_size_last_dim) {
     for (uint32_t i = 0; i < n; ++i) {
       for (int j = 0; j < _gemm_args.dims.c.k; j++) {
         auto A = Kokkos::subview(_gemm_args.A, j, Kokkos::ALL(), Kokkos::ALL());
@@ -356,7 +358,7 @@ void __do_gemm_serial_batched_template(options_t options,
         if (batch_size_last_dim) {
           A = Kokkos::subview(_gemm_args.A, Kokkos::ALL(), Kokkos::ALL(), j);
           B = Kokkos::subview(_gemm_args.B, Kokkos::ALL(), Kokkos::ALL(), j);
-          C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);  
+          C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);
         }
 
         SerialGemm<TransAType, TransBType, AlgoType>::invoke(
@@ -365,7 +367,8 @@ void __do_gemm_serial_batched_template(options_t options,
     }
   };
 
-  __do_loop(options.warm_up_n, gemm_args, options.blas_args.batch_size_last_dim);
+  __do_loop(options.warm_up_n, gemm_args,
+            options.blas_args.batch_size_last_dim);
   Kokkos::fence();
 
   timer.reset();
@@ -1311,18 +1314,22 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
  * @var epsilon:  The tolerance to use when comparing.
  * @return true if the comparison fails and false if the comparison succeeds.
  */
-static inline bool __gemm_print_compare_failure(view_type_3d expected, view_type_3d actual, int i, int j, int k, double epsilon) {
+static inline bool __gemm_print_compare_failure(view_type_3d expected,
+                                                view_type_3d actual, int i,
+                                                int j, int k, double epsilon) {
   STATUS;
-  typename view_type_3d::HostMirror h_expected = Kokkos::create_mirror_view(expected);
-  typename view_type_3d::HostMirror h_actual = Kokkos::create_mirror_view(actual);
-  auto diff = static_cast<double>(Kokkos::Experimental::fabs(static_cast<double>(h_expected(i,j,k) - h_actual(i,j,k))));
+  typename view_type_3d::HostMirror h_expected =
+      Kokkos::create_mirror_view(expected);
+  typename view_type_3d::HostMirror h_actual =
+      Kokkos::create_mirror_view(actual);
+  auto diff = static_cast<double>(Kokkos::Experimental::fabs(
+      static_cast<double>(h_expected(i, j, k) - h_actual(i, j, k))));
 
   if (diff > epsilon) {
-    printf("fabs(expected(%d,%d,%d):%g - actual(%d,%d,%d):%g):%g > epsilon:%g\n", 
-            i,j,k,static_cast<double>(h_expected(i,j,k)), 
-            i,j,k,static_cast<double>(h_actual(i,j,k)), 
-            diff,
-            epsilon);
+    printf(
+        "fabs(expected(%d,%d,%d):%g - actual(%d,%d,%d):%g):%g > epsilon:%g\n",
+        i, j, k, static_cast<double>(h_expected(i, j, k)), i, j, k,
+        static_cast<double>(h_actual(i, j, k)), diff, epsilon);
     FATAL_ERROR("Comparison failure!");
     return true;
   }
@@ -1336,7 +1343,8 @@ static inline bool __gemm_print_compare_failure(view_type_3d expected, view_type
  * @return false if expected matches actual within epsilon, otherwise true.
  */
 template <class ScalarType, class LayoutType>
-static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual) {
+static inline bool __gemm_do_compare(view_type_3d expected,
+                                     view_type_3d actual) {
   double epsilon = Test::epsilon<ScalarType>::value * 1e3;
   STATUS;
 
@@ -1354,7 +1362,7 @@ static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual)
   if (std::is_same<LayoutType, Kokkos::LayoutLeft>::value) {
     for (size_t k = 0; k < expected.extent(2); k++) {
       for (size_t j = 0; j < expected.extent(1); j++) {
-          for (size_t i = 0; i < expected.extent(0); i++) {
+        for (size_t i = 0; i < expected.extent(0); i++) {
           if (__gemm_print_compare_failure(expected, actual, i, j, k, epsilon))
             return true;
         }
@@ -1366,58 +1374,90 @@ static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual)
 }
 
 template <class dstViewType>
-static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstViewType dst, options_t options) {
+static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
+                                                    dstViewType dst,
+                                                    options_t options) {
   using dst_scalar_type = typename dstViewType::value_type;
   using src_scalar_type = typename view_type_5d::value_type;
 
   if (options.blas_args.batch_size_last_dim) {
-    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(), simd_internal_vector_size, src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3));
-    typename view_type_5d::HostMirror h_src_raw = Kokkos::create_mirror_view(src_raw);
+    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(),
+                         simd_internal_vector_size, src.ivec_4d.extent(0),
+                         src.ivec_4d.extent(1), src.ivec_4d.extent(2),
+                         src.ivec_4d.extent(3));
+    typename view_type_5d::HostMirror h_src_raw =
+        Kokkos::create_mirror_view(src_raw);
     size_t remainder = dst.extent(2) % simd_vector_size;
-    remainder = remainder == 0 ? simd_internal_vector_size : remainder;
+    remainder        = remainder == 0 ? simd_internal_vector_size : remainder;
 
-    // The below loops copies each corresponding 2-rank matrix within the simd view back to the
-    // 3-rank view.
-    for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder; simd_internal_vec_idx++) {
-      auto sv0 = Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-      for (size_t vector_batch_idx = 0; vector_batch_idx < src.ivec_4d.extent(0); vector_batch_idx++) {
-        auto sv1 = Kokkos::subview(sv0, vector_batch_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-        for (size_t simd_batch_size_idx = 0; simd_batch_size_idx < src.ivec_4d.extent(3); simd_batch_size_idx++) {
-          auto sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(), simd_batch_size_idx);
+    // The below loops copies each corresponding 2-rank matrix within the simd
+    // view back to the 3-rank view.
+    for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder;
+         simd_internal_vec_idx++) {
+      auto sv0 =
+          Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(),
+                          Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      for (size_t vector_batch_idx = 0;
+           vector_batch_idx < src.ivec_4d.extent(0); vector_batch_idx++) {
+        auto sv1 = Kokkos::subview(sv0, vector_batch_idx, Kokkos::ALL(),
+                                   Kokkos::ALL(), Kokkos::ALL());
+        for (size_t simd_batch_size_idx = 0;
+             simd_batch_size_idx < src.ivec_4d.extent(3);
+             simd_batch_size_idx++) {
+          auto sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(),
+                                     simd_batch_size_idx);
           for (size_t m = 0; m < src.ivec_4d.extent(1); m++) {
             for (size_t n = 0; n < src.ivec_4d.extent(2); n++) {
-              dst(m, n, simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx) = sv2(m, n);
+              dst(m, n,
+                  simd_internal_vec_idx + simd_batch_size_idx +
+                      vector_batch_idx) = sv2(m, n);
             }
           }
         }
       }
     }
   } else {
-    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(), simd_internal_vector_size, src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3));
-    typename view_type_5d::HostMirror h_src_raw = Kokkos::create_mirror_view(src_raw);
+    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(),
+                         simd_internal_vector_size, src.ivec_4d.extent(0),
+                         src.ivec_4d.extent(1), src.ivec_4d.extent(2),
+                         src.ivec_4d.extent(3));
+    typename view_type_5d::HostMirror h_src_raw =
+        Kokkos::create_mirror_view(src_raw);
     size_t remainder = dst.extent(0) % simd_vector_size;
 
     if (remainder > 0) {
-      // The below loops copies each corresponding 2-rank matrix within the simd view back to the
-      // 3-rank view.
-      for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder; simd_internal_vec_idx++) {
-        auto sv0 = Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-        for (size_t simd_batch_size_idx = 0; simd_batch_size_idx < src.ivec_4d.extent(0); simd_batch_size_idx++) {
-          auto sv1 = Kokkos::subview(sv0, simd_batch_size_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-          for (size_t vector_batch_idx = 0; vector_batch_idx < src.ivec_4d.extent(3); vector_batch_idx++) {
-            auto sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(), vector_batch_idx);
+      // The below loops copies each corresponding 2-rank matrix within the simd
+      // view back to the 3-rank view.
+      for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder;
+           simd_internal_vec_idx++) {
+        auto sv0 =
+            Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(),
+                            Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        for (size_t simd_batch_size_idx = 0;
+             simd_batch_size_idx < src.ivec_4d.extent(0);
+             simd_batch_size_idx++) {
+          auto sv1 = Kokkos::subview(sv0, simd_batch_size_idx, Kokkos::ALL(),
+                                     Kokkos::ALL(), Kokkos::ALL());
+          for (size_t vector_batch_idx = 0;
+               vector_batch_idx < src.ivec_4d.extent(3); vector_batch_idx++) {
+            auto sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(),
+                                       vector_batch_idx);
             for (size_t m = 0; m < src.ivec_4d.extent(1); m++) {
               for (size_t n = 0; n < src.ivec_4d.extent(2); n++) {
-                dst(simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx, m, n) = sv2(m, n);
+                dst(simd_internal_vec_idx + simd_batch_size_idx +
+                        vector_batch_idx,
+                    m, n) = sv2(m, n);
               }
             }
           }
         }
       }
     } else {
-      // When the batch_size is a multiple of the simd_vector_size, each 2-rank matrix lies in the correct location
-      // and the data can simply be copied.
-      memcpy(dst.data(), src.ivec_4d.data(), sizeof(dst_scalar_type) * dst.extent(0) * dst.extent(1) * dst.extent(2));
+      // When the batch_size is a multiple of the simd_vector_size, each 2-rank
+      // matrix lies in the correct location and the data can simply be copied.
+      memcpy(dst.data(), src.ivec_4d.data(),
+             sizeof(dst_scalar_type) * dst.extent(0) * dst.extent(1) *
+                 dst.extent(2));
     }
   }
 }
@@ -1429,22 +1469,26 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
  * @return false if expected matches actual within epsilon, otherwise true.
  */
 template <class ScalarType, class LayoutType>
-static inline bool __gemm_do_compare(view_type_3d expected, gemm_simd_args_t actual, options_t options) {
-  decltype(expected) actual_data("actual_data", expected.extent(0), expected.extent(1), expected.extent(2));
+static inline bool __gemm_do_compare(view_type_3d expected,
+                                     gemm_simd_args_t actual,
+                                     options_t options) {
+  decltype(expected) actual_data("actual_data", expected.extent(0),
+                                 expected.extent(1), expected.extent(2));
 
   STATUS;
 
   // Copy the simd view to a 3d view for comparision.
-  // NOTE: The raw results are different when batch_size % simd_vector_size != 0.
-  // Also note that when batch_size % simd_vector_size != 0, the simd operation
-  // calculates results that we do not require.
-  // So, we end up running an extra batch_size % simd_vector_size GEMMs!
+  // NOTE: The raw results are different when batch_size % simd_vector_size !=
+  // 0. Also note that when batch_size % simd_vector_size != 0, the simd
+  // operation calculates results that we do not require. So, we end up running
+  // an extra batch_size % simd_vector_size GEMMs!
   __gemm_copy_simd_view_to_3d_view(actual, actual_data, options);
   return __gemm_do_compare<ScalarType, LayoutType>(expected, actual_data);
 }
 
 template <class ScalarType, class LayoutType, class DeviceType>
-static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, void (*fn)(options_t, gemm_args_t)) {
+static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args,
+                                    void (*fn)(options_t, gemm_args_t)) {
   using execution_space = typename DeviceType::execution_space;
   // Just create "expected" types using non-simd types.
   decltype(gemm_args.C) C_expected;
@@ -1453,13 +1497,19 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
   STATUS;
 
   if (options.blas_args.batch_size_last_dim) {
-    C_expected = decltype(C_expected)("C_expected", gemm_args.dims.c.m, gemm_args.dims.c.n, gemm_args.dims.c.k);
-    A_expected = decltype(A_expected)("A_expected", gemm_args.dims.a.m, gemm_args.dims.a.n, gemm_args.dims.a.k);
-    B_expected = decltype(B_expected)("B_expected", gemm_args.dims.b.m, gemm_args.dims.b.n, gemm_args.dims.b.k);
+    C_expected = decltype(C_expected)("C_expected", gemm_args.dims.c.m,
+                                      gemm_args.dims.c.n, gemm_args.dims.c.k);
+    A_expected = decltype(A_expected)("A_expected", gemm_args.dims.a.m,
+                                      gemm_args.dims.a.n, gemm_args.dims.a.k);
+    B_expected = decltype(B_expected)("B_expected", gemm_args.dims.b.m,
+                                      gemm_args.dims.b.n, gemm_args.dims.b.k);
   } else {
-    C_expected = decltype(C_expected)("C_expected", gemm_args.dims.c.k, gemm_args.dims.c.m, gemm_args.dims.c.n);
-    A_expected = decltype(A_expected)("A_expected", gemm_args.dims.a.k, gemm_args.dims.a.m, gemm_args.dims.a.n);
-    B_expected = decltype(B_expected)("B_expected", gemm_args.dims.b.k, gemm_args.dims.b.m, gemm_args.dims.b.n);
+    C_expected = decltype(C_expected)("C_expected", gemm_args.dims.c.k,
+                                      gemm_args.dims.c.m, gemm_args.dims.c.n);
+    A_expected = decltype(A_expected)("A_expected", gemm_args.dims.a.k,
+                                      gemm_args.dims.a.m, gemm_args.dims.a.n);
+    B_expected = decltype(B_expected)("B_expected", gemm_args.dims.b.k,
+                                      gemm_args.dims.b.m, gemm_args.dims.b.n);
   }
 
   // Initialize "expected" matrices.
@@ -1468,44 +1518,50 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
     Kokkos::deep_copy(A_expected, gemm_args.A);
     Kokkos::deep_copy(B_expected, gemm_args.B);
 
-    Kokkos::fence(); // Ensure that deep_copy has completed
+    Kokkos::fence();  // Ensure that deep_copy has completed
 
     // Check that initial values match
     if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.C))
       FATAL_ERROR("Inital values mismatch!");
   } else if (gemm_args.Cv.vec_3d.data() != nullptr) {
-    __gemm_copy_simd_view_to_3d_view<decltype(C_expected)>(gemm_args.Cv, C_expected, options);
-    __gemm_copy_simd_view_to_3d_view<decltype(A_expected)>(gemm_args.Av, A_expected, options);
-    __gemm_copy_simd_view_to_3d_view<decltype(B_expected)>(gemm_args.Bv, B_expected, options);
+    __gemm_copy_simd_view_to_3d_view<decltype(C_expected)>(gemm_args.Cv,
+                                                           C_expected, options);
+    __gemm_copy_simd_view_to_3d_view<decltype(A_expected)>(gemm_args.Av,
+                                                           A_expected, options);
+    __gemm_copy_simd_view_to_3d_view<decltype(B_expected)>(gemm_args.Bv,
+                                                           B_expected, options);
 
     // Check that initial values match
-    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv, options))
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv,
+                                                  options))
       FATAL_ERROR("Inital values mismatch!");
   } else {
     FATAL_ERROR("Input arguments are empty!");
   }
 
   // Populate "expected" matrices via VanillaGemm
-  Test::Functor_BatchedVanillaGEMM<decltype(A_expected), decltype(B_expected), decltype(C_expected), execution_space> vgemm;
+  Test::Functor_BatchedVanillaGEMM<decltype(A_expected), decltype(B_expected),
+                                   decltype(C_expected), execution_space>
+      vgemm;
   vgemm.A_t = toupper(gemm_args.transA) == 'T';
   vgemm.B_t = toupper(gemm_args.transB) == 'T';
-  vgemm.A_c = vgemm.B_c = false;
+  vgemm.A_c = vgemm.B_c     = false;
   vgemm.batch_size_last_dim = options.blas_args.batch_size_last_dim;
-  vgemm.A = A_expected;
-  vgemm.B = B_expected;
-  vgemm.C = C_expected;
-  vgemm.alpha = gemm_args.alpha;
-  vgemm.beta = gemm_args.beta;
-  vgemm.run(); // Compute C_expected
+  vgemm.A                   = A_expected;
+  vgemm.B                   = B_expected;
+  vgemm.C                   = C_expected;
+  vgemm.alpha               = gemm_args.alpha;
+  vgemm.beta                = gemm_args.beta;
+  vgemm.run();  // Compute C_expected
 
-  // Run routine with warm_up_n = 1 and n = 0. 
+  // Run routine with warm_up_n = 1 and n = 0.
   auto warm_up_n_bak = options.warm_up_n;
-  options.warm_up_n = 1;
-  auto n_bak = options.n;
-  options.n = 0;
+  options.warm_up_n  = 1;
+  auto n_bak         = options.n;
+  options.n          = 0;
   fn(options, gemm_args);
 
-  Kokkos::fence(); // Redundant fence.
+  Kokkos::fence();  // Redundant fence.
 
   // Check the result
   if (gemm_args.C.data() != nullptr) {
@@ -1514,14 +1570,15 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args, vo
   }
 
   if (gemm_args.Cv.vec_3d.data() != nullptr) {
-    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv, options))
+    if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.Cv,
+                                                  options))
       FATAL_ERROR("Result value mismatch!");
   }
 
   // Run actual timed test.
-  options.verify = false; // Set verify to false for csv output.
+  options.verify    = false;  // Set verify to false for csv output.
   options.warm_up_n = warm_up_n_bak;
-  options.n = n_bak;
+  options.n         = n_bak;
   fn(options, gemm_args);
 
   // Reset verify for next matrix size.
@@ -1617,16 +1674,23 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
 
     // Use the non-simd 4-rank view type to randomly populate the gemm simd
     // arguments
-    using tmp_view_type_4d = Kokkos::View<double ****, default_layout, default_device>;
-    tmp_view_type_4d tmpA("tmpA", gemm_args.Av.mat_4d.extent(0), gemm_args.Av.mat_4d.extent(1), gemm_args.Av.mat_4d.extent(2), gemm_args.Av.mat_4d.extent(3));
+    using tmp_view_type_4d =
+        Kokkos::View<double ****, default_layout, default_device>;
+    tmp_view_type_4d tmpA(
+        "tmpA", gemm_args.Av.mat_4d.extent(0), gemm_args.Av.mat_4d.extent(1),
+        gemm_args.Av.mat_4d.extent(2), gemm_args.Av.mat_4d.extent(3));
     Kokkos::fill_random(tmpA, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                      double>::max());
-    tmp_view_type_4d tmpB("tmpB", gemm_args.Bv.mat_4d.extent(0), gemm_args.Bv.mat_4d.extent(1), gemm_args.Bv.mat_4d.extent(2), gemm_args.Bv.mat_4d.extent(3));
+    tmp_view_type_4d tmpB(
+        "tmpB", gemm_args.Bv.mat_4d.extent(0), gemm_args.Bv.mat_4d.extent(1),
+        gemm_args.Bv.mat_4d.extent(2), gemm_args.Bv.mat_4d.extent(3));
     Kokkos::fill_random(tmpB, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                      double>::max());
-    tmp_view_type_4d tmpC("tmpC", gemm_args.Cv.mat_4d.extent(0), gemm_args.Cv.mat_4d.extent(1), gemm_args.Cv.mat_4d.extent(2), gemm_args.Cv.mat_4d.extent(3));
+    tmp_view_type_4d tmpC(
+        "tmpC", gemm_args.Cv.mat_4d.extent(0), gemm_args.Cv.mat_4d.extent(1),
+        gemm_args.Cv.mat_4d.extent(2), gemm_args.Cv.mat_4d.extent(3));
     Kokkos::fill_random(tmpC, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                      double>::max());
@@ -1646,16 +1710,20 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
       gemm_args.C = vtc("gemm_args.C", dims.c.k, dims.c.m, dims.c.n);
     }
 
-    using tmp_view_type_3d = Kokkos::View<double ***, default_layout, default_device>;
-    tmp_view_type_3d tmpA("tmpA", gemm_args.A.extent(0), gemm_args.A.extent(1), gemm_args.A.extent(2));
+    using tmp_view_type_3d =
+        Kokkos::View<double ***, default_layout, default_device>;
+    tmp_view_type_3d tmpA("tmpA", gemm_args.A.extent(0), gemm_args.A.extent(1),
+                          gemm_args.A.extent(2));
     Kokkos::fill_random(tmpA, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                      double>::max());
-    tmp_view_type_3d tmpB("tmpB", gemm_args.B.extent(0), gemm_args.B.extent(1), gemm_args.B.extent(2));
+    tmp_view_type_3d tmpB("tmpB", gemm_args.B.extent(0), gemm_args.B.extent(1),
+                          gemm_args.B.extent(2));
     Kokkos::fill_random(tmpB, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                      double>::max());
-    tmp_view_type_3d tmpC("tmpC", gemm_args.C.extent(0), gemm_args.C.extent(1), gemm_args.C.extent(2));
+    tmp_view_type_3d tmpC("tmpC", gemm_args.C.extent(0), gemm_args.C.extent(1),
+                          gemm_args.C.extent(2));
     Kokkos::fill_random(tmpC, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
                                      double>::max());
@@ -1671,7 +1739,7 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
   gemm_args.bp.team_size  = options.blas_args.team_size;
   gemm_args.bp.vector_len = options.blas_args.vector_len;
 
-  Kokkos::fence(); // Ensure that fill_random has completed.
+  Kokkos::fence();  // Ensure that fill_random has completed.
 
   return gemm_args;
 }
@@ -1702,7 +1770,8 @@ void __do_loop_and_invoke(options_t options,
                            view_type_3d, default_device>(options, cur_dims);
 
     if (options.verify) {
-      __gemm_do_verify<default_scalar, default_layout, default_device>(options, gemm_args, fn);
+      __gemm_do_verify<default_scalar, default_layout, default_device>(
+          options, gemm_args, fn);
     } else {
       fn(options, gemm_args);
     }
