@@ -175,7 +175,7 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
 
   options.out[0] << test_e_str[options.test] << ","
                  << options.blas_args.trmm.trmm_args << ","
-                 << options.blas_args.trmm.alpha << ","
+                 << static_cast<double>(options.blas_args.trmm.alpha) << ","
                  << loop_e_str[options.loop] << "," << trmm_args.A.extent(0)
                  << "x" << trmm_args.A.extent(1) << "x" << trmm_args.A.extent(2)
                  << "," << trmm_args.B.extent(0) << "x" << trmm_args.B.extent(1)
@@ -624,10 +624,14 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   trmm_args.alpha = options.blas_args.trmm.alpha;
   host_A          = Kokkos::create_mirror_view(trmm_args.A);
 
-  Kokkos::fill_random(trmm_args.A, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                   scalar_type>::max());
-  Kokkos::deep_copy(host_A, trmm_args.A);
+
+  {
+    Kokkos::View<double ***, default_layout, default_device> tmp("tmp", trmm_args.A.extent(0), trmm_args.A.extent(1), trmm_args.A.extent(2));
+    Kokkos::fill_random(tmp, rand_pool,
+			Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+			double>::max());
+    Kokkos::deep_copy(host_A, tmp);
+  }
 
   if (trmm_args.uplo == 'U' || trmm_args.uplo == 'u') {
     // Make A upper triangular
@@ -663,9 +667,13 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   }
   Kokkos::deep_copy(trmm_args.A, host_A);
 
-  Kokkos::fill_random(trmm_args.B, rand_pool,
-                      Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                   scalar_type>::max());
+  {
+    Kokkos::View<double ***, default_layout, default_device> tmp("tmp", trmm_args.B.extent(0), trmm_args.B.extent(1), trmm_args.B.extent(2));
+    Kokkos::fill_random(tmp, rand_pool,
+			Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
+			double>::max());
+    Kokkos::deep_copy(trmm_args.B, tmp);
+  }
 
   return trmm_args;
 }

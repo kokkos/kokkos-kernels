@@ -266,8 +266,8 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
   gflops = flops / 1e9;
 
   options.out[0] << algo_name << "," << options.blas_args.gemm.gemm_args << ","
-                 << options.blas_args.gemm.alpha << ","
-                 << options.blas_args.gemm.beta << "," << ts << "," << vlen
+                 << static_cast<double>(options.blas_args.gemm.alpha) << ","
+                 << static_cast<double>(options.blas_args.gemm.beta) << "," << ts << "," << vlen
                  << "," << loop_e_str[options.loop] << ","
                  << __gemm_output_dim_string(options, gemm_args.dims.a) << ","
                  << __gemm_output_dim_string(options, gemm_args.dims.b) << ","
@@ -1315,7 +1315,7 @@ static inline bool __gemm_print_compare_failure(view_type_3d expected, view_type
   STATUS;
   typename view_type_3d::HostMirror h_expected = Kokkos::create_mirror_view(expected);
   typename view_type_3d::HostMirror h_actual = Kokkos::create_mirror_view(actual);
-  auto diff = static_cast<double>(Kokkos::Experimental::fabs(h_expected(i,j,k) - h_actual(i,j,k)));
+  auto diff = static_cast<double>(Kokkos::Experimental::fabs(static_cast<double>(h_expected(i,j,k) - h_actual(i,j,k))));
 
   if (diff > epsilon) {
     printf("fabs(expected(%d,%d,%d):%g - actual(%d,%d,%d):%g):%g > epsilon:%g\n", 
@@ -1367,10 +1367,11 @@ static inline bool __gemm_do_compare(view_type_3d expected, view_type_3d actual)
 
 template <class dstViewType>
 static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstViewType dst, options_t options) {
-  using scalar_type = typename dstViewType::value_type;
+  using dst_scalar_type = typename dstViewType::value_type;
+  using src_scalar_type = typename view_type_5d::value_type;
 
   if (options.blas_args.batch_size_last_dim) {
-    view_type_5d src_raw((double *)src.ivec_4d.data(), simd_internal_vector_size, src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3));
+    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(), simd_internal_vector_size, src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3));
     typename view_type_5d::HostMirror h_src_raw = Kokkos::create_mirror_view(src_raw);
     size_t remainder = dst.extent(2) % simd_vector_size;
     remainder = remainder == 0 ? simd_internal_vector_size : remainder;
@@ -1392,7 +1393,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
       }
     }
   } else {
-    view_type_5d src_raw((double *)src.ivec_4d.data(), simd_internal_vector_size, src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3));
+    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(), simd_internal_vector_size, src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3));
     typename view_type_5d::HostMirror h_src_raw = Kokkos::create_mirror_view(src_raw);
     size_t remainder = dst.extent(0) % simd_vector_size;
 
@@ -1416,7 +1417,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src, dstVie
     } else {
       // When the batch_size is a multiple of the simd_vector_size, each 2-rank matrix lies in the correct location
       // and the data can simply be copied.
-      memcpy(dst.data(), src.ivec_4d.data(), sizeof(scalar_type) * dst.extent(0) * dst.extent(1) * dst.extent(2));
+      memcpy(dst.data(), src.ivec_4d.data(), sizeof(dst_scalar_type) * dst.extent(0) * dst.extent(1) * dst.extent(2));
     }
   }
 }
@@ -1616,15 +1617,24 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
 
     // Use the non-simd 4-rank view type to randomly populate the gemm simd
     // arguments
-    Kokkos::fill_random(gemm_args.Av.mat_4d, rand_pool,
+    using tmp_view_type_4d = Kokkos::View<double ****, default_layout, default_device>;
+    tmp_view_type_4d tmpA("tmpA", gemm_args.Av.mat_4d.extent(0), gemm_args.Av.mat_4d.extent(1), gemm_args.Av.mat_4d.extent(2), gemm_args.Av.mat_4d.extent(3));
+    Kokkos::fill_random(tmpA, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     scalar_type>::max());
-    Kokkos::fill_random(gemm_args.Bv.mat_4d, rand_pool,
+                                     double>::max());
+    tmp_view_type_4d tmpB("tmpB", gemm_args.Bv.mat_4d.extent(0), gemm_args.Bv.mat_4d.extent(1), gemm_args.Bv.mat_4d.extent(2), gemm_args.Bv.mat_4d.extent(3));
+    Kokkos::fill_random(tmpB, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     scalar_type>::max());
-    Kokkos::fill_random(gemm_args.Cv.mat_4d, rand_pool,
+                                     double>::max());
+    tmp_view_type_4d tmpC("tmpC", gemm_args.Cv.mat_4d.extent(0), gemm_args.Cv.mat_4d.extent(1), gemm_args.Cv.mat_4d.extent(2), gemm_args.Cv.mat_4d.extent(3));
+    Kokkos::fill_random(tmpC, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     scalar_type>::max());
+                                     double>::max());
+    Kokkos::fence();
+    Kokkos::deep_copy(gemm_args.Av.mat_4d, tmpA);
+    Kokkos::deep_copy(gemm_args.Bv.mat_4d, tmpB);
+    Kokkos::deep_copy(gemm_args.Cv.mat_4d, tmpC);
+    Kokkos::fence();
   } else {
     if (options.blas_args.batch_size_last_dim) {
       gemm_args.A = vta("gemm_args.A", dims.a.m, dims.a.n, dims.a.k);
@@ -1636,15 +1646,25 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
       gemm_args.C = vtc("gemm_args.C", dims.c.k, dims.c.m, dims.c.n);
     }
 
-    Kokkos::fill_random(gemm_args.A, rand_pool,
+    using tmp_view_type_3d = Kokkos::View<double ***, default_layout, default_device>;
+    tmp_view_type_3d tmpA("tmpA", gemm_args.A.extent(0), gemm_args.A.extent(1), gemm_args.A.extent(2));
+    Kokkos::fill_random(tmpA, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     scalar_type>::max());
-    Kokkos::fill_random(gemm_args.B, rand_pool,
+                                     double>::max());
+    tmp_view_type_3d tmpB("tmpB", gemm_args.B.extent(0), gemm_args.B.extent(1), gemm_args.B.extent(2));
+    Kokkos::fill_random(tmpB, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     scalar_type>::max());
-    Kokkos::fill_random(gemm_args.C, rand_pool,
+                                     double>::max());
+    tmp_view_type_3d tmpC("tmpC", gemm_args.C.extent(0), gemm_args.C.extent(1), gemm_args.C.extent(2));
+    Kokkos::fill_random(tmpC, rand_pool,
                         Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,
-                                     scalar_type>::max());
+                                     double>::max());
+
+    Kokkos::fence();
+    Kokkos::deep_copy(gemm_args.A, tmpA);
+    Kokkos::deep_copy(gemm_args.B, tmpB);
+    Kokkos::deep_copy(gemm_args.C, tmpC);
+    Kokkos::fence();
   }
   gemm_args.alpha         = options.blas_args.gemm.alpha;
   gemm_args.beta          = options.blas_args.gemm.beta;
