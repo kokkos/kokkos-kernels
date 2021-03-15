@@ -159,7 +159,7 @@ namespace Test {
   // C(i,:,:) = alpha * (A(i,:,:) * B(i,:,:)) + beta * C(i,:,:)
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
   struct Functor_BatchedVanillaGEMM {
-    bool A_t, B_t, A_c, B_c;
+    bool A_t, B_t, A_c, B_c, batch_size_last_dim = false;
     ViewTypeA A;
     ViewTypeB B;
     ViewTypeC C;
@@ -167,25 +167,35 @@ namespace Test {
     using ScalarA = typename ViewTypeA::value_type;
     using ScalarB = typename ViewTypeB::value_type;
     using ScalarC = typename ViewTypeC::value_type;
+    using SubviewTypeA = typename Kokkos::View<ScalarA**, Kokkos::LayoutStride, typename ViewTypeA::device_type>;
+    using SubviewTypeB = typename Kokkos::View<ScalarB**, Kokkos::LayoutStride, typename ViewTypeA::device_type>;
+    using SubviewTypeC = typename Kokkos::View<ScalarC**, Kokkos::LayoutStride, typename ViewTypeA::device_type>;
+
     ScalarA alpha;
     ScalarC beta;
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
       int i = team.league_rank();
+      SubviewTypeA _A;
+      SubviewTypeB _B;
+      SubviewTypeC _C;
 
-      auto _A = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-      auto _B = Kokkos::subview(B, i, Kokkos::ALL(), Kokkos::ALL());
-      auto _C = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
-      using SubviewTypeA = decltype(_A);
-      using SubviewTypeB = decltype(_B);
-      using SubviewTypeC = decltype(_C);
+      if (batch_size_last_dim) {
+        _A = Kokkos::subview(A, Kokkos::ALL(), Kokkos::ALL(), i);
+        _B = Kokkos::subview(B, Kokkos::ALL(), Kokkos::ALL(), i);
+        _C = Kokkos::subview(C, Kokkos::ALL(), Kokkos::ALL(), i);
+      } else {
+        _A = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
+        _B = Kokkos::subview(B, i, Kokkos::ALL(), Kokkos::ALL());
+        _C = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
+      }
       struct SharedVanillaGEMM<SubviewTypeA,SubviewTypeB,SubviewTypeC,ExecutionSpace> vgemm;
       vgemm.A_t = A_t; vgemm.B_t = B_t;
       vgemm.A_c = A_c; vgemm.B_c = B_c;
-      vgemm.C_rows = C.extent(1);
-      vgemm.C_cols = C.extent(2);    
-      vgemm.A_cols = A_t?A.extent(1):A.extent(2);
+      vgemm.C_rows = batch_size_last_dim ? C.extent(0) : C.extent(1);
+      vgemm.C_cols = batch_size_last_dim ? C.extent(1) : C.extent(2);
+      vgemm.A_cols = batch_size_last_dim ? (A_t?A.extent(0):A.extent(1)) : (A_t?A.extent(1):A.extent(2));
       vgemm.A = _A;
       vgemm.B = _B;
       vgemm.C = _C;
@@ -198,9 +208,24 @@ namespace Test {
     void run() {
       Kokkos::parallel_for(
           "Test::VanillaGEMM",
-          Kokkos::TeamPolicy<ExecutionSpace>(C.extent(0), Kokkos::AUTO, 16),
+          Kokkos::TeamPolicy<ExecutionSpace>(batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO, 16),
           *this);
     }
   };
+
+  template<class T>
+  class epsilon {
+    public:
+      constexpr static double value = std::numeric_limits<T>::epsilon();
+  };
+
+  // explicit epsilon specializations
+  #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  template<>
+  class epsilon<Kokkos::Experimental::half_t> {
+    public:
+      constexpr static double value = 0.0009765625F;
+  };
+  #endif // KOKKOS_HALF_T_IS_FLOAT
 }
 #endif

@@ -204,7 +204,8 @@ namespace KokkosBatched {
                    std::is_same<T,Kokkos::complex<float> >::value  ||
                    std::is_same<T,std::complex<float> >::value     ||
                    std::is_same<T,Kokkos::complex<double> >::value ||
-                   std::is_same<T,std::complex<double> >::value,
+                   std::is_same<T,std::complex<double> >::value    ||
+                   std::is_same<T,Kokkos::Experimental::half_t>::value,
                    "KokkosKernels:: Invalid SIMD<> type." );
     using value_type = T;
   };
