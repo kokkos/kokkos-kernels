@@ -1415,12 +1415,12 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
 
   // Views needed for slow manual copy
   view_type_5d src_raw;
-  using subview_type_2d = Kokkos::View<src_scalar_type **, Kokkos::LayoutStride, default_device>;
-  using subview_type_3d = Kokkos::View<src_scalar_type ***, Kokkos::LayoutStride, default_device>;
-  using subview_type_4d = Kokkos::View<src_scalar_type ****, Kokkos::LayoutStride, default_device>;
-  subview_type_4d sv0;
-  subview_type_3d sv1;
-  subview_type_2d sv2;
+  using h_subview_type_2d = Kokkos::View<src_scalar_type **, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  using h_subview_type_3d = Kokkos::View<src_scalar_type ***, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  using h_subview_type_4d = Kokkos::View<src_scalar_type ****, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  h_subview_type_4d h_sv0;
+  h_subview_type_3d h_sv1;
+  h_subview_type_2d h_sv2;
   
   if (std::is_same<default_layout, Kokkos::LayoutRight>::value)
     src_raw = view_type_5d((src_scalar_type *)src.ivec_4d.data(), src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3), simd_internal_vector_size);
@@ -1437,29 +1437,29 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
   for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder;
         simd_internal_vec_idx++) {
     if (std::is_same<default_layout, Kokkos::LayoutRight>::value)
-      sv0 = Kokkos::subview(h_src_raw, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), simd_internal_vec_idx);
+      h_sv0 = Kokkos::subview(h_src_raw, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), simd_internal_vec_idx);
     else
-      sv0 = Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      h_sv0 = Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
     
     for (size_t vector_batch_idx = 0;
           vector_batch_idx < vector_batch_size; vector_batch_idx++) {
       if (options.blas_args.batch_size_last_dim)
-        sv1 = Kokkos::subview(sv0, vector_batch_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        h_sv1 = Kokkos::subview(h_sv0, vector_batch_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
       else
-        sv1 = Kokkos::subview(sv0, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), vector_batch_idx);
+        h_sv1 = Kokkos::subview(h_sv0, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), vector_batch_idx);
       for (size_t simd_batch_size_idx = 0;
             simd_batch_size_idx < simd_batch_size;
             simd_batch_size_idx++) {
         if (options.blas_args.batch_size_last_dim)
-          sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(), simd_batch_size_idx);
+          h_sv2 = Kokkos::subview(h_sv1, Kokkos::ALL(), Kokkos::ALL(), simd_batch_size_idx);
         else
-          sv2 = Kokkos::subview(sv1, simd_batch_size_idx, Kokkos::ALL(), Kokkos::ALL());
+          h_sv2 = Kokkos::subview(h_sv1, simd_batch_size_idx, Kokkos::ALL(), Kokkos::ALL());
         for (size_t m = 0; m < src.ivec_4d.extent(1); m++) {
           for (size_t n = 0; n < src.ivec_4d.extent(2); n++) {
             if (options.blas_args.batch_size_last_dim)
-              dst(m, n, simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx) = sv2(m, n);
+              dst(m, n, simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx) = h_sv2(m, n);
             else
-              dst(simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx, m, n) = sv2(m, n);
+              dst(simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx, m, n) = h_sv2(m, n);
           }
         }
       }
