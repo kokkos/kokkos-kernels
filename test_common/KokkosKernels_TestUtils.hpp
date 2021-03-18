@@ -46,6 +46,8 @@
 #define KOKKOSKERNELS_TEST_UTILS_HPP
 
 #include "KokkosKernels_Utils.hpp"
+#include "Kokkos_ArithTraits.hpp"
+
 namespace Test {
   template<class ViewType, bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value>
   struct multivector_layout_adapter;
@@ -83,16 +85,15 @@ namespace Test {
   template<class Scalar1, class Scalar2, class Scalar3>
   void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol) {
     typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
-    typedef Kokkos::Details::ArithTraits<Scalar2> AT2;
     typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
-    EXPECT_NEAR(double(AT1::abs(val1)),double(AT2::abs(val2)),double(AT3::abs(tol)));
+    EXPECT_LE((double) AT1::abs(val1 - val2), (double) AT3::abs(tol));
   }
 
   template<class ViewType1, class ViewType2, class Scalar>
   void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
     size_t v1_size = v1.extent(0);
     size_t v2_size = v2.extent(0);
-    EXPECT_NEAR_KK(v1_size, v2_size, 0);
+    EXPECT_EQ(v1_size, v2_size);
 
 
     typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
@@ -227,5 +228,29 @@ namespace Test {
       constexpr static double value = 0.0009765625F;
   };
   #endif // KOKKOS_HALF_T_IS_FLOAT
+
+  //Get the interval for Kokkos::fill_random
+  //For real, interval is (-mag, mag)
+  //For complex, both real and imaginary parts will have interval (-mag, mag)
+  template<typename Scalar>
+  inline void getRandomBounds(double mag, Scalar& start, Scalar& end)
+  {
+    start = -mag * Kokkos::ArithTraits<Scalar>::one();
+    end = mag * Kokkos::ArithTraits<Scalar>::one();
+  }
+
+  template<>
+  inline void getRandomBounds(double mag, Kokkos::complex<float>& start, Kokkos::complex<float>& end)
+  {
+    start = Kokkos::complex<float>(-mag, -mag);
+    end = Kokkos::complex<float>(mag, mag);
+  }
+
+  template<>
+  inline void getRandomBounds(double mag, Kokkos::complex<double>& start, Kokkos::complex<double>& end)
+  {
+    start = Kokkos::complex<double>(-mag, -mag);
+    end = Kokkos::complex<double>(mag, mag);
+  }
 }
 #endif
