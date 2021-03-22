@@ -214,7 +214,7 @@ struct gemm_args {
 typedef struct gemm_args gemm_args_t;
 
 static std::string gemm_csv_header_str =
-    "algorithm,transAtransB,alpha,beta,team_size,vector_len,loop_type,A_dims,B_"
+    "algorithm,vector_type,transAtransB,alpha,beta,team_size,vector_len,loop_type,A_dims,B_"
     "dims,C_dims,warm_up_n,"
     "iter,total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
 
@@ -249,6 +249,7 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
   std::string algo_name = test_e_str[options.test];
   std::string ts        = std::to_string(gemm_args.bp.team_size);
   std::string vlen      = std::to_string(gemm_args.bp.vector_len);
+  std::string vtype     = internal_vector_type::label();
   if (experiment_name) algo_name = std::string(experiment_name);
   if (options.blas_args.use_auto) ts = vlen = "Kokkos::AUTO";
 
@@ -264,7 +265,7 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
 
   gflops = flops / 1e9;
 
-  options.out[0] << algo_name << "," << options.blas_args.gemm.gemm_args << ","
+  options.out[0] << algo_name << "," << vtype << "," << options.blas_args.gemm.gemm_args << ","
                  << static_cast<double>(options.blas_args.gemm.alpha) << ","
                  << static_cast<double>(options.blas_args.gemm.beta) << ","
                  << ts << "," << vlen << "," << loop_e_str[options.loop] << ","
@@ -1314,14 +1315,11 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
  * @var epsilon:  The tolerance to use when comparing.
  * @return true if the comparison fails and false if the comparison succeeds.
  */
-static inline bool __gemm_print_compare_failure(view_type_3d expected,
-                                                view_type_3d actual, int i,
+template<class ViewType>
+static inline bool __gemm_print_compare_failure(ViewType h_expected,
+                                                ViewType h_actual, int i,
                                                 int j, int k, double epsilon) {
   STATUS;
-  typename view_type_3d::HostMirror h_expected =
-      Kokkos::create_mirror_view(expected);
-  typename view_type_3d::HostMirror h_actual =
-      Kokkos::create_mirror_view(actual);
   auto diff = static_cast<double>(Kokkos::Experimental::fabs(
       static_cast<double>(h_expected(i, j, k) - h_actual(i, j, k))));
 
@@ -1348,11 +1346,21 @@ static inline bool __gemm_do_compare(view_type_3d expected,
   double epsilon = Test::epsilon<ScalarType>::value * 1e3;
   STATUS;
 
+  typename view_type_3d::HostMirror h_expected =
+      Kokkos::create_mirror_view(expected);
+  typename view_type_3d::HostMirror h_actual =
+      Kokkos::create_mirror_view(actual);
+
+  // Copy to host for comparision
+  Kokkos::deep_copy(h_expected, expected);
+  Kokkos::deep_copy(h_actual, actual);
+  Kokkos::fence();
+
   if (std::is_same<LayoutType, Kokkos::LayoutRight>::value) {
-    for (size_t i = 0; i < expected.extent(0); i++) {
-      for (size_t j = 0; j < expected.extent(1); j++) {
-        for (size_t k = 0; k < expected.extent(2); k++) {
-          if (__gemm_print_compare_failure(expected, actual, i, j, k, epsilon))
+    for (size_t i = 0; i < h_expected.extent(0); i++) {
+      for (size_t j = 0; j < h_expected.extent(1); j++) {
+        for (size_t k = 0; k < h_expected.extent(2); k++) {
+          if (__gemm_print_compare_failure<decltype(h_expected)>(h_expected, h_actual, i, j, k, epsilon))
             return true;
         }
       }
@@ -1360,10 +1368,10 @@ static inline bool __gemm_do_compare(view_type_3d expected,
   }
 
   if (std::is_same<LayoutType, Kokkos::LayoutLeft>::value) {
-    for (size_t k = 0; k < expected.extent(2); k++) {
-      for (size_t j = 0; j < expected.extent(1); j++) {
-        for (size_t i = 0; i < expected.extent(0); i++) {
-          if (__gemm_print_compare_failure(expected, actual, i, j, k, epsilon))
+    for (size_t k = 0; k < h_expected.extent(2); k++) {
+      for (size_t j = 0; j < h_expected.extent(1); j++) {
+        for (size_t i = 0; i < h_expected.extent(0); i++) {
+          if (__gemm_print_compare_failure<decltype(h_expected)>(h_expected, h_actual, i, j, k, epsilon))
             return true;
         }
       }
@@ -1379,87 +1387,108 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
                                                     options_t options) {
   using dst_scalar_type = typename dstViewType::value_type;
   using src_scalar_type = typename view_type_5d::value_type;
+  size_t remainder, vector_batch_size, simd_batch_size, last_batch;
+  bool data_layout_same_as_3d_view = false;
+  typename dstViewType::HostMirror h_dst =
+      Kokkos::create_mirror_view(dst);
+  typename view_type_4d::HostMirror h_src =
+      Kokkos::create_mirror_view(src.mat_4d);
+  Kokkos::deep_copy(h_src, src.mat_4d);
+  Kokkos::fence();
 
   if (options.blas_args.batch_size_last_dim) {
-    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(),
-                         simd_internal_vector_size, src.ivec_4d.extent(0),
-                         src.ivec_4d.extent(1), src.ivec_4d.extent(2),
-                         src.ivec_4d.extent(3));
-    typename view_type_5d::HostMirror h_src_raw =
-        Kokkos::create_mirror_view(src_raw);
-    size_t remainder = dst.extent(2) % simd_vector_size;
-    remainder        = remainder == 0 ? simd_internal_vector_size : remainder;
-
-    // The below loops copies each corresponding 2-rank matrix within the simd
-    // view back to the 3-rank view.
-    for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder;
-         simd_internal_vec_idx++) {
-      auto sv0 =
-          Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(),
-                          Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-      for (size_t vector_batch_idx = 0;
-           vector_batch_idx < src.ivec_4d.extent(0); vector_batch_idx++) {
-        auto sv1 = Kokkos::subview(sv0, vector_batch_idx, Kokkos::ALL(),
-                                   Kokkos::ALL(), Kokkos::ALL());
-        for (size_t simd_batch_size_idx = 0;
-             simd_batch_size_idx < src.ivec_4d.extent(3);
-             simd_batch_size_idx++) {
-          auto sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(),
-                                     simd_batch_size_idx);
-          for (size_t m = 0; m < src.ivec_4d.extent(1); m++) {
-            for (size_t n = 0; n < src.ivec_4d.extent(2); n++) {
-              dst(m, n,
-                  simd_internal_vec_idx + simd_batch_size_idx +
-                      vector_batch_idx) = sv2(m, n);
-            }
-          }
-        }
-      }
-    }
+    remainder = dst.extent(2) % simd_internal_vector_size;
+    vector_batch_size = src.ivec_4d.extent(0);
+    simd_batch_size = src.ivec_4d.extent(3);
+    last_batch = dst.extent(2);
+    if (std::is_same<default_layout, Kokkos::LayoutRight>::value && remainder == 0)
+      data_layout_same_as_3d_view = true;
+    
   } else {
-    view_type_5d src_raw((src_scalar_type *)src.ivec_4d.data(),
-                         simd_internal_vector_size, src.ivec_4d.extent(0),
-                         src.ivec_4d.extent(1), src.ivec_4d.extent(2),
-                         src.ivec_4d.extent(3));
-    typename view_type_5d::HostMirror h_src_raw =
-        Kokkos::create_mirror_view(src_raw);
-    size_t remainder = dst.extent(0) % simd_vector_size;
+    remainder = dst.extent(0) % simd_internal_vector_size;
+    vector_batch_size = src.ivec_4d.extent(3);
+    simd_batch_size = src.ivec_4d.extent(0);
+    last_batch = dst.extent(0);
+    if (std::is_same<default_layout, Kokkos::LayoutLeft>::value && remainder == 0)
+      data_layout_same_as_3d_view = true;
+  }
 
-    if (remainder > 0) {
-      // The below loops copies each corresponding 2-rank matrix within the simd
-      // view back to the 3-rank view.
-      for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder;
-           simd_internal_vec_idx++) {
-        auto sv0 =
-            Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(),
-                            Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-        for (size_t simd_batch_size_idx = 0;
-             simd_batch_size_idx < src.ivec_4d.extent(0);
-             simd_batch_size_idx++) {
-          auto sv1 = Kokkos::subview(sv0, simd_batch_size_idx, Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL());
-          for (size_t vector_batch_idx = 0;
-               vector_batch_idx < src.ivec_4d.extent(3); vector_batch_idx++) {
-            auto sv2 = Kokkos::subview(sv1, Kokkos::ALL(), Kokkos::ALL(),
-                                       vector_batch_idx);
-            for (size_t m = 0; m < src.ivec_4d.extent(1); m++) {
-              for (size_t n = 0; n < src.ivec_4d.extent(2); n++) {
-                dst(simd_internal_vec_idx + simd_batch_size_idx +
-                        vector_batch_idx,
-                    m, n) = sv2(m, n);
-              }
-            }
+  // When the batch_size is a multiple of the simd_vector_size and the batch_size
+  // dimension is nearest to the simd_vector_size dimension, each 2-rank matrix
+  // lies in the correct location and the data can simply be cast to the 3d view.
+  if (data_layout_same_as_3d_view) {
+    // We can just re-cast the data to the 3d view but we'll copy it for verification
+    memcpy(h_dst.data(), h_src.data(),
+          sizeof(dst_scalar_type) * dst.extent(0) * dst.extent(1) *
+              dst.extent(2));
+    Kokkos::deep_copy(dst, h_dst);
+    Kokkos::fence();
+    return;
+  }
+
+  // If the remainder is 0, we have simd_vector_size sub-batches to copy out...
+  // this is a bad data access pattern but for these perf_tests we will support it.
+  // If the remainder is non-zero, we have simd_vector_size sub-batches + remainder to
+  // copy out.
+  remainder += simd_internal_vector_size;
+
+  // Views needed for slow manual copy
+  using h_view_type_5d = Kokkos::View<src_scalar_type *****, default_layout, Kokkos::HostSpace>;
+  using h_subview_type_2d = Kokkos::View<src_scalar_type **, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  using h_subview_type_3d = Kokkos::View<src_scalar_type ***, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  using h_subview_type_4d = Kokkos::View<src_scalar_type ****, Kokkos::LayoutStride, Kokkos::HostSpace>;
+  h_view_type_5d h_src_raw;
+  h_subview_type_4d h_sv0;
+  h_subview_type_3d h_sv1;
+  h_subview_type_2d h_sv2;
+  
+  // TODO: Clean everything below this point up...
+  if (std::is_same<default_layout, Kokkos::LayoutRight>::value)
+    h_src_raw = h_view_type_5d((src_scalar_type *)h_src.data(), src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3), simd_internal_vector_size);
+  else
+    h_src_raw = h_view_type_5d((src_scalar_type *)h_src.data(),
+                          simd_internal_vector_size, src.ivec_4d.extent(0),
+                          src.ivec_4d.extent(1), src.ivec_4d.extent(2),
+                          src.ivec_4d.extent(3));
+
+  // The below loops copies each corresponding 2-rank matrix within the simd
+  // view back to the 3-rank view.
+  for (size_t simd_internal_vec_idx = 0; simd_internal_vec_idx < remainder;
+        simd_internal_vec_idx++) {
+    if (std::is_same<default_layout, Kokkos::LayoutRight>::value)
+      h_sv0 = Kokkos::subview(h_src_raw, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), simd_internal_vec_idx);
+    else
+      h_sv0 = Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+    
+    for (size_t vector_batch_idx = 0;
+          vector_batch_idx < vector_batch_size; vector_batch_idx++) {
+      if (options.blas_args.batch_size_last_dim)
+        h_sv1 = Kokkos::subview(h_sv0, vector_batch_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      else
+        h_sv1 = Kokkos::subview(h_sv0, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), vector_batch_idx);
+      for (size_t simd_batch_size_idx = 0;
+            simd_batch_size_idx < simd_batch_size;
+            simd_batch_size_idx++) {
+        if (options.blas_args.batch_size_last_dim)
+          h_sv2 = Kokkos::subview(h_sv1, Kokkos::ALL(), Kokkos::ALL(), simd_batch_size_idx);
+        else
+          h_sv2 = Kokkos::subview(h_sv1, simd_batch_size_idx, Kokkos::ALL(), Kokkos::ALL());
+        for (size_t m = 0; m < src.ivec_4d.extent(1); m++) {
+          for (size_t n = 0; n < src.ivec_4d.extent(2); n++) {
+            if (options.blas_args.batch_size_last_dim)
+              h_dst(m, n, simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx) = h_sv2(m, n);
+            else
+              h_dst(simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx, m, n) = h_sv2(m, n);
           }
         }
+        if (simd_internal_vec_idx + simd_batch_size_idx + vector_batch_idx == last_batch - 1)
+          goto out;
       }
-    } else {
-      // When the batch_size is a multiple of the simd_vector_size, each 2-rank
-      // matrix lies in the correct location and the data can simply be copied.
-      memcpy(dst.data(), src.ivec_4d.data(),
-             sizeof(dst_scalar_type) * dst.extent(0) * dst.extent(1) *
-                 dst.extent(2));
     }
   }
+out:
+  Kokkos::deep_copy(dst, h_dst);
+  Kokkos::fence();
 }
 
 /**
