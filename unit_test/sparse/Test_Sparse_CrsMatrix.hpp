@@ -189,9 +189,36 @@ testCrsMatrix ()
   //printf ("A is %d by %d\n", A.numRows (), A.numCols ());
 }
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void
+testCrsMatrixHostMirror ()
+{
+  using namespace Test;
+  using crs_matrix = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using crs_matrix_host = typename crs_matrix::HostMirror;
+  using crs_graph = typename crs_matrix::StaticCrsGraphType;
+  using crs_graph_host = typename crs_graph::HostMirror;
+  crs_matrix A = makeCrsMatrix<crs_matrix>();
+  typename crs_matrix::values_type::HostMirror valuesHost("values host", A.nnz());
+  typename crs_matrix::row_map_type::HostMirror rowmapHost("rowmap host", A.numRows() + 1);
+  typename crs_matrix::index_type::HostMirror entriesHost("entries host", A.nnz());
+  crs_graph_host graphHost(entriesHost, rowmapHost);
+  //Test the two CrsMatrix constructors that take the StaticCrsGraph
+  crs_matrix_host Ahost1("Ahost1", graphHost);
+  crs_matrix_host Ahost2("Ahost2", A.numCols(), valuesHost, graphHost);
+  //Test deep copy constructor (can copy between any two spaces)
+  {
+    crs_matrix Bdev("B device", Ahost1);
+    crs_matrix_host Bhost("B host", A);
+  }
+}
+
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## crsmatrix ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   testCrsMatrix<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
+} \
+TEST_F( TestCategory, sparse ## _ ## crsmatrix_host_mirror ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  testCrsMatrixHostMirror<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
 }
 
 
