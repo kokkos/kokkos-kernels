@@ -225,6 +225,8 @@ display_help_text() {
       echo ""
       echo "--with-cuda[=/Path/To/Cuda]:                  Enable Cuda and set path to Cuda Toolkit."
       echo "--with-hip[=/Path/To/Hip]:                    Enable Hip and set path to ROCM Toolkit."
+      echo "--with-openmptarget:                          Enable OpenMPTarget backend."
+      echo "--with-sycl:                                  Enable Sycl backend."
       echo "--with-openmp:                                Enable OpenMP backend."
       echo "--with-pthread:                               Enable Pthreads backend."
       echo "--with-serial:                                Enable Serial backend."
@@ -395,6 +397,12 @@ do
       ;;
     --with-openmp)
       update_kokkos_devices OpenMP
+      ;;
+    --with-openmptarget)
+      update_kokkos_devices OpenMPTarget
+      ;;
+    --with-sycl)
+      update_kokkos_devices Sycl
       ;;
     --with-pthread)
       update_kokkos_devices Pthread
