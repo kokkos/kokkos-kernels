@@ -392,6 +392,7 @@ private:
 
 
 public:
+/*
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for colored SPGEMM
   ////DECL IS AT _color.hpp
@@ -400,17 +401,18 @@ public:
             typename b_row_view_t__, typename b_nnz_view_t__, typename b_scalar_view_t__,
             typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__>
   struct NumericCCOLOR;
+*/
 private:
   /**
    * \brief Numeric phase with speed method
    */
+/*
   template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
   void KokkosSPGEMM_numeric_color(
       c_row_view_t rowmapC_,
       c_lno_nnz_view_t entriesC_,
       c_scalar_nnz_view_t valuesC_,
       SPGEMMAlgorithm spgemm_algorithm);
-
 
   template <typename c_row_view_t, typename c_nnz_view_t>
   void d2_color_c_matrix(
@@ -425,6 +427,7 @@ private:
       nnz_lno_t &num_colors_in_one_step,
       nnz_lno_t &num_multi_color_steps,
       SPGEMMAlgorithm spgemm_algorithm);
+*/
 public:
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for kkmem SPGEMM
@@ -752,15 +755,72 @@ private:
 		    c_row_view_t rowmapC,
 		    nnz_lno_t maxNumRoughNonzeros
 		  );
-};
 
+  //////////////////////////////////////////////////////////////////////////
+  ///// Jacobi-fused SpGEMM declarations 
+  //////////////////////////////////////////////////////////////////////////
+public:
+
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t,
+            typename b_row_view_t, typename b_nnz_view_t, typename b_scalar_view_t,
+            typename c_row_view_t, typename c_nnz_view_t, typename c_scalar_view_t,
+	    typename dinv_view_t,
+            typename pool_memory_type>
+  struct JacobiSpGEMMSparseAcc;
+
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t,
+            typename b_row_view_t, typename b_nnz_view_t, typename b_scalar_view_t,
+            typename c_row_view_t, typename c_nnz_view_t, typename c_scalar_view_t,
+	    typename dinv_view_t,
+            typename mpool_type>
+  struct JacobiSpGEMMDenseAcc;
+
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t, 
+	    typename dinv_view_t>
+  void KokkosSPGEMM_jacobi_sparseacc(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_, 
+				     typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv, 
+				     KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space);
+
+private:
+  template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t, typename dinv_view_t>
+  void KokkosSPGEMM_jacobi_denseacc(c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_, c_scalar_nnz_view_t valuesC_,
+				    typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv,
+				    KokkosKernels::Impl::ExecSpaceType my_exec_space);
+
+  //Utility to compute the number of pool chunks for L2 hashmap accumulators.
+  //Uses free memory query for accelerators/GPUs but assumes infinite available host memory.
+  //
+  //chunk_bytes: bytes in each chunk
+  //ideal_num_chunks: number of chunks that would give each thread/team its own chunk (no contention)
+  template<typename Pool>
+  size_t compute_num_pool_chunks(size_t chunk_bytes, size_t ideal_num_chunks)
+  {
+    if(!KokkosKernels::Impl::kk_is_gpu_exec_space<typename Pool::execution_space>())
+      return ideal_num_chunks;
+    size_t free_byte, total_byte;
+    KokkosKernels::Impl::kk_get_free_total_memory<typename Pool::memory_space>(free_byte, total_byte);
+    size_t required_size = ideal_num_chunks * chunk_bytes;
+    if (KOKKOSKERNELS_VERBOSE)
+      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
+    size_t num_chunks = ideal_num_chunks;
+    //If there is not enough memory to safely allocate ideal_num_chunks, use half the free memory, rounded down
+    if (required_size > free_byte / 2) {
+      num_chunks = (free_byte / 2) / chunk_bytes;
+    }
+    //then take the largest power of 2 smaller than that
+    size_t po2_num_chunks = 1;
+    while (po2_num_chunks * 2 < num_chunks) {
+      po2_num_chunks *= 2;
+    }
+    return po2_num_chunks;
+  }
+};
 
 }
 }
 #include "KokkosSparse_spgemm_imp_outer.hpp"
 #include "KokkosSparse_spgemm_impl_memaccess.hpp"
 #include "KokkosSparse_spgemm_impl_kkmem.hpp"
-#include "KokkosSparse_spgemm_impl_color.hpp"
 #include "KokkosSparse_spgemm_impl_speed.hpp"
 #include "KokkosSparse_spgemm_impl_compression.hpp"
 #include "KokkosSparse_spgemm_impl_def.hpp"

@@ -1,5 +1,95 @@
 # Change Log
 
+## [3.3.00](https://github.com/kokkos/kokkos-kernels/tree/3.3.00) (2020-12-16)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.2.01...3.3.00)
+
+**Implemented enhancements:**
+- Add permanent RCM reordering interface, and a basic serial implementation [\#854](https://github.com/kokkos/kokkos/pull/#854)
+- Half\_t explicit conversions [\#849](https://github.com/kokkos/kokkos/pull/#849)
+- Add batched gemm performance tests [\#838](https://github.com/kokkos/kokkos/pull/#838)
+- Add HIP support to src and perf\_test [\#828](https://github.com/kokkos/kokkos/pull/#828)
+- Factor out coarsening [\#827](https://github.com/kokkos/kokkos/pull/#827)
+- Allow enabling/disabling components at configuration time [\#823](https://github.com/kokkos/kokkos/pull/#823)
+- HIP: CMake work on tests and ETI  [\#820](https://github.com/kokkos/kokkos/pull/#820)
+- HIP: KokkosBatched - hip specialization [\#812](https://github.com/kokkos/kokkos/pull/#812)
+- Distance-2 maximal independent set [\#801](https://github.com/kokkos/kokkos/pull/#801)
+- Use batched TRTRI & TRMM for Supernode-sptrsv setup [\#797](https://github.com/kokkos/kokkos/pull/#797)
+- Initial support for half precision [\#794](https://github.com/kokkos/kokkos/pull/#794)
+
+**Fixed bugs:**
+- Fix issue with HIP and Kokkos\_ArithTraits [\#844](https://github.com/kokkos/kokkos/pull/#844)
+- HIP: fixing round of issues on AMD [\#840](https://github.com/kokkos/kokkos/pull/#840)
+- Throw an exception if BLAS GESV is not enabled [\#837](https://github.com/kokkos/kokkos/pull/#837)
+- Fixes -Werror for gcc with c++20 [\#836](https://github.com/kokkos/kokkos/pull/#836)
+- Add fallback condition to use spmv\_native when cuSPARSE does not work [\#834](https://github.com/kokkos/kokkos/pull/#834)
+- Fix install testing refactor for inline builds [\#811](https://github.com/kokkos/kokkos/pull/#811)
+- HIP: fix ArithTraits to support HIP backend [\#809](https://github.com/kokkos/kokkos/pull/#809)
+- cuSPARSE 11: fix spgemm and spmv\_struct\_tunning compilation error [\#804](https://github.com/kokkos/kokkos/pull/#804)
+
+**Incompatibilities:**
+- Remove pre-3.0 deprecated code [\#825](https://github.com/kokkos/kokkos/pull/#825)
+
+## [3.2.01](https://github.com/kokkos/kokkos-kernels/tree/3.2.01) (2020-11-17)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.2.00...3.2.01)
+
+**Fixed bugs:**
+
+- Cpp14 Fixes: [\#790](https://github.com/kokkos/kokkos-kernels/pull/790)
+
+## [3.2.00](https://github.com/kokkos/kokkos-kernels/tree/3.2.00) (2020-08-19)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.1.01...3.2.00)
+
+**Implemented enhancements:**
+
+- Add CudaUVMSpace specializations for cuBLAS IAMAX and SCAL [\#758](https://github.com/kokkos/kokkos-kernels/issues/758)
+- Add wiki examples [\#735](https://github.com/kokkos/kokkos-kernels/issues/735)
+- Support complex\_float, complex\_double in cuSPARSE SPMV wrapper [\#726](https://github.com/kokkos/kokkos-kernels/issues/726)
+- Add performance tests for trmm and trtri [\#711](https://github.com/kokkos/kokkos-kernels/issues/711)
+- SpAdd requires output values to be zero-initialized, but this shouldnt be needed [\#694](https://github.com/kokkos/kokkos-kernels/issues/694)
+- SpAdd doesnt merge entries correctly [\#685](https://github.com/kokkos/kokkos-kernels/issues/685)
+- cusparse SpMV merge algorithm [\#670](https://github.com/kokkos/kokkos-kernels/issues/670)
+- TPL support for SpMV [\#614](https://github.com/kokkos/kokkos-kernels/issues/614)
+- Add two BLAS/LAPACK calls needed by: Sptrsv supernode \#552 [\#589](https://github.com/kokkos/kokkos-kernels/issues/589)
+- HashmapAccumulator has several unused members, misnamed parameters [\#508](https://github.com/kokkos/kokkos-kernels/issues/508)
+
+**Fixed bugs:**
+
+- Nightly test failure: spgemm unit tests failing on White \(Power8\) [\#780](https://github.com/kokkos/kokkos-kernels/issues/780)
+- supernodal does not build with UVM enabled [\#633](https://github.com/kokkos/kokkos-kernels/issues/633)
+
+## [3.1.00](https://github.com/kokkos/kokkos-kernels/tree/3.1.00) (2020-04-14)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.0.00...3.1.00)
+
+**Implemented enhancements:**
+
+- Two-stage & Classical Gauss-Seidel [\#672](https://github.com/kokkos/kokkos-kernels/issues/672)
+- Test transpose utilities [\#664](https://github.com/kokkos/kokkos-kernels/issues/664)
+- cuSPARSE spmv wrapper doesn't actually use 'mode' [\#650](https://github.com/kokkos/kokkos-kernels/issues/650)
+- Distance-2 improvements [\#625](https://github.com/kokkos/kokkos-kernels/issues/625)
+- FindMKL module: which mkl versions to prioritize [\#480](https://github.com/kokkos/kokkos-kernels/issues/480)
+- Add SuperLU as optional CMake TPL [\#545](https://github.com/kokkos/kokkos-kernels/issues/545)
+- Revamp the ETI system [\#460](https://github.com/kokkos/kokkos-kernels/issues/460)
+
+**Fixed bugs:**
+
+- 2-stage GS update breaking cuda/10+rdc build [\#673](https://github.com/kokkos/kokkos-kernels/issues/673)
+- Why CrsMatrix::staticcrsgraph\_type uses execution\_space and not device\_type? [\#665](https://github.com/kokkos/kokkos-kernels/issues/665)
+- TRMM and TRTRI build failures with clang/7+cuda9+Cuda\_OpenMP and gcc/5.3+OpenMP [\#657](https://github.com/kokkos/kokkos-kernels/issues/657)
+- cuSPARSE spmv wrapper doesn't actually use 'mode' [\#650](https://github.com/kokkos/kokkos-kernels/issues/650)
+- Block Gauss-Seidel test fails when cuSPARSE is enabled [\#648](https://github.com/kokkos/kokkos-kernels/issues/648)
+- cuda uvm test failures without launch blocking - expected behavior? [\#636](https://github.com/kokkos/kokkos-kernels/issues/636)
+- graph\_color\_d2\_symmetric\_double\_int\_int\_TestExecSpace seg faults in cuda/10.1 + Volta nightly test on kokkos-dev-2 [\#634](https://github.com/kokkos/kokkos-kernels/issues/634)
+- Build failures on kokkos-dev with clang/7.0.1 cuda/9.2 and blas/cublas/cusparse tpls [\#629](https://github.com/kokkos/kokkos-kernels/issues/629)
+- Distance-2 improvements [\#625](https://github.com/kokkos/kokkos-kernels/issues/625)
+- trsv - internal compiler error with intel/19 [\#607](https://github.com/kokkos/kokkos-kernels/issues/607)
+- complex\_double misalignment still breaking SPGEMM [\#598](https://github.com/kokkos/kokkos-kernels/issues/598)
+- PortableNumericCHASH can't align shared memory  [\#587](https://github.com/kokkos/kokkos-kernels/issues/587)
+- Remove all references to Kokkos::Impl::is\_same [\#586](https://github.com/kokkos/kokkos-kernels/issues/586)
+- Can I run KokkosKernels spgemm with float or int32 type? [\#583](https://github.com/kokkos/kokkos-kernels/issues/583)
+- Kokkos Blas: gemv segfaults [\#443](https://github.com/kokkos/kokkos-kernels/issues/443)
+- Generated kokkos-kernels file names are too long and are crashing cloning Trilinos on Windows [\#395](https://github.com/kokkos/kokkos-kernels/issues/395)
+
+
 ## [3.0.00](https://github.com/kokkos/kokkos-kernels/tree/3.0.00) (2020-01-27)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.9.00...3.0.00)
 

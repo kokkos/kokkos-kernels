@@ -95,7 +95,7 @@ void kk_sparseMatrix_generate(
   colInd = new OrdinalType[nnz];
   for(OrdinalType row=0;row<nrows;row++)
   {
-    for(SizeType k=rowPtr[row] ;k<rowPtr[row+1];k++)
+    for(SizeType k=rowPtr[row]; k<rowPtr[row+1]; ++k)
     {
       while (true){
         OrdinalType pos = (1.0*rand()/RAND_MAX-0.5)*bandwidth+row;
@@ -169,7 +169,8 @@ void kk_diagonally_dominant_sparseMatrix_generate(
     OrdinalType bandwidth,
     ScalarType* &values,
     SizeType* &rowPtr,
-    OrdinalType* &colInd)
+    OrdinalType* &colInd,
+    ScalarType diagDominance = 10 * Kokkos::ArithTraits<ScalarType>::one())
 {
   rowPtr = new SizeType[nrows+1];
 
@@ -180,30 +181,48 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   {
     int varianz = (1.0*rand()/RAND_MAX-0.5)*row_size_variance;
     rowPtr[row+1] = rowPtr[row] + elements_per_row+varianz;
+    if(rowPtr[row+1] <= rowPtr[row])   // This makes sure that there is
+      rowPtr[row+1] = rowPtr[row] + 1; // at least one nonzero in the row
   }
   nnz = rowPtr[nrows];
   values = new ScalarType[nnz];
   colInd = new OrdinalType[nnz];
-  const ScalarType temp = 10;
-  for(OrdinalType row=0;row<nrows;row++)
+  for(OrdinalType row=0; row<nrows; row++)
   {
     ScalarType total_values = 0;
-    for(SizeType k=rowPtr[row] ;k<rowPtr[row+1] - 1;k++)
+    for(SizeType k=rowPtr[row]; k<rowPtr[row+1]-1; k++)
     {
-      OrdinalType pos = row;
-      while (pos == row){
-        pos = ((1.0*rand())/RAND_MAX-0.5)*bandwidth+row;
-      }
-      if(pos<0) pos+=ncols;
+      while (true){
+        OrdinalType pos = (1.0*rand()/RAND_MAX-0.5)*bandwidth+row;
+        while(pos < 0)
+	  pos += ncols;
+        while(pos >= ncols)
+	  pos -= ncols;
 
-      if(pos>=ncols) pos-=ncols;
-      colInd[k]= pos;
-      values[k] = 100.0*rand()/RAND_MAX-50.0;
-      total_values += Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
+        bool is_already_in_the_row = false;
+	if(pos == row)
+	  is_already_in_the_row = true;
+	else
+	{
+	  for(SizeType j = rowPtr[row] ; j<k ;j++){
+	    if (colInd[j] == pos){
+	      is_already_in_the_row = true;
+	      break;
+	    }
+	  }
+	}
+        if (!is_already_in_the_row) {
+
+          colInd[k]= pos;
+          values[k] = 100.0*rand()/RAND_MAX-50.0;
+	  total_values += Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
+          break;
+        }
+      }
     }
 
     colInd[rowPtr[row+1] - 1]= row;
-    values[rowPtr[row+1] - 1] = total_values * temp;
+    values[rowPtr[row+1] - 1] = total_values * diagDominance;
   }
 }
 
@@ -213,8 +232,10 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
     typename crsMat_t::const_ordinal_type ncols,
     typename crsMat_t::non_const_size_type &nnz,
     typename crsMat_t::const_ordinal_type row_size_variance,
-    typename crsMat_t::const_ordinal_type bandwidth){
-
+    typename crsMat_t::const_ordinal_type bandwidth,
+    typename crsMat_t::const_value_type diagDominance =
+      10 * Kokkos::ArithTraits<typename crsMat_t::value_type>::one())
+{
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
   typedef typename graph_t::entries_type::non_const_type   cols_view_t;
@@ -230,7 +251,7 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
 
   kk_diagonally_dominant_sparseMatrix_generate<scalar_t, lno_t, size_type>(
       nrows, ncols, nnz, row_size_variance,  bandwidth,
-      values, xadj, adj);
+      values, xadj, adj, diagDominance);
 
   row_map_view_t rowmap_view("rowmap_view", nrows+1);
   cols_view_t columns_view("colsmap_view", nnz);
@@ -259,7 +280,6 @@ crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
   delete [] xadj; delete [] adj; delete [] values;
   return crsmat;
 }
-
 
 template <typename crsMat_t>
 crsMat_t kk_generate_triangular_sparse_matrix(
