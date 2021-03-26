@@ -211,6 +211,16 @@ testCrsMatrixHostMirror ()
     crs_matrix Bdev("B device", Ahost1);
     crs_matrix_host Bhost("B host", A);
   }
+  //Test the empty (0x0, 0 entries) case - zero-length rowmap.
+  typename crs_graph::row_map_type::non_const_type zeroRowmap;
+  typename crs_graph::entries_type zeroEntries;
+  typename crs_matrix::values_type zeroValues;
+  crs_matrix zero("ZeroRow", 0, 0, 0, zeroValues, zeroRowmap, zeroEntries);
+  crs_matrix_host zeroHost("zero1Host", zero);
+  EXPECT_EQ(zeroHost.numRows(), 0);
+  EXPECT_EQ(zeroHost.numCols(), 0);
+  EXPECT_EQ(zeroHost.nnz(), 0);
+  EXPECT_EQ(zeroHost.graph.row_map.extent(0), 0);
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \

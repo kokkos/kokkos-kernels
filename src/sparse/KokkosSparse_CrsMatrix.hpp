@@ -473,13 +473,13 @@ public:
   {}
 
   //! Copy constructor (shallow copy).
-  template<typename SType,
-           typename OType,
-           class DType,
-           class MTType,
-           typename IType>
+  template<typename InScalar,
+           typename InOrdinal,
+           class InDevice,
+           class InMemTraits,
+           typename InSizeType>
   KOKKOS_INLINE_FUNCTION
-  CrsMatrix (const CrsMatrix<SType,OType,DType,MTType,IType> & B) :
+  CrsMatrix (const CrsMatrix<InScalar,InOrdinal,InDevice,InMemTraits,InSizeType> & B) :
     graph (B.graph.entries, B.graph.row_map),
     values (B.values),
     dev_config (B.dev_config),
@@ -495,9 +495,9 @@ public:
   }
 
   //! Deep copy constructor (can cross spaces)
-  template<typename S, typename O, typename D, typename M, typename ST>
-  CrsMatrix (const std::string& label,
-      const CrsMatrix<S, O, D, M, ST>& mat_)
+  template<typename InScalar, typename InOrdinal, typename InDevice, typename InMemTraits, typename InSizeType>
+  CrsMatrix (const std::string&,
+      const CrsMatrix<InScalar, InOrdinal, InDevice, InMemTraits, InSizeType>& mat_)
   {
     typename row_map_type::non_const_type rowmap(Kokkos::ViewAllocateWithoutInitializing("rowmap"), mat_.graph.row_map.extent(0));
     index_type cols(Kokkos::ViewAllocateWithoutInitializing("cols"), mat_.nnz());
@@ -518,9 +518,9 @@ public:
   /// \brief Construct with a graph that will be shared.
   ///
   /// Allocate the values array for subsquent fill.
-  template<typename DT, typename A1, typename A2, typename A3, typename ST>
+  template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
   CrsMatrix (const std::string& label,
-             const Kokkos::StaticCrsGraph<DT, A1, A2, A3, ST>& graph_) :
+             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
     graph (graph_.entries, graph_.row_map),
     values (label, graph_.entries.extent(0)),
     numCols_ (maximum_entry (graph_) + 1)
@@ -631,11 +631,11 @@ public:
   /// \param rows [in/out] The row map (containing the offsets to the
   ///   data in each row).
   /// \param cols [in/out] The column indices.
-  template<typename DT, typename A1, typename A2, typename A3, typename ST>
+  template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
   CrsMatrix (const std::string&,
              const OrdinalType& ncols,
              const values_type& vals,
-             const Kokkos::StaticCrsGraph<DT, A1, A2, A3, ST>& graph_) :
+             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
     graph (graph_.entries, graph_.row_map),
     values (vals),
     numCols_ (ncols)
