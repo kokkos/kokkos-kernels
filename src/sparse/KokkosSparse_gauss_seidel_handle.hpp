@@ -702,7 +702,7 @@ namespace KokkosSparse{
     crsmat_t crsmatL;
     crsmat_t crsmatU;
     // > complements for compact form of recurrence
-    //   where La = A - U and Ua = A - U
+    //   where La = A - U and Ua = A - L
     values_view_t Da;
     crsmat_t crsmatLa;
     crsmat_t crsmatUa;

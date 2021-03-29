@@ -981,13 +981,11 @@ namespace KokkosSparse{
 #endif
             }
           }
-          //if (sweep == 0) {
-          //  auto localY = Kokkos::subview (localX, range_type(num_rows, localX.extent(0)), Kokkos::ALL ());
-          //  Kokkos::deep_copy (localY, zero);
-          //}
           if (!two_stage) {
             // ===== sparse-triangular solve =====
-            // TODO: omega is not supported here (because omega*L + D is extracted in initialize_numeric, but omega is passed into apply)
+            // TODO: omega is not supported here 
+            //       (L + D is extracted in initialize_numeric, 
+            //        but (omega*L + D)^{-1} needs to be applied with omega passed into apply)
             //       hence, omega = one
             if (forward_sweep) {
               // Z = (omega * L + D)^{-1} * R
