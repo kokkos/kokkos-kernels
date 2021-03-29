@@ -593,7 +593,7 @@ public:
   }
   // ---------------------------------------- //
   // Specify damping factor of inner sweeps for two-stage Gauss-Seidel
-  void set_gs_set_inner_damp_factor (scalar_t_ damp_factor) {
+  void set_gs_set_inner_damp_factor (nnz_scalar_t damp_factor) {
     auto gs2 = get_twostage_gs_handle();
     gs2->setInnerDampFactor (damp_factor);
   }
