@@ -987,6 +987,9 @@ namespace KokkosSparse{
             //       (L + D is extracted in initialize_numeric, 
             //        but (omega*L + D)^{-1} needs to be applied with omega passed into apply)
             //       hence, omega = one
+            if (omega != one) {
+              throw std::invalid_argument (" *** TwostageGaussSeidel::apply with omega != one is not supported with sptrsv ***\n");
+            }
             if (forward_sweep) {
               // Z = (omega * L + D)^{-1} * R
               // NOTE: need to go over RHSs
