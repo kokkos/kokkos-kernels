@@ -1237,14 +1237,18 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
+    #elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::isinf;
     #endif
-    return sycl::isinf(x);
+    return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
+    #elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::isnan;
     #endif
-    return sycl::isnan(x);
+    return isnan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return ::fabs (x);
