@@ -858,13 +858,17 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
-    #endif
+#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::isinf
+#endif
     return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const float x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
-    #endif
+#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::isnan
+#endif
     return isnan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const float x) {
@@ -1030,18 +1034,38 @@ public:
     return std::complex<RealFloatType> (ArithTraits<mag_type>::infinity (), ArithTraits<mag_type>::infinity ());
   }
 
-  static bool isInf (const std::complex<RealFloatType>& x) {
-    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+  template <typename Dummy = RealFloatType>
+  static bool isInf(const std::complex<Dummy>& x) {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
-    #endif
+#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::isinf
+#endif
     return isinf (real (x)) || isinf (imag (x));
   }
-  static bool isNan (const std::complex<RealFloatType>& x) {
-    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+#ifdef KOKKOS_ENABLE_SYCL
+  template <>
+  static bool isInf<long double>(const std::complex<long double>& x) {
+    Kokkos::abort("isInf not available for std::complex<long double>!\n");
+    return true;
+  }
+#endif
+  template <typename Dummy = RealFloatType>
+  static bool isNan(const std::complex<Dummy>& x) {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
-    #endif
+#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::isnan
+#endif
     return isnan (real (x)) || isnan (imag (x));
   }
+#ifdef KOKKOS_ENABLE_SYCL
+  template <>
+  static bool isNan<long double>(const std::complex<long double>& x) {
+    Kokkos::abort("isNan not available for std::complex<long double>!\n");
+    return true;
+  }
+#endif
   static mag_type abs (const std::complex<RealFloatType>& x) {
     return std::abs (x);
   }
@@ -1214,13 +1238,13 @@ public:
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
     #endif
-    return isinf (x);
+    return sycl::isinf(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
     #endif
-    return isnan (x);
+    return sycl::isnan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return ::fabs (x);

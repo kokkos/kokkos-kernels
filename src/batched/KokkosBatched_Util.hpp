@@ -283,6 +283,16 @@ namespace KokkosBatched {
         typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::Experimental::HIPSpace>::value,int>
         ::type mb() { return 2; }
 #endif
+#if defined(KOKKOS_ENABLE_SYCL)
+        template <typename ActiveMemorySpaceType>
+        KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
+            std::is_same<ActiveMemorySpaceType,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace>::value,
+            int>::type
+        mb() {
+          return 2;
+        }
+#endif
         template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
         typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
         ::type mb() { return 4; }
@@ -331,6 +341,16 @@ namespace KokkosBatched {
         template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
         typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::Experimental::HIPSpace>::value,int>
         ::type mb() { return 1; }
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+        template <typename ActiveMemorySpaceType>
+        KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
+            std::is_same<ActiveMemorySpaceType,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace>::value,
+            int>::type
+        mb() {
+          return 1;
+        }
 #endif
         template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
         typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
