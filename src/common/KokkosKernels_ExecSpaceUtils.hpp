@@ -129,7 +129,7 @@ constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Experimental:
 }
 #endif
 
-#ifdef KOKKOS_ENABLE_HIP
+#ifdef KOKKOS_ENABLE_SYCL
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool
 kk_is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
