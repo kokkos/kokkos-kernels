@@ -2058,25 +2058,33 @@ public:
     Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize_;
     size_type maxColors_;
     color_view_type colors_;
+    Kokkos::View<int *, MyTempMemorySpace> bannedColors_;
 
-    functorDeterministicColoring(const_lno_row_view_t rowPtr,
-                                 const_lno_nnz_view_t colInd,
-                                 nnz_lno_persistent_work_view_t dependency,
-                                 nnz_lno_temp_work_view_t frontier,
-                                 Kokkos::View<size_type, MyTempMemorySpace> frontierSize,
-                                 nnz_lno_temp_work_view_t newFrontier,
-                                 Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize,
-                                 size_type maxColors,
-                                 color_view_type colors)
-      : xadj_(rowPtr), adj_(colInd), dependency_(dependency), frontier_(frontier),
-      frontierSize_(frontierSize), newFrontier_(newFrontier), newFrontierSize_(newFrontierSize),
-      maxColors_(maxColors), colors_(colors) {}
+    functorDeterministicColoring(
+        const_lno_row_view_t rowPtr, const_lno_nnz_view_t colInd,
+        nnz_lno_persistent_work_view_t dependency,
+        nnz_lno_temp_work_view_t frontier,
+        Kokkos::View<size_type, MyTempMemorySpace> frontierSize,
+        nnz_lno_temp_work_view_t newFrontier,
+        Kokkos::View<size_type, MyTempMemorySpace> newFrontierSize,
+        size_type maxColors, color_view_type colors)
+        : xadj_(rowPtr),
+          adj_(colInd),
+          dependency_(dependency),
+          frontier_(frontier),
+          frontierSize_(frontierSize),
+          newFrontier_(newFrontier),
+          newFrontierSize_(newFrontierSize),
+          maxColors_(maxColors),
+          colors_(colors),
+          bannedColors_("KokkosKernels::bannedColors",
+                        maxColors_ * frontier.size()) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const size_type frontierIdx) const {
       typedef typename std::remove_reference< decltype( newFrontierSize_() ) >::type atomic_incr_type;
       size_type frontierNode = frontier_(frontierIdx);
-      int* bannedColors = new int[maxColors_];
+      int *bannedColors      = bannedColors_.data() + maxColors_ * frontierIdx;
       for(size_type colorIdx= 0; colorIdx < maxColors_; ++colorIdx) {
         bannedColors[colorIdx] = 0;
       }
@@ -2105,7 +2113,6 @@ public:
           break;
         }
       } // Loop over banned colors
-      delete [] bannedColors;
     }
   }; // functorDeterministicColoring
 
