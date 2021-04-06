@@ -159,7 +159,7 @@ void testTranspose(int numRows, int numCols, bool doValues)
   }
 }
 
-TEST_F( TestCategory, test_common_transpose_matrix) {
+TEST_F( TestCategory, common_transpose_matrix) {
   //Test both matrix and graph transpose with various sizes
   testTranspose<TestExecSpace>(100, 100, true);
   testTranspose<TestExecSpace>(500, 50, true);
@@ -169,7 +169,7 @@ TEST_F( TestCategory, test_common_transpose_matrix) {
   testTranspose<TestExecSpace>(2000, 2000, true);
 }
 
-TEST_F( TestCategory, test_common_transpose_graph) {
+TEST_F( TestCategory, common_transpose_graph) {
   testTranspose<TestExecSpace>(100, 100, false);
   testTranspose<TestExecSpace>(500, 50, false);
   testTranspose<TestExecSpace>(50, 500, false);

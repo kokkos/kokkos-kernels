@@ -61,15 +61,20 @@
 #include "KokkosSparse_partitioning_impl.hpp"
 #include "KokkosSparse_sor_sequential_impl.hpp"
 
-#ifndef kokkos_complex_double
-#define kokkos_complex_double Kokkos::complex<double>
-#define kokkos_complex_float Kokkos::complex<float>
-#endif
+// #ifndef kokkos_complex_double
+// #define kokkos_complex_double Kokkos::complex<double>
+// #define kokkos_complex_float Kokkos::complex<float>
+// #endif
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
+
+
 namespace Test {
 
 template <typename crsMat_t, typename vec_t, typename device>
@@ -149,38 +154,38 @@ int run_gauss_seidel(
   return 0;
 }
 
-template<typename vec_t>
-vec_t create_x_vector(vec_t& kok_x, double max_value = 10.0) {
-  typedef typename vec_t::value_type scalar_t;
-  auto h_x = Kokkos::create_mirror_view (kok_x);
-  for (size_t j = 0; j < h_x.extent(1); ++j){
-    for (size_t i = 0; i < h_x.extent(0); ++i){
-      scalar_t r =
-          static_cast <scalar_t> (rand()) /
-          static_cast <scalar_t> (RAND_MAX / max_value);
-      h_x.access(i, j) = r;
-    }
-  }
-  Kokkos::deep_copy (kok_x, h_x);
-  return kok_x;
-}
+// template<typename vec_t>
+// vec_t create_x_vector(vec_t& kok_x, double max_value = 10.0) {
+//   typedef typename vec_t::value_type scalar_t;
+//   auto h_x = Kokkos::create_mirror_view (kok_x);
+//   for (size_t j = 0; j < h_x.extent(1); ++j){
+//     for (size_t i = 0; i < h_x.extent(0); ++i){
+//       scalar_t r =
+//           static_cast <scalar_t> (rand()) /
+//           static_cast <scalar_t> (RAND_MAX / max_value);
+//       h_x.access(i, j) = r;
+//     }
+//   }
+//   Kokkos::deep_copy (kok_x, h_x);
+//   return kok_x;
+// }
 
-template <typename crsMat_t, typename vector_t>
-vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
-  vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
-      crsMat.numRows());
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
-}
+// template <typename crsMat_t, typename vector_t>
+// vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
+//   vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+//       crsMat.numRows());
+//   KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+//   return y_vector;
+// }
 
-template <typename crsMat_t, typename vector_t>
-vector_t create_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
-  vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
-      crsMat.numRows(), x_vector.extent(1));
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
-}
-}
+// template <typename crsMat_t, typename vector_t>
+// vector_t create_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
+//   vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+//       crsMat.numRows(), x_vector.extent(1));
+//   KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+//   return y_vector;
+// }
+} // namespace Test
 
 template<typename scalar_t, typename lno_t, typename size_type, typename device, typename crsMat_t>
 crsMat_t symmetrize(crsMat_t A)

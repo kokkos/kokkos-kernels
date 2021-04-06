@@ -39,42 +39,6 @@ TARGET_COMPILE_FEATURES(kokkoskernels_gtest PUBLIC cxx_std_11)
 
 
 
-#
-#
-#  Making some CMake experiments to design a more automated
-#  unit-test framework that generates automatically cpp files
-#  needed by each backend to generate the unit-test executables.
-#
-#
-
-set(MY_COMPS Common)
-set(MY_BACKENDS Serial OpenMP)
-
-foreach(COMP ${MY_COMPS})
-  string(TOLOWER ${COMP} COMP_LOWER)
-  file(GLOB COMP_CPP ${COMP_LOWER}/*.hpp)
-  message(STATUS "List of Test_${COMP}_.cpp files:")
-  foreach(BACKEND ${MY_BACKENDS})
-    string(TOLOWER ${BACKEND} BACKEND_LOWER)
-    string(TOUPPER ${BACKEND} BACKEND_UPPER)
-    if(KOKKOS_ENABLE_${BACKEND_UPPER})
-      foreach(COMP_FILE ${COMP_CPP})
-        get_filename_component(COMP_NAME ${COMP_FILE} NAME_WE)
-        string(REPLACE "Test_${COMP}_" "" COMP_TEST ${COMP_NAME})
-        message(STATUS "  ${COMP_TEST}")
-        string(COMPARE EQUAL ${COMP_TEST} float128 CHECK_FLOAT)
-        if(${CHECK_FLOAT})
-          file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${BACKEND_LOWER}/${COMP_LOWER}/Test_${BACKEND}_${COMP}_${COMP_TEST}.cpp "/*/n#include<Test_${BACKEND}.hpp>\n#include<Test_${COMP}_${COMP_TEST}.hpp>\n*/")
-        else()
-          file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${BACKEND_LOWER}/${COMP_LOWER}/Test_${BACKEND}_${COMP}_${COMP_TEST}.cpp "#include<Test_${BACKEND}.hpp>\n#include<Test_${COMP}_${COMP_TEST}.hpp>")
-        endif()
-      endforeach(COMP_FILE)
-    endif()
-  endforeach(BACKEND)
-endforeach(COMP)
-
-
-
 
 
 
@@ -247,72 +211,72 @@ IF (KOKKOS_ENABLE_OPENMP)
     COMPONENTS graph
   )
   
-  APPEND_GLOB(OPENMP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Common*.cpp)
+  # APPEND_GLOB(OPENMP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Common*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_openmp
     SOURCES
       Test_Main.cpp
-      ${OPENMP_COMMON_SOURCES}
+      openmp/Test_OpenMP_Common.cpp
+      # ${OPENMP_COMMON_SOURCES}
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_SERIAL)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/serial)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/serial)
-  
-  APPEND_GLOB(SERIAL_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Blas*.cpp)
 
-  # IF (KOKKOS_ENABLE_DEBUG)
-  #   SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-serial.gemm_double")
-  # ENDIF()
+#   # IF (KOKKOS_ENABLE_DEBUG)
+#   #   SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-serial.gemm_double")
+#   # ENDIF()
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     blas_serial
     SOURCES
       Test_Main.cpp
-      ${SERIAL_BLAS_SOURCES}
-#    ARGS ${DISABLE_SLOW_DGEMM_DOUBLE_TEST}
+      serial/Test_Serial_Blas.cpp
     COMPONENTS blas
-    )
+  )
     
-  APPEND_GLOB(SERIAL_BATCHED_DLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Batched*.cpp)
+  # APPEND_GLOB(SERIAL_BATCHED_DLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Batched*.cpp)
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   batched_dla_serial
+  #   SOURCES
+  #     Test_Main.cpp
+  #     ${SERIAL_BATCHED_DLA_SOURCES}
+  #   COMPONENTS batched
+  #   )
+
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_serial
     SOURCES
       Test_Main.cpp
-      ${SERIAL_BATCHED_DLA_SOURCES}
+      serial/Test_Serial_Batched.cpp
     COMPONENTS batched
-    )
-
-   APPEND_GLOB(SERIAL_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Sparse*.cpp)
+  )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_serial
     SOURCES
       Test_Main.cpp
-      ${SERIAL_SPARSE_SOURCES}
+      serial/Test_Serial_Sparse.cpp
     COMPONENTS sparse
   )
-  
-  APPEND_GLOB(SERIAL_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Graph*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_serial
     SOURCES
       Test_Main.cpp
-      ${SERIAL_GRAPH_SOURCES}
+      serial/Test_Serial_Graph.cpp
     COMPONENTS graph
   )
-  
-  # APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Common*.cpp)
-  APPEND_GLOB(SERIAL_COMMON_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/serial/common/Test_Serial_Common*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_serial
     SOURCES
       Test_Main.cpp
-      ${SERIAL_COMMON_SOURCES}
+      serial/Test_Serial_Common.cpp
+    COMPONENTS common
   )
 ENDIF ()
 
