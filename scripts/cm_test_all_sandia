@@ -502,16 +502,16 @@ elif [ "$MACHINE" = "white" ]; then
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
-  BASE_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>"
-  IBM_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0"
-  CUDA_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,ibm/xl/16.1.1"
-  CUDA10_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.1"
+  BASE_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  IBM_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0"
+  CUDA_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,ibm/xl/16.1.1"
+  CUDA10_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.1"
 
-  GCC72_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,netlib/3.8.0/gcc/7.2.0"
-  GCC74_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.4/gcc/7.4.0"
-  CUDA_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
-  CUDA10_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,openblas/0.3.4/gcc/7.4.0"
-  IBM_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/ibm/xl/16.1.1"
+  GCC72_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,netlib/3.8.0/gcc/7.2.0"
+  GCC74_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.4/gcc/7.4.0"
+  CUDA_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
+  CUDA10_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,openblas/0.3.4/gcc/7.4.0"
+  IBM_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/ibm/xl/16.1.1"
 
   # Don't do pthread on white.
   GCC_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
@@ -534,7 +534,8 @@ elif [ "$MACHINE" = "white" ]; then
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/6.4.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("gcc/5.4.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/6.4.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/9.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "ibm/16.1.1 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
@@ -555,14 +556,14 @@ elif [ "$MACHINE" = "weaver" ]; then
   eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
 
-  BASE_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>"
-  IBM_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0"
-  CUDA_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,ibm/xl/16.1.1"
-  CUDA10_MODULE_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.1"
+  BASE_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  IBM_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/xl/<COMPILER_VERSION>,gcc/7.2.0"
+  CUDA_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,ibm/xl/16.1.1"
+  CUDA10_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.4.0,ibm/xl/16.1.1"
 
-  GCC72_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0"
-  CUDA_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
-  CUDA10_MODULE_TPL_LIST="cmake/3.18.0,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,openblas/0.2.20/gcc/7.2.0"
+  GCC72_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0"
+  CUDA_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
+  CUDA10_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,openblas/0.2.20/gcc/7.2.0"
     # Issues finding CUBLAS with cuda/10.1.243 module at configure
     # "Could NOT find TPLCUBLAS (missing: CUDA_CUBLAS_LIBRARIES)"
     # Once resolved add the compiler + modules below to the SPOT_CHECK_TPLS
@@ -630,7 +631,7 @@ elif [ "$MACHINE" = "mayer" ]; then
 
   # Format: (compiler module-list build-list exe-name warning-flag)
   COMPILERS=("gnu7/7.2.0 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "arm/20.0 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST armclang++ $ARMCLANG_WARNING_FLAGS")
+             "arm/20.1 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST armclang++ $ARMCLANG_WARNING_FLAGS")
 
   if [ -z "$ARCH_FLAG" ]; then
     ARCH_FLAG="--arch=ARMV8_THUNDERX2"
@@ -1109,8 +1110,8 @@ setup_env() {
   done
 
   if [ -e ${CM_ALL_SCRIPT_PATH}/update_lib.sh ]; then
-     echo "calling ${CM_ALL_SCRIPT_PATH}/update_lib.sh $MACHINE"
-     source ${CM_ALL_SCRIPT_PATH}/update_lib.sh $MACHINE
+     echo "calling ${CM_ALL_SCRIPT_PATH}/update_lib.sh $MACHINE $compiler"
+     source ${CM_ALL_SCRIPT_PATH}/update_lib.sh $MACHINE $compiler
   fi
 
   return 0
