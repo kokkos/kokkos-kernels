@@ -242,7 +242,7 @@ void run_experiment(const Params& params)
 #endif
 
   char* cusparseBuffer;
-  int c_nnz;
+  int c_nnz = 0;
   const double alphabeta = 1.0;
 
   for(int sumRep = 0; sumRep < params.repeat; sumRep++)
@@ -491,6 +491,11 @@ int main (int argc, char ** argv){
   if(params.use_cusparse && !useCUDA)
   {
     throw std::invalid_argument("To run cuSPARSE SpAdd, must supply the '--cuda <device id>' flag");
+  }
+
+  if(params.cmtx.length() && params.use_mkl)
+  {
+    throw std::invalid_argument("If running MKL, can't output the result to file");
   }
 
   bool useSerial = !useOMP && !useCUDA;
