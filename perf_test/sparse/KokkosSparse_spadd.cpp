@@ -125,8 +125,6 @@ void run_experiment(const Params& params)
   {
     std::cout << "Loading B from " << params.bmtx << '\n';
     B = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(params.bmtx.c_str());
-    if(B.numRows() != m || B.numCols() != n)
-      throw std::runtime_error("A, B dimensions don't match");
   }
   else if(params.bDiag)
   {
@@ -160,17 +158,12 @@ void run_experiment(const Params& params)
     B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnzUnused, 0, (n + 3) / 3);
   }
   //Make sure dimensions are compatible
-  if(A.numRows() != B.numRows())
+  if(A.numRows() != B.numRows() || A.numCols() != B.numCols())
   {
-    std::cout << "ERROR: A and B have different numbers of rows\n";
+    std::cout << "ERROR: A is " << A.numRows() << 'x' << A.numCols() << ", but B is " << B.numRows() << 'x' << B.numCols() << '\n';
     exit(1);
   }
-  if(A.numCols() != B.numCols())
-  {
-    std::cout << "ERROR: A and B have different numbers of columns\n";
-    exit(1);
-  }
-  std::cout << "Have A and B: " << m << "x" << n << ", " << A.nnz() << " and " << B.nnz() << " entries.\n";
+  std::cout << "A and B are " << m << "x" << n << ". A, B have " << A.nnz() << " and " << B.nnz() << " entries.\n";
 
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
