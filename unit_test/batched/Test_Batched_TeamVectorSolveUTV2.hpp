@@ -95,7 +95,7 @@ namespace Test {
 	::invoke(member, aa, ac);
 
       /// bb = AA*xx
-      TeamVectorGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Unblocked>
+      KokkosBatched::TeamVectorGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Unblocked>
 	::invoke(member, one, aa, xx, zero, bb); 
       member.team_barrier();
       

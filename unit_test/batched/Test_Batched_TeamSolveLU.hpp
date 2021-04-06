@@ -18,6 +18,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace TeamSolveLU {
 	
   template<typename TA, typename TB>
   struct ParamTag { 
@@ -58,7 +59,7 @@ namespace Test {
       }
       member.team_barrier();
 	  
-      TeamGemm<MemberType,
+      KokkosBatched::TeamGemm<MemberType,
                typename ParamTagType::transA,
                typename ParamTagType::transB,
                AlgoTagType>::
@@ -103,7 +104,7 @@ namespace Test {
       }
       member.team_barrier();
       
-      TeamLU<MemberType,AlgoTagType>::invoke(member, aa);
+      KokkosBatched::TeamLU<MemberType,AlgoTagType>::invoke(member, aa);
     }
     inline
     void run() {
@@ -140,7 +141,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
       
-      TeamSolveLU<MemberType,TransType,AlgoTagType>::invoke(member, aa, bb);
+      KokkosBatched::TeamSolveLU<MemberType,TransType,AlgoTagType>::invoke(member, aa, bb);
     }
     
     inline
@@ -243,27 +244,28 @@ namespace Test {
     // EXPECT_NEAR_KK( diff_T/sum_T, 0.0, eps);
   }
 }
+}
 
 
 template<typename DeviceType,
          typename ValueType,
          typename AlgoTagType>
-int test_batched_solvelu() {
+int test_batched_team_solvelu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
+    Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                         
-      Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+      Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
+    Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+      Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif

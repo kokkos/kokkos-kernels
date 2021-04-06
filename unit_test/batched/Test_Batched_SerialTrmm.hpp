@@ -10,7 +10,8 @@
 using namespace KokkosBatched;
 
 namespace Test {
-
+namespace Trmm {
+  
   template<class ViewTypeA, class ExecutionSpace>
   struct UnitDiagTRMM {
     ViewTypeA A_;
@@ -268,6 +269,7 @@ namespace Test {
     ASSERT_EQ( fail_flag, false );
   }
 }
+}
 
 
 template<typename DeviceType,
@@ -282,22 +284,22 @@ int test_batched_trmm(int batchSize = 512) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
+    Test::Trmm::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 4, &trans);
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 1, &trans);
+      Test::Trmm::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 4, &trans);
+      Test::Trmm::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 1, &trans);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
+    Test::Trmm::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4, &trans);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);  
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 4, &trans);
-      Test::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 1, &trans);
+      Test::Trmm::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 4, &trans);
+      Test::Trmm::impl_test_batched_trmm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i, 1, &trans);
     }
   }
 #endif

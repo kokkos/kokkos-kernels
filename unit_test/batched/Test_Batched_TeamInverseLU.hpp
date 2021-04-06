@@ -18,7 +18,8 @@
 using namespace KokkosBatched;
 
 namespace Test {
-	
+namespace TeamInverseLU {
+
   template<typename TA, typename TB>
   struct ParamTag { 
     typedef TA transA;
@@ -58,7 +59,7 @@ namespace Test {
       }
       member.team_barrier();
 	  
-      TeamGemm<MemberType,
+      KokkosBatched::TeamGemm<MemberType,
         typename ParamTagType::transA,
         typename ParamTagType::transB,
         AlgoTagType>::
@@ -146,7 +147,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto ww = Kokkos::subview(_w, k, Kokkos::ALL());
 
-      TeamInverseLU<MemberType,AlgoTagType>::invoke(member, aa, ww);
+      KokkosBatched::TeamInverseLU<MemberType,AlgoTagType>::invoke(member, aa, ww);
     }
 
     inline
@@ -221,18 +222,19 @@ namespace Test {
     EXPECT_NEAR_KK( sum_diag - sum_diag_ref, 0, eps);
   }
 }
+}
 
 template<typename DeviceType,
          typename ValueType,
          typename AlgoTagType>
-int test_batched_inverselu() {
+int test_batched_team_inverselu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> AViewType;
     typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
-    Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
+    Test::TeamInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                         
-      Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
+      Test::TeamInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif
@@ -240,9 +242,9 @@ int test_batched_inverselu() {
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> AViewType;
     typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
-    Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
+    Test::TeamInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
+      Test::TeamInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif

@@ -15,7 +15,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
-
+namespace TeamTrsv {
   template<typename U, typename T, typename D>
   struct ParamTag {
     typedef U uplo;
@@ -47,7 +47,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), 0);
       
-      TeamTrsv<MemberType,
+      KokkosBatched::TeamTrsv<MemberType,
         typename ParamTagType::uplo,
         typename ParamTagType::trans,
         typename ParamTagType::diag,
@@ -128,6 +128,7 @@ namespace Test {
     EXPECT_NEAR_KK( diff/sum, 0.0, eps);
   }
 }
+}
 
 
 template<typename DeviceType,
@@ -135,24 +136,24 @@ template<typename DeviceType,
          typename ScalarType,
          typename ParamTagType,
          typename AlgoTagType>
-int test_batched_trsv() {
+int test_batched_team_trsv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::TeamTrsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::TeamTrsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::TeamTrsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::TeamTrsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
 #endif

@@ -15,6 +15,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace TeamTrsm {
 
   template<typename S, typename U, typename T, typename D>
   struct ParamTag {
@@ -48,7 +49,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
 
-      TeamTrsm<MemberType,
+      KokkosBatched::TeamTrsm<MemberType,
         typename ParamTagType::side,
         typename ParamTagType::uplo,
         typename ParamTagType::trans,
@@ -131,6 +132,7 @@ namespace Test {
     EXPECT_NEAR_KK( diff/sum, 0.0, eps);
   }
 }
+}
 
 
 template<typename DeviceType,
@@ -138,26 +140,26 @@ template<typename DeviceType,
          typename ScalarType,
          typename ParamTagType,
          typename AlgoTagType>
-int test_batched_trsm() {
+int test_batched_team_trsm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
+    Test::TeamTrsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
+    Test::TeamTrsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);  
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
     }
   }
 #endif

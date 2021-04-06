@@ -14,6 +14,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace Gemv {
 
   template<typename T>
   struct ParamTag { 
@@ -122,6 +123,7 @@ namespace Test {
     EXPECT_NEAR_KK( diff/sum, 0, eps);
   }
 }
+}
 
 template<typename DeviceType, 
          typename ValueType, 
@@ -132,20 +134,20 @@ int test_batched_gemv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) 
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::Gemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
-      Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::Gemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) 
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::Gemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutRight, Blksize %d\n", i); 
-      Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::Gemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
 #endif
