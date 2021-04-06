@@ -373,7 +373,19 @@ void print_options(){
   std::cerr << "\t[Optional] --amtx <path> :: 1st input matrix" << std::endl;
   std::cerr << "\t[Optional] --bmtx <path> :: 2nd input matrix" << std::endl;
   std::cerr << "\t[Optional] --cmtx <path> :: output matrix for C = A+B"  << std::endl;
-  std::cerr << "\t[Optional] Verbose Output: '--verbose'" << std::endl;
+  std::cerr << "\t[Optional] --mkl         :: run SpAdd from MKL" << std::endl;
+  std::cerr << "\t[Optional] --cusparse    :: run SpAdd from cuSPARSE " << std::endl;
+  std::cerr << "\t[Optional] --sorted      :: sort rows of inputs, and run the sorted algorithm" << std::endl;
+  std::cerr << "\t[Optional] --unsorted    :: run the unsorted algorithm" << std::endl;
+  std::cerr << "\t[Optional] --repeat      :: how many times to repeat overall spadd (symbolic + repeated numeric)" << std::endl;
+  std::cerr << "\t[Optional] --numeric-repeat :: how many times to repeat numeric per symbolic" << std::endl;
+  std::cerr << "\t[Optional] --verbose     :: enable verbose output" << std::endl;
+  std::cerr << "\nSettings for randomly generated A/B matrices" << std::endl;
+  std::cerr << "\t[Optional] --m           :: number of rows to generate" << std::endl;
+  std::cerr << "\t[Optional] --n           :: number of cols to generate" << std::endl;
+  std::cerr << "\t[Optional] --nnz         :: number of entries per row to generate" << std::endl;
+  std::cerr << "\t[Optional] --nnz         :: number of entries per row to generate" << std::endl;
+  std::cerr << "\t[Optional] --bdiag       :: generate B as a diagonal matrix" << std::endl;
 }
 
 int parse_inputs (Params& params, int argc, char **argv){
@@ -463,8 +475,24 @@ int main (int argc, char ** argv){
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
   //Kokkos::print_configuration(std::cout);
 
+  //First, make sure that requested TPL (if any) is actually available
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  if(params.use_mkl)
+    throw std::invalid_argument("To run MKL SpAdd, must enable the MKL TPL in cmake");
+#endif
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  if(params.use_cusparse)
+    throw std::invalid_argument("To run cuSPARSE SpAdd, must enable the cuSPARSE TPL in cmake");
+#endif
+
   bool useOMP = params.use_openmp != 0;
   bool useCUDA = params.use_cuda != 0;
+
+  if(params.use_cusparse && !useCUDA)
+  {
+    throw std::invalid_argument("To run cuSPARSE SpAdd, must supply the '--cuda <device id>' flag");
+  }
+
   bool useSerial = !useOMP && !useCUDA;
 
   if(useOMP)
