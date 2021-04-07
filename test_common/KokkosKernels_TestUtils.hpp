@@ -292,5 +292,12 @@ namespace Test {
     start = Kokkos::complex<double>(-mag, -mag);
     end = Kokkos::complex<double>(mag, mag);
   }
+
+  template<typename TA, typename TB, typename BL>
+  struct SharedParamTag { 
+    typedef TA transA;
+    typedef TB transB;
+    using batchLayout = BL;
+  };
 }
 #endif

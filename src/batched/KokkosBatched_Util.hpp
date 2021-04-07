@@ -243,6 +243,27 @@ namespace KokkosBatched {
     struct NonUnit { static const bool use_unit_diag = false; };
   };
 
+  
+  /// \brief: BatchLayout class used to specify where the batch dimension is allocated in
+  ///         the input views for host-level Batched BLAS/LAPACK routines.
+  /// \var Left  Batch dimension is the leftmost dimension within input views
+  /// \var Right Batch dimension is the rightmost dimension within input views
+  struct BatchLayout {
+    struct Left {};
+    struct Right {};
+  };
+
+  /// \brief ResultsPerThread class used to specify how to divide a given
+  ///        BLAS/LAPACK operation among Kokkos threads
+  /// \var Rank0 Each Kokkos thread calculates a 0-rank result
+  /// \var Rank1 Each Kokkos thread calculates a 1-rank result
+  /// \var Rank2 Each Kokkos thread calculates a 2-rank result
+  struct ResultsPerThread {
+    struct Rank0 {};
+    struct Rank1 {};
+    struct Rank2 {};
+  };
+
   struct Direct {
     struct Forward {};
     struct Backward {};
