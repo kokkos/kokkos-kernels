@@ -210,6 +210,9 @@ void run_experiment(const Params& params)
   cusparseMatDescr_t A_cusparse;
   cusparseMatDescr_t B_cusparse;
   cusparseMatDescr_t C_cusparse;
+  char* cusparseBuffer;
+  const double alphabeta = 1.0;
+
   if(params.use_cusparse)
   {
     cusparseCreate(&cusparseHandle);
@@ -241,9 +244,7 @@ void run_experiment(const Params& params)
   }
 #endif
 
-  char* cusparseBuffer;
   int c_nnz = 0;
-  const double alphabeta = 1.0;
 
   for(int sumRep = 0; sumRep < params.repeat; sumRep++)
   {
