@@ -603,13 +603,13 @@ void testSortCRS(default_lno_t numRows, default_lno_t numCols, default_size_type
   //call the actual sort routine being tested
   if(doValues)
   {
-    KokkosKernels::Impl::sort_crs_matrix
+    KokkosKernels::sort_crs_matrix
       <exec_space, rowmap_t, entries_t, values_t>
       (A.graph.row_map, A.graph.entries, A.values);
   }
   else
   {
-    KokkosKernels::Impl::sort_crs_graph
+    KokkosKernels::sort_crs_graph
       <exec_space, rowmap_t, entries_t>
       (A.graph.row_map, A.graph.entries);
   }
@@ -674,7 +674,7 @@ void testSortAndMerge()
   Kokkos::deep_copy(devInValues, hostInValues);
   crsMat_t input("Input", nrows, ncols, nnz,
       devInValues, devInRowmap, devInEntries);
-  crsMat_t output = KokkosKernels::Impl::sort_and_merge_matrix(input);
+  crsMat_t output = KokkosKernels::sort_and_merge_matrix(input);
   exec_space().fence();
   EXPECT_EQ(output.numRows(), nrows);
   EXPECT_EQ(output.numCols(), ncols);

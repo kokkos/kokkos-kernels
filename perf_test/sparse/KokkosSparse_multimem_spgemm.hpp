@@ -248,41 +248,26 @@ namespace Experiment{
 
     if (c_mat_file != NULL){
       if (params.c_mem_space == 1){
-
-        fast_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
-        fast_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
-
-        KokkosKernels::Impl::kk_sort_graph
-        <const_fast_row_map_view_t, const_fast_cols_view_t, const_fast_values_view_t, fast_cols_view_t, fast_values_view_t, myExecSpace>(
-            c_fast_crsmat.graph.row_map,
-            c_fast_crsmat.graph.entries,
-            c_fast_crsmat.values, sorted_adj, sorted_vals);
+        KokkosKernels::sort_crs_matrix(c_fast_crsmat);
 
         KokkosKernels::Impl::write_graph_bin(
             (lno_t) (c_fast_crsmat.numRows()),
             (size_type) (c_fast_crsmat.graph.entries.extent(0)),
             c_fast_crsmat.graph.row_map.data(),
-            sorted_adj.data(),
-            sorted_vals.data(),
+            c_fast_crsmat.graph.entries.data(),
+            c_fast_crsmat.values.data(),
             c_mat_file);
       }
       else {
-        slow_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
-        slow_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
-
-        KokkosKernels::Impl::kk_sort_graph<
-        const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t, slow_cols_view_t, slow_values_view_t, myExecSpace>(
-            c_slow_crsmat.graph.row_map,
-            c_slow_crsmat.graph.entries,
-            c_slow_crsmat.values, sorted_adj, sorted_vals);
+        KokkosKernels::sort_crs_matrix(c_slow_crsmat);
 
         KokkosKernels::Impl::write_graph_bin(
             (lno_t) c_slow_crsmat.numRows(),
             (size_type) c_slow_crsmat.graph.entries.extent(0),
             c_slow_crsmat.graph.row_map.data(),
-            sorted_adj.data(),
-            sorted_vals.data(),
-                    c_mat_file);
+            c_slow_crsmat.graph.entries.data(),
+            c_slow_crsmat.values.data(),
+            c_mat_file);
       }
     }
   }
