@@ -62,8 +62,9 @@ inline void spadd_mkl_internal_safe_call(sparse_status_t mklStatus,
 					const char* file = nullptr,
 					const int line   = 0) {
   if (SPARSE_STATUS_SUCCESS != mklStatus) {
-    std::cerr << "MKL call \"" << name << "\" encountered error at " << file << ":" << line << '\n';
-    Kokkos::abort();
+    std::ostringstream oss;
+    oss << "MKL call \"" << name << "\" encountered error at " << file << ":" << line << '\n';
+    Kokkos::abort(oss.str().c_str());
   }
 }
 
