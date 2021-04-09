@@ -131,18 +131,29 @@ struct TRSV< CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false, 
         DomainMultiVectorType B,
         RangeMultiVectorType X) // X is the output MV
   {
+    auto hostRowptr = Kokkos::create_mirror_view(A.graph.row_map);
+    auto hostEntries = Kokkos::create_mirror_view(A.graph.entries);
+    auto hostValues = Kokkos::create_mirror_view(A.values);
+    auto hostB = Kokkos::create_mirror_view(B);
+    auto hostX = Kokkos::create_mirror_view(X);
+    Kokkos::deep_copy(hostRowptr, A.graph.row_map);
+    Kokkos::deep_copy(hostEntries, A.graph.entries);
+    Kokkos::deep_copy(hostValues, A.values);
+    Kokkos::deep_copy(hostB, B);
+    typename CrsMatrixType::HostMirror hostA("A_host",
+        A.numRows(), A.numCols(), A.nnz(), hostValues, hostRowptr, hostEntries);
     if (trans[0] == 'N' || trans[0] == 'n') {       // no transpose
       if (uplo[0] == 'L' || uplo[0] == 'l') {   // lower triangular
         if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
-          Sequential::lowerTriSolveCsrUnitDiag (X, A, B);
+          Sequential::lowerTriSolveCsrUnitDiag (hostX, hostA, hostB);
         } else {                               // non unit diagonal
-          Sequential::lowerTriSolveCsr (X, A, B);
+          Sequential::lowerTriSolveCsr (hostX, hostA, hostB);
         }
       } else {                                  // upper triangular
         if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
-          Sequential::upperTriSolveCsrUnitDiag (X, A, B);
+          Sequential::upperTriSolveCsrUnitDiag (hostX, hostA, hostB);
         } else {                               // non unit diagonal
-          Sequential::upperTriSolveCsr (X, A, B);
+          Sequential::upperTriSolveCsr (hostX, hostA, hostB);
         }
       }
     }
@@ -150,17 +161,17 @@ struct TRSV< CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false, 
       if (uplo[0] == 'L' || uplo[0] == 'l') {   // lower triangular
         // Transposed lower tri CSR => upper tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
-          Sequential::upperTriSolveCscUnitDiag (X, A, B);
+          Sequential::upperTriSolveCscUnitDiag (hostX, hostA, hostB);
         } else {                               // non unit diagonal
-          Sequential::upperTriSolveCsc (X, A, B);
+          Sequential::upperTriSolveCsc (hostX, hostA, hostB);
         }
       }
       else {                                    // upper triangular
         // Transposed upper tri CSR => lower tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
-          Sequential::lowerTriSolveCscUnitDiag (X, A, B);
+          Sequential::lowerTriSolveCscUnitDiag (hostX, hostA, hostB);
         } else {                               // non unit diagonal
-          Sequential::lowerTriSolveCsc (X, A, B);
+          Sequential::lowerTriSolveCsc (hostX, hostA, hostB);
         }
       }
     }
@@ -168,20 +179,22 @@ struct TRSV< CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false, 
       if (uplo[0] == 'L' || uplo[0] == 'l') {    // lower triangular
         // Transposed lower tri CSR => upper tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {     // unit diagonal
-          Sequential::upperTriSolveCscUnitDiagConj (X, A, B);
+          Sequential::upperTriSolveCscUnitDiagConj (hostX, hostA, hostB);
         } else {                                // non unit diagonal
-          Sequential::upperTriSolveCscConj (X, A, B);
+          Sequential::upperTriSolveCscConj (hostX, hostA, hostB);
         }
       }
       else {                                     // upper triangular
         // Transposed upper tri CSR => lower tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {     // unit diagonal
-          Sequential::lowerTriSolveCscUnitDiagConj (X, A, B);
+          Sequential::lowerTriSolveCscUnitDiagConj (hostX, hostA, hostB);
         } else {                                // non unit diagonal
-          Sequential::lowerTriSolveCscConj (X, A, B);
+          Sequential::lowerTriSolveCscConj (hostX, hostA, hostB);
         }
       }
     }
+    //Copy solution back
+    Kokkos::deep_copy(X, hostX);
   }
 };
 
