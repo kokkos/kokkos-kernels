@@ -46,63 +46,44 @@ IF (KOKKOS_ENABLE_CUDA)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/cuda)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/cuda)
 
-  APPEND_GLOB(CUDA_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Blas*.cpp)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     blas_cuda
     SOURCES
       Test_Main.cpp
-      ${CUDA_BLAS_SOURCES}
+      cuda/Test_Cuda_Blas.cpp
     COMPONENTS blas
-    )
+  )
 
-  APPEND_GLOB(CUDA_BATCHED_DLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Batched*.cpp)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_cuda
     SOURCES
       Test_Main.cpp
-      ${CUDA_BATCHED_DLA_SOURCES}
+      cuda/Test_Cuda_Batched.cpp
     COMPONENTS batched
-    )
-    
-  APPEND_GLOB(CUDA_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Sparse*.cpp)
-  IF (NOT KOKKOS_ENABLE_CUDA_UVM)
-    LIST(REMOVE_ITEM CUDA_SPARSE_SOURCES
-      "${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Sparse_findRelOffset.cpp")
-    LIST(REMOVE_ITEM CUDA_SPARSE_SOURCES
-      "${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Sparse_trsv.cpp")
-  ENDIF()
-  IF (NOT KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-    LIST(REMOVE_ITEM CUDA_SPARSE_SOURCES
-         "${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Sparse_Utils_cusparse.cpp")
-  ENDIF()
+  )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_cuda
     SOURCES
       Test_Main.cpp
-      ${CUDA_SPARSE_SOURCES}
+      cuda/Test_Cuda_Sparse.cpp
     COMPONENTS sparse
   )
-  
-  APPEND_GLOB(CUDA_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Graph*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_cuda
     SOURCES
       Test_Main.cpp
-      ${CUDA_GRAPH_SOURCES}
+      cuda/Test_Cuda_Graph.cpp
     COMPONENTS graph
   )
-  
-  #currently float 128 test is not working. So common tests are explicitly added.  
-  APPEND_GLOB(CUDA_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cuda/Test_Cuda_Common*.cpp)
-  
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_cuda
     SOURCES
       Test_Main.cpp
-      ${CUDA_COMMON_SOURCES}
+      cuda/Test_Cuda_Common.cpp
+    COMPONENTS common
   )
 ENDIF ()
 
@@ -167,58 +148,44 @@ ENDIF ()
 IF (KOKKOS_ENABLE_OPENMP)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/openmp)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/openmp)
-  
-  APPEND_GLOB(OPENMP_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Blas*.cpp)
-
-  # IF (KOKKOS_ENABLE_DEBUG)
-  #   SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-openmp.gemm_double")
-  # ENDIF()
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     blas_openmp
     SOURCES
       Test_Main.cpp
-      ${OPENMP_BLAS_SOURCES}
+      openmp/Test_OpenMP_Blas.cpp
     COMPONENTS blas
   )
 
-  APPEND_GLOB(OPENMP_BATCHED_DLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Batched*.cpp)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_openmp
     SOURCES
       Test_Main.cpp
-      ${OPENMP_BATCHED_DLA_SOURCES}
-    COMPONENTS batched
+      openmp/Test_OpenMP_Batched.cpp
+    COMPONENTS blas
   )
-        
-  APPEND_GLOB(OPENMP_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Sparse*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_openmp
     SOURCES
       Test_Main.cpp
-      ${OPENMP_SPARSE_SOURCES}
-    COMPONENTS sparse
+      openmp/Test_OpenMP_Blas.cpp
+    COMPONENTS blas
   )
-  
-  APPEND_GLOB(OPENMP_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Graph*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_openmp
     SOURCES
       Test_Main.cpp
-      ${OPENMP_GRAPH_SOURCES}
+      openmp/Test_OpenMP_Graph.cpp
     COMPONENTS graph
   )
-  
-  # APPEND_GLOB(OPENMP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Common*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_openmp
     SOURCES
       Test_Main.cpp
       openmp/Test_OpenMP_Common.cpp
-      # ${OPENMP_COMMON_SOURCES}
   )
 ENDIF ()
 
@@ -275,44 +242,44 @@ IF (KOKKOS_ENABLE_PTHREAD)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/threads)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/threads)
 
-  APPEND_GLOB(THREADS_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Blas*.cpp)
-
   KOKKOSKERNELS_ADD_UNIT_TEST(
     blas_threads
     SOURCES
       Test_Main.cpp
-      ${THREADS_BLAS_SOURCES}
+      threads/Test_Threads_Blas.cpp
     COMPONENTS blas
-    )
+  )
     
-  APPEND_GLOB(THREADS_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Sparse*.cpp)
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_dla_threads
+    SOURCES
+      Test_Main.cpp
+      threads/Test_Threads_Batched.cpp
+    COMPONENTS batched
+  )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_threads
     SOURCES
       Test_Main.cpp
-      ${THREADS_SPARSE_SOURCES}
+      threads/Test_Threads_Sparse.cpp
     COMPONENTS sparse
   )
-  
-  APPEND_GLOB(THREADS_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Graph*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_threads
     SOURCES
       Test_Main.cpp
-      ${THREADS_GRAPH_SOURCES}
+      threads/Test_Threads_Graph.cpp
     COMPONENTS graph
   )
-  
-  
-  APPEND_GLOB(THREADS_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/threads/Test_Threads_Common*.cpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_threads
     SOURCES
       Test_Main.cpp
-      ${THREADS_COMMON_SOURCES}
+      threads/Test_Threads_Common.cpp
+    COMPONENTS common
   )
 ENDIF ()
 

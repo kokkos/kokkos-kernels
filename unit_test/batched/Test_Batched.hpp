@@ -77,9 +77,11 @@
 
 
 // Vector Kernels
+#if !defined(KOKKOSKERNELS_CUDA_BATCHED_TESTS)
 #include "Test_Batched_VectorArithmatic.hpp"
 #include "Test_Batched_VectorLogical.hpp"
 #include "Test_Batched_VectorMath.hpp"
 #include "Test_Batched_VectorMisc.hpp"
 #include "Test_Batched_VectorRelation.hpp"
 #include "Test_Batched_VectorView.hpp"
+#endif

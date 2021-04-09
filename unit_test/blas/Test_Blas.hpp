@@ -19,6 +19,7 @@
 #include "Test_Blas1_update.hpp"
 
 // Team Blas 1
+#if !defined(KOKKOSKERNELS_CUDA_BLAS_TESTS) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 #include "Test_Blas1_team_abs.hpp"
 #include "Test_Blas1_team_axpby.hpp"
 #include "Test_Blas1_team_axpy.hpp"
@@ -27,10 +28,15 @@
 #include "Test_Blas1_team_nrm2.hpp"
 #include "Test_Blas1_team_scal.hpp"
 #include "Test_Blas1_team_update.hpp"
+#endif
 
 // Blas 2
 #include "Test_Blas2_gemv.hpp"
+
+// Team Blas 2
+#if !defined(KOKKOSKERNELS_CUDA_BLAS_TESTS) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 #include "Test_Blas2_team_gemv.hpp"
+#endif
 
 // Blas 3
 #include "Test_Blas3_gemm.hpp"
