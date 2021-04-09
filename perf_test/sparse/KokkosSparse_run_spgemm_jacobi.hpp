@@ -307,18 +307,7 @@ namespace KokkosKernels{
       typedef Kokkos::Device<exec_space, sbm_mem_space> mySlowExecSpace;
 
       typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, myFastDevice, void, size_type > fast_crstmat_t;
-      typedef typename fast_crstmat_t::index_type::non_const_type   fast_cols_view_t;
-      typedef typename fast_crstmat_t::values_type::non_const_type fast_values_view_t;
-      typedef typename fast_crstmat_t::row_map_type::const_type const_fast_row_map_view_t;
-      typedef typename fast_crstmat_t::index_type::const_type   const_fast_cols_view_t;
-      typedef typename fast_crstmat_t::values_type::const_type const_fast_values_view_t;
-
       typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, mySlowExecSpace, void, size_type > slow_crstmat_t;
-      typedef typename slow_crstmat_t::index_type::non_const_type   slow_cols_view_t;
-      typedef typename slow_crstmat_t::values_type::non_const_type slow_values_view_t;
-      typedef typename slow_crstmat_t::row_map_type::const_type const_slow_row_map_view_t;
-      typedef typename slow_crstmat_t::index_type::const_type   const_slow_cols_view_t;
-      typedef typename slow_crstmat_t::values_type::const_type const_slow_values_view_t;
 
       char *a_mat_file = params.a_mtx_bin_file;
       char *b_mat_file = params.b_mtx_bin_file;
