@@ -46,6 +46,7 @@
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosKernels_SparseUtils_cusparse.hpp"
 #include "KokkosSparse_spadd.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
@@ -55,6 +56,19 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
 #include <mkl_spblas.h>
+
+inline void spadd_mkl_internal_safe_call(sparse_status_t mklStatus,
+					const char* name,
+					const char* file = nullptr,
+					const int line   = 0) {
+  if (SPARSE_STATUS_SUCCESS != mklStatus) {
+    std::cerr << "MKL call \"" << name << "\" encountered error at " << file << ":" << line << '\n';
+    Kokkos::abort();
+  }
+}
+
+#define SPADD_MKL_SAFE_CALL(call) \
+  spadd_mkl_internal_safe_call(call, #call, __FILE__, __LINE__)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
@@ -215,32 +229,30 @@ void run_experiment(const Params& params)
 
   if(params.use_cusparse)
   {
-    cusparseCreate(&cusparseHandle);
-    cusparseSetPointerMode(cusparseHandle, CUSPARSE_POINTER_MODE_HOST);
-    cusparseCreateMatDescr(&A_cusparse);
-    cusparseCreateMatDescr(&B_cusparse);
-    cusparseCreateMatDescr(&C_cusparse);
-    cusparseSetMatType(A_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL);
-    cusparseSetMatType(B_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL);
-    cusparseSetMatType(C_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL);
-    cusparseSetMatDiagType(A_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT);
-    cusparseSetMatDiagType(B_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT);
-    cusparseSetMatDiagType(C_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT);
-    cusparseSetMatIndexBase(A_cusparse, CUSPARSE_INDEX_BASE_ZERO);
-    cusparseSetMatIndexBase(B_cusparse, CUSPARSE_INDEX_BASE_ZERO);
-    cusparseSetMatIndexBase(C_cusparse, CUSPARSE_INDEX_BASE_ZERO);
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(cusparseHandle, CUSPARSE_POINTER_MODE_HOST));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&A_cusparse));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&B_cusparse));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&C_cusparse));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(A_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(B_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(C_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(A_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(B_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(C_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(A_cusparse, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(B_cusparse, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(C_cusparse, CUSPARSE_INDEX_BASE_ZERO));
   }
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   sparse_matrix_t Amkl, Bmkl, Cmkl;
   if(params.use_mkl)
   {
-    if(SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr(&Amkl, SPARSE_INDEX_BASE_ZERO, m, n,
-        (int*) A.graph.row_map.data(), (int*) A.graph.row_map.data() + 1, A.graph.entries.data(), A.values.data()))
-      throw std::runtime_error("Failed to create A MKL handle");
-    if(SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr(&Bmkl, SPARSE_INDEX_BASE_ZERO, m, n,
-        (int*) B.graph.row_map.data(), (int*) B.graph.row_map.data() + 1, B.graph.entries.data(), B.values.data()))
-      throw std::runtime_error("Failed to create B MKL handle");
+    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(&Amkl, SPARSE_INDEX_BASE_ZERO, m, n,
+        (int*) A.graph.row_map.data(), (int*) A.graph.row_map.data() + 1, A.graph.entries.data(), A.values.data()));
+    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(&Bmkl, SPARSE_INDEX_BASE_ZERO, m, n,
+        (int*) B.graph.row_map.data(), (int*) B.graph.row_map.data() + 1, B.graph.entries.data(), B.values.data()));
   }
 #endif
 
@@ -263,20 +275,20 @@ void run_experiment(const Params& params)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       //Symbolic phase: compute buffer size, then compute nnz
       size_t bufferSize;
-      cusparseDcsrgeam2_bufferSizeExt(cusparseHandle,
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2_bufferSizeExt(cusparseHandle,
           A.numRows(), A.numCols(),
           &alphabeta, A_cusparse, A.nnz(),
           A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
           &alphabeta, B_cusparse, B.nnz(),
           B.values.data(), B.graph.row_map.data(), B.graph.entries.data(),
-          C_cusparse, NULL, row_mapC.data(), NULL, &bufferSize);
+          C_cusparse, NULL, row_mapC.data(), NULL, &bufferSize));
       //Allocate work buffer
-      cudaMalloc((void**) &cusparseBuffer, bufferSize);
-      cusparseXcsrgeam2Nnz(cusparseHandle, m, n,
+      CUDA_SAFE_CALL(cudaMalloc((void**) &cusparseBuffer, bufferSize));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgeam2Nnz(cusparseHandle, m, n,
           A_cusparse, A.nnz(), A.graph.row_map.data(), A.graph.entries.data(),
           B_cusparse, B.nnz(), B.graph.row_map.data(), B.graph.entries.data(),
           C_cusparse, row_mapC.data(), &c_nnz,
-          cusparseBuffer);
+          cusparseBuffer));
 #endif
     }
     if(!params.use_mkl)
@@ -294,23 +306,20 @@ void run_experiment(const Params& params)
       if(params.use_cusparse)
       {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        cusparseDcsrgeam2(cusparseHandle, m, n,
+        KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2(cusparseHandle, m, n,
             &alphabeta, A_cusparse, A.nnz(),
             A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
             &alphabeta, B_cusparse, B.nnz(),
             B.values.data(), B.graph.row_map.data(), B.graph.entries.data(),
             C_cusparse, valuesC.data(), row_mapC.data(), entriesC.data(),
-            cusparseBuffer);
+            cusparseBuffer));
 #endif
       }
       else if(params.use_mkl)
       {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        if(SPARSE_STATUS_SUCCESS != mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl))
-        {
-          throw std::runtime_error("MKL spadd failed");
-        }
-        mkl_sparse_destroy(Cmkl);
+        SPADD_MKL_SAFE_CALL(mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl));
+        SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
 #endif
       }
       else
@@ -324,20 +333,20 @@ void run_experiment(const Params& params)
     numericTime += timer.seconds();
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if(params.use_cusparse)
-      cudaFree(cusparseBuffer);
+      CUDA_SAFE_CALL(cudaFree(cusparseBuffer));
 #endif
   }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   if(params.use_cusparse)
-    cusparseDestroy(cusparseHandle);
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle));
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   if(params.use_mkl)
   {
-    mkl_sparse_destroy(Amkl);
-    mkl_sparse_destroy(Bmkl);
+    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
+    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
   }
 #endif
 
