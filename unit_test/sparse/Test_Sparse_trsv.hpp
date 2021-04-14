@@ -1,6 +1,6 @@
 #if !defined(TEST_HIP_SPARSE_CPP) \
-  || !defined(TEST_CUDA_SPARSE_CPP) \
-  || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM))
+  && ( !defined(TEST_CUDA_SPARSE_CPP)					\
+       || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM)) )
 
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>

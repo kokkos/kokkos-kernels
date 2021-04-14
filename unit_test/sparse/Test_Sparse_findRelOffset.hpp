@@ -48,7 +48,9 @@
 //       by all backends so the following guard
 //       ensure that the test is not inclueded
 //       on these backends.
-#if !defined(TEST_HIP_SPARSE_CPP) || !defined(TEST_CUDA_SPARSE_CPP) || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM))
+#if !defined(TEST_HIP_SPARSE_CPP) \
+  && ( !defined(TEST_CUDA_SPARSE_CPP) \
+       || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM)) )
 
 #include "Kokkos_Core.hpp"
 #include <vector>
