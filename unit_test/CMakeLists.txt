@@ -162,15 +162,15 @@ IF (KOKKOS_ENABLE_OPENMP)
     SOURCES
       Test_Main.cpp
       openmp/Test_OpenMP_Batched.cpp
-    COMPONENTS blas
+    COMPONENTS batched
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_openmp
     SOURCES
       Test_Main.cpp
-      openmp/Test_OpenMP_Blas.cpp
-    COMPONENTS blas
+      openmp/Test_OpenMP_Sparse.cpp
+    COMPONENTS sparse
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
@@ -186,6 +186,7 @@ IF (KOKKOS_ENABLE_OPENMP)
     SOURCES
       Test_Main.cpp
       openmp/Test_OpenMP_Common.cpp
+    COMPONENTS common
   )
 ENDIF ()
 

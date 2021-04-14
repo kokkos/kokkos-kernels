@@ -1,6 +1,7 @@
-#define KOKKOSKERNELS_CUDA_BLAS_TESTS
+#ifndef TEST_CUDA_BLAS_CPP
+#define TEST_CUDA_BLAS_CPP
 
 #include<Test_Cuda.hpp>
 #include<Test_Blas.hpp>
 
-#undef KOKKOSKERNELS_CUDA_BLAS_TESTS
+#endif // TEST_CUDA_BLAS_CPP

@@ -31,53 +31,53 @@ namespace Test {
     }
   };
 
-//   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
-//   struct VanillaGEMM {
-//     bool A_t, B_t, A_c, B_c;
-//     int N,K;
-//     ViewTypeA A;
-//     ViewTypeB B;
-//     ViewTypeC C;
+  template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
+  struct trmm_VanillaGEMM {
+    bool A_t, B_t, A_c, B_c;
+    int N,K;
+    ViewTypeA A;
+    ViewTypeB B;
+    ViewTypeC C;
 
-//     typedef typename ViewTypeA::value_type ScalarA;
-//     typedef typename ViewTypeB::value_type ScalarB;
-//     typedef typename ViewTypeC::value_type ScalarC;
-//     typedef Kokkos::Details::ArithTraits<ScalarC> APT;
-//     typedef typename APT::mag_type mag_type;
-//     ScalarA alpha;
-//     ScalarC beta;
+    typedef typename ViewTypeA::value_type ScalarA;
+    typedef typename ViewTypeB::value_type ScalarB;
+    typedef typename ViewTypeC::value_type ScalarC;
+    typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+    typedef typename APT::mag_type mag_type;
+    ScalarA alpha;
+    ScalarC beta;
 
-//     KOKKOS_INLINE_FUNCTION
-//     void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
-// // GNU COMPILER BUG WORKAROUND
-// #if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
-//       int i = team.league_rank();
-// #else
-//       const int i = team.league_rank();
-// #endif
-//       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [&] (const int& j) {
-//         ScalarC C_ij = 0.0;
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
+// GNU COMPILER BUG WORKAROUND
+#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+      int i = team.league_rank();
+#else
+      const int i = team.league_rank();
+#endif
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [&] (const int& j) {
+        ScalarC C_ij = 0.0;
 
-//         // GNU 5.3, 5.4 and 6.1 (and maybe more) crash with another nested lambda here
+        // GNU 5.3, 5.4 and 6.1 (and maybe more) crash with another nested lambda here
 
-// #if defined(KOKKOS_COMPILER_GNU) && !defined(KOKKOS_COMPILER_NVCC)
-//         for(int k=0; k<K; k++) {
-//           ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
-//           ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
-//           C_ij += A_ik*B_kj;
-//         }
-// #else
-//         Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,K), [&] (const int& k, ScalarC& lsum) {
-//            ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
-//            ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
-//            lsum += A_ik*B_kj;
-//         },C_ij);
-// #endif
+#if defined(KOKKOS_COMPILER_GNU) && !defined(KOKKOS_COMPILER_NVCC)
+        for(int k=0; k<K; k++) {
+          ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
+          ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
+          C_ij += A_ik*B_kj;
+        }
+#else
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,K), [&] (const int& k, ScalarC& lsum) {
+           ScalarA A_ik = A_t?(A_c?APT::conj(A(k,i)):A(k,i)):A(i,k);
+           ScalarB B_kj = B_t?(B_c?APT::conj(B(j,k)):B(j,k)):B(k,j);
+           lsum += A_ik*B_kj;
+        },C_ij);
+#endif
 
-//         C(i,j) = beta*C(i,j) + alpha*C_ij;
-//       });
-//     }
-//   };
+        C(i,j) = beta*C(i,j) + alpha*C_ij;
+      });
+    }
+  };
 
   template<class Scalar, class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_trmm(const char* side, const char* uplo, const char* trans, const char* diag, 
@@ -138,30 +138,26 @@ namespace Test {
     }
     Kokkos::deep_copy(A, host_A);
 
+    struct trmm_VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
     if (A_l){
       // B_expected = alpha * op(A) * B + beta * C = 1 * op(A) * B + 0 * C
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = (trans[0]!='N') && (trans[0]!='n'); vgemm.B_t = false;
       vgemm.A_c = (trans[0]=='C') || (trans[0]=='c'); vgemm.B_c = false;
-      vgemm.N = N;    vgemm.K = K;
-      vgemm.A = A;    vgemm.B = B;
-      vgemm.C = B_expected; // out
-      vgemm.alpha = alpha;
-      vgemm.beta = beta;
-      Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+      vgemm.A = A;     vgemm.B = B;
     }
     else {
       // B_expected = alpha * B * op(A) + beta * C = 1 * B * op(A) + 0 * C
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = false; vgemm.B_t = (trans[0]!='N') && (trans[0]!='n');
       vgemm.A_c = false; vgemm.B_c = (trans[0]=='C') || (trans[0]=='c');
-      vgemm.N = N;     vgemm.K = K;
-      vgemm.A = B;    vgemm.B = A;
-      vgemm.C = B_expected; // out
-      vgemm.alpha = alpha;
-      vgemm.beta = beta;
-      Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+      vgemm.A = B;     vgemm.B = A;
     }
+    vgemm.N = N;
+    vgemm.K = K;
+    vgemm.C = B_expected; // out
+    vgemm.alpha = alpha;
+    vgemm.beta = beta;
+    Kokkos::parallel_for("KokkosBlas::Test::trmm_VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+    Kokkos::fence();
     Kokkos::deep_copy(host_B_expected, B_expected);
 
     KokkosBlas::trmm(side, uplo, trans, diag, alpha, A, B);

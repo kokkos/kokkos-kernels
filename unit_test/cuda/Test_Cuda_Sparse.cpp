@@ -1,6 +1,7 @@
-#define KOKKOSKERNELS_CUDA_SPARSE_TESTS
+#ifndef TEST_CUDA_SPARSE_CPP
+#define TEST_CUDA_SPARSE_CPP
 
 #include<Test_Cuda.hpp>
 #include<Test_Sparse.hpp>
 
-#undef KOKKOSKERNELS_CUDA_SPARSE_TESTS
+#endif // TEST_CUDA_SPARSE_CPP

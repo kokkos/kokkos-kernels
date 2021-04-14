@@ -1,3 +1,6 @@
+#ifndef TEST_BATCHED_HPP
+#define TEST_BATCHED_HPP
+
 // Serial kernels
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
@@ -77,11 +80,11 @@
 
 
 // Vector Kernels
-#if !defined(KOKKOSKERNELS_CUDA_BATCHED_TESTS)
 #include "Test_Batched_VectorArithmatic.hpp"
 #include "Test_Batched_VectorLogical.hpp"
 #include "Test_Batched_VectorMath.hpp"
 #include "Test_Batched_VectorMisc.hpp"
 #include "Test_Batched_VectorRelation.hpp"
 #include "Test_Batched_VectorView.hpp"
-#endif
+
+#endif // TEST_BATCHED_HPP

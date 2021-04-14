@@ -1,3 +1,7 @@
+#if !defined(TEST_HIP_SPARSE_CPP) \
+  || !defined(TEST_CUDA_SPARSE_CPP) \
+  || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM))
+
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
@@ -291,4 +295,5 @@ TEST_F( TestCategory,sparse ## _ ## trsv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST_MV(kokkos_complex_float, int64_t, size_t, LayoutRight, TestExecSpace)
 #endif
 
+#endif // check for CUDA and UVM
 
