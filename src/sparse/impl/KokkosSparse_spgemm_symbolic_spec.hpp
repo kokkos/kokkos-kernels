@@ -52,6 +52,7 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
+#include "KokkosSparse_spgemm_rocSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"
@@ -189,6 +190,19 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           row_mapB, entriesB, transposeB,
           row_mapC);
       break;
+
+    case SPGEMM_ROCSPARSE:
+      rocSPARSE_symbolic<spgemmHandleType,
+      a_size_view_t_,
+      a_lno_view_t,
+      b_size_view_t_,
+      b_lno_view_t,
+      c_size_view_t_>(sh, m,n,k,
+          row_mapA, entriesA, transposeA,
+          row_mapB, entriesB, transposeB,
+          row_mapC);
+      break;
+
     case SPGEMM_CUSP:
     case SPGEMM_VIENNA:
       break;
