@@ -1213,4 +1213,7 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv_struct ## _ ## SCALAR ## _ ## ORDINA
  EXECUTE_TEST_MV(kokkos_complex_float, int64_t, size_t, LayoutRight, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST
+#undef EXECUTE_TEST_STRUCT
+#undef EXECUTE_TEST_MV
+#undef EXECUTE_TEST_MV_STRUCT

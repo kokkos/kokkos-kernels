@@ -521,6 +521,6 @@ TEST_F( TestCategory, sparse ## _ ## block_gauss_seidel_rank2 ## _ ## SCALAR ## 
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST
 
 

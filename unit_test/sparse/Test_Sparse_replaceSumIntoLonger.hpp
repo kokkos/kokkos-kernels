@@ -658,6 +658,6 @@ TEST_F( TestCategory, sparse ## _ ## replaceSumIntoLonger ## _ ## SCALAR ## _ ##
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST
 
 

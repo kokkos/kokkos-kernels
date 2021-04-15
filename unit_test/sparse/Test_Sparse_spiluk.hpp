@@ -395,3 +395,5 @@ TEST_F( TestCategory, sparse ## _ ## spiluk ## _ ## SCALAR ## _ ## ORDINAL ## _ 
 #endif
 
 #endif
+
+#undef EXECUTE_TEST

@@ -471,4 +471,6 @@ TEST_F( TestCategory, sparse ## _ ##findRelOffset ## _ ## SCALAR ## _ ## ORDINAL
  EXECUTE_TEST(double, int64_t, int, TestExecSpace)
 #endif
 
+#undef EXECUTE_TEST
+
 #endif // Backend/UVM check

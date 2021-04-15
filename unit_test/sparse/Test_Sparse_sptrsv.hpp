@@ -922,3 +922,4 @@ TEST_F( TestCategory, sparse ## _ ## sptrsv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
+#undef EXECUTE_TEST

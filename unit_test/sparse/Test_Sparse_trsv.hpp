@@ -295,5 +295,7 @@ TEST_F( TestCategory,sparse ## _ ## trsv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST_MV(kokkos_complex_float, int64_t, size_t, LayoutRight, TestExecSpace)
 #endif
 
+#undef EXECUTE_TEST_MV
+
 #endif // check for CUDA and UVM
 

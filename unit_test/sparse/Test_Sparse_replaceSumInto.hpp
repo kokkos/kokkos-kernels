@@ -377,7 +377,7 @@ TEST_F( TestCategory,sparse ## _ ## replaceSumInto ## _ ## SCALAR ## _ ## ORDINA
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST
 
 
 

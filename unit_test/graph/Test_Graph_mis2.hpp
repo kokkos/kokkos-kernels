@@ -299,3 +299,5 @@ EXECUTE_TEST(double, int, size_t, TestExecSpace)
 EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
 #endif
 #endif
+
+#undef EXECUTE_TEST
