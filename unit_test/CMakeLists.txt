@@ -99,29 +99,29 @@ IF (KOKKOS_ENABLE_HIP)
     COMPONENTS blas
   )
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    batched_dla_hip
-    SOURCES
-      Test_Main.cpp
-      hip/Test_HIP_Batched.cpp
-    COMPONENTS batched
-  )
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   batched_dla_hip
+  #   SOURCES
+  #     Test_Main.cpp
+  #     hip/Test_HIP_Batched.cpp
+  #   COMPONENTS batched
+  # )
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    sparse_hip
-    SOURCES
-      Test_Main.cpp
-      hip/Test_HIP_Sparse.cpp
-    COMPONENTS sparse
-  )
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   sparse_hip
+  #   SOURCES
+  #     Test_Main.cpp
+  #     hip/Test_HIP_Sparse.cpp
+  #   COMPONENTS sparse
+  # )
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    graph_hip
-    SOURCES
-      Test_Main.cpp
-      hip/Test_HIP_Graph.cpp
-    COMPONENTS graph
-  )
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   graph_hip
+  #   SOURCES
+  #     Test_Main.cpp
+  #     hip/Test_HIP_Graph.cpp
+  #   COMPONENTS graph
+  # )
   
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_hip
