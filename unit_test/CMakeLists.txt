@@ -91,57 +91,44 @@ IF (KOKKOS_ENABLE_HIP)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/hip)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/hip)
 
-  APPEND_GLOB(HIP_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Blas*.cpp)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     blas_hip
     SOURCES
       Test_Main.cpp
-      ${HIP_BLAS_SOURCES}
+      hip/Test_HIP_Blas.cpp
     COMPONENTS blas
-    )
+  )
 
-  # APPEND_GLOB(HIP_BATCHED_DLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Batched*.cpp)
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   batched_dla_hip
-  #   SOURCES
-  #     Test_Main.cpp
-  #     ${HIP_BATCHED_DLA_SOURCES}
-  #   COMPONENTS batched
-  #   )
-    
-  # APPEND_GLOB(HIP_SPARSE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Sparse*.cpp)
-  # # HIP does not provide UVM, these two tests are henced remove permanently
-  # # IF (NOT KOKKOS_ENABLE_CUDA_UVM)
-  #   LIST(REMOVE_ITEM HIP_SPARSE_SOURCES
-  #     "${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Sparse_findRelOffset.cpp")
-  #   LIST(REMOVE_ITEM HIP_SPARSE_SOURCES
-  #     "${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Sparse_trsv.cpp")
-  # # ENDIF()
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_dla_hip
+    SOURCES
+      Test_Main.cpp
+      hip/Test_HIP_Batched.cpp
+    COMPONENTS batched
+  )
 
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   sparse_hip
-  #   SOURCES
-  #     Test_Main.cpp
-  #     ${HIP_SPARSE_SOURCES}
-  #   COMPONENTS sparse
-  # )
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_hip
+    SOURCES
+      Test_Main.cpp
+      hip/Test_HIP_Sparse.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    graph_hip
+    SOURCES
+      Test_Main.cpp
+      hip/Test_HIP_Graph.cpp
+    COMPONENTS graph
+  )
   
-  # APPEND_GLOB(HIP_GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Graph*.cpp)
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   graph_hip
-  #   SOURCES
-  #     Test_Main.cpp
-  #     ${HIP_GRAPH_SOURCES}
-  #   COMPONENTS graph
-  # )
-  
-  #currently float 128 test is not working. So common tests are explicitly added.  
-  APPEND_GLOB(HIP_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hip/Test_HIP_Common*.cpp)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     common_hip
     SOURCES
       Test_Main.cpp
-      ${HIP_COMMON_SOURCES}
+      hip/Test_HIP_Common.cpp
+    COMPONENTS common
   )
 ENDIF ()
 
