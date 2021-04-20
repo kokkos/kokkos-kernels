@@ -141,7 +141,7 @@ void run(int m, int n, int repeat)
   }
   double total = timer.seconds();
   double avg = total / repeat;
-  size_t flopsPerRun = (size_t) m * n;
+  size_t flopsPerRun = (size_t) 2 * m * n;
   printf("Avg GEMV time: %f s.\n", avg);
   printf("Avg GEMV FLOP/s: %.3e\n", flopsPerRun / avg);
 }

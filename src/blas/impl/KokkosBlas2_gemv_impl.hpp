@@ -96,17 +96,17 @@ struct SingleLevelNontransposeGEMV {
   KOKKOS_INLINE_FUNCTION void
   operator () (const IndexType& i) const
   {
-    using y_value_type = typename std::decay<decltype (y_[i]) >::type;
+    using y_value_type = typename YViewType::non_const_value_type;
 
     y_value_type y_i;
     if (betaPreset == 0) {
-      y_i = Kokkos::Details::ArithTraits<y_value_type>::zero ();
+      y_i = Kokkos::ArithTraits<y_value_type>::zero ();
     }
     else if (betaPreset == 1) {
-      y_i = y_[i];
+      y_i = y_(i);
     }
     else { // beta_ != 0 and beta != 1
-      y_i = beta_ * y_[i];
+      y_i = beta_ * y_(i);
     }
 
     const IndexType numCols = A_.extent(1);
@@ -124,7 +124,7 @@ struct SingleLevelNontransposeGEMV {
       }
     }
 
-    y_[i] = y_i;
+    y_(i) = y_i;
   }
 
 private:
@@ -215,8 +215,8 @@ public:
       const y_value_type y_j =
         beta_ == ArithTraits<BetaCoeffType>::zero () ?
         ArithTraits<y_value_type>::zero () :
-        beta_ * y_[j];
-      y_[j] = y_j + y_result[j];
+        beta_ * y_(j);
+      y_(j) = y_j + y_result[j];
     }
   }
 
@@ -569,7 +569,7 @@ public:
       IndexType yrow = team.league_rank() * 32 + i;
       if(yrow < (IndexType) A_.extent(0))
       {
-        y_[yrow] = beta_ * y_[yrow] + alpha_ * blockResult[i];
+        y_(yrow) = beta_ * y_(yrow) + alpha_ * blockResult[i];
       }
     });
   }
@@ -594,7 +594,7 @@ public:
     Kokkos::single(Kokkos::PerTeam(team),
     [=]()
     {
-      y_[i] = beta_ * y_[i] + alpha_ * val;
+      y_(i) = beta_ * y_(i) + alpha_ * val;
     });
   }
 
@@ -671,7 +671,7 @@ public:
 
     // compute yj = beta*yj + alpha*val
     if (team.team_rank() == 0) {
-      y_[j] = beta_*y_[j] + alpha_ * val;
+      y_(j) = beta_*y_(j) + alpha_ * val;
     }
   }
 
