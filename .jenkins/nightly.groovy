@@ -18,6 +18,7 @@ pipeline {
                       mkdir build && cd build && \
                       cmake \
                         -DCMAKE_CXX_COMPILER=hipcc \
+                        -DCMAKE_CXX_EXTENSIONS=OFF \
                         -DKokkos_ENABLE_HIP=ON \
                         -DKokkos_ARCH_VEGA906=ON \
                         .. && \
@@ -27,6 +28,7 @@ pipeline {
                       cmake \
                         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                         -DCMAKE_CXX_COMPILER=hipcc \
+                        -DCMAKE_CXX_EXTENSIONS=OFF \
                         -DKokkosKernels_ENABLE_TESTS=ON \
                         -DKokkosKernels_ENABLE_EXAMPLES=ON \
                         -DKokkos_ENABLE_HIP=ON \
