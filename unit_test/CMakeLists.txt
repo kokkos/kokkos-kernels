@@ -152,13 +152,13 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   COMPONENTS batched
   # )
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    sparse_openmptarget
-    SOURCES
-      Test_Main.cpp
-      openmptarget/Test_OpenMPTarget_Sparse.cpp
-    COMPONENTS sparse
-  )
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   sparse_openmptarget
+  #   SOURCES
+  #     Test_Main.cpp
+  #     openmptarget/Test_OpenMPTarget_Sparse.cpp
+  #   COMPONENTS sparse
+  # )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_openmptarget
@@ -168,13 +168,13 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
     COMPONENTS graph
   )
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    common_openmptarget
-    SOURCES
-      Test_Main.cpp
-      openmptarget/Test_OpenMPTarget_Common.cpp
-    COMPONENTS common
-  )
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   common_openmptarget
+  #   SOURCES
+  #     Test_Main.cpp
+  #     openmptarget/Test_OpenMPTarget_Common.cpp
+  #   COMPONENTS common
+  # )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMP)
