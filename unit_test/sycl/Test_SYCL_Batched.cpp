@@ -1,9 +1,7 @@
 #ifndef TEST_SYCL_BATCHED_CPP
 #define TEST_SYCL_BATCHED_CPP
-#define KOKKOSKERNELS_SYCL_BATCHED_TESTS
 
 #include<Test_SYCL.hpp>
 #include<Test_Batched.hpp>
 
-#undef KOKKOSKERNELS_SYCL_BATCHED_TESTS
 #endif // TEST_SYCL_BATCHED_CPP
