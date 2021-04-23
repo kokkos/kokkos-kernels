@@ -7,7 +7,7 @@
 namespace Test {
 
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
-  struct VanillaGEMM {
+  struct gemm_VanillaGEMM {
     bool A_t, B_t, A_c, B_c;
     int N,K;
     ViewTypeA A;
@@ -114,8 +114,9 @@ namespace Test {
     // Kokkos::fill_random(C,rand_pool,ScalarC(10));
     
     Kokkos::deep_copy(C2,C);
-
-    struct VanillaGEMM<ViewTypeA,ViewTypeB,ViewTypeC,execution_space> vgemm;
+    Kokkos::fence();
+ 
+    struct gemm_VanillaGEMM<ViewTypeA,ViewTypeB,ViewTypeC,execution_space> vgemm;
     vgemm.A_t = A_t; vgemm.B_t = B_t;
     vgemm.A_c = A_c; vgemm.B_c = B_c;
     vgemm.N = N;     vgemm.K = K;
@@ -124,7 +125,7 @@ namespace Test {
     vgemm.alpha = alpha;
     vgemm.beta = beta;
 
-    Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+    Kokkos::parallel_for("KokkosBlas::Test::gemm_VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
 
     KokkosBlas::gemm(TA,TB,alpha,A,B,beta,C);
 

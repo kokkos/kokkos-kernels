@@ -15,6 +15,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace TeamLU {
 
   template<typename DeviceType,
            typename ViewType,
@@ -38,7 +39,7 @@ namespace Test {
       }
       member.team_barrier();
 
-      TeamLU<MemberType,AlgoTagType>::invoke(member, aa);
+      KokkosBatched::TeamLU<MemberType,AlgoTagType>::invoke(member, aa);
     }
 
     inline
@@ -103,29 +104,30 @@ namespace Test {
     EXPECT_NEAR_KK( diff/sum, 0, eps);
   }
 }
+}
 
 
 template<typename DeviceType,
          typename ValueType,
          typename AlgoTagType>
-int test_batched_lu() {
+int test_batched_team_lu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
+    Test::TeamLU::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
-      Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+      Test::TeamLU::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
+    Test::TeamLU::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
-      Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+      Test::TeamLU::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif

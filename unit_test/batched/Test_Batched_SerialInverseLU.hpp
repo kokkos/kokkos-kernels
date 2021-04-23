@@ -18,6 +18,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace SerialInverseLU {
 
   template<typename TA, typename TB>
   struct ParamTag { 
@@ -127,7 +128,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto ww = Kokkos::subview(_w, k, Kokkos::ALL());
 
-      SerialInverseLU<AlgoTagType>::invoke(aa,ww);
+      KokkosBatched::SerialInverseLU<AlgoTagType>::invoke(aa,ww);
     }
 
     inline
@@ -174,7 +175,7 @@ namespace Test {
     Functor_TestBatchedSerialInverseLU<DeviceType,AViewType,WViewType,AlgoTagType>(a1,w).run();
 
     value_type alpha = 1.0, beta = 0.0;   
-    typedef ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+    typedef SerialInverseLU::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
 
     Functor_BatchedSerialGemm<DeviceType,AViewType,value_type,
       param_tag_type,AlgoTagType>(alpha, a0, a1, beta, c0).run();
@@ -201,6 +202,7 @@ namespace Test {
     EXPECT_NEAR_KK( sum_diag - sum_diag_ref, 0, eps);
   }
 }
+}
 
 template<typename DeviceType,
          typename ValueType,
@@ -210,9 +212,9 @@ int test_batched_inverselu() {
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> AViewType;
     typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
-    Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
+    Test::SerialInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
-      Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
+      Test::SerialInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif
@@ -220,9 +222,9 @@ int test_batched_inverselu() {
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> AViewType;
     typedef Kokkos::View<ValueType**, Kokkos::LayoutRight,DeviceType> WViewType;
-    Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
+    Test::SerialInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
-      Test::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
+      Test::SerialInverseLU::impl_test_batched_inverselu<DeviceType,AViewType,WViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif

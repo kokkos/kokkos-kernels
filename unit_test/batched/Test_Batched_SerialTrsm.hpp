@@ -4,8 +4,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
-
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
 
@@ -14,6 +12,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace Trsm {
 
   template<typename S, typename U, typename T, typename D>
   struct ParamTag {
@@ -124,6 +123,7 @@ namespace Test {
     EXPECT_NEAR_KK( diff/sum, 0.0, eps);
   }
 }
+}
 
 
 template<typename DeviceType,
@@ -135,22 +135,22 @@ int test_batched_trsm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
+    Test::Trsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
+      Test::Trsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
+      Test::Trsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
+    Test::Trsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);  
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
-      Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
+      Test::Trsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
+      Test::Trsm::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
     }
   }
 #endif

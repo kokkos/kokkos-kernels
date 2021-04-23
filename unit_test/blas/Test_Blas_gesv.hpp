@@ -1,3 +1,11 @@
+// Note: Luc Berger-Vergiat 04/15/21
+//       This test should only be included
+//       in the CUDA backend if TPL MAGMA
+//       has been enabled.
+
+#if !defined(TEST_CUDA_BLAS_CPP) \
+  || ( defined(TEST_CUDA_BLAS_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) )
+
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
@@ -386,3 +394,5 @@ TEST_F( TestCategory, gesv_mrhs_complex_float ) {
 #endif
 
 #endif//KOKKOSKERNELS_ENABLE_TPL_MAGMA || KOKKOSKERNELS_ENABLE_TPL_BLAS
+
+#endif // Check for TPL MAGMA when compiling the CUDA tests

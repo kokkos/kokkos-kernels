@@ -15,6 +15,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace TeamMatUtil {
         
   enum : int  { BatchedSet = 0,
                 BatchedScale = 1 };
@@ -139,28 +140,29 @@ namespace Test {
           EXPECT_NEAR_KK( b_host(k,i,j), a_host(k,i,j), eps);
   }
 }
+}
 
 template<typename DeviceType, 
          typename ValueType, 
          typename ScalarType,
          int TestID>
-int test_batched_matutil() {
+int test_batched_team_matutil() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) 
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(     0, 10);
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(    10, 15);
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(  1024,  9);
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(132231,  3);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(     0, 10);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(    10, 15);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(  1024,  9);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(132231,  3);
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) 
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(     0, 10);
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(    10, 15);
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(  1024,  9);
-    Test::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(132231,  3);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(     0, 10);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(    10, 15);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(  1024,  9);
+    Test::TeamMatUtil::impl_test_batched_matutil<DeviceType,ViewType,ScalarType,TestID>(132231,  3);
   }
 #endif
   

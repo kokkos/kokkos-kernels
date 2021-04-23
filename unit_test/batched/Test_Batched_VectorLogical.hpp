@@ -1,5 +1,13 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+// Note: Luc Berger-Vergiat 04/14/21
+//       This test does not run on cuda or HIP
+//       backends so the whole file is guarded
+//       to ensure it is not included in these
+//       backends unit-test
+
+#if !defined(TEST_CUDA_BATCHED_CPP) && !defined(TEST_HIP_BATCHED_CPP)
+
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -122,3 +130,5 @@ TEST_F( TestCategory, batched_vector_logical_simd_double4 ) {
 //   test_batched_vector_logical<TestExecSpace,Kokkos::complex<double>,2>();
 // }
 // #endif
+
+#endif // check on TEST_CUDA_BATCHED_CPP and TEST_HIP_BATCHED_CPP

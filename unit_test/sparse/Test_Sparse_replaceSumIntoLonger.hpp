@@ -49,10 +49,13 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 
 
-#ifndef kokkos_complex_double
-#define kokkos_complex_double Kokkos::complex<double>
-#define kokkos_complex_float Kokkos::complex<float>
-#endif
+// #ifndef kokkos_complex_double
+// #define kokkos_complex_double Kokkos::complex<double>
+// #define kokkos_complex_float Kokkos::complex<float>
+// #endif
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 // mfh 21 Jun 2016: CUDA 7.5 with GCC 4.8.4 gives me funny build
 // errors if I put this functor in an anonymous namespace.  If I name
@@ -655,6 +658,6 @@ TEST_F( TestCategory, sparse ## _ ## replaceSumIntoLonger ## _ ## SCALAR ## _ ##
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST
 
 

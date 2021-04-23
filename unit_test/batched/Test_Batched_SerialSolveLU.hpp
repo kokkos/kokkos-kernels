@@ -18,6 +18,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace SerialSolveLU {
 
   template<typename TA, typename TB>
   struct ParamTag { 
@@ -127,7 +128,7 @@ namespace Test {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
 
-      SerialSolveLU<TransType,AlgoTagType>::invoke(aa,bb);
+      KokkosBatched::SerialSolveLU<TransType,AlgoTagType>::invoke(aa,bb);
     }
 
     inline
@@ -228,6 +229,7 @@ namespace Test {
     // EXPECT_NEAR_KK( diff_T/sum_T, 0.0, eps);
   }
 }
+}
 
 template<typename DeviceType,
          typename ValueType,
@@ -236,18 +238,18 @@ int test_batched_solvelu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
+    Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
-      Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+      Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
+    Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
-      Test::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+      Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType,ViewType,AlgoTagType>(1024,  i);
     }
   }
 #endif

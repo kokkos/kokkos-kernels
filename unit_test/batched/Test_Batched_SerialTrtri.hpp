@@ -12,6 +12,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace Trtri {
 
   template<class ViewTypeA, class ExecutionSpace>
   struct UnitDiagTRTRI {
@@ -297,6 +298,7 @@ namespace Test {
     ASSERT_EQ( fail_flag, false );
   }
 }
+}
 
 
 template<typename DeviceType,
@@ -308,23 +310,23 @@ int test_batched_trtri(int batchSize = 512) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::Trtri::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     //Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     1, 2);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
+      Test::Trtri::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
+      Test::Trtri::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::Trtri::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       //printf("Testing: LayoutRight, Blksize %d\n", i);  
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
-      Test::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
+      Test::Trtri::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
+      Test::Trtri::impl_test_batched_trtri<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(batchSize,  i);
     }
   }
 #endif

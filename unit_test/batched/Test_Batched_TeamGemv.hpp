@@ -15,6 +15,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace TeamGemv {
 
   template<typename T>
   struct ParamTag { 
@@ -48,7 +49,7 @@ namespace Test {
       auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), 0);
       auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), 0);
       
-      TeamGemv<MemberType,
+      KokkosBatched::TeamGemv<MemberType,
         typename ParamTagType::trans,
         AlgoTagType>::
         invoke(member, _alpha, aa, bb, _beta, cc);
@@ -128,30 +129,31 @@ namespace Test {
     EXPECT_NEAR_KK( diff/sum, 0, eps);
   }
 }
+}
 
 template<typename DeviceType, 
          typename ValueType, 
          typename ScalarType,
          typename ParamTagType,
          typename AlgoTagType>
-int test_batched_gemv() {
+int test_batched_team_gemv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) 
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::TeamGemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutLeft,  Blksize %d\n", i); 
-      Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::TeamGemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) 
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::TeamGemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
       //printf("Testing: LayoutRight, Blksize %d\n", i); 
-      Test::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
+      Test::TeamGemv::impl_test_batched_gemv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
 #endif

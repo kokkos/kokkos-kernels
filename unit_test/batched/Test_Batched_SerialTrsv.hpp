@@ -12,6 +12,7 @@
 using namespace KokkosBatched;
 
 namespace Test {
+namespace Trsv {
 
   template<typename U, typename T, typename D>
   struct ParamTag {
@@ -170,6 +171,7 @@ namespace Test {
     EXPECT_NEAR( diff/sum, 0.0, eps);
   }
 }
+}
 
 
 template<typename DeviceType,
@@ -181,28 +183,28 @@ int test_batched_trsv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
-    Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::Trsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       // printf("Testing: LayoutLeft,  Blksize %d, Uplo %d, Trans %d, Diag %d\n", 
       //        i, 
       //        std::is_same<typename ParamTagType::uplo, Uplo::Lower>::value, 
       //        std::is_same<typename ParamTagType::trans, Trans::NoTranspose>::value, 
       //        std::is_same<typename ParamTagType::diag, Diag::Unit>::value);
-      Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1,  i);
+      Test::Trsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1,  i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
-    Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
+    Test::Trsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {
       // printf("Testing: LayoutRight,  Blksize %d, Uplo %d, Trans %d, Diag %d\n", 
       //        i, 
       //        std::is_same<typename ParamTagType::uplo, Uplo::Lower>::value, 
       //        std::is_same<typename ParamTagType::trans, Trans::NoTranspose>::value, 
       //        std::is_same<typename ParamTagType::diag, Diag::Unit>::value);
-      Test::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1,  i);
+      Test::Trsv::impl_test_batched_trsv<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1,  i);
     }
   }
 #endif
