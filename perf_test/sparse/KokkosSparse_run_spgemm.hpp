@@ -100,11 +100,11 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
       typename device::execution_space>(output_mat1.graph.entries, output_mat2.graph.entries, 0 );
   if (!is_identical) {
 	  for (size_t i = 0; i <  nrows1; ++i){
-		  size_t rb = output_mat1.graph.row_map[i];
-		  size_t re = output_mat1.graph.row_map[i + 1];
+		  size_t rb = output_mat1.graph.row_map(i);
+		  size_t re = output_mat1.graph.row_map(i + 1);
 		  bool incorrect =false;
 		  for (size_t j = rb; j <  re; ++j){
-			 if (output_mat1.graph.entries[j] != output_mat2.graph.entries[j]){
+			 if (output_mat1.graph.entries(j) != output_mat2.graph.entries(j)){
 				 incorrect = true;
 				 break;
 			 }
@@ -112,7 +112,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 		  if (incorrect){
 			  for (size_t j = rb; j <  re; ++j){
                             std::cerr << "row:" << i << " j:" << j <<
-                              " h_ent1[j]:" << output_mat1.graph.entries(j) << " h_ent2[j]:" << output_mat2.graph.entries[j] <<
+                              " h_ent1(j):" << output_mat1.graph.entries(j) << " h_ent2(j):" << output_mat2.graph.entries(j) <<
                               " rb:" << rb << " re:" << re << std::endl;
 			  }
 		  }

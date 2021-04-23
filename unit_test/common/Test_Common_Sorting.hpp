@@ -184,7 +184,7 @@ struct TestSerialRadixFunctor
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
     int off = offsets(i);
-    KokkosKernels::Impl::SerialRadixSort<int, UnsignedKey>(
+    KokkosKernels::SerialRadixSort<int, UnsignedKey>(
         (UnsignedKey*) keys.data() + off, (UnsignedKey*) keysAux.data() + off, counts(i));
   }
   KeyView keys;
@@ -207,7 +207,7 @@ struct TestSerialRadix2Functor
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
     int off = offsets(i);
-    KokkosKernels::Impl::SerialRadixSort2<int, UnsignedKey, Value>(
+    KokkosKernels::SerialRadixSort2<int, UnsignedKey, Value>(
         (UnsignedKey*) keys.data() + off, (UnsignedKey*) keysAux.data() + off,
         values.data() + off, valuesAux.data() + off, counts(i));
   }
@@ -321,7 +321,7 @@ struct TestTeamBitonicFunctor
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMem t) const
   {
     int i = t.league_rank();
-    KokkosKernels::Impl::TeamBitonicSort<int, Value, TeamMem>(values.data() + offsets(i), counts(i), t);
+    KokkosKernels::TeamBitonicSort<int, Value, TeamMem>(values.data() + offsets(i), counts(i), t);
   }
 
   ValView values;
@@ -343,7 +343,7 @@ struct TestTeamBitonic2Functor
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMem t) const
   {
     int i = t.league_rank();
-    KokkosKernels::Impl::TeamBitonicSort2<int, Key, Value, TeamMem>(keys.data() + offsets(i), values.data() + offsets(i), counts(i), t);
+    KokkosKernels::TeamBitonicSort2<int, Key, Value, TeamMem>(keys.data() + offsets(i), values.data() + offsets(i), counts(i), t);
   }
 
   KeyView keys;
@@ -458,7 +458,7 @@ void testBitonicSort(size_t n)
   typedef Kokkos::View<Scalar*, mem_space> ValView;
   ValView data("Bitonic sort testing data", n);
   fillRandom(data);
-  KokkosKernels::Impl::bitonicSort<ValView, ExecSpace, int>(data);
+  KokkosKernels::bitonicSort<ValView, ExecSpace, int>(data);
   int ordered = 1;
   Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpace>(0, n - 1),
       CheckSortedFunctor<ValView>(data), Kokkos::Min<int>(ordered));
@@ -501,7 +501,7 @@ void testBitonicSortDescending()
   size_t n = 12521;
   ValView data("Bitonic sort testing data", n);
   fillRandom(data);
-  KokkosKernels::Impl::bitonicSort<ValView, ExecSpace, int, Comp>(data);
+  KokkosKernels::bitonicSort<ValView, ExecSpace, int, Comp>(data);
   int ordered = 1;
   Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpace>(0, n - 1),
       CheckOrderedFunctor<ValView, Comp>(data), Kokkos::Min<int>(ordered));
@@ -536,7 +536,7 @@ void testBitonicSortLexicographic()
   size_t n = 9521;
   ValView data("Bitonic sort testing data", n);
   fillRandom(data);
-  KokkosKernels::Impl::bitonicSort<ValView, ExecSpace, int, LexCompare>(data);
+  KokkosKernels::bitonicSort<ValView, ExecSpace, int, LexCompare>(data);
   int ordered = 1;
   Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpace>(0, n - 1),
       CheckOrderedFunctor<ValView, LexCompare>(data), Kokkos::Min<int>(ordered));
@@ -544,7 +544,7 @@ void testBitonicSortLexicographic()
 }
 
 template<typename exec_space>
-void testSortCRS(default_lno_t numRows, default_lno_t numCols, default_size_type nnz, bool doValues)
+void testSortCRS(default_lno_t numRows, default_lno_t numCols, default_size_type nnz, bool doValues, bool doStructInterface)
 {
   using scalar_t = default_scalar;
   using lno_t = default_lno_t;
@@ -603,15 +603,29 @@ void testSortCRS(default_lno_t numRows, default_lno_t numCols, default_size_type
   //call the actual sort routine being tested
   if(doValues)
   {
-    KokkosKernels::sort_crs_matrix
-      <exec_space, rowmap_t, entries_t, values_t>
-      (A.graph.row_map, A.graph.entries, A.values);
+    if(doStructInterface)
+    {
+      KokkosKernels::sort_crs_matrix(A);
+    }
+    else
+    {
+      KokkosKernels::sort_crs_matrix
+        <exec_space, rowmap_t, entries_t, values_t>
+        (A.graph.row_map, A.graph.entries, A.values);
+    }
   }
   else
   {
-    KokkosKernels::sort_crs_graph
-      <exec_space, rowmap_t, entries_t>
-      (A.graph.row_map, A.graph.entries);
+    if(doStructInterface)
+    {
+      KokkosKernels::sort_crs_graph(A.graph);
+    }
+    else
+    {
+      KokkosKernels::sort_crs_graph
+        <exec_space, rowmap_t, entries_t>
+        (A.graph.row_map, A.graph.entries);
+    }
   }
   //Copy to host and compare
   Kokkos::View<lno_t*, Kokkos::HostSpace> entriesOut("sorted entries host", nnz);
@@ -774,20 +788,26 @@ TEST_F( TestCategory, common_device_bitonic) {
 }
 
 TEST_F( TestCategory, common_sort_crsgraph) {
-  testSortCRS<TestExecSpace>(10, 10, 20, false);
-  testSortCRS<TestExecSpace>(100, 100, 2000, false);
-  testSortCRS<TestExecSpace>(1000, 1000, 30000, false);
+  for(int doStructInterface = 0; doStructInterface < 2; doStructInterface++)
+  {
+    testSortCRS<TestExecSpace>(10, 10, 20, false, doStructInterface);
+    testSortCRS<TestExecSpace>(100, 100, 2000, false, doStructInterface);
+    testSortCRS<TestExecSpace>(1000, 1000, 30000, false, doStructInterface);
+  }
 }
 
 TEST_F( TestCategory, common_sort_crsmatrix) {
-  testSortCRS<TestExecSpace>(10, 10, 20, true);
-  testSortCRS<TestExecSpace>(100, 100, 2000, true);
-  testSortCRS<TestExecSpace>(1000, 1000, 30000, true);
+  for(int doStructInterface = 0; doStructInterface < 2; doStructInterface++)
+  {
+    testSortCRS<TestExecSpace>(10, 10, 20, true, doStructInterface);
+    testSortCRS<TestExecSpace>(100, 100, 2000, true, doStructInterface);
+    testSortCRS<TestExecSpace>(1000, 1000, 30000, true, doStructInterface);
+  }
 }
 
 TEST_F( TestCategory, common_sort_crs_longrows) {
-  testSortCRS<TestExecSpace>(1, 50000, 10000, false);
-  testSortCRS<TestExecSpace>(1, 50000, 10000, true);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false);
 }
 
 TEST_F( TestCategory, common_sort_merge_crsmatrix) {

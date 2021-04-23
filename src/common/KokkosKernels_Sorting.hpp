@@ -77,10 +77,21 @@ void sort_crs_matrix(const crsMat_t& A);
 template<typename execution_space, typename rowmap_t, typename entries_t>
 void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries);
 
+template <typename crsGraph_t>
+void sort_crs_graph(const crsGraph_t& G);
+
 // sort_and_merge_matrix produces a new matrix which is equivalent to A but is sorted
 // and has no duplicated entries: each (i, j) is unique. Values for duplicated entries are summed.
 template<typename crsMat_t>
 crsMat_t sort_and_merge_matrix(const crsMat_t& A);
+
+template<typename crsGraph_t>
+crsGraph_t sort_and_merge_graph(const crsGraph_t& G);
+
+template<typename exec_space, typename rowmap_t, typename entries_t>
+void sort_and_merge_graph(
+    const typename rowmap_t::const_type& rowmap_in, const entries_t& entries_in,
+    rowmap_t& rowmap_out, entries_t& entries_out);
 
 // ----------------------------
 // General device-level sorting
@@ -371,7 +382,7 @@ struct BitonicSingleTeamFunctor
   BitonicSingleTeamFunctor(View& v_, const Comparator& comp_) : v(v_), comp(comp_) {}
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const
   {
-    TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data(), v.extent(0), t, comp);
+    KokkosKernels::TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data(), v.extent(0), t, comp);
   };
   View v;
   Comparator comp;
@@ -389,7 +400,7 @@ struct BitonicChunkFunctor
     Ordinal n = chunkSize;
     if(chunkStart + n > Ordinal(v.extent(0)))
       n = v.extent(0) - chunkStart;
-    TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data() + chunkStart, n, t, comp);
+    KokkosKernels::TeamBitonicSort<Ordinal, typename View::value_type, TeamMember, Comparator>(v.data() + chunkStart, n, t, comp);
   };
   View v;
   Comparator comp;
@@ -591,6 +602,17 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
   }
 }
 
+template <typename crsGraph_t>
+void sort_crs_graph(const crsGraph_t& G)
+{
+  static_assert(!std::is_const<typename crsGraph_t::entries_type::value_type>::value,
+      "sort_crs_graph requires StaticCrsGraph entries to be non-const.");
+  sort_crs_graph<
+    typename crsGraph_t::execution_space,
+    typename crsGraph_t::row_map_type, typename crsGraph_t::entries_type>
+    (G.row_map, G.entries);
+}
+
 //Sort the rows of matrix, and merge duplicate entries.
 template<typename crsMat_t>
 crsMat_t sort_and_merge_matrix(const crsMat_t& A)
@@ -655,6 +677,19 @@ void sort_and_merge_graph(
       Impl::GraphMergedEntriesFunctor<const_rowmap_t, entries_t>
       (rowmap_in, entries_in,
        rowmap_out, entries_out));
+}
+
+template<typename crsGraph_t>
+crsGraph_t sort_and_merge_graph(const crsGraph_t& G)
+{
+  using rowmap_t = typename crsGraph_t::row_map_type::non_const_type;
+  using entries_t = typename crsGraph_t::entries_type;
+  static_assert(!std::is_const<typename entries_t::value_type>::value,
+      "sort_and_merge_graph requires StaticCrsGraph entries to be non-const.");
+  rowmap_t mergedRowmap;
+  entries_t mergedEntries;
+  sort_and_merge_graph<typename crsGraph_t::execution_space, rowmap_t, entries_t>(G.row_map, G.entries, mergedRowmap, mergedEntries);
+  return crsGraph_t(mergedEntries, mergedRowmap);
 }
 
 //Version to be called from host on a single array
@@ -1026,15 +1061,87 @@ TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember 
 //For backward compatibility: keep the public interface accessible in KokkosKernels::Impl::
 namespace Impl
 {
-  using KokkosKernels::sort_crs_graph;
-  using KokkosKernels::sort_crs_matrix;
-  using KokkosKernels::sort_and_merge_graph;
-  using KokkosKernels::sort_and_merge_matrix;
-  using KokkosKernels::bitonicSort;
-  using KokkosKernels::SerialRadixSort;
-  using KokkosKernels::SerialRadixSort2;
-  using KokkosKernels::TeamBitonicSort;
-  using KokkosKernels::TeamBitonicSort2;
+  template<typename execution_space, typename rowmap_t, typename entries_t>
+  [[deprecated]]
+  void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
+  {
+    KokkosKernels::sort_crs_graph<execution_space, rowmap_t, entries_t>(rowmap, entries);
+  }
+
+  template<typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
+  [[deprecated]]
+  void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const values_t& values)
+  {
+    KokkosKernels::sort_crs_matrix<execution_space, rowmap_t, entries_t, values_t>(rowmap, entries, values);
+  }
+
+  template <typename crsMat_t>
+  [[deprecated]]
+  void sort_crs_matrix(const crsMat_t& A)
+  {
+    KokkosKernels::sort_crs_matrix(A);
+  }
+
+  template<typename exec_space, typename rowmap_t, typename entries_t>
+  [[deprecated]]
+  void sort_and_merge_graph(
+      const typename rowmap_t::const_type& rowmap_in, const entries_t& entries_in,
+      rowmap_t& rowmap_out, entries_t& entries_out)
+  {
+    KokkosKernels::sort_and_merge_graph<exec_space, rowmap_t, entries_t>(rowmap_in, entries_in, rowmap_out, entries_out);
+  }
+
+  template<typename crsMat_t>
+  [[deprecated]]
+  crsMat_t sort_and_merge_matrix(const crsMat_t& A)
+  {
+    KokkosKernels::sort_and_merge_matrix(A);
+  }
+
+  template<typename View, typename ExecSpace, typename Ordinal, typename Comparator = Impl::DefaultComparator<typename View::value_type>>
+  [[deprecated]]
+  void bitonicSort(View v, const Comparator& comp = Comparator())
+  {
+    KokkosKernels::bitonicSort<View, ExecSpace, Ordinal, Comparator>(v, comp);
+  }
+
+  template<typename Ordinal, typename ValueType>
+  [[deprecated]]
+  KOKKOS_INLINE_FUNCTION
+  void
+  SerialRadixSort(ValueType* values, ValueType* valuesAux, Ordinal n)
+  {
+    KokkosKernels::SerialRadixSort<Ordinal, ValueType>(values, valuesAux, n);
+  }
+
+  // Same as SerialRadixSort, but also permutes perm[0...n] as it sorts values[0...n].
+  template<typename Ordinal, typename ValueType, typename PermType>
+  [[deprecated]]
+  KOKKOS_INLINE_FUNCTION
+  void
+  SerialRadixSort2(ValueType* values, ValueType* valuesAux, PermType* perm, PermType* permAux, Ordinal n)
+  {
+    KokkosKernels::SerialRadixSort2<Ordinal, ValueType, PermType>(values, valuesAux, perm, permAux, n);
+  }
+
+  template<typename Ordinal, typename ValueType, typename TeamMember, typename Comparator = Impl::DefaultComparator<ValueType>>
+  [[deprecated]]
+  KOKKOS_INLINE_FUNCTION
+  void
+  TeamBitonicSort(ValueType* values, Ordinal n, const TeamMember mem, const Comparator& comp = Comparator())
+  {
+    KokkosKernels::TeamBitonicSort<Ordinal, ValueType, TeamMember, Comparator>(values, n, mem, comp);
+  }
+
+  // Same as SerialRadixSort, but also permutes perm[0...n] as it sorts values[0...n].
+  template<typename Ordinal, typename ValueType, typename PermType, typename TeamMember, typename Comparator = Impl::DefaultComparator<ValueType>>
+  [[deprecated]]
+  KOKKOS_INLINE_FUNCTION
+  void
+  TeamBitonicSort2(ValueType* values, PermType* perm, Ordinal n, const TeamMember mem, const Comparator& comp = Comparator())
+  {
+    KokkosKernels::TeamBitonicSort2<Ordinal, ValueType, PermType, TeamMember, Comparator>(values, perm, n, mem, comp);
+  }
 }
 
 }
