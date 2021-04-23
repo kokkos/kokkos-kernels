@@ -1,9 +1,7 @@
 #ifndef TEST_CUDA_BATCHED_CPP
 #define TEST_CUDA_BATCHED_CPP
-#define KOKKOSKERNELS_CUDA_BATCHED_TESTS
 
 #include<Test_Cuda.hpp>
 #include<Test_Batched.hpp>
 
-#undef KOKKOSKERNELS_CUDA_BATCHED_TESTS
 #endif // TEST_CUDA_BATCHED_CPP
