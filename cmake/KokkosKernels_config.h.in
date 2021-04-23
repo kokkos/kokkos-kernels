@@ -119,6 +119,13 @@
 #endif
 #endif
 
+#if !defined(KOKKOS_ENABLE_CUDA) \
+  && !defined(KOKKOS_ENABLE_HIP)/* \
+  && !defined(KOKKOS_ENABLE_SYCL) \
+  && !defined(KOKKOS_ENABLE_OPENMPTARGET) */
+#define KOKKOSKERNELS_ENABLE_HOST_ONLY
+#endif
+
 
 /*
  * "Optimization level" for computational kernels in this subpackage.
