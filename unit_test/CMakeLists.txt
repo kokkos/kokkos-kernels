@@ -178,6 +178,51 @@ IF (KOKKOS_ENABLE_HIP)
   )
 ENDIF ()
 
+IF (KOKKOS_ENABLE_OPENMPTARGET)
+  KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/openmp_target)
+  KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/openmptarget)
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blas_openmptarget
+    SOURCES
+      Test_Main.cpp
+      openmptarget/Test_OpenMPTarget_Blas.cpp
+    COMPONENTS blas
+  )
+
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   batched_dla_openmptarget
+  #   SOURCES
+  #     Test_Main.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched.cpp
+  #   COMPONENTS batched
+  # )
+
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   sparse_openmptarget
+  #   SOURCES
+  #     Test_Main.cpp
+  #     openmptarget/Test_OpenMPTarget_Sparse.cpp
+  #   COMPONENTS sparse
+  # )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    graph_openmptarget
+    SOURCES
+      Test_Main.cpp
+      openmptarget/Test_OpenMPTarget_Graph.cpp
+    COMPONENTS graph
+  )
+
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   common_openmptarget
+  #   SOURCES
+  #     Test_Main.cpp
+  #     openmptarget/Test_OpenMPTarget_Common.cpp
+  #   COMPONENTS common
+  # )
+ENDIF ()
+
 IF (KOKKOS_ENABLE_OPENMP)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/openmp)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/openmp)
