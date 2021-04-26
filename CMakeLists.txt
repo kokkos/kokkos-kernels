@@ -64,7 +64,13 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
     "Whether to build tests. Default: OFF"
   )
 ENDIF()
-
+IF(KokkosKernels_ENABLE_TESTS)
+  set(BLT_CODE_CHECK_TARGET_NAME "fix-for-blt" CACHE STRING "Docstring")
+  set(INFRASTRUCTURE_ONLY ON CACHE BOOL "Only build the RAJAPerf infrastructure, no builtin kernels")
+  add_definitions("-DRAJAPERF_INFRASTRUCTURE_ONLY")
+  add_subdirectory(tpls/rajaperf)
+  include_directories(tpls/rajaperf/src)
+endif()
 SET(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
     "Whether to build tests and examples against installation")
 IF (KokkosKernels_INSTALL_TESTING)
