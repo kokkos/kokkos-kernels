@@ -26,7 +26,7 @@ namespace Test {
 
     ScalarA alpha = 3;
     ScalarX beta = 5;
-    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarY>::mag_type, float>::value ? 1e-3 : 3e-10);
+    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarY>::mag_type, float>::value ? 1e-3 : 5e-10);
 
     int ldx;
     int ldy;
