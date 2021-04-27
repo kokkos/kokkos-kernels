@@ -6,6 +6,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
+#include "KokkosKernels_Macros.hpp"
 
 namespace KokkosBatched {
   /* BEGIN functor-level routines */
@@ -198,7 +199,7 @@ namespace KokkosBatched {
 
       // Begin checking conditions for optimal BatchedGemm invocation.
       using view_scalar_type = typename CViewType::value_type;
-      using execution_space __attribute__((unused)) =
+      using execution_space KOKKOSKERNELS_UNUSED_ATTRIBUTE =
           typename CViewType::execution_space;
       constexpr bool is_vector =
           KokkosBatched::is_vector<view_scalar_type>::value;
