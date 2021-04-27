@@ -198,7 +198,8 @@ namespace KokkosBatched {
 
       // Begin checking conditions for optimal BatchedGemm invocation.
       using view_scalar_type = typename CViewType::value_type;
-      using execution_space  = typename CViewType::execution_space;
+      using execution_space __attribute__((unused)) =
+          typename CViewType::execution_space;
       constexpr bool is_vector =
           KokkosBatched::is_vector<view_scalar_type>::value;
 #if defined(KOKKOS_ENABLE_CUDA)
