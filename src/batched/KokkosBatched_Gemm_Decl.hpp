@@ -6,7 +6,6 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
-#include "KokkosKernels_Macros.hpp"
 
 namespace KokkosBatched {
   /* BEGIN functor-level routines */
@@ -199,15 +198,15 @@ namespace KokkosBatched {
 
       // Begin checking conditions for optimal BatchedGemm invocation.
       using view_scalar_type = typename CViewType::value_type;
-      using execution_space KOKKOSKERNELS_UNUSED_ATTRIBUTE =
-          typename CViewType::execution_space;
       constexpr bool is_vector =
           KokkosBatched::is_vector<view_scalar_type>::value;
 #if defined(KOKKOS_ENABLE_CUDA)
-      constexpr bool on_gpu = std::is_same<execution_space, Kokkos::Cuda>::value;
+      constexpr bool on_gpu = std::is_same<typename CViewType::execution_space,
+                                           Kokkos::Cuda>::value;
 #endif  // KOKKOS_ENABLE_CUDA
 #if defined(KOKKOS_ENABLE_HIP)
-      constexpr bool on_gpu = std::is_same<execution_space, Kokkos::Experimental::HIP>::value;
+      constexpr bool on_gpu = std::is_same<typename CViewType::execution_space,
+                                           Kokkos::Experimental::HIP>::value;
 #endif  // KOKKOS_ENABLE_HIP
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
@@ -215,13 +214,17 @@ namespace KokkosBatched {
 #endif
 
 #if __x86_64__
-      constexpr bool on_intel = std::is_same<typename execution_space::memory_space, Kokkos::HostSpace>::value;
+      constexpr bool on_intel =
+          std::is_same<typename CViewType::execution_space::memory_space,
+                       Kokkos::HostSpace>::value;
 #else
       constexpr bool on_intel = false;
 #endif  // Intel architectures
 
 #if defined(__ARM_ARCH_ISA_A64)
-      constexpr bool on_a64fx = std::is_same<typename execution_space::memory_space, Kokkos::HostSpace>::value;
+      constexpr bool on_a64fx =
+          std::is_same<typename CViewType::execution_space::memory_space,
+                       Kokkos::HostSpace>::value;
 #else
       constexpr bool on_a64fx = false;
 #endif
