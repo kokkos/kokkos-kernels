@@ -87,6 +87,52 @@ IF (KOKKOS_ENABLE_CUDA)
   )
 ENDIF ()
 
+IF (KOKKOS_ENABLE_SYCL)
+  KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/sycl)
+  KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/sycl)
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blas_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Blas.cpp
+    COMPONENTS blas
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_dla_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Batched.cpp
+    COMPONENTS batched
+  )
+
+  # FIXME_SYCL
+  #KOKKOSKERNELS_ADD_UNIT_TEST(
+  #  sparse_sycl
+  #  SOURCES
+  #    Test_Main.cpp
+  #    sycl/Test_SYCL_Sparse.cpp
+  #  COMPONENTS sparse
+  #)
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    graph_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Graph.cpp
+    COMPONENTS graph
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    common_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Common.cpp
+    COMPONENTS common
+  )
+ENDIF ()
+
 IF (KOKKOS_ENABLE_HIP)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/hip)
   KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/hip)

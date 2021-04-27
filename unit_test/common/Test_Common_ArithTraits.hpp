@@ -63,10 +63,17 @@
 #include <typeinfo> // typeid (T)
 #include <cstdio>
 
-#define FAILURE() {printf("%s:%s:%d: Failure\n", __FILE__, __func__, __LINE__); success = 0;}
+#define FAILURE()                                                            \
+  {                                                                          \
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%s:%d: Failure\n", __FILE__, __func__, \
+                                  __LINE__);                                 \
+    success = 0;                                                             \
+  }
 
 #if 0
-#define TRACE() printf("%s:%s:%d: Trace\n", __FILE__, __func__, __LINE__);
+#define TRACE()                                                          \
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%s:%d: Trace\n", __FILE__, __func__, \
+                                __LINE__);
 #else
 #define TRACE()
 #endif
@@ -210,7 +217,7 @@ public:
     // T, but we check for this int constant for compatibility with
     // std::numeric_limits.
     if (! AT::is_specialized) {
-      printf ("! AT::is_specialized\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("! AT::is_specialized\n");
       FAILURE();
     }
 
@@ -218,11 +225,13 @@ public:
     // function, just not to its class methods (which are not marked
     // as device functions).
     if (AT::is_integer != std::numeric_limits<ScalarType>::is_integer) {
-      printf ("AT::is_integer not same as numeric_limits\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+          "AT::is_integer not same as numeric_limits\n");
       FAILURE();
     }
     if (AT::is_exact != std::numeric_limits<ScalarType>::is_exact) {
-      printf ("AT::is_exact not same as numeric_limits\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+          "AT::is_exact not same as numeric_limits\n");
       FAILURE();
     }
 
@@ -231,34 +240,34 @@ public:
 
     // Test properties of the arithmetic and multiplicative identities.
     if (zero + zero != zero) {
-      printf ("0 + 0 != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 + 0 != 0\n");
       FAILURE();
     }
     if (zero + one != one) {
-      printf ("0 + 1 != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 + 1 != 1\n");
       FAILURE();
     }
     if (one - one != zero) {
-      printf ("1 - 1 != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 - 1 != 0\n");
       FAILURE();
     }
     // This is technically 1 even of Z_2, since in that field, one
     // is its own inverse (so -one == one).
     if ((one + one) - one != one) {
-      printf ("(1 + 1) - 1 != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("(1 + 1) - 1 != 1\n");
       FAILURE();
     }
 
     if (AT::abs (zero) != zero) {
-      printf ("AT::abs(0) != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::abs(0) != 0\n");
       FAILURE();
     }
     if (AT::abs (one) != one) {
-      printf ("AT::abs(1) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::abs(1) != 1\n");
       FAILURE();
     }
     if (AT::is_signed && AT::abs (-one) != one) {
-      printf ("AT::is_signed and AT::abs(-1) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::is_signed and AT::abs(-1) != 1\n");
       FAILURE();
     }
     // Need enable_if to test whether T can be compared using <=.
@@ -267,7 +276,7 @@ public:
     // These are very mild ordering properties.
     // They should work even for a set only containing zero.
     if (AT::abs (zero) > AT::abs (AT::max ())) {
-      printf ("AT::abs(0) > AT::abs (AT::max ())\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::abs(0) > AT::abs (AT::max ())\n");
       FAILURE();
     }
 
@@ -585,20 +594,20 @@ public:
     if (! AT::is_complex) {
       result = AT::pow (two, three);
       if (!equal(result,eight)) {
-        printf ("AT::pow(2,3) != 8\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(2,3) != 8\n");
         FAILURE();
       }
     }
     if (!equal(AT::pow (three, zero) , one)) {
-      printf ("AT::pow(3,0) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,0) != 1\n");
       FAILURE();
     }
     if (!equal(AT::pow (three, one) , three)) {
-      printf ("AT::pow(3,1) != 3\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,1) != 3\n");
       FAILURE();
     }
     if (!equal(AT::pow (three, two) , nine)) {
-      printf ("AT::pow(3,2) != 9\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,2) != 9\n");
       FAILURE();
     }
 
@@ -606,7 +615,7 @@ public:
     if (! AT::is_complex) {
       result = AT::pow (three, three);
       if (!equal(result , twentySeven)) {
-        printf ("AT::pow(3,3) != 27\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,3) != 27\n");
         FAILURE();
       }
     }
@@ -615,93 +624,94 @@ public:
     if (AT::is_signed && ! AT::is_complex) {
       result = AT::pow (-three, one);
       if (!equal(result , -three)) {
-        printf ("AT::pow(-3,1) != -3\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(-3,1) != -3\n");
         FAILURE();
       }
       result = AT::pow (-three, two);
       if (!equal(result , nine)) {
-        printf ("AT::pow(-3,2) != 9\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(-3,2) != 9\n");
         FAILURE();
       }
       result = AT::pow (-three, three);
       if (!equal(result , -twentySeven)) {
-        printf ("AT::pow(-3,3) != 27\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(-3,3) != 27\n");
         FAILURE();
       }
     }
 
     if (!equal(AT::sqrt (zero) , zero)) {
-      printf ("AT::sqrt(0) != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(0) != 0\n");
       FAILURE();
     }
     if (!equal(AT::sqrt (one) , one)) {
-      printf ("AT::sqrt(1) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(1) != 1\n");
       FAILURE();
     }
     if (!equal(AT::sqrt (thirtySix) , six)) {
-      printf ("AT::sqrt(36) != 6\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(36) != 6\n");
       FAILURE();
     }
     if (!equal(AT::sqrt (sixtyFour) , eight)) {
-      printf ("AT::sqrt(64) != 8\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(64) != 8\n");
       FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::sqrt (fortyTwo) , six)) {
-        printf ("AT:sqrt(42) != 6\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT:sqrt(42) != 6\n");
         FAILURE();
       }
       if (!equal(AT::sqrt (oneTwentySeven) , eleven)) {
-        printf ("AT::sqrt(127) != 11\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(127) != 11\n");
         FAILURE();
       }
     }
 
     if (!equal(AT::cbrt (zero) , zero)) {
-      printf ("AT::cbrt(0) != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 0\n");
       FAILURE();
     }
     if (!equal(AT::cbrt (one) , one)) {
-      printf ("AT::cbrt(1) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(1) != 1\n");
       FAILURE();
     }
     if (!equal(AT::cbrt (twentySeven) , three)) {
-      printf ("AT::cbrt(27) != 3\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(27) != 3\n");
       FAILURE();
     }
     if (!equal(AT::cbrt (sixtyFour) , four)) {
-      printf ("AT::cbrt(64) != 4\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(64) != 4\n");
       FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::cbrt (fortyTwo) , three)) {
-        printf ("AT:cbrt(42) != 3\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT:cbrt(42) != 3\n");
         FAILURE();
       }
       if (!equal(AT::cbrt (oneTwentySeven) , five)) {
-        printf ("AT::cbrt(127) != 5\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(127) != 5\n");
         FAILURE();
       }
     }
 
     if (!equal(AT::exp (zero) , one)) {
-      printf ("AT::cbrt(0) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 1\n");
       FAILURE();
     }
     if (AT::is_complex) {
       const ScalarType val = two; //(two.real(), two.real());
       if (!equal(AT::conj (AT::exp  (val)) , 
                  AT::exp  (AT::conj (val)))) {
-        printf ("AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
         FAILURE();
       }
     }
     if (!equal(AT::log (one) , zero)) {
-      printf ("AT::log(1) != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::log(1) != 0\n");
       FAILURE();
     }
     if (!equal(AT::log10 (one) , zero)) {
-      printf ("AT::log10(1) != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::log10(1) != 0\n");
       FAILURE();
     }
 
@@ -710,11 +720,13 @@ public:
       const auto val_sin = AT::sin (val);
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
-        printf ("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
         FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
-        printf ("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       } 
     } else {
@@ -722,25 +734,27 @@ public:
       const auto val_sin = AT::sin (val);
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
-        printf ("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
         FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
-        printf ("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       } 
     }
 
     if (!equal(AT::asin (AT::sin (one)), one)) {
-      printf ("AT::asin(sin(1)) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::asin(sin(1)) != 1\n");
       FAILURE();
     } 
     if (!equal(AT::acos (AT::cos (one)), one)) {
-      printf ("AT::acos(cos(1)) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::acos(cos(1)) != 1\n");
       FAILURE();
     } 
     if (!equal(AT::atan (AT::tan (one)), one)) {
-      printf ("AT::atan(tan(1)) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::atan(tan(1)) != 1\n");
       FAILURE();
     } 
 
@@ -867,41 +881,42 @@ protected:
     }
 
     if (!equal(AT::cbrt (zero) , zero)) {
-      printf ("AT::cbrt(0) != 0\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 0\n");
       FAILURE();
     }
     if (!equal(AT::cbrt (one) , one)) {
-      printf ("AT::cbrt(1) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(1) != 1\n");
       FAILURE();
     }
     if (!equal(AT::cbrt (twentySeven) , three)) {
-      printf ("AT::cbrt(27) != 3\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(27) != 3\n");
       FAILURE();
     }
     if (!equal(AT::cbrt (sixtyFour) , four)) {
-      printf ("AT::cbrt(64) != 4\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(64) != 4\n");
       FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::cbrt (fortyTwo) , three)) {
-        printf ("AT:cbrt(42) != 3\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT:cbrt(42) != 3\n");
         FAILURE();
       }
       if (!equal(AT::cbrt (oneTwentySeven) , five)) {
-        printf ("AT::cbrt(127) != 5\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(127) != 5\n");
         FAILURE();
       }
     }
 
     if (!equal(AT::exp (zero) , one)) {
-      printf ("AT::cbrt(0) != 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 1\n");
       FAILURE();
     }
     if (AT::is_complex) {
       const ScalarType val = two; //(two.real(), two.real());
       if (!equal(AT::conj (AT::exp  (val)) , 
                  AT::exp  (AT::conj (val)))) {
-        printf ("AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
         FAILURE();
       }
     }
@@ -919,11 +934,13 @@ protected:
       const auto val_sin = AT::sin (val);
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
-        printf ("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
         FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
-        printf ("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       } 
     } else {
@@ -931,25 +948,27 @@ protected:
       const auto val_sin = AT::sin (val);
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
-        printf ("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
         FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
-        printf ("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       } 
     }
 
     if (!equal(AT::asin (AT::sin (three)), three)) {
-      printf ("AT::asin(sin(3)) != 3\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::asin(sin(3)) != 3\n");
       FAILURE();
     } 
     if (!equal(AT::acos (AT::cos (three)), three)) {
-      printf ("AT::acos(cos(3)) != 3\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::acos(cos(3)) != 3\n");
       FAILURE();
     } 
     if (!equal(AT::atan (AT::tan (three)), three)) {
-      printf ("AT::atan(tan(3)) != 3\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::atan(tan(3)) != 3\n");
       FAILURE();
     } 
 
@@ -1045,7 +1064,7 @@ public:
 #else
     {
       if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
-        printf(
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed "
             "= 0x%x\n",
             AT::is_signed, std::numeric_limits<ScalarType>::is_signed);
@@ -1264,12 +1283,12 @@ public:
     int success = 1;
 
     if (AT::is_exact) {
-      printf ("AT::is_exact is 1\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::is_exact is 1\n");
       FAILURE();
     }
 
     if (! AT::isNan (AT::nan ())) {
-      printf ("NaN is not NaN\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("NaN is not NaN\n");
       FAILURE();
     }
 
@@ -1277,19 +1296,19 @@ public:
     const ScalarType one = AT::one ();
 
     if (AT::isInf (zero)) {
-      printf ("0 is Inf\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is Inf\n");
       FAILURE();
     }
     if (AT::isInf (one)) {
-      printf ("1 is Inf\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 is Inf\n");
       FAILURE();
     }
     if (AT::isNan (zero)) {
-      printf ("0 is NaN\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is NaN\n");
       FAILURE();
     }
     if (AT::isNan (one)) {
-      printf ("1 is NaN\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 is NaN\n");
       FAILURE();
     }
 
@@ -1385,7 +1404,7 @@ public:
     int success = 1;
 
     if (! AT::is_exact) {
-      printf ("! AT:is_exact\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("! AT:is_exact\n");
       FAILURE();
     }
 
