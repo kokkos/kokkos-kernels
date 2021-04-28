@@ -5,23 +5,25 @@
 #include <common/Executor.hpp>
 #include "sparse/tracked_testing.hpp"
 #include <iostream>
+#include <Kokkos_Core.hpp>
+int main(int argc, char* argv[]) {
+  {
+    rajaperf::Executor exec(argc, argv);
+    rajaperf::RunParams run_params(argc, argv);
+    Kokkos::initialize(argc, argv);
+    test::sparse::build_executor(exec, argc, argv, run_params);
+    exec.setupSuite();
 
-int main(int argc, char* argv[]){
-  rajaperf::Executor exec(argc, argv);
-  rajaperf::RunParams run_params(argc, argv);
-  test::sparse::build_executor(exec, argc, argv, run_params);
-  exec.setupSuite();
+    // STEP 3: Report suite run summary
+    //         (enable users to catch errors before entire suite is run)
+    exec.reportRunSummary(std::cout);
 
-  // STEP 3: Report suite run summary
-  //         (enable users to catch errors before entire suite is run)
-  exec.reportRunSummary(std::cout);
+    // STEP 4: Execute suite
+    exec.runSuite();
 
-  // STEP 4: Execute suite
-  exec.runSuite();
-
-  // STEP 5: Generate suite execution reports
-  exec.outputRunData();
-
+    // STEP 5: Generate suite execution reports
+    exec.outputRunData();
+  }
+  Kokkos::finalize();
   std::cout << "\n\nDONE!!!...." << std::endl;
-
 }

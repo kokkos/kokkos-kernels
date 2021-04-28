@@ -61,6 +61,7 @@
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 #include <common/RunParams.hpp>
 #include <common/QuickKernelBase.hpp>
+#include <PerfTestUtilities.hpp>
 #ifdef HAVE_CUSPARSE
 #include <CuSparse_SPMV.hpp>
 #endif
@@ -155,141 +156,112 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
     default: fprintf(stderr, "Selected test is not available.\n");
   }
 }
-rajaperf::KernelBase* construct_kernel_base(const rajaperf::RunParams& run_params,Ordinal numRows, Ordinal numCols, int test,
-                                            const char* filename, Ordinal rows_per_thread,
-                                            int team_size, int vector_length, int schedule,
-                                            int loop) {
+std::vector<rajaperf::KernelBase*> construct_kernel_base(
+    const rajaperf::RunParams& run_params, Ordinal numRows, Ordinal numCols,
+    int test, const char* filename, Ordinal rows_per_thread, int team_size,
+    int vector_length, int schedule, int loop) {
   typedef KokkosSparse::CrsMatrix<Scalar, Ordinal,
-      Kokkos::DefaultExecutionSpace, void, Offset>
+                                  Kokkos::DefaultExecutionSpace, void, Offset>
       matrix_type;
   typedef typename Kokkos::View<Scalar*, Layout> mv_type;
   typedef typename mv_type::HostMirror h_mv_type;
   srand(17312837);
-  return rajaperf::make_kernel_base(
-          "Sparse_SPMV",
-          run_params,
-          [&](const int iterations, const int runsize) {
-            matrix_type A;
-            if (filename)
-              A = KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type>(
-                  filename);
-            else {
-              Offset nnz = 10 * numRows;
-              // note: the help text says the bandwidth is fixed at 0.01 *
-              // numRows
-              A = KokkosKernels::Impl::kk_generate_sparse_matrix<matrix_type>(
-                  numRows, numCols, nnz, 0, 0.01 * numRows);
-            }
-            numRows    = A.numRows();
-            numCols    = A.numCols();
-            Offset nnz = A.nnz();
-            mv_type x("X", numCols);
-            mv_type y("Y", numRows);
-            h_mv_type h_x         = Kokkos::create_mirror_view(x);
-            h_mv_type h_y         = Kokkos::create_mirror_view(y);
-            h_mv_type h_y_compare = Kokkos::create_mirror(y);
+  data_retriever<matrix_type> reader("sparse/spmv/", "sample.mtx");
+  std::vector<rajaperf::KernelBase*> test_cases;
+  for (auto test_case : reader.test_cases) {
 
-            typename matrix_type::StaticCrsGraphType::HostMirror h_graph =
-                Kokkos::create_mirror(A.graph);
-            typename matrix_type::values_type::HostMirror h_values =
-                Kokkos::create_mirror_view(A.values);
+    test_cases.push_back( rajaperf::make_kernel_base(
+        "Sparse_SPMV:" + test_case.filename, run_params,
+        [=](const int iterations, const int runsize) {
+          matrix_type A = std::get<0>(test_case.test_data);
+          auto newnumRows = A.numRows();
+          auto newnumCols = A.numCols();
+          Offset nnz      = A.nnz();
+          mv_type x("X", numCols);
+          mv_type y("Y", numRows);
+          h_mv_type h_x         = Kokkos::create_mirror_view(x);
+          h_mv_type h_y         = Kokkos::create_mirror_view(y);
+          h_mv_type h_y_compare = Kokkos::create_mirror(y);
 
-            for (int i = 0; i < numCols; i++) {
-              h_x(i) = (Scalar)(1.0 * (rand() % 40) - 20.);
-            }
-            for (int i = 0; i < numRows; i++) {
-              h_y(i) = (Scalar)(1.0 * (rand() % 40) - 20.);
-            }
+          typename matrix_type::StaticCrsGraphType::HostMirror h_graph =
+              Kokkos::create_mirror(A.graph);
+          typename matrix_type::values_type::HostMirror h_values =
+              Kokkos::create_mirror_view(A.values);
 
-            // Error Check Gold Values
-            for (int i = 0; i < numRows; i++) {
-              int start = h_graph.row_map(i);
-              int end   = h_graph.row_map(i + 1);
-              for (int j = start; j < end; j++) {
-                h_values(j) = h_graph.entries(j) + i;
-              }
+          for (int i = 0; i < numCols; i++) {
+            h_x(i) = (Scalar)(1.0 * (rand() % 40) - 20.);
+          }
+          for (int i = 0; i < numRows; i++) {
+            h_y(i) = (Scalar)(1.0 * (rand() % 40) - 20.);
+          }
 
-              h_y_compare(i) = 0;
-              for (int j = start; j < end; j++) {
-                Scalar tmp_val = h_graph.entries(j) + i;
-                int idx        = h_graph.entries(j);
-                h_y_compare(i) += tmp_val * h_x(idx);
-              }
+          // Error Check Gold Values
+          for (int i = 0; i < numRows; i++) {
+            int start = h_graph.row_map(i);
+            int end   = h_graph.row_map(i + 1);
+            for (int j = start; j < end; j++) {
+              h_values(j) = h_graph.entries(j) + i;
             }
 
-            Kokkos::deep_copy(x, h_x);
-            Kokkos::deep_copy(y, h_y);
-            Kokkos::deep_copy(A.graph.entries, h_graph.entries);
-            Kokkos::deep_copy(A.values, h_values);
-            mv_type x1("X1", numCols);
-            Kokkos::deep_copy(x1, h_x);
-            mv_type y1("Y1", numRows);
-
-            // int nnz_per_row = A.nnz()/A.numRows();
-            matvec(A, x1, y1, rows_per_thread, team_size, vector_length, test,
-                   schedule);
-
-            // Error Check
-            Kokkos::deep_copy(h_y, y1);
-            Scalar error = 0;
-            Scalar sum   = 0;
-            for (int i = 0; i < numRows; i++) {
-              error += (h_y_compare(i) - h_y(i)) * (h_y_compare(i) - h_y(i));
-              sum += h_y_compare(i) * h_y_compare(i);
+            h_y_compare(i) = 0;
+            for (int j = start; j < end; j++) {
+              Scalar tmp_val = h_graph.entries(j) + i;
+              int idx        = h_graph.entries(j);
+              h_y_compare(i) += tmp_val * h_x(idx);
             }
+          }
 
-            int num_errors     = 0;
-            double total_error = 0;
-            double total_sum   = 0;
-            num_errors += (error / (sum == 0 ? 1 : sum)) > 1e-5 ? 1 : 0;
-            total_error += error;
-            total_sum += sum;
+          Kokkos::deep_copy(x, h_x);
+          Kokkos::deep_copy(y, h_y);
+          Kokkos::deep_copy(A.graph.entries, h_graph.entries);
+          Kokkos::deep_copy(A.values, h_values);
+          mv_type x1("X1", numCols);
+          Kokkos::deep_copy(x1, h_x);
+          mv_type y1("Y1", numRows);
 
-            // Benchmark
-            double min_time = 1.0e32;
-            double max_time = 0.0;
-            double ave_time = 0.0;
-            return std::make_tuple(A, x1, y1, rows_per_thread, team_size,
-                                   vector_length, test, schedule, ave_time, max_time, min_time
-            );
-          },
-          [&](const int iterations, const int runsize, auto& A, auto& x1, auto& y1,
-              auto& rows_per_thread, auto& team_size, auto& vector_length,
-              auto& test, auto& schedule, auto& ave_time, auto& max_time, auto& min_time) {
-            Kokkos::Timer timer;
-            matvec(A, x1, y1, rows_per_thread, team_size, vector_length, test,
-                   schedule);
-            Kokkos::fence();
-            double time = timer.seconds();
-            ave_time += time;
-            if (time > max_time) max_time = time;
-            if (time < min_time) min_time = time;
-          });
-  // Performance Output
-  //double matrix_size =
-  //    1.0 *
-  //    ((nnz * (sizeof(Scalar) + sizeof(Ordinal)) + numRows * sizeof(Offset))) /
-  //    1024 / 1024;
-  //double vector_size      = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
-  //double vector_readwrite = (nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
+          // int nnz_per_row = A.nnz()/A.numRows();
+          matvec(A, x1, y1, rows_per_thread, team_size, vector_length, test,
+                 schedule);
 
-  //double problem_size = matrix_size + vector_size;
-  //printf(
-  //    "NNZ NumRows NumCols ProblemSize(MB) AveBandwidth(GB/s) "
-  //    "MinBandwidth(GB/s) MaxBandwidth(GB/s) AveGFlop MinGFlop MaxGFlop "
-  //    "aveTime(ms) maxTime(ms) minTime(ms) numErrors\n");
-  //printf(
-  //    "%i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( "
-  //    "%6.3lf %6.3lf %6.3lf ) %i RESULT\n",
-  //    nnz, numRows, numCols, problem_size,
-  //    (matrix_size + vector_readwrite) / ave_time * loop / 1024,
-  //    (matrix_size + vector_readwrite) / max_time / 1024,
-  //    (matrix_size + vector_readwrite) / min_time / 1024,
-  //    2.0 * nnz * loop / ave_time / 1e9, 2.0 * nnz / max_time / 1e9,
-  //    2.0 * nnz / min_time / 1e9, ave_time / loop * 1000, max_time * 1000,
-  //    min_time * 1000, num_errors);
-  //return (int)total_errors;
+          // Error Check
+          Kokkos::deep_copy(h_y, y1);
+          Scalar error = 0;
+          Scalar sum   = 0;
+          for (int i = 0; i < numRows; i++) {
+            error += (h_y_compare(i) - h_y(i)) * (h_y_compare(i) - h_y(i));
+            sum += h_y_compare(i) * h_y_compare(i);
+          }
 
+          int num_errors     = 0;
+          double total_error = 0;
+          double total_sum   = 0;
+          num_errors += (error / (sum == 0 ? 1 : sum)) > 1e-5 ? 1 : 0;
+          total_error += error;
+          total_sum += sum;
+
+          // Benchmark
+          double min_time = 1.0e32;
+          double max_time = 0.0;
+          double ave_time = 0.0;
+          return std::make_tuple(newnumRows, newnumCols, A, x1, y1,
+                                 rows_per_thread, team_size, vector_length,
+                                 test, schedule, ave_time, max_time, min_time);
+        },
+        [&](const int iterations, const int runsize, auto& numRows,
+            auto& numCols, auto& A, auto& x1, auto& y1, auto& rows_per_thread,
+            auto& team_size, auto& vector_length, auto& test, auto& schedule,
+            auto& ave_time, auto& max_time, auto& min_time) {
+          Kokkos::Timer timer;
+          matvec(A, x1, y1, rows_per_thread, team_size, vector_length, test,
+                 schedule);
+          Kokkos::fence();
+          double time = timer.seconds();
+          ave_time += time;
+          if (time > max_time) max_time = time;
+          if (time < min_time) min_time = time;
+        }));
+  }
+  return test_cases;
 }
 int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
                               const char* filename, Ordinal rows_per_thread,
@@ -308,8 +280,7 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
   exec.registerKernel(
       "Sparse",
       rajaperf::make_kernel_base(
-          "Sparse_SPMV",
-          run_params,
+          "Sparse_SPMV", run_params,
           [&](const int iterations, const int runsize) {
             matrix_type A;
             if (filename)
@@ -392,13 +363,14 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
             double max_time = 0.0;
             double ave_time = 0.0;
             return std::make_tuple(A, x1, y1, rows_per_thread, team_size,
-                                   vector_length, test, schedule, ave_time, max_time, min_time
-                                   );
+                                   vector_length, test, schedule, ave_time,
+                                   max_time, min_time);
           },
-          [&](const int iterations, const int runsize, auto& A, auto& x1, auto& y1,
-              auto& rows_per_thread, auto& team_size, auto& vector_length,
-              auto& test, auto& schedule, auto& ave_time, auto& max_time, auto& min_time) {
-             Kokkos::Timer timer;
+          [&](const int iterations, const int runsize, auto& A, auto& x1,
+              auto& y1, auto& rows_per_thread, auto& team_size,
+              auto& vector_length, auto& test, auto& schedule, auto& ave_time,
+              auto& max_time, auto& min_time) {
+            Kokkos::Timer timer;
             matvec(A, x1, y1, rows_per_thread, team_size, vector_length, test,
                    schedule);
             Kokkos::fence();
@@ -421,19 +393,19 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
 
   std::cout << "\n\nDONE!!!...." << std::endl;
   // Performance Output
-  //double matrix_size =
+  // double matrix_size =
   //    1.0 *
-  //    ((nnz * (sizeof(Scalar) + sizeof(Ordinal)) + numRows * sizeof(Offset))) /
-  //    1024 / 1024;
-  //double vector_size      = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
-  //double vector_readwrite = (nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
+  //    ((nnz * (sizeof(Scalar) + sizeof(Ordinal)) + numRows * sizeof(Offset)))
+  //    / 1024 / 1024;
+  // double vector_size      = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
+  // double vector_readwrite = (nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
 
-  //double problem_size = matrix_size + vector_size;
-  //printf(
+  // double problem_size = matrix_size + vector_size;
+  // printf(
   //    "NNZ NumRows NumCols ProblemSize(MB) AveBandwidth(GB/s) "
   //    "MinBandwidth(GB/s) MaxBandwidth(GB/s) AveGFlop MinGFlop MaxGFlop "
   //    "aveTime(ms) maxTime(ms) minTime(ms) numErrors\n");
-  //printf(
+  // printf(
   //    "%i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( "
   //    "%6.3lf %6.3lf %6.3lf ) %i RESULT\n",
   //    nnz, numRows, numCols, problem_size,
@@ -443,7 +415,7 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
   //    2.0 * nnz * loop / ave_time / 1e9, 2.0 * nnz / max_time / 1e9,
   //    2.0 * nnz / min_time / 1e9, ave_time / loop * 1000, max_time * 1000,
   //    min_time * 1000, num_errors);
-  //return (int)total_errors;
+  // return (int)total_errors;
   return (int)0;
 }
 
@@ -506,8 +478,8 @@ int amain(int argc, char** argv) {
   int loop            = 100;
 
   if (argc == 1) {
-    print_help();
-    return 0;
+    // print_help();
+    // return 0;
   }
 
   for (int i = 0; i < argc; i++) {
@@ -583,10 +555,11 @@ int amain(int argc, char** argv) {
     printf("Kokkos::MultiVector Test: Passed\n");
   else
     printf("Kokkos::MultiVector Test: Failed\n");
- return 0;
+  return 0;
 }
 
-rajaperf::KernelBase* make_spmv_kernel_base(int argc, char* argv[], const rajaperf::RunParams& params) {
+std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(int argc, char* argv[],
+                                            const rajaperf::RunParams& params) {
   long long int size = 110503;  // a prime number
   // int numVecs = 4;
   int test = KOKKOS;
@@ -600,10 +573,10 @@ rajaperf::KernelBase* make_spmv_kernel_base(int argc, char* argv[], const rajape
   int loop            = 100;
 
   if (argc == 1) {
-    print_help();
-    exit(0);
+    // print_help();
+    // exit(0);
   }
-
+  test = KOKKOS;
   for (int i = 0; i < argc; i++) {
     if ((strcmp(argv[i], "-s") == 0)) {
       size = atoi(argv[++i]);
@@ -666,7 +639,8 @@ rajaperf::KernelBase* make_spmv_kernel_base(int argc, char* argv[], const rajape
       exit(0);
     }
   }
-
-  return construct_kernel_base(params, size, size, test, filename, rows_per_thread,
-                            team_size, vector_length, schedule, loop);
+  filename = nullptr;
+  return construct_kernel_base(params, size, size, test, filename,
+                               rows_per_thread, team_size, vector_length,
+                               schedule, loop);
 }

@@ -6,11 +6,14 @@
 #include <common/RAJAPerfSuite.hpp>
 #include <common/Executor.hpp>
 #include "KokkosSparse_spmv_test.hpp"
+//#include "KokkosSparse_spgemm_test.hpp"
 namespace test {
 namespace sparse {
 void build_executor(rajaperf::Executor& exec, int argc, char* argv[], const rajaperf::RunParams& params) {
   exec.registerGroup("Sparse");
-  exec.registerKernel("Sparse_SPMV", make_spmv_kernel_base(argc, argv, params));
+  for(auto* kernel : make_spmv_kernel_base(argc, argv, params)) {
+    exec.registerKernel("Sparse", kernel);
+  }
 }
 }
 }  // namespace test

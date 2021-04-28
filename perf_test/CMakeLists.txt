@@ -28,6 +28,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         tracked_testing
         SOURCES KokkosKernelsTrackedTesting.cpp
         sparse/KokkosSparse_spmv_test.cpp
+        #sparse/KokkosSparse_spgemm_test.cpp
 )
 
 
