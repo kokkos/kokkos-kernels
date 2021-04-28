@@ -1,27 +1,47 @@
 #if defined(KOKKOS_HALF_T_IS_FLOAT)
 TEST_F( TestCategory, batched_scalar_team_gemm_nt_nt_half_half ) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose,Trans::NoTranspose> param_tag_type;
+  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
+      param_tag_type;
 
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Blocked>();
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Unblocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Blocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Unblocked>();
 }
 TEST_F( TestCategory, batched_scalar_team_gemm_t_nt_half_half ) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose,Trans::NoTranspose> param_tag_type;
+  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
+      param_tag_type;
 
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Blocked>();
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Unblocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Blocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Unblocked>();
 }
 TEST_F( TestCategory, batched_scalar_team_gemm_nt_t_half_half ) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose,Trans::Transpose> param_tag_type;
+  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
+      param_tag_type;
 
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Blocked>();
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Unblocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Blocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Unblocked>();
 }
 TEST_F( TestCategory, batched_scalar_team_gemm_t_t_half_half ) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose,Trans::Transpose> param_tag_type;
+  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
+      param_tag_type;
 
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Blocked>();
-  test_batched_teamgemm_half<TestExecSpace,::Test::halfScalarType,::Test::halfScalarType,param_tag_type,Algo::Gemm::Unblocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Blocked>();
+  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+                        ::Test::halfScalarType, param_tag_type,
+                        Algo::Gemm::Unblocked>();
 }
 #endif // KOKKOS_HALF_T_IS_FLOAT
 
