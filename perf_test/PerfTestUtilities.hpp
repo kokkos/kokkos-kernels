@@ -7,22 +7,23 @@
 #include "KokkosKernels_default_types.hpp"
 #include <common/KernelBase.hpp>
 #include <common/QuickKernelBase.hpp>
+#include <common/KernelBase.hpp>
 namespace readers {
 
-template <class Scalar, class Ordinal, class Offset>
+template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
 using matrix_type =
-    KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace,
+    KokkosSparse::CrsMatrix<Scalar, Ordinal, ExecutionSpace,
                             void, Offset>;
 
 template <class>
 struct test_reader;
 
-template <class Scalar, class Ordinal, class Offset>
-struct test_reader<matrix_type<Scalar, Ordinal, Offset>> {
-  static matrix_type<Scalar, Ordinal, Offset> read(
+template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
+struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
+  static matrix_type<Scalar, Ordinal, ExecutionSpace,Offset> read(
       const std::string& filename) {
     return KokkosKernels::Impl::read_kokkos_crst_matrix<
-        matrix_type<Scalar, Ordinal, Offset>>(filename.c_str());
+        matrix_type<Scalar, Ordinal, ExecutionSpace,Offset>>(filename.c_str());
   }
 };
 
@@ -61,6 +62,6 @@ struct data_retriever {
     }
   }
 };
-using test_list = std::vector<KernelBase*>;
+using test_list = std::vector<rajaperf::KernelBase*>;
 
 #endif  // KOKKOSKERNELS_PERFTESTUTILITIES_HPP
