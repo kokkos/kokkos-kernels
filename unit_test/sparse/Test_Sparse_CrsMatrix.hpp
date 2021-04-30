@@ -194,6 +194,26 @@ testCrsMatrix ()
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void
+testCrsMatrixRawConstructor()
+{
+  int nrows = 5;
+  //note: last 2 columns will be empty.
+  //This makes sure the ncols provided to constructor is preserved.
+  int ncols = 7;
+  int nnz = 9;
+  //NOTE: this is not a mistake, the raw ptr constructor takes rowmap as ordinal.
+  std::vector<lno_t> rowmap = {0, 0, 2, 5, 6, 9};
+  std::vector<lno_t> entries = {3, 4, 0, 1, 2, 2, 0, 3, 4};
+  std::vector<scalar_t> values(nnz, Kokkos::ArithTraits<scalar_t>::one());
+  KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> A(
+      "A", nrows, ncols, nnz, values.data(), rowmap.data(), entries.data());
+  EXPECT_EQ(A.numRows(), nrows);
+  EXPECT_EQ(A.numCols(), ncols);
+  EXPECT_EQ(A.nnz(), nnz);
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void
 testCrsMatrixHostMirror ()
 {
   using namespace Test;
@@ -229,6 +249,7 @@ testCrsMatrixHostMirror ()
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## crsmatrix ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   testCrsMatrix<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
+  testCrsMatrixRawConstructor<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
 } \
 TEST_F( TestCategory, sparse ## _ ## crsmatrix_host_mirror ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   testCrsMatrixHostMirror<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
