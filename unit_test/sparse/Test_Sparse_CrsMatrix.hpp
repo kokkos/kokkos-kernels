@@ -204,12 +204,26 @@ testCrsMatrixRawConstructor()
   //NOTE: this is not a mistake, the raw ptr constructor takes rowmap as ordinal.
   std::vector<lno_t> rowmap = {0, 0, 2, 5, 6, 9};
   std::vector<lno_t> entries = {3, 4, 0, 1, 2, 2, 0, 3, 4};
-  std::vector<scalar_t> values(nnz, Kokkos::ArithTraits<scalar_t>::one());
+  std::vector<scalar_t> values;
+  for(int i = 0; i < nnz; i++)
+    values.push_back(Kokkos::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
   KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> A(
       "A", nrows, ncols, nnz, values.data(), rowmap.data(), entries.data());
   EXPECT_EQ(A.numRows(), nrows);
   EXPECT_EQ(A.numCols(), ncols);
   EXPECT_EQ(A.nnz(), nnz);
+  //verify rowmap, entries, values: should all be identical to original raw arrays
+  //(except the rowmap elements are now size_type)
+  auto checkRowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+  auto checkEntries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
+  auto checkValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
+  for(int i = 0; i < nrows + 1; i++)
+    EXPECT_EQ(checkRowmap(i), (size_type) rowmap[i]);
+  for(int i = 0; i < nnz; i++)
+  {
+    EXPECT_EQ(checkEntries(i), entries[i]);
+    EXPECT_EQ(checkValues(i), values[i]);
+  }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
