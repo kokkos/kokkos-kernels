@@ -239,9 +239,10 @@ struct SPMV_Functor {
     };
     size_t context = get_new_context_id();
     set_input_values(context, 2, tuning_values);
-    auto config = tuning_util->tuner->begin();
     begin_context(context);
+    auto config = tuning_util->tuner->begin();
     func(std::get<0>(config), std::get<1>(config), std::get<2>(config));
+    tuning_util->tuner->end();
     end_context(context);
     }
     else{
