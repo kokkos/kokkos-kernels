@@ -152,67 +152,49 @@ namespace Test {
   }
 }
 
+template<typename Scalar, typename Layout>
+void test_gemm()
+{
+  typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_a;
+  typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_b;
+  typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_c;
+  std::vector<const char*> modes = {"N", "T"};
+  if(std::is_same<Scalar, Kokkos::complex<float>>::value || std::is_same<Scalar, Kokkos::complex<double>>::value)
+    modes.push_back("C");
+  Scalar alpha = 4.5;
+  std::vector<Scalar> betas = {0.0, 3.0};
+  for(Scalar beta : betas)
+  {
+    for(auto amode : modes)
+    {
+      for(auto bmode : modes)
+      {
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,0,0,0,alpha,beta);
+        //BMK: N = 1 exercises the special GEMV code path in GEMM (currently, only for modes N/N)
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,50,1,40,alpha,beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,13,15,17,alpha,beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,179,15,211,alpha,beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,12,3071,517,alpha,beta);
+      }
+    }
+  }
+}
 
-
-template<class ScalarA, class ScalarB, class ScalarC, class Device>
-int test_gemm(const char* mode, ScalarA alpha, ScalarB beta) {
-
+template<typename Scalar>
+void test_gemm_enabled_layouts()
+{
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarB**, Kokkos::LayoutLeft, Device> view_type_b_ll;
-  typedef Kokkos::View<ScalarC**, Kokkos::LayoutLeft, Device> view_type_c_ll;
-  Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],0,0,0,alpha,beta);
-  Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],13,15,17,alpha,beta);
-  Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],179,15,211,alpha,beta);
-  Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],12,3071,517,alpha,beta);
-  //Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],1024,1024,2048,alpha,beta);
+  test_gemm<Scalar, Kokkos::LayoutLeft>();
 #endif
-
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
-  typedef Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device> view_type_b_lr;
-  typedef Kokkos::View<ScalarC**, Kokkos::LayoutRight, Device> view_type_c_lr;
-  Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],0,0,0,alpha,beta);
-  Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],13,15,17,alpha,beta);
-  Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],179,15,211,alpha,beta);
-  Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],12,3071,517,alpha,beta);
-  //Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],1024,1024,2048,alpha,beta);
+  test_gemm<Scalar, Kokkos::LayoutRight>();
 #endif
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
-  typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device> view_type_b_ls;
-  typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device> view_type_c_ls;
-  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,0,1024);
-  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,13,1024);
-  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,1024,1024);
-  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,132231,1024);
-#endif
-
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(mode,1024,1024);
-  Test::impl_test_gemv<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(mode,1024,1024);
-#endif
-*/
-  return 1;
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gemm_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_float");
-    float alpha = 5.0f;
-    float beta = 3.0f;
-    test_gemm<float,float,float,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<float,float,float,TestExecSpace> ("TN",alpha,beta);
-    test_gemm<float,float,float,TestExecSpace> ("NT",alpha,beta);
-    test_gemm<float,float,float,TestExecSpace> ("TT",alpha,beta);
-
-    alpha = 4.5f;
-    beta = 0.0f;
-    test_gemm<float,float,float,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<float,float,float,TestExecSpace> ("TN",alpha,beta);
-    test_gemm<float,float,float,TestExecSpace> ("NT",alpha,beta);
-    test_gemm<float,float,float,TestExecSpace> ("TT",alpha,beta);
+  test_gemm_enabled_layouts<float>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -220,19 +202,7 @@ TEST_F( TestCategory, gemm_float ) {
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gemm_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_double");
-    double alpha = 5.0;
-    double beta = 3.0;
-    test_gemm<double,double,double,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<double,double,double,TestExecSpace> ("TN",alpha,beta);
-    test_gemm<double,double,double,TestExecSpace> ("NT",alpha,beta);
-    test_gemm<double,double,double,TestExecSpace> ("TT",alpha,beta);
-
-    alpha = 4.5;
-    beta = 0.0;
-    test_gemm<double,double,double,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<double,double,double,TestExecSpace> ("TN",alpha,beta);
-    test_gemm<double,double,double,TestExecSpace> ("NT",alpha,beta);
-    test_gemm<double,double,double,TestExecSpace> ("TT",alpha,beta);
+    test_gemm_enabled_layouts<double>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -240,19 +210,7 @@ TEST_F( TestCategory, gemm_double ) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gemm_complex_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_complex_double");
-    Kokkos::complex<double> alpha = 5.0;
-    Kokkos::complex<double> beta = 3.0;
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("CN",alpha,beta);
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("NC",alpha,beta);
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("CC",alpha,beta);
-
-    alpha = Kokkos::complex<double>(4.5,0.0);
-    beta = 0.0;
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("CN",alpha,beta);
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("NC",alpha,beta);
-    test_gemm<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("CC",alpha,beta);
+    test_gemm_enabled_layouts<Kokkos::complex<double>>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -260,33 +218,8 @@ TEST_F( TestCategory, gemm_complex_double ) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gemm_complex_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_complex_float");
-    Kokkos::complex<float> alpha = 5.0f;
-    Kokkos::complex<float> beta = 3.0f;
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("CN",alpha,beta);
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("NC",alpha,beta);
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("CC",alpha,beta);
-
-    alpha = Kokkos::complex<float>(4.5f,0.0f);
-    beta = 0.0;
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("NN",alpha,beta);
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("CN",alpha,beta);
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("NC",alpha,beta);
-    test_gemm<Kokkos::complex<float>,Kokkos::complex<float>,Kokkos::complex<float>,TestExecSpace> ("CC",alpha,beta);
+    test_gemm_enabled_layouts<Kokkos::complex<float>>();
   Kokkos::Profiling::popRegion();
 }
 #endif
 
-/*
-#if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F( TestCategory, gemm_int ) {
-    test_gemm<int,int,int,TestExecSpace> ("N");
-}
-#endif
-
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-TEST_F( TestCategory, gemm_double_int ) {
-    test_gemm<double,int,float,TestExecSpace> ("N");
-}
-#endif
-*/
