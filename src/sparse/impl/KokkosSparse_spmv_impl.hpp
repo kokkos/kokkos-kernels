@@ -163,6 +163,7 @@ SPMVTuningUtil* get_tuning_singleton(std::string functor_name, const SPMVFunctor
   static SPMVTuningUtil* tuning_data;
   using execution_space = ExecutionSpace;
   if (tuning_data == nullptr) {
+    tuning_data = new SPMVTuningUtil();
     static std::vector<int64_t> rows_per_thread_options {
       1,2,4,8,16,32,64,128,256,1024,2048,4096
     };
