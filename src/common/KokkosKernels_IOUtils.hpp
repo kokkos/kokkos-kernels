@@ -382,7 +382,6 @@ crsMat_t kk_generate_sparse_matrix(
     Kokkos::deep_copy (rowmap_view , hr);
     Kokkos::deep_copy (columns_view , hc);
     Kokkos::deep_copy (values_view , hv);
-    Kokkos::fence();
   }
 
   graph_t static_graph (columns_view, rowmap_view);
@@ -1025,7 +1024,7 @@ void write_kokkos_crst_matrix(crs_matrix_t a_crsmat,const  char *filename){
 template <typename lno_t, typename size_type, typename scalar_t>
 int read_mtx (
     const char *fileName,
-    lno_t *nv, size_type *ne,
+    lno_t *nrows, lno_t* ncols, size_type *ne,
     size_type **xadj, lno_t **adj, scalar_t **ew,
     bool symmetrize = false, bool remove_diagonal = true,
     bool transpose = false)
@@ -1216,7 +1215,8 @@ int read_mtx (
     nc = tmp;
   }
   //idx *nv, idx *ne, idx **xadj, idx **adj, wt **wt
-  *nv = nr;
+  *nrows = nr;
+  *ncols = nc;
   *ne = nE;
   //*xadj = new idx[nr + 1];
   md_malloc<size_type>(xadj, nr+1);
@@ -1242,6 +1242,20 @@ int read_mtx (
   (*xadj)[nr] = actual;
   *ne = actual;
   return 0;
+}
+
+//Version of read_mtx which does not capture the number of columns.
+//This is the old interface; it's kept for backwards compatibility.
+template <typename lno_t, typename size_type, typename scalar_t>
+int read_mtx (
+    const char *fileName,
+    lno_t *nv, size_type *ne,
+    size_type **xadj, lno_t **adj, scalar_t **ew,
+    bool symmetrize = false, bool remove_diagonal = true,
+    bool transpose = false)
+{
+  lno_t ncol; //will discard
+  return read_mtx<lno_t, size_type, scalar_t>(fileName, nv, &ncol, ne, xadj, adj, ew, symmetrize, remove_diagonal, transpose);
 }
 
 template <typename lno_t, typename size_type, typename scalar_t>
@@ -1271,6 +1285,8 @@ void read_matrix(lno_t *nv, size_type *ne,size_type **xadj, lno_t **adj, scalar_
 
 template <typename crsMat_t>
 crsMat_t read_kokkos_crst_matrix(const char * filename_){
+  std::string strfilename(filename_);
+  bool isMatrixMarket = endswith(strfilename, ".mtx") || endswith(strfilename, ".mm");
 
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
@@ -1281,43 +1297,45 @@ crsMat_t read_kokkos_crst_matrix(const char * filename_){
   typedef typename cols_view_t::value_type   lno_t;
   typedef typename values_view_t::value_type scalar_t;
 
-
-  lno_t nv, *adj;
+  lno_t nr, nc, *adj;
   size_type *xadj, nnzA;
   scalar_t *values;
-  read_matrix<lno_t, size_type, scalar_t>(
-      &nv, &nnzA, &xadj, &adj, &values, filename_);
 
-  row_map_view_t rowmap_view("rowmap_view", nv+1);
+  if(isMatrixMarket)
+  {
+    //MatrixMarket file contains the exact number of columns
+    read_mtx<lno_t, size_type, scalar_t> (
+        filename_, &nr, &nc, &nnzA, &xadj, &adj, &values, false, false, false);
+  }
+  else
+  {
+    //.crs and .bin files don't contain #cols, so will compute it later based on the entries
+    read_matrix<lno_t, size_type, scalar_t>(
+        &nr, &nnzA, &xadj, &adj, &values, filename_);
+  }
+
+  row_map_view_t rowmap_view("rowmap_view", nr + 1);
   cols_view_t columns_view("colsmap_view", nnzA);
   values_view_t values_view("values_view", nnzA);
 
-
   {
-    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-    typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
-    typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
-
-    for (lno_t i = 0; i <= nv; ++i){
-      hr(i) = xadj[i];
-    }
-
-    for (size_type i = 0; i < nnzA; ++i){
-      hc(i) = adj[i];
-      hv(i) = values[i];
-    }
+    Kokkos::View<size_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> hr(xadj, nr + 1);
+    Kokkos::View<lno_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> hc(adj, nnzA);
+    Kokkos::View<scalar_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> hv(values, nnzA);
     Kokkos::deep_copy (rowmap_view , hr);
     Kokkos::deep_copy (columns_view , hc);
     Kokkos::deep_copy (values_view , hv);
   }
 
-  lno_t ncols = 0;
-  KokkosKernels::Impl::kk_view_reduce_max
-      <cols_view_t, typename crsMat_t::execution_space>(nnzA, columns_view, ncols);
-  ncols += 1;
+  if(!isMatrixMarket)
+  {
+    KokkosKernels::Impl::kk_view_reduce_max
+        <cols_view_t, typename crsMat_t::execution_space>(nnzA, columns_view, nc);
+    nc++;
+  }
   
   graph_t static_graph (columns_view, rowmap_view);
-  crsMat_t crsmat("CrsMatrix", ncols, values_view, static_graph);
+  crsMat_t crsmat("CrsMatrix", nc, values_view, static_graph);
   delete [] xadj; delete [] adj; delete [] values;
   return crsmat;
 }
