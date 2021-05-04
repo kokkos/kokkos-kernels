@@ -50,12 +50,12 @@
 #include <Kokkos_Atomic.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_Bitset.hpp>
-#include <Kokkos_Sort.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 //FOR DEBUGGING
 #include "KokkosBlas1_nrm2.hpp"
@@ -738,7 +738,7 @@ namespace KokkosSparse{
         // TODO BMK: Why are the vertices in each color set only being sorted on GPU?
         // Wouldn't it have a locality benefit on CPU too?
         if(KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
-          KokkosKernels::Impl::sort_crs_graph<MyExecSpace, decltype(color_xadj), decltype(color_adj)>(color_xadj, color_adj);
+          KokkosKernels::sort_crs_graph<MyExecSpace, decltype(color_xadj), decltype(color_adj)>(color_xadj, color_adj);
           MyExecSpace().fence();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
           std::cout << "SORT_TIME:" << timer.seconds() << std::endl;

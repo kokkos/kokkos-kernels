@@ -620,7 +620,7 @@ void spadd_symbolic(
         "KokkosSparse::SpAdd:Symbolic::InputNotSorted::UnmergedSum",
         range_type(0, nrows), unmergedSum);
     // sort the unmerged sum
-    KokkosKernels::Impl::sort_crs_matrix<execution_space, clno_row_view_t_,
+    KokkosKernels::sort_crs_matrix<execution_space, clno_row_view_t_,
                                          clno_nnz_view_t_, clno_nnz_view_t_>(
         c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
     clno_nnz_view_t_ a_pos(NoInitialize("A entry positions"),

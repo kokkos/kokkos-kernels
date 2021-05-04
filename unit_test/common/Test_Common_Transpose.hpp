@@ -50,6 +50,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Sort.hpp>
 #include <KokkosKernels_SparseUtils.hpp>
+#include <KokkosKernels_Sorting.hpp>
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_default_types.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -137,9 +138,8 @@ void testTranspose(int numRows, int numCols, bool doValues)
          tt_rowmap, tt_entries);
   }
   //Sort both the transpose-transpose, and the original matrix (to compare directly)
-  KokkosKernels::Impl::sort_crs_matrix<exec_space, c_rowmap_t, entries_t, values_t>
-    (input_mat.graph.row_map, input_mat.graph.entries, input_mat.values);
-  KokkosKernels::Impl::sort_crs_matrix<exec_space, c_rowmap_t, entries_t, values_t>
+  KokkosKernels::sort_crs_matrix(input_mat);
+  KokkosKernels::sort_crs_matrix<exec_space, c_rowmap_t, entries_t, values_t>
     (tt_rowmap, tt_entries, tt_values);
   //The views should now be exactly identical, since they represent the same matrix and are sorted
   size_type rowmapDiffs;
