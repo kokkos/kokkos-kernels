@@ -275,6 +275,7 @@ struct SPMVTuner {
 	      Kokkos::Tools::Experimental::make_variable_value(nnz_context_variable, nnz)};
 
     context = Kokkos::Tools::Experimental::get_new_context_id();
+    Kokkos::Tools::Experimental::begin_context(context);
     Kokkos::Tools::Experimental::set_input_values(context, 2, context_values.data());
     Kokkos::Tools::Experimental::VariableValue configuration = Kokkos::Tools::Experimental::make_variable_value(team_size_tuning_variable, int64_t(default_value));
     Kokkos::Tools::Experimental::request_output_values(context, 1, &configuration);
