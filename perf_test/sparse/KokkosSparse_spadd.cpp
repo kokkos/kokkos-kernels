@@ -197,8 +197,8 @@ void run_experiment(const Params& params)
   if(params.sorted)
   {
     std::cout << "Assuming input matrices are sorted (explicitly sorting just in case)\n";
-    KokkosKernels::Impl::sort_crs_matrix(A);
-    KokkosKernels::Impl::sort_crs_matrix(B);
+    KokkosKernels::sort_crs_matrix(A);
+    KokkosKernels::sort_crs_matrix(B);
   }
   else
     std::cout << "Assuming input matrices are not sorted.\n";
