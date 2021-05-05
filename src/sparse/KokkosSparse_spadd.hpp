@@ -169,7 +169,6 @@ struct SortedCountEntriesTeam {
 
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMem t) const
   {
-    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
     ordinal_type i = t.league_rank() * t.team_size() + t.team_rank();
     if(i >= nrows)
       return;
