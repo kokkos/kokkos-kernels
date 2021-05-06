@@ -50,14 +50,14 @@
 
 namespace KokkosBlas {
 
-/// \brief Return the (smallest) index of the element of the maximum magnitude of the vector x. 
+/// \brief Return the (smallest) index of the element of the maximum magnitude of the vector x.
 ///
 /// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
 ///
 /// \param x [in] Input 1-D View.
 ///
 /// \return The (smallest) index of the element of the maximum magnitude; a single value.
-///         Note: Returned index is 1-based for compatibility with Fortran.    
+///         Note: Returned index is 1-based for compatibility with Fortran.
 template<class XVector>
 typename XVector::size_type iamax (const XVector& x)
 {
@@ -74,7 +74,7 @@ typename XVector::size_type iamax (const XVector& x)
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVector_Internal;
 
   typedef Kokkos::View<index_type,
-    Kokkos::LayoutLeft,
+    typename XVector_Internal::array_layout,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 
@@ -130,12 +130,12 @@ iamax (const RV& R, const XMV& X,
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
-  // Create unmanaged versions of the input Views.  RV may be rank 0 or rank 2. 
+  // Create unmanaged versions of the input Views.  RV may be rank 0 or rank 2.
   // XMV may be rank 1 or rank 2.
   typedef Kokkos::View<
     typename std::conditional<
-      RV::rank == 0, 
-      typename RV::non_const_value_type, 
+      RV::rank == 0,
+      typename RV::non_const_value_type,
       typename RV::non_const_value_type* >::type,
     typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
     typename std::conditional<
