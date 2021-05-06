@@ -14,13 +14,9 @@ namespace Test {
     typedef Kokkos::ArithTraits<ScalarA> ats;
 
     typedef Kokkos::View<ScalarA*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeA;
+       typename ViewTypeA::array_layout,Device> BaseTypeA;
     typedef Kokkos::View<ScalarB*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeB::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeB;
+       typename ViewTypeB::array_layout,Device> BaseTypeB;
 
 
     BaseTypeA b_a("A",N);
