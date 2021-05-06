@@ -14,17 +14,11 @@ namespace Test {
     typedef typename ViewTypeC::value_type ScalarC;
 
     typedef Kokkos::View<ScalarA*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeA;
+       typename ViewTypeA::array_layout,Device> BaseTypeA;
     typedef Kokkos::View<ScalarB*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeB::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeB;
+       typename ViewTypeB::array_layout,Device> BaseTypeB;
     typedef Kokkos::View<ScalarC*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeC::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeC;
+       typename ViewTypeC::array_layout,Device> BaseTypeC;
 
 
     ScalarA a = 3;
@@ -35,7 +29,7 @@ namespace Test {
     BaseTypeB b_y("Y",N);
     BaseTypeC b_z("Y",N);
     BaseTypeC b_org_z("Org_Z",N);
-    
+
 
     ViewTypeA x = Kokkos::subview(b_x,Kokkos::ALL(),0);
     ViewTypeB y = Kokkos::subview(b_y,Kokkos::ALL(),0);
@@ -109,9 +103,7 @@ namespace Test {
     typedef typename ViewTypeC::value_type ScalarC;
 
     typedef Kokkos::View<ScalarA*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeA;
+       typename ViewTypeA::array_layout,Device> BaseTypeA;
     typedef multivector_layout_adapter<ViewTypeB> vfB_type;
     typedef multivector_layout_adapter<ViewTypeC> vfC_type;
 
