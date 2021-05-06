@@ -73,7 +73,7 @@ sum (const XVector& x)
 
   typedef Kokkos::View<
     typename XVector::non_const_value_type,
-    Kokkos::LayoutLeft,
+    typename XVector_Internal::array_layout,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 
