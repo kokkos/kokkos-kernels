@@ -140,15 +140,18 @@ struct SortCrsMatrixFunctor
   using lno_t = typename entries_t::non_const_value_type;
   using scalar_t = typename values_t::non_const_value_type;
   using team_mem = typename Kokkos::TeamPolicy<execution_space>::member_type;
+  //The functor owns memory for entriesAux, so it can't have MemoryTraits<Unmanaged>
+  using entries_managed_t = Kokkos::View<typename entries_t::data_type, typename entries_t::device_type>;
+  using values_managed_t = Kokkos::View<typename values_t::data_type, typename values_t::device_type>;
 
   SortCrsMatrixFunctor(bool usingRangePol, const rowmap_t& rowmap_, const entries_t& entries_, const values_t& values_)
     : rowmap(rowmap_), entries(entries_), values(values_)
   {
     if(usingRangePol)
     {
-      entriesAux = entries_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
+      entriesAux = entries_managed_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
           entries.extent(0));
-      valuesAux = values_t(Kokkos::ViewAllocateWithoutInitializing("Values aux"),
+      valuesAux = values_managed_t(Kokkos::ViewAllocateWithoutInitializing("Values aux"),
           values.extent(0));
     }
     //otherwise, aux arrays won't be allocated (sorting in place)
@@ -180,9 +183,9 @@ struct SortCrsMatrixFunctor
 
   rowmap_t rowmap;
   entries_t entries;
-  entries_t entriesAux;
+  entries_managed_t entriesAux;
   values_t values;
-  values_t valuesAux;
+  values_managed_t valuesAux;
 };
 
 template<typename execution_space, typename rowmap_t, typename entries_t>
@@ -191,13 +194,15 @@ struct SortCrsGraphFunctor
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t = typename entries_t::non_const_value_type;
   using team_mem = typename Kokkos::TeamPolicy<execution_space>::member_type;
+  //The functor owns memory for entriesAux, so it can't have MemoryTraits<Unmanaged>
+  using entries_managed_t = Kokkos::View<typename entries_t::data_type, typename entries_t::device_type>;
 
   SortCrsGraphFunctor(bool usingRangePol, const rowmap_t& rowmap_, const entries_t& entries_)
     : rowmap(rowmap_), entries(entries_)
   {
     if(usingRangePol)
     {
-      entriesAux = entries_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
+      entriesAux = entries_managed_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
           entries.extent(0));
     }
     //otherwise, aux arrays won't be allocated (sorting in place)
@@ -228,7 +233,7 @@ struct SortCrsGraphFunctor
 
   rowmap_t rowmap;
   entries_t entries;
-  entries_t entriesAux;
+  entries_managed_t entriesAux;
 };
 
 template<typename rowmap_t, typename entries_t>
