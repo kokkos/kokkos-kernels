@@ -14,9 +14,7 @@ namespace Test {
     typedef Kokkos::ArithTraits<mag_type> MAT;
 
     typedef Kokkos::View<ScalarA*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeA;
+       typename ViewTypeA::array_layout,Device> BaseTypeA;
 
 
     BaseTypeA b_a("A",N);
