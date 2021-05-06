@@ -74,7 +74,7 @@ nrm2_squared (const XVector& x)
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVector_Internal;
 
   typedef Kokkos::View<mag_type,
-    Kokkos::LayoutLeft,
+    typename XVector::array_layout,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 

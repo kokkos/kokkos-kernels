@@ -12,9 +12,7 @@ namespace Test {
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
     typedef Kokkos::View<ScalarA*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeA;
+       typename ViewTypeA::array_layout,Device> BaseTypeA;
 
 
     BaseTypeA b_a("A",N);
@@ -87,7 +85,7 @@ namespace Test {
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
+    Kokkos::View<typename AT::mag_type*,typename ViewTypeA::array_layout,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::nrm2(r,a);
     for(int k=0;k<K;k++) {
