@@ -718,7 +718,7 @@ void write_graph_crs(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *
 }
 
 template <typename lno_t, typename size_type, typename scalar_t>
-void write_graph_ligra(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t */*ew*/,const  char *filename){
+void write_graph_ligra(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t * /*ew*/,const  char *filename){
 
   std::ofstream ff (filename);
   ff << "AdjacencyGraph" << std::endl;

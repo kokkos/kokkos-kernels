@@ -595,7 +595,7 @@ int main(int argc, char **argv)
   return 0;
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
-int main(int /*argc*/, char **/*argv*/)
+int main()
 {
   std::cout << std::endl << "** CHOLMOD NOT ENABLED **" << std::endl << std::endl;
   return 0;

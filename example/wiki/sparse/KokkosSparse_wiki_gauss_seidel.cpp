@@ -13,7 +13,7 @@
 //  -Here, use to solve a diagonally dominant linear system directly.
 
 //Helper to print out colors in the shape of the grid
-int main(int /*argc*/, char* /*argv*/[])
+int main()
 {
   using Scalar  = default_scalar;
   using Mag     = Kokkos::ArithTraits<Scalar>::mag_type;
