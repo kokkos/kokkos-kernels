@@ -550,11 +550,9 @@ public:
     IndexType blockColStart = columnsPerThread * block;
     Scalar localSum = KAT::zero();
     //compute local sum
-    for(IndexType col = blockColStart; col < blockColStart + columnsPerThread; col++)
+    if(row < (IndexType) A_.extent(0))
     {
-      if(col == (IndexType) A_.extent(1))
-        break;
-      if(row < (IndexType) A_.extent(0))
+      for(IndexType col = blockColStart; col < blockColStart + columnsPerThread && col < A_.extent(1); col++)
       {
         //A access is coalesced, x access is a broadcast
         localSum += A_(row, col) * x_(col);
