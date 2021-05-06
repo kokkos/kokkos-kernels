@@ -1291,10 +1291,10 @@ struct KokkosSPGEMM
 
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const GPUTag&, const team_member_t & teamMember) const {
+  void operator()(const GPUTag&, const team_member_t & /*teamMember*/) const {
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /*team_size*/) const {
     return shared_memory_size;
   }
 
@@ -1591,7 +1591,7 @@ void
     KokkosSPGEMM_numeric_triangle(
       c_row_view_t rowmapC_,
       c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_){
+      c_scalar_nnz_view_t /*valuesC_*/){
   this->KokkosSPGEMM_numeric_triangle_ai(rowmapC_, entriesC_);
 
 }
@@ -1644,7 +1644,7 @@ void
   struct dummy{
 
     KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
+    void operator ()(const nnz_lno_t &/*row*/, const nnz_lno_t &/*col_set_ind*/, const nnz_lno_t & /*col_set*/, const nnz_lno_t &/*threadid*/) const{
     }
   } dummy;
   this->triangle_count_ai(
@@ -1858,7 +1858,7 @@ void KokkosSPGEMM
 
   struct dummy{
     KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
+    void operator ()(const nnz_lno_t &/*row*/, const nnz_lno_t &/*col_set_ind*/, const nnz_lno_t & /*col_set*/, const nnz_lno_t &/*threadid*/) const{
     }
 
   } dummy;

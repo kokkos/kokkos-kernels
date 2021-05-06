@@ -82,8 +82,8 @@ void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
  * LHS giving us this flop count: flops = columns_LHS * (columns_LHS + 1) flops
  * = (flops / 2) * 2 flops = flops * rows_LHS
  */
-static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
-                                         int a_n) {
+static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int /*a_m*/,
+                                         int /*a_n*/) {
   int flops;
 
   if (side == 'L' || side == 'l') {
@@ -107,7 +107,7 @@ static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int a_m,
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
 static inline double __trmm_flop_count(char side, double b_m, double b_n,
-                                       double a_m, double a_n) {
+                                       double /*a_m*/, double /*a_n*/) {
   double flops;
 
   if (side == 'L' || side == 'l') {
@@ -189,8 +189,8 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
                  << std::endl;
 }
 
-static void __print_trmm_perf_test_options(options_t options) {
 #ifdef PERF_TEST_DEBUG
+static void __print_trmm_perf_test_options(options_t options) {
   printf("options.test      = %s\n", test_e_str[options.test].c_str());
   printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
   printf("options.start     = %dx%d,%dx%d\n", options.start.a.m,
@@ -207,17 +207,21 @@ static void __print_trmm_perf_test_options(options_t options) {
     printf("options.alpha     = %lf\n", options.blas_args.trmm.alpha);
   else if (std::is_same<float, default_scalar>::value)
     printf("options.alpha     = %f\n", options.blas_args.trmm.alpha);
-#endif  // PERF_TEST_DEBUG
   return;
 }
+#else
+static void __print_trmm_perf_test_options(options_t /*options*/) {
+  return;
+}
+#endif  // PERF_TEST_DEBUG
 
 /*************************** Internal templated fns **************************/
-template <class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
 // Need to take subviews on the device
 #if !defined(KOKKOS_ENABLE_CUDA) \
   && !defined(KOKKOS_ENABLE_HIP) \
   && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+template <class scalar_type, class vta, class vtb, class device_type>
+void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -249,20 +253,24 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
     Kokkos::fence();
   }
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
-#else
-  std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA or KOKKOS_ENABLE_OPENMPTARGET is defined." << std::endl;
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_OPENMPTARGET
   return;
 }
+#else
+template <class scalar_type, class vta, class vtb, class device_type>
+void __do_trmm_serial_blas(options_t /*options*/, trmm_args_t /*trmm_args*/) {
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA or KOKKOS_ENABLE_OPENMPTARGET is defined." << std::endl;
+  return;
+}
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_OPENMPTARGET
 
-template <class side, class uplo, class trans, class diag>
-void __do_trmm_serial_batched_template(options_t options,
-                                       trmm_args_t trmm_args) {
 // Need to take subviews on the device
 #if !defined(KOKKOS_ENABLE_CUDA) \
   && !defined(KOKKOS_ENABLE_HIP) \
   && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+template <class side, class uplo, class trans, class diag>
+void __do_trmm_serial_batched_template(options_t options,
+                                       trmm_args_t trmm_args) {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -291,11 +299,15 @@ void __do_trmm_serial_batched_template(options_t options,
     Kokkos::fence();
   }
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
+}
 #else
+template <class side, class uplo, class trans, class diag>
+void __do_trmm_serial_batched_template(options_t /*options*/,
+                                       trmm_args_t /*trmm_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA or KOKKOS_ENABLE_OPENMPTARGET is defined." << std::endl;
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_OPENMPTARGET
 }
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_OPENMPTARGET
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {

@@ -73,7 +73,7 @@ namespace Test {
     ModifyEntries (const CrsMatrixType& A,
                    const bool replace,
                    const bool sorted,
-                   const bool atomic) :
+                   const bool /*atomic*/) :
       A_ (A), replace_ (replace), sorted_ (sorted)
     {}
 
@@ -204,7 +204,7 @@ namespace { // (anonymous)
 		  	  	  	  	  	  	   std::ostream &outRef,
 								   //Teuchos::FancyOStream& outRef, // see notes
                                    const CrsMatrixType& A,
-                                   const bool replace,
+                                   const bool /*replace*/,
                                    const bool /* sorted */,
                                    const bool /* atomic */,
                                    const bool debug = false)
@@ -304,9 +304,9 @@ namespace { // (anonymous)
 
   template<class CrsMatrixType, const int numEntriesToModify>
   void
-  testOneCaseImpl (bool& success,
-		  	  	   std::ostream &out,
-				   //Teuchos::FancyOStream& out,
+  testOneCaseImpl (bool& /*success*/,
+		   std::ostream &out,
+		   //Teuchos::FancyOStream& out,
                    const CrsMatrixType& A,
                    const bool replace,
                    const bool sorted,
@@ -386,8 +386,8 @@ namespace { // (anonymous)
   struct TestOneCase<CrsMatrixType, 0> {
     static void
     test (bool& /* success */,
-    	  std::ostream &out,
-		  //Teuchos::FancyOStream& /* out */,
+    	  std::ostream &/*out*/,
+	  //Teuchos::FancyOStream& /* out */,
           const CrsMatrixType& /* A */,
           const bool /* replace */,
           const bool /* sorted */,

@@ -843,7 +843,7 @@ template <typename in_row_view_t,
           typename MyExecSpace>
 inline size_t kk_is_d1_coloring_valid(
     typename in_nnz_view_t::non_const_value_type num_rows,
-    typename in_nnz_view_t::non_const_value_type num_cols,
+    typename in_nnz_view_t::non_const_value_type /*num_cols*/,
     in_row_view_t xadj,
     in_nnz_view_t adj,
     in_color_view_t v_colors
@@ -1438,21 +1438,29 @@ void kk_sort_by_row_size_parallel(
         });
       }
 }
-#endif 
+#endif
+
+#ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
 template <typename size_type, typename lno_t, typename ExecutionSpace>
 void kk_sort_by_row_size(
     const lno_t nv,
     const size_type *in_xadj,
     lno_t *new_indices, int sort_decreasing_order = 1, int num_threads=64){
 
-#ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
   std::cout << "Parallel Sort" << std::endl;
   kk_sort_by_row_size_parallel<size_type, lno_t, ExecutionSpace>(nv, in_xadj, new_indices, sort_decreasing_order, num_threads); 
+}
 #else
+template <typename size_type, typename lno_t, typename ExecutionSpace>
+void kk_sort_by_row_size(
+    const lno_t nv,
+    const size_type *in_xadj,
+    lno_t *new_indices, int sort_decreasing_order = 1, int /*num_threads*/=64){
+
   std::cout << "Sequential Sort" << std::endl;
   kk_sort_by_row_size_sequential(nv, in_xadj, new_indices, sort_decreasing_order);
-#endif
 }
+#endif
 
 template <typename size_type, typename lno_t, typename ExecutionSpace, typename scalar_t = double>
 void kk_get_lower_triangle_fill_parallel(
@@ -1717,8 +1725,8 @@ crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
 template <typename graph_t>
 graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
     typename graph_t::data_type *new_indices = NULL,
-    bool use_dynamic_scheduling = false,
-    bool chunksize = 4){
+    bool /*use_dynamic_scheduling*/ = false,
+    bool /*chunksize*/ = 4){
 
   typedef typename graph_t::execution_space exec_space;
 
@@ -1848,8 +1856,8 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     cols_view_t in_entries,
     out_row_map_view_t &out_rowmap,
     out_cols_view_t &out_entries,
-    bool use_dynamic_scheduling = false,
-    bool chunksize = 4){
+    bool /*use_dynamic_scheduling */ = false,
+    bool /*chunksize*/ = 4){
 
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;

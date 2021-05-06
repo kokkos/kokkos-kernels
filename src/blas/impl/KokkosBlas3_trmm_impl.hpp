@@ -68,7 +68,7 @@ namespace KokkosBlas {
     void SerialTrmm_Invoke (const char side[],
                       const char uplo[],
                       const char trans[],
-                      const char diag[],
+		      const char /*diag*/[],
                       typename BViewType::const_value_type& alpha,
                       const AViewType& A,
                       const BViewType& B)

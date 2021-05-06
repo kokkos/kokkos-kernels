@@ -42,7 +42,7 @@ void printReorderedMatrix(const rowmap_t& rowmapIn, const entries_t& entriesIn, 
 }
 
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
   Kokkos::initialize();
   {

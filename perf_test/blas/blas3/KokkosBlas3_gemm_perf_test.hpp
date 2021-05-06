@@ -277,8 +277,8 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                  << flops << "," << gflops / average_time << std::endl;
 }
 
-static void __print_gemm_perf_test_options(options_t options) {
 #ifdef PERF_TEST_DEBUG
+static void __print_gemm_perf_test_options(options_t options) {
   printf("options.test      = %s\n", test_e_str[options.test].c_str());
   printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
   printf("options.start     = %dx%d,%dx%d\n", options.start.a.m,
@@ -295,9 +295,13 @@ static void __print_gemm_perf_test_options(options_t options) {
     printf("options.alpha     = %lf\n", options.blas_args.gemm.alpha);
   else if (std::is_same<float, default_scalar>::value)
     printf("options.alpha     = %f\n", options.blas_args.gemm.alpha);
-#endif  // PERF_TEST_DEBUG
   return;
 }
+#else
+static void __print_gemm_perf_test_options(options_t /*options*/) {
+  return;
+}
+#endif  // PERF_TEST_DEBUG
 
 /*************************** Internal templated fns **************************/
 template <class scalar_type, class vta, class vtb, class device_type>
@@ -471,32 +475,32 @@ struct parallel_batched_gemm_range_policy {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamTag &, const int &i) const {
+  void operator()(const TeamTag &, const int &/*i*/) const {
     Kokkos::abort("TeamTag not supported using RangePolicy.");
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamBatchDim3Tag &, const int &i) const {
+  void operator()(const TeamBatchDim3Tag &, const int &/*i*/) const {
     Kokkos::abort("TeamBatchDim3Tag not supported using RangePolicy.");
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamVectorTag &, const int &i) const {
+  void operator()(const TeamVectorTag &, const int &/*i*/) const {
     Kokkos::abort("TeamVectorTag not supported using RangePolicy.");
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamVectorBatchDim3Tag &, const int &i) const {
+  void operator()(const TeamVectorBatchDim3Tag &, const int &/*i*/) const {
     Kokkos::abort("TeamVectorBatchDim3Tag not supported using RangePolicy.");
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamSimdTag &, const int &i) const {
+  void operator()(const TeamSimdTag &, const int &/*i*/) const {
     Kokkos::abort("TeamSimdTag not supported using RangePolicy.");
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const TeamSimdBatchDim4Tag &, const int &i) const {
+  void operator()(const TeamSimdBatchDim4Tag &, const int &/*i*/) const {
     Kokkos::abort("TeamSimdBatchDim4Tag not supported using RangePolicy.");
   }
 };
@@ -631,13 +635,13 @@ struct parallel_batched_gemm {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const SerialSimdTag &, const MemberType &member) const {
+  void operator()(const SerialSimdTag &, const MemberType &/*member*/) const {
     Kokkos::abort("SerialSimdTag not supported using RangePolicy.");
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const SerialSimdBatchDim3Tag &,
-                  const MemberType &member) const {
+                  const MemberType &/*member*/) const {
     Kokkos::abort("SerialSimdBatchDim3Tag not supported using RangePolicy.");
   }
 };
@@ -1143,10 +1147,10 @@ class parallel_batched_gemm_experiment5 {
  *
  * Not portable to GPU
  */
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class TransAType, class TransBType, class BlockingType,
           class device_type>
 void __do_gemm_parallel_experiment5(options_t options, gemm_args_t gemm_args) {
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   using execution_space = typename device_type::execution_space;
   using policy_type     = Kokkos::RangePolicy<SimdCpuTag, execution_space>;
 
@@ -1204,14 +1208,19 @@ void __do_gemm_parallel_experiment5(options_t options, gemm_args_t gemm_args) {
   Kokkos::fence();
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds(), "experiment5");
+  return;
+}
 #else
+template <class TransAType, class TransBType, class BlockingType,
+          class device_type>
+void __do_gemm_parallel_experiment5(options_t /*options*/, gemm_args_t /*gemm_args*/) {
   std::cerr
       << std::string(__func__)
       << " disabled since KOKKOS_ENABLE_CUDA or KOKKOS_ENABLE_HIP is defined."
       << std::endl;
-#endif  // !KOKKOS_ENABLE_CUDA || !KOKKOS_ENABLE_HIP
   return;
 }
+#endif  // !KOKKOS_ENABLE_CUDA || !KOKKOS_ENABLE_HIP
 
 template <class MemberType, class SimdViewType, class TransAType,
           class TransBType, class BlockingType>
@@ -1240,10 +1249,10 @@ class parallel_batched_gemm_experiment6 {
   }
 };
 
+#if 0
 template <class TransAType, class TransBType, class BlockingType,
           class device_type>
 void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
-#if 0
   using execution_space = typename device_type::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
   using member_type     = typename policy_type::member_type;
@@ -1304,9 +1313,15 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
   }
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds(), "experiment6");
-#endif
   return;
 }
+#else
+template <class TransAType, class TransBType, class BlockingType,
+          class device_type>
+void __do_gemm_parallel_experiment6(options_t /*options*/, gemm_args_t /*gemm_args*/) {
+  return;
+}
+#endif
 
 /**
  * Check difference of scalars expected and actual at indexes i,j,k
@@ -1895,11 +1910,11 @@ void do_gemm_serial_simd_batched_blocked_parallel(options_t options) {
   return;
 }
 
-void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
-  STATUS;
 #if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&         \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
+  STATUS;
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
@@ -1910,7 +1925,11 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
         options,
         __do_gemm_parallel_batched<SerialSimdTag, Algo::Gemm::CompactMKL,
                                    default_device>);
+  return;
+}
 #else
+void do_gemm_serial_batched_compact_mkl_parallel(options_t /*options*/) {
+  STATUS;
 #if !defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
   std::cerr
       << std::string(__func__)
@@ -1928,9 +1947,9 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
          "is undefined."
       << std::endl;
 #endif
-#endif
   return;
 }
+#endif
 
 void do_gemm_team_batched_parallel(options_t options) {
   STATUS;

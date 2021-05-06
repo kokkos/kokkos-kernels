@@ -126,8 +126,8 @@ void kk_sparseMatrix_generate_lower_upper_triangle(
     OrdinalType nrows,
     OrdinalType ncols,
     SizeType &nnz,
-    OrdinalType row_size_variance,
-    OrdinalType bandwidth,
+    OrdinalType /*row_size_variance*/,
+    OrdinalType /*bandwidth*/,
     ScalarType* &values,
     SizeType* &rowPtr,
     OrdinalType* &colInd)
@@ -396,7 +396,7 @@ crsMat_t kk_generate_sparse_matrix(
 //TODO: need to fix the size_type. All over the reading inputs are lno_t.
 
 template <typename stype>
-void md_malloc(stype **arr, size_t n, std::string alloc_str = ""){
+void md_malloc(stype **arr, size_t n, std::string /*alloc_str*/ = ""){
   *arr = new stype[n];
   if (*arr == NULL){
     throw std::runtime_error ("Memory Allocation Problem\n");
@@ -718,7 +718,7 @@ void write_graph_crs(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *
 }
 
 template <typename lno_t, typename size_type, typename scalar_t>
-void write_graph_ligra(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t *ew,const  char *filename){
+void write_graph_ligra(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *adj,const  scalar_t */*ew*/,const  char *filename){
 
   std::ofstream ff (filename);
   ff << "AdjacencyGraph" << std::endl;

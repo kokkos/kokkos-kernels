@@ -92,7 +92,7 @@ namespace KokkosBatched {
   invoke(const MemberType &member, 
          const int m, const int n,
          ValueType *__restrict__ A, const int as0, const int as1,
-         const typename MagnitudeScalarType<ValueType>::type tiny) {
+         const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
 
     enum : int {
       mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()

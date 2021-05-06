@@ -97,7 +97,7 @@ namespace KokkosBatched {
              typename bViewType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const MemberType &member,
+    invoke(const MemberType &/*member*/,
            const ScalarType alpha,
            const AViewType &A,
            const bViewType &b) {

@@ -106,7 +106,7 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
 #endif
 #ifdef KOKKOS_ENABLE_HIP
 template<>
-inline int RowsPerThread<Kokkos::Experimental::HIP>(const int NNZPerRow) {
+inline int RowsPerThread<Kokkos::Experimental::HIP>(const int /*NNZPerRow*/) {
   return 1;
 }
 #endif
@@ -546,7 +546,7 @@ public:
   ///   must have length \c nrows+1.
   /// \param cols [in] The column indices. \c cols[k] is the column
   ///   index of entry k, with a corresponding value of \c val[k] .
-  CrsMatrix (const std::string &label,
+  CrsMatrix (const std::string &/*label*/,
              OrdinalType nrows,
              OrdinalType ncols,
              size_type annz,

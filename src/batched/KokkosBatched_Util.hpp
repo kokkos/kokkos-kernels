@@ -441,7 +441,7 @@ namespace KokkosBatched {
       : as1(arg_as1), AL(NULL), AR(NULL) {}
 
     KOKKOS_INLINE_FUNCTION
-    void partWithAL(ValueType *A, const int nA, const int nAL) {
+    void partWithAL(ValueType *A, const int /* nA */, const int nAL) {
       AL = A; AR = AL+nAL*as1;
     }
 
@@ -496,7 +496,7 @@ namespace KokkosBatched {
       : as0(arg_as0), AT(NULL), AB(NULL) {}
 
     KOKKOS_INLINE_FUNCTION
-    void partWithAT(ValueType *A, const int mA, const int mAT) {
+    void partWithAT(ValueType *A, const int /* mA */, const int mAT) {
       AT = A;
       AB = AT+mAT*as0;
     }
@@ -564,7 +564,7 @@ namespace KokkosBatched {
 
     KOKKOS_INLINE_FUNCTION
     void partWithATL(ValueType *A, 
-                     const int mA, const int nA, 
+                     const int /* mA */, const int /* nA */, 
                      const int mATL, const int nATL) {
       ATL = A;            ATR = ATL+nATL*as1; 
       ABL = ATL+mATL*as0; ABR = ABL+nATL*as1;

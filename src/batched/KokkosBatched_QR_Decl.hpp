@@ -36,10 +36,10 @@ namespace KokkosBatched {
              typename wViewType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const MemberType &member,
-           const AViewType &A,
-           const tViewType &t,
-           const wViewType &w) {
+    invoke(const MemberType &/*member*/,
+           const AViewType &/*A*/,
+           const tViewType &/*t*/,
+           const wViewType &/*w*/) {
       /// not implemented
       return -1;
     }
