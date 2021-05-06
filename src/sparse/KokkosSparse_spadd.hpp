@@ -183,7 +183,7 @@ struct SortedCountEntriesTeam {
     {
       //fall back to slow serial method
       Kokkos::single(Kokkos::PerThread(t),
-      [=]()
+      [&]()
       {
         longRowFallback(i);
       });
@@ -192,7 +192,7 @@ struct SortedCountEntriesTeam {
     if(n == 0)
     {
       Kokkos::single(Kokkos::PerThread(t),
-      [=]()
+      [&]()
       {
         Crowcounts(i) = 0;
       });
@@ -259,7 +259,7 @@ struct SortedCountEntriesTeam {
           lcount++;
       }, risingEdges);
     Kokkos::single(Kokkos::PerThread(t),
-    [=]()
+    [&]()
     {
       Crowcounts(i) = risingEdges + 1;
     });

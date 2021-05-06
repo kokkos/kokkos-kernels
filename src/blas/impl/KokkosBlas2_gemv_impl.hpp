@@ -592,7 +592,7 @@ public:
 
     // compute yj = beta*yj + alpha*val
     Kokkos::single(Kokkos::PerTeam(team),
-    [=]()
+    [&]()
     {
       y_(i) = beta_ * y_(i) + alpha_ * val;
     });
