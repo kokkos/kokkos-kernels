@@ -74,6 +74,8 @@ print_help() {
   echo "    Valid items:"
   echo "      LayoutLeft,LayoutRight"
   echo ""
+  echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -202,6 +204,7 @@ TEST_SCRIPT=False
 TEST_SPACK=False
 SKIP_HWLOC=False
 SPOT_CHECK=False
+NO_DEFAULT_ETI=False
 
 PRINT_HELP=False
 OPT_FLAG=""
@@ -351,6 +354,9 @@ do
       ;;
     --with-layouts*)
       KOKKOSKERNELS_LAYOUTS="${key#*=}"
+      ;;
+    --no-default-eti*)
+      NO_DEFAULT_ETI=True
       ;;
     --with-tpls*)
       KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
@@ -1190,6 +1196,10 @@ single_build_and_test() {
   local ldflags="${LD_FLAGS_EXTRA}"
 
   local cxx_standard="${CXX_STANDARD}"
+
+  if [ "${NO_DEFAULT_ETI}" = "True" ]; then
+    local extra_args="$extra_args --no-default-eti"
+  fi
 
 
   echo "  Starting job $desc"
