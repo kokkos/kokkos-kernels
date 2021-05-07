@@ -226,7 +226,7 @@ namespace KokkosSparse{
 
     typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
     typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-    typedef typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
+    typedef typename Kokkos::View<nnz_scalar_t **, default_layout, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
     typedef typename scalar_persistent_work_view_t::HostMirror scalar_persistent_work_host_view_t; //Host view type
 
     typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
@@ -514,7 +514,7 @@ namespace KokkosSparse{
         throw std::runtime_error("inverse diagonal does not exist until after numeric setup.");
       return inverse_diagonal;
     }
-    
+
     bool use_teams() const
     {
       return KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>();
@@ -562,7 +562,7 @@ namespace KokkosSparse{
     using const_ordinal_t = typename const_entries_view_t::value_type;
     using const_scalar_t  = typename const_values_view_t::value_type;
 
-    using vector_view_t = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, device_t>;
+    using vector_view_t = Kokkos::View<scalar_t**, default_layout, device_t>;
 
     using GSHandle = GaussSeidelHandle<input_size_t, input_ordinal_t, input_scalar_t,
                                        ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace>;

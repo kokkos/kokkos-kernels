@@ -255,7 +255,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 
     bool is_symmetric_graph = true;
     size_t shmem_size = 32128;
-    
+
     for(int i = 0; i < 2; ++i)
     {
       if (i == 1) shmem_size = 2008; //make the shmem small on gpus so that it will test 2 level algorithm.
@@ -292,7 +292,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
-  typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, device> scalar_view2d_t;
+  typedef Kokkos::View<scalar_t**, default_layout, device> scalar_view2d_t;
   typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
@@ -378,7 +378,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 
     scalar_view_t res_norms("Residuals", numVecs);
     auto h_res_norms = Kokkos::create_mirror_view(res_norms);
-    
+
     for(int i = 0; i < 2; ++i)
     {
       if (i == 1) shmem_size = 2008; //make the shmem small on gpus so that it will test 2 level algorithm.
