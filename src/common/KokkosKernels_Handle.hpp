@@ -49,6 +49,7 @@
 #include "KokkosSparse_spadd_handle.hpp"
 #include "KokkosSparse_sptrsv_handle.hpp"
 #include "KokkosSparse_spiluk_handle.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
