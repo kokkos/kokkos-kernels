@@ -413,7 +413,6 @@ namespace Impl{
     (void)values;
     (void)rhs;
     (void)lhs;
-    (void)trans;
     throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
 #endif
 
