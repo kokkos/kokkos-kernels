@@ -279,7 +279,7 @@ namespace Impl{
       ain_values_scalar_view_type values,
       b_values_scalar_view_type rhs,
       x_values_scalar_view_type lhs,
-      bool trans
+      bool /*trans*/
       )
   {
 

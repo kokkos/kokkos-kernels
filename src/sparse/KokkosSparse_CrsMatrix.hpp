@@ -100,7 +100,7 @@ inline int RowsPerThread(const int NNZPerRow) {
 }
 #ifdef KOKKOS_ENABLE_CUDA
 template<>
-inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
+inline int RowsPerThread<Kokkos::Cuda>(const int /*NNZPerRow*/) {
   return 1;
 }
 #endif

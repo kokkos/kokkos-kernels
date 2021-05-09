@@ -304,10 +304,10 @@ static void __print_gemm_perf_test_options(options_t /*options*/) {
 #endif  // PERF_TEST_DEBUG
 
 /*************************** Internal templated fns **************************/
+#if !defined(KOKKOS_ENABLE_CUDA)
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_gemm_serial_blas(options_t options, gemm_args_t gemm_args) {
 // Need to take subviews on the device
-#if !defined(KOKKOS_ENABLE_CUDA)
   Kokkos::Timer timer;
 
   STATUS;
@@ -339,18 +339,22 @@ void __do_gemm_serial_blas(options_t options, gemm_args_t gemm_args) {
   Kokkos::fence();
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds());
-#else
-  std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
-#endif  // !KOKKOS_ENABLE_CUDA
   return;
 }
+#else
+template <class scalar_type, class vta, class vtb, class device_type>
+void __do_gemm_serial_blas(options_t /*options*/, gemm_args_t /*gemm_args*/) {
+  std::cerr << std::string(__func__)
+            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
+  return;
+}
+#endif  // !KOKKOS_ENABLE_CUDA
 
+#if !defined(KOKKOS_ENABLE_CUDA)
 template <class TransAType, class TransBType, class AlgoType>
 void __do_gemm_serial_batched_template(options_t options,
                                        gemm_args_t gemm_args) {
 // Need to take subviews on the device
-#if !defined(KOKKOS_ENABLE_CUDA)
   Kokkos::Timer timer;
 
   auto __do_loop = [](uint32_t n, gemm_args_t _gemm_args,
@@ -380,11 +384,15 @@ void __do_gemm_serial_batched_template(options_t options,
   __do_loop(options.n, gemm_args, options.blas_args.batch_size_last_dim);
   Kokkos::fence();
   __gemm_output_csv_row(options, gemm_args, timer.seconds());
+}
 #else
+template <class TransAType, class TransBType, class AlgoType>
+void __do_gemm_serial_batched_template(options_t /*options*/,
+                                       gemm_args_t /*gemm_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
-#endif  // !KOKKOS_ENABLE_CUDA
 }
+#endif  // !KOKKOS_ENABLE_CUDA
 
 template <class scalar_type, class vta, class vtb, class vtc, class device_type,
           class algo_type>
