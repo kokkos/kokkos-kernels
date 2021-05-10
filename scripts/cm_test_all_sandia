@@ -361,7 +361,7 @@ do
     --no-default-eti*)
       NO_DEFAULT_ETI=True
       ;;
-    --with-layouts*)
+    --with-spaces*)
       KOKKOSKERNELS_SPACES="${key#*=}"
       ;;
     --with-tpls*)
