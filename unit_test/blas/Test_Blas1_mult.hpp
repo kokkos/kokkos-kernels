@@ -8,91 +8,75 @@
 namespace Test {
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class Device>
   void impl_test_mult(int N) {
+  typedef typename ViewTypeA::value_type ScalarA;
+  typedef typename ViewTypeB::value_type ScalarB;
+  typedef typename ViewTypeC::value_type ScalarC;
 
-    typedef typename ViewTypeA::value_type ScalarA;
-    typedef typename ViewTypeB::value_type ScalarB;
-    typedef typename ViewTypeC::value_type ScalarC;
+  ScalarA a  = 3;
+  ScalarB b  = 5;
+  double eps = std::is_same<ScalarC, float>::value ? 1e-4 : 1e-7;
 
-    typedef Kokkos::View<ScalarA*[2],
-       typename ViewTypeA::array_layout,Device> BaseTypeA;
-    typedef Kokkos::View<ScalarB*[2],
-       typename ViewTypeB::array_layout,Device> BaseTypeB;
-    typedef Kokkos::View<ScalarC*[2],
-       typename ViewTypeC::array_layout,Device> BaseTypeC;
+  ViewTypeA x("X", N);
+  ViewTypeB y("Y", N);
+  ViewTypeC z("Y", N);
+  ViewTypeC b_org_z("Org_Z", N);
 
+  typename ViewTypeA::const_type c_x = x;
+  typename ViewTypeB::const_type c_y = y;
 
-    ScalarA a = 3;
-    ScalarB b = 5;
-    double eps = std::is_same<ScalarC,float>::value?1e-4:1e-7;
+  typename ViewTypeA::HostMirror h_x = Kokkos::create_mirror_view(x);
+  typename ViewTypeB::HostMirror h_y = Kokkos::create_mirror_view(y);
+  typename ViewTypeC::HostMirror h_z = Kokkos::create_mirror_view(z);
 
-    BaseTypeA b_x("X",N);
-    BaseTypeB b_y("Y",N);
-    BaseTypeC b_z("Y",N);
-    BaseTypeC b_org_z("Org_Z",N);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
+      13718);
 
+  {
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(x, rand_pool, randStart, randEnd);
+  }
+  {
+    ScalarB randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(y, rand_pool, randStart, randEnd);
+  }
+  {
+    ScalarC randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(z, rand_pool, randStart, randEnd);
+  }
 
-    ViewTypeA x = Kokkos::subview(b_x,Kokkos::ALL(),0);
-    ViewTypeB y = Kokkos::subview(b_y,Kokkos::ALL(),0);
-    ViewTypeC z = Kokkos::subview(b_z,Kokkos::ALL(),0);
-    typename ViewTypeA::const_type c_x = x;
-    typename ViewTypeB::const_type c_y = y;
+  Kokkos::deep_copy(b_org_z, z);
+  auto h_b_org_z =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_z);
 
-    typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-    typename BaseTypeB::HostMirror h_b_y = Kokkos::create_mirror_view(b_y);
-    typename BaseTypeC::HostMirror h_b_z = Kokkos::create_mirror_view(b_z);
+  Kokkos::deep_copy(h_x, x);
+  Kokkos::deep_copy(h_y, y);
 
-    typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x,Kokkos::ALL(),0);
-    typename ViewTypeB::HostMirror h_y = Kokkos::subview(h_b_y,Kokkos::ALL(),0);
-    typename ViewTypeC::HostMirror h_z = Kokkos::subview(h_b_z,Kokkos::ALL(),0);
+  // expected_result = ScalarC(b*h_z(i) + a*h_x(i)*h_y(i))
 
-    Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+  KokkosBlas::mult(b, z, a, x, y);
+  Kokkos::deep_copy(h_z, z);
+  for (int i = 0; i < N; i++) {
+    EXPECT_NEAR_KK(a * h_x(i) * h_y(i) + b * h_b_org_z(i), h_z(i), eps);
+  }
 
+  Kokkos::deep_copy(z, b_org_z);
+  KokkosBlas::mult(b, z, a, x, c_y);
+  Kokkos::deep_copy(h_z, z);
+  for(int i = 0; i < N; i++)
     {
-      ScalarA randStart, randEnd;
-      Test::getRandomBounds(10.0, randStart, randEnd);
-      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
-    }
+    EXPECT_NEAR_KK(a * h_x(i) * h_y(i) + b * h_b_org_z(i), h_z(i), eps);
+  }
+
+  Kokkos::deep_copy(z, b_org_z);
+  KokkosBlas::mult(b, z, a, c_x, c_y);
+  Kokkos::deep_copy(h_z, z);
+  for(int i = 0; i < N; i++)
     {
-      ScalarB randStart, randEnd;
-      Test::getRandomBounds(10.0, randStart, randEnd);
-      Kokkos::fill_random(b_y,rand_pool,randStart,randEnd);
-    }
-    {
-      ScalarC randStart, randEnd;
-      Test::getRandomBounds(10.0, randStart, randEnd);
-      Kokkos::fill_random(b_z,rand_pool,randStart,randEnd);
-    }
-
-    Kokkos::deep_copy(b_org_z,b_z);
-    auto h_b_org_z = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_z);
-
-    Kokkos::deep_copy(h_b_x,b_x);
-    Kokkos::deep_copy(h_b_y,b_y);
-
-    //expected_result = ScalarC(b*h_z(i) + a*h_x(i)*h_y(i))
-
-    KokkosBlas::mult(b,z,a,x,y);
-    Kokkos::deep_copy(h_b_z, b_z);
-    for(int i = 0; i < N; i++)
-    {
-      EXPECT_NEAR_KK(a * h_x(i) * h_y(i) + b * h_b_org_z(i, 0), h_z(i), eps);
-    }
-
-    Kokkos::deep_copy(b_z,b_org_z);
-    KokkosBlas::mult(b,z,a,x,c_y);
-    Kokkos::deep_copy(h_b_z, b_z);
-    for(int i = 0; i < N; i++)
-    {
-      EXPECT_NEAR_KK(a * h_x(i) * h_y(i) + b * h_b_org_z(i, 0), h_z(i), eps);
-    }
-
-    Kokkos::deep_copy(b_z,b_org_z);
-    KokkosBlas::mult(b,z,a,c_x,c_y);
-    Kokkos::deep_copy(h_b_z, b_z);
-    for(int i = 0; i < N; i++)
-    {
-      EXPECT_NEAR_KK(a * h_x(i) * h_y(i) + b * h_b_org_z(i, 0), h_z(i), eps);
-    }
+    EXPECT_NEAR_KK(a * h_x(i) * h_y(i) + b * h_b_org_z(i), h_z(i), eps);
+  }
   }
 
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class Device>
