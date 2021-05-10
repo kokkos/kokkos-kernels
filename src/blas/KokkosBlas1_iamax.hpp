@@ -130,14 +130,19 @@ iamax (const RV& R, const XMV& X,
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
-  // Create unmanaged versions of the input Views.  RV may be rank 0 or rank 2.
+  using UnifiedXLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
+  using UnifiedRVLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+
+  // Create unmanaged versions of the input Views.  RV may be rank 0 or rank 1.
   // XMV may be rank 1 or rank 2.
   typedef Kokkos::View<
     typename std::conditional<
       RV::rank == 0,
       typename RV::non_const_value_type,
       typename RV::non_const_value_type* >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
+    UnifiedRVLayout,
     typename std::conditional<
       std::is_same<typename RV::device_type::memory_space, Kokkos::HostSpace>::value,
       Kokkos::HostSpace,
@@ -148,7 +153,7 @@ iamax (const RV& R, const XMV& X,
       XMV::rank == 1,
       typename XMV::const_value_type*,
       typename XMV::const_value_type** >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
+    UnifiedXLayout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
 
