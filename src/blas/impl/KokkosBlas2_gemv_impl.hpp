@@ -212,11 +212,10 @@ public:
 
     for (IndexType j = 0; j < value_count; ++j) {
       // Sum into initial y_ values; use beta as a pre-multiplier if nonzero.
-      const y_value_type y_j =
-        beta_ == ArithTraits<BetaCoeffType>::zero () ?
-        ArithTraits<y_value_type>::zero () :
-        beta_ * y_(j);
-      y_(j) = y_j + y_result[j];
+      if(betaPreset == 0)
+        y_(j) = y_result[j];
+      else
+        y_(j) = beta_ * y_(j) + y_result[j];
     }
   }
 
@@ -550,11 +549,9 @@ public:
     IndexType blockColStart = columnsPerThread * block;
     Scalar localSum = KAT::zero();
     //compute local sum
-    for(IndexType col = blockColStart; col < blockColStart + columnsPerThread; col++)
+    if(row < (IndexType) A_.extent(0))
     {
-      if(col == (IndexType) A_.extent(1))
-        break;
-      if(row < (IndexType) A_.extent(0))
+      for(IndexType col = blockColStart; col < blockColStart + columnsPerThread && col < A_.extent(1); col++)
       {
         //A access is coalesced, x access is a broadcast
         localSum += A_(row, col) * x_(col);
@@ -569,7 +566,10 @@ public:
       IndexType yrow = team.league_rank() * 32 + i;
       if(yrow < (IndexType) A_.extent(0))
       {
-        y_(yrow) = beta_ * y_(yrow) + alpha_ * blockResult[i];
+        if(beta_ == KAT::zero())
+          y_(yrow) = alpha_ * blockResult[i];
+        else
+          y_(yrow) = beta_ * y_(yrow) + alpha_ * blockResult[i];
       }
     });
   }
@@ -579,13 +579,13 @@ public:
   operator () (TwoLevelGEMV_LayoutRightTag, const member_type& team) const
   {
     using Kokkos::Details::ArithTraits;
-    using KAT = ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT = ArithTraits<typename YViewType::non_const_value_type>;
 
     const IndexType N = A_.extent(1);
     const int i = team.league_rank(); // batch id
 
     // parallel-reduce to compute val += A(:,j)' * x
-    y_value_type val = KAT:: zero();
+    y_value_type val = KAT::zero();
     Kokkos::parallel_reduce( Kokkos::TeamThreadRange( team, N ), [&] ( const int j, y_value_type &update ) {
       update += A_(i, j) * x_(j);
     }, val);
@@ -594,7 +594,10 @@ public:
     Kokkos::single(Kokkos::PerTeam(team),
     [&]()
     {
-      y_(i) = beta_ * y_(i) + alpha_ * val;
+      if(beta_ == KAT::zero())
+        y_(i) = alpha_ * val;
+      else
+        y_(i) = beta_ * y_(i) + alpha_ * val;
     });
   }
 
@@ -656,23 +659,29 @@ public:
   operator () (const member_type & team) const
   {
     using Kokkos::Details::ArithTraits;
-    using KAT = ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT_A = ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT_Y = ArithTraits<typename YViewType::non_const_value_type>;
 
     const IndexType M = A_.extent(0);
     const int j = team.league_rank(); // batch id
 
     // parallel-reduce to compute val += A(:,j)' * x
-    y_value_type val = KAT:: zero();
+    y_value_type val = KAT_Y::zero();
     Kokkos::parallel_reduce( Kokkos::TeamThreadRange( team, M ), [&] ( const int i, y_value_type &update ) {
       const auto x_i = x_(i);
-      const auto A_ij = conj ? KAT::conj (A_(i,j)) : A_(i,j);
+      const auto A_ij = conj ? KAT_A::conj (A_(i,j)) : A_(i,j);
       update += A_ij * x_i;
     }, val);
 
     // compute yj = beta*yj + alpha*val
-    if (team.team_rank() == 0) {
-      y_(j) = beta_*y_(j) + alpha_ * val;
-    }
+    Kokkos::single(Kokkos::PerTeam(team),
+    [&]()
+    {
+      if(beta_ == KAT_Y::zero())
+        y_(j) = alpha_ * val;
+      else
+        y_(j) = beta_ * y_(j) + alpha_ * val;
+    });
   }
 
 private:
