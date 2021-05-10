@@ -8,63 +8,51 @@
 namespace Test {
   template<class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_scal(int N) {
+  typedef typename ViewTypeA::value_type ScalarA;
+  typedef typename ViewTypeB::value_type ScalarB;
+  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
-    typedef typename ViewTypeA::value_type ScalarA;
-    typedef typename ViewTypeB::value_type ScalarB;
-    typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  ScalarA a(3);
+  typename AT::mag_type eps = AT::epsilon() * 1000;
 
-    typedef Kokkos::View<ScalarA*[2],
-       typename ViewTypeA::array_layout,Device> BaseTypeA;
-    typedef Kokkos::View<ScalarB*[2],
-       typename ViewTypeB::array_layout,Device> BaseTypeB;
+  ViewTypeA x("X", N);
+  ViewTypeB y("Y", N);
+  ViewTypeB org_y("Org_Y", N);
 
+  typename ViewTypeA::const_type c_x = x;
+  typename ViewTypeB::const_type c_y = y;
 
-    ScalarA a(3);
-    typename AT::mag_type eps = AT::epsilon()*1000;
+  typename ViewTypeA::HostMirror h_x = Kokkos::create_mirror_view(x);
+  typename ViewTypeB::HostMirror h_y = Kokkos::create_mirror_view(y);
 
-    BaseTypeA b_x("X",N);
-    BaseTypeB b_y("Y",N);
-    BaseTypeB b_org_y("Org_Y",N);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
+      13718);
 
-    ViewTypeA x = Kokkos::subview(b_x,Kokkos::ALL(),0);
-    ViewTypeB y = Kokkos::subview(b_y,Kokkos::ALL(),0);
-    typename ViewTypeA::const_type c_x = x;
-    typename ViewTypeB::const_type c_y = y;
+  {
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(1.0, randStart, randEnd);
+    Kokkos::fill_random(x, rand_pool, randStart, randEnd);
+  }
+  {
+    ScalarB randStart, randEnd;
+    Test::getRandomBounds(1.0, randStart, randEnd);
+    Kokkos::fill_random(y, rand_pool, randStart, randEnd);
+  }
 
-    typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-    typename BaseTypeB::HostMirror h_b_y = Kokkos::create_mirror_view(b_y);
+  Kokkos::deep_copy(org_y, y);
 
-    typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x,Kokkos::ALL(),0);
-    typename ViewTypeB::HostMirror h_y = Kokkos::subview(h_b_y,Kokkos::ALL(),0);
+  Kokkos::deep_copy(h_x, x);
 
-    Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
-
-    {
-      ScalarA randStart, randEnd;
-      Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
-    }
-    {
-      ScalarB randStart, randEnd;
-      Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(b_y,rand_pool,randStart,randEnd);
-    }
-
-    Kokkos::deep_copy(b_org_y,b_y);
-
-    Kokkos::deep_copy(h_b_x,b_x);
-    Kokkos::deep_copy(h_b_y,b_y);
-
-    KokkosBlas::scal(y,a,x);
-    Kokkos::deep_copy(h_b_y, b_y);
-    for(int i = 0; i < N; i++)
+  KokkosBlas::scal(y, a, x);
+  Kokkos::deep_copy(h_y, y);
+  for(int i = 0; i < N; i++)
     {
       EXPECT_NEAR_KK(a * h_x(i), h_y(i), eps);
     }
 
-    Kokkos::deep_copy(b_y,b_org_y);
-    KokkosBlas::scal(y,a,c_x);
-    Kokkos::deep_copy(h_b_y, b_y);
+    Kokkos::deep_copy(y, org_y);
+    KokkosBlas::scal(y, a, c_x);
+    Kokkos::deep_copy(h_y, y);
     for(int i = 0; i < N; i++)
     {
       EXPECT_NEAR_KK(a * h_x(i), h_y(i), eps);
