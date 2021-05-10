@@ -11,27 +11,19 @@ namespace Test {
     typedef typename ViewTypeA::non_const_value_type ScalarA;
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
     typedef typename AT::mag_type mag_type;
+    using size_type = typename ViewTypeA::size_type;
 
-    typedef Kokkos::View<ScalarA*[2],
-       typename ViewTypeA::array_layout,Device> BaseTypeA;
+    ViewTypeA a("a", N);
 
-    typedef typename BaseTypeA::size_type size_type;
-
-    BaseTypeA b_a("A",N);
-
-    ViewTypeA a = Kokkos::subview(b_a,Kokkos::ALL(),0);
-
-    typename BaseTypeA::HostMirror h_b_a = Kokkos::create_mirror_view(b_a);
-
-    typename ViewTypeA::HostMirror h_a = Kokkos::subview(h_b_a,Kokkos::ALL(),0);
+    typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
     ScalarA randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
+    Kokkos::fill_random(a, rand_pool, randStart, randEnd);
 
-    Kokkos::deep_copy(h_b_a,b_a);
+    Kokkos::deep_copy(h_a, a);
 
     typename ViewTypeA::const_type c_a = a;
 
