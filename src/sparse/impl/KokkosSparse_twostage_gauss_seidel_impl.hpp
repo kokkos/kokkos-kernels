@@ -869,7 +869,7 @@ namespace KokkosSparse{
                   scalar_t omega = ST::one(),
                   bool apply_forward = true,
                   bool apply_backward = true,
-                  bool update_y_vector = true)
+                  bool /*update_y_vector*/ = true)
       {
         const_scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
         const_scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero ();

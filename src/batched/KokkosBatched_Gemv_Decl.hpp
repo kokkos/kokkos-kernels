@@ -22,11 +22,11 @@ namespace KokkosBatched {
              typename yViewType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const ScalarType alpha,
-           const AViewType &A,
-           const xViewType &x,
-           const ScalarType beta,
-           const yViewType &y) {
+    invoke(const ScalarType /*alpha*/,
+           const AViewType &/*A*/,
+           const xViewType &/*x*/,
+           const ScalarType /*beta*/,
+           const yViewType &/*y*/) {
       assert(false && "Error: encounter dummy impl");
       return 0;
     }
@@ -46,12 +46,12 @@ namespace KokkosBatched {
              typename yViewType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const MemberType &member, 
-           const ScalarType alpha,
-           const AViewType &A,
-           const xViewType &x,
-           const ScalarType beta,
-           const yViewType &y) {
+    invoke(const MemberType &/*member*/, 
+           const ScalarType /*alpha*/,
+           const AViewType &/*A*/,
+           const xViewType &/*x*/,
+           const ScalarType /*beta*/,
+           const yViewType &/*y*/) {
       assert(false && "Error: encounter dummy impl");
       return 0;
     }
@@ -71,12 +71,12 @@ namespace KokkosBatched {
              typename yViewType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const MemberType &member, 
-           const ScalarType alpha,
-           const AViewType &A,
-           const xViewType &x,
-           const ScalarType beta,
-           const yViewType &y) {
+    invoke(const MemberType &/*member*/, 
+           const ScalarType /*alpha*/,
+           const AViewType &/*A*/,
+           const xViewType &/*x*/,
+           const ScalarType /*beta*/,
+           const yViewType &/*y*/) {
       assert(false && "Error: encounter dummy impl");
       return 0;
     }

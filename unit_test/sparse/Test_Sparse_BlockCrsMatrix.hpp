@@ -226,7 +226,7 @@ namespace Test{ // anonymous
   {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const int rid ) const
+  void operator()( const int /*rid*/ ) const
   {
     // Test 1: Check member functions behave as expected
     bool check0 = true;

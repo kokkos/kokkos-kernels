@@ -307,7 +307,7 @@ void pcgsolve(
             ,  const double tolerance = std::numeric_limits<double>::epsilon()
             ,  CGSolveResult * result = 0
             ,  bool use_sgs = true
-            ,  int clusterSize = 1
+            ,  int /*clusterSize*/ = 1
             ,  bool use_sequential_sgs = false)
 {
   using namespace KokkosSparse;

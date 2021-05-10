@@ -151,7 +151,7 @@ struct Axpby {
 
 template<class AV, class XMV, class BV, class YMV>
 struct Axpby<AV,XMV,BV,YMV,0,true,true> {
-  static void axpby (const AV& av, const XMV& X, const BV& bv, const YMV& Y) {
+  static void axpby (const AV& /* av */, const XMV& /* X */, const BV& /* bv */, const YMV& /* Y */) {
     static_assert(YMV::Rank==0,"Oh My God");
   }
 };

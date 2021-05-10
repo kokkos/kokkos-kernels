@@ -76,7 +76,7 @@ namespace KokkosBatched {
   int
   SerialTrtriInternalLower<Algo::Trtri::Unblocked>::
   invoke(const bool use_unit_diag,
-         const int am, const int an,
+         const int am, const int /*an*/,
          ValueType *__restrict__ A, const int as0, const int as1) {
     ValueType one(1.0), zero(0.0), A_ii;
     if (!use_unit_diag) {
@@ -131,7 +131,7 @@ namespace KokkosBatched {
   int
   SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::
   invoke(const bool use_unit_diag,
-         const int am, const int an,
+         const int am, const int /*an*/,
          ValueType *__restrict__ A, const int as0, const int as1) {
     ValueType one(1.0), zero(0.0), A_ii;
 

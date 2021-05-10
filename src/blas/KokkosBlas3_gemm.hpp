@@ -100,13 +100,13 @@ namespace Impl {
            class CViewType>
   bool
   gemv_based_gemm
-       (const char transA[],
-        const char transB[],
-        typename AViewType::const_value_type& alpha,
-        const AViewType& A,
-        const BViewType& B,
-        typename CViewType::const_value_type& beta,
-        const CViewType& C,
+       (const char /*transA*/[],
+        const char /*transB*/[],
+        typename AViewType::const_value_type& /*alpha*/,
+        const AViewType& /*A*/,
+        const BViewType& /*B*/,
+        typename CViewType::const_value_type& /*beta*/,
+        const CViewType& /*C*/,
         typename std::enable_if<
           std::is_same<typename BViewType::array_layout, Kokkos::LayoutStride>::value ||
           std::is_same<typename CViewType::array_layout, Kokkos::LayoutStride>::value>::type* = nullptr)

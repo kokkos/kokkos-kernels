@@ -70,7 +70,7 @@ namespace Test{ // (anonymous)
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
   template <typename lno_t, typename DT>
-  void generalTest (bool& success, std::ostream &out)
+  void generalTest (bool& /*success*/, std::ostream &out)
   {
     using KokkosSparse::findRelOffset;
     //typedef int lno_t;
@@ -357,7 +357,7 @@ namespace Test{ // (anonymous)
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
   template <typename lno_t, typename device_t>
-  void testLongArray (bool& success, std::ostream &out)
+  void testLongArray (bool& /*success*/, std::ostream &out)
   {
     using KokkosSparse::findRelOffset;
     //typedef long lno_t; // just for a change

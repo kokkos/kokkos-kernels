@@ -25,7 +25,7 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member, 
 	   const int matrix_rank,
-           const int m, const int n,
+           const int m, const int /*n*/,
            const ValueType * U, const int us0, const int us1,
 	   const ValueType * T, const int ts0, const int ts1,
 	   const ValueType * V, const int vs0, const int vs1,

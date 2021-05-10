@@ -294,7 +294,7 @@ protected:
   /// this a "hook.")
   ///
   /// \return \c 1 if all tests succeeded, else \c 0.
-  int testHostImpl (std::ostream& out) const {
+  int testHostImpl (std::ostream& /*out*/) const {
     return 1; // there are no tests, so trivially, all the tests pass
   }
 

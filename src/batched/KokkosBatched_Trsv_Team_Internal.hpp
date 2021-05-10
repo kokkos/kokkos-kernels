@@ -29,12 +29,12 @@ namespace KokkosBatched {
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const MemberType &member,
-           const bool use_unit_diag,
-           const int m,
-           const ScalarType alpha,
-           const ValueType *__restrict__ A, const int as0, const int as1,
-           /**/  ValueType *__restrict__ b, const int bs0) {
+    invoke(const MemberType &/*member*/,
+           const bool /*use_unit_diag*/,
+           const int /*m*/,
+           const ScalarType /*alpha*/,
+           const ValueType *__restrict__ /*A*/, const int /*as0*/, const int /*as1*/,
+           /**/  ValueType *__restrict__ /*b*/, const int /*bs0*/) {
       assert(false && "Error: encounter dummy impl");
       return 0;
     }
@@ -160,12 +160,12 @@ namespace KokkosBatched {
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const MemberType &member,
-           const bool use_unit_diag,
-           const int m,
-           const ScalarType alpha,
-           const ValueType *__restrict__ A, const int as0, const int as1,
-           /**/  ValueType *__restrict__ b, const int bs0) {
+    invoke(const MemberType &/*member*/,
+           const bool /*use_unit_diag*/,
+           const int /*m*/,
+           const ScalarType /*alpha*/,
+           const ValueType *__restrict__ /*A*/, const int /*as0*/, const int /*as1*/,
+           /**/  ValueType *__restrict__ /*b*/, const int /*bs0*/) {
       assert(false && "Error: encounter dummy impl");
       return 0;
     }

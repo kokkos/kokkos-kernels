@@ -811,7 +811,7 @@ int main(int argc, char **argv) {
   return 0;
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
-int main(int argc, char **argv) {
+int main() {
   std::cout << std::endl << " ** SUPERLU NOT ENABLED **" << std::endl << std::endl;
   exit(0);
   return 0;
@@ -820,7 +820,7 @@ int main(int argc, char **argv) {
 
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
-int main(int argc, char **argv) {
+int main() {
 #if !defined(KOKKOSKERNELS_INST_DOUBLE)
   std::cout << " Only supported with double precision" << std::endl;
 #endif

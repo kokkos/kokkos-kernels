@@ -71,7 +71,7 @@ struct GetCoeffView {
 template<class IT, class IL, class ID, class IM, class IS, class DeviceType>
 struct GetCoeffView<Kokkos::View<IT*,IL,ID,IM,IS>,DeviceType> {
   typedef Kokkos::View<IT*,IL,ID,IM,IS> view_type;
-  static Kokkos::View<IT*,IL,ID,IM,IS> get_view(const Kokkos::View<IT*,IL,ID,IM,IS>& in, int size) {
+  static Kokkos::View<IT*,IL,ID,IM,IS> get_view(const Kokkos::View<IT*,IL,ID,IM,IS>& in, int /*size*/) {
     return in;
   }
 };
