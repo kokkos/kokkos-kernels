@@ -86,28 +86,24 @@ namespace Test {
     typedef typename ViewTypeB::value_type ScalarB;
     typedef typename ViewTypeC::value_type ScalarC;
 
-    typedef Kokkos::View<ScalarA*[2],
-       typename ViewTypeA::array_layout,Device> BaseTypeA;
     typedef multivector_layout_adapter<ViewTypeB> vfB_type;
     typedef multivector_layout_adapter<ViewTypeC> vfC_type;
 
-    BaseTypeA b_x("X",N);
-    typename vfB_type::BaseType b_y("Y",N,K);
+    ViewTypeA x("X", N);
+    typename vfB_type::BaseType b_y("Y", N, K);
     typename vfC_type::BaseType b_z("Z",N,K);
     typename vfC_type::BaseType b_org_z("Z",N,K);
 
-    ViewTypeA x = Kokkos::subview(b_x,Kokkos::ALL(),0);
     ViewTypeB y = vfB_type::view(b_y);
     ViewTypeC z = vfC_type::view(b_z);
 
     typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
     typedef multivector_layout_adapter<typename ViewTypeC::HostMirror> h_vfC_type;
 
-    typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
     typename h_vfB_type::BaseType h_b_y = Kokkos::create_mirror_view(b_y);
     typename h_vfC_type::BaseType h_b_z = Kokkos::create_mirror_view(b_z);
 
-    typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x,Kokkos::ALL(),0);
+    typename ViewTypeA::HostMirror h_x = Kokkos::create_mirror_view(x);
     typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
     typename ViewTypeC::HostMirror h_z = h_vfC_type::view(h_b_z);
 
@@ -116,7 +112,7 @@ namespace Test {
     {
       ScalarA randStart, randEnd;
       Test::getRandomBounds(10.0, randStart, randEnd);
-      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
+      Kokkos::fill_random(x, rand_pool, randStart, randEnd);
     }
     {
       ScalarB randStart, randEnd;
@@ -132,8 +128,8 @@ namespace Test {
     Kokkos::deep_copy(b_org_z,b_z);
     auto h_b_org_z = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_z);
 
-    Kokkos::deep_copy(h_b_x,b_x);
-    Kokkos::deep_copy(h_b_y,b_y);
+    Kokkos::deep_copy(h_x, x);
+    Kokkos::deep_copy(h_b_y, b_y);
     Kokkos::deep_copy(h_b_z,b_z);
 
     ScalarA a = 3;
