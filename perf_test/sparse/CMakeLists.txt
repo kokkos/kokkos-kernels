@@ -13,7 +13,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 
 #KOKKOSKERNELS_ADD_EXECUTABLE(
 #  sparse_spgemm
-#  SOURCES KokkosSparse_spgemm_test.cpp
+#  SOURCES KokkosSparse_spgemm.cpp
 #  )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
@@ -40,7 +40,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
-  SOURCES KokkosSparse_spmv_test.cpp
+  SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(

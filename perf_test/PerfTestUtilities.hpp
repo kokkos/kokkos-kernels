@@ -5,25 +5,54 @@
 #ifndef KOKKOSKERNELS_PERFTESTUTILITIES_HPP
 #define KOKKOSKERNELS_PERFTESTUTILITIES_HPP
 #include "KokkosKernels_default_types.hpp"
+#include "KokkosKernels_config.h"
+#include "KokkosKernels_IOUtils.hpp"
+#include <common/RunParams.hpp>
+#include <common/QuickKernelBase.hpp>
 #include <common/KernelBase.hpp>
 #include <common/QuickKernelBase.hpp>
 #include <common/KernelBase.hpp>
+#include <dirent.h>
+namespace KokkosSparse {
+
+template <class Scalar, class Ordinal, class ExecutionSpace, class,
+          class Offset>
+class CrsMatrix;
+}
+/** TODO: fix in C++17 */
+inline std::vector<std::string> get_directories(std::string path) {
+  DIR *d;
+  std::vector<std::string> paths;
+  struct dirent *dir;
+  d = opendir(path.c_str());
+  if (d) {
+    while ((dir = readdir(d)) != NULL) {
+      std::string nname = std::string(dir->d_name);
+      if (nname.find(".") != std::string::npos) {
+        continue;
+      }
+      paths.emplace_back(dir->d_name);
+    }
+    closedir(d);
+  }
+  return paths;
+}
+
 namespace readers {
 
 template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
 using matrix_type =
-    KokkosSparse::CrsMatrix<Scalar, Ordinal, ExecutionSpace,
-                            void, Offset>;
+    KokkosSparse::CrsMatrix<Scalar, Ordinal, ExecutionSpace, void, Offset>;
 
 template <class>
 struct test_reader;
 
 template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
 struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
-  static matrix_type<Scalar, Ordinal, ExecutionSpace,Offset> read(
-      const std::string& filename) {
+  static matrix_type<Scalar, Ordinal, ExecutionSpace, Offset> read(
+      const std::string &filename) {
     return KokkosKernels::Impl::read_kokkos_crst_matrix<
-        matrix_type<Scalar, Ordinal, ExecutionSpace,Offset>>(filename.c_str());
+        matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>>(filename.c_str());
   }
 };
 
@@ -42,19 +71,21 @@ struct data_retriever {
                                           std::string path_to_data,
                                           std::string dataset,
                                           std::string filename) {
-    return root_path + repo + path_to_data + dataset + filename;
+    return root_path + "/" + repo + "/" + path_to_data + dataset + "/" +
+           filename;
   }
   template <class... Locations>
   data_retriever(std::string path_to_data, Locations... locations)
       : sub_path(path_to_data) {
     // TODO: way to list the directories in the root path
-    std::vector<std::string> data_repos{"uur/"};
+    std::vector<std::string> data_repos = get_directories(root_path + "/");
     // TODO: list directories in subpaths
-    std::vector<std::string> datasets{"dataset_0/", "dataset_1/"};
     for (auto repo : data_repos) {
+      std::vector<std::string> datasets =
+          get_directories(root_path + "/" + repo + "/" + path_to_data + "/");
       for (auto dataset : datasets) {
         test_cases.push_back(
-            test_case{repo + dataset,
+            test_case{repo + "/" + dataset,
                       std::make_tuple(readers::test_reader<SubComponents>::read(
                           make_full_path_to_data_file(
                               repo, path_to_data, dataset, locations))...)});
@@ -62,6 +93,7 @@ struct data_retriever {
     }
   }
 };
-using test_list = std::vector<rajaperf::KernelBase*>;
+
+using test_list = std::vector<rajaperf::KernelBase *>;
 
 #endif  // KOKKOSKERNELS_PERFTESTUTILITIES_HPP
