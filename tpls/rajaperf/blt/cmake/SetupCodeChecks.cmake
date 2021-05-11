@@ -26,7 +26,7 @@ if(CLANGFORMAT_FOUND)
     set(BLT_REQUIRED_CLANGFORMAT_VERSION "" CACHE STRING "Required version of clang-format")
     # targets for verifying formatting
     add_custom_target(clangformat_check)
-    add_dependencies(${BLT_CODE_CHECK_TARGET_NAME} clangformat_check)
+    #add_dependencies(${BLT_CODE_CHECK_TARGET_NAME} clangformat_check)
 
     # targets for modifying formatting
     add_custom_target(clangformat_style)
@@ -79,12 +79,12 @@ if(CLANGQUERY_FOUND)
     # sense as a dependency of check
     add_custom_target(clang_query_check)
     add_custom_target(interactive_clang_query_check)
-    add_dependencies(${BLT_CODE_CHECK_TARGET_NAME} clang_query_check)
+    #add_dependencies(${BLT_CODE_CHECK_TARGET_NAME} clang_query_check)
 endif()
 
 if(CLANGTIDY_FOUND)
     add_custom_target(clang_tidy_check)
-    add_dependencies(${BLT_CODE_CHECK_TARGET_NAME} clang_tidy_check)
+    #add_dependencies(${BLT_CODE_CHECK_TARGET_NAME} clang_tidy_check)
 endif()
 
 # Code check targets should only be run on demand
