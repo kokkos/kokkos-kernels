@@ -1,0 +1,8 @@
+libdir=@CMAKE_INSTALL_PREFIX@/lib
+includedir=@CMAKE_INSTALL_PREFIX@/include
+
+Name: @CMAKE_PROJECT_NAME@
+Description: camp concepts and meta-programming library
+Version: @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@RPROJECT_VERSION_PATCH@
+Libs:
+Cflags: -I${includedir}

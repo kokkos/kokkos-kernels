@@ -1,0 +1,105 @@
+# Copyright (c) 2017-2019, Lawrence Livermore National Security, LLC and
+# other BLT Project Developers. See the top-level COPYRIGHT file for details
+# 
+# SPDX-License-Identifier: (BSD-3-Clause)
+
+variables:
+  DOCKER_FLAGS: "--user='root' -v `pwd`:/blt -w /blt/build $(Compiler_ImageName)"
+
+strategy:
+  matrix:
+    linux_gcc7:
+      VM_ImageName: 'ubuntu-16.04'
+      Compiler_ImageName: 'axom/tpls:gcc-7'
+      C_COMPILER: '/usr/bin/gcc'
+      CXX_COMPILER: '/usr/bin/g++'
+      CMAKE_BIN_DIR: '/home/axom/axom_tpls/gcc-7.3.0/cmake-3.9.6/bin'
+      MPI_DIR: '/home/axom/axom_tpls/gcc-7.3.0/mpich-3.2.1'
+      MPI_FLAGS: '-DENABLE_MPI=ON -DMPI_C_COMPILER=$(MPI_DIR)/bin/mpicc -DMPI_CXX_COMPILER=$(MPI_DIR)/bin/mpicxx -DMPIEXEC=$(MPI_DIR)/bin/mpiexec -DMPIEXEC_NUMPROC_FLAG=-n'
+      CMAKE_FLAGS: '-DCMAKE_C_COMPILER=$(C_COMPILER) -DCMAKE_CXX_COMPILER=$(CXX_COMPILER) -DENABLE_GTEST_DEATH_TESTS=OFF $(MPI_FLAGS) -DENABLE_OPENMP=ON'
+      TEST_TARGET: 'linux_gcc7'
+    linux_gcc8:
+      VM_ImageName: 'ubuntu-16.04'
+      Compiler_ImageName: 'axom/tpls:gcc-8'
+      C_COMPILER: '/usr/bin/gcc'
+      CXX_COMPILER: '/usr/bin/g++'
+      CMAKE_BIN_DIR: '/home/axom/axom_tpls/gcc-8.1.0/cmake-3.10.1/bin'
+      MPI_DIR: '/home/axom/axom_tpls/gcc-8.1.0/mpich-3.3.2'
+      MPI_FLAGS: '-DENABLE_MPI=ON -DMPI_C_COMPILER=$(MPI_DIR)/bin/mpicc -DMPI_CXX_COMPILER=$(MPI_DIR)/bin/mpicxx -DMPIEXEC=$(MPI_DIR)/bin/mpiexec -DMPIEXEC_NUMPROC_FLAG=-n'
+      CMAKE_FLAGS: '-DCMAKE_C_COMPILER=$(C_COMPILER) -DCMAKE_CXX_COMPILER=$(CXX_COMPILER) -DENABLE_GTEST_DEATH_TESTS=OFF $(MPI_FLAGS) -DENABLE_OPENMP=ON'
+      TEST_TARGET: 'linux_gcc8'
+    linux_clang4:
+      VM_ImageName: 'ubuntu-16.04'
+      Compiler_ImageName: 'axom/tpls:clang-4'
+      C_COMPILER: '/usr/bin/clang'
+      CXX_COMPILER: '/usr/bin/clang++'
+      CMAKE_BIN_DIR: '/home/axom/axom_tpls/clang-4.0.0/cmake-3.10.1/bin'
+      MPI_DIR: '/home/axom/axom_tpls/clang-4.0.0/mpich-3.0.4'
+      MPI_FLAGS: '-DENABLE_MPI=ON -DMPI_C_COMPILER=$(MPI_DIR)/bin/mpicc -DMPI_CXX_COMPILER=$(MPI_DIR)/bin/mpicxx -DMPIEXEC=$(MPI_DIR)/bin/mpiexec -DMPIEXEC_NUMPROC_FLAG=-n'
+      CMAKE_FLAGS: '-DCMAKE_C_COMPILER=$(C_COMPILER) -DCMAKE_CXX_COMPILER=$(CXX_COMPILER) -DENABLE_GTEST_DEATH_TESTS=OFF $(MPI_FLAGS) -DENABLE_OPENMP=ON'
+      TEST_TARGET: 'linux_clang4'
+    linux_clang6:
+      VM_ImageName: 'ubuntu-16.04'
+      Compiler_ImageName: 'axom/tpls:clang-6'
+      C_COMPILER: '/usr/bin/clang'
+      CXX_COMPILER: '/usr/bin/clang++'
+      CMAKE_BIN_DIR: '/home/axom/axom_tpls/clang-6.0.0/cmake-3.10.1/bin'
+      MPI_DIR: '/home/axom/axom_tpls/clang-6.0.0/mpich-3.0.4'
+      MPI_FLAGS: '-DENABLE_MPI=ON -DMPI_C_COMPILER=$(MPI_DIR)/bin/mpicc -DMPI_CXX_COMPILER=$(MPI_DIR)/bin/mpicxx -DMPIEXEC=$(MPI_DIR)/bin/mpiexec -DMPIEXEC_NUMPROC_FLAG=-n'
+      CMAKE_FLAGS: '-DCMAKE_C_COMPILER=$(C_COMPILER) -DCMAKE_CXX_COMPILER=$(CXX_COMPILER) -DENABLE_GTEST_DEATH_TESTS=OFF $(MPI_FLAGS) -DENABLE_OPENMP=ON'
+      TEST_TARGET: 'linux_clang6'
+    osx_gcc:
+      VM_ImageName: 'macos-10.14'
+      CMAKE_FLAGS: ''
+      TEST_TARGET: 'osx_gcc'
+    windows:
+      VM_ImageName: 'windows-2019'
+      CMAKE_FLAGS: ''
+      TEST_TARGET: 'win_vs'
+
+pool:
+  vmImage: $(VM_ImageName)
+
+steps:
+# All
+- checkout: self
+  clean: true
+
+# OSX and Windows
+- script: |
+    mkdir build
+    cd build
+    cmake $(CMAKE_FLAGS) ../tests/internal
+  displayName: 'OSX/Windows CMake'
+  condition: or( eq( variables['Agent.OS'], 'Windows_NT'), eq( variables['Agent.OS'], 'Darwin'))
+- script: |
+    cmake --build build --config Release 
+  displayName: 'OSX/Windows Build'
+  condition: or( eq( variables['Agent.OS'], 'Windows_NT'), eq( variables['Agent.OS'], 'Darwin'))
+- script: |
+    cd build
+    ctest -C Release -T Test --output-on-failure -V
+  displayName: 'OSX/Windows Test'
+  condition: or( eq( variables['Agent.OS'], 'Windows_NT'), eq( variables['Agent.OS'], 'Darwin'))
+
+# Linux
+- script:  |
+    docker run $(DOCKER_FLAGS) $(CMAKE_BIN_DIR)/cmake $(CMAKE_FLAGS) ../tests/internal
+  condition: eq( variables['Agent.OS'], 'Linux')
+  displayName: 'Linux CMake'
+- script:  |
+    docker run $(DOCKER_FLAGS) make -j2
+  condition: eq( variables['Agent.OS'], 'Linux')
+  displayName: 'Linux Build'
+- script:  |
+    docker run $(DOCKER_FLAGS) $(CMAKE_BIN_DIR)/ctest -T Test --output-on-failure -V
+  condition: eq( variables['Agent.OS'], 'Linux')
+  displayName: 'Linux Test'
+
+# All
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'cTest'
+    testResultsFiles: 'build/Testing/*/Test.xml'
+    testRunTitle: '$(TEST_TARGET) Tests'
+    failTaskOnFailedTests: true

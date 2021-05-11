@@ -1,0 +1,50 @@
+##############################################################################
+# Copyright (c) 2017-2021, Lawrence Livermore National Security, LLC and BLT
+# project contributors. See the LICENSE file for details.
+##############################################################################
+
+variables:
+  PROJECT_ALLOC_NAME: ${CI_PROJECT_NAME}_ci_${CI_PIPELINE_ID}
+  BUILD_ROOT: ${CI_PROJECT_DIR}
+
+stages:
+  - l_build
+  - q_allocate_resources
+  - q_build
+  - q_release_resources
+
+####
+# Template
+.srun_build_script:
+  script:
+    #Use pre-existing allocation if any
+    - JOBID=$(squeue -h --name=${PROJECT_ALLOC_NAME} --format=%A)
+    - ASSIGN_ID=$(if [[ -n "${JOBID}" ]]; then echo "--jobid=${JOBID}"; fi)
+    - EXEC_PREFIX="srun -p pdebug ${ASSIGN_ID} -t 10 -N 1 --mpibind=off"
+   #BUILD + TEST
+    - echo -e "section_start:$(date +%s):build_and_test\r\e[0K
+      Build and test ${CI_PROJECT_NAME}"
+    - ${EXEC_PREFIX} .gitlab/build_and_test.sh
+    - echo -e "section_end:$(date +%s):build_and_test\r\e[0K"
+  artifacts:
+    reports:
+      junit: build/junit.xml
+
+
+.build_blueos_3_ppc64le_ib_p9_script:
+  script:
+    - EXEC_PREFIX="lalloc 1 -W 10 -q pdebug"
+    #BUILD + TEST
+    - echo -e "section_start:$(date +%s):build_and_test\r\e[0K
+      Build and test ${CI_PROJECT_NAME}"
+    - ${EXEC_PREFIX} .gitlab/build_and_test.sh
+    - echo -e "section_end:$(date +%s):build_and_test\r\e[0K"
+  artifacts:
+    reports:
+      junit: build/junit.xml
+
+
+# This is where jobs are included
+include:
+  - local: .gitlab/build_quartz.yml
+  - local: .gitlab/build_lassen.yml

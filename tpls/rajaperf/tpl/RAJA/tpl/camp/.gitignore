@@ -1,0 +1,9 @@
+*.pyc
+*.o
+*.a
+*.exe
+*.gch
+build/
+build-*/
+/Debug/
+./extern/googletest/*

@@ -1,0 +1,52 @@
+####
+# This is the share configuration of jobs for lassen
+.on_lassen:
+  variables:
+  tags:
+    - shell
+    - lassen
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /_lnone/ || $ON_LASSEN == "OFF"' #run except if ...
+      when: never
+    - when: on_success
+
+####
+# Load required modules
+.with_cuda:
+  before_script:
+    - module load cmake/3.18.0
+    - module load cuda/11.1.1
+
+####
+# Template
+.build_on_lassen:
+  stage: l_build
+  extends: [.build_blueos_3_ppc64le_ib_p9_script, .on_lassen]
+  needs: []
+
+####
+# Build jobs
+clang_upstream_link_with_nvcc (lassen):
+  variables:
+    HOST_CONFIG: "clang@upstream_link_with_nvcc.cmake"
+  extends: [.build_on_lassen, .with_cuda]
+
+clang_upstream_nvcc_c++17 (lassen):
+  variables:
+    HOST_CONFIG: "clang@upstream_nvcc_c++17.cmake"
+  extends: [.build_on_lassen, .with_cuda]
+
+clang_upstream_nvcc_c++17_no_separable (lassen):
+  variables:
+    HOST_CONFIG: "clang@upstream_nvcc_c++17_no_separable.cmake"
+  extends: [.build_on_lassen, .with_cuda]
+
+clang_upstream_nvcc_xlf (lassen):
+  variables:
+    HOST_CONFIG: "clang@upstream_nvcc_xlf.cmake"
+  extends: [.build_on_lassen, .with_cuda]
+
+pgi_20.4_nvcc (lassen):
+  variables:
+    HOST_CONFIG: "pgi@20.4_nvcc.cmake"
+  extends: [.build_on_lassen, .with_cuda]
