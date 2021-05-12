@@ -693,7 +693,7 @@ struct KokkosSPGEMM
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
               Kokkos::parallel_for(
                  Kokkos::ThreadVectorRange(teamMember, vector_size),
-	          [&] (nnz_lno_t i) {
+	          [&] (nnz_lno_t /*i*/) {
 #endif
         //then for those who failed we insert it again to L2-accumulator.
 	      if (num_unsuccess) {

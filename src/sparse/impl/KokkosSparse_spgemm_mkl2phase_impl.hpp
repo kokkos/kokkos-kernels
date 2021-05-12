@@ -131,6 +131,7 @@ void mkl2phase_symbolic(
     }
 
 #if __INTEL_MKL__ < 2018
+    (void) transposeA; (void) transposeB; // supress unused-parameter warning
     char trans = 'N';
     MKL_INT request = 1;
     MKL_INT sort = handle->get_mkl_sort_option();
@@ -166,7 +167,7 @@ void mkl2phase_symbolic(
     else {
       handle->set_c_nnz(row_mapC(m) - 1);
     }
-#endif
+#endif // __INTEL_MKL__ < 2018
 
 #if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
     MKL_INT mklm = m, mkln = n;
@@ -262,15 +263,18 @@ void mkl2phase_symbolic(
     }
 #elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
     throw std::runtime_error ("Intel MKL version 18 must have update 2 - use intel/18.2.xyz\n");
+    (void) k; (void) transposeA; (void) transposeB; (void) verbose;
 #else
     throw std::runtime_error ("Intel MKL versions > 18 are not yet tested/supported\n");
+    (void) k; (void) transposeA; (void) transposeB; (void) verbose;
 #endif
 
   }
   else {
     throw std::runtime_error ("MKL requires local ordinals to be integer.\n");
+    (void) k; (void) transposeA; (void) transposeB; (void) verbose;
   }
-#else
+#else // KOKKOSKERNELS_ENABLE_TPL_MKL
   (void)handle;
   (void)m;          (void)n;          (void)k;
   (void)row_mapA;   (void)row_mapB;   (void)row_mapC;
@@ -278,7 +282,7 @@ void mkl2phase_symbolic(
   (void)transposeA; (void)transposeB;
   (void)verbose;
   throw std::runtime_error ("MKL IS NOT DEFINED\n");
-#endif
+#endif // KOKKOSKERNELS_ENABLE_TPL_MKL
 }
 
 
@@ -313,15 +317,11 @@ void mkl2phase_symbolic(
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
-    typedef typename KernelHandle::nnz_lno_t idx;
-
-    typedef typename KernelHandle::HandlePersistentMemorySpace HandlePersistentMemorySpace;
-
-    typedef typename Kokkos::View<int *, HandlePersistentMemorySpace> int_persistent_work_view_t;
-
-    typedef typename KernelHandle::nnz_scalar_t value_type;
-
-    typedef typename KernelHandle::HandleExecSpace MyExecSpace;
+    using HandlePersistentMemorySpace = typename KernelHandle::HandlePersistentMemorySpace;
+    using int_persistent_work_view_t  = typename Kokkos::View<int *, HandlePersistentMemorySpace>;
+    using MyExecSpace                 = typename KernelHandle::HandleExecSpace;
+    using value_type                  = typename KernelHandle::nnz_scalar_t;
+    using idx                         = typename KernelHandle::nnz_lno_t;
 
     if (std::is_same<idx, int>::value){
 
@@ -347,6 +347,7 @@ void mkl2phase_symbolic(
       }
 
 #if __INTEL_MKL__ < 2018
+      (void) transposeA; (void) transposeB;
       const value_type *a_ew = valuesA.data();
       const value_type *b_ew = valuesB.data();
 
@@ -407,7 +408,7 @@ void mkl2phase_symbolic(
       {
         KokkosKernels::Impl::kk_a_times_x_plus_b< cin_nonzero_index_view_type, cin_nonzero_index_view_type,  int, int, MyExecSpace>(entriesC.extent(0), entriesC, entriesC,  1, -1);
       }
-#endif
+#endif // __INTEL_MKL__ < 2018
 
 #if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
       value_type *a_ew = const_cast<value_type*>(valuesA.data());
@@ -544,12 +545,27 @@ void mkl2phase_symbolic(
       }
 #elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
       throw std::runtime_error ("Intel MKL version 18 must have update 2 - use intel/18.2.xyz\n");
+      (void) m;         (void) n;         (void) k;
+      (void)entriesC;
+      (void)valuesA;    (void)valuesB;    (void)valuesC;
+      (void)transposeA; (void)transposeB;
+      (void)verbose;
 #else
       throw std::runtime_error ("Intel MKL versions > 18 are not yet tested/supported\n");
-#endif
+      (void) m;         (void) n;         (void) k;
+      (void)entriesC;
+      (void)valuesA;    (void)valuesB;    (void)valuesC;
+      (void)transposeA; (void)transposeB;
+      (void)verbose;
+#endif // __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
 
     }
     else {
+      (void) m;         (void) n;         (void) k;
+      (void)entriesC;
+      (void)valuesA;    (void)valuesB;    (void)valuesC;
+      (void)transposeA; (void)transposeB;
+      (void)verbose;
       throw std::runtime_error ("MKL requires local ordinals to be integer.\n");
     }
 #else
@@ -561,7 +577,7 @@ void mkl2phase_symbolic(
     (void)transposeA; (void)transposeB;
     (void)verbose;
     throw std::runtime_error ("MKL IS NOT DEFINED\n");
-#endif
+#endif // KOKKOSKERNELS_ENABLE_TPL_MKL
   } // end mkl2phase_apply
 } } // namespace KokkosKernels::Impl
 
