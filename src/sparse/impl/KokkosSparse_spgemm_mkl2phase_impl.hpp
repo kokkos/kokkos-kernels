@@ -407,7 +407,7 @@ void mkl2phase_symbolic(
       {
         KokkosKernels::Impl::kk_a_times_x_plus_b< cin_nonzero_index_view_type, cin_nonzero_index_view_type,  int, int, MyExecSpace>(entriesC.extent(0), entriesC, entriesC,  1, -1);
       }
-#endif
+#endif // __INTEL_MKL__ < 2018
 
 #if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
       value_type *a_ew = const_cast<value_type*>(valuesA.data());
@@ -544,12 +544,18 @@ void mkl2phase_symbolic(
       }
 #elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
       throw std::runtime_error ("Intel MKL version 18 must have update 2 - use intel/18.2.xyz\n");
+      (void)valuesC;
+      (void)verbose;
 #else
       throw std::runtime_error ("Intel MKL versions > 18 are not yet tested/supported\n");
-#endif
+      (void)valuesC;
+      (void)verbose;
+#endif // __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
 
     }
     else {
+      (void)valuesC;
+      (void)verbose;
       throw std::runtime_error ("MKL requires local ordinals to be integer.\n");
     }
 #else
