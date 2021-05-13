@@ -244,6 +244,24 @@ KOKKOSBLAS2_CGEMV_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::Layout
 namespace KokkosBlas {
 namespace Impl {
 
+#define KOKKOSBLAS2_GEMV_CUBLAS_DETERMINE_ARGS(LAYOUTA)			\
+  bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value;	\
+  const int M = static_cast<int> (A_is_lr ? A.extent(1) : A.extent(0)); \
+  const int N = static_cast<int> (A_is_lr ? A.extent(0) : A.extent(1)); \
+  constexpr int one = 1;						\
+  const int LDA = A_is_lr ? A.stride(0) : A.stride(1);			\
+									\
+  cublasOperation_t transa;						\
+  if ((trans[0]=='N')||(trans[0]=='n'))					\
+    transa = A_is_lr ? CUBLAS_OP_T : CUBLAS_OP_N;			\
+  else if ((trans[0]=='T')||(trans[0]=='t'))				\
+    transa = A_is_lr ? CUBLAS_OP_N : CUBLAS_OP_T;			\
+  else {								\
+    if (A_is_lr)							\
+      throw std::runtime_error("Error: cublas gemv conjugate transpose requires LayoutLeft views."); \
+    transa = CUBLAS_OP_C;						\
+  }									\
+
 #define KOKKOSBLAS2_DGEMV_CUBLAS( LAYOUTA, LAYOUTX, LAYOUTY, MEM_SPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct GEMV< \
@@ -271,19 +289,7 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_CUBLAS,double]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    \
-    cublasOperation_t transa; \
-    if ((trans[0]=='N')||(trans[0]=='n')) \
-      transa = CUBLAS_OP_N; \
-    else if ((trans[0]=='T')||(trans[0]=='t')) \
-      transa = CUBLAS_OP_T; \
-    else \
-      transa = CUBLAS_OP_C; \
+    KOKKOSBLAS2_GEMV_CUBLAS_DETERMINE_ARGS(LAYOUTA); \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     cublasDgemv(s.handle, transa, M, N, &alpha, A.data(), LDA, X.data(), one, &beta, Y.data(), one); \
     Kokkos::Profiling::popRegion(); \
@@ -317,19 +323,7 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_CUBLAS,float]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    \
-    cublasOperation_t transa; \
-    if ((trans[0]=='N')||(trans[0]=='n')) \
-      transa = CUBLAS_OP_N; \
-    else if ((trans[0]=='T')||(trans[0]=='t')) \
-      transa = CUBLAS_OP_T; \
-    else \
-      transa = CUBLAS_OP_C; \
+    KOKKOSBLAS2_GEMV_CUBLAS_DETERMINE_ARGS(LAYOUTA); \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     cublasSgemv(s.handle, transa, M, N, &alpha, A.data(), LDA, X.data(), one, &beta, Y.data(), one); \
     Kokkos::Profiling::popRegion(); \
@@ -363,19 +357,7 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_CUBLAS,complex<double>]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    \
-    cublasOperation_t transa; \
-    if ((trans[0]=='N')||(trans[0]=='n')) \
-      transa = CUBLAS_OP_N; \
-    else if ((trans[0]=='T')||(trans[0]=='t')) \
-      transa = CUBLAS_OP_T; \
-    else \
-      transa = CUBLAS_OP_C; \
+    KOKKOSBLAS2_GEMV_CUBLAS_DETERMINE_ARGS(LAYOUTA); \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     cublasZgemv(s.handle, transa, M, N, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, reinterpret_cast<const cuDoubleComplex*>(&beta), reinterpret_cast<cuDoubleComplex*>(Y.data()), one); \
     Kokkos::Profiling::popRegion(); \
@@ -409,19 +391,7 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_CUBLAS,complex<float>]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    \
-    cublasOperation_t transa; \
-    if ((trans[0]=='N')||(trans[0]=='n')) \
-      transa = CUBLAS_OP_N; \
-    else if ((trans[0]=='T')||(trans[0]=='t')) \
-      transa = CUBLAS_OP_T; \
-    else \
-      transa = CUBLAS_OP_C; \
+    KOKKOSBLAS2_GEMV_CUBLAS_DETERMINE_ARGS(LAYOUTA); \
     KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
     cublasCgemv(s.handle, transa, M, N, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(A.data()), LDA, reinterpret_cast<const cuComplex*>(X.data()), one, reinterpret_cast<const cuComplex*>(&beta), reinterpret_cast<cuComplex*>(Y.data()), one); \
     Kokkos::Profiling::popRegion(); \
