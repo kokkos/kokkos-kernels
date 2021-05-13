@@ -51,6 +51,24 @@
 namespace KokkosBlas {
 namespace Impl {
 
+#define KOKKOSBLAS2_GEMV_DETERMINE_ARGS(LAYOUTA)			\
+  bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value;	\
+  const int M = static_cast<int> (A_is_lr ? A.extent(1) : A.extent(0)); \
+  const int N = static_cast<int> (A_is_lr ? A.extent(0) : A.extent(1)); \
+  constexpr int one = 1;						\
+  const int LDA = A_is_lr ? A.stride(0) : A.stride(1);			\
+									\
+  char transa;								\
+  if ((trans[0]=='N')||(trans[0]=='n'))					\
+    transa = A_is_lr ? 'T' : 'N';					\
+  else if ((trans[0]=='T')||(trans[0]=='t'))				\
+    transa = A_is_lr ? 'N' : 'T';					\
+  else {								\
+    if (A_is_lr)							\
+      throw std::runtime_error("Error: HostBlas::gemv conjugate transpose requires LayoutLeft views."); \
+    transa = 'C';							\
+  }									\
+
 #define KOKKOSBLAS2_DGEMV_BLAS( LAYOUTA, LAYOUTX, LAYOUTY, MEM_SPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct GEMV< \
@@ -78,12 +96,8 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_BLAS,double]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    HostBlas<double>::gemv(trans[0],M,N,alpha,A.data(),LDA,X.data(),one,beta,Y.data(),one); \
+    KOKKOSBLAS2_GEMV_DETERMINE_ARGS(LAYOUTA); \
+    HostBlas<double>::gemv(transa,M,N,alpha,A.data(),LDA,X.data(),one,beta,Y.data(),one); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -115,12 +129,8 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_BLAS,float]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    HostBlas<float>::gemv(trans[0],M,N,alpha,A.data(),LDA,X.data(),one,beta,Y.data(),one); \
+    KOKKOSBLAS2_GEMV_DETERMINE_ARGS(LAYOUTA); \
+    HostBlas<float>::gemv(transa,M,N,alpha,A.data(),LDA,X.data(),one,beta,Y.data(),one); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -152,14 +162,10 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_BLAS,complex<double>]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    const std::complex<double> alpha_val = alpha, beta_val = beta;      \
+    KOKKOSBLAS2_GEMV_DETERMINE_ARGS(LAYOUTA); \
+    const std::complex<double> alpha_val = alpha, beta_val = beta;       \
     HostBlas<std::complex<double> >::gemv                               \
-      (trans[0],M,N,                                                       \
+      (transa,M,N,                                                       \
        alpha_val,            \
        reinterpret_cast<const std::complex<double>*>(A.data()),LDA,     \
        reinterpret_cast<const std::complex<double>*>(X.data()),one,     \
@@ -196,14 +202,10 @@ struct GEMV< \
         const YViewType& Y) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_BLAS,complex<float>]"); \
-    const int M = static_cast<int> (A.extent(0)); \
-    const int N = static_cast<int> (A.extent(1)); \
-    constexpr int one = 1; \
-    bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
-    const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
+    KOKKOSBLAS2_GEMV_DETERMINE_ARGS(LAYOUTA); \
     const std::complex<float> alpha_val = alpha, beta_val = beta;       \
     HostBlas<std::complex<float> >::gemv                                \
-      (trans[0],M,N,                                                       \
+      (transa,M,N,                                                       \
        alpha_val,             \
        reinterpret_cast<const std::complex<float>*>(A.data()),LDA,     \
        reinterpret_cast<const std::complex<float>*>(X.data()),one,     \
