@@ -274,7 +274,7 @@ void mkl2phase_symbolic(
     throw std::runtime_error ("MKL requires local ordinals to be integer.\n");
     (void) k; (void) transposeA; (void) transposeB; (void) verbose;
   }
-#else
+#else // KOKKOSKERNELS_ENABLE_TPL_MKL
   (void)handle;
   (void)m;          (void)n;          (void)k;
   (void)row_mapA;   (void)row_mapB;   (void)row_mapC;
@@ -283,10 +283,6 @@ void mkl2phase_symbolic(
   (void)verbose;
   throw std::runtime_error ("MKL IS NOT DEFINED\n");
 #endif // KOKKOSKERNELS_ENABLE_TPL_MKL
-  // Supress -Wunused-param in intel-18
-  (void)k;
-  (void)transposeA; (void)transposeB;
-  (void)verbose;
 }
 
 
@@ -558,8 +554,6 @@ void mkl2phase_symbolic(
       throw std::runtime_error ("Intel MKL versions > 18 are not yet tested/supported\n");
       // Supress -Wunused-parameter on intel-18
       (void) m;         (void) n;         (void) k;
-#endif
-      // Supress -Wunused-parameter on intel-18
       (void)entriesC;
       (void)valuesA;    (void)valuesB;    (void)valuesC;
       (void)transposeA; (void)transposeB;
