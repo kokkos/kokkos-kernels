@@ -63,6 +63,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
+#include "KokkosKernels_default_types.hpp"
 
 using namespace KokkosGraph;
 
