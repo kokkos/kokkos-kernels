@@ -446,11 +446,11 @@ extern template struct Axpby< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      2, false, true>; \
 extern template struct Axpby< \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -466,11 +466,11 @@ template struct Axpby< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      2, false, true>; \
 template struct Axpby< \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
+     Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,\
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \

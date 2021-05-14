@@ -12,18 +12,10 @@ namespace Test {
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeX::value_type ScalarX;
     typedef typename ViewTypeY::value_type ScalarY;
+    using LayoutAType = typename ViewTypeA::array_layout;
     typedef Kokkos::ArithTraits<ScalarY> KAT_Y;
 
     typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-    typedef Kokkos::View<ScalarX*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeX::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeX;
-    typedef Kokkos::View<ScalarY*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeY::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeY;
-
 
     ScalarA alpha = 3;
     ScalarY beta = 5;
@@ -31,7 +23,7 @@ namespace Test {
 
     int ldx;
     int ldy;
-    if(mode[0]=='N') {
+    if (mode[0] == 'N') {
       ldx = N;
       ldy = M;
     } else {
@@ -39,80 +31,89 @@ namespace Test {
       ldy = N;
     }
     typename vfA_type::BaseType b_A("A", M, N);
-    BaseTypeX b_x("X", ldx);
-    BaseTypeY b_y("Y", ldy);
-    BaseTypeY b_org_y("Org_Y", ldy);
-    
-    ViewTypeA A = vfA_type::view(b_A);
-    ViewTypeX x = Kokkos::subview(b_x,Kokkos::ALL(),0);
-    ViewTypeY y = Kokkos::subview(b_y,Kokkos::ALL(),0);
+    ViewTypeX x("X", ldx);
+    ViewTypeY y("Y", ldy);
+    ViewTypeY org_y("Org_Y", ldy);
+
+    ViewTypeA A                        = vfA_type::view(b_A);
     typename ViewTypeX::const_type c_x = x;
     typename ViewTypeA::const_type c_A = A;
 
-    typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
+    typedef multivector_layout_adapter<typename ViewTypeA::HostMirror>
+        h_vfA_type;
 
     typename h_vfA_type::BaseType h_b_A = Kokkos::create_mirror_view(b_A);
-    typename BaseTypeX::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-    typename BaseTypeY::HostMirror h_b_y = Kokkos::create_mirror_view(b_y);
 
     typename ViewTypeA::HostMirror h_A = h_vfA_type::view(h_b_A);
-    typename ViewTypeX::HostMirror h_x = Kokkos::subview(h_b_x,Kokkos::ALL(),0);
-    typename ViewTypeY::HostMirror h_y = Kokkos::subview(h_b_y,Kokkos::ALL(),0);
+    typename ViewTypeX::HostMirror h_x = Kokkos::create_mirror_view(x);
+    typename ViewTypeY::HostMirror h_y = Kokkos::create_mirror_view(y);
 
-    Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+    Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
+        13718);
 
     {
       ScalarX randStart, randEnd;
       Test::getRandomBounds(10.0, randStart, randEnd);
-      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
+      Kokkos::fill_random(x, rand_pool, randStart, randEnd);
     }
     {
       ScalarY randStart, randEnd;
       Test::getRandomBounds(10.0, randStart, randEnd);
-      Kokkos::fill_random(b_y,rand_pool,randStart,randEnd);
+      Kokkos::fill_random(y, rand_pool, randStart, randEnd);
     }
     {
       ScalarA randStart, randEnd;
       Test::getRandomBounds(10.0, randStart, randEnd);
-      Kokkos::fill_random(b_A,rand_pool,randStart,randEnd);
+      Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
     }
 
-    Kokkos::deep_copy(b_org_y,b_y);
-    auto h_b_org_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
-    auto h_org_y = Kokkos::subview(h_b_org_y, Kokkos::ALL(), 0);
+    Kokkos::deep_copy(org_y, y);
+    auto h_org_y =
+        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), org_y);
 
-    Kokkos::deep_copy(h_b_x,b_x);
-    Kokkos::deep_copy(h_b_y,b_y);
-    Kokkos::deep_copy(h_b_A,b_A);
+    Kokkos::deep_copy(h_x, x);
+    Kokkos::deep_copy(h_y, y);
+    Kokkos::deep_copy(h_b_A, b_A);
 
     Kokkos::View<ScalarY*, Kokkos::HostSpace> expected("expected aAx+by", ldy);
     Kokkos::deep_copy(expected, h_org_y);
     vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
 
-    KokkosBlas::gemv(mode, alpha, A, x, beta, y);
-    Kokkos::deep_copy(h_b_y, b_y);
+    // Cublas does not support row-major (LayoutRight) + conjugate transpose
+    // We throw a runtime error in the wrapper for cublasGemv if the user attempts
+    // this, therefore we must test this code path via the try-catch below.
+    try {
+      KokkosBlas::gemv(mode, alpha, A, x, beta, y);
+    } catch (const std::runtime_error &error) {
+      if ((mode[0] == 'c' || mode[0] == 'C') && std::is_same<LayoutAType, Kokkos::LayoutRight>::value)
+	return; // Pass since we caught the runtime error
+      FAIL();
+    }
+    Kokkos::deep_copy(h_y, y);
     int numErrors = 0;
-    for(int i = 0; i < ldy; i++)
-    {
-      if(KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
+    for (int i = 0; i < ldy; i++) {
+      if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
         numErrors++;
     }
-    EXPECT_EQ(numErrors, 0) << "Nonconst input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
- 
-    Kokkos::deep_copy(b_y, b_org_y);
-    KokkosBlas::gemv(mode, alpha,A ,c_x, beta, y);
-    Kokkos::deep_copy(h_b_y, b_y);
-    numErrors = 0;
-    for(int i = 0; i < ldy; i++)
-    {
-      if(KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
-        numErrors++;
-    }
-    EXPECT_EQ(numErrors, 0) << "Const vector input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
+    EXPECT_EQ(numErrors, 0)
+        << "Nonconst input, " << M << 'x' << N << ", alpha = " << alpha
+        << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
 
-    Kokkos::deep_copy(b_y, b_org_y);
+    Kokkos::deep_copy(y, org_y);
+    KokkosBlas::gemv(mode, alpha, A, c_x, beta, y);
+    Kokkos::deep_copy(h_y, y);
+    numErrors = 0;
+    for (int i = 0; i < ldy; i++) {
+      if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
+        numErrors++;
+    }
+    EXPECT_EQ(numErrors, 0)
+        << "Const vector input, " << M << 'x' << N << ", alpha = " << alpha
+        << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
+
+    Kokkos::deep_copy(y, org_y);
     KokkosBlas::gemv(mode, alpha, c_A, c_x, beta, y);
-    Kokkos::deep_copy(h_b_y, b_y);
+    Kokkos::deep_copy(h_y, y);
     numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
@@ -125,9 +126,9 @@ namespace Test {
     beta = KAT_Y::zero();
     //beta changed, so update the correct answer
     vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
-    Kokkos::deep_copy(b_y, KAT_Y::nan());
+    Kokkos::deep_copy(y, KAT_Y::nan());
     KokkosBlas::gemv(mode, alpha, A, x, beta, y);
-    Kokkos::deep_copy(h_b_y, b_y);
+    Kokkos::deep_copy(h_y, y);
     numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
