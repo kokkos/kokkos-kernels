@@ -45,6 +45,7 @@
 #define KOKKOSKERNELS_HELPERS_HPP_
 
 #include "KokkosKernels_config.h"  // KOKKOSKERNELS_INST_LAYOUTLEFT, KOKKOSKERNELS_INST_LAYOUTRIGHT
+#include "KokkosKernels_default_types.hpp"  // default_layout
 
 namespace KokkosKernels {
 namespace Impl {
@@ -61,26 +62,11 @@ struct GetUnifiedLayoutPreferring {
       PreferredLayoutType, typename ViewType::array_layout>::type array_layout;
 };
 
-// If LayoutLeft kernels are pre instantiated, try to unify layout to LayoutLeft
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 template <class ViewType>
 struct GetUnifiedLayout {
   using array_layout =
-      typename GetUnifiedLayoutPreferring<ViewType,
-               Kokkos::LayoutLeft>::array_layout;
+      typename GetUnifiedLayoutPreferring<ViewType, default_layout>::array_layout;
 };
-#else
-// If LayoutLeft kernels are not pre instantiated, try to unify layout to
-// LayoutRight
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-template <class ViewType>
-struct GetUnifiedLayout {
-  using array_layout =
-      typename GetUnifiedLayoutPreferring<ViewType,
-               Kokkos::LayoutRight>::array_layout;
-};
-#endif
-#endif
 
 template <class T, class TX, bool do_const,
           bool isView = Kokkos::is_view<T>::value>

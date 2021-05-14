@@ -53,7 +53,7 @@
 #elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
   using default_lno_t = int64_t;
 #else
-  #error "Expect INT and/or INT64_T to be enabled as ORDINAL (lno_t) types"
+  using default_lno_t = int;
 #endif
   //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
 #if defined(KOKKOSKERNELS_INST_OFFSET_INT)
@@ -61,7 +61,7 @@
 #elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
   using default_size_type = size_t;
 #else
-  #error "Expect SIZE_T and/or INT to be enabled as OFFSET (size_type) types"
+  using default_size_type = int;
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
@@ -69,7 +69,7 @@
 #elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   using default_layout = Kokkos::LayoutRight;
 #else
-  #error "Expect LAYOUTLEFT and/or LAYOUTRIGHT to be enabled as layout types"
+  using default_layout = Kokkos::LayoutLeft;
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
@@ -77,7 +77,7 @@
 #elif defined(KOKKOSKERNELS_INST_FLOAT)
   using default_scalar = float;
 #else
-  #error "Expect at least one real-valued scalar type (double or float) to be enabled"
+  using default_scalar = double;
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
