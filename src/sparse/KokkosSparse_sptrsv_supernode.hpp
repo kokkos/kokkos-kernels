@@ -1269,6 +1269,36 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
   int num_batchs = 0;
   int size_unblocked = handle->get_supernode_size_unblocked();
   integer_view_host_t supernode_ids ("supernode_batch", nsuper);
+  #define KOKKOS_SPTRSV_SUPERNODE_TRMM_ON_DEVICE
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_TRMM_ON_DEVICE
+  using trmm_execution_space = Kokkos::DefaultExecutionSpace;
+  using trmm_memory_space    = typename trmm_execution_space::memory_space;
+  using trmm_view_t = Kokkos::View<scalar_t*, trmm_execution_space>;
+  bool run_trmm_on_device = !std::is_same< trmm_execution_space, execution_space>::value;
+
+  // figure out largest supernode
+  int lwork = 0;
+  trmm_view_t trmm_dwork ("trmm_dwork", lwork);
+  if(run_trmm_on_device) {
+    for (int s2 = 0; s2 < nsuper; s2++) {
+      int nscol = nb[s2+1] - nb[s2];
+      if (nscol >= size_unblocked) {
+        int j1 = nb[s2];
+        int nsrow = hr(j1+1) - hr(j1);
+        if (lwork < nsrow * nscol) {
+          lwork = nsrow * nscol;
+        }
+      }
+    }
+    try {
+      Kokkos::resize(trmm_dwork, lwork);
+    } catch (...) {
+      // something went wrong allocating device memory
+      // so we'll just do trmm on host
+      run_trmm_on_device = false;
+    }
+  }
+  #endif
   for (int s2 = 0; s2 < nsuper; s2++) {
     int nscol = nb[s2+1] - nb[s2];
 
@@ -1300,9 +1330,23 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
         #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
         timer.reset ();
         #endif
-        KokkosBlas::trmm (&side_char, &uplo_char,
-                          &tran_char, &diag_char,
-                          one, Ljj, Lij);
+        if(run_trmm_on_device) {
+          Kokkos::View<scalar_t**, Kokkos::LayoutLeft, trmm_memory_space, Kokkos::MemoryUnmanaged>
+            devL (trmm_dwork.data(), nsrow, nscol);
+          auto devLjj = Kokkos::subview (devL, range_type (0, nscol), Kokkos::ALL ());
+          auto devLij = Kokkos::subview (devL, range_type (nscol, nsrow), Kokkos::ALL ());
+
+std::cout << " deep_copy( " << nsrow << " x " << nscol << " ) with lwork " << lwork << std::endl;
+          Kokkos::deep_copy(devL, viewL);
+          KokkosBlas::trmm (&side_char, &uplo_char,
+                            &tran_char, &diag_char,
+                            one, devLjj, devLij);
+          Kokkos::deep_copy(viewL, devL);
+        } else {
+          KokkosBlas::trmm (&side_char, &uplo_char,
+                            &tran_char, &diag_char,
+                            one, Ljj, Lij);
+        }
         #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
         time2 += timer.seconds ();
         #endif
