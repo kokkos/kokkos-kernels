@@ -440,7 +440,7 @@ SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
     KOKKOS_INLINE_FUNCTION auto subview_wrapper(
         ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
         const BatchLayout::Left &layout_tag, const Trans::Transpose) const {
-      return subview_wrapper(v, i2, i1, i3, layout_tag);
+      return subview_wrapper(v, i1, i3, i2, layout_tag);
     }
 
     // subview_wrapper overloads for handling 3-rank BatchLayout::Right views

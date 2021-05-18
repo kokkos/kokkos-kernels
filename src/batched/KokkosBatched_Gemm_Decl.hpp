@@ -247,7 +247,7 @@ namespace KokkosBatched {
 
 #if 0
       std::cout << "view_scalar_type:" << typeid(view_scalar_type).name() << std::endl <<
-                "execution_space:" << typeid(execution_space).name() << std::endl <<
+  	        "execution_space:" << typeid(typename CViewType::execution_space).name() << std::endl <<
                 "resultsPerThread:" << typeid(resultsPerThread).name() << std::endl <<
                 "mode_type:" << typeid(mode_type).name() << std::endl <<
                 "is_vector:" << is_vector << std::endl <<
