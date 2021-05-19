@@ -87,7 +87,7 @@ int run_gauss_seidel(
     int apply_type = 0, // 0 for symmetric, 1 for forward, 2 for backward.
     int cluster_size = 1,
     bool classic = false, // only with two-stage, true for sptrsv instead of richardson
-    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT) 
+    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT)
 {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
@@ -221,7 +221,7 @@ crsMat_t symmetrize(crsMat_t A)
     }
   }
   //Count entries
-  Kokkos::View<size_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_rowmap("Rowmap", numRows + 1);
+  Kokkos::View<size_type*, default_layout, Kokkos::HostSpace> new_host_rowmap("Rowmap", numRows + 1);
   size_t accum = 0;
   for(lno_t r = 0; r <= numRows; r++)
   {
@@ -230,8 +230,8 @@ crsMat_t symmetrize(crsMat_t A)
       accum += symRows[r].size();
   }
   //Allocate new entries/values
-  Kokkos::View<lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_entries("Entries", accum);
-  Kokkos::View<scalar_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_values("Values", accum);
+  Kokkos::View<lno_t*, default_layout, Kokkos::HostSpace> new_host_entries("Entries", accum);
+  Kokkos::View<scalar_t*, default_layout, Kokkos::HostSpace> new_host_values("Values", accum);
   for(lno_t r = 0; r < numRows; r++)
   {
     auto rowIt = symRows[r].begin();
@@ -338,8 +338,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   using namespace Test;
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, device> scalar_view2d_t;
-  typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> host_scalar_view2d_t;
+  typedef Kokkos::View<scalar_t**, default_layout, device> scalar_view2d_t;
+  typedef Kokkos::View<scalar_t**, default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
   typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;

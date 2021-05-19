@@ -74,6 +74,11 @@ print_help() {
   echo "    Valid items:"
   echo "      LayoutLeft,LayoutRight"
   echo ""
+  echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
+  echo ""
+  echo "--with-spaces=SPACES:       Set spaces to be instantiated."
+  echo "                                Options: hostspace, cudaspace, cudauvmspace"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -202,6 +207,7 @@ TEST_SCRIPT=False
 TEST_SPACK=False
 SKIP_HWLOC=False
 SPOT_CHECK=False
+NO_DEFAULT_ETI=False
 
 PRINT_HELP=False
 OPT_FLAG=""
@@ -351,6 +357,12 @@ do
       ;;
     --with-layouts*)
       KOKKOSKERNELS_LAYOUTS="${key#*=}"
+      ;;
+    --no-default-eti*)
+      NO_DEFAULT_ETI=True
+      ;;
+    --with-spaces*)
+      KOKKOSKERNELS_SPACES="${key#*=}"
       ;;
     --with-tpls*)
       KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
@@ -1152,6 +1164,10 @@ single_build_and_test() {
   if [ ! -z "$KOKKOSKERNELS_ORDINALS" ]; then
     kernels_variants="$kernels_variants ordinals=$KOKKOSKERNELS_ORDINALS"
   fi
+  if [ ! -z "$KOKKOSKERNELS_SPACES" ]; then
+      kernels_variants="$kernels_variants spaces=$KOKKOSKERNELS_SPACES"
+      KOKKOSKERNELS_SPACES="--with-spaces=$KOKKOSKERNELS_SPACES"
+  fi
 
 
   echo "  #   Load modules:" &> reload_modules.sh
@@ -1190,6 +1206,10 @@ single_build_and_test() {
   local ldflags="${LD_FLAGS_EXTRA}"
 
   local cxx_standard="${CXX_STANDARD}"
+
+  if [ "${NO_DEFAULT_ETI}" = "True" ]; then
+    local extra_args="$extra_args --no-default-eti"
+  fi
 
 
   echo "  Starting job $desc"
@@ -1241,13 +1261,13 @@ single_build_and_test() {
 
     # KOKKOS_OPTIONS and KOKKOS_CUDA_OPTIONS are exported and detected by kokkos' generate_makefile.sh during install of kokkos; we pass them to the reproducer script instructions
     echo "  #   Use generate_makefile line below to call cmake which generates makefile for this build:" &> call_generate_makefile.sh
-    echo "        ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} --no-examples $extra_args" &>> call_generate_makefile.sh
+    echo "        ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} ${KOKKOSKERNELS_SPACES} --no-examples $extra_args" &>> call_generate_makefile.sh
     chmod +x call_generate_makefile.sh
 
     # script command with generic path for faster copy/paste of reproducer into issues
-    echo "  #     \$KOKKOSKERNELS_PATH/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=\$KOKKOS_PATH --kokkoskernels-path=\$KOKKOSKERNELS_PATH --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} --no-examples $extra_args" &> call_generate_makefile_genericpath.sh
+    echo "  #     \$KOKKOSKERNELS_PATH/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=\$KOKKOS_PATH --kokkoskernels-path=\$KOKKOSKERNELS_PATH --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} ${KOKKOSKERNELS_SPACES} --no-examples $extra_args" &> call_generate_makefile_genericpath.sh
 
-    run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOS_BOUNDS_CHECK} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOS_BOUNDS_CHECK} ${KOKKOSKERNELS_SPACES} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
 
     local make_par_lvl=12
     if [[ "$MACHINE" = white* ]]; then

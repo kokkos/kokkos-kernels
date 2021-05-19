@@ -374,13 +374,11 @@ spmv (KokkosKernels::Experimental::Controls /*controls*/,
   // Call single-vector version if appropriate
   if (x.extent(1) == 1) {
     typedef Kokkos::View<typename XVector::const_value_type*,
-      typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout, Kokkos::LayoutLeft>::value,
-                                  Kokkos::LayoutLeft, Kokkos::LayoutStride>::type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
       typename XVector::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_SubInternal;
     typedef Kokkos::View<typename YVector::non_const_value_type*,
-      typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout,Kokkos::LayoutLeft>::value,
-                                  Kokkos::LayoutLeft,Kokkos::LayoutStride>::type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
       typename YVector::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_SubInternal;
 
@@ -735,13 +733,11 @@ void spmv(const char mode[],
       // Call single-vector version if appropriate
       if (x.extent(1) == 1) {
         typedef Kokkos::View<typename XVector::const_value_type*,
-                             typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout, Kokkos::LayoutLeft>::value,
-                                                         Kokkos::LayoutLeft, Kokkos::LayoutStride>::type,
+                             typename YVector::array_layout,
                              typename XVector::device_type,
                              Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_SubInternal;
         typedef Kokkos::View<typename YVector::non_const_value_type*,
-                             typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout,Kokkos::LayoutLeft>::value,
-                                                         Kokkos::LayoutLeft,Kokkos::LayoutStride>::type,
+                             typename YVector::array_layout,
                              typename YVector::device_type,
                              Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_SubInternal;
 

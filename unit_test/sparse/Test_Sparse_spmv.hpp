@@ -9,6 +9,7 @@
 #include<KokkosKernels_Utils.hpp>
 
 #include "KokkosKernels_Controls.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 // #ifndef kokkos_complex_double
 // #define kokkos_complex_double Kokkos::complex<double>
@@ -778,9 +779,9 @@ void test_github_issue_101 ()
   // vectors.  Include a little extra in case the implementers decide
   // to strip-mine that.
   constexpr int numVecs = 22;
-  Kokkos::View<double**, Kokkos::LayoutLeft, DeviceType> X ("X", numCols, numVecs);
+  Kokkos::View<double**, default_layout, DeviceType> X ("X", numCols, numVecs);
   Kokkos::deep_copy (X, static_cast<double> (1.0));
-  Kokkos::View<double**, Kokkos::LayoutLeft, DeviceType> Y ("Y", numRows, numVecs);
+  Kokkos::View<double**, default_layout, DeviceType> Y ("Y", numRows, numVecs);
   auto Y_h = Kokkos::create_mirror_view (Y); // we'll want this later
 
   // Start with the easy test case, where the matrix and the vectors
@@ -1043,7 +1044,7 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv_struct ## _ ## SCALAR ## _ ## ORDINA
 #endif
 
 
-
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT)) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -1156,7 +1157,7 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv_struct ## _ ## SCALAR ## _ ## ORDINA
  EXECUTE_TEST_MV(kokkos_complex_float, int64_t, size_t, LayoutLeft, TestExecSpace)
  EXECUTE_TEST_MV_STRUCT(kokkos_complex_float, int64_t, size_t, LayoutLeft, TestExecSpace)
 #endif
-
+#endif // defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 
 
 
