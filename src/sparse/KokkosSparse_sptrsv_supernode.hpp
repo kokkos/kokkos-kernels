@@ -1362,8 +1362,8 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
   using trmm_execution_space = Kokkos::DefaultExecutionSpace;
   using trmm_memory_space    = typename trmm_execution_space::memory_space;
   using trmm_view_t = Kokkos::View<scalar_t*, trmm_execution_space>;
-  // NOTE: we could also integrade a user-specified input here (e.g., just run TRMM on host as a default)
-  bool run_trmm_on_device = !std::is_same< trmm_execution_space, execution_space>::value;
+  bool run_trmm_on_device = (handle->get_trmm_on_device() &&
+                             !std::is_same< trmm_execution_space, execution_space>::value);
 
   // figure out largest supernode
   int lwork = 0;
