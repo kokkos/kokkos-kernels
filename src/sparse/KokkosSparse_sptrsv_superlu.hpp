@@ -92,7 +92,7 @@ graph_t read_superlu_graphL(KernelHandle *kernelHandle, SuperMatrix *L) {
 /* ========================================================================================= */
 // read SuperLU U factor into CSR
 template <typename graph_t, typename KernelHandle>
-graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMatrix *U) {
+graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMatrix *U) {
 
   using   row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using      cols_view_t = typename graph_t::entries_type::non_const_type;
@@ -326,7 +326,7 @@ void sptrsv_symbolic(
 
 /* ========================================================================================= */
 template <typename crsmat_t, typename graph_t, typename KernelHandle>
-crsmat_t read_superlu_valuesL(KernelHandle kernelHandle, SuperMatrix *L, graph_t &static_graph) {
+crsmat_t read_superlu_valuesL(KernelHandle *kernelHandle, SuperMatrix *L, graph_t &static_graph) {
 
   using values_view_t = typename crsmat_t::values_type::non_const_type;
   using scalar_t      = typename values_view_t::value_type;
@@ -357,7 +357,7 @@ template <typename crsmat_t,
           typename graph_t,
           typename KernelHandle>
 crsmat_t
-read_superlu_valuesU(KernelHandle kernelHandle,
+read_superlu_valuesU(KernelHandle *kernelHandle,
                      SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;

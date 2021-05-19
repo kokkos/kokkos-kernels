@@ -103,7 +103,7 @@ graph_t deep_copy_graph (host_graph_t &host_graph) {
 /* ========================================================================================= */
 template <typename graph_t, typename ptr_type, typename size_type, typename ordinal_type, typename KernelHandle>
 graph_t
-read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, int nnzA, bool ptr_by_column,
+read_supernodal_graphL(KernelHandle *kernelHandle, int n, int nsuper, int nnzA, bool ptr_by_column,
                        ptr_type *mb, size_type *nb, ordinal_type *rowind) {
 
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
@@ -229,7 +229,7 @@ read_supernodal_graphL(KernelHandle kernelHandle, int n, int nsuper, int nnzA, b
 /* ========================================================================================= */
 template <typename graph_t, typename ptr_type, typename size_type, typename ordinal_type, typename KernelHandle>
 graph_t
-read_supernodal_graphLt(KernelHandle kernelHandle, int n, int nsuper, bool ptr_by_column,
+read_supernodal_graphLt(KernelHandle *kernelHandle, int n, int nsuper, bool ptr_by_column,
                         ptr_type *mb, size_type *nb, ordinal_type *rowind) {
 
   using row_map_view_t = typename graph_t::row_map_type::non_const_type;
@@ -1233,7 +1233,7 @@ template <typename KernelHandle, typename input_size_type,
           typename row_map_type, typename index_type, typename values_type,
           typename integer_view_host_t>
 void
-invert_supernodal_columns_batched(KernelHandle kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb, 
+invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb, 
                                   row_map_type& hr, index_type& hc, values_type& hv, int num_batches, integer_view_host_t supernode_ids) {
 
   using execution_space = typename values_type::execution_space;
@@ -1241,6 +1241,7 @@ invert_supernodal_columns_batched(KernelHandle kernelHandle, bool unit_diag, int
   using values_view_t   = typename values_type::non_const_type;
   using scalar_t        = typename values_view_t::value_type;
   using range_type = Kokkos::pair<int, int>;
+using ex = typename KernelHandle::HandleExecSpace;
 
   using Uplo = KokkosBatched::Uplo;
   using Diag = KokkosBatched::Diag;
@@ -1317,7 +1318,7 @@ invert_supernodal_columns_batched(KernelHandle kernelHandle, bool unit_diag, int
 template <typename KernelHandle, typename input_size_type,
           typename row_map_type, typename index_type, typename values_type>
 void
-invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb, 
+invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb, 
                           row_map_type& hr, index_type& hc, values_type& hv) {
 
   using execution_space = typename values_type::execution_space;
@@ -1356,10 +1357,11 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
   int num_batches = 0;
   int size_unblocked = handle->get_supernode_size_unblocked();
   integer_view_host_t supernode_ids ("supernode_batch", nsuper);
-  #define KOKKOS_SPTRSV_SUPERNODE_TRMM_ON_DEVICE
-  #ifdef KOKKOS_SPTRSV_SUPERNODE_TRMM_ON_DEVICE
-  // NOTE: we are using defaullt execution space to run TRMM
-  using trmm_execution_space = Kokkos::DefaultExecutionSpace;
+
+  // ----------------------------------------------------------
+  // If we are running KokkosKernels::trmm on device,
+  // then we need to allocate a workspace on device
+  using trmm_execution_space = typename KernelHandle::HandleExecSpace;
   using trmm_memory_space    = typename trmm_execution_space::memory_space;
   using trmm_view_t = Kokkos::View<scalar_t*, trmm_execution_space>;
   bool run_trmm_on_device = (handle->get_trmm_on_device() &&
@@ -1387,7 +1389,10 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
       run_trmm_on_device = false;
     }
   }
-  #endif
+
+  // ----------------------------------------------------------
+  // now go through the supernode columns and invert "large" supernodes
+  // using KokkosKernels::trtri (host) and KokkosKernels::trmm (host or device)
   for (int s2 = 0; s2 < nsuper; s2++) {
     int nscol = nb[s2+1] - nb[s2];
 
@@ -1419,7 +1424,6 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
         #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
         timer.reset ();
         #endif
-        #ifdef KOKKOS_SPTRSV_SUPERNODE_TRMM_ON_DEVICE
         if(run_trmm_on_device) {
           Kokkos::View<scalar_t**, Kokkos::LayoutLeft, trmm_memory_space, Kokkos::MemoryUnmanaged>
             devL (trmm_dwork.data(), nsrow, nscol);
@@ -1432,7 +1436,6 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
                             one, devLjj, devLij);
           Kokkos::deep_copy(viewL, devL);
         } else
-        #endif
         {
           KokkosBlas::trmm (&side_char, &uplo_char,
                             &tran_char, &diag_char,
@@ -1473,7 +1476,7 @@ invert_supernodal_columns(KernelHandle kernelHandle, bool unit_diag, int nsuper,
 template <typename crsmat_t, typename input_crsmat_t, typename input_ptr_type, typename graph_t,
           typename KernelHandle>
 crsmat_t
-read_merged_supernodes(KernelHandle kernelHandle, int nsuper, const input_ptr_type *mb,
+read_merged_supernodes(KernelHandle *kernelHandle, int nsuper, const input_ptr_type *mb,
                        bool unit_diag, input_crsmat_t &L, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
@@ -1547,7 +1550,7 @@ template <typename crsmat_t, typename graph_t, typename scalar_t,
           typename input_size_type, typename input_ptr_type,
           typename size_type, typename ordinal_type, typename KernelHandle>
 crsmat_t
-read_supernodal_valuesL(KernelHandle kernelHandle,
+read_supernodal_valuesL(KernelHandle *kernelHandle,
                         int n, int nsuper, bool ptr_by_column, const input_size_type *mb, const input_ptr_type *nb,
                         const size_type *colptr, ordinal_type *rowind, scalar_t *Lx, graph_t &static_graph) {
 
@@ -1694,7 +1697,7 @@ template <typename crsmat_t, typename graph_t, typename scalar_t,
           typename input_size_type, typename input_ptr_type,
           typename size_type, typename ordinal_type, typename KernelHandle>
 crsmat_t
-read_supernodal_valuesLt(KernelHandle kernelHandle,
+read_supernodal_valuesLt(KernelHandle *kernelHandle,
                          int n, int nsuper, bool ptr_by_column, const input_size_type *mb, const input_ptr_type *nb,
                          const size_type *colptr, ordinal_type *rowind, scalar_t *Lx, graph_t &static_graph) {
 

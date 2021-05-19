@@ -424,6 +424,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khU.set_sptrsv_perm (perm_c);
 
           // specify whether to run trmm on device
+          std::cout << " TRMM on device     : " << trmm_on_device << std::endl;
           khL.set_sptrsv_trmm_on_device (trmm_on_device);
           khU.set_sptrsv_trmm_on_device (trmm_on_device);
 
