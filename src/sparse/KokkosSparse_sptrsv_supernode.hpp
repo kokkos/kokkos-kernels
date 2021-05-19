@@ -1237,11 +1237,6 @@ invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, in
                                   row_map_type& hr, index_type& hc, values_type& hv, int num_batches, integer_view_host_t supernode_ids) {
 
   using execution_space = typename values_type::execution_space;
-  using memory_space    = typename execution_space::memory_space;
-  using values_view_t   = typename values_type::non_const_type;
-  using scalar_t        = typename values_view_t::value_type;
-  using range_type = Kokkos::pair<int, int>;
-using ex = typename KernelHandle::HandleExecSpace;
 
   using Uplo = KokkosBatched::Uplo;
   using Diag = KokkosBatched::Diag;
