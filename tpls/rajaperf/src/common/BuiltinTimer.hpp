@@ -1,7 +1,8 @@
 //
 // Created by Poliakoff, David Zoeller on 4/26/21.
 //
-
+#include <chrono>
+#include <limits>
 #ifndef RAJAPERFSUITE_BUILTINTIMER_HPP
 #define RAJAPERFSUITE_BUILTINTIMER_HPP
 namespace rajaperf {
