@@ -769,7 +769,7 @@ void run_test_sptrsv() {
     }
 
     {
-      // unit-test for correctness
+      // unit-test for supernode SpTrsv (default)
       // > set up supernodes (block size = one)
       int *etree = NULL;
       Kokkos::View<int*, Kokkos::HostSpace> supercols ("supercols", 1+nrows);
@@ -790,8 +790,10 @@ void run_test_sptrsv() {
       Kokkos::fence();
 
       // > solve 
+      ValuesType b ("b", nrows);
+      Kokkos::deep_copy (b, B);
       Kokkos::deep_copy (X, ZERO);
-      sptrsv_solve (&khL, &khU, X, B);
+      sptrsv_solve (&khL, &khU, X, b);
       Kokkos::fence();
 
       // > check
@@ -805,6 +807,105 @@ void run_test_sptrsv() {
 
       khL.destroy_sptrsv_handle();
       khU.destroy_sptrsv_handle();
+    }
+
+    {
+      // unit-test for supernode SpTrsv (running TRMM on device for compute)
+
+      // convert U into csc (for inverting off-diag)
+      using host_exec_space = typename KernelHandle::SPTRSVHandleType::supercols_host_execution_space;
+
+      auto host_rowptrU = Kokkos::create_mirror_view(U.graph.row_map);
+      auto host_colindU = Kokkos::create_mirror_view(U.graph.entries);
+      auto host_valuesU = Kokkos::create_mirror_view(U.values);
+      Kokkos::deep_copy(host_rowptrU, U.graph.row_map);
+      Kokkos::deep_copy(host_colindU, U.graph.entries);
+      Kokkos::deep_copy(host_valuesU, U.values);
+
+      size_type nnzU = host_rowptrU (nrows);
+      row_map_view_t Urow_map ("rowmap_view", nrows+1);
+      cols_view_t    Uentries ("colmap_view", nnzU);
+      values_view_t  Uvalues  ("values_view", nnzU);
+      transpose_matrix <in_row_map_view_t, in_cols_view_t, in_values_view_t,
+                           row_map_view_t,    cols_view_t,    values_view_t,
+                        row_map_view_t, host_exec_space>
+        (nrows, nrows, host_rowptrU, host_colindU, host_valuesU,
+                       Urow_map, Uentries, Uvalues);
+      Kokkos::fence();
+
+      // sptrsv assumes the diagonal "block" is stored before off-diagonal blocks
+      for (size_type j = 0; j < nrows; j++) {
+        for (size_type k = Urow_map (j); k < Urow_map (j+1); k++) {
+          if (Uentries (k) == (lno_t)j) {
+            scalar_t val = Uvalues (k);
+
+            Uvalues (k) = Uvalues (Urow_map(j));
+            Uentries (k) = Uentries (Urow_map(j));
+
+            Uvalues (Urow_map(j)) = val;
+            Uentries (Urow_map(j)) = j;
+            break;
+          }
+        }
+      }
+
+      // store Ut in crsmat
+      host_graph_t static_graph(Uentries, Urow_map);
+      host_crsmat_t Ut ("CrsMatrixL", nrows, Uvalues, static_graph);
+
+      // > set up supernodes (block size = one)
+      int *etree = NULL;
+      Kokkos::View<int*, Kokkos::HostSpace> supercols ("supercols", 1+nrows);
+      for (size_type i = 0; i <= nrows; i++) {
+        supercols (i) = i;
+      }
+
+      // > create handles
+      KernelHandle khLd;
+      KernelHandle khUd;
+      khLd.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
+      khUd.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
+
+      // > invert diagonal blocks
+      bool invert_diag = true;
+      khLd.set_sptrsv_invert_diagonal (invert_diag);
+      khUd.set_sptrsv_invert_diagonal (invert_diag);
+
+      // > invert off-diagonal blocks
+      bool invert_offdiag = true;
+      khUd.set_sptrsv_column_major (true);
+      khLd.set_sptrsv_invert_offdiagonal (invert_offdiag);
+      khUd.set_sptrsv_invert_offdiagonal (invert_offdiag);
+
+      // > forcing sptrsv compute to perform TRMM on device
+      khLd.set_sptrsv_diag_supernode_sizes (1, 1);
+      khUd.set_sptrsv_diag_supernode_sizes (1, 1);
+
+      // > symbolic (on host)
+      sptrsv_supernodal_symbolic (nrows, supercols.data (), etree, L.graph, &khLd, Ut.graph, &khUd);
+      // > numeric (on host)
+      sptrsv_compute (&khLd, L);
+      sptrsv_compute (&khUd, Ut);
+      Kokkos::fence();
+
+      // > solve 
+      ValuesType b ("b", nrows);
+      Kokkos::deep_copy (b, B);
+      Kokkos::deep_copy (X, ZERO);
+      sptrsv_solve (&khLd, &khUd, X, b);
+      Kokkos::fence();
+
+      // > check
+      scalar_t sum = 0.0;
+      Kokkos::parallel_reduce (Kokkos::RangePolicy<typename device::execution_space>(0, X.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(X), sum);
+      if ( sum != lhs.extent(0) ) {
+        std::cout << "Supernode Tri Solve FAILURE" << std::endl;
+        khLd.get_sptrsv_handle()->print_algorithm();
+      }
+      EXPECT_TRUE( sum == scalar_t(X.extent(0)) );
+
+      khLd.destroy_sptrsv_handle();
+      khUd.destroy_sptrsv_handle();
     }
 #endif
   }
