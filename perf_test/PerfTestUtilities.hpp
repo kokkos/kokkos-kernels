@@ -86,7 +86,7 @@ struct data_retriever {
   template <class... Locations>
   data_retriever(std::string path_to_data, Locations... locations)
       : sub_path(path_to_data) {
-     root_path = get_input_data_path();
+     root_path = test::get_input_data_path();
   
     // TODO: way to list the directories in the root path
     std::vector<std::string> data_repos = get_directories(root_path + "/");

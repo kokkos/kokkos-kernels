@@ -12,12 +12,10 @@ int main(int argc, char* argv[]) {
     // argument parsing for setting input data at runtime
    
 std::string inputDataPath;
-
 if (argc == 1) {
-    print_help();
+//    print_help();
     return 0;
   }
-
 
   for (int i = 0; i < argc; i++) {
     // if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
@@ -37,8 +35,9 @@ if (argc == 1) {
      test::set_input_data_path(inputDataPath);
 
     // set up Executor
-    rajaperf::Executor exec(argc, argv);
-    rajaperf::RunParams run_params(argc, argv);
+    rajaperf::Executor exec(0, argv);
+    //rajaperf::Executor exec(argc, argv);
+    rajaperf::RunParams run_params(0, argv);
     // Initialize Kokkos
     Kokkos::initialize(argc, argv);
     

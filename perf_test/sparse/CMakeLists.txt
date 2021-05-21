@@ -41,6 +41,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
   SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp
+../PerfTestUtilities.cpp
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
