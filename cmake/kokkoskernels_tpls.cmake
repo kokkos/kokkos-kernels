@@ -460,8 +460,6 @@ IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
     ELSE ()
       MESSAGE(FATAL_ERROR "F77_BLAS_MANGLE ${F77_BLAS_MANGLE} detected while MAGMA only accepts Fortran mangling that is one of single underscore (-DADD_), uppercase (-DUPCASE), and no change (-DNOCHANGE)")
     ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR "KokkosKernels does not currently support MAGMA in standalone mode")
   ENDIF()
   LIST(APPEND TPL_LIST "MAGMA")
 ENDIF()
@@ -483,6 +481,7 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   KOKKOSKERNELS_IMPORT_TPL(SUPERLU)
   KOKKOSKERNELS_IMPORT_TPL(METIS)
   KOKKOSKERNELS_IMPORT_TPL(ARMPL)
+  KOKKOSKERNELS_IMPORT_TPL(MAGMA)
 ENDIF()
 
 #Convert list to newlines (which CMake doesn't always like in cache variables)
@@ -490,4 +489,3 @@ STRING(REPLACE ";" "\n" KOKKOSKERNELS_TPL_EXPORT_TEMP "${KOKKOSKERNELS_TPL_EXPOR
 #Convert to a regular variable
 UNSET(KOKKOSKERNELS_TPL_EXPORTS CACHE)
 SET(KOKKOSKERNELS_TPL_EXPORTS ${KOKKOSKERNELS_TPL_EXPORT_TEMP})
-
