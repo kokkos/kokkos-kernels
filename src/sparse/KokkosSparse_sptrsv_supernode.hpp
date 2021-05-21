@@ -1457,6 +1457,10 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
   time3 = timer.seconds ();
   #endif
 
+  if(run_trmm_on_device) {
+    // to make sure the data is deep-copied to host..
+    Kokkos::fence();
+  }
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "   invert_supernodes" << std::endl;
   std::cout << "   + num supernodes = " << nsuper << " num batchs = " << num_batches << std::endl;
