@@ -1,5 +1,16 @@
 # Change Log
 
+## [3.4.01](https://github.com/kokkos/kokkos-kernels/tree/3.4.01) (2021-05-19)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.4.00...3.4.01)
+
+**Fixed Bugs:**
+- Windows: Fixes for Windows [\#981](https://github.com/kokkos/kokkos-kernels/pull/981)
+- Sycl: ArithTraits fixes for Sycl [\#959](https://github.com/kokkos/kokkos-kernels/pull/959)
+- Sparse: Added code to allow KokkosKernels coloring to accept partial colorings [\#938](https://github.com/kokkos/kokkos-kernels/pull/938)
+- Sparse: Include sorting within spiluk [\#972](https://github.com/kokkos/kokkos-kernels/pull/972)
+- Sparse: Fix CrsMatrix raw pointer constructor [\#971](https://github.com/kokkos/kokkos-kernels/pull/971)
+- Sparse: Fix spmv Serial beta==-1 code path [\#947](https://github.com/kokkos/kokkos-kernels/pull/947)
+
 ## [3.4.00](https://github.com/kokkos/kokkos-kernels/tree/3.4.00) (2021-04-25)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.3.01...3.4.00)
 
