@@ -74,6 +74,8 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
+// crs = compressed row storage
+
 int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
                               const char* filename, Ordinal rows_per_thread,
                               int team_size, int vector_length, int schedule,
