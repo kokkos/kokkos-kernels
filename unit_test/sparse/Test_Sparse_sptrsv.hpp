@@ -388,7 +388,7 @@ void run_test_sptrsv() {
   ValuesType X ("sol", nrows);
 
   // host CRS for L & U
-  host_crsmat_t L, U;
+  host_crsmat_t L, U, Ut;
 #endif
 
   // Upper tri
@@ -567,6 +567,42 @@ void run_test_sptrsv() {
       // create handle for Supernodal Sptrsv
       bool is_lower_tri = false;
       khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
+    }
+
+    {
+      // convert U into csc (for inverting off-diag)
+      using host_exec_space = typename KernelHandle::SPTRSVHandleType::supercols_host_execution_space;
+
+      size_type nnzU = hrow_map (nrows);
+      row_map_view_t Urow_map ("rowmap_view", nrows+1);
+      cols_view_t    Uentries ("colmap_view", nnzU);
+      values_view_t  Uvalues  ("values_view", nnzU);
+      transpose_matrix <in_row_map_view_t, in_cols_view_t, in_values_view_t,
+                           row_map_view_t,    cols_view_t,    values_view_t,
+                        row_map_view_t, host_exec_space>
+        (nrows, nrows, hrow_map, hentries, hvalues,
+                       Urow_map, Uentries, Uvalues);
+      Kokkos::fence();
+
+      // sptrsv assumes the diagonal "block" is stored before off-diagonal blocks
+      for (size_type j = 0; j < nrows; j++) {
+        for (size_type k = Urow_map (j); k < Urow_map (j+1); k++) {
+          if (Uentries (k) == (lno_t)j) {
+            scalar_t val = Uvalues (k);
+
+            Uvalues (k) = Uvalues (Urow_map(j));
+            Uentries (k) = Uentries (Urow_map(j));
+
+            Uvalues (Urow_map(j)) = val;
+            Uentries (Urow_map(j)) = j;
+            break;
+          }
+        }
+      }
+
+      // store Ut in crsmat
+      host_graph_t static_graph(Uentries, Urow_map);
+      Ut = host_crsmat_t("CrsMatrixUt", nrows, Uvalues, static_graph);
     }
 #endif
   }
@@ -811,48 +847,6 @@ void run_test_sptrsv() {
 
     {
       // unit-test for supernode SpTrsv (running TRMM on device for compute)
-
-      // convert U into csc (for inverting off-diag)
-      using host_exec_space = typename KernelHandle::SPTRSVHandleType::supercols_host_execution_space;
-
-      auto host_rowptrU = Kokkos::create_mirror_view(U.graph.row_map);
-      auto host_colindU = Kokkos::create_mirror_view(U.graph.entries);
-      auto host_valuesU = Kokkos::create_mirror_view(U.values);
-      Kokkos::deep_copy(host_rowptrU, U.graph.row_map);
-      Kokkos::deep_copy(host_colindU, U.graph.entries);
-      Kokkos::deep_copy(host_valuesU, U.values);
-
-      size_type nnzU = host_rowptrU (nrows);
-      row_map_view_t Urow_map ("rowmap_view", nrows+1);
-      cols_view_t    Uentries ("colmap_view", nnzU);
-      values_view_t  Uvalues  ("values_view", nnzU);
-      transpose_matrix <in_row_map_view_t, in_cols_view_t, in_values_view_t,
-                           row_map_view_t,    cols_view_t,    values_view_t,
-                        row_map_view_t, host_exec_space>
-        (nrows, nrows, host_rowptrU, host_colindU, host_valuesU,
-                       Urow_map, Uentries, Uvalues);
-      Kokkos::fence();
-
-      // sptrsv assumes the diagonal "block" is stored before off-diagonal blocks
-      for (size_type j = 0; j < nrows; j++) {
-        for (size_type k = Urow_map (j); k < Urow_map (j+1); k++) {
-          if (Uentries (k) == (lno_t)j) {
-            scalar_t val = Uvalues (k);
-
-            Uvalues (k) = Uvalues (Urow_map(j));
-            Uentries (k) = Uentries (Urow_map(j));
-
-            Uvalues (Urow_map(j)) = val;
-            Uentries (Urow_map(j)) = j;
-            break;
-          }
-        }
-      }
-
-      // store Ut in crsmat
-      host_graph_t static_graph(Uentries, Urow_map);
-      host_crsmat_t Ut ("CrsMatrixL", nrows, Uvalues, static_graph);
-
       // > set up supernodes (block size = one)
       int *etree = NULL;
       Kokkos::View<int*, Kokkos::HostSpace> supercols ("supercols", 1+nrows);
