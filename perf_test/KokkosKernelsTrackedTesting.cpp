@@ -14,6 +14,7 @@ int main(int argc, char* argv[]) {
 std::string inputDataPath;
 if (argc == 1) {
 //    print_help();
+	std::cout << "Please provide input data directory: --input-data /PATH/TO/KOKKOS-KERNELS/INPUT/DATA" << std::endl; 
     return 0;
   }
 
