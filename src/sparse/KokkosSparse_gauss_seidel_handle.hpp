@@ -243,8 +243,6 @@ namespace KokkosSparse{
     scalar_persistent_work_view_t permuted_inverse_diagonal;
     nnz_lno_t block_size; //this is for block sgs
 
-    nnz_lno_t max_nnz_input_row;
-
     nnz_lno_t num_values_in_l1, num_values_in_l2, num_big_rows;
     size_t level_1_mem, level_2_mem;
 
@@ -268,7 +266,6 @@ namespace KokkosSparse{
       permuted_xadj(), permuted_adj(), permuted_adj_vals(), old_to_new_map(),
       permuted_y_vector(), permuted_x_vector(),
       permuted_inverse_diagonal(), block_size(1),
-      max_nnz_input_row(-1),
       num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0),
       long_row_threshold(0)
     {
