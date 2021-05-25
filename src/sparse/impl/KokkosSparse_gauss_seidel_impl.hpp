@@ -1672,10 +1672,12 @@ namespace KokkosSparse{
         nnz_lno_persistent_work_host_view_t long_rows_per_color;
         scalar_persistent_work_view_t long_row_x;
         bool haveLongRows = false;
+        MyExecSpace long_row_stream;
         if(gsHandle->get_long_row_threshold() > 0)
         {
           long_rows_per_color = gsHandle->get_long_rows_per_color();
           long_row_x = gsHandle->get_long_row_x();
+          long_row_stream = gsHandle->get_long_row_apply_stream();
           haveLongRows = true;
         }
 
@@ -1727,14 +1729,20 @@ namespace KokkosSparse{
                   auto Xcol = Kokkos::subview(gs._Xvector, Kokkos::ALL(), long_row_col);
                   auto Ycol = Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
                   gs._long_row_col = long_row_col;
-                  Kokkos::deep_copy(long_row_x, nnz_scalar_t());
+                  Kokkos::deep_copy(long_row_stream, long_row_x, nnz_scalar_t());
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::forward",
-                      longrow_apply_team_policy_t(numLongRows * long_row_par, Kokkos::AUTO()), gs);
+                      longrow_apply_team_policy_t(long_row_stream, numLongRows * long_row_par, Kokkos::AUTO()), gs);
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::x_update",
-                      range_pol(color_index_end - numLongRows, color_index_end),
+                      range_pol(long_row_stream, color_index_end - numLongRows, color_index_end),
                       LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>
                       (Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal, gs.omega, color_index_end - numLongRows));
                 }
+              }
+              if(haveLongRows) {
+                if(numRegularRows)
+                  MyExecSpace().fence();
+                if(numLongRows)
+                  long_row_stream.fence();
               }
             }
           }
@@ -1753,11 +1761,13 @@ namespace KokkosSparse{
         nnz_lno_persistent_work_host_view_t long_rows_per_color;
         scalar_persistent_work_view_t long_row_x;
         bool haveLongRows = false;
+        MyExecSpace long_row_stream;
         if(gsHandle->get_long_row_threshold() > 0)
         {
           long_rows_per_color = gsHandle->get_long_rows_per_color();
           long_row_x = gsHandle->get_long_row_x();
           gs._long_row_x = long_row_x;
+          long_row_stream = gsHandle->get_long_row_apply_stream();
           haveLongRows = true;
         }
 
@@ -1788,13 +1798,19 @@ namespace KokkosSparse{
                   auto Xcol = Kokkos::subview(gs._Xvector, Kokkos::ALL(), long_row_col);
                   auto Ycol = Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
                   gs._long_row_col = long_row_col;
-                  Kokkos::deep_copy(long_row_x, nnz_scalar_t());
-                  Kokkos::parallel_for (labelLong, range_pol (0, numLongRows), gs);
+                  Kokkos::deep_copy(long_row_stream, long_row_x, nnz_scalar_t());
+                  Kokkos::parallel_for (labelLong, range_pol (long_row_stream, 0, numLongRows), gs);
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::x_update",
-                      range_pol(color_index_end - numLongRows, color_index_end),
+                      range_pol(long_row_stream, color_index_end - numLongRows, color_index_end),
                       LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>
                       (Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal, gs.omega, color_index_end - numLongRows));
                 }
+              }
+              if(haveLongRows) {
+                if(numRegularRows)
+                  MyExecSpace().fence();
+                if(numLongRows)
+                  long_row_stream.fence();
               }
             }
           }
