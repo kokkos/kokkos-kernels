@@ -450,7 +450,6 @@ KOKKOSKERNELS_ADD_TPL_OPTION(CUSPARSE ${CUSPARSE_DEFAULT}   "Whether to enable C
   DEFAULT_DOCSTRING "ON if CUDA-enabled Kokkos, otherwise OFF")
 
 IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-  IF (KOKKOSKERNELS_HAS_TRILINOS)
     IF (F77_BLAS_MANGLE STREQUAL "(name,NAME) name ## _")
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DADD_ -fopenmp -lgfortran")
     ELSEIF (F77_BLAS_MANGLE STREQUAL "(name,NAME) NAME")
@@ -460,7 +459,6 @@ IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
     ELSE ()
       MESSAGE(FATAL_ERROR "F77_BLAS_MANGLE ${F77_BLAS_MANGLE} detected while MAGMA only accepts Fortran mangling that is one of single underscore (-DADD_), uppercase (-DUPCASE), and no change (-DNOCHANGE)")
     ENDIF()
-  ENDIF()
   LIST(APPEND TPL_LIST "MAGMA")
 ENDIF()
 
