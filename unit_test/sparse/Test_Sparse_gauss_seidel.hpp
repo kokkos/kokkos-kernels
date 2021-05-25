@@ -61,6 +61,7 @@
 #include "KokkosSparse_partitioning_impl.hpp"
 #include "KokkosSparse_sor_sequential_impl.hpp"
 #include "KokkosKernels_Sorting.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 // #ifndef kokkos_complex_double
 // #define kokkos_complex_double Kokkos::complex<double>
@@ -195,70 +196,6 @@ void run_gauss_seidel(
 // }
 } // namespace Test
 
-template<typename scalar_t, typename lno_t, typename size_type, typename device, typename crsMat_t>
-crsMat_t symmetrize(crsMat_t A)
-{
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  auto host_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
-  auto host_entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
-  auto host_values = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
-  lno_t numRows = A.numRows();
-  //symmetrize as input_mat + input_mat^T, to still have a diagonally dominant matrix
-  typedef std::map<lno_t, scalar_t> Row;
-  std::vector<Row> symRows(numRows);
-  for(lno_t r = 0; r < numRows; r++)
-  {
-    auto& row = symRows[r];
-    for(size_type i = host_rowmap(r); i < host_rowmap(r + 1); i++)
-    {
-      lno_t c = host_entries(i);
-      auto& col = symRows[c];
-      auto it = row.find(c);
-      if(it == row.end())
-        row[c] = host_values(i);
-      else
-        row[c] += host_values(i);
-      it = col.find(r);
-      if(it == col.end())
-        col[r] = host_values(i);
-      else
-        col[r] += host_values(i);
-    }
-  }
-  //Count entries
-  Kokkos::View<size_type*, default_layout, Kokkos::HostSpace> new_host_rowmap("Rowmap", numRows + 1);
-  size_t accum = 0;
-  for(lno_t r = 0; r <= numRows; r++)
-  {
-    new_host_rowmap(r) = accum;
-    if(r < numRows)
-      accum += symRows[r].size();
-  }
-  //Allocate new entries/values
-  Kokkos::View<lno_t*, default_layout, Kokkos::HostSpace> new_host_entries("Entries", accum);
-  Kokkos::View<scalar_t*, default_layout, Kokkos::HostSpace> new_host_values("Values", accum);
-  for(lno_t r = 0; r < numRows; r++)
-  {
-    auto rowIt = symRows[r].begin();
-    for(size_type i = new_host_rowmap(r); i < new_host_rowmap(r + 1); i++)
-    {
-      new_host_entries(i) = rowIt->first;
-      new_host_values(i) = rowIt->second;
-      rowIt++;
-    }
-  }
-  lno_view_t new_rowmap("Rowmap", numRows + 1);
-  lno_nnz_view_t new_entries("Entries", accum);
-  scalar_view_t new_values("Values", accum);
-  Kokkos::deep_copy(new_rowmap, new_host_rowmap);
-  Kokkos::deep_copy(new_entries, new_host_entries);
-  Kokkos::deep_copy(new_values, new_host_values);
-  return crsMat_t("SymA", numRows, numRows, accum, new_values, new_rowmap, new_entries);
-}
-
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool symmetric)
 {
@@ -272,7 +209,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   if(symmetric)
   {
     //Symmetrize on host, rather than relying on the parallel versions (those can be tested for symmetric=false)
-    input_mat = symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
+    input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), nv);
@@ -353,7 +290,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   if(symmetric)
   {
     //Symmetrize on host, rather than relying on the parallel versions (those can be tested for symmetric=false)
-    input_mat = symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
+    input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
   }
   lno_t nv = input_mat.numRows();
   host_scalar_view2d_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), nv, numVecs);
@@ -619,7 +556,7 @@ void test_sgs_zero_rows()
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_gauss_seidel_longrows(lno_t numRows, lno_t numLongRows, lno_t nnzPerShortRow, bool symmetric)
+void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerShortRow, bool symmetric)
 {
   using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
@@ -672,7 +609,7 @@ void test_gauss_seidel_longrows(lno_t numRows, lno_t numLongRows, lno_t nnzPerSh
   if(symmetric)
   {
     //Symmetrize on host, rather than relying on the parallel versions (those can be tested for symmetric=false)
-    input_mat = symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
+    input_mat = Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), nv);
@@ -726,7 +663,7 @@ TEST_F( TestCategory, sparse ## _ ## sequential_sor ## _ ## SCALAR ## _ ## ORDIN
   test_sequential_sor<SCALAR,ORDINAL,OFFSET,DEVICE>(1000, 1000 * 15, 50, 10); \
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_long_rows ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_gauss_seidel_longrows<SCALAR,ORDINAL,OFFSET,DEVICE>(500, 10, 20, true); \
+  test_gauss_seidel_long_rows<SCALAR,ORDINAL,OFFSET,DEVICE>(500, 10, 20, true); \
 } \
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \

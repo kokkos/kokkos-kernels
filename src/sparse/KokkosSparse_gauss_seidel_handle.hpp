@@ -248,13 +248,11 @@ namespace KokkosSparse{
     nnz_lno_t num_values_in_l1, num_values_in_l2, num_big_rows;
     size_t level_1_mem, level_2_mem;
 
-    //if <= 0, no effect. Otherwise, rows with at least this many entries are processed in a separate Jacobi pass.
-    nnz_lno_t long_row_threshold; 
-    //if < 0, no long rows. Otherwise, this color set contains the long rows (NOTE: color set IDs like this one are 0-based)
-    nnz_lno_t long_row_color;
-    //list of long rows.
-    nnz_lno_persistent_work_view_t long_rows;
-    //vector that temporarily stores long row matvec, before scattering back to the unknown vector.
+    //Option set by user: rows with at least this many nonzeros are handled by a separate kernel
+    nnz_lno_t long_row_threshold;
+    //Number of long rows per color set. They are all grouped at the end of each color set.
+    nnz_lno_persistent_work_host_view_t long_rows_per_color;
+    //Temporary space for matvec over long rows - size is only max num long rows in a color.
     scalar_persistent_work_view_t long_row_x;
 
   public:
@@ -269,7 +267,7 @@ namespace KokkosSparse{
       permuted_inverse_diagonal(), block_size(1),
       max_nnz_input_row(-1),
       num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0),
-      long_row_threshold(0), long_row_color(-1)
+      long_row_threshold(0)
     {
       if (gs == GS_DEFAULT)
         this->choose_default_algorithm();
@@ -377,24 +375,14 @@ namespace KokkosSparse{
       long_row_threshold = lrt;
     }
 
-    nnz_lno_t get_long_row_color() const
+    nnz_lno_persistent_work_host_view_t get_long_rows_per_color() const
     {
-      return long_row_color;
+      return long_rows_per_color;
     }
 
-    void set_long_row_color(nnz_lno_t long_row_color_)
+    void set_long_rows_per_color(const nnz_lno_persistent_work_host_view_t& long_rows_per_color_)
     {
-      long_row_color = long_row_color_;
-    }
-
-    nnz_lno_persistent_work_view_t get_long_rows() const
-    {
-      return long_rows;
-    }
-
-    void set_long_rows(const nnz_lno_persistent_work_view_t& long_rows_)
-    {
-      long_rows = long_rows_;
+      long_rows_per_color = long_rows_per_color_;
     }
 
     scalar_persistent_work_view_t get_long_row_x() const
