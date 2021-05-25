@@ -1233,7 +1233,7 @@ template <typename KernelHandle, typename input_size_type,
           typename row_map_type, typename index_type, typename values_type,
           typename integer_view_host_t>
 void
-invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb, 
+invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, const input_size_type *nb, 
                                   row_map_type& hr, index_type& hc, values_type& hv, int num_batches, integer_view_host_t supernode_ids) {
 
   using execution_space = typename values_type::execution_space;
@@ -1241,13 +1241,15 @@ invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, in
   using Uplo = KokkosBatched::Uplo;
   using Diag = KokkosBatched::Diag;
 
+  // load parameters
+  auto *handle = kernelHandle->get_sptrsv_handle ();
+  bool invert_diag = handle->get_invert_diagonal ();
+  bool invert_offdiag = handle->get_invert_offdiagonal ();
+
+  // quick return
+  if (!invert_diag && !invert_offdiag) return;
+
   if (num_batches > 0) {
-
-    // load parameters
-    auto *handle = kernelHandle->get_sptrsv_handle ();
-    bool invert_diag = handle->get_invert_diagonal ();
-    bool invert_offdiag = handle->get_invert_offdiagonal ();
-
     // lower is always in CSC, if UinCSC, then lower=false, else lower=true
     bool lower_tri = kernelHandle->is_sptrsv_lower_tri ();
     bool lower = ((lower_tri && handle->is_column_major ()) || (!lower_tri && !handle->is_column_major ()));
@@ -1452,7 +1454,7 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   timer.reset ();
   #endif
-  invert_supernodal_columns_batched(kernelHandle, unit_diag, nsuper, nb, hr, hc, hv, num_batches, supernode_ids);
+  invert_supernodal_columns_batched(kernelHandle, unit_diag, nb, hr, hc, hv, num_batches, supernode_ids);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time3 = timer.seconds ();
   #endif
