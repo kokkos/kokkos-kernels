@@ -47,7 +47,7 @@
 
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_ArithTraits.hpp"
-#include <gtest/gtest.h>  //for EXPECT_**
+#include "gtest/gtest.h"  //for EXPECT_**
 
 namespace Test {
   template<class ViewType, bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value>
