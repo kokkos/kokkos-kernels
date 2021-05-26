@@ -52,9 +52,6 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
-// trmm & trtri are called on Host
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
-
 #include "KokkosBlas3_trmm.hpp"
 #include "KokkosBlas_trtri.hpp"
 
@@ -2191,6 +2188,5 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif // KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 

@@ -13,12 +13,6 @@ KOKKOSKERNELS_ADD_OPTION(
   OFF
   BOOL
   "Whether to build supernodal SPTRSV support")
-KOKKOSKERNELS_FEATURE_DEPENDS_ON_TPLS(
-  SUPERNODAL_SPTRSV
-    CHOLMOD
-    SUPERLU
-    BLAS
-)
 
 # ==================================================================
 # Fortran Complex BLAS
