@@ -580,6 +580,11 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   std::random_shuffle(rowLengths.begin(), rowLengths.end());
   size_type totalEntries = 0;
   int randSteps = 1000000;
+  scalar_t offDiagBase;
+  {
+    scalar_t unused;
+    Test::getRandomBounds(0.6, unused, offDiagBase);
+  }
   for(lno_t i = 0; i < numRows; i++)
   {
     for(lno_t ent = 0; ent < rowLengths[i]; ent++)
@@ -587,12 +592,12 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
       if(ent == 0)
       {
         entries.push_back(i);
-        values.push_back(10.0 * one);
+        values.push_back(2.5 * one);
       }
       else
       {
         entries.push_back(rand() % numRows);
-        values.push_back((-0.05 + (0.1 * (rand() % randSteps) / randSteps)) * one);
+        values.push_back((-0.3 + (0.6 * (rand() % randSteps) / randSteps)) * offDiagBase);
       }
     }
     totalEntries += rowLengths[i];
@@ -636,7 +641,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
     run_gauss_seidel(kh, input_mat, x_vector, y_vector, symmetric, 0.9, apply_type);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
-    EXPECT_LT(result_norm_res, initial_norm_res);
+    EXPECT_LT(result_norm_res, 0.25 * initial_norm_res);
   }
 }
 

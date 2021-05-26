@@ -1799,7 +1799,7 @@ namespace KokkosSparse{
                   auto Ycol = Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
                   gs._long_row_col = long_row_col;
                   Kokkos::deep_copy(long_row_stream, long_row_x, nnz_scalar_t());
-                  Kokkos::parallel_for (labelLong, range_pol (long_row_stream, 0, numLongRows), gs);
+                  Kokkos::parallel_for (labelLong, Kokkos::RangePolicy<MyExecSpace, LongRowTag>(long_row_stream, 0, numLongRows * long_row_par), gs);
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::x_update",
                       range_pol(long_row_stream, color_index_end - numLongRows, color_index_end),
                       LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>
