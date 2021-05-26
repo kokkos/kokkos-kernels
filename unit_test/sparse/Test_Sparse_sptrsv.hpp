@@ -838,6 +838,9 @@ void run_test_sptrsv() {
       if ( sum != lhs.extent(0) ) {
         std::cout << "Supernode Tri Solve FAILURE" << std::endl;
         khL.get_sptrsv_handle()->print_algorithm();
+      } else {
+        std::cout << "Supernode Tri Solve SUCCESS" << std::endl;
+        khL.get_sptrsv_handle()->print_algorithm();
       }
       EXPECT_TRUE( sum == scalar_t(X.extent(0)) );
 
@@ -894,6 +897,9 @@ void run_test_sptrsv() {
       Kokkos::parallel_reduce (Kokkos::RangePolicy<typename device::execution_space>(0, X.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(X), sum);
       if ( sum != lhs.extent(0) ) {
         std::cout << "Supernode Tri Solve FAILURE" << std::endl;
+        khLd.get_sptrsv_handle()->print_algorithm();
+      } else {
+        std::cout << "Supernode Tri Solve SUCCESS" << std::endl;
         khLd.get_sptrsv_handle()->print_algorithm();
       }
       EXPECT_TRUE( sum == scalar_t(X.extent(0)) );
