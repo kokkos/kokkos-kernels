@@ -150,9 +150,6 @@ namespace KokkosSparse{
       //Batch size for column applies. Used as a stack array size, so must be a compile-time constant.
       static constexpr nnz_lno_t apply_batch_size = 8;
 
-      //Number of parallel units (teams for TeamPolicy, items for RangePolicy) assigned to each long row
-      static constexpr nnz_lno_t long_row_par = 16;
-
     public:
 
       struct PSGS{
@@ -170,6 +167,7 @@ namespace KokkosSparse{
         scalar_persistent_work_view_t _long_row_x;  //Results of simple Ax matvec over long rows.
         nnz_lno_t _long_row_col;  //Which X/Y column is now being processed for long rows.
         nnz_lno_t _color_set_begin; //(only used for long rows): where the current set of rows begins
+        nnz_lno_t _long_row_par;
 
         PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
              scalar_persistent_work_view2d_t Xvector_, scalar_persistent_work_view2d_t Yvector_, nnz_lno_persistent_work_view_t /* color_adj_ */,
@@ -210,12 +208,12 @@ namespace KokkosSparse{
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const LongRowTag&, const nnz_lno_t i) const {
-          nnz_lno_t row = _color_set_begin + i / long_row_par;
-          nnz_lno_t chunk = i % long_row_par;
+          nnz_lno_t row = _color_set_begin + i / _long_row_par;
+          nnz_lno_t chunk = i % _long_row_par;
           size_type row_begin = _xadj(row);
           size_type row_end = _xadj(row + 1);
-          size_type chunk_begin = row_begin + (row_end - row_begin) * chunk / long_row_par;
-          size_type chunk_end = row_begin + (row_end - row_begin) * (chunk + 1) / long_row_par;
+          size_type chunk_begin = row_begin + (row_end - row_begin) * chunk / _long_row_par;
+          size_type chunk_end = row_begin + (row_end - row_begin) * (chunk + 1) / _long_row_par;
           if(chunk_end > row_end)
             chunk_end = row_end;
           nnz_scalar_t localSum{};
@@ -258,6 +256,7 @@ namespace KokkosSparse{
         nnz_lno_persistent_work_view_t _long_rows;
         scalar_persistent_work_view_t _long_row_x;
         nnz_lno_t _long_row_col;  //Which X/Y column is now being processed for long rows.
+        nnz_lno_t _long_row_par;
 
         Team_PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
                   scalar_persistent_work_view2d_t Xvector_, scalar_persistent_work_view2d_t Yvector_,
@@ -614,12 +613,12 @@ namespace KokkosSparse{
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const LongRowTag&, const team_member_t& teamMember) const {
-          nnz_lno_t row = _color_set_begin + teamMember.league_rank() / long_row_par;
-          nnz_lno_t chunk = teamMember.league_rank() % long_row_par;
+          nnz_lno_t row = _color_set_begin + teamMember.league_rank() / _long_row_par;
+          nnz_lno_t chunk = teamMember.league_rank() % _long_row_par;
           size_type row_begin = _xadj(row);
           size_type row_end = _xadj(row + 1);
-          size_type chunk_begin = row_begin + (row_end - row_begin) * chunk / long_row_par;
-          size_type chunk_end = row_begin + (row_end - row_begin) * (chunk + 1) / long_row_par;
+          size_type chunk_begin = row_begin + (row_end - row_begin) * chunk / _long_row_par;
+          size_type chunk_end = row_begin + (row_end - row_begin) * (chunk + 1) / _long_row_par;
           if(chunk_end > row_end)
             chunk_end = row_end;
           nnz_scalar_t localSum;
@@ -671,8 +670,9 @@ namespace KokkosSparse{
         SortIntoLongRowsFunctor(
             const in_lno_row_view_t& xadj_, nnz_lno_t longRowThreshold_,
             const nnz_lno_persistent_work_view_t& color_xadj_, const nnz_lno_persistent_work_view_t& color_adj_,
-            const nnz_lno_persistent_work_view_t& long_rows_per_color_)
-          : xadj(xadj_), longRowThreshold(longRowThreshold_), color_xadj(color_xadj_), color_adj(color_adj_), long_rows_per_color(long_rows_per_color_)
+            const nnz_lno_persistent_work_view_t& long_rows_per_color_, const nnz_lno_persistent_work_view_t& max_row_length_per_color_)
+          : xadj(xadj_), longRowThreshold(longRowThreshold_), color_xadj(color_xadj_), color_adj(color_adj_),
+          long_rows_per_color(long_rows_per_color_), max_row_length_per_color(max_row_length_per_color_)
         {}
 
         KOKKOS_INLINE_FUNCTION void operator()(const team_member_t& t, nnz_lno_t& lmostPerColor) const
@@ -699,6 +699,20 @@ namespace KokkosSparse{
               if(numLongRows > lmostPerColor)
                 lmostPerColor = numLongRows;
             });
+          nnz_lno_t max_row_length;
+          Kokkos::parallel_reduce(Kokkos::TeamThreadRange(t, colorBegin, colorBegin + colorLen),
+            [&](nnz_lno_t i, nnz_lno_t& lmaxLength)
+            {
+              nnz_lno_t row = color_adj(i);
+              nnz_lno_t len = xadj(row + 1) - xadj(row);
+              if(len > lmaxLength)
+                lmaxLength = len;
+            }, Kokkos::Max<nnz_lno_t>(max_row_length));
+          Kokkos::single(Kokkos::PerTeam(t),
+            [&]()
+            {
+              max_row_length_per_color(color) = max_row_length;
+            });
         }
 
         in_lno_row_view_t xadj;
@@ -706,6 +720,7 @@ namespace KokkosSparse{
         nnz_lno_persistent_work_view_t color_xadj;
         nnz_lno_persistent_work_view_t color_adj;
         nnz_lno_persistent_work_view_t long_rows_per_color;
+        nnz_lno_persistent_work_view_t max_row_length_per_color;
       };
 
       /**
@@ -862,13 +877,17 @@ namespace KokkosSparse{
         {
           //Count long rows per color set, and sort color sets so that long rows come after regular rows
           nnz_lno_persistent_work_view_t long_rows_per_color(Kokkos::ViewAllocateWithoutInitializing("long_rows_per_color"), numColors);
+          nnz_lno_persistent_work_view_t max_row_length_per_color(Kokkos::ViewAllocateWithoutInitializing("max_row_length_per_color"), numColors);
           nnz_lno_t mostLongRowsInColor = 0;
           Kokkos::parallel_reduce(team_policy_t(numColors, Kokkos::AUTO()),
-              SortIntoLongRowsFunctor(xadj, longRowThreshold, color_xadj, color_adj, long_rows_per_color),
+              SortIntoLongRowsFunctor(xadj, longRowThreshold, color_xadj, color_adj, long_rows_per_color, max_row_length_per_color),
               Kokkos::Max<nnz_lno_t>(mostLongRowsInColor));
           auto host_long_rows_per_color = Kokkos::create_mirror_view(long_rows_per_color);
           Kokkos::deep_copy(host_long_rows_per_color, long_rows_per_color);
           gsHandle->set_long_rows_per_color(host_long_rows_per_color);
+          auto host_max_row_length_per_color = Kokkos::create_mirror_view(max_row_length_per_color);
+          Kokkos::deep_copy(host_max_row_length_per_color, max_row_length_per_color);
+          gsHandle->set_max_row_length_per_color(host_max_row_length_per_color);
           scalar_persistent_work_view_t long_row_x(Kokkos::ViewAllocateWithoutInitializing("long_row_x"), mostLongRowsInColor);
           gsHandle->set_long_row_x(long_row_x);
         }
@@ -1670,15 +1689,18 @@ namespace KokkosSparse{
       {
         auto gsHandle = this->get_gs_handle();
         nnz_lno_persistent_work_host_view_t long_rows_per_color;
+        nnz_lno_persistent_work_host_view_t max_row_length_per_color;
         scalar_persistent_work_view_t long_row_x;
         bool haveLongRows = false;
-        MyExecSpace long_row_stream;
+        int longRowTeamSize = 1;
         if(gsHandle->get_long_row_threshold() > 0)
         {
           long_rows_per_color = gsHandle->get_long_rows_per_color();
+          max_row_length_per_color = gsHandle->get_max_row_length_per_color();
           long_row_x = gsHandle->get_long_row_x();
-          long_row_stream = gsHandle->get_long_row_apply_stream();
           haveLongRows = true;
+          longrow_apply_team_policy_t tempPolicy(1, 1);
+          longRowTeamSize = tempPolicy.team_size_recommended(gs, Kokkos::ParallelForTag());
         }
 
         for (int iter = 0; iter < num_iteration; ++iter){
@@ -1725,24 +1747,21 @@ namespace KokkosSparse{
                 gs._color_set_begin = color_index_end - numLongRows;
                 gs._color_set_end = color_index_end;
                 gs._long_row_x = long_row_x;
+                nnz_lno_t max_par = max_row_length_per_color(i);
+                nnz_lno_t teams_per_row = ((max_par + 3) / 4 + longRowTeamSize - 1) / longRowTeamSize;
+                gs._long_row_par = teams_per_row;
                 for(nnz_lno_t long_row_col = 0; long_row_col < gs._Xvector.extent_int(1); long_row_col++) {
                   auto Xcol = Kokkos::subview(gs._Xvector, Kokkos::ALL(), long_row_col);
                   auto Ycol = Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
                   gs._long_row_col = long_row_col;
-                  Kokkos::deep_copy(long_row_stream, long_row_x, nnz_scalar_t());
+                  Kokkos::deep_copy(long_row_x, nnz_scalar_t());
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::forward",
-                      longrow_apply_team_policy_t(long_row_stream, numLongRows * long_row_par, Kokkos::AUTO()), gs);
+                      longrow_apply_team_policy_t(numLongRows * teams_per_row, longRowTeamSize), gs);
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::x_update",
-                      range_pol(long_row_stream, color_index_end - numLongRows, color_index_end),
+                      range_pol(color_index_end - numLongRows, color_index_end),
                       LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>
                       (Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal, gs.omega, color_index_end - numLongRows));
                 }
-              }
-              if(haveLongRows) {
-                if(numRegularRows)
-                  MyExecSpace().fence();
-                if(numLongRows)
-                  long_row_stream.fence();
               }
             }
           }
@@ -1759,15 +1778,15 @@ namespace KokkosSparse{
       {
         auto gsHandle = this->get_gs_handle();
         nnz_lno_persistent_work_host_view_t long_rows_per_color;
+        nnz_lno_persistent_work_host_view_t max_row_length_per_color;
         scalar_persistent_work_view_t long_row_x;
         bool haveLongRows = false;
-        MyExecSpace long_row_stream;
         if(gsHandle->get_long_row_threshold() > 0)
         {
           long_rows_per_color = gsHandle->get_long_rows_per_color();
+          max_row_length_per_color = gsHandle->get_max_row_length_per_color();
           long_row_x = gsHandle->get_long_row_x();
           gs._long_row_x = long_row_x;
-          long_row_stream = gsHandle->get_long_row_apply_stream();
           haveLongRows = true;
         }
 
@@ -1794,23 +1813,20 @@ namespace KokkosSparse{
               }
               if(numLongRows) {
                 gs._color_set_begin = color_index_end - numLongRows;
+                nnz_lno_t max_par = max_row_length_per_color(i);
+                nnz_lno_t par_per_row = (max_par + 1023) / 1024;
+                gs._long_row_par = par_per_row;
                 for(nnz_lno_t long_row_col = 0; long_row_col < gs._Xvector.extent_int(1); long_row_col++) {
                   auto Xcol = Kokkos::subview(gs._Xvector, Kokkos::ALL(), long_row_col);
                   auto Ycol = Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
                   gs._long_row_col = long_row_col;
-                  Kokkos::deep_copy(long_row_stream, long_row_x, nnz_scalar_t());
-                  Kokkos::parallel_for (labelLong, Kokkos::RangePolicy<MyExecSpace, LongRowTag>(long_row_stream, 0, numLongRows * long_row_par), gs);
+                  Kokkos::deep_copy(long_row_x, nnz_scalar_t());
+                  Kokkos::parallel_for (labelLong, Kokkos::RangePolicy<MyExecSpace, LongRowTag>(0, numLongRows * par_per_row), gs);
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::x_update",
-                      range_pol(long_row_stream, color_index_end - numLongRows, color_index_end),
+                      range_pol(color_index_end - numLongRows, color_index_end),
                       LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>
                       (Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal, gs.omega, color_index_end - numLongRows));
                 }
-              }
-              if(haveLongRows) {
-                if(numRegularRows)
-                  MyExecSpace().fence();
-                if(numLongRows)
-                  long_row_stream.fence();
               }
             }
           }

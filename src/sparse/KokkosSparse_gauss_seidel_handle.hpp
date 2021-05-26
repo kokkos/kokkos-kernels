@@ -246,13 +246,12 @@ namespace KokkosSparse{
     nnz_lno_t num_values_in_l1, num_values_in_l2, num_big_rows;
     size_t level_1_mem, level_2_mem;
 
-    //Handle (with non-default stream, if supported by backend) for long row applies.
-    //Gets kernel-level parallelism to mitigate launch overhead.
-    HandleExecSpace long_row_apply_stream;
     //Option set by user: rows with at least this many nonzeros are handled by a separate kernel
     nnz_lno_t long_row_threshold;
     //Number of long rows per color set. They are all grouped at the end of each color set.
     nnz_lno_persistent_work_host_view_t long_rows_per_color;
+    //Maximum row length in each color set.
+    nnz_lno_persistent_work_host_view_t max_row_length_per_color;
     //Temporary space for matvec over long rows - size is only max num long rows in a color.
     scalar_persistent_work_view_t long_row_x;
 
@@ -271,7 +270,6 @@ namespace KokkosSparse{
     {
       if (gs == GS_DEFAULT)
         this->choose_default_algorithm();
-      long_row_apply_stream = KokkosKernels::Impl::Experimental::SpaceInstance<HandleExecSpace>::create();
     }
 
     void set_block_size(nnz_lno_t bs){this->block_size = bs; }
@@ -284,10 +282,7 @@ namespace KokkosSparse{
         this->algorithm_type = GS_PERMUTED;
     }
 
-    ~PointGaussSeidelHandle()
-    {
-      KokkosKernels::Impl::Experimental::SpaceInstance<HandleExecSpace>::destroy(long_row_apply_stream);
-    }
+    ~PointGaussSeidelHandle() = default;
 
     //getters
     row_lno_persistent_work_view_t get_new_xadj() const {
@@ -389,6 +384,16 @@ namespace KokkosSparse{
       long_rows_per_color = long_rows_per_color_;
     }
 
+    nnz_lno_persistent_work_host_view_t get_max_row_length_per_color() const
+    {
+      return max_row_length_per_color;
+    }
+
+    void set_max_row_length_per_color(const nnz_lno_persistent_work_host_view_t& max_row_length_per_color_)
+    {
+      max_row_length_per_color = max_row_length_per_color_;
+    }
+
     scalar_persistent_work_view_t get_long_row_x() const
     {
       return long_row_x;
@@ -397,11 +402,6 @@ namespace KokkosSparse{
     void set_long_row_x(const scalar_persistent_work_view_t& long_row_x_)
     {
       long_row_x = long_row_x_;
-    }
-
-    HandleExecSpace get_long_row_apply_stream() const
-    {
-      return long_row_apply_stream;
     }
 
     void allocate_x_y_vectors(nnz_lno_t num_rows, nnz_lno_t num_cols, nnz_lno_t num_vecs){
