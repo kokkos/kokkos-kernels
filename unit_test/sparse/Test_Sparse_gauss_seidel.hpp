@@ -163,37 +163,6 @@ void run_gauss_seidel(
   kh.destroy_gs_handle();
 }
 
-// template<typename vec_t>
-// vec_t create_x_vector(vec_t& kok_x, double max_value = 10.0) {
-//   typedef typename vec_t::value_type scalar_t;
-//   auto h_x = Kokkos::create_mirror_view (kok_x);
-//   for (size_t j = 0; j < h_x.extent(1); ++j){
-//     for (size_t i = 0; i < h_x.extent(0); ++i){
-//       scalar_t r =
-//           static_cast <scalar_t> (rand()) /
-//           static_cast <scalar_t> (RAND_MAX / max_value);
-//       h_x.access(i, j) = r;
-//     }
-//   }
-//   Kokkos::deep_copy (kok_x, h_x);
-//   return kok_x;
-// }
-
-// template <typename crsMat_t, typename vector_t>
-// vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
-//   vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
-//       crsMat.numRows());
-//   KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-//   return y_vector;
-// }
-
-// template <typename crsMat_t, typename vector_t>
-// vector_t create_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
-//   vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
-//       crsMat.numRows(), x_vector.extent(1));
-//   KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-//   return y_vector;
-// }
 } // namespace Test
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -213,9 +182,9 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), nv);
-  create_x_vector(solution_x);
+  create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
   //GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the behavior
   //of each algorithm _should be_ the same on every execution space, which is why
   //we just test GS_DEFAULT.
@@ -294,10 +263,10 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   lno_t nv = input_mat.numRows();
   host_scalar_view2d_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), nv, numVecs);
-  create_x_vector(solution_x);
+  create_random_x_vector(solution_x);
   scalar_view2d_t x_vector(Kokkos::ViewAllocateWithoutInitializing("X"), nv, numVecs);
   Kokkos::deep_copy(x_vector, solution_x);
-  scalar_view2d_t y_vector = create_y_vector_mv(input_mat, x_vector);
+  scalar_view2d_t y_vector = create_random_y_vector_mv(input_mat, x_vector);
   auto x_host = Kokkos::create_mirror_view(x_vector);
   std::vector<mag_t> initial_norms(numVecs);
   for(lno_t i = 0; i < numVecs; i++)
@@ -429,7 +398,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   //record the correct solution, to compare against at the end
   vector_t xgold("X gold", numRows);
   Kokkos::deep_copy(xgold, x);
-  vector_t y = Test::create_y_vector(input_mat, x);
+  vector_t y = Test::create_random_y_vector(input_mat, x);
   exec_space().fence();
   auto y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), y);
   //initial solution is zero
@@ -618,9 +587,9 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   }
   lno_t nv = input_mat.numRows();
   scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X (correct)"), nv);
-  create_x_vector(solution_x);
+  create_random_x_vector(solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-  scalar_view_t y_vector = create_y_vector(input_mat, solution_x);
+  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
   //GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the behavior
   //of each algorithm _should be_ the same on every execution space, which is why
   //we just test GS_DEFAULT.

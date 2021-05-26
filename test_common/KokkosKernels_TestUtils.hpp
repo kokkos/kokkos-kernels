@@ -47,6 +47,7 @@
 
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "KokkosSparse_spmv.hpp"
 #include "gtest/gtest.h"  //for EXPECT_**
 
 namespace Test {
@@ -356,6 +357,40 @@ namespace Test {
     Kokkos::deep_copy(new_entries, new_host_entries);
     Kokkos::deep_copy(new_values, new_host_values);
     return crsMat_t("SymA", numRows, numRows, accum, new_values, new_rowmap, new_entries);
+  }
+
+  //create_random_x_vector and create_random_y_vector can be used together to generate a random 
+  //linear system Ax = y.
+  template<typename vec_t>
+  vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
+    typedef typename vec_t::value_type scalar_t;
+    auto h_x = Kokkos::create_mirror_view (kok_x);
+    for (size_t j = 0; j < h_x.extent(1); ++j){
+      for (size_t i = 0; i < h_x.extent(0); ++i){
+        scalar_t r =
+            static_cast <scalar_t> (rand()) /
+            static_cast <scalar_t> (RAND_MAX / max_value);
+        h_x.access(i, j) = r;
+      }
+    }
+    Kokkos::deep_copy (kok_x, h_x);
+    return kok_x;
+  }
+
+  template <typename crsMat_t, typename vector_t>
+  vector_t create_random_y_vector(crsMat_t crsMat, vector_t x_vector){
+    vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+        crsMat.numRows());
+    KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+    return y_vector;
+  }
+
+  template <typename crsMat_t, typename vector_t>
+  vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
+    vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+        crsMat.numRows(), x_vector.extent(1));
+    KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+    return y_vector;
   }
 }
 #endif
