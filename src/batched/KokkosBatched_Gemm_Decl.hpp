@@ -7,7 +7,7 @@
 #include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
-/* BEGIN functor-level routines */
+/********************* BEGIN functor-level routines *********************/
 ///
 /// Serial Gemm
 ///
@@ -73,9 +73,10 @@ struct Gemm {
     return r_val;
   }
 };
-/* END functor-level routines */
+/********************* END functor-level routines *********************/
 
-/* BEGIN host-level routines */
+/********************* BEGIN non-functor-level routines *********************/
+namespace Experimental {
 
 // Forward declare BatchedSerialGemm
 template <typename ArgTransA, typename ArgTransB, typename ArgMode,
@@ -222,7 +223,8 @@ struct BatchedGemm {
     return ret;
   }
 };
-/* END host-level routines */
+/********************* END non-functor-level routines *********************/
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"

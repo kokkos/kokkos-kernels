@@ -7,7 +7,7 @@
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
 
 namespace KokkosBatched {
-/* BEGIN functor-level routines */
+/********************* BEGIN functor-level routines *********************/
 ///
 /// Serial Impl
 /// ===========
@@ -339,9 +339,10 @@ SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
       A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
-/* END functor-level routines */
+/********************* END functor-level routines *********************/
 
-/* BEGIN host-level routines */
+/********************* BEGIN non-functor-level routines *********************/
+namespace Experimental {
 template <class ScalarType, class AViewType, class BViewType, class CViewType,
           class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchLayout,
           class ArgResultsPerThread>
@@ -500,8 +501,8 @@ struct BatchedSerialGemm {
     return 0;
   }
 };
-/* END host-level routines */
-
+/********************* END non-functor-level routines *********************/
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif
