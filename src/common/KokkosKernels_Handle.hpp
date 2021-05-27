@@ -783,6 +783,10 @@ public:
   bool is_sptrsv_column_major () {
     return this->sptrsvHandle->is_column_major ();
   }
+
+  void set_sptrsv_trmm_on_device (bool trmm_on_device) {
+    this->sptrsvHandle->set_trmm_on_device (trmm_on_device);
+  }
 #endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)

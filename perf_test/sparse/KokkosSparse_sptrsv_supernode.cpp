@@ -210,6 +210,9 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& lower_f
           khL.set_sptrsv_verbose (verbose);
           khU.set_sptrsv_verbose (verbose);
 
+          // specify if U is stored in CSR or CSC
+          khU.set_sptrsv_column_major (!u_in_csr);
+
           // specify wheather to merge supernodes (optional, default merge is false)
           khL.set_sptrsv_merge_supernodes (merge);
           khU.set_sptrsv_merge_supernodes (merge);
