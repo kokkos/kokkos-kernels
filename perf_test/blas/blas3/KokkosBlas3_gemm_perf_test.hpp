@@ -59,6 +59,10 @@
 #include "gtest/gtest.h"  // EXPECT_NEAR
 #include "KokkosKernels_TestUtils.hpp"
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+#include "armpl.h"
+#endif // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+
 //#define GEMM_PERF_TEST_DEBUG
 
 // Forward declarations
@@ -105,7 +109,7 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
         NULL, NULL,                                              // Team
         NULL, NULL,                                              // TeamVector
         NULL, NULL,                                              // TeamSimd
-        NULL  // Serial Experiment
+        NULL, // Serial Experiment
     },
     {
         NULL,                             // BLAS
@@ -1269,7 +1273,7 @@ void __do_gemm_parallel_experiment6(options_t options, gemm_args_t gemm_args) {
   using scalar_type = typename view_type_3d::value_type;
   constexpr int vl =
       KokkosBatched::DefaultVectorLength<scalar_type, execution_space>::value;
-  constexpr int il = 
+  constexpr int il =
       KokkosBatched::DefaultInternalVectorLength<scalar_type, execution_space>::value;
   using view_type = Kokkos::View<scalar_type***[vl], default_layout, default_device>;
   using vector_view_type = Kokkos::View<vector_type***, default_layout, default_device>;
@@ -1330,6 +1334,148 @@ void __do_gemm_parallel_experiment6(options_t /*options*/, gemm_args_t /*gemm_ar
   return;
 }
 #endif
+
+
+/**
+ * examples/armpl_dgemm_interleave_batch_c_example.c was used as a reference
+ * when writing this.
+ **/
+template <class TransAType, class TransBType, class BlockingType,
+          class device_type>
+void __do_gemm_armpl(options_t options, gemm_args_t gemm_args) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+  using execution_space = typename device_type::execution_space;
+
+  uint32_t warm_up_n = options.warm_up_n;
+  uint32_t n         = options.n;
+  Kokkos::Timer timer;
+
+  armpl_int_t bstrd_A, istrd_A, jstrd_A,  bstrd_B, istrd_B, jstrd_B, bstrd_C, istrd_C, jstrd_C, lda, ldb, ldc;
+
+  armpl_int_t ninter = 4, nbatch = gemm_args.dims.c.k / ninter;
+
+  if (gemm_args.dims.c.k % ninter)
+    FATAL_ERROR("batch size must be evenly divisible by ninter!");
+
+  if (!std::is_same<default_scalar, double>::value)
+    FATAL_ERROR("only double scalars are supported!");
+
+  jstrd_A = ninter;
+  istrd_A = jstrd_A * gemm_args.dims.a.n;
+  bstrd_A = istrd_A * gemm_args.dims.a.m;
+
+  jstrd_B = ninter;
+  istrd_B = jstrd_B * gemm_args.dims.b.n;
+  bstrd_B = istrd_B * gemm_args.dims.b.m;
+
+  jstrd_C = ninter;
+  istrd_C = jstrd_C * gemm_args.dims.c.n;
+  bstrd_C = istrd_C * gemm_args.dims.c.m;
+
+  STATUS;
+
+  default_scalar *A_p = (default_scalar *)malloc(sizeof(default_scalar)*bstrd_A*nbatch);
+  default_scalar *B_p = (default_scalar *)malloc(sizeof(default_scalar)*bstrd_B*nbatch);
+  default_scalar *C_p = (default_scalar *)malloc(sizeof(default_scalar)*bstrd_C*nbatch);
+
+  using view_type_2d =
+    Kokkos::View<default_scalar **, Kokkos::LayoutStride, default_device>;
+  view_type_2d A, B, C;
+
+  // Populate interleave-batch matrices
+  for (int ib = 0; ib < nbatch; ++ib) {
+    for (int i = 0; i < ninter; ++i) {
+      if (options.blas_args.batch_size_last_dim) {
+        A = Kokkos::subview(gemm_args.A, Kokkos::ALL(), Kokkos::ALL(), ib * ninter + i);
+        B = Kokkos::subview(gemm_args.B, Kokkos::ALL(), Kokkos::ALL(), ib * ninter + i);
+        C = Kokkos::subview(gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), ib * ninter + i);
+      } else {
+        A = Kokkos::subview(gemm_args.A, ib * ninter + i, Kokkos::ALL(), Kokkos::ALL());
+        B = Kokkos::subview(gemm_args.B, ib * ninter + i, Kokkos::ALL(), Kokkos::ALL());
+        C = Kokkos::subview(gemm_args.C, ib * ninter + i, Kokkos::ALL(), Kokkos::ALL());
+      }
+      auto info = armpl_dge_interleave(ninter, i, gemm_args.dims.a.m, gemm_args.dims.a.n, A.data(), A.stride(0), A.stride(1), &A_p[bstrd_A*ib], istrd_A, jstrd_A);
+      if (info != ARMPL_STATUS_SUCCESS) {
+        FATAL_ERROR("armpl_dge_interleave (A)\n");
+      }
+      info = armpl_dge_interleave(ninter, i, gemm_args.dims.b.m, gemm_args.dims.b.n, B.data(), B.stride(0), B.stride(1), &B_p[bstrd_B*ib], istrd_B, jstrd_B);
+      if (info != ARMPL_STATUS_SUCCESS) {
+        FATAL_ERROR("armpl_dge_interleave (B)\n");
+      }
+      info = armpl_dge_interleave(ninter, i, gemm_args.dims.c.m, gemm_args.dims.c.n, C.data(), C.stride(0), C.stride(1), &C_p[bstrd_C*ib], istrd_C, jstrd_C);
+      if (info != ARMPL_STATUS_SUCCESS) {
+        FATAL_ERROR("armpl_dge_interleave (C)\n");
+      }
+    }
+  }
+
+  for (uint32_t i = 0; i < warm_up_n; i++) {
+    armpl_dgemm_interleave_batch(ninter, nbatch,
+                                 std::is_same<TransAType, Trans::NoTranspose>::value ? 'N' : 'T',
+                                 std::is_same<TransBType, Trans::NoTranspose>::value ? 'N' : 'T',
+                                 gemm_args.dims.c.m, gemm_args.dims.c.n, gemm_args.dims.a.n,
+                                 gemm_args.alpha,
+                                 A_p, bstrd_A, istrd_A, jstrd_A,
+                                 B_p, bstrd_B, istrd_B, jstrd_B,
+                                 gemm_args.beta,
+                                 C_p, bstrd_C, istrd_C, jstrd_C);
+
+    for (int ib = 0; ib < nbatch; ++ib) {
+      for (int i = 0; i < ninter; ++i) {
+        if (options.blas_args.batch_size_last_dim) {
+          C = Kokkos::subview(gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), ib * ninter + i);
+        } else {
+          C = Kokkos::subview(gemm_args.C, ib * ninter + i, Kokkos::ALL(), Kokkos::ALL());
+        }
+        auto info = armpl_dge_deinterleave(ninter, i, gemm_args.dims.c.m, gemm_args.dims.c.n, C.data(), C.stride(0), C.stride(1), &C_p[bstrd_C*ib], istrd_C, jstrd_C);
+        if (info != ARMPL_STATUS_SUCCESS) {
+          FATAL_ERROR("armpl_dge_deinterleave (C)\n");
+        }
+      }
+    }
+
+  }
+
+  timer.reset();
+  for (uint32_t i = 0; i < n; i++) {
+    armpl_dgemm_interleave_batch(ninter, nbatch,
+                                 std::is_same<TransAType, Trans::NoTranspose>::value ? 'N' : 'T',
+                                 std::is_same<TransBType, Trans::NoTranspose>::value ? 'N' : 'T',
+                                 gemm_args.dims.c.m, gemm_args.dims.c.n, gemm_args.dims.a.n,
+                                 gemm_args.alpha,
+                                 A_p, bstrd_A, istrd_A, jstrd_A,
+                                 B_p, bstrd_B, istrd_B, jstrd_B,
+                                 gemm_args.beta,
+                                 C_p, bstrd_C, istrd_C, jstrd_C);
+
+    for (int ib = 0; ib < nbatch; ++ib) {
+      for (int i = 0; i < ninter; ++i) {
+        if (options.blas_args.batch_size_last_dim) {
+          C = Kokkos::subview(gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), ib * i + i);
+        } else {
+          C = Kokkos::subview(gemm_args.C, ib * i + i, Kokkos::ALL(), Kokkos::ALL());
+        }
+        auto info = armpl_dge_deinterleave(ninter, i, gemm_args.dims.c.m, gemm_args.dims.c.n, C.data(), C.stride(0), C.stride(1), &C_p[bstrd_C*ib], istrd_C, jstrd_C);
+        if (info != ARMPL_STATUS_SUCCESS) {
+          FATAL_ERROR("armpl_dge_deinterleave (C)\n");
+        }
+      }
+    }
+  }
+
+  free(A_p);
+  free(B_p);
+  free(C_p);
+
+  __gemm_output_csv_row(options, gemm_args, timer.seconds());
+#else
+    std::cerr
+      << std::string(__func__)
+      << " disabled since KOKKOSKERNELS_ENABLE_TPL_ARMPL is undefined."
+      << std::endl;
+#endif// KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  return;
+}
 
 /**
  * Check difference of scalars expected and actual at indexes i,j,k
@@ -1426,7 +1572,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
     last_batch = dst.extent(2);
     if (std::is_same<default_layout, Kokkos::LayoutRight>::value && remainder == 0)
       data_layout_same_as_3d_view = true;
-    
+
   } else {
     remainder = dst.extent(0) % simd_internal_vector_size;
     vector_batch_size = src.ivec_4d.extent(3);
@@ -1464,7 +1610,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
   h_subview_type_4d h_sv0;
   h_subview_type_3d h_sv1;
   h_subview_type_2d h_sv2;
-  
+
   // TODO: Clean everything below this point up...
   if (std::is_same<default_layout, Kokkos::LayoutRight>::value)
     h_src_raw = h_view_type_5d((src_scalar_type *)h_src.data(), src.ivec_4d.extent(0), src.ivec_4d.extent(1), src.ivec_4d.extent(2), src.ivec_4d.extent(3), simd_internal_vector_size);
@@ -1482,7 +1628,7 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
       h_sv0 = Kokkos::subview(h_src_raw, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), simd_internal_vec_idx);
     else
       h_sv0 = Kokkos::subview(h_src_raw, simd_internal_vec_idx, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-    
+
     for (size_t vector_batch_idx = 0;
           vector_batch_idx < vector_batch_size; vector_batch_idx++) {
       if (options.blas_args.batch_size_last_dim)
@@ -2044,24 +2190,25 @@ void do_gemm_experiment_parallel(options_t options) {
   using TransBType   = Trans::NoTranspose;
   using BlockingType = Algo::Gemm::Unblocked;
 
-  __do_loop_and_invoke(
-      options, __do_gemm_parallel_experiment1<TransAType, TransBType,
-                                              BlockingType, default_device>);
-  __do_loop_and_invoke(
-      options, __do_gemm_parallel_experiment2<TransAType, TransBType,
-                                              BlockingType, default_device>);
-  __do_loop_and_invoke(
-      options, __do_gemm_parallel_experiment3<TransAType, TransBType,
-                                              BlockingType, default_device>);
-  __do_loop_and_invoke(
-      options, __do_gemm_parallel_experiment4<TransAType, TransBType,
-                                              BlockingType, default_device>);
-  __do_loop_and_invoke(
-      options, __do_gemm_parallel_experiment5<TransAType, TransBType,
-                                              BlockingType, default_device>);
-  __do_loop_and_invoke(
-      options, __do_gemm_parallel_experiment6<TransAType, TransBType,
-                                              BlockingType, default_device>);
+  // __do_loop_and_invoke(
+  //     options, __do_gemm_parallel_experiment1<TransAType, TransBType,
+  //                                             BlockingType, default_device>);
+  // __do_loop_and_invoke(
+  //     options, __do_gemm_parallel_experiment2<TransAType, TransBType,
+  //                                             BlockingType, default_device>);
+  // __do_loop_and_invoke(
+  //     options, __do_gemm_parallel_experiment3<TransAType, TransBType,
+  //                                             BlockingType, default_device>);
+  // __do_loop_and_invoke(
+  //     options, __do_gemm_parallel_experiment4<TransAType, TransBType,
+  //                                             BlockingType, default_device>);
+  // __do_loop_and_invoke(
+  //     options, __do_gemm_parallel_experiment5<TransAType, TransBType,
+  //                                             BlockingType, default_device>);
+  // __do_loop_and_invoke(
+  //     options, __do_gemm_parallel_experiment6<TransAType, TransBType,
+  //                                             BlockingType, default_device>);
+  __do_loop_and_invoke(options, __do_gemm_armpl<TransAType, TransBType, BlockingType, default_device>);
 }
 
 #endif  // KOKKOSBLAS3_GEMM_PERF_TEST_H_
