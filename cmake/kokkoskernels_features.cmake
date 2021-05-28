@@ -10,7 +10,7 @@ endfunction()
 
 KOKKOSKERNELS_ADD_OPTION(
   ENABLE_SUPERNODAL_SPTRSV
-  OFF
+  ON
   BOOL
   "Whether to build supernodal SPTRSV support")
 
