@@ -52,6 +52,8 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "KokkosBlas3_trmm.hpp"
 #include "KokkosBlas_trtri.hpp"
 
@@ -2188,5 +2190,6 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 } // namespace Experimental
 } // namespace KokkosSparse
 
+#endif // KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 #endif // KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
 

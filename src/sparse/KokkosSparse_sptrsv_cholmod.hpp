@@ -52,7 +52,9 @@
 #ifndef KOKKOSSPARSE_SPTRSV_CHOLMOD_HPP_
 #define KOKKOSSPARSE_SPTRSV_CHOLMOD_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD) && \
+    defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "cholmod.h"
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_sptrsv_supernode.hpp"
@@ -285,6 +287,6 @@ namespace Experimental {
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#endif // KOKKOSKERNELS_ENABLE_TPL_CHOLMOD && KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 #endif // KOKKOSSPARSE_SPTRSV_CHOLMOD_HPP_
 
