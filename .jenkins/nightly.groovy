@@ -30,7 +30,6 @@ pipeline {
                         -DCMAKE_CXX_EXTENSIONS=OFF \
                         -DKokkosKernels_ENABLE_TESTS=ON \
                         -DKokkosKernels_ENABLE_EXAMPLES=ON \
-                        -DKokkos_ENABLE_HIP=ON \
                         -DKokkosKernels_INST_DOUBLE=ON \
                         -DKokkosKernels_INST_ORDINAL_INT=ON \
                         -DKokkosKernels_INST_OFFSET_INT=ON \
