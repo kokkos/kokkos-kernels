@@ -20,7 +20,6 @@ pipeline {
                         -DCMAKE_CXX_COMPILER=hipcc \
                         -DCMAKE_CXX_EXTENSIONS=OFF \
                         -DKokkos_ENABLE_HIP=ON \
-                        -DKokkos_ARCH_VEGA906=ON \
                         .. && \
                        make -j8 && make install && \
                        cd ../.. && rm -rf kokkos'''
