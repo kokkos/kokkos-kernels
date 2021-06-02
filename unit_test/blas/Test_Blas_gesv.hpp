@@ -58,48 +58,14 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     // Deep copy device view to host view.
     Kokkos::deep_copy( h_X0, X0 );
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-    if( std::is_same< typename Device::execution_space, Kokkos::Cuda >::value ) {
-      // Allocate IPIV view on host
-      typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
-      magma_int_t *ipiv_raw = nullptr;
-      int Nt = 0;
-      if(mode[0]=='Y') {
-        Nt = N;
-        magma_imalloc_cpu( &ipiv_raw, Nt );
-      }
-      ViewTypeP ipiv(ipiv_raw, Nt);
-
-      // Solve.
-      KokkosBlas::gesv(A,B,ipiv);
-      Kokkos::fence();
-
-      // Get the solution vector.
-      Kokkos::deep_copy( h_B, B );
-
-      // Checking vs ref on CPU, this eps is about 10^-9
-      typedef typename ats::mag_type mag_type;
-      const mag_type eps = 1.0e7 * ats::epsilon();
-      bool test_flag = true;
-      for (int i=0; i<N; i++) {
-        if ( ats::abs(h_B(i) - h_X0(i)) > eps ) {
-          test_flag = false;
-          //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld)\n", N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), i );
-          break;
-        }
-      }
-      ASSERT_EQ( test_flag, true );
-
-      if(mode[0]=='Y') {
-        magma_free_cpu( ipiv_raw );
-      }
-    }
-#else
     // Allocate IPIV view on host
     typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
+    ViewTypeP ipiv;
     int Nt = 0;
-    if(mode[0]=='Y') Nt = N;
-    ViewTypeP ipiv("IPIV", Nt);
+    if(mode[0]=='Y') {
+      Nt = N;
+      ipiv = ViewTypeP("IPIV", Nt);
+    }
 
     // Solve.
     KokkosBlas::gesv(A,B,ipiv);
@@ -120,8 +86,6 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
       }
     }
     ASSERT_EQ( test_flag, true );
-#endif
-
   }
 
 template<class ViewTypeA, class ViewTypeB, class Device>
@@ -165,51 +129,14 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     // Deep copy device view to host view.
     Kokkos::deep_copy( h_X0, X0 );
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-    if( std::is_same< typename Device::execution_space, Kokkos::Cuda >::value ) {
-      // Allocate IPIV view on host
-      typedef Kokkos::View<magma_int_t*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > ViewTypeP;
-      magma_int_t *ipiv_raw = nullptr;
-      int Nt = 0;
-      if(mode[0]=='Y') {
-        Nt = N;
-        magma_imalloc_cpu( &ipiv_raw, Nt );
-      }
-      ViewTypeP ipiv(ipiv_raw, Nt);
-
-      // Solve.
-      KokkosBlas::gesv(A,B,ipiv);
-      Kokkos::fence();
-
-      // Get the solution vector.
-      Kokkos::deep_copy( h_B, B );
-
-      // Checking vs ref on CPU, this eps is about 10^-9
-      typedef typename ats::mag_type mag_type;
-      const mag_type eps = 1.0e7 * ats::epsilon();
-      bool test_flag = true;
-      for (int j=0; j<nrhs; j++) {
-        for (int i=0; i<N; i++) {
-          if ( ats::abs(h_B(i,j) - h_X0(i,j)) > eps ) {
-            test_flag = false;
-            //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld) at rhs %d\n", N, mode[0], padding[0], ats::abs(h_B(i,j)), ats::abs(h_X0(i,j)), i, j );
-            break;
-          }
-        }
-        if (test_flag == false) break;
-      }
-      ASSERT_EQ( test_flag, true );
-
-      if(mode[0]=='Y') {
-        magma_free_cpu( ipiv_raw );
-      }
-    }
-#else
     // Allocate IPIV view on host
     typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewTypeP;
+    ViewTypeP ipiv;
     int Nt = 0;
-    if(mode[0]=='Y') Nt = N;
-    ViewTypeP ipiv("IPIV", Nt);
+    if(mode[0]=='Y') {
+      Nt = N;
+      ipiv = ViewTypeP("IPIV", Nt);
+    }
 
     // Solve.
     KokkosBlas::gesv(A,B,ipiv);
@@ -233,8 +160,6 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
       if (test_flag == false) break;
     }
     ASSERT_EQ( test_flag, true );
-#endif
-
   }
 
 }//namespace Test
