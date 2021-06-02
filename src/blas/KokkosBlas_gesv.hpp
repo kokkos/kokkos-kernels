@@ -74,6 +74,7 @@ template <class AMatrix, class BXMV, class IPIVV>
 void
 gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
 {
+  using memory_space = typename AMatrix::device_type::memory_space;
 
   static_assert (Kokkos::Impl::is_view<AMatrix>::value,
                  "KokkosBlas::gesv: A must be a Kokkos::View.");
@@ -102,7 +103,8 @@ gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  if((IPIV0 == 0) && (IPIV.data()==nullptr)) {
+  if((!std::is_same< memory_space, Kokkos::CudaSpace >::value) &&
+     (IPIV0 == 0) && (IPIV.data()==nullptr)) {
     std::ostringstream os;
     os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". " <<
       "TPL BLAS does not support no pivoting.";
