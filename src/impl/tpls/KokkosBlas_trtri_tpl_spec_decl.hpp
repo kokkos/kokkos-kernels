@@ -73,6 +73,7 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
         const AViewType& A) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::trtri[TPL_BLAS,"#SCALAR_TYPE"]"); \
+    printf("KokkosBlas::trtri<> TPL BLAS specialization for < %s , %s >\n",typeid(RViewType).name(),typeid(AViewType).name()); \
     const int M = static_cast<int> (A.extent(0)); \
     \
     bool A_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \
@@ -116,6 +117,7 @@ typedef Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
         const AViewType& A) { \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::trtri[TPL_BLAS,"#SCALAR_TYPE"]"); \
+    printf("KokkosBlas::trtri<> TPL MAGMA specialization for < %s , %s >\n",typeid(RViewType).name(),typeid(AViewType).name()); \
     magma_int_t M = static_cast<magma_int_t> (A.extent(0)); \
     \
     bool A_is_layout_left = std::is_same<Kokkos::LayoutLeft,LAYOUTA>::value; \

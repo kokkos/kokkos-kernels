@@ -180,6 +180,7 @@ struct GESV< \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,complex<double>]"); \
     gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    printf("KokkosBlas::gesv<> TPL BLAS specialization for < %s , %s, %s >\n",typeid(AViewType).name(),typeid(BViewType).name(),typeid(PViewType).name()); \
     const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     const int N    = static_cast<int> (A.extent(1)); \
@@ -385,6 +386,7 @@ struct GESV< \
     \
     Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,complex<double>]"); \
     gesv_print_specialization<AViewType,BViewType,PViewType>(); \
+    printf("KokkosBlas::gesv<> TPL MAGMA specialization for < %s , %s, %s >\n",typeid(AViewType).name(),typeid(BViewType).name(),typeid(PViewType).name()); \
     const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data()==nullptr)); \
     \
     magma_int_t N    = static_cast<magma_int_t> (A.extent(1)); \
