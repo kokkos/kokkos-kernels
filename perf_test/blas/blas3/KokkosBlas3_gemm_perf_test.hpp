@@ -1469,6 +1469,9 @@ void __do_gemm_armpl(options_t options, gemm_args_t gemm_args) {
 
   __gemm_output_csv_row(options, gemm_args, timer.seconds());
 #else
+  // Cast to void to supress unused param warnings
+  (void) options;
+  (void) gemm_args;
     std::cerr
       << std::string(__func__)
       << " disabled since KOKKOSKERNELS_ENABLE_TPL_ARMPL is undefined."
