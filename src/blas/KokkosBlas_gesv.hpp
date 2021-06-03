@@ -74,8 +74,6 @@ template <class AMatrix, class BXMV, class IPIVV>
 void
 gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
 {
-  using memory_space = typename AMatrix::device_type::memory_space;
-
   static_assert (Kokkos::Impl::is_view<AMatrix>::value,
                  "KokkosBlas::gesv: A must be a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<BXMV>::value,
@@ -104,7 +102,7 @@ gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
   }
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //and have BLAS TPL
-  if((!std::is_same< memory_space, Kokkos::CudaSpace >::value) &&
+  if((!std::is_same< typename AMatrix::device_type::memory_space, Kokkos::CudaSpace >::value) &&
      (IPIV0 == 0) && (IPIV.data()==nullptr)) {
     std::ostringstream os;
     os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". " <<
