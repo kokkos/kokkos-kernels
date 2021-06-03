@@ -102,7 +102,8 @@ gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
       "Valid options include zero-extent 1-D view (no pivoting), or 1-D View with size of "<< A0 << " (partial pivoting).";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //and have BLAS TPL
   if((!std::is_same< memory_space, Kokkos::CudaSpace >::value) &&
      (IPIV0 == 0) && (IPIV.data()==nullptr)) {
     std::ostringstream os;
@@ -110,6 +111,16 @@ gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
       "TPL BLAS does not support no pivoting.";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but have BLAS TPL
+  if((IPIV0 == 0) && (IPIV.data()==nullptr)) {
+    std::ostringstream os;
+    os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". " <<
+      "TPL BLAS does not support no pivoting.";
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+  #endif
 #endif
 
   // Check compatibility of dimensions at run time.
