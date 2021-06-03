@@ -833,7 +833,7 @@ void merge_supernodal_graph(int *p_nsuper, input_size_type *nb,
 /* ========================================================================================= */
 template <typename output_graph_t, typename input_graph_t, typename input_size_type>
 output_graph_t
-generate_merged_supernodal_graph(bool lower, 
+generate_merged_supernodal_graph(bool lower,
                                  int nsuper, const input_size_type *nb,
                                  int nsuper2,      input_size_type *nb2,
                                  input_graph_t &graph, int *nnz) {
@@ -1146,7 +1146,7 @@ void sptrsv_supernodal_symbolic(
   struct Tag_SupTrtriFunctor{};
   struct Tag_SupTrtriTrmmFunctor{};
 
-  template <typename UploType, typename DiagType, typename integer_view_host_t, 
+  template <typename UploType, typename DiagType, typename integer_view_host_t,
             typename input_size_type, typename row_map_type, typename index_type, typename values_type>
   struct TriSupernodalTrtriFunctor {
 
@@ -1157,7 +1157,7 @@ void sptrsv_supernodal_symbolic(
     values_type  hv;
 
     KOKKOS_INLINE_FUNCTION
-    TriSupernodalTrtriFunctor(integer_view_host_t supernode_ids_, const input_size_type *nb_, 
+    TriSupernodalTrtriFunctor(integer_view_host_t supernode_ids_, const input_size_type *nb_,
                               row_map_type& hr_, index_type& hc_, values_type& hv_) :
     supernode_ids(supernode_ids_),
     nb(nb_),
@@ -1232,7 +1232,7 @@ template <typename KernelHandle, typename input_size_type,
           typename row_map_type, typename index_type, typename values_type,
           typename integer_view_host_t>
 void
-invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, const input_size_type *nb, 
+invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, const input_size_type *nb,
                                   row_map_type& hr, index_type& hc, values_type& hv, int num_batches, integer_view_host_t supernode_ids) {
 
   using execution_space = typename values_type::execution_space;
@@ -1314,7 +1314,7 @@ invert_supernodal_columns_batched(KernelHandle *kernelHandle, bool unit_diag, co
 template <typename KernelHandle, typename input_size_type,
           typename row_map_type, typename index_type, typename values_type>
 void
-invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb, 
+invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper, const input_size_type *nb,
                           row_map_type& hr, index_type& hc, values_type& hv) {
 
   using execution_space = typename values_type::execution_space;
@@ -1400,7 +1400,7 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
       char uplo_char = (lower ? 'L' : 'U');
       char diag_char = (unit_diag ? 'U' : 'N');
 
-      Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged>
+      Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged>
         viewL (&hv(nnzD), nsrow, nscol);
       auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
 
@@ -1421,7 +1421,7 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
         timer.reset ();
         #endif
         if(run_trmm_on_device) {
-          Kokkos::View<scalar_t**, Kokkos::LayoutLeft, trmm_memory_space, Kokkos::MemoryUnmanaged>
+          Kokkos::View<scalar_t**, default_layout, trmm_memory_space, Kokkos::MemoryUnmanaged>
             devL (trmm_dwork.data(), nsrow, nscol);
           auto devLjj = Kokkos::subview (devL, range_type (0, nscol), Kokkos::ALL ());
           auto devLij = Kokkos::subview (devL, range_type (nscol, nsrow), Kokkos::ALL ());
@@ -2122,7 +2122,7 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       graph_t diag_graph(columnD_view, rowmapD_view);
       diag_blocks[lvl] = crsmat_t("DiagMatrix", nrows, valuesD_view, diag_graph);
     }
-    //std::cout << "   > split nnz(" << lvl << ") = " << nnzL+nnzD << std::endl; 
+    //std::cout << "   > split nnz(" << lvl << ") = " << nnzL+nnzD << std::endl;
     time2 += timer.seconds ();
 
     // update the number of supernodes processed
@@ -2213,4 +2213,3 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
 
 #endif // KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 #endif // KOKKOSSPARSE_SPTRSV_SUPERNODE_HPP_
-
