@@ -347,9 +347,9 @@ crsmat_t read_superlu_valuesL(KernelHandle *kernelHandle, SuperMatrix *L, graph_
   int * rowind = Lstore->rowind;
 
   bool ptr_by_column = true;
-  return read_supernodal_valuesL<crsmat_t> (kernelHandle, n, nsuper, 
-                                            ptr_by_column, mb, nb,
-                                            colptr, rowind, Lx, static_graph);
+  return read_supernodal_values<crsmat_t> (kernelHandle, n, nsuper, 
+                                           ptr_by_column, mb, nb,
+                                           colptr, rowind, Lx, static_graph);
 }
 
 

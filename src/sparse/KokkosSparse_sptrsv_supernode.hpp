@@ -1550,9 +1550,9 @@ template <typename crsmat_t, typename graph_t, typename scalar_t,
           typename input_size_type, typename input_ptr_type,
           typename size_type, typename ordinal_type, typename KernelHandle>
 crsmat_t
-read_supernodal_valuesL(KernelHandle *kernelHandle,
-                        int n, int nsuper, bool ptr_by_column, const input_size_type *mb, const input_ptr_type *nb,
-                        const size_type *colptr, ordinal_type *rowind, scalar_t *Lx, graph_t &static_graph) {
+read_supernodal_values(KernelHandle *kernelHandle,
+                       int n, int nsuper, bool ptr_by_column, const input_size_type *mb, const input_ptr_type *nb,
+                       const size_type *colptr, ordinal_type *rowind, scalar_t *Lx, graph_t &static_graph) {
 
   using  values_view_t = typename crsmat_t::values_type::non_const_type;
   using integer_view_host_t = Kokkos::View<ordinal_type*, Kokkos::HostSpace>;
@@ -1567,6 +1567,10 @@ read_supernodal_valuesL(KernelHandle *kernelHandle,
   auto *handle = kernelHandle->get_sptrsv_handle ();
   bool unit_diag = handle->is_unit_diagonal ();
   bool merge = handle->get_merge_supernodes ();
+
+  // lower is always in CSC, if UinCSC, then lower=false, else lower=true
+  bool lower_tri = kernelHandle->is_sptrsv_lower_tri ();
+  bool lower = ((lower_tri && handle->is_column_major ()) || (!lower_tri && !handle->is_column_major ()));
 
   // load graph
   auto rowmap_view = static_graph.row_map;
@@ -1632,19 +1636,36 @@ read_supernodal_valuesL(KernelHandle *kernelHandle,
     // for each column (or row due to symmetry), the diagonal supernodal block is stored (in ascending order of row indexes) first
     // so that we can do TRSM on the diagonal block
     for (int jj = 0; jj < nscol; jj++) {
-      // shift for explicitly store zeros in upper-part
-      hr(j1+jj) += jj;
-      // diagonal
-      if (unit_diag) {
-        hv(hr(j1+jj)) = one;
-      } else {
-        hv(hr(j1+jj)) = Lx[psx + (jj + jj*nsrow)];
-      }
-      hr(j1+jj) ++;
-      // lower-triangular part
-      for (int ii = jj+1; ii < nscol; ii++) {
-        hv(hr(j1+jj)) = Lx[psx + (ii + jj*nsrow)];
+      if (lower) {
+        // shift for explicitly store zeros in upper-part
+        hr(j1+jj) += jj;
+        // diagonal
+        if (unit_diag) {
+          hv(hr(j1+jj)) = one;
+        } else {
+          hv(hr(j1+jj)) = Lx[psx + (jj + jj*nsrow)];
+        }
         hr(j1+jj) ++;
+        // lower-triangular part
+        for (int ii = jj+1; ii < nscol; ii++) {
+          hv(hr(j1+jj)) = Lx[psx + (ii + jj*nsrow)];
+          hr(j1+jj) ++;
+        }
+      } else {
+        // upper-triangular part
+        for (int ii = 0; ii < jj; ii++) {
+          hv(hr(j1+jj)) = Lx[psx + (ii + jj*nsrow)];
+          hr(j1+jj) ++;
+        }
+        // diagonal
+        if (unit_diag) {
+          hv(hr(j1+jj)) = one;
+        } else {
+          hv(hr(j1+jj)) = Lx[psx + (jj + jj*nsrow)];
+        }
+        hr(j1+jj) ++;
+        // shift for explicitly store zeros in lower-part
+        hr(j1+jj) += (nscol-jj-1);
       }
     }
     /* off-diagonal blocks */
@@ -1657,7 +1678,7 @@ read_supernodal_valuesL(KernelHandle *kernelHandle,
     }
     for (int jj = 0; jj < nscol; jj++) {
       for (int kk = 0; kk < nsrow2; kk++) {
-      int ii = (merge ? sorted_rowind (kk) : kk); // sorted rowind
+        int ii = (merge ? sorted_rowind (kk) : kk); // sorted rowind
         hv(hr(j1+jj)) = Lx[psx + (nscol+ii + jj*nsrow)];
         hr(j1+jj) ++;
       }
@@ -1671,7 +1692,7 @@ read_supernodal_valuesL(KernelHandle *kernelHandle,
   hr(0) = 0;
 
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-  std::cout << "    read_supernodal_valuesL" << std::endl;
+  std::cout << "    read_supernodal_values(" << (lower ? "lower)" : "upper)") << std::endl;
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
@@ -1823,7 +1844,7 @@ read_supernodal_valuesLt(KernelHandle *kernelHandle,
   }
 
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-  std::cout << "    read_supernodal_valuesL" << std::endl;
+  std::cout << "    read_supernodal_valuesLt" << std::endl;
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
@@ -2167,8 +2188,8 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
     // read numerical values of L from Cholmod
     using crsmat_t = typename KernelHandle::SPTRSVHandleType::crsmat_t;
     bool ptr_by_column = true;
-    auto crsmatL = read_supernodal_valuesL<crsmat_t> (kernelHandleL, nrows, nsuper, ptr_by_column, row_map.data (), supercols,
-                                                      row_map.data (), entries.data (), values.data (), graph);
+    auto crsmatL = read_supernodal_values<crsmat_t> (kernelHandleL, nrows, nsuper, ptr_by_column, row_map.data (), supercols,
+                                                     row_map.data (), entries.data (), values.data (), graph);
 
     // ===================================================================
     bool useSpMV = (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV ||

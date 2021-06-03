@@ -190,8 +190,8 @@ namespace Experimental {
 
     bool ptr_by_column = false;
     if (kernelHandle->is_sptrsv_column_major()) {
-      return read_supernodal_valuesL<crsmat_t> (kernelHandle, n, nsuper,
-                                                ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
+      return read_supernodal_values<crsmat_t> (kernelHandle, n, nsuper,
+                                               ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
     } else {
       return read_supernodal_valuesLt<crsmat_t> (kernelHandle, n, nsuper,
                                                  ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);

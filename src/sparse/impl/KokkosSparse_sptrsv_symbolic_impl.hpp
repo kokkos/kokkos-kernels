@@ -459,7 +459,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           size_type row = supercols[s];
           signed_integral_t nsrow = row_map (row+1) - row_map(row);
           lwork += nsrow;
-          //printf( " %d %d %d %d %d\n",num_done+num_leave, level, nsrow, supercols[s+1]-supercols[s],s );
+          //printf( " %d: nuum_leave=%d, level=%d, nsrow=%d, nscol=%d, s=%d\n",(int)(num_done+num_leave), (int)num_leave, (int)level, (int)nsrow, (int)(supercols[s+1]-supercols[s]),(int)s );
           //for (int i = supercols[s]; i < supercols[s+1]; i++) printf("%d %d %d\n",i,s,level );  // permute matrix based on scheduling
 
           // total supernode size
@@ -469,7 +469,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           #ifdef profile_supernodal_etree
           // gather static if requested
           signed_integral_t nscol = supercols[s+1] - supercols[s];
-          if (num_leave == 0) {
+          if (num_done+num_leave == 0) {
             max_nscol = nscol;
             min_nscol = nscol;
 
