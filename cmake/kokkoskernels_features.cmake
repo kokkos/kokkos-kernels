@@ -14,6 +14,11 @@ KOKKOSKERNELS_ADD_OPTION(
   BOOL
   "Whether to build supernodal SPTRSV support")
 
+IF (KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV AND NOT KOKKOSKERNELS_INST_LAYOUTLEFT)
+  MESSAGE(WARNING "Disabling SUPERNODAL_SPTRSV - this capability is only supported with LayoutLeft")
+  SET(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV OFF CACHE BOOL "Disabling SUPERNODAL_SPTRSV - this capability is only supported with LayoutLeft" FORCE)
+ENDIF()
+
 # ==================================================================
 # Fortran Complex BLAS
 # ==================================================================
