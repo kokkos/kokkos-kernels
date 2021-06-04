@@ -321,19 +321,16 @@ TEST_F( TestCategory, gesv_complex_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_double");
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
   if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
-    printf("MAGMA, CudaSpace\n");
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
-    printf("MAGMA and BLAS, not CudaSpace\n");
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
-    printf("BLAS only (no MAGMA)\n");
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
