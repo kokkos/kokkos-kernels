@@ -235,21 +235,41 @@ int test_gesv_mrhs(const char* mode) {
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gesv_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_float");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
     test_gesv<float,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv<float,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    test_gesv<float,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv<float,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F( TestCategory, gesv_mrhs_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_float");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
     test_gesv_mrhs<float,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv_mrhs<float,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    test_gesv_mrhs<float,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<float,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -257,21 +277,41 @@ TEST_F( TestCategory, gesv_mrhs_float ) {
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gesv_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_double");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
     test_gesv<double,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv<double,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    test_gesv<double,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv<double,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F( TestCategory, gesv_mrhs_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_double");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
     test_gesv_mrhs<double,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv_mrhs<double,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    test_gesv_mrhs<double,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<double,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -279,21 +319,44 @@ TEST_F( TestCategory, gesv_mrhs_double ) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gesv_complex_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_double");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
+    printf("MAGMA, CudaSpace\n");
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    printf("MAGMA and BLAS, not CudaSpace\n");
+    test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    printf("BLAS only (no MAGMA)\n");
+    test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F( TestCategory, gesv_mrhs_complex_double ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_double");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
     test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -301,21 +364,41 @@ TEST_F( TestCategory, gesv_mrhs_complex_double ) {
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, gesv_complex_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_float");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
     test_gesv<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    test_gesv<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F( TestCategory, gesv_mrhs_complex_float ) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_float");
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  if( std::is_same< typename TestExecSpace::execution_space, Kokkos::Cuda >::value )
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  if( std::is_same< typename TestExecSpace::memory_space, Kokkos::CudaSpace >::value ) { //CudaSpace
     test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
-#endif
     test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  else { //Only test with BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
+  #endif
+#endif
   Kokkos::Profiling::popRegion();
 }
 #endif
