@@ -608,12 +608,20 @@ void run_test_sptrsv() {
       bool is_lower_tri = false;
       khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
 
-      // X = U*ONES to generate B = A*ONES
-      auto hX  = Kokkos::create_mirror_view(X);
-      auto hB  = Kokkos::create_mirror_view(B);
-      Kokkos::deep_copy (hB, ONE);
-      KokkosSparse::spmv ("N", ONE, U, hB, ZERO, hX);
-      Kokkos::deep_copy(X, hX);
+      // X = U*ONES to generate B = A*ONES (on device)
+      {
+        RowMapType  Urowptr("Urowptr", nrows+1);
+        EntriesType Ucolind("Ucolind", nnz_sp);
+        ValuesType  Uvalues("Uvalues", nnz_sp);
+
+        Kokkos::deep_copy(Urowptr, hUrowptr);
+        Kokkos::deep_copy(Ucolind, hUcolind);
+        Kokkos::deep_copy(Uvalues, hUvalues);
+
+        crsMat_t mtxU("mtxU", nrows, nrows, nnz_sp, Uvalues, Urowptr, Ucolind);
+        Kokkos::deep_copy (B, ONE);
+        KokkosSparse::spmv ("N", ONE, mtxU, B, ZERO, X);
+      }
     }
 
     {
@@ -901,12 +909,19 @@ void run_test_sptrsv() {
       bool is_lower_tri = true;
       khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
 
-      // generate B = A*ONES = L*(U*ONES), where X = U*ONES
-      auto hX  = Kokkos::create_mirror_view(X);
-      auto hB  = Kokkos::create_mirror_view(B);
-      Kokkos::deep_copy(hX, X);
-      KokkosSparse::spmv( "T", ONE, L, hX, ZERO, hB); // Transpose since L in csc
-      Kokkos::deep_copy(B, hB);
+      // generate B = A*ONES = L*(U*ONES), where X = U*ONES (on device)
+      {
+        RowMapType  Lcolptr("Lcolptr", nrows+1);
+        EntriesType Lrowind("Lrowind", nnz_sp);
+        ValuesType  Lvalues("Lvalues", nnz_sp);
+
+        Kokkos::deep_copy(Lcolptr, hLcolptr);
+        Kokkos::deep_copy(Lrowind, hLrowind);
+        Kokkos::deep_copy(Lvalues, hLvalues);
+
+        crsMat_t mtxL("mtxL", nrows, nrows, nnz_sp, Lvalues, Lcolptr, Lrowind);
+        KokkosSparse::spmv ("T", ONE, mtxL, X, ZERO, B);
+      }
     }
 
     {
