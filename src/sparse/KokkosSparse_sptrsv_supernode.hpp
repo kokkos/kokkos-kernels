@@ -1405,6 +1405,7 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
       char uplo_char = (lower ? 'L' : 'U');
       char diag_char = (unit_diag ? 'U' : 'N');
 
+      // NOTE: we currently supports only default_layout = LayoutLeft
       Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged>
         viewL (&hv(nnzD), nsrow, nscol);
       auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
@@ -1426,6 +1427,7 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
         timer.reset ();
         #endif
         if(run_trmm_on_device) {
+          // NOTE: we currently supports only default_layout = LayoutLeft
           Kokkos::View<scalar_t**, default_layout, trmm_memory_space, Kokkos::MemoryUnmanaged>
             devL (trmm_dwork.data(), nsrow, nscol);
           auto devLjj = Kokkos::subview (devL, range_type (0, nscol), Kokkos::ALL ());

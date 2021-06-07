@@ -776,6 +776,7 @@ struct LowerTriSupernodalFunctor
     const int nsrow = colptr (j1+1) - i1;
 
     // create a view for the s-th supernocal column
+    // NOTE: we currently supports only default_layout = LayoutLeft
     scalar_t *dataL = const_cast<scalar_t*> (values.data ());
     Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> viewL (&dataL[i1], nsrow, nscol);
 
@@ -817,6 +818,7 @@ struct LowerTriSupernodalFunctor
                                   KokkosBatched::Algo::Gemv::Unblocked>
             ::invoke(team, one, Ljj, Y, zero, Xj);
         } else {
+          // NOTE: we currently supports only default_layout = LayoutLeft
           Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
           if (unit_diagonal) {
             KokkosBatched::TeamTrsm<member_type,
@@ -877,6 +879,7 @@ struct UpperTriSupernodalFunctor
   using integer_view_t = Kokkos::View<int*, memory_space>;
   using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
+  // NOTE: we currently supports only default_layout = LayoutLeft
   using SupernodeView = typename Kokkos::View<scalar_t**, default_layout,
                                               memory_space, Kokkos::MemoryUnmanaged>;
 
@@ -999,6 +1002,7 @@ struct UpperTriSupernodalFunctor
                                 KokkosBatched::Algo::Gemv::Unblocked>
           ::invoke(team, one, Ujj, Y, zero, Xj);
       } else {
+        // NOTE: we currently supports only default_layout = LayoutLeft
         Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
         KokkosBatched::TeamTrsm<member_type,
                                 KokkosBatched::Side::Left,
@@ -1107,6 +1111,7 @@ struct UpperTriTranSupernodalFunctor
     const int nsrow2 = nsrow - nscol;
 
     // create a view of the s-th supernocal column of U
+    // NOTE: we currently supports only default_layout = LayoutLeft
     scalar_t *dataU = const_cast<scalar_t*> (values.data ());
     Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> viewU (&dataU[i1], nsrow, nscol);
 
@@ -1146,6 +1151,7 @@ struct UpperTriTranSupernodalFunctor
                                   KokkosBatched::Algo::Gemv::Unblocked>
             ::invoke(team, one, Ujj, Y, zero, Xj);
         } else {
+          // NOTE: we currently supports only default_layout = LayoutLeft
           Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
           KokkosBatched::TeamTrsm<member_type,
                                   KokkosBatched::Side::Left,
@@ -2726,6 +2732,7 @@ cudaProfilerStart();
         timer.reset();
         #endif
 
+        // NOTE: we currently supports only default_layout = LayoutLeft
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
         using supernode_view_type = Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged>;
         if (diag_kernel_type_host (lvl) == 3) {
@@ -2782,6 +2789,7 @@ cudaProfilerStart();
                           zero, Xj);
               } else {
                 char unit_diag = (unit_diagonal ? 'U' : 'N');
+                // NOTE: we currently supports only default_layout = LayoutLeft
                 Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
                 KokkosBlas::
                 trsm("L", "L", "N", &unit_diag,
@@ -3069,6 +3077,7 @@ cudaProfilerStart();
               int workoffset = work_offset_host (s);
 
               // create a view for the s-th supernocal block column
+              // NOTE: we currently supports only default_layout = LayoutLeft
               Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> viewU (&dataU[i1], nsrow, nscol);
 
               if (invert_offdiagonal) {
@@ -3093,6 +3102,7 @@ cudaProfilerStart();
                                   Y,
                             zero, Xj);
                 } else {
+                  // NOTE: we currently supports only default_layout = LayoutLeft
                   Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
                   KokkosBlas::
                   trsm("L", "U", "N", "N",
@@ -3159,6 +3169,7 @@ cudaProfilerStart();
               int workoffset = work_offset_host (s);
 
               // create a view for the s-th supernocal block column
+              // NOTE: we currently supports only default_layout = LayoutLeft
               Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> viewU (&dataU[i1], nsrow, nscol);
 
               // extract part of the solution, corresponding to the diagonal block
@@ -3185,6 +3196,7 @@ cudaProfilerStart();
                                 Xj,
                           zero, Y);
               } else {
+                // NOTE: we currently supports only default_layout = LayoutLeft
                 Kokkos::View<scalar_t**, default_layout, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
                 KokkosBlas::
                 trsm("L", "L", "T", "N",
