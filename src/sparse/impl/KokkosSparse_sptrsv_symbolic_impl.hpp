@@ -470,6 +470,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
           // gather static if requested
           signed_integral_t nscol = supercols[s+1] - supercols[s];
           if (num_done+num_leave == 0) {
+            // initialization at the initial step
             max_nscol = nscol;
             min_nscol = nscol;
 
