@@ -68,8 +68,26 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     }
 
     // Solve.
-    KokkosBlas::gesv(A,B,ipiv);
-    Kokkos::fence();
+    try {
+      KokkosBlas::gesv(A,B,ipiv);
+      Kokkos::fence();
+    } catch (const std::runtime_error& error) {
+      // Check for expected runtime errors due to no pivoting case (only MAGMA supports no pivoting interface)
+      bool nopivot_runtime_err = true;
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //and have BLAS TPL
+      nopivot_runtime_err = 
+       (!std::is_same< typename Device::memory_space, Kokkos::CudaSpace >::value) &&
+       (ipiv.extent(0) == 0) && (ipiv.data()==nullptr);
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but have BLAS TPL
+      nopivot_runtime_err = (ipiv.extent(0) == 0) && (ipiv.data()==nullptr);
+  #endif
+#endif
+      if (!nopivot_runtime_err) FAIL();
+      return;
+    }
 
     // Get the solution vector.
     Kokkos::deep_copy( h_B, B );
@@ -139,8 +157,26 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     }
 
     // Solve.
-    KokkosBlas::gesv(A,B,ipiv);
-    Kokkos::fence();
+    try {
+      KokkosBlas::gesv(A,B,ipiv);
+      Kokkos::fence();
+    } catch (const std::runtime_error& error) {
+      // Check for expected runtime errors due to no pivoting case (only MAGMA supports no pivoting interface)
+      bool nopivot_runtime_err = true;
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //and have BLAS TPL
+      nopivot_runtime_err = 
+       (!std::is_same< typename Device::memory_space, Kokkos::CudaSpace >::value) &&
+       (ipiv.extent(0) == 0) && (ipiv.data()==nullptr);
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but have BLAS TPL
+      nopivot_runtime_err = (ipiv.extent(0) == 0) && (ipiv.data()==nullptr);
+  #endif
+#endif
+      if (!nopivot_runtime_err) FAIL();
+      return;
+    }
 
     // Get the solution vector.
     Kokkos::deep_copy( h_B, B );
@@ -242,11 +278,13 @@ TEST_F( TestCategory, gesv_float ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv<float,TestExecSpace> ("N");//No pivoting
     test_gesv<float,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv<float,TestExecSpace> ("N");//No pivoting
     test_gesv<float,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
@@ -262,11 +300,13 @@ TEST_F( TestCategory, gesv_mrhs_float ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv_mrhs<float,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<float,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<float,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<float,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
@@ -284,11 +324,13 @@ TEST_F( TestCategory, gesv_double ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv<double,TestExecSpace> ("N");//No pivoting
     test_gesv<double,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv<double,TestExecSpace> ("N");//No pivoting
     test_gesv<double,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
@@ -304,11 +346,13 @@ TEST_F( TestCategory, gesv_mrhs_double ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv_mrhs<double,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<double,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<double,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<double,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
@@ -326,11 +370,13 @@ TEST_F( TestCategory, gesv_complex_double ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
     test_gesv<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
@@ -346,11 +392,13 @@ TEST_F( TestCategory, gesv_mrhs_complex_double ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<Kokkos::complex<double>,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
@@ -368,11 +416,13 @@ TEST_F( TestCategory, gesv_complex_float ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
     test_gesv<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
     test_gesv<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
@@ -388,11 +438,13 @@ TEST_F( TestCategory, gesv_mrhs_complex_float ) {
   }
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   else { //Only test with BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
   }
   #endif
 #else //not have MAGMA TPL
   #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but test if having BLAS TPL
+    test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("N");//No pivoting
     test_gesv_mrhs<Kokkos::complex<float>,TestExecSpace> ("Y");//Partial pivoting
   #endif
 #endif
