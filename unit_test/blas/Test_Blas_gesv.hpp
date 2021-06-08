@@ -69,8 +69,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 
     // Solve.
     try {
-      KokkosBlas::gesv(A,B,ipiv);
-      Kokkos::fence();
+      KokkosBlas::gesv(A,B,ipiv);  
     } catch (const std::runtime_error& error) {
       // Check for expected runtime errors due to no pivoting case (only MAGMA supports no pivoting interface)
       bool nopivot_runtime_err = true;
@@ -88,6 +87,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
       if (!nopivot_runtime_err) FAIL();
       return;
     }
+    Kokkos::fence();
 
     // Get the solution vector.
     Kokkos::deep_copy( h_B, B );
@@ -159,7 +159,6 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     // Solve.
     try {
       KokkosBlas::gesv(A,B,ipiv);
-      Kokkos::fence();
     } catch (const std::runtime_error& error) {
       // Check for expected runtime errors due to no pivoting case (only MAGMA supports no pivoting interface)
       bool nopivot_runtime_err = true;
@@ -177,6 +176,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
       if (!nopivot_runtime_err) FAIL();
       return;
     }
+    Kokkos::fence();
 
     // Get the solution vector.
     Kokkos::deep_copy( h_B, B );
