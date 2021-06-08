@@ -76,7 +76,6 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 #include <common/Executor.hpp>
-#include <common/QuickKernelBase.hpp>
 
 // return std::make_tuple(newnumRows, newnumCols, A, x1, y1,
 //    rows_per_thread, team_size, vector_length,
