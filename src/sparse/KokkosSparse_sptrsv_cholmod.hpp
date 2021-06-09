@@ -52,7 +52,9 @@
 #ifndef KOKKOSSPARSE_SPTRSV_CHOLMOD_HPP_
 #define KOKKOSSPARSE_SPTRSV_CHOLMOD_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD) && \
+    defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "cholmod.h"
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_sptrsv_supernode.hpp"
@@ -188,8 +190,8 @@ namespace Experimental {
 
     bool ptr_by_column = false;
     if (kernelHandle->is_sptrsv_column_major()) {
-      return read_supernodal_valuesL<crsmat_t> (kernelHandle, n, nsuper,
-                                                ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
+      return read_supernodal_values<crsmat_t> (kernelHandle, n, nsuper,
+                                               ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
     } else {
       return read_supernodal_valuesLt<crsmat_t> (kernelHandle, n, nsuper,
                                                  ptr_by_column, mb, nb, colptr, rowind, Lx, static_graph);
@@ -285,6 +287,6 @@ namespace Experimental {
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
+#endif // KOKKOSKERNELS_ENABLE_TPL_CHOLMOD && KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 #endif // KOKKOSSPARSE_SPTRSV_CHOLMOD_HPP_
 
