@@ -116,22 +116,57 @@ int parse_inputs (Params& params, int argc, char **argv){
   return 0;
 }
 
+/* Templated function on ExecSpace and Layout
+ * The run function takes three arguments:
+ * m = number of rows in a matrix
+ * n = number of columns
+ * repeat = number of replicates in a run
+ *
+ */
+
+
+// These types 
+//
 template<typename ExecSpace, typename Layout>
 void run(int m, int n, int repeat)
 {
+  // Declare type aliases      
   using Scalar = double;
   using MemSpace = typename ExecSpace::memory_space;
   using Device = Kokkos::Device<ExecSpace, MemSpace>;
+
   std::cout << "Running GEMV experiment (" << ExecSpace::name() << ")\n";
+  
+  // Create a View containing a 2D matrix; allocate KokkosView with template args of Scalar**, a layout, and
+  // device, and create the "A" matrix with m rows, n columns as an
+  // uninitialized view   
   Kokkos::View<Scalar**, Layout, Device> A(Kokkos::ViewAllocateWithoutInitializing("A"), m, n);
+  // Create Views containing 1D matrix; allocate (without) matrix "x" of size n
   Kokkos::View<Scalar*, Device> x(Kokkos::ViewAllocateWithoutInitializing("x"), n);
+  // Create Views containing 1D matrix; allocate (without) matrix "y" of size m   
   Kokkos::View<Scalar*, Device> y(Kokkos::ViewAllocateWithoutInitializing("y"), m);
+  
+  // Declaring variable pool w/ a number seed; 
+  // a parallel random number generator, so you
+  // won't get the same number with a given seed each time
   Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
+
+  // Fill 2D Matrix "A" and 1D matrix (i.e., a vector) "x" with random values;
+  // Here, 10 is the max value of the random generator between 1 and 10
+  // (uniform )
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(x, pool, 10.0);
-  //Do a warm-up run
+  
+
+  // https://github.com/kokkos/kokkos-kernels/wiki/BLAS-2%3A%3Agemv
+  // Header File: KokkosBlas2_gemv.hpp
+  // Usage: KokkosBlas::gemv (mode, alpha, A, x, beta, y);
+  // Matrix Vector Multiplication y[i] = beta * y[i] + alpha * SUM_j(A[i,j] * x[j])
+ 
+  // Do a warm-up run
   KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
-  //Now, start timing
+
+  //Start timing
   Kokkos::fence();
   Kokkos::Timer timer;
   for(int i = 0; i < repeat; i++)
@@ -139,29 +174,57 @@ void run(int m, int n, int repeat)
     KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
     ExecSpace().fence();
   }
+  // Kokkos Timer set up
   double total = timer.seconds();
   double avg = total / repeat;
+  // Flops calculation   
   size_t flopsPerRun = (size_t) 2 * m * n;
   printf("Avg GEMV time: %f s.\n", avg);
   printf("Avg GEMV FLOP/s: %.3e\n", flopsPerRun / avg);
 }
 
+
 int main (int argc, char ** argv){
+  
+  // Create an instance of Params
   Params params;
 
+  // Argument parsing:
   if (parse_inputs (params, argc, argv) ){
     return 1;
   }
-  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  //const int num_threads = params.use_openmp;
+  const int num_threads = std::max(params.use_openmp, params.use_threads);
+
   const int device_id = params.use_cuda - 1;
 
-  Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
 
+
+  Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
+  
+  // Create booleans to handle pthreads, openmp and cuda params and initialize to true;
+  bool useThreads = params.use_threads != 0;
   bool useOMP = params.use_openmp != 0;
   bool useCUDA = params.use_cuda != 0;
 
+  // Create boolean to handle serial setting if not using open and cuda
   bool useSerial = !useOMP && !useCUDA;
 
+  // Logic for runtime with PThreads; AJP inserted at BMK's mention
+    if (useThreads)
+  {
+#if defined(KOKKOS_ENABLE_THREADS)
+    if (params.use_threads)
+      run<Kokkos::Threads, Kokkos::LayoutLeft>(params.m, params.n, params.repeat);
+    else
+      run<Kokkos::Threads, Kokkos::LayoutRight>(params.m, params.n, params.repeat);
+#else
+    std::cout << "ERROR:  PThreads requested, but not available.\n";
+  return 1;
+#endif
+}
+
+  // Logic for runtime with OpenMP
   if(useOMP)
   {
 #if defined( KOKKOS_ENABLE_OPENMP )
@@ -174,6 +237,8 @@ int main (int argc, char ** argv){
     return 1;
 #endif
   }
+
+  // Logic for runtime with Cuda
   if(useCUDA)
   {
 #if defined( KOKKOS_ENABLE_CUDA )
@@ -186,6 +251,7 @@ int main (int argc, char ** argv){
     return 1;
 #endif
   }
+  // Logic for serial runtime
   if(useSerial)
   {
 #if defined( KOKKOS_ENABLE_SERIAL )
