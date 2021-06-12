@@ -118,7 +118,7 @@ struct GESV<AMatrix, BXMV, IPIVV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
         const IPIVV& /* IPIV */)
   {
    //NOTE: Might add the implementation of KokkosBlas::gesv later
-   throw std::runtime_error("No fallback implementation of GESV (general LU factorization & solve) exists. Enable BLAS and/or MAGMA TPL.");printf("HOHOHO\n");
+   throw std::runtime_error("No fallback implementation of GESV (general LU factorization & solve) exists. Enable BLAS and/or MAGMA TPL.");
   }
 };
 
