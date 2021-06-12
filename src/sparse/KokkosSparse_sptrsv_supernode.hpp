@@ -63,6 +63,7 @@
 #include "KokkosBatched_Trmm_Decl.hpp"
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 
+#include "KokkosKernels_Sorting.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 
 namespace KokkosSparse {
@@ -148,7 +149,7 @@ read_supernodal_graphL(KernelHandle *kernelHandle, int n, int nsuper, int nnzA, 
     }
   }
 
-  integer_view_host_t sorted_rowind_view ("sorted_rowind", max_nnz_per_row);
+  integer_view_host_t sorted_rowind_view ("sorted_rowind", max_nnz_per_row+1);
   ordinal_type *sorted_rowind = sorted_rowind_view.data ();
   // store L in csr
   for (int s = 0 ; s < nsuper ; s++) {
@@ -583,9 +584,8 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const inpu
   #endif
 
   // sort column ids per row
-  for (int s = 0; s < nsuper; s++) {
-    std::sort(&(hc (hr (s))), &(hc (hr (s+1))));
-  }
+  KokkosKernels::sort_crs_graph<Kokkos::HostSpace::execution_space, row_map_view_host_t, cols_view_host_t>
+      (hr, hc);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time_seconds = timer.seconds ();
   std::cout << "   > Generate Supernodal Graph: sort graph     : " << time_seconds << std::endl << std::endl;
@@ -851,7 +851,7 @@ generate_merged_supernodal_graph(bool lower,
   using integer_view_host_t = Kokkos::View<int*, Kokkos::HostSpace>;
   integer_view_host_t mb2 ("mb2", nsuper2);
   integer_view_host_t work1 ("work1", n);
-  integer_view_host_t work2 ("work2", n);
+  integer_view_host_t work2 ("work2", n+1);
   Kokkos::deep_copy (work1, 0);
 
   int nnzS = 0;
@@ -1613,7 +1613,7 @@ read_supernodal_values(KernelHandle *kernelHandle,
     }
   }
 
-  integer_view_host_t sorted_rowind ("sorted_rowind", max_nnz_per_row);
+  integer_view_host_t sorted_rowind ("sorted_rowind", max_nnz_per_row+1);
   // store L in csr
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
