@@ -99,9 +99,9 @@ template<class AMatrix,
         >
 struct GESV{
   static void
-  gesv (AMatrix& A,
-        BXMV& B,
-        IPIVV& IPIV);
+  gesv (const AMatrix& A,
+        const BXMV& B,
+        const IPIVV& IPIV);
 };
 
 
@@ -118,7 +118,7 @@ struct GESV<AMatrix, BXMV, IPIVV, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
         const IPIVV& /* IPIV */)
   {
    //NOTE: Might add the implementation of KokkosBlas::gesv later
-   throw std::runtime_error("No fallback implementation of GESV (general LU factorization & solve) exists. Enable BLAS and/or MAGMA TPL.");
+   throw std::runtime_error("No fallback implementation of GESV (general LU factorization & solve) exists. Enable BLAS and/or MAGMA TPL.");printf("HOHOHO\n");
   }
 };
 
