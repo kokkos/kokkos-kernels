@@ -39,6 +39,10 @@ using MultiVector_Internal =
 
 namespace details {
 
+} // namespace details
+
+namespace test {
+
 const Scalar SC_ONE  = Kokkos::ArithTraits<Scalar>::one();
 const Scalar SC_ZERO = Kokkos::ArithTraits<Scalar>::zero();
 
@@ -334,106 +338,56 @@ void compare(const char fOp[], const mtx_t &myMatrix,
   }
 }
 
-template <typename mtx_t>
-void test_matrix(const mtx_t &myMatrix, const int blockSize, const int repeat) {
-  const Scalar alpha = details::SC_ONE;
-  const Scalar beta  = details::SC_ZERO;
+template<typename mtx_t = crs_matrix_t_, typename bmtx_t = bcrs_matrix_t_>
+class TestCase {
+public:
+  using time_t = std::chrono::duration<double>;
 
-  auto const numRows = myMatrix.numRows();
+  struct RunInfo {
+    // options
+    const char *mode = "N"; // N/T/C/H
+    const Scalar alpha = SC_ONE;
+    const Scalar beta = SC_ZERO;
+    // results
+    double error = 0.0;
+    double maxNorm = 0.0;
+    time_t dt_crs;
+    time_t dt_bcrs;
+  };
 
-  //
-  // Use BlockCrsMatrix format
-  //
-  bcrs_matrix_t_ myBlockMatrix = to_block_crs_matrix(myMatrix, blockSize);
-
-  double error = 0.0, maxNorm = 0.0;
+public:
+  TestCase(std::string name, crs_matrix_t_ myMatrix,
+           const int blockSize, const int repeat = 1024):
+    name_(name),
+    myMatrix_(std::move(myMatrix)),
+    blockSize_(blockSize),
+    repeat_(repeat)
+  {
+    myBlockMatrix_ = to_block_crs_matrix(myMatrix_, blockSize_); // Use BlockCrsMatrix format
+  }
 
   //
   // Assess y <- A * x
   //
-  compare("N", myMatrix, myBlockMatrix, alpha, beta, error, maxNorm);
-
-  std::cout << " Error BlockCrsMatrix " << error << " maxNorm " << maxNorm
-            << "\n";
-  std::cout << " ------------------------ \n";
-
-  //---
-
-  std::chrono::duration<double> dt_crs =
-      measure("N", myMatrix, alpha, beta, repeat);
-
-  std::cout << " Total time for Crs Mat-Vec " << dt_crs.count() << " Avg. "
-            << dt_crs.count() / static_cast<double>(repeat);
-  std::cout << " Flops (mult only) "
-            << myMatrix.nnz() * static_cast<double>(repeat / dt_crs.count())
-            << "\n";
-  std::cout << " ------------------------ \n";
-
-  //---
-  std::chrono::duration<double> dt_bcrs =
-      measure_block("N", myBlockMatrix, alpha, beta, repeat);
-
-  std::cout << " Total time for BlockCrs Mat-Vec " << dt_bcrs.count()
-            << " Avg. " << dt_bcrs.count() / static_cast<double>(repeat);
-  std::cout << " Flops (mult only) "
-            << myMatrix.nnz() * static_cast<double>(repeat / dt_bcrs.count());
-  std::cout << "\n";
-  //
-  std::cout << " Ratio = " << dt_bcrs.count() / dt_crs.count();
-
-  if (dt_bcrs.count() < dt_crs.count()) {
-    std::cout << " --- GOOD --- ";
-  } else {
-    std::cout << " ((( Not Faster ))) ";
+  bool execute(RunInfo &run)
+  {
+    compare(run.mode, myMatrix_, myBlockMatrix_, run.alpha, run.beta, run.error, run.maxNorm);
+    run.dt_crs = measure(run.mode, myMatrix_, run.alpha, run.beta, repeat_);
+    run.dt_bcrs = measure_block(run.mode, myBlockMatrix_, run.alpha, run.beta, repeat_);
+    return true;
   }
-  std::cout << "\n";
 
-  std::cout << " ======================== \n";
+// private:
+  mtx_t myMatrix_;
+  bmtx_t myBlockMatrix_; // derived
+  int blockSize_;
+  int repeat_;
+  std::string name_;
+};
 
-  //
-  // Assess y <- A * x
-  //
-  compare("T", myMatrix, myBlockMatrix, alpha, beta, error, maxNorm);
-
-  std::cout << " Error Transpose BlockCrsMatrix " << error << " maxNorm "
-            << maxNorm << "\n";
-  std::cout << " ------------------------ \n";
-
-  //---
-
-  dt_crs = measure("T", myMatrix, alpha, beta, repeat);
-
-  std::cout << " Total time for Crs Mat^T-Vec " << dt_crs.count() << " Avg. "
-            << dt_crs.count() / static_cast<double>(repeat);
-  std::cout << " Flops (mult only) "
-            << myMatrix.nnz() * static_cast<double>(repeat / dt_crs.count())
-            << "\n";
-  std::cout << " ------------------------ \n";
-
-  //---
-  dt_bcrs = measure_block("T", myBlockMatrix, alpha, beta, repeat);
-
-  std::cout << " Total time for BlockCrs Mat^T-Vec " << dt_bcrs.count()
-            << " Avg. " << dt_bcrs.count() / static_cast<double>(repeat);
-  std::cout << " Flops (mult only) "
-            << myMatrix.nnz() * static_cast<double>(repeat / dt_bcrs.count());
-  std::cout << "\n";
-  //
-  std::cout << " Ratio = " << dt_bcrs.count() / dt_crs.count();
-
-  if (dt_bcrs.count() < dt_crs.count()) {
-    std::cout << " --- GOOD --- ";
-  } else {
-    std::cout << " ((( Not Faster ))) ";
-  }
-  std::cout << "\n";
-
-  std::cout << " ======================== \n";
-}
-
-int test_random(const int repeat = 1024, const int minBlockSize = 1,
-                const int maxBlockSize = 12) {
-  int return_value = 0;
+template<typename test_t>
+void test_random(std::vector<test_t> &samples, const int repeat = 1024,
+                 const int minBlockSize = 1, const int maxBlockSize = 12) {
 
   // The mat_structure view is used to generate a matrix using
   // finite difference (FD) or finite element (FE) discretization
@@ -457,23 +411,18 @@ int test_random(const int repeat = 1024, const int minBlockSize = 1,
     std::vector<int> mat_rowmap, mat_colidx;
     std::vector<double> mat_val;
 
-    crs_matrix_t_ myMatrix = details::generate_crs_matrix(
-        "FD", mat_structure, blockSize, mat_rowmap, mat_colidx, mat_val);
-
-    std::cout << " ======================== \n";
-    std::cout << " Block Size " << blockSize;
-    std::cout << " Matrix Size " << myMatrix.numRows() << " nnz "
-              << myMatrix.nnz() << "\n";
-
-    test_matrix(myMatrix, blockSize, repeat);
+    samples.push_back({
+      "rand-" + std::to_string(blockSize),
+      generate_crs_matrix(
+        "FD", mat_structure, blockSize, mat_rowmap, mat_colidx, mat_val),
+      blockSize,
+      repeat
+    });
   }
-  return return_value;
 }
 
-int test_samples(const int repeat = 3000) {
-  int return_value = 0;
-
-  srand(17312837);
+template<typename test_t>
+void test_samples(std::vector<test_t> &samples, const int repeat = 3000) {
 
   const std::vector<std::tuple<const char *, int> > SAMPLES{
       // std::tuple(char* fileName, int blockSize)
@@ -510,36 +459,102 @@ int test_samples(const int repeat = 3000) {
   };
 
   // Loop over sample matrix files
-  std::for_each(SAMPLES.begin(), SAMPLES.end(), [=](auto const &sample) {
+  std::for_each(SAMPLES.begin(), SAMPLES.end(), [&](auto const &sample) {
     const char *fileName = std::get<0>(sample);
-    const int blockSize  = std::get<1>(sample);
-    auto myMatrix =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<crs_matrix_t_>(fileName);
-
-    std::cout << " ======================== \n";
-    std::cout << " Sample: '" << fileName << "', Block Size " << blockSize;
-    std::cout << " Matrix Size " << myMatrix.numCols() << " x "
-              << myMatrix.numRows() << ", nnz " << myMatrix.nnz() << "\n";
-
-    test_matrix(myMatrix, blockSize, repeat);
+    samples.push_back({
+      std::string(fileName),
+      KokkosKernels::Impl::read_kokkos_crst_matrix<crs_matrix_t_>(fileName),
+      std::get<1>(sample),
+      repeat
+    });
   });
-  return return_value;
 }
 
-}  // namespace details
+} // namespace test
 
-//#define TEST_RANDOM_BSPMV
+class CSVOutput
+{
+  public:
+  static constexpr const char* const sep = "\t";
+
+  void showHeader() {
+    std::cout << "no." << sep << "name" << sep << "size" << sep << "block" << sep << "nnz" // sample info
+              << sep << "mode" << sep << "alpha" << sep << "beta" // run info
+              << sep << "error" << sep << "maxNorm"
+              << sep << "crsTime" << sep << "crsAvg" << sep << "crsGFlops"
+              << sep << "bcrsTime" << sep << "bcrsAvg" << sep << "bcrsGFlops"
+              << sep << "ratio" << sep << "remarks"
+              << std::endl;
+  }
+
+  template <typename Test, typename RunInfo, typename id_t>
+  void showRunInfo(Test &test, RunInfo &run, id_t sample_id, bool skipSample = false) {
+    std::cout << sample_id << sep;
+    if (skipSample)
+      std::cout << sep << "^" << sep << "^" << sep << "^" << sep << "^";
+    else
+      std::cout << sep << test.name_ << sep << test.myMatrix_.numRows()
+                << sep << test.blockSize_ << sep << test.myMatrix_.nnz();
+    std::cout << sep << run.mode << sep << run.alpha << sep << run.beta;
+  }
+
+  template <typename Test, typename RunInfo>
+  void showRunResults(Test &test, RunInfo &run) {
+    std::cout << sep << run.error << sep << run.maxNorm;
+    auto const nnz = test.myMatrix_.nnz();
+    showTime(run.dt_crs, nnz, test.repeat_);
+    showTime(run.dt_bcrs, nnz, test.repeat_);
+    auto const remarks = (run.dt_bcrs.count() < run.dt_crs.count()) ? "good" : "NOT_faster";
+    std::cout << sep << (run.dt_bcrs.count() / run.dt_crs.count()) << sep << remarks;
+    std::cout << std::endl;
+  }
+
+private:
+  template <typename time_t, typename ord_t>
+  void showTime(const time_t &t, ord_t nnz, int repeat) {
+    auto const avg = (t.count() / static_cast<double>(repeat));
+    auto const flops = nnz * static_cast<double>(repeat / t.count());
+    std::cout << sep <<t.count() << sep << avg << sep << (flops * 1e-9);
+  }
+};
 
 int main() {
   Kokkos::initialize();
+  bool failed = false;
+  srand(17312837);
 
-#ifdef TEST_RANDOM_BSPMV
-  int return_value = details::test_random();
-#else
-  int return_value = details::test_samples();
-#endif
+  {
+    // Prepare samples
+    using test_t = test::TestCase<crs_matrix_t_, bcrs_matrix_t_>;
+    std::vector<test_t> samples;
+    test::test_random(samples);
+    test::test_samples(samples);
+
+    // Prepare variants
+    std::vector<test_t::RunInfo> variants;
+    variants.push_back({"N"});
+    variants.push_back({"T"});
+
+    // Run samples
+    int sample_id = 0;
+    CSVOutput out;
+    out.showHeader();
+    std::for_each(samples.begin(), samples.end(), [&](test_t &test) {
+      sample_id += 1;
+      int variant_id = 0;
+      std::for_each(variants.begin(), variants.end(), [&](test_t::RunInfo &run) {
+        ++variant_id;
+        auto const label = std::to_string(sample_id)
+                           + ":" + std::to_string(variant_id)
+                           + "/" + std::to_string(samples.size());
+        out.showRunInfo(test, run, label, 1 != variant_id);
+        bool pass = test.execute(run);
+        failed = failed || !pass;
+        out.showRunResults(test, run);
+      });
+    });
+  }
 
   Kokkos::finalize();
-
-  return return_value;
+  return failed ? 1 : 0;
 }
