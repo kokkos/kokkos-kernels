@@ -278,10 +278,13 @@ void test_mis2_coarsening_zero_rows()
       test_mis2_coarsening_zero_rows<SCALAR, ORDINAL, OFFSET, DEVICE>(); \
     }
 
+// FIXME_SYCL
+#ifndef KOKKOS_ENABLE_SYCL
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 #if(defined(KOKKOSKERNELS_INST_ORDINAL_INT) && defined(KOKKOSKERNELS_INST_OFFSET_INT)) \
   || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(double, int, int, TestExecSpace)
+#endif
 #endif
 
 #if(defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && defined(KOKKOSKERNELS_INST_OFFSET_INT)) \

@@ -314,6 +314,7 @@ test_list run_multi_mem_spgemm(rajaperf::RunParams rajaperf_params,
     //                     c_slow_crsmat.graph.entries, c_slow_crsmat.values,
     //                     sorted_adj, sorted_vals);
 
+
     //    KokkosKernels::Impl::write_graph_bin(
     //        (lno_t)c_slow_crsmat.numRows(),
     //        (size_type)c_slow_crsmat.graph.entries.extent(0),

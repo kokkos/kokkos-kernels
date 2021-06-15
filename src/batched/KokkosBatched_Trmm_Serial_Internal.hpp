@@ -121,7 +121,7 @@ namespace KokkosBatched {
   KOKKOS_INLINE_FUNCTION
   int
   SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::
-  invoke(const bool use_unit_diag,
+  invoke(const bool /*use_unit_diag*/,
          const bool do_conj,
          const int am, const int an,
          const int bm, const int bn,
@@ -203,7 +203,7 @@ namespace KokkosBatched {
   KOKKOS_INLINE_FUNCTION
   int
   SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::
-  invoke(const bool use_unit_diag,
+  invoke(const bool /*use_unit_diag*/,
          const bool do_conj,
          const int am, const int an,
          const int bm, const int bn,
@@ -284,7 +284,7 @@ namespace KokkosBatched {
   KOKKOS_INLINE_FUNCTION
   int
   SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::
-  invoke(const bool use_unit_diag,
+  invoke(const bool /*use_unit_diag*/,
          const bool do_conj,
          const int am, const int an,
          const int bm, const int bn,
@@ -362,7 +362,7 @@ namespace KokkosBatched {
   KOKKOS_INLINE_FUNCTION
   int
   SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::
-  invoke(const bool use_unit_diag,
+  invoke(const bool /*use_unit_diag*/,
          const bool do_conj,
          const int am, const int an,
          const int bm, const int bn,

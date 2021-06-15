@@ -182,7 +182,7 @@ struct ExplicitGraphCoarsening
         });
     }
 
-    size_t team_shmem_size(int teamSize) const
+    size_t team_shmem_size(int /*teamSize*/) const
     {
       return tableSize() * sizeof(int);
     }

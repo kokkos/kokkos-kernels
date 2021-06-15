@@ -74,6 +74,11 @@ print_help() {
   echo "    Valid items:"
   echo "      LayoutLeft,LayoutRight"
   echo ""
+  echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
+  echo ""
+  echo "--with-spaces=SPACES:       Set spaces to be instantiated."
+  echo "                                Options: hostspace, cudaspace, cudauvmspace"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -161,6 +166,10 @@ if [[ "$HOSTNAME" == kokkos-dev\.sandia\.gov* ]]; then
   MACHINE=kokkos-dev
 fi
 
+if [[ "$HOSTNAME" == sogpu01* ]]; then
+  MACHINE=sogpu
+fi
+
 if [ ! -z "$SEMS_MODULEFILES_ROOT" ]; then
   if [[ "$MACHINE" = "" ]]; then
     MACHINE=sems
@@ -183,12 +192,12 @@ CLANG_BUILD_LIST="Pthread,Serial,Pthread_Serial"
 CUDA_BUILD_LIST="Cuda_OpenMP,Cuda_Pthread,Cuda_Serial"
 CUDA_IBM_BUILD_LIST="Cuda_OpenMP,Cuda_Serial"
 
-GCC_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wignored-qualifiers,-Wempty-body,-Wclobbered,-Wuninitialized"
-IBM_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
-CLANG_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wuninitialized"
-INTEL_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wuninitialized"
-CUDA_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wuninitialized"
-#CUDA_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+GCC_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wignored-qualifiers,-Wempty-body,-Wclobbered,-Wuninitialized"
+IBM_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+CLANG_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+INTEL_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+CUDA_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Werror,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+#CUDA_WARNING_FLAGS="-Wall,-Wunused-parameter,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
 PGI_WARNING_FLAGS=""
 
 # Default. Machine specific can override.
@@ -202,6 +211,7 @@ TEST_SCRIPT=False
 TEST_SPACK=False
 SKIP_HWLOC=False
 SPOT_CHECK=False
+NO_DEFAULT_ETI=False
 
 PRINT_HELP=False
 OPT_FLAG=""
@@ -352,6 +362,12 @@ do
     --with-layouts*)
       KOKKOSKERNELS_LAYOUTS="${key#*=}"
       ;;
+    --no-default-eti*)
+      NO_DEFAULT_ETI=True
+      ;;
+    --with-spaces*)
+      KOKKOSKERNELS_SPACES="${key#*=}"
+      ;;
     --with-tpls*)
       KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
       ;;
@@ -441,6 +457,38 @@ if [ "$MACHINE" = "sems" ]; then
   fi
   SPACK_CUDA_ARCH="+maxwell50" #use an old one
   SPACK_CUDA_HOST_COMPILER="%gcc@7.2.0"
+elif [ "$MACHINE" = "sogpu" ]; then
+  source /projects/sems/modulefiles/utils/sems-modules-init.sh
+
+  module load sems-cmake/3.17.1 sems-git
+  BASE_MODULE_LIST="sems-env,sems-cmake/3.17.1,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  CUDA_MODULE_LIST="sems-env,sems-cmake/3.17.1,sems-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/7.2.0"
+  CUDA11_MODULE_LIST="sems-env,sems-cmake/3.17.1,sems-<COMPILER_NAME>/<COMPILER_VERSION>,sems-gcc/8.3.0"
+  SKIP_HWLOC=True
+  # No sems hwloc module
+
+  if [ -z "$ARCH_FLAG" ]; then
+    ARCH_FLAG="--arch=Volta70"
+  fi
+
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/6.4.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/7.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/8.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/9.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "clang/5.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "clang/7.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "clang/9.0.0 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "clang/10.0.0 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/18.0.5 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/19.0.5 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "cuda/10.1 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/11.1 $CUDA11_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+              )
 elif [ "$MACHINE" = "kokkos-dev" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-modules-init.sh"
   eval "$MODULE_ENVIRONMENT"
@@ -1152,6 +1200,10 @@ single_build_and_test() {
   if [ ! -z "$KOKKOSKERNELS_ORDINALS" ]; then
     kernels_variants="$kernels_variants ordinals=$KOKKOSKERNELS_ORDINALS"
   fi
+  if [ ! -z "$KOKKOSKERNELS_SPACES" ]; then
+      kernels_variants="$kernels_variants spaces=$KOKKOSKERNELS_SPACES"
+      KOKKOSKERNELS_SPACES="--with-spaces=$KOKKOSKERNELS_SPACES"
+  fi
 
 
   echo "  #   Load modules:" &> reload_modules.sh
@@ -1190,6 +1242,10 @@ single_build_and_test() {
   local ldflags="${LD_FLAGS_EXTRA}"
 
   local cxx_standard="${CXX_STANDARD}"
+
+  if [ "${NO_DEFAULT_ETI}" = "True" ]; then
+    local extra_args="$extra_args --no-default-eti"
+  fi
 
 
   echo "  Starting job $desc"
@@ -1241,13 +1297,13 @@ single_build_and_test() {
 
     # KOKKOS_OPTIONS and KOKKOS_CUDA_OPTIONS are exported and detected by kokkos' generate_makefile.sh during install of kokkos; we pass them to the reproducer script instructions
     echo "  #   Use generate_makefile line below to call cmake which generates makefile for this build:" &> call_generate_makefile.sh
-    echo "        ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} --no-examples $extra_args" &>> call_generate_makefile.sh
+    echo "        ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} ${KOKKOSKERNELS_SPACES} --no-examples $extra_args" &>> call_generate_makefile.sh
     chmod +x call_generate_makefile.sh
 
     # script command with generic path for faster copy/paste of reproducer into issues
-    echo "  #     \$KOKKOSKERNELS_PATH/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=\$KOKKOS_PATH --kokkoskernels-path=\$KOKKOSKERNELS_PATH --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} --no-examples $extra_args" &> call_generate_makefile_genericpath.sh
+    echo "  #     \$KOKKOSKERNELS_PATH/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=\$KOKKOS_PATH --kokkoskernels-path=\$KOKKOSKERNELS_PATH --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} --with-options=${KOKKOS_OPTIONS} --with-cuda-options=${KOKKOS_CUDA_OPTIONS} ${KOKKOS_BOUNDS_CHECK} ${KOKKOSKERNELS_SPACES} --no-examples $extra_args" &> call_generate_makefile_genericpath.sh
 
-    run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOS_BOUNDS_CHECK} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOS_BOUNDS_CHECK} ${KOKKOSKERNELS_SPACES} --no-examples $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
 
     local make_par_lvl=12
     if [[ "$MACHINE" = white* ]]; then

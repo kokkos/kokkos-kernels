@@ -72,7 +72,7 @@ namespace KokkosBatched {
     template< typename I0 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,Args...>::value && 1 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , Args ... args ) const {
+    operator()( const I0 & i0 , Args ... /*args*/ ) const {
       return _a(i0/vector_length)[i0%vector_length];
     }
       
@@ -80,7 +80,7 @@ namespace KokkosBatched {
     template< typename I0 , typename I1 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,I1,Args...>::value && 2 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , const I1 & i1 , Args ... args ) const {
+    operator()( const I0 & i0 , const I1 & i1 , Args ... /*args*/ ) const {
       switch (PackDim::value) {
       case 0: return _a(i0/vector_length,i1)[i0%vector_length];
       case 1: break;
@@ -93,7 +93,7 @@ namespace KokkosBatched {
     template< typename I0 , typename I1 , typename I2 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,I1,I2,Args...>::value && 3 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , Args ... args ) const {
+    operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , Args ... /*args*/ ) const {
       switch (PackDim::value) {
       case 0: return _a(i0/vector_length,i1,i2)[i0%vector_length];
       case 1: return _a(i0,i1/vector_length,i2)[i1%vector_length];
@@ -107,7 +107,7 @@ namespace KokkosBatched {
     template< typename I0 , typename I1 , typename I2 , typename I3 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,I1,I2,I3,Args...>::value && 4 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , Args ... args ) const {
+    operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , Args ... /*args*/ ) const {
       switch (PackDim::value) {
       case 0: return _a(i0/vector_length,i1,i2,i3)[i0%vector_length];
       case 1: return _a(i0,i1/vector_length,i2,i3)[i1%vector_length];
@@ -122,7 +122,7 @@ namespace KokkosBatched {
     template< typename I0 , typename I1 , typename I2 , typename I3 , typename I4 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,I1,I2,I3,I4,Args...>::value && 5 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , Args ... args ) const {
+    operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , Args ... /*args*/ ) const {
       switch (PackDim::value) {
       case 0: return _a(i0/vector_length,i1,i2,i3,i4)[i0%vector_length];
       case 1: return _a(i0,i1/vector_length,i2,i3,i4)[i1%vector_length];
@@ -138,7 +138,7 @@ namespace KokkosBatched {
     template< typename I0 , typename I1 , typename I2 , typename I3 , typename I4 , typename I5 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,I1,I2,I3,I4,I5,Args...>::value && 6 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , const I5 & i5 , Args ... args ) const {
+    operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , const I5 & i5 , Args ... /*args*/ ) const {
       switch (PackDim::value) {
       case 0: return _a(i0/vector_length,i1,i2,i3,i4,i5)[i0%vector_length];
       case 1: return _a(i0,i1/vector_length,i2,i3,i4,i5)[i1%vector_length];
@@ -155,7 +155,7 @@ namespace KokkosBatched {
     template< typename I0 , typename I1 , typename I2 , typename I3 , typename I4 , typename I5 , typename I6 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,I1,I2,I3,I4,I5,I6,Args...>::value && 7 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , const I5 & i5 , const I6 & i6 , Args ... args ) const {
+    operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , const I5 & i5 , const I6 & i6 , Args ... /*args*/ ) const {
       switch (PackDim::value) {
       case 0: return _a(i0/vector_length,i1,i2,i3,i4,i5,i6)[i0%vector_length];
       case 1: return _a(i0,i1/vector_length,i2,i3,i4,i5,i6)[i1%vector_length];
@@ -173,7 +173,7 @@ namespace KokkosBatched {
     template< typename I0 , typename I1 , typename I2 , typename I3 , typename I4 , typename I5 , typename I6 , typename I7 , class ... Args >
     KOKKOS_FORCEINLINE_FUNCTION
     typename std::enable_if<Kokkos::Impl::are_integral<I0,I1,I2,I3,I4,I5,I6,I7,Args...>::value && 8 == ViewType::rank, reference_type >::type
-      operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , const I5 & i5 , const I6 & i6 , const I7 & i7 , Args ... args ) const {
+    operator()( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 , const I4 & i4 , const I5 & i5 , const I6 & i6 , const I7 & i7 , Args ... /*args*/ ) const {
       switch (PackDim::value) {
       case 0: return _a(i0/vector_length,i1,i2,i3,i4,i5,i6,i7)[i0%vector_length];
       case 1: return _a(i0,i1/vector_length,i2,i3,i4,i5,i6,i7)[i1%vector_length];

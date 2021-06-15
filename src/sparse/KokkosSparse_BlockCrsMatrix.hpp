@@ -208,7 +208,7 @@ public:
   /// \param idx_to_match [in] local block idx within block-row
   /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
-  ordinal_type findRelBlockOffset ( const ordinal_type idx_to_match, bool is_sorted = false ) const {
+  ordinal_type findRelBlockOffset ( const ordinal_type idx_to_match, bool /*is_sorted*/ = false ) const {
     ordinal_type offset = Kokkos::Details::ArithTraits< ordinal_type >::max();
     for ( ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
       ordinal_type idx = colidx_[blk_offset];
@@ -358,7 +358,7 @@ public:
   /// \param idx_to_match [in] local block idx within block-row
   /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
-  ordinal_type findRelBlockOffset ( const ordinal_type &idx_to_match, bool is_sorted = false ) const {
+  ordinal_type findRelBlockOffset ( const ordinal_type &idx_to_match, bool /*is_sorted*/ = false ) const {
     typedef typename std::remove_cv<ordinal_type>::type non_const_ordinal_type;
     non_const_ordinal_type offset = Kokkos::Details::ArithTraits< non_const_ordinal_type >::max();
     for ( non_const_ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset ) {
@@ -549,10 +549,10 @@ public:
   /// \param rows [in/out] The row map (containing the offsets to the
   ///   data in each row).
   /// \param cols [in/out] The column indices.
-  BlockCrsMatrix (const std::string& label,
+  BlockCrsMatrix (const std::string& /*label*/,
                   const OrdinalType nrows,
                   const OrdinalType ncols,
-                  const size_type annz,
+                  const size_type /*annz*/,
                   const values_type& vals,
                   const row_map_type& rows,
                   const index_type& cols,
@@ -595,7 +595,7 @@ public:
   /// \param rows [in/out] The row map (containing the offsets to the
   ///   data in each row).
   /// \param cols [in/out] The column indices.
-  BlockCrsMatrix (const std::string& label,
+  BlockCrsMatrix (const std::string& /*label*/,
                   const OrdinalType& ncols,
                   const values_type& vals,
                   const staticcrsgraph_type& graph_,
@@ -905,7 +905,7 @@ private:
 template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
 void
 BlockCrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
-ctor_impl (const std::string &label,
+ctor_impl (const std::string &/*label*/,
            const OrdinalType nrows,
            const OrdinalType ncols,
            const size_type annz,

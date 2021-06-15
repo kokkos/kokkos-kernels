@@ -66,7 +66,7 @@ namespace Experimental {
 
   /* ========================================================================================= */
   template <typename cholmod_int_type, typename graph_t, typename KernelHandle>
-  graph_t read_cholmod_graphL(KernelHandle kernelHandle, cholmod_factor *L, cholmod_common *cm) {
+  graph_t read_cholmod_graphL(KernelHandle *kernelHandle, cholmod_factor *L, cholmod_common *cm) {
 
     /* ---------------------------------------------------------------------- */
     /* get inputs */
@@ -169,7 +169,7 @@ namespace Experimental {
 
   /* ========================================================================================= */
   template <typename cholmod_int_type, typename crsmat_t, typename graph_t, typename KernelHandle>
-  crsmat_t read_cholmod_factor(KernelHandle kernelHandle, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
+  crsmat_t read_cholmod_factor(KernelHandle *kernelHandle, cholmod_factor *L, cholmod_common *cm, graph_t &static_graph) {
 
     using values_view_t = typename crsmat_t::values_type::non_const_type;
     using scalar_t      = typename values_view_t::value_type;

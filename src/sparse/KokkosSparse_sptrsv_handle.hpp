@@ -348,6 +348,7 @@ private:
   int *etree;
 
   // type of kernels used at each level
+  bool trmm_on_device;
   int sup_size_unblocked;
   int sup_size_blocked;
   integer_view_host_t diag_kernel_type_host;
@@ -422,6 +423,7 @@ public:
     , invert_diagonal (true)
     , invert_offdiagonal (false)
     , etree (nullptr)
+    , trmm_on_device (true)
     , sup_size_unblocked (100)
     , sup_size_blocked (200)
     , perm_avail (false)
@@ -548,6 +550,16 @@ public:
   integer_view_host_t get_work_offset_host() const { 
     return this->work_offset_host;
   }
+
+  // specify whether too run KokkosKernels::trmm on device or not
+  void set_trmm_on_device (bool flag) {
+    this->trmm_on_device = flag;
+  }
+
+  bool get_trmm_on_device () {
+    return trmm_on_device;
+  }
+
 
   // supernode size tolerance to pick right kernel type
   int get_supernode_size_unblocked() {

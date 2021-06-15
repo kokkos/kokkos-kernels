@@ -210,6 +210,9 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& lower_f
           khL.set_sptrsv_verbose (verbose);
           khU.set_sptrsv_verbose (verbose);
 
+          // specify if U is stored in CSR or CSC
+          khU.set_sptrsv_column_major (!u_in_csr);
+
           // specify wheather to merge supernodes (optional, default merge is false)
           khL.set_sptrsv_merge_supernodes (merge);
           khU.set_sptrsv_merge_supernodes (merge);
@@ -412,7 +415,7 @@ int main(int argc, char **argv) {
   return 0;
 }
 #else // defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
-int main(int argc, char **argv) {
+int main() {
   std::cout << std::endl << " ** SUPERNODAL NOT ENABLED **" << std::endl << std::endl;
   exit(0);
   return 0;
@@ -421,7 +424,7 @@ int main(int argc, char **argv) {
 
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
-int main(int argc, char **argv) {
+int main() {
 #if !defined(KOKKOSKERNELS_INST_DOUBLE)
   std::cout << " Only supported with double precision" << std::endl;
 #endif

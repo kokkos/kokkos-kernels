@@ -220,7 +220,7 @@ static void __print_help_blas3_perf_test() {
       DEFAULT_VERIFY);
 }
 
-static void __blas3_perf_test_input_error(char **argv, char short_opt,
+static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt,
                                           char *getopt_optarg) {
   fprintf(stderr, "ERROR: invalid option \"-%c %s\". Try --help.\n", short_opt,
           getopt_optarg);

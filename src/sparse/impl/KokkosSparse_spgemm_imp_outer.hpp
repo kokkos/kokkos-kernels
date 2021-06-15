@@ -879,10 +879,10 @@ void KokkosSPGEMM
 <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
 b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
 KokkosSPGEMM_numeric_outer(
-    c_row_view_t &rowmapC_,
-    c_lno_nnz_view_t &entriesC_,
-    c_scalar_nnz_view_t &valuesC_,
-    KokkosKernels::Impl::ExecSpaceType my_exec_space_){
+    c_row_view_t & /*rowmapC_*/,
+    c_lno_nnz_view_t & /*entriesC_*/,
+    c_scalar_nnz_view_t & /*valuesC_*/,
+    KokkosKernels::Impl::ExecSpaceType /*my_exec_space_*/){
   throw std::runtime_error ("Cannot run outer product. ENABLE openmp and outer product to run\n");
 }
 #endif
@@ -896,10 +896,10 @@ void KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_numeric_outer(
-    c_row_view_t &rowmapC_,
-    c_lno_nnz_view_t &entriesC_,
-    c_scalar_nnz_view_t &valuesC_,
-    KokkosKernels::Impl::ExecSpaceType my_exec_space_){
+    c_row_view_t &/*rowmapC_*/,
+    c_lno_nnz_view_t &/*entriesC_*/,
+    c_scalar_nnz_view_t &/*valuesC_*/,
+    KokkosKernels::Impl::ExecSpaceType /*my_exec_space_*/){
   throw std::runtime_error ("Cannot run outer product. ENABLE openmp and outer product to run\n");
 }
 #endif

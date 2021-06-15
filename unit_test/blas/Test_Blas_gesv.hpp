@@ -44,7 +44,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     // Create host mirrors of device views.
     typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
     typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror(B);
-    
+
     // Initialize data.
     Kokkos::fill_random(A, rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
     Kokkos::fill_random(X0,rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
@@ -69,14 +69,14 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
         magma_imalloc_cpu( &ipiv_raw, Nt );
       }
       ViewTypeP ipiv(ipiv_raw, Nt);
-	  
+
       // Solve.
       KokkosBlas::gesv(A,B,ipiv);
       Kokkos::fence();
-      
+
       // Get the solution vector.
       Kokkos::deep_copy( h_B, B );
-      
+
       // Checking vs ref on CPU, this eps is about 10^-9
       typedef typename ats::mag_type mag_type;
       const mag_type eps = 1.0e7 * ats::epsilon();
@@ -84,10 +84,10 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
       for (int i=0; i<N; i++) {
         if ( ats::abs(h_B(i) - h_X0(i)) > eps ) {
           test_flag = false;
-          //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld)\n", N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), i );		
+          //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld)\n", N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), i );
           break;
         }
-      }	
+      }
       ASSERT_EQ( test_flag, true );
 
       if(mode[0]=='Y') {
@@ -100,7 +100,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     int Nt = 0;
     if(mode[0]=='Y') Nt = N;
     ViewTypeP ipiv("IPIV", Nt);
-	
+
     // Solve.
     KokkosBlas::gesv(A,B,ipiv);
     Kokkos::fence();
@@ -115,10 +115,10 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     for (int i=0; i<N; i++) {
       if ( ats::abs(h_B(i) - h_X0(i)) > eps ) {
         test_flag = false;
-        //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld)\n", N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), i );		
+        //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld)\n", N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), i );
         break;
       }
-    }	
+    }
     ASSERT_EQ( test_flag, true );
 #endif
 
@@ -133,7 +133,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
     int ldda, lddb;
-	
+
     if(padding[0]=='Y') {//rounded up to multiple of 32
       ldda = ((N+32-1)/32)*32;
       lddb = ldda;
@@ -151,7 +151,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     // Create host mirrors of device views.
     typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view( X0 );
     typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror( B );
-    
+
     // Initialize data.
     Kokkos::fill_random(A, rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
     Kokkos::fill_random(X0,rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
@@ -176,14 +176,14 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
         magma_imalloc_cpu( &ipiv_raw, Nt );
       }
       ViewTypeP ipiv(ipiv_raw, Nt);
-      
-      // Solve.	
+
+      // Solve.
       KokkosBlas::gesv(A,B,ipiv);
       Kokkos::fence();
-      
+
       // Get the solution vector.
       Kokkos::deep_copy( h_B, B );
-      
+
       // Checking vs ref on CPU, this eps is about 10^-9
       typedef typename ats::mag_type mag_type;
       const mag_type eps = 1.0e7 * ats::epsilon();
@@ -192,7 +192,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
         for (int i=0; i<N; i++) {
           if ( ats::abs(h_B(i,j) - h_X0(i,j)) > eps ) {
             test_flag = false;
-            //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld) at rhs %d\n", N, mode[0], padding[0], ats::abs(h_B(i,j)), ats::abs(h_X0(i,j)), i, j );		
+            //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld) at rhs %d\n", N, mode[0], padding[0], ats::abs(h_B(i,j)), ats::abs(h_X0(i,j)), i, j );
             break;
           }
         }
@@ -211,7 +211,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
     if(mode[0]=='Y') Nt = N;
     ViewTypeP ipiv("IPIV", Nt);
 
-    // Solve.	
+    // Solve.
     KokkosBlas::gesv(A,B,ipiv);
     Kokkos::fence();
 
@@ -226,7 +226,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
       for (int i=0; i<N; i++) {
         if ( ats::abs(h_B(i,j) - h_X0(i,j)) > eps ) {
           test_flag = false;
-          //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld) at rhs %d\n", N, mode[0], padding[0], ats::abs(h_B(i,j)), ats::abs(h_X0(i,j)), i, j );		
+          //printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) != solution( %.15lf ) at (%ld) at rhs %d\n", N, mode[0], padding[0], ats::abs(h_B(i,j)), ats::abs(h_X0(i,j)), i, j );
           break;
         }
       }
@@ -267,7 +267,8 @@ int test_gesv(const char* mode) {
   Test::impl_test_gesv<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "Y", 179); //padding
 #endif
 */
-
+  // Supress unused parameters on CUDA10
+  (void)mode;
   return 1;
 }
 
@@ -299,7 +300,8 @@ int test_gesv_mrhs(const char* mode) {
   Test::impl_test_gesv_mrhs<view_type_a_lr, view_type_b_lr, Device>(&mode[0], "Y", 179, 5);//padding
 #endif
 */
-
+  // Supress unused parameters on CUDA10
+  (void)mode;
   return 1;
 }
 

@@ -243,6 +243,27 @@ namespace KokkosBatched {
     struct NonUnit { static const bool use_unit_diag = false; };
   };
 
+  
+  /// \brief: BatchLayout class used to specify where the batch dimension is allocated in
+  ///         the input views for host-level Batched BLAS/LAPACK routines.
+  /// \var Left  Batch dimension is the leftmost dimension within input views
+  /// \var Right Batch dimension is the rightmost dimension within input views
+  struct BatchLayout {
+    struct Left {};
+    struct Right {};
+  };
+
+  /// \brief ResultsPerThread class used to specify how to divide a given
+  ///        BLAS/LAPACK operation among Kokkos threads
+  /// \var Rank0 Each Kokkos thread calculates a 0-rank result
+  /// \var Rank1 Each Kokkos thread calculates a 1-rank result
+  /// \var Rank2 Each Kokkos thread calculates a 2-rank result
+  struct ResultsPerThread {
+    struct Rank0 {};
+    struct Rank1 {};
+    struct Rank2 {};
+  };
+
   struct Direct {
     struct Forward {};
     struct Backward {};
@@ -441,7 +462,7 @@ namespace KokkosBatched {
       : as1(arg_as1), AL(NULL), AR(NULL) {}
 
     KOKKOS_INLINE_FUNCTION
-    void partWithAL(ValueType *A, const int nA, const int nAL) {
+    void partWithAL(ValueType *A, const int /* nA */, const int nAL) {
       AL = A; AR = AL+nAL*as1;
     }
 
@@ -496,7 +517,7 @@ namespace KokkosBatched {
       : as0(arg_as0), AT(NULL), AB(NULL) {}
 
     KOKKOS_INLINE_FUNCTION
-    void partWithAT(ValueType *A, const int mA, const int mAT) {
+    void partWithAT(ValueType *A, const int /* mA */, const int mAT) {
       AT = A;
       AB = AT+mAT*as0;
     }
@@ -564,7 +585,7 @@ namespace KokkosBatched {
 
     KOKKOS_INLINE_FUNCTION
     void partWithATL(ValueType *A, 
-                     const int mA, const int nA, 
+                     const int /* mA */, const int /* nA */, 
                      const int mATL, const int nATL) {
       ATL = A;            ATR = ATL+nATL*as1; 
       ABL = ATL+mATL*as0; ABR = ABL+nATL*as1;

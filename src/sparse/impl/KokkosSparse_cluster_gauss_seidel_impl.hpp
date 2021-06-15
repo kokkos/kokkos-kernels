@@ -811,7 +811,7 @@ namespace KokkosSparse{
           nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
           bool apply_forward = true,
           bool apply_backward = true,
-          bool update_y_vector = true)
+          bool /*update_y_vector*/ = true)
       {
         auto gsHandle = get_gs_handle();
 
