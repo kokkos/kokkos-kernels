@@ -7,20 +7,15 @@
  			"recurseDirectories" : false
 		},
 		"categories": [
-			"Kokkos_Lambda_CUDA",
-            "Kokkos_Lambda_Seq",
-            "Base_CUDA",
-            "Base_Seq",
-            "Lambda_Seq",
-            "RAJA_CUDA",
-            "RAJA_Seq"
+			"kokkos_lambda"
+
 		],		
 		"plot" : [
 			{
 				"autoname" : {
 					"useProperty" : "y/path"
 				},
-				"category" : "Kokkos_Lambda_CUDA",
+				"category" : "kokkos_lambda",
 				"template" : "kokkos_template",
 				"dataLines" : [
 					{
@@ -35,7 +30,7 @@
 							"getElement" : "performance-report|timing",
 							"getPath": "*/kokkos_perf_suite/*",
   							"getPathAttribute": "name",
-							"getKey" : "Kokkos_Lambda_CUDA",
+							"getKey" : "kokkos_lambda",
 							"unit" : "seconds",
 							"strategy" : {
 								"getFirstMatchOnly" : "false",
@@ -45,73 +40,12 @@
 						"color" : "202,77,77"
 					}
 				]
-			}, {
-				"inherit" : "kokkos_template",
-				"category" : "Kokkos_Lambda_Seq",
-				"dataLines" : [
-					{
-						"y" : {
-							"getKey" : "Kokkos_Lambda_Seq"
-						}
-					}
-				]
-			}, {
-				"inherit" : "kokkos_template",
-				"category" : "Base_CUDA",
-				"dataLines" : [
-					{
-						"y" : {
-							"getKey" : "Base_CUDA"
-						}
-					}
-				]
-			}, {
-				"inherit" : "kokkos_template",
-				"category" : "Base_Seq",
-				"dataLines" : [
-					{
-						"y" : {
-							"getKey" : "Base_Seq"
-						}
-					}
-				]
-			}, {
-				"inherit" : "kokkos_template",
-				"category" : "Lambda_Seq",
-				"dataLines" : [
-					{
-						"y" : {
-							"getKey" : "Lambda_Seq"
-						}
-					}
-				]
-			}, {
-				"inherit" : "kokkos_template",
-				"category" : "RAJA_CUDA",
-				"dataLines" : [
-					{
-						"y" : {
-							"getKey" : "RAJA_CUDA"
-						}
-					}
-				]
-			}, {
-				"inherit" : "kokkos_template",
-				"category" : "RAJA_Seq",
-				"dataLines" : [
-					{
-						"y" : {
-							"getKey" : "RAJA_Seq"
-						}
-					}
-				]
 			}
 		]
 	},
     "graphDisplay": {
 		"dbLocation" : "root",
 		"page" : 1,
-		"displayCategory" : "Kokkos_Lambda_CUDA",
 		"displayRange" : 30,
 		"graphWidth" : 450,
 		"graphHeight" : 450,
