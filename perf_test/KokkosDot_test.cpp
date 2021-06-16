@@ -41,7 +41,7 @@
 // ************************************************************************
 //@HEADER
 */
-
+// Headers from KokkosSparse_spmv_test
 #include <cstdio>
 
 #include <ctime>
@@ -51,17 +51,18 @@
 #include <limits.h>
 #include <cmath>
 #include <unordered_map>
-#include <KokkosSparse_spmv_test.hpp>
+//#include <KokkosSparse_spmv_test.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
-#include <KokkosSparse_spmv.hpp>
+//#include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
-#include <spmv/Kokkos_SPMV.hpp>
-#include <spmv/Kokkos_SPMV_Inspector.hpp>
+//#include <spmv/Kokkos_SPMV.hpp>
+//#include <spmv/Kokkos_SPMV_Inspector.hpp>
 #include <common/RunParams.hpp>
 #include <common/QuickKernelBase.hpp>
 #include <PerfTestUtilities.hpp>
+
 #ifdef HAVE_CUSPARSE
 #include <CuSparse_SPMV.hpp>
 #endif
@@ -71,16 +72,33 @@
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-// #include <OpenMPStatic_SPMV.hpp>
-// #include <OpenMPDynamic_SPMV.hpp>
-// #include <OpenMPSmartStatic_SPMV.hpp>
+#include <OpenMPStatic_SPMV.hpp>
+#include <OpenMPDynamic_SPMV.hpp>
+#include <OpenMPSmartStatic_SPMV.hpp>
 #endif
+
+///////////////////////////////////////////////////////////////
+// RAJAPerf Suite interface for Kokkos, Kokkos-Kernels
 #include <common/Executor.hpp>
+
+// Headers from dot test prog
+
+#include <iostream>
+#include "KokkosBlas1_dot.hpp"
+#include "KokkosKernels_Utils.hpp"
+// in test_common
+//#include "KokkosKernels_TestUtils.hpp"
+
+/////////////////////////////////////////////////////////////
 
 // return std::make_tuple(newnumRows, newnumCols, A, x1, y1,
 //    rows_per_thread, team_size, vector_length,
 //    test, schedule, ave_time, max_time, min_time);
 
+// A function setting up all the data needed for the RPS - implemented spmv test;
+// This function returns the test_data obj , an instance of SPMVTestData.
+
+/*
 SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int loop) {
@@ -144,6 +162,63 @@ SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
 
   return test_data;
 }
+*/
+
+/*
+SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,    
+                        Ordinal rows_per_thread, int team_size,    
+                        int vector_length, int schedule, int loop)
+
+                        */
+
+
+// FUNCTION THAT IS PART OF KK for generating test matrices
+  //create_random_x_vector and create_random_y_vector can be used together to generate a random 
+  //linear system Ax = y.
+  template<typename vec_t>
+  vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
+    typedef typename vec_t::value_type scalar_t;
+    auto h_x = Kokkos::create_mirror_view (kok_x);
+    for (size_t j = 0; j < h_x.extent(1); ++j){
+      for (size_t i = 0; i < h_x.extent(0); ++i){
+        scalar_t r =
+            static_cast <scalar_t> (rand()) /
+            static_cast <scalar_t> (RAND_MAX / max_value);
+        h_x.access(i, j) = r;
+      }
+    }
+    Kokkos::deep_copy (kok_x, h_x);
+    return kok_x;
+  }
+
+
+
+
+DotTestData setup_test(DotTestData::matrix_type A_matrix, DotTestData::matrix_type B_matrix) {
+          DotTestData test_data;
+          using matrix_type   = DotTestData::matrix_type;
+          test_data.A_matrix = create_random_x_vector(A_matrix);
+          test.B_matrix = create_random_x_vector(B_matrix);
+
+        return test_data;
+}
+
+
+
+void run_benchmark(DotTestData& test_data) {
+
+        Kokkos::Timer timer;
+        Kokkos::fence();
+        timer.reset();
+        double result_1D = KokkosBlas::dot(test_data.A_matrix, test_data.B_matrix);
+        double elapsed = timer.seconds();
+}
+
+
+
+
+// Test run method that takes SPMVTestData obj
+/*
 void run_benchmark(SPMVTestData& data) {
   Kokkos::Timer timer;
   matvec(data.A, data.x1, data.y1, data.rows_per_thread, data.team_size,
@@ -155,6 +230,11 @@ void run_benchmark(SPMVTestData& data) {
   if (time < data.min_time) data.min_time = time;
 }
 
+*/
+
+// Struct handling the test config data
+
+/*
 struct SPMVConfiguration {
   int test;
   Ordinal rows_per_thread;
@@ -164,6 +244,10 @@ struct SPMVConfiguration {
   int loop;
 };
 
+*/
+
+
+/*
 namespace readers {
 template <>
 struct test_reader<SPMVConfiguration> {
@@ -175,8 +259,14 @@ struct test_reader<SPMVConfiguration> {
     return config;
   }
 };
+} 
+*/
 
-}  // namespace readers
+
+
+
+// namespace readers
+/*
 test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
   using matrix_type = SPMVTestData::matrix_type;
   typedef typename Kokkos::View<Scalar*, Layout> mv_type;
@@ -202,6 +292,11 @@ test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
   return test_cases;
 }
 
+*/
+
+// Create KernelBase
+
+/*
 std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
     const rajaperf::RunParams& params) {
   long long int size = 110503;  // a prime number
@@ -215,3 +310,4 @@ std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
 
   return construct_kernel_base(params);
 }
+*/

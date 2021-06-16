@@ -37,6 +37,7 @@ using Layout  = default_layout;
 
 std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
     const rajaperf::RunParams& params);
+
 struct SPMVTestData {
   using matrix_type =
       KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace,
@@ -101,13 +102,17 @@ struct SPMVTestData {
     }
   }
 };
+
 SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int loop);
+
+
 test_list construct_kernel_base(const rajaperf::RunParams& run_params,
                                 Ordinal numRows, Ordinal numCols, int test,
                                 Ordinal rows_per_thread, int team_size,
                                 int vector_length, int schedule, int loop);
+
 
 template <typename AType, typename XType, typename YType>
 void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
@@ -133,7 +138,8 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
       break;
 
 #ifdef KOKKOS_ENABLE_OPENMP
-    case OMP_STATIC:
+
+/*    case OMP_STATIC:
       openmp_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x,
                                                                          y);
       break;
@@ -145,6 +151,8 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
       openmp_smart_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(
           A, x, y);
       break;
+      */
+
 #endif
 
 #ifdef HAVE_MKL

@@ -6,6 +6,12 @@
 #include "sparse/tracked_testing.hpp"
 #include <iostream>
 #include <Kokkos_Core.hpp>
+// For RPS implementation of BLAS Level-1 Tests
+#include "blas/blas/tracked_testing.hpp"
+
+
+
+
 int main(int argc, char* argv[]) {
   {
 
@@ -46,7 +52,7 @@ if (argc == 1) {
     test::sparse::build_executor(exec, argc, argv, run_params);
    
 
-	
+    test::blas::build_executor(exec, argc, argv, run_params);
     
 
     exec.setupSuite();
