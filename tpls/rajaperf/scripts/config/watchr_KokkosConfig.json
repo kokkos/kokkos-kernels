@@ -1,7 +1,7 @@
 {
 	"plots" : {
 		"files" : {
-			"fileName": "RAJAPerfSuite_*",
+			"fileName": "RAJAPerf-timing*",
  			"type" : "xml",
 			"ignoreOldFiles" : true,
  			"recurseDirectories" : false
