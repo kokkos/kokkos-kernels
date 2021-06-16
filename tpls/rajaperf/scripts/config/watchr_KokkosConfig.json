@@ -13,7 +13,8 @@
 		"plot" : [
 			{
 				"autoname" : {
-					"useProperty" : "y/path"
+					"useProperty" : "y/path",
+                    "formatByRemovingPrefix" : "\\/RAJAPerf\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2}" 
 				},
 				"category" : "kokkos_lambda",
 				"template" : "kokkos_template",
