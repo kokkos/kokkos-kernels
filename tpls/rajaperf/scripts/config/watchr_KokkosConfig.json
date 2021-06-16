@@ -3,7 +3,7 @@
 		"files" : {
 			"fileName": "RAJAPerf-timing*",
  			"type" : "xml",
-			"ignoreOldFiles" : true,
+			"ignoreOldFiles" : false,
  			"recurseDirectories" : false
 		},
 		"categories": [
