@@ -1413,7 +1413,23 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
       #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       timer.reset ();
       #endif
-      KokkosBlas::trtri(&uplo_char, &diag_char, Ljj);
+      #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+      if(run_trmm_on_device) {
+        Kokkos::View<scalar_t**, Kokkos::LayoutLeft, trmm_memory_space, Kokkos::MemoryUnmanaged>
+          dViewL (trmm_dwork.data(), nsrow, nscol);
+
+        // deep-copy the whole supernode column to device
+        Kokkos::deep_copy(dViewL, viewL);
+
+        // call trtri on device
+        auto dViewLjj = Kokkos::subview (dViewL, range_type (0, nscol), Kokkos::ALL ());
+        KokkosBlas::trtri(&uplo_char, &diag_char, dViewLjj);
+      } else
+      #endif
+      {
+        // call trtri on host
+        KokkosBlas::trtri(&uplo_char, &diag_char, Ljj);
+      }
       #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       time1 += timer.seconds ();
       #endif
@@ -1427,17 +1443,26 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
         timer.reset ();
         #endif
         if(run_trmm_on_device) {
-          // NOTE: we currently supports only default_layout = LayoutLeft
-          Kokkos::View<scalar_t**, default_layout, trmm_memory_space, Kokkos::MemoryUnmanaged>
-            devL (trmm_dwork.data(), nsrow, nscol);
-          auto devLjj = Kokkos::subview (devL, range_type (0, nscol), Kokkos::ALL ());
-          auto devLij = Kokkos::subview (devL, range_type (nscol, nsrow), Kokkos::ALL ());
+          Kokkos::View<scalar_t**, Kokkos::LayoutLeft, trmm_memory_space, Kokkos::MemoryUnmanaged>
+            dViewL (trmm_dwork.data(), nsrow, nscol);
 
-          Kokkos::deep_copy(devL, viewL);
+          #if !defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+          // deep-copy the whole supernode column to device
+          Kokkos::deep_copy(dViewL, viewL);
+          #endif
+
+          // NOTE: we currently supports only default_layout = LayoutLeft
+          auto dViewLjj = Kokkos::subview (dViewL, range_type (0, nscol), Kokkos::ALL ());
+          auto dViewLij = Kokkos::subview (dViewL, range_type (nscol, nsrow), Kokkos::ALL ());
+
           KokkosBlas::trmm (&side_char, &uplo_char,
                             &tran_char, &diag_char,
-                            one, devLjj, devLij);
-          Kokkos::deep_copy(viewL, devL);
+                            one, dViewLjj, dViewLij);
+
+          #if !defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+          // deep-copy the whole panel back to host (since I cannot just deep-copy Lij)
+          Kokkos::deep_copy(viewL, dViewL);
+          #endif
         } else
         {
           KokkosBlas::trmm (&side_char, &uplo_char,
@@ -1448,6 +1473,15 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
         time2 += timer.seconds ();
         #endif
       }
+
+      #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+      if(run_trmm_on_device) {
+        // deep-copy the whole supernode column back to host
+        Kokkos::View<scalar_t**, Kokkos::LayoutLeft, trmm_memory_space, Kokkos::MemoryUnmanaged>
+          dViewL (trmm_dwork.data(), nsrow, nscol);
+        Kokkos::deep_copy(viewL, dViewL);
+      }
+      #endif
     }
     else {
       supernode_ids (num_batches) = s2;
