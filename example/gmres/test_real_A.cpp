@@ -52,7 +52,7 @@
 
 #include"gmres.hpp"
 
-int main(int argc, char *argv[]) {
+int main(int /*argc*/, char ** /*argv[]*/) {
 
   typedef double                             ST;
   typedef int                               OT;
