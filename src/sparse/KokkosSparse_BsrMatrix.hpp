@@ -52,12 +52,14 @@
 #ifndef KOKKOS_SPARSE_BSRMATRIX_HPP_
 #define KOKKOS_SPARSE_BSRMATRIX_HPP_
 
-#include "Kokkos_Core.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
+
+#include "Kokkos_Core.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_BlockCrsMatrix.hpp"
 
@@ -235,10 +237,10 @@ struct BsrRowViewConst {
   //
   // Assumes values and colidx__ already offset to the correct location
   KOKKOS_INLINE_FUNCTION
-  BsrRowViewConst(value_type* const values, ordinal_type* const colidx__,
+  BsrRowViewConst(value_type* const values, ordinal_type* const colidx_,
                   const ordinal_type& blockDim, const ordinal_type& count)
       : values_(values),
-        colidx_(colidx__),
+        colidx_(colidx_),
         blockDim_(blockDim),
         length(count) {}
 
@@ -259,13 +261,13 @@ struct BsrRowViewConst {
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION BsrRowViewConst(
       const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx__,
+      const typename MatrixType::index_type& colidx_,
       const ordinal_type& blockDim, const ordinal_type& count,
       const OffsetType& start,
       const typename std::enable_if<std::is_integral<OffsetType>::value,
                                     int>::type& = 0)
       : values_(&values(start * blockDim * blockDim)),
-        colidx_(&colidx__(start)),
+        colidx_(&colidx_(start)),
         blockDim_(blockDim),
         length(count) {}
 
@@ -580,7 +582,6 @@ class BsrMatrix {
 
     blockDim_ = blockDimIn;
     numCols_  = crs_mtx.numCols() / blockDim_;
-    values    = crs_mtx.values;
 
     OrdinalType nbrows =
         crs_mtx.numRows() /
@@ -597,14 +598,18 @@ class BsrMatrix {
         Kokkos::create_mirror_view(crs_mtx.graph.entries);
     Kokkos::deep_copy(h_crs_entries, crs_mtx.graph.entries);
 
-    // determine size of block cols indices == number of blocks, i.e. nnz for
-    // the block CRS graph
+    // determine size of block cols indices == number of blocks,
+    // i.e. nnz for the block CRS graph
     OrdinalType numBlocks = 0;
     for (OrdinalType i = 0; i < crs_mtx.numRows(); i += blockDim_) {
-      numBlocks +=
-          (h_crs_row_map(i + 1) - h_crs_row_map(i)) / blockDim_;  // cum sum
-      block_rows[i / blockDim_] = (h_crs_row_map(i + 1) - h_crs_row_map(i)) /
-                                  blockDim_;  // frequency counts
+      OrdinalType current_blocks = 0;
+      for (OrdinalType j = 0; j < blockDim_; ++j) {
+        const auto n_entries =
+            h_crs_row_map(i + 1 + j) - h_crs_row_map(i + j) + blockDim_ - 1;
+        current_blocks = std::max(current_blocks, n_entries / blockDim_);
+      }
+      numBlocks += current_blocks;                 // cum sum
+      block_rows[i / blockDim_] = current_blocks;  // frequency counts
     }
 
     // create_staticcrsgraph takes the frequency of blocks per row
@@ -612,26 +617,60 @@ class BsrMatrix {
     // numBlocks in the final entry
     graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type>("blockgraph",
                                                                block_rows);
-    typename values_type::HostMirror h_values =
-        Kokkos::create_mirror_view(values);
+    typename index_type::HostMirror h_row_map =
+        Kokkos::create_mirror_view(graph.row_map);
+    Kokkos::deep_copy(h_row_map, graph.row_map);
+
     typename index_type::HostMirror h_entries =
         Kokkos::create_mirror_view(graph.entries);
 
-    for (OrdinalType i = 0; i < nbrows; ++i) {
-      OrdinalType blks_in_row = block_rows[i];
+    OrdinalType ientry = 0;
+    for (OrdinalType ib = 0; ib < nbrows; ++ib) {
+      auto ir_start = ib * blockDim_;
+      auto ir_stop  = (ib + 1) * blockDim_;
+      std::set<OrdinalType> col_set;
+      for (OrdinalType ir = ir_start; ir < ir_stop; ++ir) {
+        for (OrdinalType jk = h_crs_row_map(ir); jk < h_crs_row_map(ir + 1); ++jk) {
+          col_set.insert(h_crs_entries(jk) / blockDim_);
+        }
+      }
+      assert(col_set.size() == block_rows[ib]);
+      auto* col_list = &h_entries(ientry);
+      for (auto col_block : col_set) col_list[ientry++] = col_block;
+    }
+    Kokkos::deep_copy(graph.entries, h_entries);
 
-      OrdinalType offset_into_blkcolidx_start = graph.row_map(i);
-      OrdinalType offset_into_colidx_start =
-          offset_into_blkcolidx_start * blockDim_ * blockDim_;
+    // Copy the numerical values
 
-      for (OrdinalType lidx = 0; lidx < blks_in_row; ++lidx) {
-        h_entries(offset_into_blkcolidx_start + lidx) =
-            h_crs_entries(offset_into_colidx_start + blockDim_ * lidx) /
-            blockDim_;
+    typename values_type::HostMirror h_crs_values =
+        Kokkos::create_mirror_view(crs_mtx.values);
+    Kokkos::deep_copy(h_crs_values, crs_mtx.values);
+
+    values    = crs_mtx.values;
+    typename values_type::HostMirror h_values =
+        Kokkos::create_mirror_view(values);
+    if (h_values.extent(0) < numBlocks * blockDim_ * blockDim_)
+      Kokkos::resize(h_values, numBlocks * blockDim_ * blockDim_);
+    Kokkos::deep_copy(h_values, 0);
+
+    for (OrdinalType ir = 0; ir < crs_mtx.numRows(); ++ir) {
+      const auto iblock = ir / blockDim_;
+      const auto ilocal = ir % blockDim_;
+      for (OrdinalType jk = h_crs_row_map(ir); jk < h_crs_row_map(ir + 1); ++jk) {
+        const auto jc     = h_crs_entries(jk);
+        const auto jblock = jc / blockDim_;
+        const auto jlocal = jc % blockDim_;
+        for (OrdinalType jkb = h_row_map(iblock); jkb < h_row_map(iblock + 1); ++jkb) {
+          if (h_entries(jkb) == jblock) {
+            OrdinalType shift = jkb * blockDim_ * blockDim_;
+            h_values(shift + ilocal * blockDim_ + jlocal) = h_crs_values(jk);
+            break;
+          }
+        }
       }
     }
+    Kokkos::deep_copy(values, h_values);
 
-    Kokkos::deep_copy(graph.entries, h_entries);
   }
 
   /// \brief Given an array of blocks, sum the values into corresponding
