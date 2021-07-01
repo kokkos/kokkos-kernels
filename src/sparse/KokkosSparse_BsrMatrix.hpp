@@ -602,14 +602,12 @@ class BsrMatrix {
     // i.e. nnz for the block CRS graph
     OrdinalType numBlocks = 0;
     for (OrdinalType i = 0; i < crs_mtx.numRows(); i += blockDim_) {
-      OrdinalType current_blocks = 0;
-      for (OrdinalType j = 0; j < blockDim_; ++j) {
-        const auto n_entries =
-            h_crs_row_map(i + 1 + j) - h_crs_row_map(i + j) + blockDim_ - 1;
-        current_blocks = std::max(current_blocks, n_entries / blockDim_);
+      std::set<OrdinalType> col_set;
+      for (OrdinalType ie = h_crs_row_map(i); ie < h_crs_row_map(i + blockDim_); ++ie) {
+        col_set.insert(h_crs_entries(ie) / blockDim_);
       }
-      numBlocks += current_blocks;                 // cum sum
-      block_rows[i / blockDim_] = current_blocks;  // frequency counts
+      numBlocks += col_set.size();                 // cum sum
+      block_rows[i / blockDim_] = col_set.size();  // frequency counts
     }
 
     // create_staticcrsgraph takes the frequency of blocks per row
@@ -629,14 +627,12 @@ class BsrMatrix {
       auto ir_start = ib * blockDim_;
       auto ir_stop  = (ib + 1) * blockDim_;
       std::set<OrdinalType> col_set;
-      for (OrdinalType ir = ir_start; ir < ir_stop; ++ir) {
-        for (OrdinalType jk = h_crs_row_map(ir); jk < h_crs_row_map(ir + 1); ++jk) {
-          col_set.insert(h_crs_entries(jk) / blockDim_);
-        }
+      for (OrdinalType jk = h_crs_row_map(ir_start); jk < h_crs_row_map(ir_stop); ++jk) {
+        col_set.insert(h_crs_entries(jk) / blockDim_);
       }
-      assert(col_set.size() == block_rows[ib]);
-      auto* col_list = &h_entries(ientry);
-      for (auto col_block : col_set) col_list[ientry++] = col_block;
+      for (auto col_block : col_set)  {
+        h_entries(ientry++) = col_block;
+      }
     }
     Kokkos::deep_copy(graph.entries, h_entries);
 
@@ -649,8 +645,10 @@ class BsrMatrix {
     values    = crs_mtx.values;
     typename values_type::HostMirror h_values =
         Kokkos::create_mirror_view(values);
-    if (h_values.extent(0) < numBlocks * blockDim_ * blockDim_)
+    if (h_values.extent(0) < numBlocks * blockDim_ * blockDim_) {
       Kokkos::resize(h_values, numBlocks * blockDim_ * blockDim_);
+      Kokkos::resize(values, numBlocks * blockDim_ * blockDim_);
+    }
     Kokkos::deep_copy(h_values, 0);
 
     for (OrdinalType ir = 0; ir < crs_mtx.numRows(); ++ir) {
@@ -675,12 +673,11 @@ class BsrMatrix {
 
   /// \brief Given an array of blocks, sum the values into corresponding
   ///        block in BsrMatrix
-  /// \param rowi [in]   is a block-row index
-  /// \param ncol [in]   is number of blocks referenced in cols[] array
-  /// \param cols[] [in] are block colidxs within the block-row to be summed
-  /// into
-  ///                    ncol entries
-  /// \param vals[] [in] array containing 'block' of values
+  /// \param[in] rowi    is a block-row index
+  /// \param[in] ncol  is number of blocks referenced in cols[] array
+  /// \param[in] cols[] are block colidxs within the block-row to be summed
+  /// into ncol entries
+  /// \param[in] vals[] array containing 'block' of values
   ///        ncol*block_size*block_size entries
   ///        assume vals block is provided in 'LayoutRight' or 'Row Major'
   ///        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
@@ -692,50 +689,16 @@ class BsrMatrix {
                             const OrdinalType ncol, const ScalarType vals[],
                             const bool is_sorted    = false,
                             const bool force_atomic = false) const {
-    SparseRowView<BsrMatrix> row_view = this->block_row(rowi);
-    const ordinal_type block_size     = this->blockDim();
-
-    ordinal_type numValid = 0;  // number of valid local column indices
-
-    for (ordinal_type i = 0; i < ncol; ++i) {
-      // Find offset into values for block-row rowi and colidx cols[i]
-      // cols[i] is the index to match
-      // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi
-      // + 1] (not global offset) colidx_ and values_ are already offset to the
-      // beginning of blockrow rowi
-      auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      if (blk_offset != Kokkos::Details::ArithTraits<ordinal_type>::max()) {
-        ordinal_type offset_into_vals =
-            i * block_size *
-            block_size;  // stride == 1 assumed between elements
-        for (ordinal_type lrow = 0; lrow < block_size; ++lrow) {
-          auto local_row_values = row_view.local_row_in_block(
-              blk_offset, lrow);  // pointer to start of specified local row
-                                  // within this block
-          for (ordinal_type lcol = 0; lcol < block_size; ++lcol) {
-            if (force_atomic) {
-              Kokkos::atomic_add(
-                  &(local_row_values[lcol]),
-                  vals[offset_into_vals + lrow * block_size + lcol]);
-            } else {
-              local_row_values[lcol] +=
-                  vals[offset_into_vals + lrow * block_size + lcol];
-            }
-          }
-        }
-        ++numValid;
-      }
-    }  // end for ncol
-    return numValid;
+    return operateValues( BsrMatrix::valueOperation::ADD,
+                          rowi, cols, ncol, vals, is_sorted, force_atomic);
   }
 
   /// \brief Given an array of blocks, replace the values of corresponding
   ///        blocks in BsrMatrix
-  /// \param rowi [in]   is a block-row index
-  /// \param ncol [in]   is number of blocks referenced in cols[] array
-  /// \param cols[] [in] are block colidxs within the block-row to be summed
-  /// into
-  ///                    ncol entries
+  /// \param[in] rowi    is a block-row index
+  /// \param[in] ncol is number of blocks referenced in cols[] array
+  /// \param[in] cols[] are block colidxs within the block-row to be summed
+  /// into ncol entries
   /// \param vals[] [in] array containing 'block' of values
   //        ncol*block_size*block_size entries
   //        assume vals block is provided in 'LayoutRight' or 'Row Major'
@@ -748,41 +711,8 @@ class BsrMatrix {
                             const OrdinalType ncol, const ScalarType vals[],
                             const bool is_sorted    = false,
                             const bool force_atomic = false) const {
-    SparseRowView<BsrMatrix> row_view = this->block_row(rowi);
-    const ordinal_type block_size     = this->blockDim();
-
-    ordinal_type numValid = 0;  // number of valid local column indices
-
-    for (ordinal_type i = 0; i < ncol; ++i) {
-      // Find offset into values for block-row rowi and colidx cols[i]
-      // cols[i] is the index to match
-      // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi
-      // + 1] (not global offset) colidx_ and values_ are already offset to the
-      // beginning of blockrow rowi
-      auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      if (blk_offset != Kokkos::Details::ArithTraits<ordinal_type>::max()) {
-        ordinal_type offset_into_vals =
-            i * block_size *
-            block_size;  // stride == 1 assumed between elements
-        for (ordinal_type lrow = 0; lrow < block_size; ++lrow) {
-          auto local_row_values = row_view.local_row_in_block(
-              blk_offset, lrow);  // pointer to start of specified local row
-                                  // within this block
-          for (ordinal_type lcol = 0; lcol < block_size; ++lcol) {
-            if (force_atomic) {
-              Kokkos::atomic_assign(
-                  &(local_row_values[lcol]),
-                  vals[offset_into_vals + lrow * block_size + lcol]);
-            } else {
-              local_row_values[lcol] =
-                  vals[offset_into_vals + lrow * block_size + lcol];
-            }
-          }
-        }
-        ++numValid;
-      }
-    }  // end for ncol
-    return numValid;
+    return operateValues( BsrMatrix::valueOperation::ASSIGN,
+                         rowi, cols, ncol, vals, is_sorted, force_atomic);
   }
 
   //! Attempt to assign the input matrix to \c *this.
@@ -891,6 +821,87 @@ class BsrMatrix {
       return SparseBlockRowViewConst<BsrMatrix>(values, graph.entries,
                                                 blockDim(), count, start);
     }
+  }
+
+ protected:
+
+  enum class valueOperation { ADD, ASSIGN };
+
+  /// \brief Given an array of blocks, operate on the values of corresponding
+  ///        blocks in BsrMatrix
+  /// \param[in] rowi    is a block-row index
+  /// \param[in] ncol is number of blocks referenced in cols[] array
+  /// \param[in] cols[] are block colidxs within the block-row to be op-ed
+  /// into ncol entries
+  /// \param vals[] [in] array containing 'block' of values
+  //        ncol*block_size*block_size entries
+  //        assume vals block is provided in 'LayoutRight' or 'Row Major'
+  //        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
+  //        1d array as [a b c d] Assume that each block is stored contiguously
+  //        in vals: [a b; c d] [e f; g h] -> [a b c d e f g h] If so, then i in
+  //        [0, ncols) for cols[] maps to i*block_size*block_size in vals[]
+  KOKKOS_INLINE_FUNCTION
+  OrdinalType operateValues(const BsrMatrix::valueOperation op,
+                            const OrdinalType rowi,
+                            const OrdinalType cols[], const OrdinalType ncol,
+                            const ScalarType vals[],
+                            const bool is_sorted    = false,
+                            const bool force_atomic = false) const {
+    SparseRowView<BsrMatrix> row_view = this->block_row(rowi);
+    const ordinal_type block_size     = this->blockDim();
+
+    ordinal_type numValid = 0;  // number of valid local column indices
+
+    for (ordinal_type i = 0; i < ncol; ++i) {
+      // Find offset into values for block-row rowi and colidx cols[i]
+      // cols[i] is the index to match
+      // blk_offset is the offset for block colidx from bptr[rowi] to bptr[rowi
+      // + 1] (not global offset) colidx_ and values_ are already offset to the
+      // beginning of blockrow rowi
+      auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
+      if (blk_offset != Kokkos::Details::ArithTraits<ordinal_type>::max()) {
+        ordinal_type offset_into_vals =
+            i * block_size *
+            block_size;  // stride == 1 assumed between elements
+        for (ordinal_type lrow = 0; lrow < block_size; ++lrow) {
+          auto local_row_values = row_view.local_row_in_block(
+              blk_offset, lrow);  // pointer to start of specified local row
+          // within this block
+          switch (op) {
+            case BsrMatrix::valueOperation::ADD:
+            {
+              for (ordinal_type lcol = 0; lcol < block_size; ++lcol) {
+                if (force_atomic) {
+                  Kokkos::atomic_add(
+                      &(local_row_values[lcol]),
+                      vals[offset_into_vals + lrow * block_size + lcol]);
+                } else {
+                  local_row_values[lcol] +=
+                      vals[offset_into_vals + lrow * block_size + lcol];
+                }
+              }
+              break;
+            }
+            case BsrMatrix::valueOperation::ASSIGN:
+            {
+              for (ordinal_type lcol = 0; lcol < block_size; ++lcol) {
+                if (force_atomic) {
+                  Kokkos::atomic_assign(
+                      &(local_row_values[lcol]),
+                      vals[offset_into_vals + lrow * block_size + lcol]);
+                } else {
+                  local_row_values[lcol] =
+                      vals[offset_into_vals + lrow * block_size + lcol];
+                }
+              }
+              break;
+            }
+          }
+        }
+        ++numValid;
+      }
+    }  // end for ncol
+    return numValid;
   }
 
  private:
