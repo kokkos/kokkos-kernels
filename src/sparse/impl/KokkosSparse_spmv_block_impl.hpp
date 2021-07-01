@@ -58,10 +58,6 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "KokkosSparse_spmv_bsr_tpl_spec_decl.hpp"
-#endif
-
 namespace KokkosSparse {
 namespace Impl {
 
@@ -174,19 +170,24 @@ struct BSPMV_Functor {
     const auto jend       = m_A.graph.row_map[iBlock + 1];
     const auto block_size_2 = block_size * block_size;
     //
+    const auto lda = (jend - jbeg) * block_size;
+    auto Aval_ptr = &m_A.values[jbeg * block_size_2];
+    //
     auto yvec = &m_y[iBlock * block_size];
     //
+    ordinal_type j = 0;
     for (auto jb = jbeg; jb < jend; ++jb) {
       const auto col_block = m_A.graph.entries[jb];
       const auto xval_ptr  = &m_x[block_size * col_block];
-      const auto Aval_ptr  = &m_A.values[jb * block_size_2];
       for (ordinal_type kr = 0; kr < block_size; ++kr) {
         for (ordinal_type ic = 0; ic < block_size; ++ic) {
-          const auto aval = conjugate ? ATV::conj(Aval_ptr[ic + kr * block_size])
-              : Aval_ptr[ic + kr * block_size];
+          const auto shift = ic + kr * lda + j * block_size;
+          const auto aval = conjugate ? ATV::conj(Aval_ptr[shift])
+              : Aval_ptr[shifte];
           yvec[kr] += alpha * aval * xval_ptr[ic];
         }
       }
+      j += 1;
     }
     //
   }
@@ -210,6 +211,8 @@ struct BSPMV_Functor {
           const auto row_num_blocks = static_cast<ordinal_type>(jend - jbeg);
           const auto block_size_2 = block_size * block_size;
           const auto col_idx      = &m_A.graph.entries[jbeg];
+          //
+          const auto lda = (jend - jbeg) * block_size;
           const auto *Aval_ptr = &m_A.values[jbeg * block_size_2];
           //
           auto yvec = &m_y[iBlock * block_size];
@@ -222,8 +225,8 @@ struct BSPMV_Functor {
                 [&](const ordinal_type &iEntry, y_value_type &ysum) {
                   const ordinal_type col_block = col_idx[iEntry] * block_size;
                   const auto xval              = &m_x[col_block];
-                  const auto *Aval = Aval_ptr + iEntry * block_size_2
-                                     + ir * block_size;
+                  const auto *Aval = Aval_ptr + iEntry * block_size;
+                                     + ir * lda;
                   for (ordinal_type jc = 0; jc < block_size; ++jc) {
                     const value_type val = conjugate ? ATV::conj(Aval[jc])
                                                      : Aval[jc];
@@ -247,22 +250,8 @@ struct BSPMV_Functor {
 //
 //  This needs to be generalized
 //
-constexpr size_t bmax = 12;
+constexpr size_t bmax = 8;
 
-using Scalar  = default_scalar;
-using Ordinal = default_lno_t;
-using Offset  = default_size_type;
-using Layout  = default_layout;
-
-using device_type = typename Kokkos::Device<
-    Kokkos::DefaultExecutionSpace,
-    typename Kokkos::DefaultExecutionSpace::memory_space>;
-
-using crs_matrix_t_ =
-    typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
-                                     Offset>;
-
-using values_type = typename crs_matrix_t_::values_type;
 /***********************************/
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -420,16 +409,18 @@ void bspmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a,
       const size_type rowStart = matrixRowOffsets[row];
       const size_type rowEnd   = matrixRowOffsets[row + 1];
       //
+      const size_type lda = blockSize * (rowEnd - rowStart);
+      auto Aval_ptr = &matrixCoeffs[rowStart * blockSize2];
+      //
       auto yvec = &y[row * blockSize];
       //
-      for (Ordinal jblock = rowStart; jblock < rowEnd; ++jblock) {
-        const auto col_block = A.graph.entries[jblock];
+      for (Ordinal jentry = rowStart, j = 0; jentry < rowEnd; ++jentry, ++j) {
+        const auto col_block = A.graph.entries[jentry];
         const auto xval_ptr  = &x[blockSize * col_block];
-        const auto Aval_ptr  = &matrixCoeffs[jblock * blockSize2];
         for (Ordinal ic = 0; ic < blockSize; ++ic) {
           const auto xvalue = xval_ptr[ic];
           for (Ordinal kr = 0; kr < blockSize; ++kr) {
-            yvec[kr] += s_a * Aval_ptr[ic + kr * blockSize] * xvalue;
+            yvec[kr] += s_a * Aval_ptr[ic + kr * lda + j * blockSize] * xvalue;
           }
         }
       }
@@ -466,14 +457,6 @@ void spMatVec_no_transpose(KokkosKernels::Experimental::Controls controls,
   if (A.numRows () <= static_cast<AO> (0)) {
     return;
   }
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  if ((!useFallback) && (!useConjugate)) {
-    // Call cuSPARSE
-    spmv_block_cusparse(controls, KokkosSparse::NoTranspose, alpha, A, x, beta, y);
-    return;
-  }
-#endif
 
   typedef KokkosSparse::Experimental::BlockCrsMatrix<AT, AO, AD,
                                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> AMatrix_Internal;
@@ -556,14 +539,6 @@ void spMatVec_no_transpose(KokkosKernels::Experimental::Controls controls,
   if (A.numRows () <= static_cast<AO> (0)) {
     return;
   }
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  if ((!useFallback) && (!useConjugate)) {
-    // Call the MKL version
-    spmv_block_mkl(controls, KokkosSparse::NoTranspose, alpha, A, x, beta, y);
-    return;
-  }
-#endif
 
   typedef Kokkos::View<
       typename XVector::const_value_type *,
