@@ -210,7 +210,7 @@ int main (int argc, char ** argv){
   // Create boolean to handle serial setting if not using open and cuda
   bool useSerial = !useOMP && !useCUDA;
 
-  // Logic for runtime with PThreads; AJP inserted at BMK's mention
+  // Logic for runtime with PThreads 
     if (useThreads)
   {
 #if defined(KOKKOS_ENABLE_THREADS)
