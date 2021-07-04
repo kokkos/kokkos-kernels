@@ -493,9 +493,8 @@ class BsrMatrix {
   BsrMatrix(const std::string& label, OrdinalType nrows, OrdinalType ncols,
             size_type annz, ScalarType* val, OrdinalType* rows,
             OrdinalType* cols, OrdinalType blockdim, bool pad = false) {
-    ///
-    /// To Be Implemented
-    ///
+    (void) pad;
+    ctor_impl (label, nrows, ncols, annz, val, rows, cols, blockdim);
   }
 
   /// \brief Constructor that accepts a row map, column indices, and
@@ -825,6 +824,35 @@ class BsrMatrix {
 
  protected:
 
+  // Input assumptions:
+  //   rows is  cols  annz is the
+  /// Declaration for ctor_impl - this member function is not inlined
+
+  /// \brief Constructor implementation
+  ///
+  /// \param label
+  /// \param nrows  total number of blocks in the row-direction
+  /// \param ncols  total number of blocks in the column-direction
+  /// \param annz  total number of non-zeros in the CrsMatrix (equal to
+  ///   blockDim*blockDim*numBlocks)
+  /// \param val
+  /// \param rows[in] pointer rep for the row_map member View of the BsrMatrix graph
+  ///  (i.e. cum sum of number of blocks per block-row)
+  /// \param cols[in] pointer rep for the entries member View of the BsrMatrix graph
+  /// (colidx for block-row blocks)
+  /// \param blockDimIn[in] Blocksize
+  ///
+  /// \note This function is not inlined.
+  void
+  ctor_impl (const std::string &label,
+             OrdinalType nrows,
+             OrdinalType ncols,
+             size_type annz,
+             ScalarType* val,
+             OrdinalType* rows,
+             OrdinalType* cols,
+             OrdinalType blockDimIn);
+
   enum class valueOperation { ADD, ASSIGN };
 
   /// \brief Given an array of blocks, operate on the values of corresponding
@@ -912,6 +940,36 @@ class BsrMatrix {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+template <typename ScalarType, typename OrdinalType, class Device,
+          class MemoryTraits, typename SizeType>
+void BsrMatrix<ScalarType, OrdinalType, Device, MemoryTraits,
+               SizeType>::ctor_impl(const std::string& /*label*/,
+                                    OrdinalType nrows,
+                                    OrdinalType ncols,
+                                    size_type annz, ScalarType* val,
+                                    OrdinalType* rows, OrdinalType* cols,
+                                    OrdinalType blockDimIn) {
+  numCols_  = ncols;
+  blockDim_ = blockDimIn;
+
+  // Wrap the raw pointers in unmanaged host Views
+  typename values_type::HostMirror unman_val(val, annz);
+  typename row_map_type::HostMirror unman_rows(rows, nrows + 1);
+  typename index_type::HostMirror unman_cols(cols, ncols);
+
+  // Create temporary Views for row_map and entries because the StaticCrsGraph
+  // ctor requires View inputs
+  values_type tmp_row_map("tmp_row_map", nrows + 1);
+  values_type tmp_entries("tmp_entries", ncols);
+
+  Kokkos::deep_copy(val, unman_val);
+  Kokkos::deep_copy(tmp_row_map, unman_rows);
+  Kokkos::deep_copy(tmp_entries, unman_cols);
+
+  // Initialize graph using the temp entries and row_map Views
+  graph = staticcrsgraph_type(tmp_entries, tmp_row_map);
+}
 
 }  // namespace Experimental
 }  // namespace KokkosSparse
