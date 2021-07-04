@@ -61,7 +61,6 @@
 #include "Kokkos_StaticCrsGraph.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_BlockCrsMatrix.hpp"
 
 namespace KokkosSparse {
 
@@ -744,9 +743,9 @@ class BsrMatrix {
     return graph.entries.extent(0);
   }
 
-  friend struct SparseBlockRowView<BsrMatrix>;
+  friend struct BsrRowView<BsrMatrix>;
 
-  /// \brief Return a SparseBlockRowView of block-row i of the matrix.
+  /// \brief Return a BsrRowView of block-row i of the matrix.
   ///
   /// If row i does not belong to the matrix, return an empty view.
   ///
@@ -784,7 +783,7 @@ class BsrMatrix {
     }
   }
 
-  /// \brief Return a SparseBlockRowViewConst of block-row i of the matrix.
+  /// \brief Return a BsrRowViewConst of block-row i of the matrix.
   ///
   /// If row i does not belong to the matrix, return an empty view.
   ///
@@ -815,9 +814,9 @@ class BsrMatrix {
         graph.row_map(i + 1) - start);  // num blocks in this row
 
     if (count == 0) {
-      return SparseBlockRowViewConst<BsrMatrix>(nullptr, nullptr, 1, 0);
+      return BsrRowViewConst<BsrMatrix>(nullptr, nullptr, 1, 0);
     } else {
-      return SparseBlockRowViewConst<BsrMatrix>(values, graph.entries,
+      return BsrRowViewConst<BsrMatrix>(values, graph.entries,
                                                 blockDim(), count, start);
     }
   }
@@ -875,7 +874,7 @@ class BsrMatrix {
                             const ScalarType vals[],
                             const bool is_sorted    = false,
                             const bool force_atomic = false) const {
-    SparseRowView<BsrMatrix> row_view = this->block_row(rowi);
+    BsrRowView<BsrMatrix> row_view = this->block_row(rowi);
     const ordinal_type block_size     = this->blockDim();
 
     ordinal_type numValid = 0;  // number of valid local column indices
