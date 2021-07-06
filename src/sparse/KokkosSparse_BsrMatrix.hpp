@@ -96,12 +96,12 @@ struct BsrRowView {
   ///   within a block-row in the above arrays.
   /// \param count [in] Number of blocks in the desired block-row.
   //
-  // Assumes values and colidx__ already offset to the correct location
+  // Assumes values and colidx already offset to the correct location
   KOKKOS_INLINE_FUNCTION
-  BsrRowView(value_type* const values, ordinal_type* const colidx__,
+  BsrRowView(value_type* const values, ordinal_type* const colidx,
              const ordinal_type& blockDim, const ordinal_type& count)
       : values_(values),
-        colidx_(colidx__),
+        colidx_(colidx),
         blockDim_(blockDim),
         length(count) {}
 
@@ -124,13 +124,13 @@ struct BsrRowView {
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION BsrRowView(
       const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx__,
+      const typename MatrixType::index_type& colidx,
       const ordinal_type& blockDim, const ordinal_type& count,
       const OffsetType& start,
       const typename std::enable_if<std::is_integral<OffsetType>::value,
                                     int>::type& = 0)
       : values_(&values(start * blockDim * blockDim)),
-        colidx_(&colidx__(start)),
+        colidx_(&colidx(start)),
         blockDim_(blockDim),
         length(count) {}
 
@@ -234,12 +234,12 @@ struct BsrRowViewConst {
   ///   within a block-row in the above arrays.
   /// \param count [in] Number of entries in the row.
   //
-  // Assumes values and colidx__ already offset to the correct location
+  // Assumes values and colidx already offset to the correct location
   KOKKOS_INLINE_FUNCTION
-  BsrRowViewConst(value_type* const values, ordinal_type* const colidx_,
+  BsrRowViewConst(value_type* const values, ordinal_type* const colidx,
                   const ordinal_type& blockDim, const ordinal_type& count)
       : values_(values),
-        colidx_(colidx_),
+        colidx_(colidx),
         blockDim_(blockDim),
         length(count) {}
 
@@ -260,13 +260,13 @@ struct BsrRowViewConst {
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION BsrRowViewConst(
       const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx_,
+      const typename MatrixType::index_type& colidx,
       const ordinal_type& blockDim, const ordinal_type& count,
       const OffsetType& start,
       const typename std::enable_if<std::is_integral<OffsetType>::value,
                                     int>::type& = 0)
       : values_(&values(start * blockDim * blockDim)),
-        colidx_(&colidx_(start)),
+        colidx_(&colidx(start)),
         blockDim_(blockDim),
         length(count) {}
 

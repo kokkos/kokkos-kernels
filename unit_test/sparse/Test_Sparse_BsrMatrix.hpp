@@ -57,7 +57,7 @@
 typedef Kokkos::complex<double> kokkos_complex_double;
 typedef Kokkos::complex<float> kokkos_complex_float;
 
-namespace Test{ // anonymous
+namespace Test_Bsr{
 
   using std::cerr;
   using std::endl;
@@ -344,14 +344,14 @@ namespace Test{ // anonymous
   }// end operator()(i)
   }; // end TestFunctor
 
-} // namespace (anonymous)
+} // namespace Test_Bsr
 
 // Create a CrsMatrix and BsrMatrix and test member functions.
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void
 testBsrMatrix ()
 {
-  using namespace Test;
+  using namespace Test_Bsr;
 
   typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crs_matrix_type;
   typedef KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device, void, size_type> bsr_matrix_type;
@@ -364,7 +364,7 @@ testBsrMatrix ()
   result_view_type d_results("d_results");
   auto h_results = Kokkos::create_mirror_view( d_results );
 
-  Kokkos::parallel_for( "KokkosSparse::Test::BsrMatrix", Kokkos::RangePolicy<typename device::execution_space>(0, 1), Test::TestFunctor< bsr_matrix_type, result_view_type>( A, d_results ) );
+  Kokkos::parallel_for( "KokkosSparse::Test_Bsr::BsrMatrix", Kokkos::RangePolicy<typename device::execution_space>(0, 1), Test_Bsr::TestFunctor< bsr_matrix_type, result_view_type>( A, d_results ) );
 
   Kokkos::deep_copy( h_results, d_results );
 
