@@ -11,10 +11,10 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_block_pcg.cpp
   )
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-  sparse_spgemm
-  SOURCES KokkosSparse_spgemm.cpp
-  )
+#KOKKOSKERNELS_ADD_EXECUTABLE(
+#  sparse_spgemm
+#  SOURCES KokkosSparse_spgemm.cpp
+#  )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spgemm_jacobi
@@ -40,7 +40,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
-  SOURCES KokkosSparse_spmv.cpp
+  SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp
+../PerfTestUtilities.cpp
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(

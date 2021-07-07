@@ -1,0 +1,90 @@
+###############################################################################
+# Copyright (c) 2017-20, Lawrence Livermore National Security, LLC
+# and RAJA Performance Suite project contributors.
+# See the RAJAPerf/COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (BSD-3-Clause)
+###############################################################################
+
+blt_add_library(
+  NAME polybench
+  SOURCES POLYBENCH_2MM.cpp 
+          POLYBENCH_2MM-Seq.cpp
+          POLYBENCH_2MM-Hip.cpp
+          POLYBENCH_2MM-Cuda.cpp
+          POLYBENCH_2MM-OMP.cpp
+          POLYBENCH_2MM-OMPTarget.cpp
+          POLYBENCH_3MM.cpp
+          POLYBENCH_3MM-Seq.cpp
+          POLYBENCH_3MM-Hip.cpp
+          POLYBENCH_3MM-Cuda.cpp
+          POLYBENCH_3MM-OMP.cpp
+          POLYBENCH_3MM-OMPTarget.cpp
+          POLYBENCH_ADI.cpp
+          POLYBENCH_ADI-Seq.cpp
+          POLYBENCH_ADI-Hip.cpp
+          POLYBENCH_ADI-Cuda.cpp
+          POLYBENCH_ADI-OMP.cpp
+          POLYBENCH_ADI-OMPTarget.cpp
+          POLYBENCH_ATAX.cpp
+          POLYBENCH_ATAX-Seq.cpp
+          POLYBENCH_ATAX-Hip.cpp
+          POLYBENCH_ATAX-Cuda.cpp
+          POLYBENCH_ATAX-OMP.cpp
+          POLYBENCH_ATAX-OMPTarget.cpp
+          POLYBENCH_FDTD_2D.cpp
+          POLYBENCH_FDTD_2D-Seq.cpp
+          POLYBENCH_FDTD_2D-Hip.cpp
+          POLYBENCH_FDTD_2D-Cuda.cpp
+          POLYBENCH_FDTD_2D-OMP.cpp
+          POLYBENCH_FDTD_2D-OMPTarget.cpp
+          POLYBENCH_FLOYD_WARSHALL.cpp
+          POLYBENCH_FLOYD_WARSHALL-Seq.cpp
+          POLYBENCH_FLOYD_WARSHALL-Hip.cpp
+          POLYBENCH_FLOYD_WARSHALL-Cuda.cpp
+          POLYBENCH_FLOYD_WARSHALL-OMP.cpp
+          POLYBENCH_FLOYD_WARSHALL-OMPTarget.cpp
+          POLYBENCH_GEMM.cpp
+          POLYBENCH_GEMM-Seq.cpp
+          POLYBENCH_GEMM-Hip.cpp
+          POLYBENCH_GEMM-Cuda.cpp
+          POLYBENCH_GEMM-OMP.cpp
+          POLYBENCH_GEMM-OMPTarget.cpp
+          POLYBENCH_GEMVER.cpp
+          POLYBENCH_GEMVER-Seq.cpp
+          POLYBENCH_GEMVER-Hip.cpp
+          POLYBENCH_GEMVER-Cuda.cpp
+          POLYBENCH_GEMVER-OMP.cpp
+          POLYBENCH_GEMVER-OMPTarget.cpp
+          POLYBENCH_GESUMMV.cpp
+          POLYBENCH_GESUMMV-Seq.cpp
+          POLYBENCH_GESUMMV-Hip.cpp
+          POLYBENCH_GESUMMV-Cuda.cpp
+          POLYBENCH_GESUMMV-OMP.cpp
+          POLYBENCH_GESUMMV-OMPTarget.cpp
+          POLYBENCH_HEAT_3D.cpp
+          POLYBENCH_HEAT_3D-Seq.cpp
+          POLYBENCH_HEAT_3D-Hip.cpp
+          POLYBENCH_HEAT_3D-Cuda.cpp
+          POLYBENCH_HEAT_3D-OMP.cpp
+          POLYBENCH_HEAT_3D-OMPTarget.cpp
+          POLYBENCH_JACOBI_1D.cpp
+          POLYBENCH_JACOBI_1D-Seq.cpp
+          POLYBENCH_JACOBI_1D-Hip.cpp
+          POLYBENCH_JACOBI_1D-Cuda.cpp
+          POLYBENCH_JACOBI_1D-OMP.cpp
+          POLYBENCH_JACOBI_1D-OMPTarget.cpp
+          POLYBENCH_JACOBI_2D.cpp
+          POLYBENCH_JACOBI_2D-Seq.cpp
+          POLYBENCH_JACOBI_2D-Hip.cpp
+          POLYBENCH_JACOBI_2D-Cuda.cpp
+          POLYBENCH_JACOBI_2D-OMP.cpp
+          POLYBENCH_JACOBI_2D-OMPTarget.cpp
+          POLYBENCH_MVT.cpp
+          POLYBENCH_MVT-Seq.cpp
+          POLYBENCH_MVT-Hip.cpp
+          POLYBENCH_MVT-Cuda.cpp
+          POLYBENCH_MVT-OMP.cpp
+          POLYBENCH_MVT-OMPTarget.cpp
+  DEPENDS_ON common ${RAJA_PERFSUITE_DEPENDS}
+  )

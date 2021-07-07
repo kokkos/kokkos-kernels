@@ -1,0 +1,7 @@
+@PACKAGE_INIT@
+
+set(camp_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@" CACHE FILEPATH "camp install prefix path")
+
+include("${CMAKE_CURRENT_LIST_DIR}/campTargets.cmake")
+check_required_components("@PROJECT_NAME@")
+

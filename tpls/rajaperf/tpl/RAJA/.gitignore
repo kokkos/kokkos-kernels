@@ -1,0 +1,13 @@
+*.pyc
+*.o
+*.a
+*.exe
+*.gch
+/*.sublime-*
+/build/
+/build_*/
+/build-*/
+/install/
+/install_*/
+/install-*/
+/Debug/

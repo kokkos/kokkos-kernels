@@ -1,0 +1,118 @@
+###############################################################################
+# Copyright (c) 2016-20, Lawrence Livermore National Security, LLC
+# and RAJA project contributors. See the RAJA/COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (BSD-3-Clause)
+###############################################################################
+
+raja_add_executable(
+  NAME resource-forall
+  SOURCES resource-forall.cpp)
+
+raja_add_executable(
+  NAME tut_daxpy
+  SOURCES tut_daxpy.cpp)
+
+raja_add_executable(
+  NAME tut_add-vectors
+  SOURCES tut_add-vectors.cpp)
+
+raja_add_executable(
+  NAME tut_dot-product
+  SOURCES tut_dot-product.cpp)
+
+raja_add_executable(
+  NAME tut_indexset-segments
+  SOURCES tut_indexset-segments.cpp)
+
+raja_add_executable(
+  NAME tut_matrix-multiply
+  SOURCES tut_matrix-multiply.cpp)
+
+raja_add_executable(
+  NAME tut_nested-loop-reorder
+  SOURCES tut_nested-loop-reorder.cpp)
+
+raja_add_executable(
+  NAME tut_vertexsum-coloring
+  SOURCES tut_vertexsum-coloring.cpp)
+
+raja_add_executable(
+  NAME tut_reductions
+  SOURCES tut_reductions.cpp)
+
+raja_add_executable(
+  NAME tut_scan
+  SOURCES tut_scan.cpp)
+
+raja_add_executable(
+  NAME tut_sort
+  SOURCES tut_sort.cpp)
+
+raja_add_executable(
+  NAME tut_atomic-histogram
+  SOURCES tut_atomic-histogram.cpp)
+
+raja_add_executable(
+  NAME tut_offset-layout
+  SOURCES tut_offset-layout.cpp)
+
+raja_add_executable(
+  NAME tut_batched-matrix-multiply
+  SOURCES tut_batched-matrix-multiply.cpp)
+
+raja_add_executable(
+  NAME tut_matrix-transpose-local-array
+  SOURCES tut_matrix-transpose-local-array.cpp)
+
+raja_add_executable(
+  NAME tut_tiled-matrix-transpose
+  SOURCES tut_tiled-matrix-transpose.cpp)
+
+raja_add_executable(
+  NAME tut_halo-exchange
+  SOURCES tut_halo-exchange.cpp)
+
+raja_add_executable(
+  NAME pi-reduce_vs_atomic
+  SOURCES pi-reduce_vs_atomic.cpp)
+
+raja_add_executable(
+  NAME raja-teams
+  SOURCES raja-teams.cpp)
+
+raja_add_executable(
+  NAME jacobi
+  SOURCES jacobi.cpp)
+
+raja_add_executable(
+  NAME red-black-gauss-seidel
+  SOURCES red-black-gauss-seidel.cpp)
+
+raja_add_executable(
+  NAME wave-eqn
+  SOURCES wave-eqn.cpp)
+
+raja_add_executable(
+  NAME ltimes
+  SOURCES ltimes.cpp)
+
+raja_add_executable(
+  NAME multiview
+  SOURCES multiview.cpp)
+
+if(ENABLE_TARGET_OPENMP)
+  #  raja_add_executable(
+  #    NAME target-kernel
+  #    SOURCES omp-target-kernel.cpp)
+  #
+  #  raja_add_executable(
+  #    NAME omp-target-ltimes
+  #    SOURCES omp-target-ltimes.cpp)
+endif()
+
+raja_add_executable(
+  NAME kernel-dynamic-tile
+  SOURCES kernel-dynamic-tile.cpp)
+
+add_subdirectory(plugin)
