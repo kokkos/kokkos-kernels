@@ -50,6 +50,9 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include "rocsparse.h"
+#endif
 #ifndef _SPGEMMHANDLE_HPP
 #define _SPGEMMHANDLE_HPP
 //#define VERBOSE
@@ -61,7 +64,7 @@ namespace KokkosSparse{
 //hidden parameter for StringToSPGEMMAlgorithm for now.
 enum SPGEMMAlgorithm{
 		/*DEFAULT*/SPGEMM_KK, SPGEMM_KK_DENSE, SPGEMM_KK_MEMORY, SPGEMM_KK_LP, //KKVARIANTS
-		SPGEMM_CUSPARSE,  SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA, //TPLS
+		SPGEMM_CUSPARSE, SPGEMM_ROCSPARSE, SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_MKL2PHASE, SPGEMM_VIENNA, //TPLS
 
 		//TRIANGLE COUNTING SPECIALIZED
 		SPGEMM_KK_TRIANGLE_AI, //SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM, SPGEMM_KK_TRIANGLE_DENSE,
@@ -187,6 +190,40 @@ public:
 
   typedef cuSparseHandleType SPGEMMcuSparseHandleType;
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  struct rocSPARSEHandleType {
+    rocsparse_handle    handle;
+    rocsparse_mat_descr a_descr, b_descr, c_descr, d_descr;
+    rocsparse_mat_info  c_info;
+    const int *         row_mapD = NULL;
+    const int *         entriesD = NULL;
+    const float *       valuesDf = NULL;
+    const double *      valuesDd = NULL;
+    void *              buffer   = NULL;
+
+    rocSPARSEHandleType() {
+      rocsparse_status    status;
+      status = rocsparse_create_handle(&handle);
+      status = rocsparse_create_mat_descr(&a_descr);
+      status = rocsparse_create_mat_descr(&b_descr);
+      status = rocsparse_create_mat_descr(&c_descr);
+      status = rocsparse_create_mat_descr(&d_descr);
+      status = rocsparse_create_mat_info(&c_info);
+    }
+
+    ~rocSPARSEHandleType() {
+      rocsparse_status    status;
+      status = rocsparse_destroy_mat_info(c_info);
+      status = rocsparse_destroy_mat_descr(d_descr);
+      status = rocsparse_destroy_mat_descr(c_descr);
+      status = rocsparse_destroy_mat_descr(b_descr);
+      status = rocsparse_destroy_mat_descr(a_descr);
+      status = rocsparse_destroy_handle(handle);
+    }
+  };
+
+  typedef rocSPARSEHandleType SPGEMMrocSPARSEHandleType;
+#endif
 private:
   SPGEMMAlgorithm algorithm_type;
   SPGEMMAccumulator accumulator_type;
@@ -298,6 +335,11 @@ private:
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 
   public:
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+private:
+  SPGEMMrocSPARSEHandleType * rocSPARSEHandle;
+public:
 #endif
 
   void set_c_column_indices(nnz_lno_temp_work_view_t c_col_indices_){
@@ -472,7 +514,10 @@ private:
     mkl_keep_output(true),
     mkl_convert_to_1base(true), is_compression_single_step(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  ,cuSPARSEHandle(NULL)
+    ,cuSPARSEHandle(NULL)
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+    ,rocSPARSEHandle(NULL)
 #endif
   {
     if (gs == SPGEMM_DEFAULT){
@@ -485,6 +530,9 @@ private:
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     this->destroy_cuSPARSE_Handle();
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+    this->destroy_rocSPARSE_Handle();
 #endif
   };
 
@@ -502,6 +550,22 @@ private:
 
   SPGEMMcuSparseHandleType *get_cuSparseHandle(){
     return this->cuSPARSEHandle;
+  }
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  void create_rocSPARSE_Handle() {
+    this->destroy_rocSPARSE_Handle();
+    this->rocSPARSEHandle = new rocSPARSEHandleType();
+  }
+  void destroy_rocSPARSE_Handle() {
+    if(this->rocSPARSEHandle != NULL) {
+      delete this->rocSPARSEHandle;
+      this->rocSPARSEHandle = NULL;
+    }
+  }
+
+  SPGEMMrocSPARSEHandleType *get_rocSPARSEHandle() {
+    return this->rocSPARSEHandle;
   }
 #endif
   void choose_default_algorithm(){
@@ -543,9 +607,9 @@ private:
 
 #if defined( KOKKOS_ENABLE_HIP )
     if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace >::value){
-      this->algorithm_type = SPGEMM_KK;
+      this->algorithm_type = SPGEMM_ROCSPARSE;
 #ifdef VERBOSE
-      std::cout << "HIP Execution Space, Default Algorithm: SPGEMM_KK" << std::endl;
+      std::cout << "HIP Execution Space, Default Algorithm: SPGEMM_ROCSPARSE" << std::endl;
 #endif
     }
 #endif

@@ -116,6 +116,21 @@ struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::C
 #endif  // CUDA/CUSPARSE >= 9.0?
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
+// cuSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+
+//These versions of cuSPARSE require the ordinal and offset types to be the same.
+//For KokkosKernels, this means int/int only.
+
+#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, ORDINAL, OFFSET, XL, YL, MEMSPACE) \
+template <> \
+struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, \
+			   const SCALAR*,       XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, \
+			   SCALAR*,             YL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> > { \
+  enum : bool { value = true }; \
+};
+#endif // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE) \
 template <> \

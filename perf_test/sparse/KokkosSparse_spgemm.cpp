@@ -53,7 +53,7 @@ void print_options(){
   std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
 
   std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' | '--hip [hipDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl;
-  std::cerr << "\t[Optional] '--algorithm [DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE|MKL|CUSPARSE|CUSP|VIENNA|MKL2]' --> to choose algorithm. KKMEM is outdated, use KKSPGEMM instead." << std::endl;
+  std::cerr << "\t[Optional] '--algorithm [DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE|MKL|CUSPARSE|ROCSPARSE|CUSP|VIENNA|MKL2]' --> to choose algorithm. KKMEM is outdated, use KKSPGEMM instead." << std::endl;
   std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB" << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> to write output C=AxB"  << std::endl;
   std::cerr << "\t[Optional] --DENSEACCMAX: on CPUs default algorithm may choose to use dense accumulators. This parameter defaults to 250k, which is max k value to choose dense accumulators. This can be increased with more memory bandwidth." << std::endl;
@@ -251,6 +251,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       else if ( 0 == strcasecmp( algoStr, "CUSPARSE" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_CUSPARSE;
+      }
+      else if ( 0 == strcasecmp( algoStr, "ROCSPARSE" ) ) {
+          params.algorithm = KokkosSparse::SPGEMM_ROCSPARSE;
       }
       else if ( 0 == strcasecmp( algoStr, "CUSP" ) ) {
     	  params.algorithm = KokkosSparse::SPGEMM_CUSP;

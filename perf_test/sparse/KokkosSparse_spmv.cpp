@@ -57,6 +57,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
+#include "KokkosKernels_spmv_data.hpp"
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
@@ -74,7 +75,11 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include <rocSPARSE_SPMV.hpp>
+#endif
+
+enum {KOKKOS, MKL, CUSPARSE, ROCSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
 
 typedef default_scalar Scalar;
@@ -83,9 +88,9 @@ typedef default_size_type Offset;
 typedef default_layout Layout;
 
 template<typename AType, typename XType, typename YType>
-void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, int vector_length, int test, int schedule) {
+void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, int vector_length, spmv_additional_data* data, int schedule) {
 
-        switch(test) {
+        switch(data->test) {
 
         case KOKKOS:
                 if(schedule == AUTO)
@@ -126,6 +131,11 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, 
                 cusparse_matvec(A, x, y);
                 break;
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+	case ROCSPARSE:
+	  rocsparse_matvec(A, x, y, data);
+	        break;
+#endif
         case KK_KERNELS:
                 KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
                 break;
@@ -143,9 +153,11 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, 
 }
 
 int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const char* filename, Ordinal rows_per_thread, int team_size, int vector_length, int schedule, int loop) {
-  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset> matrix_type;
-  typedef typename Kokkos::View<Scalar*, Layout> mv_type;
-  typedef typename mv_type::HostMirror h_mv_type;
+  using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset>;
+  using mv_type     = typename Kokkos::View<Scalar*, Layout>;
+  using h_mv_type   = typename mv_type::HostMirror;
+
+  spmv_additional_data data(test);
 
   srand(17312837);
   matrix_type A;
@@ -201,7 +213,7 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   mv_type y1("Y1",numRows);
 
   //int nnz_per_row = A.nnz()/A.numRows();
-  matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
+  matvec(A,x1,y1,rows_per_thread,team_size,vector_length,&data,schedule);
 
   // Error Check
   Kokkos::deep_copy(h_y,y1);
@@ -226,7 +238,7 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   double ave_time = 0.0;
   for(int i=0;i<loop;i++) {
     Kokkos::Timer timer;
-    matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
+    matvec(A,x1,y1,rows_per_thread,team_size,vector_length,&data,schedule);
     Kokkos::fence();
     double time = timer.seconds();
     ave_time += time;
@@ -263,7 +275,7 @@ void print_help() {
   printf("                      omp-dynamic,omp-static (Standard OpenMP)\n");
   printf("                      omp-insp               (OpenMP Structure Inspection)\n");
 #endif
-  printf("                      mkl,cusparse           (Vendor Libraries)\n\n");
+  printf("                      mkl,cusparse,rocsparse (Vendor Libraries)\n\n");
   printf("  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ default ]).\n");
   printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
   printf("  -fb [file]      : Read in binary Matrix files 'file'.\n");
@@ -312,6 +324,8 @@ int main(int argc, char **argv)
       test = KOKKOS;
     if((strcmp(argv[i],"cusparse")==0))
       test = CUSPARSE;
+    if((strcmp(argv[i],"rocsparse")==0))
+      test = ROCSPARSE;
     if((strcmp(argv[i],"kk-kernels")==0))
       test = KK_KERNELS;
     if((strcmp(argv[i],"kk-kernels-insp")==0))

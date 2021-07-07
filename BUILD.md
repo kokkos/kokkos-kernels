@@ -125,6 +125,12 @@ endif()
 * CUSPARSE_LIBRARY_DIRS: STRING
   * Optional override for the library directories that comprise TPL CUSPARSE.
   * Default: None. Default common library locations will be searched
+* ROCSPARSE_LIBRARIES: STRING
+  * Optional override for the libraries that comprise TPL ROCSPARSE.
+  * Default: None. Default common library names will be searched
+* ROCSPARSE_LIBRARY_DIRS: STRING
+  * Optional override for the library directories that comprise TPL ROCSPARSE.
+  * Default: None. Default common library locations will be searched
 * ARMPL_LIBRARIES: STRING
   * Optional override for the libraries that comprise TPL ARMPL.
   * Default: None. Default common library names will be searched
@@ -140,6 +146,9 @@ endif()
 * KokkosKernels_CUSPARSE_ROOT: PATH
   * Location of CUSPARSE install root.
   * Default: None or the value of the environment variable CUSPARSE_ROOT if set
+* KokkosKernels_ROCSPARSE_ROOT: PATH
+  * Location of ROCSPARSE install root.
+  * Default: None or the value of the environment variable ROCSPARSE_ROOT if set
 * KokkosKernels_ENABLE_EXAMPLES: BOOL
   * Whether to build examples.
   * Default: OFF
@@ -158,6 +167,9 @@ endif()
 * KokkosKernels_ENABLE_TPL_CUSPARSE: BOOL
   * Whether to enable CUSPARSE
   * Default: ON if CUDA-enabled Kokkos, otherwise OFF
+* KokkosKernels_ENABLE_TPL_ROCSPARSE: BOOL
+  * Whether to enable ROCSPARSE
+  * Default: ON if HIP-enabled Kokkos, otherwise OFF
 * KokkosKernels_ENABLE_TPL_LAPACK: BOOL
   * Whether to enable LAPACK
   * Default: ON if BLAS is enabled, otherwise OFF

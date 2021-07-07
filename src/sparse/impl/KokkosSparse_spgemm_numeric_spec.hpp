@@ -53,6 +53,7 @@
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //#include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
+#include "KokkosSparse_spgemm_rocSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"

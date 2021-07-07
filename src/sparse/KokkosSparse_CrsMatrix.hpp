@@ -424,7 +424,7 @@ public:
   typedef CrsMatrix<const_value_type,ordinal_type,device_type,memory_traits,size_type> const_type;
 
 #ifdef KOKKOS_USE_CUSPARSE
-  cusparseHandle_t cusparse_handle;
+  cusparseHandle_t   cusparse_handle;
   cusparseMatDescr_t cusparse_descr;
 #endif // KOKKOS_USE_CUSPARSE
 
@@ -471,7 +471,7 @@ public:
     dev_config (B.dev_config),
 #ifdef KOKKOS_USE_CUSPARSE
     cusparse_handle (B.cusparse_handle),
-    cusparse_descr (B.cusparse_descr),
+    cusparse_descr  (B.cusparse_descr),
 #endif // KOKKOS_USE_CUSPARSE
     numCols_ (B.numCols ())
   {
