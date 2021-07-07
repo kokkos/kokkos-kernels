@@ -491,9 +491,101 @@ class BsrMatrix {
   /// The \c pad argument is currently not used.
   BsrMatrix(const std::string& label, OrdinalType nrows, OrdinalType ncols,
             size_type annz, ScalarType* val, OrdinalType* rows,
-            OrdinalType* cols, OrdinalType blockdim, bool pad = false) {
-    (void) pad;
-    ctor_impl (label, nrows, ncols, annz, val, rows, cols, blockdim);
+            OrdinalType* cols, OrdinalType blockdim, bool pad = false)
+  {
+    blockDim_ = blockdim;
+
+    if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
+      assert((ncols % blockDim_ == 0) &&
+          "BsrMatrix: input CrsMatrix columns is not a multiple of block size");
+      assert((nrows % blockDim_ == 0) &&
+      "BsrMatrix: input CrsMatrix rows is not a multiple of block size");
+    }
+
+    numCols_  = ncols / blockDim_;
+    ordinal_type tmp_num_rows = nrows / blockDim_;
+
+    //
+    // Wrap the raw pointers in unmanaged host Views
+    //
+    typename values_type::HostMirror unman_val(val, annz);
+    typename row_map_type::HostMirror unman_rows(rows, annz);
+    typename index_type::HostMirror unman_cols(cols, annz);
+
+    row_map_type tmp_row_map("tmp_row_map", tmp_num_rows + 1);
+    auto row_map_host = Kokkos::create_mirror_view(tmp_row_map);
+    Kokkos::deep_copy(row_map_host, 0);
+
+    if (annz > 0) {
+      ordinal_type iblock = 0;
+      std::set< ordinal_type > set_blocks;
+      for (ordinal_type ii = 0; ii <= annz; ++ii) {
+        if ((ii == annz) || ((unman_rows(ii) / blockDim_) > iblock)) {
+          // Flush the stored entries
+          row_map_host(iblock + 1) = set_blocks.size();
+          if (ii == annz)
+            break;
+          set_blocks.clear();
+          iblock = unman_rows(ii) / blockDim_;
+        }
+        ordinal_type tmp_jblock = unman_cols(ii) / blockDim_;
+        set_blocks.insert(tmp_jblock);
+      }
+    }
+
+    for (ordinal_type ii = 0; ii < annz; ++ii)
+      row_map_host(ii + 1) += row_map_host(ii);
+
+    Kokkos::deep_copy(tmp_row_map, row_map_host);
+
+    // Create temporary Views for row_map and entries
+    // because the StaticCrsGraph ctor requires View inputs
+    index_type tmp_entries("tmp_entries", row_map_host(tmp_num_rows));
+    auto tmp_entries_host = Kokkos::create_mirror_view(tmp_entries);
+
+    Kokkos::resize(values, row_map_host(tmp_num_rows) * blockDim_ * blockDim_);
+    auto values_host = Kokkos::create_mirror_view(values);
+    Kokkos::deep_copy(values_host, 0);
+
+    if (annz > 0) {
+      //--- Fill tmp_entries
+      ordinal_type iblock = 0;
+      std::set< ordinal_type > set_blocks;
+      for (ordinal_type ii = 0; ii <= annz; ++ii) {
+        if ((ii == annz) || ((unman_rows(ii) / blockDim_) > iblock)) {
+          // Flush the stored entries
+          ordinal_type ipos = row_map_host(iblock);
+          for (auto jblock : set_blocks)
+            tmp_entries_host(ipos++) = jblock;
+          if (ii == annz)
+            break;
+          set_blocks.clear();
+          iblock = unman_rows(ii) / blockDim_;
+        }
+        ordinal_type tmp_jblock = unman_cols(ii) / blockDim_;
+        set_blocks.insert(tmp_jblock);
+      }
+      //--- Fill numerical values
+      for (ordinal_type ii = 0; ii < annz; ++ii) {
+        ordinal_type iblock = rows(ii) / blockDim_;
+        ordinal_type ilocal = rows(ii) % blockDim_;
+        ordinal_type jblock = cols(ii) / blockDim_;
+        ordinal_type jlocal = cols(ii) % blockDim_;
+        for (auto jj = row_map_host(jblock); jj < row_map_host(jblock + 1); ++jj) {
+          if (tmp_entries_host(jj) == jblock) {
+            const auto shift = jj * blockDim_ * blockDim_ + ilocal * blockDim_ + jlocal;
+            values_host(shift) = unman_val(ii);
+            break;
+          }
+        }
+      }
+    }
+
+    Kokkos::deep_copy(tmp_entries, tmp_entries_host);
+    Kokkos::deep_copy(values, values_host);
+
+    // Initialize graph using the temp entries and row_map Views
+    graph = staticcrsgraph_type(tmp_entries, tmp_row_map);
   }
 
   /// \brief Constructor that accepts a row map, column indices, and
@@ -823,35 +915,6 @@ class BsrMatrix {
 
  protected:
 
-  // Input assumptions:
-  //   rows is  cols  annz is the
-  /// Declaration for ctor_impl - this member function is not inlined
-
-  /// \brief Constructor implementation
-  ///
-  /// \param label
-  /// \param nrows  total number of blocks in the row-direction
-  /// \param ncols  total number of blocks in the column-direction
-  /// \param annz  total number of non-zeros in the CrsMatrix (equal to
-  ///   blockDim*blockDim*numBlocks)
-  /// \param val
-  /// \param rows[in] pointer rep for the row_map member View of the BsrMatrix graph
-  ///  (i.e. cum sum of number of blocks per block-row)
-  /// \param cols[in] pointer rep for the entries member View of the BsrMatrix graph
-  /// (colidx for block-row blocks)
-  /// \param blockDimIn[in] Blocksize
-  ///
-  /// \note This function is not inlined.
-  void
-  ctor_impl (const std::string &label,
-             OrdinalType nrows,
-             OrdinalType ncols,
-             size_type annz,
-             ScalarType* val,
-             OrdinalType* rows,
-             OrdinalType* cols,
-             OrdinalType blockDimIn);
-
   enum class valueOperation { ADD, ASSIGN };
 
   /// \brief Given an array of blocks, operate on the values of corresponding
@@ -939,36 +1002,6 @@ class BsrMatrix {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-template <typename ScalarType, typename OrdinalType, class Device,
-          class MemoryTraits, typename SizeType>
-void BsrMatrix<ScalarType, OrdinalType, Device, MemoryTraits,
-               SizeType>::ctor_impl(const std::string& /*label*/,
-                                    OrdinalType nrows,
-                                    OrdinalType ncols,
-                                    size_type annz, ScalarType* val,
-                                    OrdinalType* rows, OrdinalType* cols,
-                                    OrdinalType blockDimIn) {
-  numCols_  = ncols;
-  blockDim_ = blockDimIn;
-
-  // Wrap the raw pointers in unmanaged host Views
-  typename values_type::HostMirror unman_val(val, annz);
-  typename row_map_type::HostMirror unman_rows(rows, nrows + 1);
-  typename index_type::HostMirror unman_cols(cols, ncols);
-
-  // Create temporary Views for row_map and entries because the StaticCrsGraph
-  // ctor requires View inputs
-  values_type tmp_row_map("tmp_row_map", nrows + 1);
-  values_type tmp_entries("tmp_entries", ncols);
-
-  Kokkos::deep_copy(val, unman_val);
-  Kokkos::deep_copy(tmp_row_map, unman_rows);
-  Kokkos::deep_copy(tmp_entries, unman_cols);
-
-  // Initialize graph using the temp entries and row_map Views
-  graph = staticcrsgraph_type(tmp_entries, tmp_row_map);
-}
 
 }  // namespace Experimental
 }  // namespace KokkosSparse
