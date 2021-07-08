@@ -549,18 +549,18 @@ class BsrMatrix {
 
     if (annz > 0) {
       //--- Fill tmp_entries
-      ordinal_type iblock = 0;
+      ordinal_type cur_block = 0;
       std::set< ordinal_type > set_blocks;
       for (ordinal_type ii = 0; ii <= annz; ++ii) {
-        if ((ii == annz) || ((unman_rows(ii) / blockDim_) > iblock)) {
+        if ((ii == annz) || ((unman_rows(ii) / blockDim_) > cur_block)) {
           // Flush the stored entries
-          ordinal_type ipos = row_map_host(iblock);
+          ordinal_type ipos = row_map_host(cur_block);
           for (auto jblock : set_blocks)
             tmp_entries_host(ipos++) = jblock;
           if (ii == annz)
             break;
           set_blocks.clear();
-          iblock = unman_rows(ii) / blockDim_;
+          cur_block = unman_rows(ii) / blockDim_;
         }
         ordinal_type tmp_jblock = unman_cols(ii) / blockDim_;
         set_blocks.insert(tmp_jblock);
