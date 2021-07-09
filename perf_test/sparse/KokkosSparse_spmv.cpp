@@ -57,6 +57,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
+#include <spmv/KokkosKernels_spmv_data.hpp>
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
@@ -74,7 +75,11 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-enum {KOKKOS, MKL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#include <spmv/ArmPL_SPMV.hpp>
+#endif
+
+enum {KOKKOS, MKL, ARMPL, CUSPARSE, KK_KERNELS, KK_KERNELS_INSP, KK_INSP, OMP_STATIC, OMP_DYNAMIC, OMP_INSP};
 enum {AUTO, DYNAMIC, STATIC};
 
 typedef default_scalar Scalar;
@@ -83,9 +88,9 @@ typedef default_size_type Offset;
 typedef default_layout Layout;
 
 template<typename AType, typename XType, typename YType>
-void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, int vector_length, int test, int schedule) {
+void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, int vector_length, spmv_additional_data* data, int schedule) {
 
-        switch(test) {
+        switch(data->test) {
 
         case KOKKOS:
                 if(schedule == AUTO)
@@ -126,6 +131,11 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, 
                 cusparse_matvec(A, x, y);
                 break;
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+	case ARMPL:
+	  armpl_matvec(A, x, y, data);
+	  break;
+#endif
         case KK_KERNELS:
                 KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
                 break;
@@ -160,6 +170,21 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   numRows = A.numRows();
   numCols = A.numCols();
   Offset nnz = A.nnz();
+
+  spmv_additional_data data(test);
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  if(test == ARMPL) {
+    if(std::is_same<Scalar, double>::value || std::is_same<Scalar, float>::value) {
+      data.set_armpl_spmat(numRows, numCols,
+			   A.graph.row_map.data(), A.graph.entries.data(),
+			   A.values.data());
+    } else {
+      throw std::runtime_error("Can't use ArmPL mat-vec for scalar types other than double and float.");
+    }
+  }
+#endif
+  
   mv_type x("X", numCols);
   mv_type y("Y", numRows);
   h_mv_type h_x = Kokkos::create_mirror_view(x);
@@ -201,7 +226,7 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   mv_type y1("Y1",numRows);
 
   //int nnz_per_row = A.nnz()/A.numRows();
-  matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
+  matvec(A,x1,y1,rows_per_thread,team_size,vector_length,&data,schedule);
 
   // Error Check
   Kokkos::deep_copy(h_y,y1);
@@ -226,7 +251,7 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   double ave_time = 0.0;
   for(int i=0;i<loop;i++) {
     Kokkos::Timer timer;
-    matvec(A,x1,y1,rows_per_thread,team_size,vector_length,test,schedule);
+    matvec(A,x1,y1,rows_per_thread,team_size,vector_length,&data,schedule);
     Kokkos::fence();
     double time = timer.seconds();
     ave_time += time;
@@ -263,7 +288,7 @@ void print_help() {
   printf("                      omp-dynamic,omp-static (Standard OpenMP)\n");
   printf("                      omp-insp               (OpenMP Structure Inspection)\n");
 #endif
-  printf("                      mkl,cusparse           (Vendor Libraries)\n\n");
+  printf("                      mkl, armpl,cusparse    (Vendor Libraries)\n\n");
   printf("  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ default ]).\n");
   printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
   printf("  -fb [file]      : Read in binary Matrix files 'file'.\n");
@@ -308,6 +333,8 @@ int main(int argc, char **argv)
     }
     if((strcmp(argv[i],"mkl")==0))
       test = MKL;
+    if((strcmp(argv[i],"armpl")==0))
+      test = ARMPL;
     if((strcmp(argv[i],"kk")==0))
       test = KOKKOS;
     if((strcmp(argv[i],"cusparse")==0))
