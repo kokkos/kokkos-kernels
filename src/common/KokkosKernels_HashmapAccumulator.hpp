@@ -46,7 +46,7 @@
 #include <Kokkos_Atomic.hpp>
 #include <atomic>
 
-//#define HASHMAPACCUMULATOR_ASSERT_ENABLED
+#define SPECIAL_HASH (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE80) || defined(KOKKOS_ARCH_AMPERE86))
 
 namespace KokkosKernels {
 
@@ -426,7 +426,81 @@ struct HashmapAccumulator {
 
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
-          values[i] = values[i] + value;
+	      values[i] = values[i] + value;
+          return __insert_success;
+        }
+      }
+    } else {
+      return __insert_success;
+    }
+
+    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+
+    if (my_write_index >= __max_value_size) {
+      return __insert_full;
+    } else {
+
+      keys[my_write_index] = key;
+      values[my_write_index] = value;
+
+      #if SPECIAL_HASH
+      //this is an issue on VOLTA because warps do not go in SIMD fashion anymore.
+      //while some thread might insert my_write_index into linked list, another
+      //thread in the warp might be reading keys in above loop.
+      //before inserting the new value in liked list -- which is done with atomic exchange below,
+      //we make sure that the linked is is complete my assigning the hash_next to current head.
+      //the head might be different when we do the atomic exchange.
+      //this would cause temporarily skipping a key in the linkedlist until
+      //hash_nexts is updated second time as below.
+      //but this is okay for spgemm,
+      //because no two keys will be inserted into hashmap at the same time, as rows have unique columns.
+      
+      // Neither the compiler nor the execution unit can re-order the line
+      // directly below with the next line performing the atomic_exchange as the
+      // atomic exchange writes to hash_begins[hash] and this line reads from
+      // hash_begins[hash].
+      // This line is needed such that threads of execution can still access the
+      // old linked list, after hash_begins+hash has been atomically overwritten
+      // with my_write_index but before hash_nexts[my_write_index] is
+      // overwritten with hashbeginning. If this line was not here, threads may
+      // not be able to access the dangling linked list since
+      // hash_nexts[my_write_index] would still be -1.
+      hash_nexts[my_write_index] = hash_begins[hash];
+      #endif
+
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      if (hashbeginning == -1) {
+        used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
+      }
+      hash_nexts[my_write_index] = hashbeginning;
+      return __insert_success;
+    }
+  }
+  
+  //just like vector_atomic_insert_into_hash_mergeAdd_TrackHashes
+  //except uses atomic addition on updating the value
+  //necessary if duplicate key insertions happen simultaneously
+  KOKKOS_INLINE_FUNCTION
+  int vector_atomic_insert_into_hash_mergeAtomicAdd_TrackHashes (
+      const key_type key,
+      const value_type value,
+      volatile size_type *used_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes
+      )
+  {
+    size_type hash, i, my_write_index, hashbeginning;
+
+    if (key == -1)
+      return __insert_success;
+
+    hash = __compute_hash(key, __hashOpRHS);
+    if (hash != -1) {
+      i = hash_begins[hash];
+
+      for (; i != -1; i = hash_nexts[i]) {
+        if (keys[i] == key) {
+	  Kokkos::atomic_add(values + i, value);
           return __insert_success;
         }
       }
@@ -478,6 +552,52 @@ struct HashmapAccumulator {
       hash_nexts[my_write_index] = hashbeginning;
       return __insert_success;
     }
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  int vector_atomic_insert_into_hash_mergeAdd_TrackHashes_no_list (
+      const key_type key,
+      const value_type value,
+      size_type *used_hash_size,
+      size_type *used_hashes
+      )
+  {
+    size_type hash;
+
+    if (key == -1)
+      return __insert_success;
+
+    hash = __compute_hash(key, __hashOpRHS);
+    if (hash != -1) {
+
+      //loop until an empty hash is found and the key insertion succeeds
+      //if our capacity is at least some constant multiple of the current used hashes
+      //then the expected number of iterations is constant
+      int depth = 0;
+      //add key to hash to ensure no two keys follow the same paths over hashes
+      //add depth to prevent cycles
+      for (;; hash = __compute_hash(hash + key + depth++, __hashOpRHS)) {
+        if (keys[hash] == key) {
+          Kokkos::atomic_add(values + hash, value);
+          return __insert_success;
+        } else if (keys[hash] == -1) {
+            if(Kokkos::atomic_compare_exchange_strong<key_type>(keys + hash, -1, key)){
+    		//should only be here if we used a new hash
+    		used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
+                Kokkos::atomic_add(values + hash, value);
+    		return __insert_success;
+	    }
+            // we don't care if we failed if some other thread succeeded with the same key as ours
+	    if(keys[hash] == key){
+                Kokkos::atomic_add(values + hash, value);
+    		return __insert_success;
+            }
+        }
+      }
+    } else {
+      return __insert_success;
+    }
+
   }
 
   // NOTE: this is an exact copy of vector_atmoic_insert_into_hash_mergeAdd from
