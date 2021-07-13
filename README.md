@@ -95,19 +95,24 @@ More details can be found in the [build instructions](BUILD.md) or [developer in
 
 
 ### Spack
-
 An alternative to manually building with the CMake is to use the Spack package manager.
-To do so, download the `kokkos-spack` git repo and add to the package list:
+Make sure you have downloaded [Spack](https://github.com/spack/spack).
+The easiest way to configure the Spack environment is:
+````bash
+> source spack/share/spack/setup-env.sh
 ````
-spack repo add $path-to-kokkos-spack
+with other scripts available for other shells.
+You can display information about how to install packages with:
+````bash
+> spack info kokkos
 ````
 A basic installation would be done as:
-````
-spack install kokkos-kernels
+````bash
+> spack install kokkos-kernels
 ````
 Spack allows options and and compilers to be tuned in the install command.
-````
-spack install kokkos-kernels@3.0 +double %gcc@7.3.0 +openmp
+````bash
+> spack install kokkos-kernels@3.0 +double %gcc@7.3.0 +openmp
 ````
 This example illustrates the three most common parameters to Spack:
 * Variants: specified with, e.g. `+openmp`, this activates (or deactivates with, e.g. `~openmp`) certain options.
@@ -115,27 +120,27 @@ This example illustrates the three most common parameters to Spack:
 * Compiler: a default compiler will be chosen if not specified, but an exact compiler version can be given with the `%`option.
 
 For a complete list of Kokkos Kernels options, run:
-````
-spack info kokkos-kernels
+````bash
+> spack info kokkos-kernels
 ````
 
 #### Tuning Kokkos Options
 As discussed above in the CMake section, Kokkos Kernels inherits much of its configuration from the installed Kokkos.
 Spack gives a mechanism for directly specifying Kokkos dependency options:
-````
-spack install kokkos-kernels ^kokkos@3.0+cuda+cuda_uvm
+````bash
+> spack install kokkos-kernels ^kokkos@3.0+cuda+cuda_uvm
 ````
 The carat `^` sepcifies an exact dependency configuration, which in this case activates CUDA and CUDA_UVM.
 For a complete list of tunable Kokkos options, run
-````
-spack info kokkos
+````bash
+> spack info kokkos
 ````
 
 #### Settuping a development environment with Spack
 Spack is generally most useful for installng packages to use.
 If you want to install all *dependencies* of Kokkos Kernels first so that you can actively develop a given Kokkos Kernels source this can still be done. Go to the Kokkos Kernels source code folder and run:
-````
-spack diy -u cmake kokkos-kernels@{version} ...
+````bash
+> spack diy -u cmake kokkos-kernels@{version} ...
 ````
 specifying the exact version you want to develop and giving any spec options in `...`.
 This creates a folder `spack-build` where you can `make`.
