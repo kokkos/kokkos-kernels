@@ -111,17 +111,17 @@ class BatchedSerialGemm;
 ///                        rightmost dimension
 /// \tparam ScalarType     Specifies the scalar type of alpha and beta
 /// \tparam AViewType      Input matrix, as either a 3-rank Kokkos::View or a
-/// 4-rank Kokkos::View
+///                        4-rank Kokkos::View
 ///                        for SIMD operations.
 /// \tparam BViewType      Input matrix, as either a 3-rank Kokkos::View or a
-/// 4-rank Kokkos::View
+///                        4-rank Kokkos::View
 ///                        for SIMD operations.
 /// \tparam CViewType      Input(RHS)/Output(LHS) matrix, as either a 3-rank
-/// Kokkos::View or a ///                        4-rank Kokkos::View for SIMD
-/// operations.
+///                        Kokkos::View or a 4-rank Kokkos::View for SIMD
+///                        operations.
 ///
 /// \param handle [in]     A handle which specifies how to invoke the batched
-/// gemm.
+///                        gemm.
 ///                        See struct BatchedGemmHandle for details.
 /// \param alpha [in]      Input coefficient used for multiplication with A
 /// \param A [in]          Input matrix, as a 3-rank Kokkos::View
