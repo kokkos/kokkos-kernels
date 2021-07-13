@@ -56,8 +56,9 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
   // Check for expected runtime errors due to non-optimal BatchedGemm invocation
   try {
-    ret = Experimental::BatchedGemm<transA, transB, batchLayout>::invoke(
-        alpha, a_actual, b_actual, beta, c_actual);  // Compute c_actual
+    ret = BatchedGemm<transA, transB, batchLayout>(
+        nullptr, alpha, a_actual, b_actual, beta,
+        c_actual);  // Compute c_actual
   } catch (const std::runtime_error& error) {
     if (!((std::is_same<view_layout, Kokkos::LayoutLeft>::value &&
            !std::is_same<batchLayout, BatchLayout::Right>::value) ||
