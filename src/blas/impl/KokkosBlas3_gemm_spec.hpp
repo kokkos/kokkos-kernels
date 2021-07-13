@@ -50,6 +50,7 @@
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include<KokkosBlas3_gemm_impl.hpp>
+#include<KokkosBlas3_gemm_dotbased_impl.hpp>
 #endif
 
 namespace KokkosBlas {
@@ -135,73 +136,98 @@ struct GEMM {
   typedef typename BViewType::non_const_value_type ScalarB;
   typedef typename CViewType::non_const_value_type ScalarC;
 
-  // Define Blocking sizes (this will be used for scratch spaces)
-  static constexpr int blockA0 = 24;
-  static constexpr int blockB1 = 64;
-  static constexpr int blockA1 = (sizeof(ScalarA)*blockA0*16 + sizeof(ScalarB)*16*blockB1 + sizeof(ScalarC)*blockA0*blockB1 < 24000) ? 16 :
-                                 (sizeof(ScalarA)*blockA0*8 + sizeof(ScalarB)*8*blockB1 + sizeof(ScalarC)*blockA0*blockB1 < 24000) ? 8 :
-                                 (sizeof(ScalarA)*blockA0*4 + sizeof(ScalarB)*4*blockB1 + sizeof(ScalarC)*blockA0*blockB1 < 24000) ? 4 : 16 ;
-  static constexpr int vector_length = blockB1/4;
 
-  // Compute scratch space size
-  typedef KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,0> gemm_dummy_type;
-  const int scratch_memory_size =
-        gemm_dummy_type::ViewTypeAScratch::required_allocation_size() +
-        gemm_dummy_type::ViewTypeBScratch::required_allocation_size() +
-        gemm_dummy_type::ViewTypeCScratch::required_allocation_size();
-  const int scratch_level = scratch_memory_size < 24000 ? 0 : 1;
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+  typedef typename CViewType::execution_space ExecSpace;
 
-  // Figure out Team Sizes
-  int team_size = 1;
-  #if defined(KOKKOS_ENABLE_CUDA)
-  if(std::is_same<typename CViewType::execution_space,Kokkos::Cuda>::value)
-    team_size = blockA0;
-  #endif
-  #if defined(KOKKOS_ENABLE_HIP)
-  if(std::is_same<typename CViewType::execution_space,Kokkos::Experimental::HIP>::value)
-    team_size = blockA0;
-  #endif
-  #if defined(KOKKOS_ENABLE_ROCM)
-  if(std::is_same<typename CViewType::execution_space,Kokkos::ROCm>::value)
-    team_size = blockA0;
-  #endif
+  // Figure out if we used use DotBased implementation
+  const int M = static_cast<int> (C.extent(0));
+  const int N = static_cast<int> (C.extent(1));
 
-  // Call the correct kernel
-  if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='N' || transB[0]=='n')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,0> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='N' || transB[0]=='n')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,0> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='N' || transB[0]=='n')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,0> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='T' || transB[0]=='t')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,1> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='T' || transB[0]=='t')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,1> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='T' || transB[0]=='t')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,1> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='C' || transB[0]=='c')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,2> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='C' || transB[0]=='c')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,2> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
-  }
-  if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='C' || transB[0]=='c')) {
-    KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,2> gemm(alpha,A,B,beta,C);
-    gemm.run(team_size,vector_length,scratch_level);
+  const bool A_is_lr = std::is_same<Kokkos::LayoutRight, typename AViewType::array_layout>::value;
+  const bool A_is_tr = ((transA[0]=='T') || (transA[0]=='t') || (transA[0]=='C') || (transA[0]=='c'));
+  const bool B_is_tr = ((transB[0]=='T') || (transB[0]=='t') || (transB[0]=='C') || (transB[0]=='c'));
+
+  constexpr int numDotsLayoutLeftThreshold = 1600;
+  constexpr int numDotsLayoutRightThreshold = 100;
+  if(    (!A_is_lr &&  A_is_tr && !B_is_tr && M*N < numDotsLayoutLeftThreshold)
+      || ( A_is_lr && !A_is_tr &&  B_is_tr && M*N < numDotsLayoutRightThreshold)) {
+    // call dot-based GEMM
+    bool A_is_conj = ((transA[0]=='C') || (transA[0]=='c'));
+    DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> dotBasedGemm(alpha, A, B, beta, C);
+    dotBasedGemm.run(A_is_conj ? true : false);
+  } else
+#endif
+  {
+
+    // Define Blocking sizes (this will be used for scratch spaces)
+    static constexpr int blockA0 = 24;
+    static constexpr int blockB1 = 64;
+    static constexpr int blockA1 = (sizeof(ScalarA)*blockA0*16 + sizeof(ScalarB)*16*blockB1 + sizeof(ScalarC)*blockA0*blockB1 < 24000) ? 16 :
+                                   (sizeof(ScalarA)*blockA0*8 + sizeof(ScalarB)*8*blockB1 + sizeof(ScalarC)*blockA0*blockB1 < 24000) ? 8 :
+                                   (sizeof(ScalarA)*blockA0*4 + sizeof(ScalarB)*4*blockB1 + sizeof(ScalarC)*blockA0*blockB1 < 24000) ? 4 : 16 ;
+    static constexpr int vector_length = blockB1/4;
+
+    // Compute scratch space size
+    typedef KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,0> gemm_dummy_type;
+    const int scratch_memory_size =
+          gemm_dummy_type::ViewTypeAScratch::required_allocation_size() +
+          gemm_dummy_type::ViewTypeBScratch::required_allocation_size() +
+          gemm_dummy_type::ViewTypeCScratch::required_allocation_size();
+    const int scratch_level = scratch_memory_size < 24000 ? 0 : 1;
+
+    // Figure out Team Sizes
+    int team_size = 1;
+    #if defined(KOKKOS_ENABLE_CUDA)
+    if(std::is_same<typename CViewType::execution_space,Kokkos::Cuda>::value)
+      team_size = blockA0;
+    #endif
+    #if defined(KOKKOS_ENABLE_HIP)
+    if(std::is_same<typename CViewType::execution_space,Kokkos::Experimental::HIP>::value)
+      team_size = blockA0;
+    #endif
+    #if defined(KOKKOS_ENABLE_ROCM)
+    if(std::is_same<typename CViewType::execution_space,Kokkos::ROCm>::value)
+      team_size = blockA0;
+    #endif
+
+    // Call the correct kernel
+    if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='N' || transB[0]=='n')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,0> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='N' || transB[0]=='n')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,0> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='N' || transB[0]=='n')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,0> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='T' || transB[0]=='t')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,1> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='T' || transB[0]=='t')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,1> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='T' || transB[0]=='t')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,1> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='N' || transA[0]=='n') && (transB[0]=='C' || transB[0]=='c')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,0,2> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='T' || transA[0]=='t') && (transB[0]=='C' || transB[0]=='c')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,1,2> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
+    if((transA[0]=='C' || transA[0]=='c') && (transB[0]=='C' || transB[0]=='c')) {
+      KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,AViewType,BViewType,CViewType,blockA0,blockA1,blockB1,2,2> gemm(alpha,A,B,beta,C);
+      gemm.run(team_size,vector_length,scratch_level);
+    }
   }
   Kokkos::Profiling::popRegion();
 }
