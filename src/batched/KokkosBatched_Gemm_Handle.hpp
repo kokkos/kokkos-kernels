@@ -51,24 +51,6 @@
 
 namespace KokkosBatched {
 
-///                      KK_SERIAL            Invoke SerialFUNC     via
-///                      RangePolicy(BatchSz) KK_TEAM              Invoke
-///                      TeamFUNC       via TeamPolicy(BatchSz) KK_TEAMVECTOR
-///                      Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
-///                      KK_SERIALSIMD        Invoke SerialFUNC     via
-///                      TeamPolicy(BatchSz) KK_TEAMSIMD          Invoke
-///                      TeamFUNC       via TeamPolicy(BatchSz) KK_SERIAL_OPT2
-///                      Invoke SerialFUNC     via
-///                                           RangePolicy(BatchSz*N*M)
-///                      KK_TEAMVECTOR_SHMEM  Invoke TeamVectorFUNC via
-///                      TeamPolicy(BatchSz)
-///                                           Copies A and B to shared memory
-///                                           before GEMM.
-///                      KK_TEAMVECTOR_DBLBUF Invoke TeamVectorFUNC via
-///                                           TeamPolicy(BatchSz*TILES)
-///                                           Uses tiling and double buffering
-///                                           via shared memory and register
-///                                           buffers.
 class GemmAlgos : public KernelAlgos {
  public:
   // Additional TPL Algos
@@ -85,20 +67,19 @@ class GemmAlgos : public KernelAlgos {
   class KK_TEAMVECTOR_DBLBUF : KernelAlgo {};
 };
 
+// clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
 ///
-/// \var kernelAlgoType  Specifies which algorithm to use for invocation
-/// (default, SQUARE).
+/// \var kernelAlgoType  Specifies which algorithm to use for invocation (default, SQUARE).
 ///
-///                    Specifies whether to select optimal invocations based on
-///                    inputs and heuristics:
-///                      SQUARE select invocations based on square matrix
-///                      heuristics where M=N TALL   select invocations based on
-///                      tall   matrix heuristics where M>N WIDE   select
-///                      invocations based on wide   matrix heuristics where M<N
-///                    Note: If the heuristics indicate SIMD views are required
-///                    for optimal performance, notify the user that SIMD views
-///                    are required for optimal performance.
+///                    Specifies whether to select optimal invocations based on inputs and
+///                    heuristics:
+///                      SQUARE select invocations based on square matrix heuristics where M=N
+///                      TALL   select invocations based on tall   matrix heuristics where M>N
+///                      WIDE   select invocations based on wide   matrix heuristics where M<N
+///                    Note: If the heuristics indicate SIMD views are required for optimal
+///                    performance, notify the user that SIMD views are required for
+///                    optimal performance.
 ///
 ///                    Specifies which cmake-enabled tpl algorithm to invoke:
 ///                      ARMPL    Invoke the ArmPL TPL interface
@@ -106,42 +87,34 @@ class GemmAlgos : public KernelAlgos {
 ///                      SYCL     Invoke the SYCL TPL interface
 ///                      CUBLAS   Invoke the CuBLAS TPL interface
 ///                      MAGMA    Invoke the Magma TPL interface
-///                    Note: Requires that input views for A, B, and C reside on
-///                    either host or device depending on the TPL selected.
-///                    Note: If the user selects a TPL, an error will be thrown
-///                    if:
+///                    Note: Requires that input views for A, B, and C reside on either host
+///                    or device depending on the TPL selected.
+///                    Note: If the user selects a TPL, an error will be thrown if:
 ///                       1. The TPL is not enabled via cmake
-///                       2. The input views do not reside on the host/device as
-///                       needed
+///                       2. The input views do not reside on the host/device as needed
 ///
 ///                    Specifies which kokkos-kernels (KK) algorithm to invoke:
-///                      KK_SERIAL            Invoke SerialFUNC     via
-///                      RangePolicy(BatchSz) KK_TEAM              Invoke
-///                      TeamFUNC       via TeamPolicy(BatchSz) KK_TEAMVECTOR
-///                      Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
-///                      KK_SERIALSIMD        Invoke SerialFUNC     via
-///                      TeamPolicy(BatchSz) KK_TEAMSIMD          Invoke
-///                      TeamFUNC       via TeamPolicy(BatchSz) KK_SERIAL_OPT2
-///                      Invoke SerialFUNC     via
+///                      KK_SERIAL            Invoke SerialFUNC     via RangePolicy(BatchSz)
+///                      KK_TEAM              Invoke TeamFUNC       via TeamPolicy(BatchSz)
+///                      KK_TEAMVECTOR        Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
+///                      KK_SERIALSIMD        Invoke SerialFUNC     via TeamPolicy(BatchSz)
+///                      KK_TEAMSIMD          Invoke TeamFUNC       via TeamPolicy(BatchSz)
+///                      KK_SERIAL_OPT2       Invoke SerialFUNC     via
 ///                                           RangePolicy(BatchSz*N*M)
-///                      KK_TEAMVECTOR_SHMEM  Invoke TeamVectorFUNC via
-///                      TeamPolicy(BatchSz)
-///                                           Copies A and B to shared memory
-///                                           before GEMM.
+///                      KK_TEAMVECTOR_SHMEM  Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
+///                                           Copies A and B to shared memory before GEMM.
 ///                      KK_TEAMVECTOR_DBLBUF Invoke TeamVectorFUNC via
 ///                                           TeamPolicy(BatchSz*TILES)
-///                                           Uses tiling and double buffering
-///                                           via shared memory and register
-///                                           buffers.
-/// \var teamSz        Specifies the team size that will affect any KK algorithm
-/// which uses
+///                                           Uses tiling and double buffering via shared
+///                                           memory and register buffers.
+/// \var teamSz        Specifies the team size that will affect any KK algorithm which uses
 ///                    TeamPolicy (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*
-/// \var vecLen        Specifies the vector length that will affect any KK
-/// algorithm which
-///                    uses TeamPolicy and Kokkos::ThreadVectorRange or
-///                    Kokkos::TeamVectorRange (default, Kokkos::AUTO). Note:
-///                    Only applied if useAlgo_type == KK_*
+/// \var vecLen        Specifies the vector length that will affect any KK algorithm which
+///                    uses TeamPolicy and Kokkos::ThreadVectorRange or Kokkos::TeamVectorRange
+///                    (default, Kokkos::AUTO).
+///                    Note: Only applied if useAlgo_type == KK_*
+// clang-format on
 template <class KernelAlgoType = GemmAlgos::SQUARE>
 class BatchedGemmHandle : public BatchedKernelHandle<KernelAlgoType> {
  public:
