@@ -48,11 +48,14 @@
 #ifndef KOKKOSSPARSE_SPMV_HPP_
 #define KOKKOSSPARSE_SPMV_HPP_
 
+#include <type_traits>
+
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosKernels_Controls.hpp"
 #include "KokkosSparse_spmv_spec.hpp"
 #include "KokkosSparse_spmv_struct_spec.hpp"
-#include <type_traits>
+#include "KokkosSparse_spmv_block_impl.hpp"
+#include "KokkosSparse_BlockCrsMatrix.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
@@ -457,6 +460,190 @@ void spmv(KokkosKernels::Experimental::Controls controls,
                               RANK_TWO, RANK_ONE>::type;
   spmv (controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE ());
 }
+
+//////////////////////////////////////////////////////////
+
+/// \brief Public interface to local block CRS sparse matrix-vector multiply.
+///
+/// \tparam ScalarType
+/// \tparam OrdinalType
+/// \tparam Device
+/// \tparam MemoryTraits
+/// \tparam SizeType
+/// \tparam AlphaType
+/// \tparam XVector
+/// \tparam BetaType
+/// \tparam YVector
+/// \param controls
+/// \param mode
+/// \param alpha
+/// \param A
+/// \param X
+/// \param beta
+/// \param Y
+template <typename ScalarType, typename OrdinalType, class Device,
+          class MemoryTraits, typename SizeType, class AlphaType, class XVector,
+          class BetaType, class YVector>
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha,
+          const KokkosSparse::Experimental::BlockCrsMatrix<
+              ScalarType, OrdinalType, Device, MemoryTraits, SizeType>& A,
+          const XVector& X, const BetaType& beta, YVector& Y) {
+  //
+  Impl::verifyArguments(mode, A, X, Y);
+  //
+  //
+  if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || A.numRows() == 0 ||
+      A.numCols() == 0 || A.nnz() == 0) {
+    // This is required to maintain semantics of KokkosKernels native SpMV:
+    // if y contains NaN but beta = 0, the result y should be filled with 0.
+    // For example, this is useful for passing in uninitialized y and beta=0.
+    if (beta == Kokkos::ArithTraits<BetaType>::zero())
+      Kokkos::deep_copy(Y, Kokkos::ArithTraits<BetaType>::zero());
+    else
+      KokkosBlas::scal(Y, beta, Y);
+    return;
+  }
+  //
+  const bool useFallback = true;
+  //
+  if (X.extent(1) == 1) {
+    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
+        (mode[0] == KokkosSparse::Conjugate[0])) {
+      bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
+      return Impl::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
+                                         useFallback, useConjugate);
+    } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
+               (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
+      bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+      return Impl::spMatVec_transpose(controls, alpha, A, X, beta, Y,
+                                      useFallback, useConjugate);
+    }
+  } else {
+    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
+        (mode[0] == KokkosSparse::Conjugate[0])) {
+      // bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
+      std::cerr
+          << "\n !!! Sparse Mat - MultiVec product not implemented !!!\n\n";
+      //      return Impl::spMatMultiVec_no_transpose(controls, alpha, A, X,
+      //      beta, Y, useFallback);
+      exit(-22);
+    } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
+               (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
+      // bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+      std::cerr
+          << "\n !!! Sparse Mat - MultiVec product not implemented !!!\n\n";
+      //      return Impl::spMatMultiVec_transpose(controls, alpha, A, X, beta,
+      //      Y, useFallback);
+      exit(-22);
+    }
+  }
+}
+
+/// \brief Public interface to local BSR sparse matrix-vector multiply.
+///
+/// \tparam ScalarType
+/// \tparam OrdinalType
+/// \tparam Device
+/// \tparam MemoryTraits
+/// \tparam SizeType
+/// \tparam AlphaType
+/// \tparam XVector
+/// \tparam BetaType
+/// \tparam YVector
+/// \param controls
+/// \param mode
+/// \param alpha
+/// \param A
+/// \param X
+/// \param beta
+/// \param Y
+/*
+///
+/// The next lines should be un-commented when the block-by-block storage
+/// is validated.
+///
+template <typename ScalarType, typename OrdinalType, class Device,
+          class MemoryTraits, typename SizeType, class AlphaType, class XVector,
+          class BetaType, class YVector>
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha,
+          const KokkosSparse::Experimental::BsrMatrix<
+              ScalarType, OrdinalType, Device, MemoryTraits, SizeType>& A,
+          const XVector& X, const BetaType& beta, YVector& Y) {
+  //
+  Impl::verifyArguments(mode, A, X, Y);
+  //
+  //
+  if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || A.numRows() == 0 ||
+      A.numCols() == 0 || A.nnz() == 0) {
+    // This is required to maintain semantics of KokkosKernels native SpMV:
+    // if y contains NaN but beta = 0, the result y should be filled with 0.
+    // For example, this is useful for passing in uninitialized y and beta=0.
+    if (beta == Kokkos::ArithTraits<BetaType>::zero())
+      Kokkos::deep_copy(Y, Kokkos::ArithTraits<BetaType>::zero());
+    else
+      KokkosBlas::scal(Y, beta, Y);
+    return;
+  }
+  //
+  // Whether to call KokkosKernel's native implementation, even if a TPL impl is
+  // available
+  bool useFallback = controls.isParameter("algorithm") &&
+                     controls.getParameter("algorithm") == "native";
+  //
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  // cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only
+  // supports the normal (N) mode.
+  if (std::is_same<typename Device::memory_space, Kokkos::CudaSpace>::value ||
+      std::is_same<typename Device::memory_space, Kokkos::CudaUVMSpace>::value) {
+#if (9000 <= CUDA_VERSION)
+    useFallback = useFallback || (mode[0] != NoTranspose[0]);
+#endif
+  }
+#endif
+  //
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  if (std::is_same<typename Device::memory_space, Kokkos::HostSpace>::value) {
+    useFallback = useFallback || (mode[0] == Conjugate[0]);
+  }
+#endif
+  //
+  if (X.extent(1) == 1) {
+    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
+        (mode[0] == KokkosSparse::Conjugate[0])) {
+      bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
+      return Impl::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
+                                         useFallback, useConjugate);
+    } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
+               (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
+      bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+      return Impl::spMatVec_transpose(controls, alpha, A, X, beta, Y,
+                                      useFallback, useConjugate);
+    }
+  } else {
+    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
+        (mode[0] == KokkosSparse::Conjugate[0])) {
+      // bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
+      std::cerr
+          << "\n !!! Sparse Mat - MultiVec product not implemented !!!\n\n";
+      //      return Impl::spMatMultiVec_no_transpose(controls, alpha, A, X,
+      //      beta, Y, useFallback);
+      exit(-11);
+    } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
+               (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
+      // bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+      std::cerr
+          << "\n !!! Sparse Mat - MultiVec product not implemented !!!\n\n";
+      //      return Impl::spMatMultiVec_transpose(controls, alpha, A, X, beta,
+      //      Y, useFallback);
+      exit(-22);
+    }
+  }
+}
+*/
+
+//////////////////////////////////////////////////////////
 
 // Overload for backward compatibility and also just simpler
 // interface for users that are happy with the kernel default settings
