@@ -147,6 +147,7 @@ struct GEMM {
   const bool A_is_tr = ((transA[0]=='T') || (transA[0]=='t') || (transA[0]=='C') || (transA[0]=='c'));
   const bool B_is_tr = ((transB[0]=='T') || (transB[0]=='t') || (transB[0]=='C') || (transB[0]=='c'));
 
+  // NOTE: these thresholds were copied from TPL CUBLAS, and may need to be retuned
   constexpr int numDotsLayoutLeftThreshold = 1600;
   constexpr int numDotsLayoutRightThreshold = 100;
   if(    (!A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutLeftThreshold)

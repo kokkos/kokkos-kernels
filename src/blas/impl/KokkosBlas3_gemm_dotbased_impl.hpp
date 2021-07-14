@@ -94,6 +94,8 @@ struct DotBasedGEMM{
 
   void run(bool conjugateTranspose) {
 
+    // NOTE: these workPerTeam and approxNumTeams were used for TPL CUBLAS,
+    //       and may need to be retuned for other architectures
     constexpr size_C workPerTeam = 4096;                   // Amount of work per team
     const size_C ndots = numCrows * numCcols;              // Number of dot products
     size_C appxNumTeams = (dotSize * ndots) / workPerTeam; // Estimation for appxNumTeams
@@ -169,8 +171,8 @@ struct DotBasedGEMM{
     scalar_C result = CVT::zero();
     const size_A baseInd = chunkSize*localRank; 
     Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
-	if(baseInd + k < dotSize)
-	  update += alpha * A(baseInd+k, rowId) * B(baseInd+k, colId);
+        if(baseInd + k < dotSize)
+          update += alpha * A(baseInd+k, rowId) * B(baseInd+k, colId);
       }, result );
 
     Kokkos::single(Kokkos::PerTeam(teamMember), [&] () { 
@@ -190,8 +192,8 @@ struct DotBasedGEMM{
     scalar_C result = CVT::zero();
     const size_A baseInd = chunkSize*localRank; 
     Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
-	if(baseInd + k < dotSize)
-	  update += alpha * AVT::conj(A(baseInd+k, rowId)) * B(baseInd+k, colId);
+        if(baseInd + k < dotSize)
+          update += alpha * AVT::conj(A(baseInd+k, rowId)) * B(baseInd+k, colId);
       }, result );
 
     Kokkos::single(Kokkos::PerTeam(teamMember), [&] () { 
