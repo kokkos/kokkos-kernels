@@ -150,9 +150,9 @@ struct GEMM {
 
   constexpr int numDotsLayoutLeftThreshold = 1600;
   constexpr int numDotsLayoutRightThreshold = 100;
-  if(    (!A_is_lr &&  A_is_tr && !B_is_tr && M*N < numDotsLayoutLeftThreshold)
-      || ( A_is_lr && !A_is_tr &&  B_is_tr && M*N < numDotsLayoutRightThreshold)) {
-    // call dot-based GEMM
+  if(    (!A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutLeftThreshold)
+      || ( A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutRightThreshold)) {
+    // call dot-based GEMM, only for C := beta * C + alpha * A^T * B
     bool A_is_conj = ((transA[0]=='C') || (transA[0]=='c'));
     DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> dotBasedGemm(alpha, A, B, beta, C);
     dotBasedGemm.run(A_is_conj ? true : false);
