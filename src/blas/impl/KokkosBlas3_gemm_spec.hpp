@@ -137,7 +137,6 @@ struct GEMM {
   typedef typename CViewType::non_const_value_type ScalarC;
 
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   typedef typename CViewType::execution_space ExecSpace;
 
   // Figure out whether to use DotBased implementation
@@ -152,13 +151,13 @@ struct GEMM {
   constexpr int numDotsLayoutRightThreshold = 100;
   if(    (!A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutLeftThreshold)
       || ( A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutRightThreshold)) {
+
     // call dot-based GEMM, only for C := beta * C + alpha * A^T * B
     bool A_is_conj = ((transA[0]=='C') || (transA[0]=='c'));
     DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> dotBasedGemm(alpha, A, B, beta, C);
     dotBasedGemm.run(A_is_conj ? true : false);
-  } else
-#endif
-  {
+
+  } else {
 
     // Define Blocking sizes (this will be used for scratch spaces)
     static constexpr int blockA0 = 24;
