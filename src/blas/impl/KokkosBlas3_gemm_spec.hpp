@@ -140,7 +140,7 @@ struct GEMM {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   typedef typename CViewType::execution_space ExecSpace;
 
-  // Figure out if we used use DotBased implementation
+  // Figure out whether to use DotBased implementation
   const int M = static_cast<int> (C.extent(0));
   const int N = static_cast<int> (C.extent(1));
 

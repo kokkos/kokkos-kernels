@@ -77,7 +77,6 @@ struct DotBasedGEMM{
   const scalar_A alpha;
   const scalar_C beta;
 
-  // The following types (especially dotSize) could have simply been int,
   const size_C numCrows;           
   const size_C numCcols;
 
@@ -88,7 +87,9 @@ struct DotBasedGEMM{
   size_A chunkSize;      // the local length of each team's share on the dot product  
   
 
-  DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_):A(A_),B(B_),C(C_),alpha(alpha_),beta(beta_),numCrows(C.extent(0)),numCcols(C.extent(1)),dotSize(A.extent(0))
+  DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_) :
+  A(A_), B(B_), C(C_), alpha(alpha_), beta(beta_),
+  numCrows(C.extent(0)), numCcols(C.extent(1)), dotSize(A.extent(0))
   { }
 
   void run(bool conjugateTranspose) {
@@ -115,7 +116,7 @@ struct DotBasedGEMM{
     // potentially be performed by multiple teams. First, compute 
     // numDivPerDot as an integer (take the floor, not ceiling), then,
     // compute actual number of teams by using this factor.
-    else{
+    else {
       numDivPerDot = appxNumTeams / ndots;
       numTeams = ndots * numDivPerDot;
     }
