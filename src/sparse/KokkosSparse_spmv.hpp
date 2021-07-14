@@ -49,8 +49,11 @@
 #include "KokkosKernels_Controls.hpp"
 #include "KokkosSparse_spmv_spec.hpp"
 #include "KokkosSparse_spmv_struct_spec.hpp"
+#include "KokkosSparse_spmv_bsrmatrix_spec.hpp"
 #include <type_traits>
+#include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_BlockCrsMatrix.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
 
@@ -421,7 +424,9 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
 ///   multivector (rank-2 Kokkos::View).  It must have the same number
 ///   of columns as x.
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
-          class YVector>
+          class YVector,
+          typename std::enable_if<
+              KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y) {
@@ -429,6 +434,126 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
       typename std::conditional<static_cast<int>(XVector::rank) == 2, RANK_TWO,
                                 RANK_ONE>::type;
   spmv(controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE());
+}
+
+/// \brief Public interface to local sparse matrix-vector multiply.
+///
+/// Compute y = beta*y + alpha*Op(A)*x, where x and y are both
+/// rank 2 (multivectors) Kokkos::View
+/// instances, A is a KokkosSparse::BsrMatrix, and Op(A) is determined
+/// by \c mode.
+/// The \c controls structure can be used to modify behavior of the tensor core
+/// implementation. On Volta-architecture GPUs (cc >= 70), the only available
+/// precision is mixed-precision fp32 accumulator from fp16 inputs. On
+/// Ampere-architecture GPUs (cc >= 80), mixed precision is used when A is fp16,
+/// x is fp16, and y is fp32. Otherwise, double-precision is used. The caller
+/// may override this by setting the "precision" parameter to "mixed" or
+/// "double" as desired.
+///
+/// For mixed precision, performance will degrade for blockDim < 16.
+/// For double precision, for blockDim < 8.
+/// For such cases, consider an alternate SpMV algorithm.
+///
+/// \param controls [in] kokkos-kernels control structure. "algorithm" must be
+/// set to "experimental_bsr_tc". \param mode [in] "N" for no transpose \param
+/// alpha [in] Scalar multiplier for the matrix A. \param A [in] The sparse
+/// matrix; KokkosSparse::BsrMatrix instance. \param x [in] A multivector
+/// (rank-2 Kokkos::View). \param beta [in] Scalar multiplier for the
+/// (multivector y. \param y [in/out] multivector (rank-2 Kokkos::View).
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector,
+          typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
+              AMatrix>::value>::type* = nullptr>
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y) {
+  if (mode[0] != NoTranspose[0]) {
+    Kokkos::Impl::throw_runtime_exception(
+        "BsrMatrix SpMV only supports mode=N");
+  }
+
+  static_assert(XVector::rank == 2,
+                "KokkosSparse::spmv on a BsrMatrix requires X with rank 2");
+  static_assert(YVector::rank == 2,
+                "KokkosSparse::spmv on a BsrMatrix requires Y with rank 2");
+
+  constexpr bool xIsCuda =
+      std::is_same<typename XVector::memory_space, Kokkos::CudaSpace>::value ||
+      std::is_same<typename XVector::memory_space, Kokkos::CudaUVMSpace>::value;
+  constexpr bool yIsCuda =
+      std::is_same<typename YVector::memory_space, Kokkos::CudaSpace>::value ||
+      std::is_same<typename YVector::memory_space, Kokkos::CudaUVMSpace>::value;
+  constexpr bool aIsCuda =
+      std::is_same<typename AMatrix::memory_space, Kokkos::CudaSpace>::value ||
+      std::is_same<typename AMatrix::memory_space, Kokkos::CudaUVMSpace>::value;
+
+  static_assert(xIsCuda,
+                "KokkosSparse::spmv on a BsrMatrix requires X be in a "
+                "CUDA-accessible space");
+  static_assert(yIsCuda,
+                "KokkosSparse::spmv on a BsrMatrix requires Y be in a "
+                "CUDA-accessible space");
+  static_assert(aIsCuda,
+                "KokkosSparse::spmv on a BsrMatrix requires A be in a "
+                "CUDA-accessible space");
+
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
+      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename AMatrix::const_size_type>
+      AMatrix_Internal;
+
+  typedef Kokkos::View<
+      typename XVector::const_value_type**,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+      typename XVector::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      XVector_Internal;
+
+  typedef Kokkos::View<
+      typename YVector::non_const_value_type**,
+      typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      YVector_Internal;
+
+  AMatrix_Internal A_i(A);
+  XVector_Internal x_i(x);
+  YVector_Internal y_i(y);
+
+  return Experimental::Impl::SPMV_BSRMATRIX<
+      typename AMatrix_Internal::value_type,
+      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::device_type,
+      typename AMatrix_Internal::memory_traits,
+      typename AMatrix_Internal::size_type,
+      typename XVector_Internal::value_type**,
+      typename XVector_Internal::array_layout,
+      typename XVector_Internal::device_type,
+      typename XVector_Internal::memory_traits,
+      typename YVector_Internal::value_type**,
+      typename YVector_Internal::array_layout,
+      typename YVector_Internal::device_type,
+      typename YVector_Internal::memory_traits>::spmv_bsrmatrix(controls, mode,
+                                                                alpha, A_i, x_i,
+                                                                beta, y_i);
+}
+
+/* Catch-all spmv interface that throws a compile-time error if
+KokkosSparse::spmv is call on a non-BsrMatrix or non-CrsMatrix.
+*/
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector,
+          typename std::enable_if<
+              !KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value &&
+              !KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y) {
+  // have to arrange this so that the compiler can't tell this is false until
+  // instantiation
+  static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value ||
+                    KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value,
+                "SpMV: AMatrix must be CrsMatrix or BsrMatrix");
 }
 
 // Overload for backward compatibility and also just simpler
@@ -513,7 +638,7 @@ void spmv_struct(const char mode[], const int stencil_type,
   XVector_Internal x_i = x;
   YVector_Internal y_i = y;
 
-  return Impl::SPMV_STRUCT<
+  return KokkosSparse::Impl::SPMV_STRUCT<
       typename AMatrix_Internal::value_type,
       typename AMatrix_Internal::ordinal_type,
       typename AMatrix_Internal::device_type,
@@ -558,6 +683,7 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
                 RANK_ONE());
     return true;
   }
+};
 #else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
@@ -571,8 +697,8 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
       const BetaType& /*beta*/, const YVector& /*y*/) {
     return false;
   }
-#endif
 };
+#endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -589,6 +715,7 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
                 RANK_ONE());
     return true;
   }
+};
 #else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
@@ -602,8 +729,8 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
       const BetaType& /*beta*/, const YVector& /*y*/) {
     return false;
   }
-#endif
 };
+#endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -620,6 +747,7 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
                 RANK_ONE());
     return true;
   }
+};
 #else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
@@ -633,8 +761,8 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
       const BetaType& /*beta*/, const YVector& /*y*/) {
     return false;
   }
-#endif
 };
+#endif
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
@@ -726,7 +854,7 @@ void spmv_struct(const char mode[], const int stencil_type,
     XVector_Internal x_i = x;
     YVector_Internal y_i = y;
 
-    return Impl::SPMV_MV<
+    return KokkosSparse::Impl::SPMV_MV<
         typename AMatrix_Internal::value_type,
         typename AMatrix_Internal::ordinal_type,
         typename AMatrix_Internal::device_type,

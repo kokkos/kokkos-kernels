@@ -926,5 +926,15 @@ class CrsMatrix {
   }
 };
 
+/// \class is_crs_matrix
+/// \brief is_crs_matrix<T>::value is true if T is a CrsMatrix<...>, false
+/// otherwise
+template <typename>
+struct is_crs_matrix : public std::false_type {};
+template <typename... P>
+struct is_crs_matrix<CrsMatrix<P...>> : public std::true_type {};
+template <typename... P>
+struct is_crs_matrix<const CrsMatrix<P...>> : public std::true_type {};
+
 }  // namespace KokkosSparse
 #endif
