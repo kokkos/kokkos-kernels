@@ -332,6 +332,7 @@ KOKKOSBLAS3_CGEMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::Layout
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 #include<KokkosBlas_tpl_spec.hpp>
+#include<KokkosBlas3_gemm_dotbased_impl.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
