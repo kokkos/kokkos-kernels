@@ -443,6 +443,7 @@ class BatchedSerialGemm {
                          *this);
   }
 
+ public:
   int invoke() {
     if (std::is_same<ArgResultsPerThread, ResultsPerThread::Rank0>::value) {
       // Set members for ResultsPerThread::Rank0 operator; these members allow
@@ -476,12 +477,9 @@ class BatchedSerialGemm {
     return 0;
   }
 
- public:
   BatchedSerialGemm(ScalarType _alpha, AViewType _A, BViewType _B,
                     ScalarType _beta, CViewType _C)
-      : A(_A), B(_B), C(_C), alpha(_alpha), beta(_beta) {
-    invoke();
-  }
+      : A(_A), B(_B), C(_C), alpha(_alpha), beta(_beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ResultsPerThread::Rank0 &, const int &i) const {

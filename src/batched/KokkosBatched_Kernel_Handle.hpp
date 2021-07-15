@@ -47,6 +47,24 @@
 #ifndef KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 #define KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#include <mkl.h>
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+// TODO: Add armpl handle type to expose nintern & nbatch?
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+#include "cuda_runtime.h"
+#include "cublas_v2.h"
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+#include <magma_v2.h>
+#include <magma_batched.h>
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
+
 namespace KokkosBatched {
 
 /// \brief Heuristic algorithm types. See BatchedKernelHandle for details.
@@ -66,36 +84,25 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 
 #define N_BASE_ALGOS BaseKokkosBatchedAlgos::N
 
-/// \brief TplHandle abstracts underlying handle type.
-union TplHandle {
+/// \brief TplParams abstracts underlying handle or execution queue type.
+struct TplParams {
+  union {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+    queue mkl_queue;
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
+
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-// TODO: Add armpl handle type to expose nintern & nbatch?
+    // TODO: Add armpl handle type to expose nintern & nbatch?
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-#include <cublas.h>
-  cublasHandle_t &cublas_handle;
+    cublasHandle_t cublas_handle;
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-        // char no_handles;
-};
-
-/// \brief TplExecQueue abstracts underlying execution queue type.
-union TplExecQueue {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-#include <mkl.h>
-  queue &mkl_queue;
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-#include <magma.h>
-  magma_queue_t &magma_queue;
+    magma_queue_t magma_queue;
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  // char no_queues;
-};
-
-union TplParams {
-  TplHandle tplHandle;
-  TplExecQueue tplQueue;
+  };
 };
 
 // clang-format off
@@ -142,12 +149,16 @@ class BatchedKernelHandle {
 
   decltype(auto) get_tpl_params() {
 #if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-    Kokkos::abort("BaseTplAlgos::ARMPL does not support any parameters");
-    return nullptr;
+    return "BaseTplAlgos::ARMPL does not support any tpl parameters";
 #elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-    return _tplParams.tplQueue.mkl_queue;
+    return _tplParamsSingleton.mkl_queue;
+#else
+    return "Unsupported kernelAlgoType = " + std::to_string(_kernelAlgoType) +
+           ".";
 #endif
   }
+
+  int get_kernel_algo_type() const { return _kernelAlgoType; }
 
   /// \var _kernelAlgoType Specifies which algorithm to use for invocation
   /// (default, SQUARE). \var _enabledDebug   toggle debug messages. \var
@@ -155,9 +166,9 @@ class BatchedKernelHandle {
   ///                      managed internally unless provided by user via
   ///                      constructor overload
  protected:
-  int _kernelAlgoType = BaseHeuristicAlgos::SQUARE;
-  bool _enableDebug   = false;
-  TplParams _tplParams;
+  int _kernelAlgoType                = BaseHeuristicAlgos::SQUARE;
+  constexpr static bool _enableDebug = false;
+  static TplParams &_tplParamsSingleton;
 };
 
 }  // namespace KokkosBatched

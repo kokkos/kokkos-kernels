@@ -46,6 +46,9 @@
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_Gemm_Handle.hpp"
 
+// Includes for non-functor-level routines
+#include <KokkosBatched_Gemm_Handle.hpp>
+
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
 ///
@@ -273,9 +276,53 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                 "on_intel:" << on_intel << std::endl <<
                 "on_a64fx:" << on_a64fx << std::endl;
 #endif
-  BatchedSerialGemm<ArgTransA, ArgTransB, mode_type, ArgBatchSzDim,
-                    resultsPerThread, ScalarType, AViewType, BViewType,
-                    CViewType>(alpha, A, B, beta, C);
+  switch (handle->get_kernel_algo_type()) {
+    case BaseKokkosBatchedAlgos::KK_SERIAL:
+      ret = BatchedSerialGemm<ArgTransA, ArgTransB, mode_type, ArgBatchSzDim,
+                              resultsPerThread, ScalarType, AViewType,
+                              BViewType, CViewType>(alpha, A, B, beta, C)
+                .invoke();
+      break;
+
+    ////////////// HEURISTIC ALGOS //////////////
+    case BaseHeuristicAlgos::SQUARE:
+
+    case BaseHeuristicAlgos::TALL:
+
+    case BaseHeuristicAlgos::WIDE:
+
+    ////////////// TPL ALGOS //////////////
+    case BaseTplAlgos::ARMPL:
+
+    case BaseTplAlgos::MKL:
+
+    case GemmTplAlgos::CUBLAS:
+
+    case GemmTplAlgos::MAGMA:
+
+      ////////////// KokkosBatched ALGOS //////////////
+
+    case GemmKokkosBatchedAlgos::KK_TEAM:
+
+    case GemmKokkosBatchedAlgos::KK_TEAMVECTOR:
+
+    case GemmKokkosBatchedAlgos::KK_SERIALSIMD:
+
+    case GemmKokkosBatchedAlgos::KK_TEAMSIMD:
+
+    case GemmKokkosBatchedAlgos::KK_SERIAL_OPT2:
+
+    case GemmKokkosBatchedAlgos::KK_TEAMVECTOR_SHMEM:
+
+    case GemmKokkosBatchedAlgos::KK_TEAMVECTOR_DBLBUF:
+
+    default:
+      std::ostringstream os;
+      os << "KokkosBatched::BatchedGemm does not support kernelAlgoType = "
+         << std::to_string(handle->get_kernel_algo_type()) << "." << std::endl;
+      Kokkos::Impl::throw_runtime_exception(os.str());
+      break;
+  }
   return ret;
 }
 /********************* END non-functor-level routines *********************/

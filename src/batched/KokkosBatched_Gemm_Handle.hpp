@@ -119,13 +119,14 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 // clang-format on
 class BatchedGemmHandle : public BatchedKernelHandle {
  public:
-  BatchedGemmHandle() = default;
-
+  BatchedGemmHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
+                    int teamSize = 0, int vecLength = 0)
+      : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength){};
   decltype(auto) get_tpl_params() {
 #if _kernelAlgoType == CUBLAS && defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-    return _tplParams.tplHandle.cublas_handle;
+    return _tplParamsSingleton.cublas_handle;
 #elif _kernelAlgoType == MAGMA && defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-    return _tplParams.tplQueue.magma_queue;
+    return _tplParamsSingleton.magma_queue;
 #else
     return this->BatchedKernelHandle::get_tpl_params();
 #endif
