@@ -24,8 +24,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   int ret                     = 0;
   ScalarType alpha            = ScalarType(1.5);
   ScalarType beta             = ScalarType(3.0);
-  using BatchedGemmHandleType = BatchedGemmHandle<GemmAlgos::SQUARE>;
-  BatchedGemmHandleType handle;
+  BatchedGemmHandle batchedGemmHandle;
 
   ViewType a_expected, a_actual, b_expected, b_actual, c_expected, c_actual;
   if (std::is_same<batchLayout, BatchLayout::Left>::value) {
@@ -59,7 +58,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   // Check for expected runtime errors due to non-optimal BatchedGemm invocation
   try {
     ret = BatchedGemm<transA, transB, batchLayout>(
-        &handle, alpha, a_actual, b_actual, beta,
+        &batchedGemmHandle, alpha, a_actual, b_actual, beta,
         c_actual);  // Compute c_actual
   } catch (const std::runtime_error& error) {
     if (!((std::is_same<view_layout, Kokkos::LayoutLeft>::value &&

@@ -49,22 +49,22 @@
 
 namespace KokkosBatched {
 
-class KernelAlgo {};
-class KernelAlgos {
- public:
-  // HEURISTIC Algos
-  class SQUARE : KernelAlgo {};
-  class TALL : KernelAlgo {};
-  class WIDE : KernelAlgo {};
+/// \brief Heuristic algorithm types. See BatchedKernelHandle for details.
+namespace BaseHeuristicAlgos {
+enum BASE_HEURISTIC_ALGOS : int { SQUARE = 0, TALL, WIDE, N };
+}
 
-  // TPL Algos
-  class ARMPL : KernelAlgo {};
-  class MKL : KernelAlgo {};
-  class SYCL : KernelAlgo {};
+/// \brief Tpl algorithm types. See BatchedKernelHandle for details.
+namespace BaseTplAlgos {
+enum BASE_TPL_ALGOS : int { ARMPL = BaseHeuristicAlgos::N, MKL, SYCL, N };
+}
 
-  // KokkosKernels batched Algos
-  class KK_SERIAL : KernelAlgo {};
-};
+/// \brief KokkosBatched algorithm types. See BatchedKernelHandle for details.
+namespace BaseKokkosBatchedAlgos {
+enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
+}
+
+#define N_BASE_ALGOS BaseKokkosBatchedAlgos::N
 
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
@@ -100,11 +100,10 @@ class KernelAlgos {
 ///                    (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*
 // clang-format on
-template <class KernelAlgoType = KernelAlgos::SQUARE>
 class BatchedKernelHandle {
  public:
-  KernelAlgoType kernelAlgoType;
-  int teamSz = 0;
+  int kernelAlgoType = BaseHeuristicAlgos::SQUARE;
+  int teamSz         = 0;
   int vecLen = 0;
 
   /// \var enabledDebug toggle debug messages.

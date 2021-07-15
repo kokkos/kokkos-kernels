@@ -51,21 +51,24 @@
 
 namespace KokkosBatched {
 
-class GemmAlgos : public KernelAlgos {
- public:
-  // Additional TPL Algos
-  class CUBLAS : KernelAlgo {};
-  class MAGMA : KernelAlgo {};
+/// \brief Tpl algorithm types. See BatchedGemmHandle for details.
+namespace GemmTplAlgos {
+enum GEMM_TPL_ALGOS : int { CUBLAS = N_BASE_ALGOS, MAGMA, N };
+}
 
-  // Additional KokkosKernels batched GEMM Algos
-  class KK_TEAM : KernelAlgo {};
-  class KK_TEAMVECTOR : KernelAlgo {};
-  class KK_SERIALSIMD : KernelAlgo {};
-  class KK_TEAMSIMD : KernelAlgo {};
-  class KK_SERIAL_OPT2 : KernelAlgo {};
-  class KK_TEAMVECTOR_SHMEM : KernelAlgo {};
-  class KK_TEAMVECTOR_DBLBUF : KernelAlgo {};
+/// \brief KokkosBatched algorithm types. See BatchedGemmHandle for details.
+namespace GemmKokkosBatchedAlgos {
+enum GEMM_KOKKOS_BATCHED_ALGOS : int {
+  KK_TEAM = GemmTplAlgos::N,
+  KK_TEAMVECTOR,
+  KK_SERIALSIMD,
+  KK_TEAMSIMD,
+  KK_SERIAL_OPT2,
+  KK_TEAMVECTOR_SHMEM,
+  KK_TEAMVECTOR_DBLBUF,
+  N
 };
+}
 
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
@@ -115,10 +118,9 @@ class GemmAlgos : public KernelAlgos {
 ///                    (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*
 // clang-format on
-template <class KernelAlgoType = GemmAlgos::SQUARE>
-class BatchedGemmHandle : public BatchedKernelHandle<KernelAlgoType> {
+class BatchedGemmHandle : public BatchedKernelHandle {
  public:
-  KernelAlgoType kernelAlgoType;
+  BatchedGemmHandle() = default;
 };
 
 }  // namespace KokkosBatched
