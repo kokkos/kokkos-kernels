@@ -87,7 +87,6 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                    Specifies which cmake-enabled tpl algorithm to invoke:
 ///                      ARMPL    Invoke the ArmPL TPL interface
 ///                      MKL      Invoke the MKL TPL interface
-///                      SYCL     Invoke the SYCL TPL interface
 ///                      CUBLAS   Invoke the CuBLAS TPL interface
 ///                      MAGMA    Invoke the Magma TPL interface
 ///                    Note: Requires that input views for A, B, and C reside on either host
@@ -121,6 +120,16 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 class BatchedGemmHandle : public BatchedKernelHandle {
  public:
   BatchedGemmHandle() = default;
+
+  decltype(auto) get_tpl_params() {
+#if _kernelAlgoType == CUBLAS && defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+    return _tplParams.tplHandle.cublas_handle;
+#elif _kernelAlgoType == MAGMA && defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+    return _tplParams.tplQueue.magma_queue;
+#else
+    return this->BatchedKernelHandle::get_tpl_params();
+#endif
+  }
 };
 
 }  // namespace KokkosBatched

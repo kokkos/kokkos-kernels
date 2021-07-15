@@ -56,7 +56,7 @@ enum BASE_HEURISTIC_ALGOS : int { SQUARE = 0, TALL, WIDE, N };
 
 /// \brief Tpl algorithm types. See BatchedKernelHandle for details.
 namespace BaseTplAlgos {
-enum BASE_TPL_ALGOS : int { ARMPL = BaseHeuristicAlgos::N, MKL, SYCL, N };
+enum BASE_TPL_ALGOS : int { ARMPL = BaseHeuristicAlgos::N, MKL, N };
 }
 
 /// \brief KokkosBatched algorithm types. See BatchedKernelHandle for details.
@@ -65,6 +65,38 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 }
 
 #define N_BASE_ALGOS BaseKokkosBatchedAlgos::N
+
+/// \brief TplHandle abstracts underlying handle type.
+union TplHandle {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+// TODO: Add armpl handle type to expose nintern & nbatch?
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+#include <cublas.h>
+  cublasHandle_t &cublas_handle;
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+        // char no_handles;
+};
+
+/// \brief TplExecQueue abstracts underlying execution queue type.
+union TplExecQueue {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#include <mkl.h>
+  queue &mkl_queue;
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+#include <magma.h>
+  magma_queue_t &magma_queue;
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
+  // char no_queues;
+};
+
+union TplParams {
+  TplHandle tplHandle;
+  TplExecQueue tplQueue;
+};
 
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
@@ -83,7 +115,6 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 ///                    Specifies which cmake-enabled tpl algorithm to invoke:
 ///                      ARMPL    Invoke the ArmPL TPL interface
 ///                      MKL      Invoke the MKL TPL interface
-///                      SYCL     Invoke the SYCL TPL interface
 ///                    Note: Requires that input views for A, B, and C reside on either host
 ///                    or device depending on the TPL selected.
 ///                    Note: If the user selects a TPL, an error will be thrown if:
@@ -102,17 +133,31 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 // clang-format on
 class BatchedKernelHandle {
  public:
-  int kernelAlgoType = BaseHeuristicAlgos::SQUARE;
-  int teamSz         = 0;
+  int teamSz = 0;
   int vecLen = 0;
 
-  /// \var enabledDebug toggle debug messages.
-  /// \var tplHandle    a handle specific to the TPL API.
-  ///                   managed internally unless provided by user via
-  ///                   constructor overload
- private:
-  bool enableDebug = false;
-  // TODO: TplHandle tplHandle;
+  BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
+                      int teamSize = 0, int vecLength = 0)
+      : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType){};
+
+  decltype(auto) get_tpl_params() {
+#if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+    Kokkos::abort("BaseTplAlgos::ARMPL does not support any parameters");
+    return nullptr;
+#elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+    return _tplParams.tplQueue.mkl_queue;
+#endif
+  }
+
+  /// \var _kernelAlgoType Specifies which algorithm to use for invocation
+  /// (default, SQUARE). \var _enabledDebug   toggle debug messages. \var
+  /// _tplParams      a handle or queue specific to the TPL API.
+  ///                      managed internally unless provided by user via
+  ///                      constructor overload
+ protected:
+  int _kernelAlgoType = BaseHeuristicAlgos::SQUARE;
+  bool _enableDebug   = false;
+  TplParams _tplParams;
 };
 
 }  // namespace KokkosBatched
