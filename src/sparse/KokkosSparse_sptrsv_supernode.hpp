@@ -1360,7 +1360,7 @@ invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag, int nsuper
   using trmm_execution_space = typename KernelHandle::HandleExecSpace;
   using trmm_memory_space    = typename trmm_execution_space::memory_space;
   using trmm_view_t = Kokkos::View<scalar_t*, trmm_execution_space>;
-  #if defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+  #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
   // use KokkosBlas::trmm only with CUBLAS (since deep-copy to host throws an error)
   bool run_trmm_on_device = false;
   #else

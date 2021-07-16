@@ -36,50 +36,62 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+// Questions? Contact Luc Berger-Vergiat (lberge@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS_TPL_SPEC_HPP_
-#define KOKKOSBLAS_TPL_SPEC_HPP_
+#ifndef KOKKOSKERNELS_SPMV_DATA_HPP_
+#define KOKKOSKERNELS_SPMV_DATA_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-#include "cuda_runtime.h"
-#include "cublas_v2.h"
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#include "armpl.h"
+#endif
 
-namespace KokkosBlas {
-namespace Impl {
+struct spmv_additional_data {
+  int test;
 
-struct CudaBlasSingleton {
-  cublasHandle_t handle;
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  armpl_spmat_t A;
+#endif
 
-  CudaBlasSingleton();
+  spmv_additional_data() = default;
 
-  static CudaBlasSingleton & singleton();
+  spmv_additional_data(int test_) : test(test_) { }
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  void set_armpl_spmat(int numRows, int numCols,
+		       const int* rowptrs, const int* entries,
+		       const float* values) {
+    armpl_spmat_create_csr_s(&A, numRows,
+			     numCols,
+			     rowptrs,
+			     entries,
+			     values,
+			     0);
+  }
+
+  void set_armpl_spmat(int numRows, int numCols,
+		       const int* rowptrs, const int* entries,
+		       const double* values) {
+    armpl_spmat_create_csr_d(&A, numRows,
+			     numCols,
+			     rowptrs,
+			     entries,
+			     values,
+			     0);
+  }
+#endif
+
+  ~spmv_additional_data() {
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+    if(test == 2) {
+      armpl_spmat_destroy(A);
+    }
+#endif    
+  }
 };
 
-}
-}
-#endif // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-
-// If LAPACK TPL is enabled, it is preferred over magma's LAPACK
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include "magma_v2.h"
-
-namespace KokkosBlas {
-namespace Impl {
-
-struct MagmaSingleton {
-
-  MagmaSingleton();
-
-  static MagmaSingleton & singleton();
-};
-
-}
-}
-#endif // KOKKOSKERNELS_ENABLE_TPL_MAGMA
-
-#endif // KOKKOSBLAS_TPL_SPEC_HPP_
+#endif /* KOKKOSKERNELS_SPMV_DATA_HPP_ */

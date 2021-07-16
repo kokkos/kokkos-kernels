@@ -36,50 +36,48 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+// Questions? Contact Luc Berger-Vergiat (lberge@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS_TPL_SPEC_HPP_
-#define KOKKOSBLAS_TPL_SPEC_HPP_
+#ifndef ARMPL_SPMV_HPP_
+#define ARMPL_SPMV_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-#include "cuda_runtime.h"
-#include "cublas_v2.h"
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#include <armpl.h>
 
-namespace KokkosBlas {
-namespace Impl {
-
-struct CudaBlasSingleton {
-  cublasHandle_t handle;
-
-  CudaBlasSingleton();
-
-  static CudaBlasSingleton & singleton();
-};
-
+template<typename Scalar>
+void armpl_matvec_wrapper(armpl_spmat_t A, Scalar* x, Scalar* y)
+{
+  throw std::runtime_error("Can't use ArmPL mat-vec for scalar types other than double and float.");
 }
+
+template<>
+void armpl_matvec_wrapper<float>(armpl_spmat_t A, float* x, float* y)
+{
+  const float alpha = 1.0;
+  const float beta  = 0.0;
+  armpl_spmv_exec_s(ARMPL_SPARSE_OPERATION_NOTRANS,
+		    alpha, A, x, beta, y);
 }
-#endif // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
-// If LAPACK TPL is enabled, it is preferred over magma's LAPACK
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include "magma_v2.h"
-
-namespace KokkosBlas {
-namespace Impl {
-
-struct MagmaSingleton {
-
-  MagmaSingleton();
-
-  static MagmaSingleton & singleton();
-};
-
+template<>
+void armpl_matvec_wrapper<double>(armpl_spmat_t A, double* x, double* y)
+{
+  const double alpha = 1.0;
+  const double beta  = 0.0;
+  armpl_spmv_exec_d(ARMPL_SPARSE_OPERATION_NOTRANS,
+		    alpha, A, x, beta, y);
 }
-}
-#endif // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#endif // KOKKOSBLAS_TPL_SPEC_HPP_
+template<typename AType, typename XType, typename YType>
+void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data) {
+  using Scalar = typename AType::non_const_value_type;
+  //Run armpl spmv corresponding to scalar type
+  armpl_matvec_wrapper<Scalar>(data->A, x.data(), y.data());
+}
+
+#endif // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#endif // ARMPL_SPMV_HPP_
