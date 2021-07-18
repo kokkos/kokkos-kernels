@@ -64,6 +64,7 @@
 #define DEFAULT_USE_AUTO 0
 #define DEFAULT_BATCH_SIZE_LAST_DIM 0
 #define DEFAULT_VERIFY 1
+#define DEFAULT_NINTER 4
 
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
@@ -195,6 +196,7 @@ typedef struct matrix_dims matrix_dims_t;
  * @var blas_routines: Selects which supported blas routines to test.
  * @var verify:        Performs verification of the blas routine for each input
  *                     before timing it.
+ * @var ninter:        The number of interleaved matrices for armpl.
  */
 struct perf_test_options {
   test_e test;
@@ -209,6 +211,7 @@ struct perf_test_options {
   blas_args_t blas_args;
   std::string blas_routines;
   bool verify;
+  int ninter;
 };
 typedef struct perf_test_options options_t;
 

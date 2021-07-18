@@ -69,6 +69,7 @@ static struct option long_options[] = {
     {"batch_size", required_argument, 0, 'k'},
     {"batch_size_last_dim", required_argument, 0, 'd'},
     {"verify", required_argument, 0, 'v'},
+    {"ninter", required_argument, 0, 'j'},
     {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
@@ -218,6 +219,14 @@ static void __print_help_blas3_perf_test() {
       "verify before timing. "
       "(default: %d)\n",
       DEFAULT_VERIFY);
+
+  printf("\t-j, --ninter=NINTER\n");
+  printf("\t\tInterleaving size for armpl. (untimed)\n");
+  printf(
+    "\t\t\tValid values for NINTER is any positive integer "
+    "that evenly divides the batch size. "
+    "(default: %d)\n",
+    DEFAULT_NINTER);
 }
 
 static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt,
@@ -270,6 +279,7 @@ int main(int argc, char **argv) {
   options.blas_args.use_auto            = DEFAULT_USE_AUTO;
   options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
   options.verify                        = DEFAULT_VERIFY;
+  options.ninter                        = DEFAULT_NINTER;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;
@@ -279,7 +289,7 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
   while (
-      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:",
+      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:",
                          long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
@@ -402,6 +412,7 @@ int main(int argc, char **argv) {
         break;
       case 'd': options.blas_args.batch_size_last_dim = atoi(optarg); break;
       case 'v': options.verify = atoi(optarg); break;
+      case 'j': options.ninter = atoi(optarg); break;
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
       case 'u': options.blas_args.use_auto = atoi(optarg); break;
