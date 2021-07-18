@@ -210,6 +210,7 @@ read_supernodal_graphL(KernelHandle *kernelHandle, int n, int nsuper, int nnzA, 
   }
   hr(0) = 0;
 
+  #define KOKKOS_SPTRSV_SUPERNODE_PROFILE
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
@@ -1927,9 +1928,14 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   // get sparse-triangular solve handle
   auto *handleL = kernelHandleL->get_sptrsv_handle ();
 
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   Kokkos::Timer timer;
+  Kokkos::Timer timer2;
   double time1 = 0.0;
   double time2 = 0.0;
+  double time3 = 0.0;
+  double time4 = 0.0;
+  #endif
   // ===================================================================
   // number of supernodes per level
   auto nodes_per_level = handleL->get_nodes_per_level ();
@@ -1959,16 +1965,43 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   bool invert_offdiag = handleL->get_invert_offdiagonal ();
   const int* supercols_host = handleL->get_supercols_host ();
 
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  timer.reset ();
+  #endif
+  // count total nnz
+  int newNnz = 0;
+  for (int j = 0; j < nrows; j++) {
+    for (size_type k = row_mapL (j); k < row_mapL (j+1); k++) {
+      if (valuesL (k) != zero) {
+          newNnz ++;
+      }
+    }
+  }
+  // allocate for all the subgraphs
+  row_map_view_t total_rowmap_view (Kokkos::ViewAllocateWithoutInitializing("rowmap_view"), 2*nlevels*(nrows+1));
+  cols_view_t    total_column_view (Kokkos::ViewAllocateWithoutInitializing("colmap_view"), newNnz);
+  values_view_t  total_values_view (Kokkos::ViewAllocateWithoutInitializing("values_view"), newNnz);
+  // create host-mirrors
+  row_map_view_host_t total_hr = Kokkos::create_mirror_view (total_rowmap_view);
+  cols_view_host_t    total_hc = Kokkos::create_mirror_view (total_column_view);
+  values_view_host_t  total_hv = Kokkos::create_mirror_view (total_values_view);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time4 = timer.seconds ();
+  #endif
+
   // form crsgraph for each submatrix at each level
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   int oldNnz = row_mapL (nrows);
   #endif
-  int newNnz = 0;
+  newNnz = 0;
   std::vector <crsmat_t> sub_crsmats (nlevels);
   std::vector <crsmat_t> diag_blocks (nlevels);
+  int offset_view = 0;
   for (int lvl = 0; lvl < nlevels; ++lvl) {
-    timer.reset ();
     // > count nnz
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    timer.reset ();
+    #endif
     int nnzL = 0;
     int nnzD = 0;
     int lvl_nodes = hnodes_per_level (lvl); // number of supernodes at this level
@@ -1992,21 +2025,34 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       }
     }
 
-    // allocate subgraph
-    row_map_view_t rowmap_view ("rowmap_view", nrows+1);
-    cols_view_t    column_view ("colmap_view", nnzL);
-    values_view_t  values_view ("values_view", nnzL);
-    row_map_view_host_t hr = Kokkos::create_mirror_view (rowmap_view);
-    cols_view_host_t    hc = Kokkos::create_mirror_view (column_view);
-    values_view_host_t  hv = Kokkos::create_mirror_view (values_view);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    timer2.reset ();
+    #endif
+    // create subviews for the subgraph
+    using range_type = Kokkos::pair<int, int>;
+    int offset_rowmap = lvl * 2 * (nrows+1);
+    row_map_view_t rowmap_view = Kokkos::subview(total_rowmap_view, range_type (offset_rowmap, offset_rowmap+(nrows+1)));
+    cols_view_t    column_view = Kokkos::subview(total_column_view, range_type (offset_view, offset_view+nnzL));
+    values_view_t  values_view = Kokkos::subview(total_values_view, range_type (offset_view, offset_view+nnzL));
 
-    // allocate subgraph, just for diagonal blocks
-    row_map_view_t rowmapD_view ("rowmapD_view", nrows+1);
-    cols_view_t    columnD_view ("colmapD_view", nnzD);
-    values_view_t  valuesD_view ("valuesD_view", nnzD);
-    row_map_view_host_t hrD = Kokkos::create_mirror_view (rowmapD_view);
-    cols_view_host_t    hcD = Kokkos::create_mirror_view (columnD_view);
-    values_view_host_t  hvD = Kokkos::create_mirror_view (valuesD_view);
+    row_map_view_host_t hr = Kokkos::subview(total_hr, range_type (offset_rowmap, offset_rowmap+(nrows+1)));
+    cols_view_host_t    hc = Kokkos::subview(total_hc, range_type (offset_view, offset_view+nnzL));
+    values_view_host_t  hv = Kokkos::subview(total_hv, range_type (offset_view, offset_view+nnzL));
+    offset_view += nnzL;
+
+    // create subviews for the subgraph, just for diagonal blocks
+    offset_rowmap += nrows+1;
+    row_map_view_t rowmapD_view = Kokkos::subview(total_rowmap_view, range_type (offset_rowmap, offset_rowmap+(nrows+1)));
+    cols_view_t    columnD_view = Kokkos::subview(total_column_view, range_type (offset_view, offset_view+nnzD));
+    values_view_t  valuesD_view = Kokkos::subview(total_values_view, range_type (offset_view, offset_view+nnzD));
+
+    row_map_view_host_t hrD = Kokkos::subview(total_hr, range_type (offset_rowmap, offset_rowmap+(nrows+1)));
+    cols_view_host_t    hcD = Kokkos::subview(total_hc, range_type (offset_view, offset_view+nnzD));
+    values_view_host_t  hvD = Kokkos::subview(total_hv, range_type (offset_view, offset_view+nnzD));
+    offset_view += nnzD;
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time3 += timer2.seconds ();
+    #endif
 
     // create subgraph
     hr (0) = 0;
@@ -2147,37 +2193,47 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
       }
     }
     newNnz += nnzL+nnzD;
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     time1 += timer.seconds ();
+    timer.reset ();
+    #endif
 
     // create crs-graph
-    timer.reset ();
-    Kokkos::deep_copy (rowmap_view, hr);
-    Kokkos::deep_copy (column_view, hc);
-    Kokkos::deep_copy (values_view, hv);
     graph_t sub_graph(column_view, rowmap_view);
     sub_crsmats[lvl] = crsmat_t("CrsMatrix", nrows, values_view, sub_graph);
     if (!invert_offdiag) {
-      Kokkos::deep_copy (rowmapD_view, hrD);
-      Kokkos::deep_copy (columnD_view, hcD);
-      Kokkos::deep_copy (valuesD_view, hvD);
       graph_t diag_graph(columnD_view, rowmapD_view);
       diag_blocks[lvl] = crsmat_t("DiagMatrix", nrows, valuesD_view, diag_graph);
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
     //std::cout << "   > split nnz(" << lvl << ") = " << nnzL+nnzD << std::endl;
     time2 += timer.seconds ();
+    #endif
 
     // update the number of supernodes processed
     node_count += lvl_nodes;
   }
+  // deep-copy all the subviews
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  timer.reset ();
+  #endif
+  Kokkos::deep_copy (total_rowmap_view, total_hr);
+  Kokkos::deep_copy (total_column_view, total_hc);
+  Kokkos::deep_copy (total_values_view, total_hv);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time2 += timer.seconds ();
+  #endif
   handleL->set_submatrices (sub_crsmats);
   if (!invert_offdiag) {
     handleL->set_diagblocks (diag_blocks);
   }
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "   split_crsmat" << std::endl;
-  std::cout << "   > Time to split to submatrices      : " << time1 << std::endl;
-  std::cout << "   > Time to copy submatrices to device: " << time2 << std::endl;
-  std::cout << "   > Total NNZ                         : " << oldNnz << " -> " << newNnz
+  std::cout << "   > Time to split to submatrices       : " << time1 << std::endl;
+  std::cout << "      + allocate submatrices            : " << time4 << std::endl;
+  std::cout << "      + create subviews                 : " << time3 << std::endl;
+  std::cout << "   > Time to copy submatrices to device : " << time2 << std::endl;
+  std::cout << "   > Total NNZ                          : " << oldNnz << " -> " << newNnz
             << std::endl << std::endl;
   #endif
 }
