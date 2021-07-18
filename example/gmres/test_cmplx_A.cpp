@@ -58,15 +58,12 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   typedef int                               OT;
   typedef Kokkos::DefaultExecutionSpace     EXSP;
 
-  //TODO: Should these really be layout left?
   using ViewVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, EXSP>;
-  using ViewHostVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, Kokkos::HostSpace>;
-  using ViewMatrixType = Kokkos::View<ST**,Kokkos::LayoutLeft, EXSP>; 
 
   std::string filename("young1c.mtx"); // example matrix
   std::string ortho("CGS2"); //orthog type
-  int m = 50; //Max subspace size before restarting.
-  double convTol = 1e-08; //Relative residual convergence tolerance.
+  int m = 100; //Max subspace size before restarting.
+  double convTol = 1e-05; //Relative residual convergence tolerance.
   int cycLim = 60;
 
   std::cout << "File to process is: " << filename << std::endl;
@@ -101,17 +98,23 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj); // wj = Ax
   KokkosBlas::axpy(-1.0, Wj, B); // b = b-Ax. 
   double endRes = KokkosBlas::nrm2(B)/nrmB;
+  std::cout << "=======================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
   std::cout << "Diff of residual from main - residual from solver: " << solveStats.minRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
   
-  if( solveStats.numIters < 2690 && solveStats.numIters > 2650 && endRes < convTol){
+  if( solveStats.numIters < 700 && solveStats.numIters > 600 && endRes < convTol){
     std::cout << "Test CGS2 Passed!" << std::endl;
     }
+  else{
+    std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
+              << "CGS2 Test Failed." << std::endl;
+      }
 
   ortho = "MGS";
   Kokkos::deep_copy(X,0.0);
+  Kokkos::deep_copy(B,1.0);
 
   std::cout << "Testing GMRES with MGS ortho:" << std::endl;
   solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, convTol, m, cycLim, ortho);
@@ -121,14 +124,19 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj); // wj = Ax
   KokkosBlas::axpy(-1.0, Wj, B); // b = b-Ax. 
   endRes = KokkosBlas::nrm2(B)/nrmB;
+  std::cout << "=======================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
   std::cout << "Diff of residual from main - residual from solver: " << solveStats.minRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
   
-  if( solveStats.numIters < 2690 && solveStats.numIters > 2650 && endRes < convTol){
+  if( solveStats.numIters < 700 && solveStats.numIters > 600 && endRes < convTol){
     std::cout << "Test MGS Passed!" << std::endl;
     }
+  else{
+    std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
+              << "MGS Test Failed." << std::endl;
+      }
 
   }
   Kokkos::finalize();

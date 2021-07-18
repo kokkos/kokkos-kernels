@@ -62,7 +62,7 @@ struct GmresStats {
       case NoConv:
         return "Not Converged";
       case LOA:
-        return "Belos had Loss of Accuracy.";
+        return "Solver has had loss of accuracy.";
       default:
         return "Flag not defined.";
     }

@@ -54,20 +54,17 @@
 
 int main(int argc, char *argv[]) {
 
-  typedef double                             ST;
+  typedef double                            ST;
   typedef int                               OT;
   typedef Kokkos::DefaultExecutionSpace     EXSP;
 
-  //TODO: Should these really be layout left?
   using ViewVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, EXSP>;
-  using ViewHostVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, Kokkos::HostSpace>;
-  using ViewMatrixType = Kokkos::View<ST**,Kokkos::LayoutLeft, EXSP>; 
 
-  std::string filename("Laplace3D10.mtx"); // example matrix
+  std::string filename("bcsstk09.mtx"); // example matrix
   std::string ortho("CGS2"); //orthog type
   int m = 50; //Max subspace size before restarting.
   double convTol = 1e-10; //Relative residual convergence tolerance.
-  int cycLim = 50;
+  int cycLim = 50; //Maximum number of times to restart the solver. 
 
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
@@ -78,10 +75,10 @@ int main(int argc, char *argv[]) {
     if (token == std::string("--ortho")) ortho = argv[++i];
     if (token == std::string("--help") || token == std::string("-h")){
       std::cout << "Kokkos GMRES solver options:" << std::endl
-        << "--filename    :  The name of a matrix market (.mtx) file for matrix A (Default Laplace3D10.mtx)." << std::endl
+        << "--filename    :  The name of a matrix market (.mtx) file for matrix A (Default bcsstk09.mtx)." << std::endl
         << "--max-subsp   :  The maximum size of the Kyrlov subspace before restarting (Default 50)." << std::endl
         << "--max-restarts:  Maximum number of GMRES restarts (Default 50)." << std::endl
-        << "--tol         :  Convergence tolerance.  (Default 1e-8)." << std::endl
+        << "--tol         :  Convergence tolerance.  (Default 1e-10)." << std::endl
         << "--ortho       :  Type of orthogonalization. Use 'CGS2' or 'MGS'. (Default 'CGS2')" << std::endl
         << "--help  -h    :  Display this help message." << std::endl 
         << "Example Call  :  ./Gmres.exe --filename Laplace3D100.mtx --tol 1e-5 --max-subsp 100 " << std::endl << std::endl;
@@ -111,6 +108,7 @@ int main(int argc, char *argv[]) {
   // Make rhs ones so that results are repeatable:
   Kokkos::deep_copy(B,1.0);
 
+  // Run GMRS solve:
   GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, convTol, m, cycLim, ortho);
 
   // Double check residuals at end of solve:
@@ -118,11 +116,11 @@ int main(int argc, char *argv[]) {
   KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj); // wj = Ax
   KokkosBlas::axpy(-1.0, Wj, B); // b = b-Ax. 
   double endRes = KokkosBlas::nrm2(B)/nrmB;
+  std::cout << "=========================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
   std::cout << "Diff of residual from main - residual from solver: " << solveStats.minRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
-  
 
   }
   Kokkos::finalize();
