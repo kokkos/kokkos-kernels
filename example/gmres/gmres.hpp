@@ -50,9 +50,11 @@
 #include<KokkosBlas3_trsm.hpp>
 #include<KokkosSparse_spmv.hpp>
 
+// This struct is returned to the user to give solver
+// statistics and convergence status. 
 struct GmresStats {
   int numIters;
-  double minRelRes;
+  double endRelRes;
   enum FLAG { Conv, NoConv, LOA };
   FLAG convFlagVal;
   std::string convFlag() {
@@ -70,8 +72,13 @@ struct GmresStats {
 };
 
 template< class ScalarType, class Layout, class EXSP, class OrdinalType = int > 
-  GmresStats gmres( KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP> &A, Kokkos::View<ScalarType*, Layout, EXSP> &B,
-        Kokkos::View<ScalarType*, Layout, EXSP> &X, typename Kokkos::Details::ArithTraits<ScalarType>::mag_type tol = 1e-8, int m=50, int maxRestart=50, std::string ortho = "CGS2"){
+  GmresStats gmres( const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP> &A, 
+                    const Kokkos::View<ScalarType*, Layout, EXSP> &B,
+                    Kokkos::View<ScalarType*, Layout, EXSP> &X, 
+                    const typename Kokkos::Details::ArithTraits<ScalarType>::mag_type tol = 1e-8, 
+                    const int m=50, 
+                    const int maxRestart=50, 
+                    const std::string ortho = "CGS2"){
 
   typedef Kokkos::Details::ArithTraits<ScalarType> AT;
   typedef typename AT::val_type ST; // So this code will run with ScalarType = std::complex<T>.
@@ -79,23 +86,44 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   ST one = AT::one();
   ST zero = AT::zero();
 
-  //TODO: Should these really be layout left?
-  typedef Kokkos::View<ST*,Layout, EXSP> ViewVectorType;
-  //TODO: Should these be Layout left or templated layou?  Think mostly used internally.  
-  typedef Kokkos::View<ST*,Kokkos::LayoutLeft, Kokkos::HostSpace> ViewHostVectorType; 
-  typedef Kokkos::View<ST**,Kokkos::LayoutLeft, EXSP> ViewMatrixType; 
+  typedef Kokkos::View<ST*, Layout, EXSP> ViewVectorType;
+  typedef Kokkos::View<ST*, Kokkos::LayoutRight, Kokkos::HostSpace> ViewHostVectorType; 
+  typedef Kokkos::View<ST**, Layout, EXSP> ViewMatrixType;
+
+  unsigned int n = A.numRows();
+
+  // Check compatibility of dimensions at run time.
+  if ( n != unsigned(A.numCols()) ){
+    std::ostringstream os;
+    os << "gmres: A must be a square matrix: " 
+      << "numRows: " << n << "  numCols: " << A.numCols();
+      Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  if (X.extent(0) != B.extent(0) ||
+      X.extent(0) != n ) {
+    std::ostringstream os;
+    os << "gmres: Dimensions of A, X, and B do not match: "
+       << "A: " << n << " x " << n << ", X: " << X.extent(0) 
+       << "x 1, B: " << B.extent(0) << " x 1";
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+  //Check parameter validity:
+  if(m <= 0){
+    throw std::invalid_argument("gmres: please choose restart size m greater than zero.");
+  }
+  if(maxRestart <= 0){
+    throw std::invalid_argument("gmres: Please choose maxRestart greater than zero.");
+  }
 
   bool converged = false;
-  int cycle = 0;
+  int cycle = 0; // How many times have we restarted? 
   int numIters = 0;  //Number of iterations within the cycle before convergence.
-  MT trueRes; //Keep this in double regardless so we know how small error gets. //TODO: Should this be in double?
-  // We are not mixing precisions.  So maybe it should be scalarType? or MT?
-  MT nrmB, relRes, shortRelRes;
+  MT nrmB, trueRes, relRes, shortRelRes;
   GmresStats myStats;
   
   std::cout << "Convergence tolerance is: " << tol << std::endl;
 
-  int n = A.numRows();
   ViewVectorType Xiter("Xiter",n); //Intermediate solution at iterations before restart. 
   ViewVectorType Res(Kokkos::ViewAllocateWithoutInitializing("Res"),n); //Residual vector
   ViewVectorType Wj(Kokkos::ViewAllocateWithoutInitializing("W_j"),n); //Tmp work vector 1
@@ -109,7 +137,6 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
 
   ViewMatrixType H("H",m+1,m); //H matrix on device. Also used in Arn Rec debug. 
   typename ViewMatrixType::HostMirror H_h = Kokkos::create_mirror_view(H); //Make H into a host view of H. 
-  ViewMatrixType RFactor("RFactor",m,m);// Triangular matrix for QR factorization of H. Used in Arn Rec debug.
 
   //Compute initial residuals:
   nrmB = KokkosBlas::nrm2(B);
@@ -118,7 +145,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   KokkosBlas::axpy(-one, Wj, Res); // res = res-Wj = b-Ax. 
   trueRes = KokkosBlas::nrm2(Res);
   relRes = trueRes/nrmB;
-  std::cout << "Initial trueRes is : " << trueRes << std::endl;
+  shortRelRes = relRes;
     
   while( !converged && cycle < maxRestart){
     GVec_h(0) = trueRes;
@@ -166,8 +193,8 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
       
       MT tmpNrm = KokkosBlas::nrm2(Wj);
       H_h(j+1,j) = tmpNrm; 
-      if(tmpNrm < 1e-14){ //Host
-        throw std::runtime_error("Lucky breakdown"); //TODO deal with this correctly? Did we check for convergence?
+      if(tmpNrm < 1e-14){ 
+        throw std::runtime_error("GMRES lucky breakdown. Solver terminated without convergence."); 
       }
 
       Vj = Kokkos::subview(V,Kokkos::ALL,j+1); 
@@ -186,7 +213,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
       MT f2 = AT::real(f)*AT::real(f) + AT::imag(f)*AT::imag(f); 
       MT g2 = AT::real(g)*AT::real(g) + AT::imag(g)*AT::imag(g);
       ST fg2 = f2 + g2;
-      ST D1 = one / sqrt(f2*fg2); //TODO should use sqrt from ArithTraits?
+      ST D1 = one / AT::sqrt(f2*fg2); 
       CosVal_h(j) = f2*D1;
       fg2 = fg2 * D1;
       H_h(j,j) = f*fg2;
@@ -220,7 +247,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         KokkosBlas::axpy(-one, Wj, Res); // r = b-Ax. 
         trueRes = KokkosBlas::nrm2(Res);
         relRes = trueRes/nrmB;
-        std::cout << "True Givens relative residual for iteration " << j+(cycle*m) << " is : " << trueRes/nrmB << std::endl;
+        std::cout << "True relative residual for iteration " << j+(cycle*m) << " is : " << relRes << std::endl;
         numIters = j;
 
         if(relRes < tol){
@@ -243,11 +270,11 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
 
     /*//DEBUG: Check orthogonality of V:
     ViewMatrixType Vsm("Vsm", m+1, m+1);
-      KokkosBlas::gemm("C","N", one, V, V, zero, Vsm); // Vsm = V^T * V
-      Kokkos::View<MT*, Layout, EXSP> nrmV("nrmV",m+1);
+    KokkosBlas::gemm("C","N", one, V, V, zero, Vsm); // Vsm = V^T * V
+    Kokkos::View<MT*, Layout, EXSP> nrmV("nrmV",m+1);
     KokkosBlas::nrm2(nrmV, Vsm); //nrmV = norm(Vsm)
     std::cout << "Norm of V^T V (Should be all ones, except ending iteration.): " << std::endl;
-      typename Kokkos::View<MT*, Layout, EXSP>::HostMirror nrmV_h = Kokkos::create_mirror_view(nrmV); 
+    typename Kokkos::View<MT*, Layout, EXSP>::HostMirror nrmV_h = Kokkos::create_mirror_view(nrmV); 
     Kokkos::deep_copy(nrmV_h, nrmV);
     for (int i1 = 0; i1 < m+1; i1++){ std::cout << nrmV_h(i1) << " " ; } 
     std::cout << std::endl;*/
@@ -258,13 +285,15 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
     Kokkos::deep_copy(X, Xiter);
   }
 
-  std::cout << "Ending true residual is: " << trueRes << std::endl;
   std::cout << "Ending relative residual is: " << relRes << std::endl;
-  myStats.minRelRes = relRes;
+  myStats.endRelRes = relRes;
   if( converged ){
     std::cout << "Solver converged! " << std::endl;
-    //TODO Deal with LOA case.
     myStats.convFlagVal = GmresStats::FLAG::Conv;
+  }
+  else if( shortRelRes < tol ){
+    std::cout << "Shortcut residual converged, but solver experienced a loss of accuracy." << std::endl;
+    myStats.convFlagVal = GmresStats::FLAG::LOA;
   }
   else{
     std::cout << "Solver did not converge. :( " << std::endl;

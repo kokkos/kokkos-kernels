@@ -108,7 +108,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   std::cout << "=======================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
-  std::cout << "Diff of residual from main - residual from solver: " << solveStats.minRelRes - endRes << std::endl;
+  std::cout << "Diff of residual from main - residual from solver: " << solveStats.endRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
   
   if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < convTol){
@@ -118,6 +118,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
     std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
               << "CGS2 Test Failed." << std::endl;
       }
+  std::cout << "=======================================" << std::endl << std::endl << std::endl;
 
   ortho = "MGS";
   Kokkos::deep_copy(X,0.0);
@@ -134,7 +135,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   std::cout << "=======================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
-  std::cout << "Diff of residual from main - residual from solver: " << solveStats.minRelRes - endRes << std::endl;
+  std::cout << "Diff of residual from main - residual from solver: " << solveStats.endRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
   
   if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < convTol){
@@ -144,6 +145,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
     std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
               << "MGS Test Failed." << std::endl;
       }
+  std::cout << "=======================================" << std::endl << std::endl << std::endl;
 
   }
   Kokkos::finalize();

@@ -33,6 +33,13 @@ The gmres function takes the following input paramters:
 **maxRestart:** The maximum number of restarts (or 'cycles') that GMRES is to perform.   
 **ortho:** The orthogonalization type.  Can be "CGS2" or "MGS".  (Two iterations of Classical Gram-Schmidt, or one iteration of Modified Gram-Schmidt.)   
 
+### Solver Output:
+The solver outputs a 'GmresStats' struct with solver statistics.  These include:
+
+**numIters**: The number of iterations the GMRES solver took before terminating.   
+**endRelRes**: The ending relative residual norm attained in the GMRES solve.   
+**convFlagVal**: An enum FLAG value which will return "Conv" if the solver converged, "NoConv" if the solver did not converge, or "LOA" if the solver converged with respect to the internally computed residual norm but lost accuracy from the true residual norm.    
+**convFlag**: A string giving the convergence status of the solver upon exit.  
 
 ### Test files:
 
@@ -54,3 +61,4 @@ These measurements were taken on 7/17/21, running on an NVIDIA V100 GPU on Weave
 ### Concerns, enhancements, or bug reporting:
 If you wish to suggest an enhancement or make a bug report for this solver code, please post an issue at https://github.com/kokkos/kokkos-kernels/issues or email jloe@sandia.gov.
 
+SAND2021-8676 O
