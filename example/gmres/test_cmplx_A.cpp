@@ -65,6 +65,8 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   int m = 100; //Max subspace size before restarting.
   double convTol = 1e-05; //Relative residual convergence tolerance.
   int cycLim = 60;
+  bool pass1 = false;
+  bool pass2 = false;
 
   std::cout << "File to process is: " << filename << std::endl;
   std::cout << "Convergence tolerance is: " << convTol << std::endl;
@@ -80,12 +82,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   int n = A.numRows();
   ViewVectorType X("X",n); //Solution and initial guess
   ViewVectorType Wj("Wj",n); //For checking residuals at end.
-  ViewVectorType B(Kokkos::ViewAllocateWithoutInitializing("B"),n);//right-hand side vec
-
-  // Make rhs random.
-  /*int rand_seed = std::rand();
-  Kokkos::Random_XorShift64_Pool<> pool(rand_seed); //initially used seed 12371
-  Kokkos::fill_random(B, pool, -1,1);*/
+  ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),n);//right-hand side vec
 
   // Make rhs ones so that results are repeatable:
   Kokkos::deep_copy(B,1.0);
@@ -106,6 +103,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   
   if( solveStats.numIters < 700 && solveStats.numIters > 600 && endRes < convTol){
     std::cout << "Test CGS2 Passed!" << std::endl;
+    pass1 = true;
     }
   else{
     std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
@@ -133,15 +131,17 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   
   if( solveStats.numIters < 700 && solveStats.numIters > 600 && endRes < convTol){
     std::cout << "Test MGS Passed!" << std::endl;
-    }
+    if( pass1 ){ pass2 = true; };
+  }
   else{
     std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
               << "MGS Test Failed." << std::endl;
-      }
+  }
   std::cout << "=======================================" << std::endl << std::endl << std::endl;
 
   }
   Kokkos::finalize();
 
+  return ( pass2 ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 

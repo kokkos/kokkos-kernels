@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
   int m = 50; //Max subspace size before restarting.
   double convTol = 1e-10; //Relative residual convergence tolerance.
   int cycLim = 50; //Maximum number of times to restart the solver. 
+  bool rand_rhs = false; //Generate random right-hand side. 
 
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
@@ -73,6 +74,7 @@ int main(int argc, char *argv[]) {
     if (token == std::string("--max-restarts")) cycLim = std::atoi(argv[++i]);
     if (token == std::string("--tol")) convTol = std::stod(argv[++i]);
     if (token == std::string("--ortho")) ortho = argv[++i];
+    if (token == std::string("--rand_rhs")) rand_rhs = true;
     if (token == std::string("--help") || token == std::string("-h")){
       std::cout << "Kokkos GMRES solver options:" << std::endl
         << "--filename    :  The name of a matrix market (.mtx) file for matrix A (Default bcsstk09.mtx)." << std::endl
@@ -80,6 +82,7 @@ int main(int argc, char *argv[]) {
         << "--max-restarts:  Maximum number of GMRES restarts (Default 50)." << std::endl
         << "--tol         :  Convergence tolerance.  (Default 1e-10)." << std::endl
         << "--ortho       :  Type of orthogonalization. Use 'CGS2' or 'MGS'. (Default 'CGS2')" << std::endl
+        << "--rand_rhs    :  Generate a random right-hand side b.  (Else, default uses b = vector of ones.)" << std::endl
         << "--help  -h    :  Display this help message." << std::endl 
         << "Example Call  :  ./Gmres.exe --filename Laplace3D100.mtx --tol 1e-5 --max-subsp 100 " << std::endl << std::endl;
       return 0; }
@@ -98,15 +101,18 @@ int main(int argc, char *argv[]) {
   int n = A.numRows();
   ViewVectorType X("X",n); //Solution and initial guess
   ViewVectorType Wj("Wj",n); //For checking residuals at end.
-  ViewVectorType B(Kokkos::ViewAllocateWithoutInitializing("B"),n);//right-hand side vec
+  ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),n);//right-hand side vec
 
-  // Make rhs random.
-  /*int rand_seed = std::rand();
-  Kokkos::Random_XorShift64_Pool<> pool(rand_seed); //initially used seed 12371
-  Kokkos::fill_random(B, pool, -1,1);*/
-
-  // Make rhs ones so that results are repeatable:
-  Kokkos::deep_copy(B,1.0);
+  if(rand_rhs){
+    // Make rhs random.
+    int rand_seed = 123;
+    Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
+    Kokkos::fill_random(B, pool, -1,1);
+  }
+  else{
+    // Make rhs ones so that results are repeatable:
+    Kokkos::deep_copy(B,1.0);
+  }
 
   // Run GMRS solve:
   GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, convTol, m, cycLim, ortho);

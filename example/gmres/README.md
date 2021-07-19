@@ -12,7 +12,8 @@ Current solver parameters for the real-valued example are as follows:
 "**--max-subsp**   :  The maximum size of the Kyrlov subspace before restarting (Default 50)."   
 "**--max-restarts:**  Maximum number of GMRES restarts (Default 50)."   
 "**--tol        :**  Convergence tolerance.  (Default 1e-10)."   
-"**--ortho       :**  Type of orthogonalization. Use 'CGS2' or 'MGS'. (Default 'CGS2')"   
+"**--ortho       :**  Type of orthogonalization. Use 'CGS2' or 'MGS'. (Default 'CGS2')"    
+"**--rand\_rhs**    :  Generate a random right-hand side b.  (Without this option, the solver default generates b = vector of ones.)"
 
 
 ##### Solver template paramters:

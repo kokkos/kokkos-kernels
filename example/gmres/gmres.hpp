@@ -112,7 +112,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   if(m <= 0){
     throw std::invalid_argument("gmres: please choose restart size m greater than zero.");
   }
-  if(maxRestart <= 0){
+  if(maxRestart < 0){
     throw std::invalid_argument("gmres: Please choose maxRestart greater than zero.");
   }
 
@@ -125,14 +125,14 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   std::cout << "Convergence tolerance is: " << tol << std::endl;
 
   ViewVectorType Xiter("Xiter",n); //Intermediate solution at iterations before restart. 
-  ViewVectorType Res(Kokkos::ViewAllocateWithoutInitializing("Res"),n); //Residual vector
-  ViewVectorType Wj(Kokkos::ViewAllocateWithoutInitializing("W_j"),n); //Tmp work vector 1
-  ViewHostVectorType GVec_h(Kokkos::ViewAllocateWithoutInitializing("GVec"),m+1);
+  ViewVectorType Res(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Res"),n); //Residual vector
+  ViewVectorType Wj(Kokkos::view_alloc(Kokkos::WithoutInitializing, "W_j"),n); //Tmp work vector 1
+  ViewHostVectorType GVec_h(Kokkos::view_alloc(Kokkos::WithoutInitializing, "GVec"),m+1);
   ViewMatrixType GLsSoln("GLsSoln",m,1);//LS solution vec for Givens Rotation. Must be 2-D for trsm. 
   typename ViewMatrixType::HostMirror GLsSoln_h = Kokkos::create_mirror_view(GLsSoln); //This one is needed for triangular solve. 
   ViewHostVectorType CosVal_h("CosVal",m);
   ViewHostVectorType SinVal_h("SinVal",m);
-  ViewMatrixType V(Kokkos::ViewAllocateWithoutInitializing("V"),n,m+1);
+  ViewMatrixType V(Kokkos::view_alloc(Kokkos::WithoutInitializing, "V"),n,m+1);
   ViewMatrixType VSub; //Subview of 1st m cols for updating soln. 
 
   ViewMatrixType H("H",m+1,m); //H matrix on device. Also used in Arn Rec debug. 
@@ -147,7 +147,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   relRes = trueRes/nrmB;
   shortRelRes = relRes;
     
-  while( !converged && cycle < maxRestart){
+  while( !converged && cycle <= maxRestart){
     GVec_h(0) = trueRes;
 
     // Run Arnoldi iteration:
@@ -173,7 +173,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         KokkosBlas::gemv("N", -one, V0j, Hj, one, Wj); // wj = wj - Vj * Hj
 
         //Re-orthog CGS:
-        ViewVectorType tmp(Kokkos::ViewAllocateWithoutInitializing("tmp"),j+1); 
+        ViewVectorType tmp(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp"),j+1); 
         KokkosBlas::gemv("C", one, V0j, Wj, zero, tmp); // tmp (Hj) = Vj^T * wj
         KokkosBlas::gemv("N", -one, V0j, tmp, one, Wj); // wj = wj - Vj * tmp 
         KokkosBlas::axpy(one, tmp, Hj); // Hj = Hj + tmp
@@ -183,14 +183,6 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         throw std::invalid_argument("Invalid argument for 'ortho'.  Please use 'CGS2' or 'MGS'.");
       }
 
-      //Re-orthog MGS:
-/*      for (int i = 0; i <= j; i++){
-        auto Vi = Kokkos::subview(V,Kokkos::ALL,i); 
-        tmpScalar = KokkosBlas::dot(Vi,Wj); //Vi^* Wj
-        KokkosBlas::axpy(-tmpScalar,Vi,Wj);//wj = wj-tmpScalar*Vi
-        H_h(i,j) = H_h(i,j) + tmpScalar; 
-      }*/
-      
       MT tmpNrm = KokkosBlas::nrm2(Wj);
       H_h(j+1,j) = tmpNrm; 
       if(tmpNrm < 1e-14){ 
@@ -257,27 +249,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         }
       }
 
-      // DEBUG: Print elts of H:
-      /*std::cout << "Elements of H " <<std::endl;
-        for (int i1 = 0; i1 < m+1; i1++){
-        for (int j1 = 0; j1 < m; j1++){
-        std::cout << H_h(i1,j1);
-        }
-        std::cout << std::endl;
-        }*/
-
     }//end Arnoldi iter.
-
-    /*//DEBUG: Check orthogonality of V:
-    ViewMatrixType Vsm("Vsm", m+1, m+1);
-    KokkosBlas::gemm("C","N", one, V, V, zero, Vsm); // Vsm = V^T * V
-    Kokkos::View<MT*, Layout, EXSP> nrmV("nrmV",m+1);
-    KokkosBlas::nrm2(nrmV, Vsm); //nrmV = norm(Vsm)
-    std::cout << "Norm of V^T V (Should be all ones, except ending iteration.): " << std::endl;
-    typename Kokkos::View<MT*, Layout, EXSP>::HostMirror nrmV_h = Kokkos::create_mirror_view(nrmV); 
-    Kokkos::deep_copy(nrmV_h, nrmV);
-    for (int i1 = 0; i1 < m+1; i1++){ std::cout << nrmV_h(i1) << " " ; } 
-    std::cout << std::endl;*/
 
     cycle++;
 
