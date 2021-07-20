@@ -88,7 +88,8 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 struct TplParams {
   union {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-    queue mkl_queue;
+    //queue mkl_queue;
+    // TODO: Add queue header? Cannot find any declarations in intel-18, let alone oneAPI 2021
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
@@ -150,8 +151,8 @@ class BatchedKernelHandle {
   decltype(auto) get_tpl_params() {
 #if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
     return "BaseTplAlgos::ARMPL does not support any tpl parameters";
-#elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-    return _tplParamsSingleton.mkl_queue;
+//#elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+//    return _tplParamsSingleton.mkl_queue;
 #else
     return "Unsupported kernelAlgoType = " + std::to_string(_kernelAlgoType) +
            ".";
