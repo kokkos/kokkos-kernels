@@ -645,13 +645,15 @@ public:
     // create_staticcrsgraph takes the frequency of blocks per row
     // and returns the cum sum pointer row_map with nbrows+1 size, and total numBlocks in the final entry
     graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> ("blockgraph", block_rows);
-    typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
     typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
+    typename row_map_type::HostMirror h_rowmap = Kokkos::create_mirror_view (graph.row_map);
+
+    Kokkos::deep_copy (h_rowmap, graph.row_map);
 
     for (OrdinalType i = 0; i < nbrows; ++i) {
       OrdinalType blks_in_row = block_rows[i];
       
-      OrdinalType offset_into_blkcolidx_start = graph.row_map(i);
+      OrdinalType offset_into_blkcolidx_start = h_rowmap(i);
       OrdinalType offset_into_colidx_start = offset_into_blkcolidx_start*blockDim_*blockDim_;
 
       for ( OrdinalType lidx = 0; lidx < blks_in_row; ++lidx ) {
