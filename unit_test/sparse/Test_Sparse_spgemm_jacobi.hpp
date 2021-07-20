@@ -130,8 +130,8 @@ namespace Test {
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size){
-    entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
   }
   spgemm_jacobi(
       &kh,

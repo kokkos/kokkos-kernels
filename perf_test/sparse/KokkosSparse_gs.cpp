@@ -175,9 +175,9 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params)
     totalEntries += rowLengths[i];
     rowmap.push_back(totalEntries);
   }
-  scalar_view_t valuesView(Kokkos::ViewAllocateWithoutInitializing("Values"), totalEntries);
-  entries_view_t entriesView(Kokkos::ViewAllocateWithoutInitializing("Entries"), totalEntries);
-  rowmap_view_t rowmapView(Kokkos::ViewAllocateWithoutInitializing("Rowmap"), numRows + 1);
+  scalar_view_t valuesView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values"), totalEntries);
+  entries_view_t entriesView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries"), totalEntries);
+  rowmap_view_t rowmapView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Rowmap"), numRows + 1);
   Kokkos::deep_copy(valuesView, Kokkos::View<scalar_t*, Kokkos::HostSpace>(values.data(), totalEntries));
   Kokkos::deep_copy(entriesView, Kokkos::View<lno_t*, Kokkos::HostSpace>(entries.data(), totalEntries));
   Kokkos::deep_copy(rowmapView, Kokkos::View<size_type*, Kokkos::HostSpace>(rowmap.data(), numRows + 1));

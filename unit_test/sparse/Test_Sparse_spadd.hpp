@@ -100,7 +100,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   handle.create_spadd_handle(sortRows);
   crsMat_t A = randomMatrix<crsMat_t, lno_t>(numRows, numCols, minNNZ, maxNNZ, sortRows);
   crsMat_t B = randomMatrix<crsMat_t, lno_t>(numRows, numCols, minNNZ, maxNNZ, sortRows);
-  row_map_type c_row_map(Kokkos::ViewAllocateWithoutInitializing("C row map"), numRows + 1);
+  row_map_type c_row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C row map"), numRows + 1);
   //Make sure that nothing relies on any specific entry of c_row_map being zero initialized
   Kokkos::deep_copy(c_row_map, (size_type) 5);
   auto addHandle = handle.get_spadd_handle();
@@ -115,7 +115,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   (&handle, A.graph.row_map, A.graph.entries, B.graph.row_map, B.graph.entries, c_row_map);
   size_type c_nnz = addHandle->get_c_nnz();
   //Fill values, entries with incorrect incorret
-  values_type c_values(Kokkos::ViewAllocateWithoutInitializing("C values"), c_nnz);
+  values_type c_values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C values"), c_nnz);
   Kokkos::deep_copy(c_values, ((typename KAT::mag_type) 5) * KAT::one());
   entries_type c_entries("C entries", c_nnz);
   Kokkos::deep_copy(c_entries, (lno_t) 5);

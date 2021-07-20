@@ -431,7 +431,7 @@ void transpose_matrix(
     )
 {
   //allocate some memory for work for row pointers
-  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
+  tempwork_row_view_t tmp_row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_row_view"), num_cols + 1);
 
   //create the functor for tranpose.
   typedef TransposeMatrix <
@@ -479,9 +479,9 @@ crsMat_t transpose_matrix(const crsMat_t& A)
   using values_t = typename crsMat_t::values_type::non_const_type;
   rowmap_t AT_rowmap("Transpose rowmap", A.numCols() + 1);
   entries_t AT_entries(
-      Kokkos::ViewAllocateWithoutInitializing("Transpose entries"), A.nnz());
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Transpose entries"), A.nnz());
   values_t AT_values(
-      Kokkos::ViewAllocateWithoutInitializing("Transpose values"), A.nnz());
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Transpose values"), A.nnz());
   transpose_matrix<
     c_rowmap_t, c_entries_t, c_values_t,
     rowmap_t, entries_t, values_t,
@@ -509,7 +509,7 @@ void transpose_graph(
     )
 {
   //allocate some memory for work for row pointers
-  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
+  tempwork_row_view_t tmp_row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_row_view"), num_cols + 1);
 
   in_nnz_view_t tmp1;
   out_nnz_view_t tmp2;
@@ -1033,7 +1033,7 @@ inline void kk_create_incidence_matrix(
 
   typedef typename in_row_view_t::non_const_type tmp_row_view_t;
   //allocate some memory for work for row pointers
-  tmp_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_rows + 1);
+  tmp_row_view_t tmp_row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_row_view"), num_rows + 1);
 
   Kokkos::deep_copy(tmp_row_view, xadj);
 
@@ -1637,7 +1637,7 @@ crstmat_t kk_get_lower_triangle(crstmat_t in_crs_matrix,
   const size_type ne = in_crs_matrix.graph.entries.extent(0);
 
 
-  row_map_view_t new_row_map (Kokkos::ViewAllocateWithoutInitializing("LL"), nr + 1);
+  row_map_view_t new_row_map (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
   kk_get_lower_triangle_count
   <size_type, lno_t, exec_space> (nr, ne, rowmap, entries, new_row_map.data(), new_indices, use_dynamic_scheduling, chunksize);
 
@@ -1652,8 +1652,8 @@ crstmat_t kk_get_lower_triangle(crstmat_t in_crs_matrix,
 
   //cols_view_t new_entries ("LL", ll_nnz_size);
   //values_view_t new_values ("LL", ll_nnz_size);
-  cols_view_t new_entries (Kokkos::ViewAllocateWithoutInitializing("LL"), ll_nnz_size);
-  values_view_t new_values (Kokkos::ViewAllocateWithoutInitializing("LL"), ll_nnz_size);
+  cols_view_t new_entries (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
+  values_view_t new_values (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
 
   kk_get_lower_triangle_fill
   <size_type, lno_t, scalar_t, exec_space> (
@@ -1693,7 +1693,7 @@ crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
   const size_type ne = in_crs_matrix.graph.entries.extent(0);
 
 
-  row_map_view_t new_row_map (Kokkos::ViewAllocateWithoutInitializing("LL"), nr + 1);
+  row_map_view_t new_row_map (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
   kk_get_lower_triangle_count
   <size_type, lno_t, exec_space> (nr, ne, rowmap, entries, new_row_map.data(), new_indices, use_dynamic_scheduling, chunksize);
 
@@ -1709,8 +1709,8 @@ crstmat_t kk_get_lower_crs_matrix(crstmat_t in_crs_matrix,
 
   //cols_view_t new_entries ("LL", ll_nnz_size);
   //values_view_t new_values ("LL", ll_nnz_size);
-  cols_view_t new_entries (Kokkos::ViewAllocateWithoutInitializing("LL"), ll_nnz_size);
-  values_view_t new_values (Kokkos::ViewAllocateWithoutInitializing("LL"), ll_nnz_size);
+  cols_view_t new_entries (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
+  values_view_t new_values (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
 
   kk_get_lower_triangle_fill
   <size_type, lno_t, scalar_t, exec_space> (
@@ -1748,7 +1748,7 @@ graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
 
   const size_type ne = in_crs_matrix.graph.entries.extent(0);
 
-  row_map_view_t new_row_map (Kokkos::ViewAllocateWithoutInitializing("LL"), nr + 1);
+  row_map_view_t new_row_map (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
   kk_get_lower_triangle_count
   <size_type, lno_t, exec_space> (nr, ne, rowmap, entries, new_row_map.data(), new_indices);
 
@@ -1761,7 +1761,7 @@ graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
   Kokkos::deep_copy (h_ll_size, ll_size);
   size_type ll_nnz_size = h_ll_size();
 
-  cols_view_t new_entries (Kokkos::ViewAllocateWithoutInitializing("LL"), ll_nnz_size);
+  cols_view_t new_entries (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
 
 
   kk_get_lower_triangle_fill
@@ -1812,7 +1812,7 @@ void kk_get_lower_triangle(
   const lno_t *entries= in_entries.data();
   const size_type ne = in_entries.extent(0);
 
-  out_rowmap = out_row_map_view_t(Kokkos::ViewAllocateWithoutInitializing("LL"), nr + 1);
+  out_rowmap = out_row_map_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), nr + 1);
   kk_get_lower_triangle_count
   <size_type, lno_t, exec_space> (nr, ne, rowmap, entries,
       out_rowmap.data(),
@@ -1831,10 +1831,10 @@ void kk_get_lower_triangle(
 
   //cols_view_t new_entries ("LL", ll_nnz_size);
   //values_view_t new_values ("LL", ll_nnz_size);
-  out_entries = out_cols_view_t(Kokkos::ViewAllocateWithoutInitializing("LL"), ll_nnz_size);
+  out_entries = out_cols_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
 
   if (in_values.data() != NULL)
-    out_values = out_values_view_t (Kokkos::ViewAllocateWithoutInitializing("LL"), ll_nnz_size);
+    out_values = out_values_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ll_nnz_size);
 
   kk_get_lower_triangle_fill
   <size_type, lno_t, scalar_t, exec_space> (
@@ -1868,7 +1868,7 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
   //const size_type *rowmap = in_rowmap.data();
   //const lno_t *entries= in_entries.data();
   const size_type ne = in_entries.extent(0);
-  out_rowmap = out_row_map_view_t(Kokkos::ViewAllocateWithoutInitializing("LL"), ne + 1);
+  out_rowmap = out_row_map_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), ne + 1);
   //const lno_t nr = in_rowmap.extent(0) - 1;
   typedef Kokkos::RangePolicy<exec_space> my_exec_space;
 
@@ -1883,7 +1883,7 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
   //team_policy_t(ne)
   //nv  / team_work_chunk_size + 1 , suggested_team_size, vector_size
 
-  out_entries = out_cols_view_t(Kokkos::ViewAllocateWithoutInitializing("LL"), 2 * ne);
+  out_entries = out_cols_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "LL"), 2 * ne);
 
   //TODO MAKE IT WITH TEAMS.
   Kokkos::parallel_for("KokkosKernels::Common::CreateIncidenceTransposeMatrixFromLowerTriangle::S1", my_exec_space(0, nr),
@@ -1928,8 +1928,8 @@ void kk_create_incidence_matrix_from_original_matrix(
   lno_t * perm = permutation.data();
   const size_type ne = in_entries.extent(0);
 
-  out_rowmap = out_row_map_view_t (Kokkos::ViewAllocateWithoutInitializing("out_rowmap"), nr+1);
-  out_entries = out_cols_view_t (Kokkos::ViewAllocateWithoutInitializing("out_cols_view"), ne);
+  out_rowmap = out_row_map_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "out_rowmap"), nr+1);
+  out_entries = out_cols_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "out_cols_view"), ne);
 
 
   //todo: need to try both true and false
@@ -1947,7 +1947,7 @@ void kk_create_incidence_matrix_from_original_matrix(
 
   //kk_print_1Dview(out_rowmap, false, 20);
 
-  out_row_map_view_t out_rowmap_copy (Kokkos::ViewAllocateWithoutInitializing("tmp"), nr+1);
+  out_row_map_view_t out_rowmap_copy (Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp"), nr+1);
   //out_rowmap = out_row_map_view_t("LL", nr+1);
   Kokkos::parallel_for("KokkosKernels::Common::CreateIncidenceTransposeMatrixFromOriginalTriangle::S0", my_exec_space(0, nr+1),
       KOKKOS_LAMBDA(const lno_t& i) {

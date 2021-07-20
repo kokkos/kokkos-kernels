@@ -2635,7 +2635,7 @@ cudaProfilerStop();
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
 
   Kokkos::View<size_type*, Kokkos::HostSpace> row_map_host(
-      Kokkos::ViewAllocateWithoutInitializing("host rowmap"), row_map.extent(0));
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "host rowmap"), row_map.extent(0));
   Kokkos::deep_copy (row_map_host, row_map);
 
   // inversion options
@@ -2945,7 +2945,7 @@ cudaProfilerStop();
   Kokkos::deep_copy (nodes_grouped_by_level_host, nodes_grouped_by_level);
 
   Kokkos::View<size_type*, Kokkos::HostSpace> row_map_host(
-      Kokkos::ViewAllocateWithoutInitializing("host rowmap"), row_map.extent(0));
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "host rowmap"), row_map.extent(0));
   Kokkos::deep_copy (row_map_host, row_map);
 
   // supernode sizes
