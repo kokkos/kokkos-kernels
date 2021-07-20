@@ -247,7 +247,7 @@ class GraphColorDistance2
 
         // conflictlist - store conflicts that can happen when we're coloring in parallel.
         lno_view_t current_vertexList(
-            Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nr);
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "vertexList"), this->nr);
 
         lno_t current_vertexListLength = this->nr;
         
@@ -260,7 +260,7 @@ class GraphColorDistance2
           Kokkos::parallel_for("InitList", range_policy_type(0, this->nr), functorInitList<lno_view_t>(current_vertexList));
         }
         // Next iteratons's conflictList
-        lno_view_t next_iteration_recolorList(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nr);
+        lno_view_t next_iteration_recolorList(Kokkos::view_alloc(Kokkos::WithoutInitializing, "recolorList"), this->nr);
 
         // Size the next iteration conflictList
         single_lno_view_t next_iteration_recolorListLength("recolorListLength");
@@ -291,7 +291,7 @@ class GraphColorDistance2
                 // * Allocate using lno_view_t (managed) but then access as an entries_t,
                 //   so that it has the same type as adj
                 // * on the other hand, t_adj is not actually modified by EF functor
-                lno_view_t adj_copy(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
+                lno_view_t adj_copy(Kokkos::view_alloc(Kokkos::WithoutInitializing, "adj copy"), this->ne);
                 Kokkos::deep_copy(adj_copy, this->adj);
                 this->colorGreedyEF(this->xadj, adj_copy, this->t_xadj, this->t_adj, colors_out);
             }
@@ -882,7 +882,7 @@ class GraphColorDistance2
       Kokkos::View<const size_type*, Kokkos::HostSpace> Vrowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), this->xadj);
       Kokkos::View<const lno_t*, Kokkos::HostSpace> Vcolinds = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), this->adj);
       //Create worklist
-      Kokkos::View<lno_t*, Kokkos::HostSpace> worklist(Kokkos::ViewAllocateWithoutInitializing("Worklist"), this->nr);
+      Kokkos::View<lno_t*, Kokkos::HostSpace> worklist(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Worklist"), this->nr);
       int iter = 0;
       Kokkos::Impl::Timer timer;
       lno_t currentWork = this->nr;

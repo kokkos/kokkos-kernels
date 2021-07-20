@@ -767,16 +767,16 @@ public:
     if ( this->require_symbolic_lvlsched_phase == true )
     {
       set_num_levels(0);
-      level_list = signed_nnz_lno_view_t(Kokkos::ViewAllocateWithoutInitializing("level_list"), nrows_);
+      level_list = signed_nnz_lno_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "level_list"), nrows_);
       Kokkos::deep_copy( level_list, signed_integral_t(-1) );
       //The host side views need to be initialized, but the device-side views don't.
       //Symbolic computes on the host (and requires these are 0 initialized), and then copies to device.
       hnodes_per_level = hostspace_nnz_lno_view_t("host nodes_per_level", nrows_);
       hnodes_grouped_by_level = hostspace_nnz_lno_view_t("host nodes_grouped_by_level", nrows_);
       nodes_per_level =  nnz_lno_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("nodes_per_level"), nrows_);
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "nodes_per_level"), nrows_);
       nodes_grouped_by_level = nnz_lno_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("nodes_grouped_by_level"), nrows_);
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "nodes_grouped_by_level"), nrows_);
 
 #if 0
       std::cout << "  newinit_handle: level schedule allocs" << std::endl;
@@ -789,8 +789,8 @@ public:
     }
 
     if (stored_diagonal) {
-      diagonal_offsets = nnz_lno_view_t(Kokkos::ViewAllocateWithoutInitializing("diagonal_offsets"), nrows_);
-      diagonal_values = nnz_scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("diagonal_values"), nrows_); // inserted by rowid
+      diagonal_offsets = nnz_lno_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "diagonal_offsets"), nrows_);
+      diagonal_values = nnz_scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "diagonal_values"), nrows_); // inserted by rowid
       hdiagonal_offsets = Kokkos::create_mirror_view(diagonal_offsets);
       hdiagonal_values = Kokkos::create_mirror_view(diagonal_values);
     }
@@ -866,7 +866,7 @@ public:
   }
 
   void allocate_tmp_int_rowmap (size_type N) {
-    tmp_int_rowmap = int_row_view_t(Kokkos::ViewAllocateWithoutInitializing("tmp_int_rowmap"), N);
+    tmp_int_rowmap = int_row_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_int_rowmap"), N);
   }
   template <typename RowViewType>
   int_row_view_t get_int_rowmap_view_copy (const RowViewType & rowmap) {

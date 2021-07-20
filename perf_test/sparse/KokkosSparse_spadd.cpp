@@ -145,9 +145,9 @@ void run_experiment(const Params& params)
   {
     std::cout << "Generating B as diagonal matrix.\n";
     int diagLength = std::min(m, n);
-    rowmap_t rowmap(Kokkos::ViewAllocateWithoutInitializing("rowmap_view"), m + 1);
-    entries_t entries(Kokkos::ViewAllocateWithoutInitializing("colsmap_view"), diagLength);
-    values_t values(Kokkos::ViewAllocateWithoutInitializing("values_view"), diagLength);
+    rowmap_t rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap_view"), m + 1);
+    entries_t entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "colsmap_view"), diagLength);
+    values_t values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_view"), diagLength);
     auto rowmapHost = Kokkos::create_mirror_view(rowmap);
     auto entriesHost = Kokkos::create_mirror_view(entries);
     auto valuesHost = Kokkos::create_mirror_view(values);
@@ -294,8 +294,8 @@ void run_experiment(const Params& params)
     }
     if(!params.use_mkl)
     {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC (empty)"), c_nnz);
-      valuesC = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC (empty)"), c_nnz);
+      entriesC = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC (empty)"), c_nnz);
+      valuesC = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC (empty)"), c_nnz);
     }
 
     //note: symbolic has a fence at the end

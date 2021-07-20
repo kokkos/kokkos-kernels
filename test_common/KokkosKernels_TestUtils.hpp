@@ -403,7 +403,7 @@ inline void getRandomBounds(double mag, Kokkos::complex<float>& start,
 
   template <typename crsMat_t, typename vector_t>
   vector_t create_random_y_vector(crsMat_t crsMat, vector_t x_vector){
-    vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+    vector_t y_vector (Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
         crsMat.numRows());
     KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
     return y_vector;
@@ -411,7 +411,7 @@ inline void getRandomBounds(double mag, Kokkos::complex<float>& start,
 
   template <typename crsMat_t, typename vector_t>
   vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
-    vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
+    vector_t y_vector (Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
         crsMat.numRows(), x_vector.extent(1));
     KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
     return y_vector;

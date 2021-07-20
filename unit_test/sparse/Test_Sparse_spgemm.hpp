@@ -160,8 +160,8 @@ int run_spgemm_old_interface(crsMat_t input_mat, crsMat_t input_mat2, KokkosSpar
   );
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+  entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+  valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
   spgemm_numeric(
       &kh,
       num_rows_1,
