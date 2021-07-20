@@ -15,7 +15,8 @@ void impl_test_batched_gemm_handle(BatchedGemmHandle* batchedGemmHandle,
                                    const int N, const int matAdim1,
                                    const int matAdim2, const int matBdim1,
                                    const int matBdim2, const int matCdim1,
-                                   const int matCdim2) {
+                                   const int matCdim2, ScalarType alpha,
+                                   ScalarType beta) {
   using execution_space = typename DeviceType::execution_space;
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
@@ -23,9 +24,7 @@ void impl_test_batched_gemm_handle(BatchedGemmHandle* batchedGemmHandle,
   using view_layout     = typename ViewType::array_layout;
   using ats             = Kokkos::Details::ArithTraits<ScalarType>;
 
-  int ret          = 0;
-  ScalarType alpha = ScalarType(1.5);
-  ScalarType beta  = ScalarType(3.0);
+  int ret = 0;
 
   ViewType a_expected, a_actual, b_expected, b_actual, c_expected, c_actual;
   if (std::is_same<batchLayout, BatchLayout::Left>::value) {
@@ -143,16 +142,35 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
       ASSERT_EQ(batchedGemmHandle.get_kernel_algo_type(), algo_type);
 
       if (algo_type == BaseKokkosBatchedAlgos::KK_SERIAL) {
+        // Invoke 4 times to ensure we cover all paths for alpha and beta
         impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
                                       ParamTagType>(
             &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
-            matCdim1, matCdim2);
+            matCdim1, matCdim2, 0.0, 0.0);
+        impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
+                                      ParamTagType>(
+            &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
+            matCdim1, matCdim2, 1.0, 0.0);
+        impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
+                                      ParamTagType>(
+            &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
+            matCdim1, matCdim2, 0.0, 1.0);
+        impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
+                                      ParamTagType>(
+            &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
+            matCdim1, matCdim2, 1.5, 3.0);
       } else {
         try {
-          impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
-                                        ParamTagType>(
-              &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
-              matCdim1, matCdim2);
+          // Allocate these views to invoke BatchedGemm with an unsupported algo
+          // type
+          ViewType a_actual("a_actual", N, matAdim1, matAdim2);
+          ViewType b_actual("b_actual", N, matBdim1, matBdim2);
+          ViewType c_actual("c_actual", N, matCdim1, matCdim2);
+          using ta = typename ParamTagType::transA;
+          using tb = typename ParamTagType::transB;
+          using bl = typename ParamTagType::batchLayout;
+          BatchedGemm<ta, tb, bl>(&batchedGemmHandle, 0.34, a_actual, b_actual,
+                                  0.43, c_actual);
           FAIL();
         } catch (const std::runtime_error& error) {
           ;
