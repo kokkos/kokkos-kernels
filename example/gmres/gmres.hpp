@@ -157,6 +157,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
 
     for (int j = 0; j < m; j++){
       KokkosSparse::spmv("N", one, A, Vj, zero, Wj); //wj = A*Vj
+      Kokkos::Profiling::pushRegion("GMRES::Orthog:");
       if( ortho == "MGS"){
         for (int i = 0; i <= j; i++){
           auto Vi = Kokkos::subview(V,Kokkos::ALL,i); 
@@ -191,6 +192,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
 
       Vj = Kokkos::subview(V,Kokkos::ALL,j+1); 
       KokkosBlas::scal(Vj,one/H_h(j+1,j),Wj); // Wj = Vj/H(j+1,j)
+      Kokkos::Profiling::popRegion();
 
       // Givens for real and complex (See Alg 3 in "On computing Givens rotations reliably and efficiently"
       // by Demmel, et. al. 2001)
