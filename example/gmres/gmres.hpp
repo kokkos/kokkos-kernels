@@ -134,6 +134,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   ViewHostVectorType SinVal_h("SinVal",m);
   ViewMatrixType V(Kokkos::view_alloc(Kokkos::WithoutInitializing, "V"),n,m+1);
   ViewMatrixType VSub; //Subview of 1st m cols for updating soln. 
+  ViewVectorType orthoTmp(Kokkos::view_alloc(Kokkos::WithoutInitializing, "orthoTmp"),m); 
 
   ViewMatrixType H("H",m+1,m); //H matrix on device. Also used in Arn Rec debug. 
   typename ViewMatrixType::HostMirror H_h = Kokkos::create_mirror_view(H); //Make H into a host view of H. 
@@ -174,10 +175,10 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         KokkosBlas::gemv("N", -one, V0j, Hj, one, Wj); // wj = wj - Vj * Hj
 
         //Re-orthog CGS:
-        ViewVectorType tmp(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp"),j+1); 
-        KokkosBlas::gemv("C", one, V0j, Wj, zero, tmp); // tmp (Hj) = Vj^T * wj
-        KokkosBlas::gemv("N", -one, V0j, tmp, one, Wj); // wj = wj - Vj * tmp 
-        KokkosBlas::axpy(one, tmp, Hj); // Hj = Hj + tmp
+        auto orthoTmpSub = Kokkos::subview(orthoTmp,Kokkos::make_pair(0,j+1)); 
+        KokkosBlas::gemv("C", one, V0j, Wj, zero, orthoTmpSub); // tmp (Hj) = Vj^T * wj
+        KokkosBlas::gemv("N", -one, V0j, orthoTmpSub, one, Wj); // wj = wj - Vj * tmp 
+        KokkosBlas::axpy(one, orthoTmpSub, Hj); // Hj = Hj + tmp
         Kokkos::deep_copy(Hj_h,Hj);
       }
       else {
