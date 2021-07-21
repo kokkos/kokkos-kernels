@@ -143,6 +143,7 @@ struct GEMM {
   const int M = static_cast<int> (C.extent(0));
   const int N = static_cast<int> (C.extent(1));
 
+  const bool host_space = std::is_same<Kokkos::HostSpace, ExecSpace>::value;
   const bool A_is_lr = std::is_same<Kokkos::LayoutRight, typename AViewType::array_layout>::value;
   const bool A_is_tr = ((transA[0]=='T') || (transA[0]=='t') || (transA[0]=='C') || (transA[0]=='c'));
   const bool B_is_tr = ((transB[0]=='T') || (transB[0]=='t') || (transB[0]=='C') || (transB[0]=='c'));
@@ -150,13 +151,14 @@ struct GEMM {
   // NOTE: these thresholds were copied from TPL CUBLAS, and may need to be retuned
   constexpr int numDotsLayoutLeftThreshold = 1600;
   constexpr int numDotsLayoutRightThreshold = 100;
-  if(    (!A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutLeftThreshold)
-      || ( A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutRightThreshold)) {
+  if((   (!A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutLeftThreshold)
+      || ( A_is_lr && A_is_tr && !B_is_tr && M*N < numDotsLayoutRightThreshold))
+     && !host_space) {
 
-    // call dot-based GEMM, only for C := beta * C + alpha * A^T * B
+    // call dot-based GEMM, only for C := beta * C + alpha * A^T * B, on device
     bool A_is_conj = ((transA[0]=='C') || (transA[0]=='c'));
     DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> dotBasedGemm(alpha, A, B, beta, C);
-    dotBasedGemm.run(A_is_conj ? true : false);
+    dotBasedGemm.run(A_is_conj);
 
   } else {
 
