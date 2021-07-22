@@ -138,11 +138,13 @@ struct TplParams {
 ///                    uses TeamPolicy and Kokkos::ThreadVectorRange or Kokkos::TeamVectorRange
 ///                    (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*
+/// \var enabledDebug  toggle debug messages.
 // clang-format on
 class BatchedKernelHandle {
  public:
   int teamSz = 0;
-  int vecLen = 0;
+  int vecLen       = 0;
+  bool enableDebug = false;
 
   BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
                       int teamSize = 0, int vecLength = 0)
@@ -161,14 +163,14 @@ class BatchedKernelHandle {
 
   int get_kernel_algo_type() const { return _kernelAlgoType; }
 
-  /// \var _kernelAlgoType Specifies which algorithm to use for invocation
-  /// (default, SQUARE). \var _enabledDebug   toggle debug messages. \var
-  /// _tplParams      a handle or queue specific to the TPL API.
+  // clang-format off
+  /// \var _kernelAlgoType Specifies which algorithm to use for invocation (default, SQUARE).
+  /// \var _tplParams      a handle or queue specific to the TPL API.
   ///                      managed internally unless provided by user via
   ///                      constructor overload
+  // clang-format on
  protected:
-  int _kernelAlgoType                = BaseHeuristicAlgos::SQUARE;
-  constexpr static bool _enableDebug = false;
+  int _kernelAlgoType = BaseHeuristicAlgos::SQUARE;
   static TplParams &_tplParamsSingleton;
 };
 

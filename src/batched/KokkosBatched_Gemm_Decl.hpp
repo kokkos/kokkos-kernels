@@ -44,10 +44,10 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
-#include "KokkosBatched_Gemm_Handle.hpp"
 
 // Includes for non-functor-level routines
 #include <KokkosBatched_Gemm_Handle.hpp>
+#include <KokkosKernels_ExecSpaceUtils.hpp>
 
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
@@ -127,6 +127,7 @@ template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim,
 class BatchedSerialGemm;
 /********************* END forward declarations *********************/
 
+// clang-format off
 /// \brief Non-blocking solve of general matrix multiply on a batch of
 /// uniform matrices.
 ///
@@ -139,8 +140,8 @@ class BatchedSerialGemm;
 ///        C = alpha * op(A) * op(B) + beta * C
 ///
 /// \tparam ArgTransA      Specifies what op does to A:
-///                        Trans::NoTranspose for non-transpose
-///                        Trans::Transpose for transpose
+///                        Trans::NoTranspose   for non-transpose
+///                        Trans::Transpose     for transpose
 ///                        Trans::ConjTranspose for conjugate transpose
 /// \tparam ArgTransB      Specifies what op does to B:
 ///                        Trans::NoTranspose   for non-transpose
@@ -148,17 +149,13 @@ class BatchedSerialGemm;
 ///                        Trans::ConjTranspose for conjugate transpose
 /// \tparam ArgBatchSzDim  Specifies where the batch dimension is allocated in
 ///                        AViewType, BViewType, and CViewType:
-///                        BatchSzDim::Left  Batch dimension is the leftmost
-///                        dimension
-///                        BatchSzDim::Right Batch dimension is the
-///                        rightmost dimension
+///                        BatchSzDim::Left  Batch dimension is leftmost
+///                        BatchSzDim::Right Batch dimension is rightmost
 /// \tparam ScalarType     Specifies the scalar type of alpha and beta
 /// \tparam AViewType      Input matrix, as either a 3-rank Kokkos::View or a
-///                        4-rank Kokkos::View
-///                        for SIMD operations.
+///                        4-rank Kokkos::View for SIMD operations.
 /// \tparam BViewType      Input matrix, as either a 3-rank Kokkos::View or a
-///                        4-rank Kokkos::View
-///                        for SIMD operations.
+///                        4-rank Kokkos::View for SIMD operations.
 /// \tparam CViewType      Input(RHS)/Output(LHS) matrix, as either a 3-rank
 ///                        Kokkos::View or a 4-rank Kokkos::View for SIMD
 ///                        operations.
@@ -168,27 +165,25 @@ class BatchedSerialGemm;
 ///                        See struct BatchedGemmHandle for details.
 /// \param alpha [in]      Input coefficient used for multiplication with A
 /// \param A [in]          Input matrix, as a 3-rank Kokkos::View
-///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix A
-///                        is MxKxB If ArgBatchSzDim == "BatchSzDim::Left",
-///                        matrix A is BxMxK
+///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix A is MxKxB
+///                        If ArgBatchSzDim == "BatchSzDim::Left",  matrix A is BxMxK
 /// \param B [in]          Input matrix, as a 3-rank Kokkos::View
-///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix B
-///                        is KxNxB
+///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix B is KxNxB
+///                        If ArgBatchSzDim == "BatchSzDim::Left",  matrix B is BxKxN
 /// \param beta [in]       Input coefficient used for multiplication with C
-///                        If ArgBatchSzDim == "BatchSzDim::Left",  matrix A
-///                        is BxKxN
 /// \param C [in/out]      Input/Output matrix, as a 3-rank Kokkos::View
-///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix C
-///                        is MxNxB If ArgBatchSzDim == "BatchSzDim::Left",
-///                        matrix C is BxMxN
+///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix C is MxNxB
+///                        If ArgBatchSzDim == "BatchSzDim::Left",  matrix C is BxMxN
 /// \return 0 upon success, non-zero otherwise
+// clang-format on
 template <typename ArgTransA, typename ArgTransB, typename ArgBatchSzDim,
           typename BatchedGemmHandleType, typename ScalarType,
           typename AViewType, typename BViewType, typename CViewType>
 int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                 const AViewType &A, const BViewType &B, const ScalarType beta,
                 const CViewType &C) {
-  int ret = 0;
+  int ret             = 0;
+  using ViewValueType = typename CViewType::value_type;
   // Check for valid input views
   static_assert(Kokkos::Impl::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
@@ -196,12 +191,46 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                 "BViewType must be a Kokkos::View.");
   static_assert(Kokkos::Impl::is_view<CViewType>::value,
                 "CViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(AViewType::rank) == 3,
-                "AViewType must have rank 3.");
-  static_assert(static_cast<int>(BViewType::rank) == 3,
-                "BViewType must have rank 3.");
-  static_assert(static_cast<int>(CViewType::rank) == 3,
-                "CViewType must have rank 3.");
+  if (is_vector<ViewValueType>::value) {
+    // Check ranks of view with underlying SIMD value types
+    // For SIMD views, we can have either 3-rank or 4-ranks inputs.
+    switch (handle->get_kernel_algo_type()) {
+      case BaseKokkosBatchedAlgos::KK_SERIAL:
+        static_assert(static_cast<int>(AViewType::rank) == 3,
+                      "AViewType must have rank 3.");
+        static_assert(static_cast<int>(BViewType::rank) == 3,
+                      "BViewType must have rank 3.");
+        static_assert(static_cast<int>(CViewType::rank) == 3,
+                      "CViewType must have rank 3.");
+        break;
+
+        // TODO: check this once KK_TEAM is supported
+        //        case GemmKokkosBatchedAlgos::KK_TEAM:
+        //          static_assert(static_cast<int>(AViewType::rank) == 4,
+        //                        "AViewType must have rank 4.");
+        //          static_assert(static_cast<int>(BViewType::rank) == 4,
+        //                        "BViewType must have rank 4.");
+        //          static_assert(static_cast<int>(CViewType::rank) == 4,
+        //                        "CViewType must have rank 4.");
+        //          break;
+
+      default:
+        std::ostringstream os;
+        os << "KokkosBatched::BatchedGemm does not support kernelAlgoType = "
+           << std::to_string(handle->get_kernel_algo_type())
+           << " with SIMD views." << std::endl;
+        Kokkos::Impl::throw_runtime_exception(os.str());
+        break;
+    }
+  } else {
+    // Check ranks of views with underlying scalar value types
+    static_assert(static_cast<int>(AViewType::rank) == 3,
+                  "AViewType must have rank 3.");
+    static_assert(static_cast<int>(BViewType::rank) == 3,
+                  "BViewType must have rank 3.");
+    static_assert(static_cast<int>(CViewType::rank) == 3,
+                  "CViewType must have rank 3.");
+  }
 
   // Check for valid data access patterns
   // Skip checking a_layout == b_layout == c_layout
@@ -222,8 +251,8 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
   using view_scalar_type   = typename CViewType::value_type;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
 #if defined(KOKKOS_ENABLE_CUDA)
-  constexpr bool on_gpu =
-      std::is_same<typename CViewType::execution_space, Kokkos::Cuda>::value;
+  constexpr bool on_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<
+      typename CViewType::execution_space>();
 #endif  // KOKKOS_ENABLE_CUDA
 #if defined(KOKKOS_ENABLE_HIP)
   constexpr bool on_gpu = std::is_same<typename CViewType::execution_space,
@@ -235,11 +264,11 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 #endif
 
 #if __x86_64__
-  constexpr bool on_intel =
+  constexpr bool on_x86_64 =
       std::is_same<typename CViewType::execution_space::memory_space,
                    Kokkos::HostSpace>::value;
 #else
-  constexpr bool on_intel = false;
+  constexpr bool on_x86_64 = false;
 #endif  // Intel architectures
 
 #if defined(__ARM_ARCH_ISA_A64)
@@ -259,23 +288,27 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
   // implementation of SerialGemm.
   using mode_type = typename std::conditional<
       is_vector,
-      typename std::conditional<on_gpu || on_intel, Algo::Gemm::Blocked,
+      typename std::conditional<on_gpu || on_x86_64, Algo::Gemm::Blocked,
                                 Algo::Gemm::Unblocked>::type,
       typename std::conditional<
           on_gpu, Algo::Gemm::Unblocked,
           typename std::conditional<on_a64fx, Algo::Gemm::Unblocked,
                                     Algo::Gemm::Blocked>::type>::type>::type;
 
-#if 0
-      std::cout << "view_scalar_type:" << typeid(view_scalar_type).name() << std::endl <<
-  	        "execution_space:" << typeid(typename CViewType::execution_space).name() << std::endl <<
-                "resultsPerThread:" << typeid(resultsPerThread).name() << std::endl <<
-                "mode_type:" << typeid(mode_type).name() << std::endl <<
-                "is_vector:" << is_vector << std::endl <<
-                "on_gpu:" << on_gpu << std::endl <<
-                "on_intel:" << on_intel << std::endl <<
-                "on_a64fx:" << on_a64fx << std::endl;
-#endif
+  if (handle->enableDebug) {
+    std::cout << "view_scalar_type:" << typeid(view_scalar_type).name()
+              << std::endl
+              << "execution_space:"
+              << typeid(typename CViewType::execution_space).name() << std::endl
+              << "resultsPerThread:" << typeid(resultsPerThread).name()
+              << std::endl
+              << "mode_type:" << typeid(mode_type).name() << std::endl
+              << "is_vector:" << is_vector << std::endl
+              << "on_gpu:" << on_gpu << std::endl
+              << "on_x86_64:" << on_x86_64 << std::endl
+              << "on_a64fx:" << on_a64fx << std::endl;
+  }
+
   switch (handle->get_kernel_algo_type()) {
     case BaseKokkosBatchedAlgos::KK_SERIAL:
       ret = BatchedSerialGemm<ArgTransA, ArgTransB, mode_type, ArgBatchSzDim,
