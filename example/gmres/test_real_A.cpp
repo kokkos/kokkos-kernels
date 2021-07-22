@@ -61,6 +61,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
 
   using sp_matrix_type = KokkosSparse::CrsMatrix<ST, OT, EXSP>; 
   using ViewVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, EXSP>;
+  typedef sp_matrix_type::non_const_ordinal_type ncOT;
   typedef sp_matrix_type::const_ordinal_type cOT;
   typedef sp_matrix_type::non_const_size_type ncST;
 
@@ -86,7 +87,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   cOT diagDominance = 1;
   nnz = 10 * numRows;
   sp_matrix_type A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<sp_matrix_type> 
-                                                (numRows, numCols, nnz, 0, cOT(0.01 * numRows), diagDominance);
+                                                (numRows, numCols, nnz, 0, ncOT(0.01 * numRows), diagDominance);
 
   // Set initial vectors:
   ViewVectorType X("X",n); //Solution and initial guess

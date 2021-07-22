@@ -1684,7 +1684,7 @@ void KokkosSPGEMM
   Kokkos::Impl::Timer timer1;
   if (apply_compression){
     //compressed b
-    row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
+    row_lno_temp_work_view_t new_row_mapB(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new row map"), n+1);
     nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
     nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
 
@@ -1795,7 +1795,7 @@ void KokkosSPGEMM
   else if ( spgemm_algorithm == SPGEMM_KK_TRIANGLE_IA ){
 
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
         a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,

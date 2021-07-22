@@ -149,9 +149,9 @@ struct SortCrsMatrixFunctor
   {
     if(usingRangePol)
     {
-      entriesAux = entries_managed_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
+      entriesAux = entries_managed_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"),
           entries.extent(0));
-      valuesAux = values_managed_t(Kokkos::ViewAllocateWithoutInitializing("Values aux"),
+      valuesAux = values_managed_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values aux"),
           values.extent(0));
     }
     //otherwise, aux arrays won't be allocated (sorting in place)
@@ -202,7 +202,7 @@ struct SortCrsGraphFunctor
   {
     if(usingRangePol)
     {
-      entriesAux = entries_managed_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
+      entriesAux = entries_managed_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries aux"),
           entries.extent(0));
     }
     //otherwise, aux arrays won't be allocated (sorting in place)
@@ -631,7 +631,7 @@ crsMat_t sort_and_merge_matrix(const crsMat_t& A)
   using range_t = Kokkos::RangePolicy<exec_space>;
   sort_crs_matrix(A);
   //Count entries per row into a new rowmap, in terms of merges that can be done
-  rowmap_t mergedRowmap(Kokkos::ViewAllocateWithoutInitializing("SortedMerged rowmap"), A.numRows() + 1);
+  rowmap_t mergedRowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "SortedMerged rowmap"), A.numRows() + 1);
   size_type numCompressedEntries = 0;
   Kokkos::parallel_reduce(range_t(0, A.numRows()),
       Impl::MergedRowmapFunctor<rowmap_t, entries_t>(mergedRowmap, A.graph.row_map, A.graph.entries), numCompressedEntries);
@@ -670,7 +670,7 @@ void sort_and_merge_graph(
   //Sort in place
   sort_crs_graph<exec_space, const_rowmap_t, entries_t>(rowmap_in, entries_in);
   //Count entries per row into a new rowmap, in terms of merges that can be done
-  rowmap_out = rowmap_t(Kokkos::ViewAllocateWithoutInitializing("SortedMerged rowmap"), numRows + 1);
+  rowmap_out = rowmap_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "SortedMerged rowmap"), numRows + 1);
   size_type numCompressedEntries = 0;
   Kokkos::parallel_reduce(range_t(0, numRows),
       Impl::MergedRowmapFunctor<rowmap_t, entries_t>(rowmap_out, rowmap_in, entries_in), numCompressedEntries);

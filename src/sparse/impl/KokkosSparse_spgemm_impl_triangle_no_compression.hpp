@@ -1106,7 +1106,7 @@ void KokkosSPGEMM
   }
   else {
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
         a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,

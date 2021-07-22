@@ -797,8 +797,8 @@ bool KokkosSPGEMM
   out_nnz_view_t set_begins_;
 #ifdef KOKKOSKERNELSMOREMEM
   if (exec_gpu) {
-    set_nexts_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_nexts_"), nnz);
-    set_begins_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_begins_"), nnz);
+    set_nexts_ = out_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "set_nexts_"), nnz);
+    set_begins_ = out_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "set_begins_"), nnz);
     Kokkos::deep_copy (set_begins_, -1);
   }
   MyExecSpace().fence();
@@ -812,8 +812,8 @@ bool KokkosSPGEMM
   //TODO: two step is not there for GPU.
 
   if (compress_in_single_step || exec_gpu) {
-    out_nnz_indices = out_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), nnz);
-    out_nnz_sets = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), nnz);
+    out_nnz_indices = out_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "set_entries_"), nnz);
+    out_nnz_sets = out_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "set_indices_"), nnz);
   }
   typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
   //create functor to compress matrix.
@@ -936,7 +936,7 @@ bool KokkosSPGEMM
   		Kokkos::Impl::Timer timer1_t;
   		auto new_row_mapB_begin = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(0), b_row_cnt));
   		auto new_row_mapB_end = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(1), b_row_cnt + 1));
-  		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
+  		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::view_alloc(Kokkos::WithoutInitializing, "origianal row flops"), a_row_cnt);
 
   		compressed_maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end, compressed_flops_per_row.data());
   		KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t, MyExecSpace>(a_row_cnt, compressed_flops_per_row, compressedoverall_flops);
@@ -965,8 +965,8 @@ bool KokkosSPGEMM
       typename out_rowmap_view_t::non_const_value_type compressed_b_size = h_c_nnz_size();
 
       //std::cout << "\tcompressed_b_size:" <<compressed_b_size << std::endl;
-      out_nnz_indices = out_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), compressed_b_size);
-      out_nnz_sets = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), compressed_b_size);
+      out_nnz_indices = out_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "set_entries_"), compressed_b_size);
+      out_nnz_sets = out_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "set_indices_"), compressed_b_size);
 
       sszm_compressMatrix.set_index_entries = out_nnz_indices;
       sszm_compressMatrix.set_entries = out_nnz_sets;
@@ -996,7 +996,7 @@ bool KokkosSPGEMM
 	  Kokkos::Impl::Timer timer1_t;
 	  auto new_row_mapB_begin = in_row_map;
 	  auto new_row_mapB_end = out_row_map;
-	  row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
+	  row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::view_alloc(Kokkos::WithoutInitializing, "origianal row flops"), a_row_cnt);
 
 	  compressed_maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end, compressed_flops_per_row.data());
 	  KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t, MyExecSpace>(a_row_cnt, compressed_flops_per_row, compressedoverall_flops);

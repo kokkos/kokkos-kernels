@@ -94,14 +94,14 @@ void testTranspose(int numRows, int numCols, bool doValues)
     (numRows, numCols, nnz, 3 * 10, numRows / 2);
   //compute the transpose while unsorted, then transpose again
   rowmap_t t_rowmap("Rowmap^T", numCols + 1); //this view is initialized to 0
-  entries_t t_entries(Kokkos::ViewAllocateWithoutInitializing("Entries^T"),
+  entries_t t_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries^T"),
       input_mat.graph.entries.extent(0));
-  values_t t_values(Kokkos::ViewAllocateWithoutInitializing("Values^T"),
+  values_t t_values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values^T"),
       input_mat.values.extent(0));
   rowmap_t tt_rowmap("Rowmap^T^T", numRows + 1); //this view is initialized to 0
-  entries_t tt_entries(Kokkos::ViewAllocateWithoutInitializing("Entries^T^T"),
+  entries_t tt_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries^T^T"),
       input_mat.graph.entries.extent(0));
-  values_t tt_values(Kokkos::ViewAllocateWithoutInitializing("Values^T"),
+  values_t tt_values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values^T"),
       input_mat.values.extent(0));
   if(doValues)
   {

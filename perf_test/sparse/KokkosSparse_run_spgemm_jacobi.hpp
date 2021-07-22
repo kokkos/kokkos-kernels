@@ -213,8 +213,8 @@ namespace KokkosKernels{
       	ExecSpace().fence();
 
       	size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-      	entriesC_ref = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      	valuesC_ref = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+      	entriesC_ref = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      	valuesC_ref = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
       	spgemm_jacobi(&sequential_kh, m, n, k,
 		      crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, TRANSPOSEFIRST,
@@ -263,8 +263,8 @@ namespace KokkosKernels{
 	if (verbose)  
 	  std::cout << "C SIZE:" << c_nnz_size << std::endl;
 	if (c_nnz_size){
-	  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-	  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+	  entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+	  valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 	}
 
 	spgemm_jacobi(&kh, m, n, k,

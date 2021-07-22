@@ -226,7 +226,7 @@ void bipartite_color_columns(
   size_type nnz = row_entries.extent(0);
   //Compute the transpose
   TRowmap col_map("Col map", num_columns + 1);
-  TEntries col_entries(Kokkos::ViewAllocateWithoutInitializing("Col entries"), nnz);
+  TEntries col_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Col entries"), nnz);
   KokkosKernels::Impl::transpose_graph
     <InRowmap, InEntries, TRowmap, TEntries, TRowmap, execution_space>
     (num_rows, num_columns, row_map, row_entries, col_map, col_entries);
