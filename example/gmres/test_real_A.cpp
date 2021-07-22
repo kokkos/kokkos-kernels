@@ -64,29 +64,31 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   typedef sp_matrix_type::const_ordinal_type cOT;
   typedef sp_matrix_type::non_const_size_type ncST;
 
-  std::string ortho("CGS2"); //orthog type
-  int m = 15; //Max subspace size before restarting.
-  double convTol = 1e-10; //Relative residual convergence tolerance.
-  int cycLim = 50;
+  GmresOpts<ST> solverOpts;
+  solverOpts.ortho="CGS2"; //orthog type
+  solverOpts.m = 15; //Max subspace size before restarting.
+  solverOpts.tol = 1e-10; //Relative residual convergence tolerance.
+  solverOpts.maxRestart = 50;
   bool pass1 = false;
   bool pass2 = false;
 
-  std::cout << "Convergence tolerance is: " << convTol << std::endl;
+  std::cout << "Convergence tolerance is: " << solverOpts.tol << std::endl;
 
   //Initialize Kokkos AFTER parsing parameters:
   Kokkos::initialize();
   {
 
+  // Create a diagonally dominant sparse matrix to test:
   ncST nnz;
   cOT n = 5000;
   cOT numRows = n;
   cOT numCols = n;
   cOT diagDominance = 1;
   nnz = 10 * numRows;
-  // Create a diagonally dominant sparse matrix to test:
   sp_matrix_type A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<sp_matrix_type> 
                                                 (numRows, numCols, nnz, 0, cOT(0.01 * numRows), diagDominance);
 
+  // Set initial vectors:
   ViewVectorType X("X",n); //Solution and initial guess
   ViewVectorType Wj("Wj",n); //For checking residuals at end.
   ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),n);//right-hand side vec
@@ -95,7 +97,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   Kokkos::deep_copy(B,1.0);
 
   std::cout << "Testing GMRES with CGS2 ortho:" << std::endl;
-  GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, convTol, m, cycLim, ortho);
+  GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
 
   // Double check residuals at end of solve:
   double nrmB = KokkosBlas::nrm2(B);
@@ -108,7 +110,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   std::cout << "Diff of residual from main - residual from solver: " << solveStats.endRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
   
-  if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < convTol){
+  if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < solverOpts.tol){
     std::cout << "Test CGS2 Passed!" << std::endl;
     pass1 = true;
   }
@@ -118,12 +120,12 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   }
   std::cout << "=======================================" << std::endl << std::endl << std::endl;
 
-  ortho = "MGS";
+  solverOpts.ortho = "MGS";
   Kokkos::deep_copy(X,0.0);
   Kokkos::deep_copy(B,1.0);
 
   std::cout << "Testing GMRES with MGS ortho:" << std::endl;
-  solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, convTol, m, cycLim, ortho);
+  solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
 
   // Double check residuals at end of solve:
   nrmB = KokkosBlas::nrm2(B);
@@ -136,7 +138,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   std::cout << "Diff of residual from main - residual from solver: " << solveStats.endRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
   
-  if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < convTol){
+  if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < solverOpts.tol){
     std::cout << "Test MGS Passed!" << std::endl;
     if( pass1 ){ pass2 = true; };
   }
