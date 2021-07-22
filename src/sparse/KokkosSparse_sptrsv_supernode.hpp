@@ -210,7 +210,6 @@ read_supernodal_graphL(KernelHandle *kernelHandle, int n, int nsuper, int nnzA, 
   }
   hr(0) = 0;
 
-  #define KOKKOS_SPTRSV_SUPERNODE_PROFILE
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
@@ -1532,9 +1531,12 @@ read_merged_supernodes(KernelHandle *kernelHandle, int nsuper, const input_ptr_t
   auto row_mapL = graphL.row_map;
   auto entriesL = graphL.entries;
   auto valuesL  = L.values;
-
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   Kokkos::Timer timer;
+  Kokkos::Timer timer2;
   timer.reset ();
+  timer2.reset ();
+  #endif
 
   // merged graph
   auto rowmap_view = static_graph.row_map;
@@ -1544,6 +1546,10 @@ read_merged_supernodes(KernelHandle *kernelHandle, int nsuper, const input_ptr_t
   auto hc = Kokkos::create_mirror_view (column_view);
   Kokkos::deep_copy (hr, rowmap_view);
   Kokkos::deep_copy (hc, column_view);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_copy = timer2.seconds ();
+  timer2.reset ();
+  #endif
 
   // ----------------------------------------------------------
   // now let's merge supernodes
@@ -1554,6 +1560,10 @@ read_merged_supernodes(KernelHandle *kernelHandle, int nsuper, const input_ptr_t
   auto nnzA = hr (n);
   values_view_t values_view ("values_view", nnzA);
   auto hv = Kokkos::create_mirror_view (values_view);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_mirror = timer2.seconds ();
+  timer2.reset ();
+  #endif
 
   for (int s2 = 0; s2 < nsuper; s2++) {
     for (int j = mb[s2]; j < mb[s2+1]; j++) {
@@ -1568,16 +1578,31 @@ read_merged_supernodes(KernelHandle *kernelHandle, int nsuper, const input_ptr_t
       }
     }
   }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_merge = timer2.seconds ();
+  timer2.reset ();
+  #endif
 
   // invert blocks (TODO done on host for now)
   invert_supernodal_columns (kernelHandle, unit_diag, nsuper, mb, hr, hc, hv);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_invert = timer2.seconds ();
+  timer2.reset ();
+  #endif
   // deepcopy
   Kokkos::deep_copy (values_view, hv);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_copy += timer2.seconds ();
+  #endif
 
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   double time = timer.seconds ();
   std::cout << "   read_merged_supernodes" << std::endl;
-  std::cout << "   > Time : " << time << std::endl;
+  std::cout << "   > Time       : " << time << std::endl;
+  std::cout << "    + copy   time : " << time_copy   << std::endl;
+  std::cout << "    + mirror time : " << time_mirror << std::endl;
+  std::cout << "    + merge  time : " << time_merge  << std::endl;
+  std::cout << "    + invert time : " << time_invert << std::endl;
   #endif
 
   // create crs
