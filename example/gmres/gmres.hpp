@@ -93,7 +93,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
                     const Kokkos::View<ScalarType*, Layout, EXSP> &B,
                     Kokkos::View<ScalarType*, Layout, EXSP> &X, 
                     const GmresOpts<ScalarType> &opts ){
-
+  Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
   typedef Kokkos::Details::ArithTraits<ScalarType> AT;
   typedef typename AT::val_type ST; // So this code will run with ScalarType = std::complex<T>.
   typedef typename AT::mag_type MT; 
@@ -294,6 +294,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   myStats.numIters = (cycle-1)*m + numIters;
   std::cout << "The solver completed " << myStats.numIters << " iterations." << std::endl;
 
+  Kokkos::Profiling::popRegion();
   return myStats;
 }
 

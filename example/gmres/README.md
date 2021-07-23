@@ -29,10 +29,13 @@ The gmres function takes the following input paramters:
 **A:** A Kokkos::CrsMatrix for the linar system Ax=b.   
 **B:** A Kokkos::View that is the system right-hand side. Must have B.extent(1)=1. (Currently only one right-hand side is supported.)   
 **X:** A Kokkos::View that is used as both the initial vector for the GMRES iteration and the output for the solution vector.  (Must have X.extent(1)=1.)   
-**tol:** The convergence tolerance for GMRES.  Based upon the relative residual. The solver will terminate when norm(b-Ax)/norm(b) <= tol.   
-**m:** The restart length (maximum subspace size) for GMRES.   
-**maxRestart:** The maximum number of restarts (or 'cycles') that GMRES is to perform.   
-**ortho:** The orthogonalization type.  Can be "CGS2" or "MGS".  (Two iterations of Classical Gram-Schmidt, or one iteration of Modified Gram-Schmidt.)   
+**opts:** A 'GmresOpts' struct as described below.   
+
+The solver has a 'GmresOpts' struct to pass in solver options.  Available options are:
+**tol:** The convergence tolerance for GMRES.  Based upon the relative residual. The solver will terminate when norm(b-Ax)/norm(b) <= tol. (Default: 1e-8)   
+**m:** The restart length (maximum subspace size) for GMRES.  (Default: 50)   
+**maxRestart:** The maximum number of restarts (or 'cycles') that GMRES is to perform. (Default: 50)   
+**ortho:** The orthogonalization type.  Can be "CGS2" (Default) or "MGS".  (Two iterations of Classical Gram-Schmidt, or one iteration of Modified Gram-Schmidt.)   
 
 ### Solver Output:
 The solver outputs a 'GmresStats' struct with solver statistics.  These include:
@@ -51,13 +54,15 @@ You can download the matrices for the real example and the complex test from the
 The real-valued test uses a matrix generated directly by Kokkos Kernels.
 
 ### Test Measurements:
-These measurements were taken on 7/17/21, running on an NVIDIA V100 GPU on Weaver3.  
+These measurements were taken on 7/23/21, running on an NVIDIA V100 GPU on Weaver7.  
+(Timings based upon the GMRES::TotalTime profiling region.)
 
-**ex\_real\_A:** Converges in 2270 iterations and 1.259 seconds.
+**ex\_real\_A:** Converges in 2270 iterations and 0.9629 seconds.
 
-**test\_real\_A:** Converges in 29 iterations (with a restart size of 15) and 0.26248 seconds.
+(The two following timings total the time for the CGS2 and MGS tests.)   
+**test\_real\_A:** Converges in 29 iterations (with a restart size of 15) and 0.2536 seconds.
 
-**test\_cmplx\_A:** Converges in 651 iterations (to a tolerance of 1e-5) in 2.91157 seconds.  
+**test\_cmplx\_A:** Converges in 651 iterations (to a tolerance of 1e-5) in 2.822 seconds.  
 
 ### Concerns, enhancements, or bug reporting:
 If you wish to suggest an enhancement or make a bug report for this solver code, please post an issue at https://github.com/kokkos/kokkos-kernels/issues or email jloe@sandia.gov.

@@ -122,9 +122,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Run GMRS solve:
-  Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
   GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
-  Kokkos::Profiling::popRegion();
 
   // Double check residuals at end of solve:
   double nrmB = KokkosBlas::nrm2(B);
