@@ -54,20 +54,22 @@
 #include"gmres.hpp"
 
 int main(int /*argc*/, char ** /*argv[]*/) {
+  typedef double ST;
+  typedef int OT;
+  typedef Kokkos::DefaultExecutionSpace EXSP;
 
-  typedef double                             ST;
-  typedef int                               OT;
-  typedef Kokkos::DefaultExecutionSpace     EXSP;
+  //  std::cout << "ST: " << typeid(ST).name() << std::endl;
+  //  std::cout << "EXSP: " << typeid(EXSP).name() << std::endl;
 
-  using sp_matrix_type = KokkosSparse::CrsMatrix<ST, OT, EXSP>; 
-  using ViewVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, EXSP>;
+  using sp_matrix_type = KokkosSparse::CrsMatrix<ST, OT, EXSP>;
+  using ViewVectorType = Kokkos::View<ST*, Kokkos::LayoutLeft, EXSP>;
   typedef sp_matrix_type::non_const_ordinal_type ncOT;
   typedef sp_matrix_type::const_ordinal_type cOT;
   typedef sp_matrix_type::non_const_size_type ncST;
 
   GmresOpts<ST> solverOpts;
-  solverOpts.ortho="CGS2"; //orthog type
-  solverOpts.m = 15; //Max subspace size before restarting.
+  solverOpts.ortho      = "CGS2";  // orthog type
+  solverOpts.m          = 15;      // Max subspace size before restarting.
   solverOpts.tol = 1e-10; //Relative residual convergence tolerance.
   solverOpts.maxRestart = 50;
   bool pass1 = false;
@@ -75,10 +77,9 @@ int main(int /*argc*/, char ** /*argv[]*/) {
 
   std::cout << "Convergence tolerance is: " << solverOpts.tol << std::endl;
 
-  //Initialize Kokkos AFTER parsing parameters:
+  // Initialize Kokkos AFTER parsing parameters:
   Kokkos::initialize();
   {
-
   // Create a diagonally dominant sparse matrix to test:
   ncST nnz;
   cOT n = 5000;
@@ -86,7 +87,7 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   cOT numCols = n;
   cOT diagDominance = 1;
   nnz = 10 * numRows;
-  sp_matrix_type A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<sp_matrix_type> 
+  sp_matrix_type A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<sp_matrix_type>
                                                 (numRows, numCols, nnz, 0, ncOT(0.01 * numRows), diagDominance);
 
   // Set initial vectors:
@@ -101,23 +102,25 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
 
   // Double check residuals at end of solve:
-  double nrmB = KokkosBlas::nrm2(B);
-  KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj); // wj = Ax
-  KokkosBlas::axpy(-1.0, Wj, B); // b = b-Ax. 
+  double nrmB = static_cast<double>(KokkosBlas::nrm2(B));
+  KokkosSparse::spmv("N", ST(1.0), A, X, ST(0.0), Wj); // wj = Ax
+  KokkosBlas::axpy(ST(-1.0), Wj, B); // b = b-Ax.
   double endRes = KokkosBlas::nrm2(B)/nrmB;
   std::cout << "=======================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
   std::cout << "Diff of residual from main - residual from solver: " << solveStats.endRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
-  
-  if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < solverOpts.tol){
+
+  if (solveStats.numIters < 40 && solveStats.numIters > 20 &&
+      endRes < static_cast<double>(solverOpts.tol)) {
     std::cout << "Test CGS2 Passed!" << std::endl;
     pass1 = true;
-  }
-  else{
-    std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
-              << "CGS2 Test Failed." << std::endl;
+  } else {
+    std::cout
+        << "Solver did not converge within the expected number of iterations. "
+        << std::endl
+        << "CGS2 Test Failed." << std::endl;
   }
   std::cout << "=======================================" << std::endl << std::endl << std::endl;
 
@@ -129,24 +132,28 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
 
   // Double check residuals at end of solve:
-  nrmB = KokkosBlas::nrm2(B);
-  KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj); // wj = Ax
-  KokkosBlas::axpy(-1.0, Wj, B); // b = b-Ax. 
+  nrmB = static_cast<double>(KokkosBlas::nrm2(B));
+  KokkosSparse::spmv("N", ST(1.0), A, X, ST(0.0), Wj); // wj = Ax
+  KokkosBlas::axpy(ST(-1.0), Wj, B); // b = b-Ax.
   endRes = KokkosBlas::nrm2(B)/nrmB;
   std::cout << "=======================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
   std::cout << "Diff of residual from main - residual from solver: " << solveStats.endRelRes - endRes << std::endl;
   std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
-  
-  if( solveStats.numIters < 40 && solveStats.numIters > 20 && endRes < solverOpts.tol){
+
+  if (solveStats.numIters < 40 && solveStats.numIters > 20 &&
+      endRes < static_cast<double>(solverOpts.tol)) {
     std::cout << "Test MGS Passed!" << std::endl;
-    if( pass1 ){ pass2 = true; };
+    if (pass1) {
+      pass2 = true;
+    };
+  } else {
+    std::cout
+        << "Solver did not converge within the expected number of iterations. "
+        << std::endl
+        << "MGS Test Failed." << std::endl;
   }
-  else{
-    std::cout << "Solver did not converge within the expected number of iterations. " << std::endl
-              << "MGS Test Failed." << std::endl;
-      }
   std::cout << "=======================================" << std::endl << std::endl << std::endl;
 
   }
@@ -154,4 +161,3 @@ int main(int /*argc*/, char ** /*argv[]*/) {
 
   return ( pass2 ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
