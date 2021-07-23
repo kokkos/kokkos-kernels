@@ -2,10 +2,7 @@
 
 GMRES (the Generalized Minimum RESidual method) is an iterative solver for sparse linear systems Ax=b.  It can be used for symmetric or non-symmetric systems.  (For full details, see "Iterative Methods for Sparse Linear Systems," Saad, 2003.)
 
-### Input parameters:
-
-
-##### Command-Line parameters for ex\_real\_A:
+### Command-Line parameters for ex\_real\_A:
 Current solver parameters for the real-valued example are as follows:
 
 "**--filename**   :  The name of a matrix market (.mtx) file for matrix A (Default bcsstk09.mtx)."    
@@ -16,7 +13,7 @@ Current solver parameters for the real-valued example are as follows:
 "**--rand\_rhs**    :  Generate a random right-hand side b.  (Without this option, the solver default generates b = vector of ones.)"
 
 
-##### Solver template paramters:
+### Solver template paramters:
 The GMRES solver has the following template parameters:   
 **ScalarType:** Type of scalars in the matrix A. (double, float, half, Kokkos::complex<double>, etc.)   
 **Layout:** Layout of vectors X and B, Kokkos::LayoutLeft, or other Kokkos layouts.   
@@ -24,14 +21,14 @@ The GMRES solver has the following template parameters:
 **OrdinalType:** The ordinal type from the Kokkos::CrsMatrix A.
 
 
-##### Solver input parameters:
+### Solver input parameters:
 The gmres function takes the following input paramters:   
 **A:** A Kokkos::CrsMatrix for the linar system Ax=b.   
 **B:** A Kokkos::View that is the system right-hand side. Must have B.extent(1)=1. (Currently only one right-hand side is supported.)   
 **X:** A Kokkos::View that is used as both the initial vector for the GMRES iteration and the output for the solution vector.  (Must have X.extent(1)=1.)   
 **opts:** A 'GmresOpts' struct as described below.   
 
-The solver has a 'GmresOpts' struct to pass in solver options.  Available options are:
+The solver has a 'GmresOpts' struct to pass in solver options.  Available options are:   
 **tol:** The convergence tolerance for GMRES.  Based upon the relative residual. The solver will terminate when norm(b-Ax)/norm(b) <= tol. (Default: 1e-8)   
 **m:** The restart length (maximum subspace size) for GMRES.  (Default: 50)   
 **maxRestart:** The maximum number of restarts (or 'cycles') that GMRES is to perform. (Default: 50)   
