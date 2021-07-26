@@ -250,14 +250,10 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
   // Begin checking conditions for optimal BatchedGemm invocation.
   using view_scalar_type   = typename CViewType::value_type;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   constexpr bool on_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<
       typename CViewType::execution_space>();
-#endif  // KOKKOS_ENABLE_CUDA
-#if defined(KOKKOS_ENABLE_HIP)
-  constexpr bool on_gpu = std::is_same<typename CViewType::execution_space,
-                                       Kokkos::Experimental::HIP>::value;
-#endif  // KOKKOS_ENABLE_HIP
+#endif  // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   constexpr bool on_gpu = false;
@@ -269,7 +265,7 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                    Kokkos::HostSpace>::value;
 #else
   constexpr bool on_x86_64 = false;
-#endif  // Intel architectures
+#endif  // x86_64 architectures
 
 #if defined(__ARM_ARCH_ISA_A64)
   constexpr bool on_a64fx =
@@ -277,7 +273,7 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                    Kokkos::HostSpace>::value;
 #else
   constexpr bool on_a64fx = false;
-#endif
+#endif  // a64fx
 
   // Select whether to calculate a rank-0 or rank-2 result per thread
   using resultsPerThread =

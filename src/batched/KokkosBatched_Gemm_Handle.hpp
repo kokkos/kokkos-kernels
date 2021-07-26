@@ -121,7 +121,49 @@ class BatchedGemmHandle : public BatchedKernelHandle {
  public:
   BatchedGemmHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
                     int teamSize = 0, int vecLength = 0)
-      : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength){};
+      : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+    if (!_tplParamsSet && kernelAlgoType == GemmTplAlgos::CUBLAS) {
+      static cublasHandle_t cublas_handle;
+      _tplParamsSingleton.cublas_handle = &cublas_handle;
+      _tplParamsSet                     = true;
+    }
+#endif  // CUBLAS
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+    if (!_tplParamsSet && kernelAlgoType == GemmTplAlgos::MAGMA) {
+      static magma_queue_t magma_queue;
+      _tplParamsSingleton.magma_queue = &magma_queue;
+      _tplParamsSet                   = true;
+    }
+#endif  // MAGMA
+  };
+
+  BatchedGemmHandle(bool tplParamsSet,
+                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
+                    int teamSize = 0, int vecLength = 0)
+      : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength) {
+    _tplParamsSet = tplParamsSet;
+  };
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+  BatchedGemmHandle(cublasHandle_t &cublas_handle,
+                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
+                    int teamSize = 0, int vecLength = 0)
+      : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
+    _tplParamsSingleton.cublas_handle = &cublas_handle;
+  };
+#endif  // CUBLAS
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+  BatchedGemmHandle(magma_queue_t &magma_queue,
+                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
+                    int teamSize = 0, int vecLength = 0)
+      : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
+    _tplParamsSingleton.magma_queue = &magma_queue;
+  };
+#endif  // MAGMA
+
   decltype(auto) get_tpl_params() {
 #if _kernelAlgoType == CUBLAS && defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
     return _tplParamsSingleton.cublas_handle;

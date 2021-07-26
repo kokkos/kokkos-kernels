@@ -132,6 +132,28 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
               BaseHeuristicAlgos::SQUARE);
     ASSERT_EQ(batchedGemmHandle.teamSz, 0);
     ASSERT_EQ(batchedGemmHandle.vecLen, 0);
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+    cublasHandle_t cublas_handle;
+    BatchedGemmHandle batchedGemmHandleCublas(cublas_handle,
+                                              GemmTplAlgos::CUBLAS, 0, 0);
+    ASSERT_EQ(&cublas_handle, batchedGemmHandleCublas.get_tpl_params());
+    ASSERT_EQ(batchedGemmHandleCublas.get_kernel_algo_type(),
+              (int)GemmTplAlgos::CUBLAS);
+    ASSERT_EQ(batchedGemmHandleCublas.teamSz, 0);
+    ASSERT_EQ(batchedGemmHandleCublas.vecLen, 0);
+#endif
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+    magma_queue_t magma_queue;
+    BatchedGemmHandle batchedGemmHandleMagma(magma_queue, GemmTplAlgos::MAGMA,
+                                             0, 0);
+    ASSERT_EQ(&magma_queue, batchedGemmHandleMagma.get_tpl_params());
+    ASSERT_EQ(batchedGemmHandleMagma.get_kernel_algo_type(),
+              (int)GemmTplAlgos::MAGMA);
+    ASSERT_EQ(batchedGemmHandleMagma.teamSz, 0);
+    ASSERT_EQ(batchedGemmHandleMagma.vecLen, 0);
+#endif
   }
 
   for (int algo_type = BaseHeuristicAlgos::SQUARE;

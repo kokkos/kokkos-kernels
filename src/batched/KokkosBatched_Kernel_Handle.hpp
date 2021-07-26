@@ -93,15 +93,15 @@ struct TplParams {
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-    // TODO: Add armpl handle type to expose nintern & nbatch?
+    // TODO: Add armpl handle type in KokkosKernels to expose nintern & nbatch?
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-    cublasHandle_t cublas_handle;
+    cublasHandle_t *cublas_handle;
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-    magma_queue_t magma_queue;
+    magma_queue_t *magma_queue;
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
   };
 };
@@ -142,7 +142,7 @@ struct TplParams {
 // clang-format on
 class BatchedKernelHandle {
  public:
-  int teamSz = 0;
+  int teamSz       = 0;
   int vecLen       = 0;
   bool enableDebug = false;
 
@@ -153,8 +153,8 @@ class BatchedKernelHandle {
   decltype(auto) get_tpl_params() {
 #if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
     return "BaseTplAlgos::ARMPL does not support any tpl parameters";
-//#elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-//    return _tplParamsSingleton.mkl_queue;
+#elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+    return "BaseTplAlgos::MKL does not support any tpl parameters";
 #else
     return "Unsupported kernelAlgoType = " + std::to_string(_kernelAlgoType) +
            ".";
@@ -172,7 +172,12 @@ class BatchedKernelHandle {
  protected:
   int _kernelAlgoType = BaseHeuristicAlgos::SQUARE;
   static TplParams &_tplParamsSingleton;
+  bool _tplParamsSet = false;
 };
+
+// Define TPL params singleton
+TplParams tplParamsGlobalStorage;
+TplParams &BatchedKernelHandle::_tplParamsSingleton = tplParamsGlobalStorage;
 
 }  // namespace KokkosBatched
 
