@@ -11,12 +11,12 @@ using namespace KokkosBatched;
 namespace Test {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType>
-void impl_test_batched_gemm_handle(BatchedGemmHandle* batchedGemmHandle,
-                                   const int N, const int matAdim1,
-                                   const int matAdim2, const int matBdim1,
-                                   const int matBdim2, const int matCdim1,
-                                   const int matCdim2, ScalarType alpha,
-                                   ScalarType beta) {
+void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
+                                        const int N, const int matAdim1,
+                                        const int matAdim2, const int matBdim1,
+                                        const int matBdim2, const int matCdim1,
+                                        const int matCdim2, ScalarType alpha,
+                                        ScalarType beta) {
   using execution_space = typename DeviceType::execution_space;
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
@@ -165,20 +165,20 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
       if (algo_type == BaseKokkosBatchedAlgos::KK_SERIAL) {
         // Invoke 4 times to ensure we cover all paths for alpha and beta
-        impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
-                                      ParamTagType>(
+        impl_test_batched_gemm_with_handle<DeviceType, ViewType, ScalarType,
+                                           ParamTagType>(
             &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
             matCdim1, matCdim2, 0.0, 0.0);
-        impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
-                                      ParamTagType>(
+        impl_test_batched_gemm_with_handle<DeviceType, ViewType, ScalarType,
+                                           ParamTagType>(
             &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
             matCdim1, matCdim2, 1.0, 0.0);
-        impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
-                                      ParamTagType>(
+        impl_test_batched_gemm_with_handle<DeviceType, ViewType, ScalarType,
+                                           ParamTagType>(
             &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
             matCdim1, matCdim2, 0.0, 1.0);
-        impl_test_batched_gemm_handle<DeviceType, ViewType, ScalarType,
-                                      ParamTagType>(
+        impl_test_batched_gemm_with_handle<DeviceType, ViewType, ScalarType,
+                                           ParamTagType>(
             &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
             matCdim1, matCdim2, 1.5, 3.0);
       } else {

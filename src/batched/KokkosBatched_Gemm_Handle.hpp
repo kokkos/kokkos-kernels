@@ -96,19 +96,17 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                       2. The input views do not reside on the host/device as needed
 ///
 ///                    Specifies which kokkos-kernels (KK) algorithm to invoke:
-///                      KK_SERIAL            Invoke SerialFUNC     via RangePolicy(BatchSz)
-///                      KK_TEAM              Invoke TeamFUNC       via TeamPolicy(BatchSz)
-///                      KK_TEAMVECTOR        Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
-///                      KK_SERIALSIMD        Invoke SerialFUNC     via TeamPolicy(BatchSz)
-///                      KK_TEAMSIMD          Invoke TeamFUNC       via TeamPolicy(BatchSz)
-///                      KK_SERIAL_OPT2       Invoke SerialFUNC     via
-///                                           RangePolicy(BatchSz*N*M)
-///                      KK_TEAMVECTOR_SHMEM  Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
-///                                           Copies A and B to shared memory before GEMM.
-///                      KK_TEAMVECTOR_DBLBUF Invoke TeamVectorFUNC via
-///                                           TeamPolicy(BatchSz*TILES)
-///                                           Uses tiling and double buffering via shared
-///                                           memory and register buffers.
+///                      KK_SERIAL       Invoke SerialGemm     via RangePolicy(BatchSz)
+///                      KK_TEAM         Invoke TeamGemm       via TeamPolicy(BatchSz)
+///                      KK_TEAMVECTOR   Invoke TeamVectorGemm via TeamPolicy(BatchSz)
+///                      KK_SERIALSIMD   Invoke SerialGemm     via TeamPolicy(BatchSz)
+///                      KK_TEAMSIMD     Invoke TeamGemm       via TeamPolicy(BatchSz)
+///                      KK_SERIAL_OPT2  Invoke SerialGemm     via RangePolicy(BatchSz*N*M)
+///                      KK_SERIAL_SHMEM Invoke SerialGemm     via TeamPolicy(BatchSz)
+///                                      Copies A and B to shared memory before GEMM.
+///                      KK_DBLBUF       Solve GEMM            via TeamPolicy(BatchSz*TILES)
+///                                      Uses custom functor, tiling and double buffering
+///                                      via shared memory and register buffers.
 /// \var teamSz        Specifies the team size that will affect any KK algorithm which uses
 ///                    TeamPolicy (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*
