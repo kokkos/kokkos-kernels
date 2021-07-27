@@ -463,11 +463,14 @@ IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
 ENDIF()
 
 KOKKOSKERNELS_ADD_TPL_OPTION(CHOLMOD OFF  "Whether to enable CHOLMOD")
-KOKKOSKERNELS_ADD_TPL_OPTION(SUPERLU OFF  "Whether to enable SUPERLU")
 KOKKOSKERNELS_ADD_TPL_OPTION(METIS   OFF  "Whether to enable METIS")
 
 # We need to do all the import work
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
+  # KokkosKernels uses all uppercase for TPLs: KokkosKernels_ENABLE_TPL_SUPERLU
+  # See https://github.com/kokkos/kokkos-kernels/issues/1059
+  KOKKOSKERNELS_ADD_TPL_OPTION(SUPERLU OFF "Whether to enable SUPERLU")
+
   KOKKOSKERNELS_IMPORT_TPL(BLAS)
   KOKKOSKERNELS_IMPORT_TPL(LAPACK)
   KOKKOSKERNELS_IMPORT_TPL(MKL)
@@ -480,7 +483,11 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   KOKKOSKERNELS_IMPORT_TPL(METIS)
   KOKKOSKERNELS_IMPORT_TPL(ARMPL)
   KOKKOSKERNELS_IMPORT_TPL(MAGMA)
-ENDIF()
+ELSE ()
+  # Tribits uses mixed case for TPLs: TPL_ENABLE_SuperLU
+  # See https://github.com/kokkos/kokkos-kernels/issues/1059
+  KOKKOSKERNELS_ADD_TPL_OPTION(SuperLU OFF "Whether to enable SuperLU")
+ENDIF ()
 
 #Convert list to newlines (which CMake doesn't always like in cache variables)
 STRING(REPLACE ";" "\n" KOKKOSKERNELS_TPL_EXPORT_TEMP "${KOKKOSKERNELS_TPL_EXPORTS}")
