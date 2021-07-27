@@ -402,9 +402,9 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 
     case GemmKokkosBatchedAlgos::KK_SERIAL_OPT2:
 
-    case GemmKokkosBatchedAlgos::KK_TEAMVECTOR_SHMEM:
+    case GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM:
 
-    case GemmKokkosBatchedAlgos::KK_TEAMVECTOR_DBLBUF:
+    case GemmKokkosBatchedAlgos::KK_DBLBUF:
 
     default:
       std::ostringstream os;
