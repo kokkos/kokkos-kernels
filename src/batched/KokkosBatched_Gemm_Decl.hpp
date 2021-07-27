@@ -390,7 +390,7 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 
     case GemmKokkosBatchedAlgos::KK_TEAMSIMD:
 
-    case GemmKokkosBatchedAlgos::KK_SERIAL_OPT2:
+    case GemmKokkosBatchedAlgos::KK_SERIAL_RANK0:
 
     case GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM:
 

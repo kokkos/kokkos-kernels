@@ -63,7 +63,7 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
   KK_TEAMVECTOR,
   KK_SERIALSIMD,
   KK_TEAMSIMD,
-  KK_SERIAL_OPT2,
+  KK_SERIAL_RANK0,
   KK_SERIAL_SHMEM,
   KK_DBLBUF,
   N
@@ -101,12 +101,15 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                      KK_TEAMVECTOR   Invoke TeamVectorGemm via TeamPolicy(BatchSz)
 ///                      KK_SERIALSIMD   Invoke SerialGemm     via TeamPolicy(BatchSz)
 ///                      KK_TEAMSIMD     Invoke TeamGemm       via TeamPolicy(BatchSz)
-///                      KK_SERIAL_OPT2  Invoke SerialGemm     via RangePolicy(BatchSz*N*M)
+///                      KK_SERIAL_RANK0 Invoke SerialGemm     via RangePolicy(BatchSz*N*M)
+///                                      Each thread computes one element of C.
 ///                      KK_SERIAL_SHMEM Invoke SerialGemm     via TeamPolicy(BatchSz)
 ///                                      Copies A and B to shared memory before GEMM.
+///                                      Each vector lane solves one element of C via SerialGemm.
 ///                      KK_DBLBUF       Solve GEMM            via TeamPolicy(BatchSz*TILES)
-///                                      Uses custom functor, tiling and double buffering
+///                                      Uses a tuned functor with tiling and double buffering
 ///                                      via shared memory and register buffers.
+///                                      KK_DBLBUF generally performs better on GPUs when M, N >= 24.
 /// \var teamSz        Specifies the team size that will affect any KK algorithm which uses
 ///                    TeamPolicy (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*
