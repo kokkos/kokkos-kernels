@@ -975,7 +975,7 @@ if [ "$COMPILERS_TO_TEST" == "" ]; then
    echo "   !!!! Invalid Compiler provided  '$ARGS' !!!!"
    echo "-----------------------------------------------"
    print_help
-   exit 0
+   exit 1
 fi
 
 #
