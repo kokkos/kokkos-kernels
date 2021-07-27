@@ -90,6 +90,13 @@ int main(int argc, char *argv[]) {
   std::cout << "File to process is: " << filename << std::endl;
   std::cout << "Convergence tolerance is: " << convTol << std::endl;
 
+  // Set GMRES options:
+  GmresOpts<ST> solverOpts;
+  solverOpts.tol = convTol;
+  solverOpts.m = m;
+  solverOpts.maxRestart = cycLim;
+  solverOpts.ortho = ortho;
+
   //Initialize Kokkos AFTER parsing parameters:
   Kokkos::initialize();
   {
@@ -115,7 +122,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Run GMRS solve:
-  GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, convTol, m, cycLim, ortho);
+  GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
 
   // Double check residuals at end of solve:
   double nrmB = KokkosBlas::nrm2(B);
