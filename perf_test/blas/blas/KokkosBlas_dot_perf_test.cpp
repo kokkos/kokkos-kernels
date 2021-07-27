@@ -46,7 +46,7 @@
 #include <blas/KokkosBlas1_dot.hpp>
 #include <Kokkos_Random.hpp>
 // For RPS implementation
-#include "KokkosBlas_dot_perf_test.hpp"
+#include <KokkosBlas_dot_perf_test.hpp>
 
 
 struct Params {
@@ -138,7 +138,7 @@ int parse_inputs(Params& params, int argc, char** argv) {
 // Here, m represents the desired length for each 1D matrix;
 // "m" is used here, because code from another test was adapted for this test.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/*
+
 template <class ExecSpace, class Layout>
 void run(int m, int repeat) {
   // Declare type aliases
@@ -188,7 +188,7 @@ void run(int m, int repeat) {
   printf("Avg DOT time: %f s.\n", avg);
   printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
 }
-*/
+
 
 
 int main(int argc, char** argv) {

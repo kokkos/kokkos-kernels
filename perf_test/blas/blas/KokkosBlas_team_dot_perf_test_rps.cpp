@@ -42,47 +42,63 @@
 //@HEADER
 */
 
+
 #include <Kokkos_Core.hpp>
-#include <KokkosBlas1_dot.hpp>
+#include <KokkosBlas1_team_dot.hpp>
 #include <Kokkos_Random.hpp>
 // For RPS implementation
-#include "KokkosBlas_dot_perf_test.hpp"
+#include "KokkosBlas_team_dot_perf_test.hpp"
 
 // Recall -- testData is a tempated class, 
 // setup_test is a templated function
 template<class ExecSpace, class Layout>
 testData<ExecSpace, Layout> setup_test(int m,
-                    int repeat
-                    )
+                                       int repeat,
+                                       bool layoutLeft,
+                                       const numberOfTeams
+                                       )
 {
-        // use constructor to generate test data
+        // use constructor to generate testData_object
         testData<ExecSpace, Layout> testData_obj(m);
 
         // set a field in the struct
         testData_obj.m = m;
         testData_obj.repeat = repeat;
+        testData_obj.numberOfTeams = numberOfTeams;
 
         return testData_obj;
 }
 
 
-test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params)
+test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
 
 {
-        // instantiate test_list as kernel_base_vector
+        // instantiate test_list (the type) as kernel_base_vector
         test_list kernel_base_vector;
 
 
+// First capture clause (by value) is for the setUp / run parameters
+// Second capture clause (by reference) is the for the run characteristics
+// https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1::team-dot
+//
+//
 kernel_base_vector.push_back(rajaperf::make_kernel_base(
-        "BLAS_DOT ",
+        "BLAS_TEAM_DOT ",
         run_params,
-        [=](const int repeat, const int m) {
+        [=](const int m, const int repeat, const int numberOfTeams) {
           // returns a tuple of testData_obj
           return std::make_tuple(
-                          setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(m, repeat));
+                          setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(m, repeat, numberOfTeams));
           },
         [&](const int iteration, const int runsize, auto& data) {
-        KokkosBlas::dot(data.x, data.y);
+        //KokkosBlas::dot(data.x, data.y);
+        Kokkos::parallel_for("TeamDotUsage_RPS",
+                        policy(numberOfTeams, Kokkos::AUTO),
+                        KOKKOS_LAMBDA(const testData::member_type& team){
+                        // body
+                        double result = KokkosBlas::Experimental::dot(team,data.x,data.y);
+
+                        });
         }));
 
 
@@ -90,6 +106,4 @@ kernel_base_vector.push_back(rajaperf::make_kernel_base(
         // of type test_list
         return kernel_base_vector;
 }
-
-
 
