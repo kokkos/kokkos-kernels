@@ -311,55 +311,19 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
   // Begin checking conditions for optimal BatchedGemm invocation.
   using view_scalar_type   = typename CViewType::value_type;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-  constexpr bool on_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<
+  constexpr bool on_gpu    = KokkosKernels::Impl::kk_is_gpu_exec_space<
       typename CViewType::execution_space>();
-#endif  // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
-
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
-  constexpr bool on_gpu = false;
-#endif
-
-#if __x86_64__
-  constexpr bool on_x86_64 =
-      std::is_same<typename CViewType::execution_space::memory_space,
-                   Kokkos::HostSpace>::value;
-#else
-  constexpr bool on_x86_64 = false;
-#endif  // x86_64 architectures
-
-#if defined(__ARM_ARCH_ISA_A64)
-  constexpr bool on_a64fx =
-      std::is_same<typename CViewType::execution_space::memory_space,
-                   Kokkos::HostSpace>::value;
-#else
-  constexpr bool on_a64fx = false;
-#endif  // a64fx
-
-  // Select whether to calculate a rank-0 or rank-2 result per thread
-  using resultsPerThread =
-      typename std::conditional<!is_vector && on_gpu, ResultsPerThread::Rank0,
-                                ResultsPerThread::Rank2>::type;
-
-  // Selects whether to use the register blocking or non-register blocking
-  // implementation of SerialGemm.
-  using mode_type = typename std::conditional<
-      is_vector,
-      typename std::conditional<on_gpu || on_x86_64, Algo::Gemm::Blocked,
-                                Algo::Gemm::Unblocked>::type,
-      typename std::conditional<
-          on_gpu, Algo::Gemm::Unblocked,
-          typename std::conditional<on_a64fx, Algo::Gemm::Unblocked,
-                                    Algo::Gemm::Blocked>::type>::type>::type;
+  constexpr bool on_x86_64 = KokkosKernels::Impl::kk_is_x86_64_mem_space<
+      typename CViewType::execution_space::memory_space>();
+  constexpr bool on_a64fx = KokkosKernels::Impl::kk_is_a64fx_mem_space<
+      typename CViewType::execution_space::memory_space>();
 
   if (handle->enableDebug) {
     std::cout << "view_scalar_type:" << typeid(view_scalar_type).name()
               << std::endl
               << "execution_space:"
               << typeid(typename CViewType::execution_space).name() << std::endl
-              << "resultsPerThread:" << typeid(resultsPerThread).name()
               << std::endl
-              << "mode_type:" << typeid(mode_type).name() << std::endl
               << "is_vector:" << is_vector << std::endl
               << "on_gpu:" << on_gpu << std::endl
               << "on_x86_64:" << on_x86_64 << std::endl
@@ -368,14 +332,40 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 
   switch (handle->get_kernel_algo_type()) {
     case BaseKokkosBatchedAlgos::KK_SERIAL:
-      ret = BatchedSerialGemm<ArgTransA, ArgTransB, mode_type, ArgBatchSzDim,
-                              resultsPerThread, ScalarType, AViewType,
-                              BViewType, CViewType>(alpha, A, B, beta, C)
+      ret = BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
+                              ArgBatchSzDim, ResultsPerThread::Rank2,
+                              ScalarType, AViewType, BViewType, CViewType>(
+                alpha, A, B, beta, C)
                 .invoke();
       break;
 
     ////////////// HEURISTIC ALGOS //////////////
     case BaseHeuristicAlgos::SQUARE:
+      // Select optimal resultsPerThread param for BatchedSerialGemm
+      using bsgResultsPerThread =
+          typename std::conditional<!is_vector && on_gpu,
+                                    ResultsPerThread::Rank0,
+                                    ResultsPerThread::Rank2>::type;
+
+      // Select optimal mode param for SerialGemm.
+      using bsgModeType = typename std::conditional<
+          is_vector,
+          typename std::conditional<on_gpu || on_x86_64, Algo::Gemm::Blocked,
+                                    Algo::Gemm::Unblocked>::type,
+          typename std::conditional<
+              on_gpu, Algo::Gemm::Unblocked,
+              typename std::conditional<on_a64fx, Algo::Gemm::Unblocked,
+                                        Algo::Gemm::Blocked>::type>::type>::
+          type;
+
+      // TODO: Add additional heuristic conditionals that look at M,N to
+      // determine
+      //       whether to invoke BatchedSerialGemm, BatchedDblBuf, etc.
+      ret = BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType, ArgBatchSzDim,
+                              bsgResultsPerThread, ScalarType, AViewType,
+                              BViewType, CViewType>(alpha, A, B, beta, C)
+                .invoke();
+      break;
 
     case BaseHeuristicAlgos::TALL:
 

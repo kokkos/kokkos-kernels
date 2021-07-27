@@ -103,6 +103,8 @@ struct TplParams {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
     magma_queue_t *magma_queue;
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
+
+    uint8_t empty_union;  // suppress empty union build warning
   };
 };
 

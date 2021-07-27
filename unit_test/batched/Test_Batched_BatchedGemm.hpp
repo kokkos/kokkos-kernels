@@ -163,7 +163,8 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
       ASSERT_EQ(batchedGemmHandle.get_kernel_algo_type(), algo_type);
 
-      if (algo_type == BaseKokkosBatchedAlgos::KK_SERIAL) {
+      if (algo_type == BaseKokkosBatchedAlgos::KK_SERIAL ||
+          algo_type == BaseHeuristicAlgos::SQUARE) {
         // Invoke 4 times to ensure we cover all paths for alpha and beta
         impl_test_batched_gemm_with_handle<DeviceType, ViewType, ScalarType,
                                            ParamTagType>(
@@ -210,12 +211,12 @@ int test_batched_gemm() {
     typedef Kokkos::View<ValueType***, Kokkos::LayoutLeft, DeviceType> ViewType;
     Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
                                  ParamTagType>(0, 10, 10, 10, 10, 10, 10);
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                   ParamTagType>(1024, i, i, i, i, i, i);
+                                   ParamTagType>(128, i, i, i, i, i, i);
     }
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
@@ -225,7 +226,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::NoTranspose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimM, dimK, dimK, dimN,
+                                     ParamTagType>(128, dimM, dimK, dimK, dimN,
                                                    dimM, dimN);
       }
       if ((std::is_same<typename ParamTagType::transA,
@@ -233,7 +234,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::Transpose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimM, dimK, dimN, dimK,
+                                     ParamTagType>(128, dimM, dimK, dimN, dimK,
                                                    dimM, dimN);
       }
       if ((std::is_same<typename ParamTagType::transA,
@@ -241,7 +242,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::NoTranspose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimK, dimM, dimK, dimN,
+                                     ParamTagType>(128, dimK, dimM, dimK, dimN,
                                                    dimM, dimN);
       }
       if ((std::is_same<typename ParamTagType::transA,
@@ -249,7 +250,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::Transpose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimK, dimM, dimN, dimK,
+                                     ParamTagType>(128, dimK, dimM, dimN, dimK,
                                                    dimM, dimN);
       }
     }
@@ -261,12 +262,12 @@ int test_batched_gemm() {
         ViewType;
     Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
                                  ParamTagType>(0, 10, 10, 10, 10, 10, 10);
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
       Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
                                    ParamTagType>(1024, i, i, i, i, i, i);
     }
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
@@ -276,7 +277,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::NoTranspose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimM, dimK, dimK, dimN,
+                                     ParamTagType>(128, dimM, dimK, dimK, dimN,
                                                    dimM, dimN);
       }
       if ((std::is_same<typename ParamTagType::transA,
@@ -284,7 +285,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::Transpose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimM, dimK, dimN, dimK,
+                                     ParamTagType>(128, dimM, dimK, dimN, dimK,
                                                    dimM, dimN);
       }
       if ((std::is_same<typename ParamTagType::transA,
@@ -292,7 +293,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::NoTranspose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimK, dimM, dimK, dimN,
+                                     ParamTagType>(128, dimK, dimM, dimK, dimN,
                                                    dimM, dimN);
       }
       if ((std::is_same<typename ParamTagType::transA,
@@ -300,7 +301,7 @@ int test_batched_gemm() {
           (std::is_same<typename ParamTagType::transB,
                         KokkosBatched::Trans::Transpose>::value)) {
         Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(1024, dimK, dimM, dimN, dimK,
+                                     ParamTagType>(128, dimK, dimM, dimN, dimK,
                                                    dimM, dimN);
       }
     }
