@@ -486,7 +486,11 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
 ELSE ()
   # Tribits uses mixed case for TPLs: TPL_ENABLE_SuperLU
   # See https://github.com/kokkos/kokkos-kernels/issues/1059
-  KOKKOSKERNELS_ADD_TPL_OPTION(SuperLU OFF "Whether to enable SuperLU")
+  KOKKOSKERNELS_ADD_TPL_OPTION(SuperLU ${TPL_ENABLE_SuperLU} "Whether to enable SuperLU")
+
+  KOKKOSKERNELS_ADD_OPTION(ENABLE_SUPERNODAL_SPTRSV OFF BOOL "Whether to build supernodal SPTRSV support")
+
+  TRILINOS_KOKKOSKERNELS_FEATURE_DEPENDS_ON_TPLS(SUPERNODAL_SPTRSV CHOLMOD SuperLU BLAS)
 ENDIF ()
 
 #Convert list to newlines (which CMake doesn't always like in cache variables)
