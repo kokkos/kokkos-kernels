@@ -53,9 +53,8 @@
 #include"gmres.hpp"
 
 int main(int argc, char *argv[]) {
-
-  typedef double                            ST;
-  typedef int                               OT;
+  typedef double ST;
+  typedef int OT;
   typedef Kokkos::DefaultExecutionSpace     EXSP;
 
   using ViewVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, EXSP>;
@@ -125,10 +124,10 @@ int main(int argc, char *argv[]) {
   GmresStats solveStats = gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
 
   // Double check residuals at end of solve:
-  double nrmB = KokkosBlas::nrm2(B);
+  ST nrmB = KokkosBlas::nrm2(B);
   KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj); // wj = Ax
   KokkosBlas::axpy(-1.0, Wj, B); // b = b-Ax. 
-  double endRes = KokkosBlas::nrm2(B)/nrmB;
+  ST endRes = KokkosBlas::nrm2(B)/nrmB;
   std::cout << "=========================================" << std::endl;
   std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
   std::cout << "Number of iterations is: " << solveStats.numIters << std::endl;
