@@ -80,20 +80,17 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                      SQUARE select invocations based on square matrix heuristics where M=N
 ///                      TALL   select invocations based on tall   matrix heuristics where M>N
 ///                      WIDE   select invocations based on wide   matrix heuristics where M<N
-///                    Note: If the heuristics indicate SIMD views are required for optimal
-///                    performance, notify the user that SIMD views are required for
-///                    optimal performance.
 ///
-///                    Specifies which cmake-enabled tpl algorithm to invoke:
-///                      ARMPL    Invoke the ArmPL TPL interface
-///                      MKL      Invoke the MKL TPL interface
-///                      CUBLAS   Invoke the CuBLAS TPL interface
-///                      MAGMA    Invoke the Magma TPL interface
+///                    Specifies which cmake-enabled TPL algorithm to invoke:
+///                      ARMPL    Invoke the ArmPL TPL interface  (Currently UNSUPPORTED)
+///                      MKL      Invoke the MKL TPL interface    (Currently UNSUPPORTED)
+///                      CUBLAS   Invoke the CuBLAS TPL interface (Currently UNSUPPORTED)
+///                      MAGMA    Invoke the Magma TPL interface  (Currently UNSUPPORTED)
 ///                    Note: Requires that input views for A, B, and C reside on either host
-///                    or device depending on the TPL selected.
+///                          or device depending on the TPL selected.
 ///                    Note: If the user selects a TPL, an error will be thrown if:
-///                       1. The TPL is not enabled via cmake
-///                       2. The input views do not reside on the host/device as needed
+///                            1. The TPL is not enabled via cmake
+///                            2. The input views do not reside on the host/device as needed
 ///
 ///                    Specifies which kokkos-kernels (KK) algorithm to invoke:
 ///                      KK_SERIAL       Invoke SerialGemm     via RangePolicy(BatchSz)
