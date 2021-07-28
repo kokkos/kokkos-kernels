@@ -471,6 +471,10 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   # See https://github.com/kokkos/kokkos-kernels/issues/1059
   KOKKOSKERNELS_ADD_TPL_OPTION(SUPERLU OFF "Whether to enable SUPERLU")
 
+  IF (KokkosKernels_ENABLE_SuperLU5_API)
+    SET(HAVE_KOKKOSKERNELS_SUPERLU5_API TRUE)
+  ENDIF ()
+
   KOKKOSKERNELS_IMPORT_TPL(BLAS)
   KOKKOSKERNELS_IMPORT_TPL(LAPACK)
   KOKKOSKERNELS_IMPORT_TPL(MKL)
@@ -488,9 +492,9 @@ ELSE ()
   # See https://github.com/kokkos/kokkos-kernels/issues/1059
   KOKKOSKERNELS_ADD_TPL_OPTION(SuperLU ${TPL_ENABLE_SuperLU} "Whether to enable SuperLU")
 
-  KOKKOSKERNELS_ADD_OPTION(ENABLE_SUPERNODAL_SPTRSV OFF BOOL "Whether to build supernodal SPTRSV support")
-
-  TRILINOS_KOKKOSKERNELS_FEATURE_DEPENDS_ON_TPLS(SUPERNODAL_SPTRSV CHOLMOD SuperLU BLAS)
+  IF (Trilinos_ENABLE_SuperLU5_API)
+    SET(HAVE_KOKKOSKERNELS_SUPERLU5_API TRUE)
+  ENDIF ()
 ENDIF ()
 
 #Convert list to newlines (which CMake doesn't always like in cache variables)

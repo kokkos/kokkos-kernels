@@ -25,7 +25,11 @@
 /* Define this macro if experimental features of Kokkoskernels are enabled */
 #cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
 
-/* Define this macro to disallow instantiations of kernels which are not covered by ETI */
+/* Define this macro if we have SuperLU API version 5 */
+#cmakedefine HAVE_KOKKOSKERNELS_SUPERLU5_API
+
+/* Define this macro to disallow instantiations of kernels which are not covered
+ * by ETI */
 #cmakedefine KOKKOSKERNELS_ETI_ONLY
 /* Define this macro to only test ETI types */
 #cmakedefine KOKKOSKERNELS_TEST_ETI_ONLY
