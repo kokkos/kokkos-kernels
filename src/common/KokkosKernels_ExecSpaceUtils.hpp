@@ -172,18 +172,19 @@ template <>
 constexpr KOKKOS_INLINE_FUNCTION bool
 kk_is_a64fx_mem_space<Kokkos::HostSpace>() {
   return true;
+}
 #endif  // a64fx architectures
 
-  // Host function to determine free and total device memory.
-  // Will throw if execution space doesn't support this.
-  template <typename MemorySpace>
-  inline void kk_get_free_total_memory(
-      size_t& /* free_mem */, size_t & /* total_mem */) {
-    std::ostringstream oss;
-    oss << "Error: memory space " << MemorySpace::name()
-        << " does not support querying free/total memory.";
-    throw std::runtime_error(oss.str());
-  }
+// Host function to determine free and total device memory.
+// Will throw if execution space doesn't support this.
+template <typename MemorySpace>
+inline void kk_get_free_total_memory(
+    size_t& /* free_mem */, size_t & /* total_mem */) {
+  std::ostringstream oss;
+  oss << "Error: memory space " << MemorySpace::name()
+      << " does not support querying free/total memory.";
+  throw std::runtime_error(oss.str());
+}
 
 #ifdef KOKKOS_ENABLE_CUDA
 template <>
