@@ -855,7 +855,14 @@ int main(int argc, char **argv) {
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
 int main() {
-  std::cout << std::endl << " ** SUPERLU NOT ENABLED **" << std::endl << std::endl;
+  std::cout << std::endl;
+  #if !defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+  std::cout << " ** SUPERLU NOT ENABLED **" << std::endl;
+  #endif
+  #if !defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+  std::cout << " ** SUPERNODAL SPTRSV NOT ENABLED **" << std::endl;
+  #endif
+  std::cout << std::endl;
   exit(0);
   return 0;
 }

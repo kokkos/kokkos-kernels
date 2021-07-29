@@ -2003,9 +2003,9 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
     }
   }
   // allocate for all the subgraphs
-  row_map_view_t total_rowmap_view (Kokkos::ViewAllocateWithoutInitializing("rowmap_view"), 2*nlevels*(nrows+1));
-  cols_view_t    total_column_view (Kokkos::ViewAllocateWithoutInitializing("colmap_view"), newNnz);
-  values_view_t  total_values_view (Kokkos::ViewAllocateWithoutInitializing("values_view"), newNnz);
+  row_map_view_t total_rowmap_view (Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap_view"), 2*nlevels*(nrows+1));
+  cols_view_t    total_column_view (Kokkos::view_alloc(Kokkos::WithoutInitializing, "colmap_view"), newNnz);
+  values_view_t  total_values_view (Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_view"), newNnz);
   // create host-mirrors
   row_map_view_host_t total_hr = Kokkos::create_mirror_view (total_rowmap_view);
   cols_view_host_t    total_hc = Kokkos::create_mirror_view (total_column_view);
