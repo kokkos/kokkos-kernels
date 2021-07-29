@@ -191,14 +191,17 @@ class BatchedKernelHandle {
   ///                      constructor overload
   // clang-format on
  protected:
-  int _kernelAlgoType = BaseHeuristicAlgos::SQUARE;
-  static TplParams &_tplParamsSingleton;
-  bool _tplParamsSet = false;
-};
+  // Define TPL params singleton as static class method variable
+  // Only one instance of tplParamsGlobalStorage may exist per process.
+  static TplParams &_get_tpl_params_singleton() {
+    static TplParams tplParamsGlobalStorage;
+    return tplParamsGlobalStorage;
+  }
 
-// Define TPL params singleton
-TplParams tplParamsGlobalStorage;
-TplParams &BatchedKernelHandle::_tplParamsSingleton = tplParamsGlobalStorage;
+  int _kernelAlgoType            = BaseHeuristicAlgos::SQUARE;
+  TplParams &_tplParamsSingleton = _get_tpl_params_singleton();
+  bool _tplParamsSet             = false;
+};
 
 }  // namespace KokkosBatched
 
