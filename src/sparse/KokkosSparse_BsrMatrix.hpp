@@ -732,7 +732,6 @@ class BsrMatrix {
         Kokkos::create_mirror_view(crs_mtx.values);
     Kokkos::deep_copy(h_crs_values, crs_mtx.values);
 
-    values    = crs_mtx.values;
     typename values_type::HostMirror h_values =
         Kokkos::create_mirror_view(values);
     if (h_values.extent(0) < numBlocks * blockDim_ * blockDim_) {
