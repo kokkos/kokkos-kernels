@@ -1000,6 +1000,14 @@ class BsrMatrix {
 };
 
 //----------------------------------------------------------------------------
+/// \class is_bsr_matrix
+/// \brief is_bsr_matrix<T>::value is true if T is a BsrMatrix<...>, false oterhwise
+template <typename>
+struct is_bsr_matrix : public std::false_type {};
+template <typename... P>
+struct is_bsr_matrix<BsrMatrix<P...>> : public std::true_type {};
+template <typename... P>
+struct is_bsr_matrix<const BsrMatrix<P...>> : public std::true_type {};
 //----------------------------------------------------------------------------
 
 }  // namespace Experimental
