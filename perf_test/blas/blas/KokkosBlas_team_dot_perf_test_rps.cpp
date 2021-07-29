@@ -76,12 +76,12 @@ test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
         // instantiate test_list (the type) as kernel_base_vector
         test_list kernel_base_vector;
 
-
+/////////////////////////////////////////////////////////////////////////////
 // First capture clause (by value) is for the setUp / run parameters
 // Second capture clause (by reference) is the for the run characteristics
 // https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1::team-dot
-//
-//
+/////////////////////////////////////////////////////////////////////////////
+
 kernel_base_vector.push_back(rajaperf::make_kernel_base(
         "BLAS_TEAM_DOT ",
         run_params,

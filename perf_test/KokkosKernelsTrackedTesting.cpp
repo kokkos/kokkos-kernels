@@ -15,6 +15,10 @@
 int main(int argc, char* argv[]) {
   {
 
+std::cout << "Is Kokkos initialized? " << Kokkos::is_initialized() << '\n';
+
+
+
     // argument parsing for setting input data at runtime
    
 std::string inputDataPath;

@@ -5,7 +5,7 @@
 #ifndef KOKKOSKERNELS_KOKKOSSPARSE_SPMV_TEST_HPP
 #define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_TEST_HPP
 
-#include <common/KernelBase.hpp>
+//#include <common/KernelBase.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
@@ -13,9 +13,12 @@
 #include "KokkosKernels_default_types.hpp"
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
-#include <common/RunParams.hpp>
-#include <common/QuickKernelBase.hpp>
+//#include <common/RunParams.hpp>
+//#include <common/QuickKernelBase.hpp>
+
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
+#endif
 
 enum {
   KOKKOS,
@@ -35,8 +38,17 @@ using Ordinal = default_lno_t;
 using Offset  = default_size_type;
 using Layout  = default_layout;
 
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
     const rajaperf::RunParams& params);
+
+
+test_list construct_kernel_base(const rajaperf::RunParams& run_params,
+                                Ordinal numRows, Ordinal numCols, int test,
+                                Ordinal rows_per_thread, int team_size,
+                                int vector_length, int schedule, int loop);
+
+#endif
 
 struct SPMVTestData {
   using matrix_type =
@@ -107,11 +119,6 @@ SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int loop);
 
-
-test_list construct_kernel_base(const rajaperf::RunParams& run_params,
-                                Ordinal numRows, Ordinal numCols, int test,
-                                Ordinal rows_per_thread, int team_size,
-                                int vector_length, int schedule, int loop);
 
 
 template <typename AType, typename XType, typename YType>

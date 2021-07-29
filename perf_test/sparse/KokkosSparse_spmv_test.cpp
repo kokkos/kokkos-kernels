@@ -59,9 +59,14 @@
 #include "KokkosKernels_default_types.hpp"
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
-#include <common/RunParams.hpp>
-#include <common/QuickKernelBase.hpp>
+//#include <common/RunParams.hpp>
+//#include <common/QuickKernelBase.hpp>
+
+
+
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
+#endif
 #ifdef HAVE_CUSPARSE
 #include <CuSparse_SPMV.hpp>
 #endif
@@ -75,7 +80,7 @@
 // #include <OpenMPDynamic_SPMV.hpp>
 // #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
-#include <common/Executor.hpp>
+//#include <common/Executor.hpp>
 
 // return std::make_tuple(newnumRows, newnumCols, A, x1, y1,
 //    rows_per_thread, team_size, vector_length,
@@ -164,6 +169,8 @@ struct SPMVConfiguration {
   int loop;
 };
 
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+
 namespace readers {
 template <>
 struct test_reader<SPMVConfiguration> {
@@ -215,3 +222,5 @@ std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
 
   return construct_kernel_base(params);
 }
+
+#endif

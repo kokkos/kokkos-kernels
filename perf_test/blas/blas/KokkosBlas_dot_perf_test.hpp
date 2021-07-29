@@ -11,10 +11,13 @@
 #include <Kokkos_Random.hpp>
 
 // These headers are required for RPS perf test implementation
-#include <common/KernelBase.hpp>
-#include <common/RunParams.hpp>
-#include <common/QuickKernelBase.hpp>
+//#include <common/KernelBase.hpp>
+//#include <common/RunParams.hpp>
+//#include <common/QuickKernelBase.hpp>
+//
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
+#endif
 
 template <class ExecSpace, class Layout>
 struct testData {
@@ -67,6 +70,7 @@ struct testData {
  */
 // Creating the machinery needed to run as an RPS test
 
+/*
 test_list make_dot_kernel_base(const rajaperf::RunParams& params);
 
 // Templated function 
@@ -78,12 +82,12 @@ testData<ExecSpace, Layout> setup_test(int m,
 
 test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
                                 
-
+*/
 // Must have the full function body, as templated functions are recipes for
 // functions
 //
-template <class ExecSpace, class Layout>
-void run(int m, int repeat);
+//template <class ExecSpace, class Layout>
+//void run(int m, int repeat);
 // COMMENT OUT TO CLEAN UP
 
 /*
