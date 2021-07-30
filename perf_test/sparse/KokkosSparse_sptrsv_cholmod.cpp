@@ -479,16 +479,16 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
 
 void print_help_sptrsv() {
   printf("Options:\n");
-  printf("  --test [OPTION] : Use different kernel implementations\n");
-  printf("                    Options:\n");
-  printf("                    cholmod_naive, cholmod_etree\n\n");
-  printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
-  printf("  --offset [O]    : Subtract O from every index.\n");
-  printf("                    Useful in case the matrix market file is not 0 based.\n\n");
-  printf("  -rpt [K]        : Number of Rows assigned to a thread.\n");
-  printf("  -ts [T]         : Number of threads per team.\n");
-  printf("  -vl [V]         : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
-  printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
+  printf("  --test [OPTION]        : Use different kernel implementations\n");
+  printf("                           Options:\n");
+  printf("                           cholmod_naive, cholmod_etree\n\n");
+  printf("  -f [file]              : Read in Matrix Market formatted text file 'file'.\n");
+  printf("  --loop [LOOP]          : How many time to run the test.\n");
+  printf("  --u-in-csc             : To store U-factor in CSC, needed for invert.\n");
+  printf("  --invert-diag          : To invert diagonal blocks.\n");
+  printf("  --invert-offdiag       : To apply inverse to off-diagonal blocks.\n");
+  printf("  --block-size [SIZE]    : To specify the threshold to switch device and bached kernel.\n");
+  printf("  --scalar-type [d or z] :\n");
 }
 
 

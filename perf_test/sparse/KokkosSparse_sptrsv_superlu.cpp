@@ -672,11 +672,16 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
 
 void print_help_sptrsv() {
   printf("Options:\n");
-  printf("  --test [OPTION] : Use different kernel implementations\n");
-  printf("                    Options:\n");
-  printf("                    superlu-naive, superlu-etree, superlu-dag\n\n");
-  printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
-  printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
+  printf("  --test [OPTION]         : Use different kernel implementations\n");
+  printf("                            Options:\n");
+  printf("                            superlu-naive, superlu-etree, superlu-dag\n\n");
+  printf("  -f [file]               : Read in Matrix Market formatted text file 'file'.\n");
+  printf("  --loop [LOOP]           : How many spmv to run to aggregate average time. \n");
+  printf("  --u-in-csc              : To store U-factor in CSC, needed for invert.\n");
+  printf("  --invert-diag           : To invert diagonal blocks.\n");
+  printf("  --invert-offdiag        : To apply inverse to off-diagonal blocks.\n");
+  printf("  --block-size [SIZE]     : To specify the threshold to switch device and bached kernel.\n");
+  printf("  --scalar-type [s,d,c,z] :\n");
 }
 
 
