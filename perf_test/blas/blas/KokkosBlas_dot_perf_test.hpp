@@ -2,7 +2,6 @@
 
 // Created by David Poliakoff and Amy Powell on 6/15/2021
 
-
 #ifndef KOKKOSKERNELS_KOKKOSBLAS_DOT_TEST_RPS_HPP
 #define KOKKOSKERNELS_KOKKOSBLAS_DOT_TEST_RPS_HPP
 
@@ -17,7 +16,11 @@
 //
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
-#endif
+
+test_list make_dot_kernel_base(const rajaperf::RunParams& params);
+test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
+
+#endif //KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 
 template <class ExecSpace, class Layout>
 struct testData {
@@ -70,8 +73,7 @@ struct testData {
  */
 // Creating the machinery needed to run as an RPS test
 
-/*
-test_list make_dot_kernel_base(const rajaperf::RunParams& params);
+
 
 // Templated function 
 template<typename ExecSpace, typename Layout>
@@ -80,19 +82,17 @@ testData<ExecSpace, Layout> setup_test(int m,
                                        bool layoutLeft
                                        );
 
-test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
                                 
-*/
+
 // Must have the full function body, as templated functions are recipes for
 // functions
 //
-//template <class ExecSpace, class Layout>
-//void run(int m, int repeat);
+/*
+template <class ExecSpace, class Layout>
+void run(int m, int repeat)
 // COMMENT OUT TO CLEAN UP
 
-/*
 {
-
 
   std::cout << "Running BLAS Level 1 DOT performance experiment ("
             << ExecSpace::name() << ")\n";
@@ -130,5 +130,3 @@ test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
 */
 
 #endif //KOKKOSKERNELS_KOKKOSBLAS_DOT_TEST_HPP
-
-

@@ -11,17 +11,19 @@
 #include <Kokkos_Random.hpp>
 
 // These headers are required for RPS perf test implementation
-#include <common/KernelBase.hpp>
-#include <common/RunParams.hpp>
-#include <common/QuickKernelBase.hpp>
+//#include <common/KernelBase.hpp>
+//#include <common/RunParams.hpp>
+//#include <common/QuickKernelBase.hpp>
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
+#endif
 
 
 //  Team Dot documenation
 //  https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1%3A%3Ateam-dot 
 
 template <class ExecSpace, class Layout>
-struct testData {
+struct testData_rps_team_dot {
   
   // type aliases
   using Scalar   = double;
@@ -40,7 +42,7 @@ struct testData {
   int repeat      = 1;              
   bool layoutLeft = true;
 
-  const int numberOfTeams = 1; // This will be passed to the TeamPolicy
+  int numberOfTeams = 1; // This will be passed to the TeamPolicy
   // Test Matrices x and y, View declaration
   
     // Declaring 1D view w/ MemSpace as the ExecSpace; this is an input vector
@@ -50,7 +52,8 @@ struct testData {
   // Create 1D view w/ Device as the ExecSpace; this is the output vector
   Kokkos::View<Scalar*, MemSpace> y;
 
-  testData(int m) {
+  testData_rps_team_dot(int m) {
+
 
   x = Kokkos::View<Scalar* , MemSpace>(Kokkos::ViewAllocateWithoutInitializing("x"), m);
   y = Kokkos::View<Scalar* , MemSpace>(Kokkos::ViewAllocateWithoutInitializing("y"), m);
@@ -90,11 +93,11 @@ struct testData {
  */
 // Declaring the machinery needed to run as an RPS test
 
-test_list make_team_dot_kernel_base(const rajaperf::RunParams& params);
+test_list construct_team_dot_kernel_base(const rajaperf::RunParams& params);
 
 // Templated function 
 template<typename ExecSpace, typename Layout>
-testData<ExecSpace, Layout> setup_test(int m,
+testData_rps_team_dot<ExecSpace, Layout> setup_test(int m,
                                        int repeat,
                                        bool layoutLeft,
                                        const int numberOfTeams
@@ -107,10 +110,8 @@ test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params);
 // functions
 //
 template <class ExecSpace, class Layout>
-void run(int m, int repeat);
-
+void run(int m, int repeat)
 {
-
   std::cout << "Running BLAS Level 1 DOT performance experiment ("
             << ExecSpace::name() << ")\n";
 
@@ -121,19 +122,21 @@ void run(int m, int repeat);
   // won't get the same number with a given seed each time
 
   // Constructing an instance of testData, which takes m as a param
-  testData<ExecSpace,Layout> testMatrices(m);
+  testData_rps_team_dot<ExecSpace,Layout> testMatrices(m);
+
+
 
   // do a warm up run of dot:
-  //KokkosBlas::dot(testMatrices.x, testMatrices.y);
-  //
   Kokkos::parallel_for("TeamDotUsage_RPS",
-                       policy(numberOfTeams, Kokkos::AUTO),
-                       KOKKOS_LAMBDA(const testData::member_type& team) {
-
+                       policy(testMatrices.numberOfTeams, Kokkos::AUTO),
+                       KOKKOS_LAMBDA(const typename testData_rps_team_dot<ExecSpace,Layout>::member_type& team) {
                        });
 
-  // The live test of dot:
+}
 
+
+  // The live test of dot:
+/*
   Kokkos::fence();
   Kokkos::Timer timer;
 
@@ -149,7 +152,7 @@ void run(int m, int repeat);
   size_t flopsPerRun = (size_t)2 * m;
   printf("Avg DOT time: %f s.\n", avg);
   printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-}
+  */
 
 
 #endif //KOKKOSKERNELS_KOKKOSBLAS_TEAM_DOT_TEST_RPS_HPP

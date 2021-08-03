@@ -51,13 +51,14 @@ if (argc == 1) {
     rajaperf::RunParams run_params(0, argv);
     // Initialize Kokkos
     Kokkos::initialize(argc, argv);
-    
 
+    Kokkos::print_configuration(std::cout);
+    
+     // sparse , spmv
     test::sparse::build_executor(exec, argc, argv, run_params);
-   
-
-    test::blas::build_executor(exec, argc, argv, run_params);
     
+    // All BLAS tests (Dot, Team Dot)
+    test::blas::build_blas_executor(exec, argc, argv, run_params);
 
     exec.setupSuite();
 	
@@ -73,4 +74,5 @@ if (argc == 1) {
   }
   Kokkos::finalize();
   std::cout << "\n\nDONE!!!...." << std::endl;
+return 0;
 }

@@ -45,8 +45,10 @@
 #include <Kokkos_Core.hpp>
 #include <blas/KokkosBlas1_dot.hpp>
 #include <Kokkos_Random.hpp>
-// For RPS implementation
-#include <KokkosBlas_dot_perf_test.hpp>
+
+// SHOULD THIS EVEN BE HERE?  This is KK standard perf test implementation
+//  For RPS implementation
+// #include <KokkosBlas_dot_perf_test.hpp>
 
 
 struct Params {
