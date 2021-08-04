@@ -60,7 +60,7 @@
 #include <KokkosSparse_spgemm.hpp>
 #include <KokkosKernels_BitUtils.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosGraph_Distance1ColorHandle.hpp"      // todo: remove this  (SCAFFOLDING - WCMCLEN)
@@ -270,7 +270,7 @@ class GraphColorDistance2
 
         double              time;
         double              total_time = 0.0;
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 
         int iter = 0;
         for(; (iter < _max_num_iterations) && (numUncolored > 0); iter++)
@@ -733,7 +733,7 @@ class GraphColorDistance2
       //note: relying on forbidden and colors_out being initialized to 0
       forbidden_view forbidden("Forbidden", batch * numCols);
       int iter = 0;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       lno_t currentWork = this->nr;
       batch = 1;
       double colorTime = 0;
@@ -884,7 +884,7 @@ class GraphColorDistance2
       //Create worklist
       Kokkos::View<lno_t*, Kokkos::HostSpace> worklist(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Worklist"), this->nr);
       int iter = 0;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       lno_t currentWork = this->nr;
       lno_t numCols = this->nc;
       for(color_type colorBase = 1; currentWork > 0; colorBase += 32)

@@ -45,7 +45,7 @@
 #define _KOKKOSKERNELS_SPARSEUTILS_HPP
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
@@ -1550,7 +1550,7 @@ void kk_get_lower_triangle_count(
     bool chunksize = 4,
     bool is_lower = true
     ){
-  //Kokkos::Impl::Timer timer1;
+  //Kokkos::Timer timer1;
 
 
   //kk_get_lower_triangle_count_sequential(nv, in_xadj, in_adj, out_xadj, new_indices);
@@ -1574,7 +1574,7 @@ void kk_get_lower_triangle_fill(
     bool chunksize = 4,
     bool is_lower = true
     ){
-  //Kokkos::Impl::Timer timer1;
+  //Kokkos::Timer timer1;
 /*
   kk_get_lower_triangle_fill_sequential(
     nv, in_xadj, in_adj,

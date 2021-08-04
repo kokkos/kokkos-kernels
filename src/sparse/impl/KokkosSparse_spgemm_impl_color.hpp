@@ -378,7 +378,7 @@ void
   sc.consecutive_chunk_size = block_size;
   sc.consecutive_all_color_chunk_size = sc.consecutive_chunk_size * num_multi_colors;
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   for (nnz_lno_t i = 0; i < num_used_colors; ){
     nnz_lno_t color_begin = color_xadj(i);
     nnz_lno_t lastcolor = i + 1;
@@ -478,7 +478,7 @@ void
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, concurrency,a_row_cnt);
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   if (this->handle->get_spgemm_handle()->coloring_input_file == ""){
 
       transpose_col_xadj = row_lno_temp_work_view_t("transpose_col_xadj", b_col_cnt + 1);

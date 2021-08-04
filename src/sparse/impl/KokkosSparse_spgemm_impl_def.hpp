@@ -96,7 +96,7 @@ void KokkosSPGEMM
 	{
 		nnz_lno_t maxNumRoughZeros = 0;
 		size_t overall_flops = 0;
-		Kokkos::Impl::Timer timer1;
+		Kokkos::Timer timer1;
 		auto new_row_mapB_begin = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(0), b_row_cnt));
 		auto new_row_mapB_end = Kokkos::subview (row_mapB, std::make_pair (nnz_lno_t(1), b_row_cnt + 1));
 		row_lno_persistent_work_view_t flops_per_row(Kokkos::view_alloc(Kokkos::WithoutInitializing, "original row flops"), a_row_cnt);
@@ -135,7 +135,7 @@ void KokkosSPGEMM
     nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
 
     //First Compress B.
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\tCOMPRESS MATRIX-B PHASE" << std::endl;

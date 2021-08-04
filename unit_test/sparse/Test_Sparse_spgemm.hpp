@@ -344,7 +344,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
       algo = "!!! UNKNOWN ALGO !!!";
     }
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     crsMat_t output_mat;
 
     bool failed = false;

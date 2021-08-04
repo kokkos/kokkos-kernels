@@ -278,7 +278,7 @@ void run_experiment(
 
 
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
 
     row_mapC = Kokkos::View <size_t *,ExecSpace>
               ("non_const_lnow_row",

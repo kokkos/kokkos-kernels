@@ -48,7 +48,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
@@ -800,7 +800,7 @@ namespace KokkosSparse{
         size_type nnz = adj.extent(0);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         typename HandleType::GraphColoringHandleType::color_view_t colors;
         color_t numColors;
@@ -1263,7 +1263,7 @@ namespace KokkosSparse{
         }
         //else
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         {
 

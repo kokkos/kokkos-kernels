@@ -791,7 +791,7 @@ bool KokkosSPGEMM
   }
   nnz_lno_t compression_bit_mask_ = lnot_size - 1;
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   //Allocate memory for the linked list to be used for the hashmap
   out_nnz_view_t set_nexts_;
   out_nnz_view_t set_begins_;
@@ -916,7 +916,7 @@ bool KokkosSPGEMM
         sszm_compressMatrix.memory_space = m_space;
       }
 
-      Kokkos::Impl::Timer timer_count;
+      Kokkos::Timer timer_count;
       // HashmapAccumulator is populated here
       if(use_unordered_compress)
         Kokkos::parallel_for( "KokkosSparse::TwoStepZipMatrix::use_unordered_compress", team_count2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
@@ -933,7 +933,7 @@ bool KokkosSPGEMM
 
     	nnz_lno_t compressed_maxNumRoughZeros = 0;
     	size_t compressedoverall_flops = 0;
-  		Kokkos::Impl::Timer timer1_t;
+  		Kokkos::Timer timer1_t;
   		auto new_row_mapB_begin = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(0), b_row_cnt));
   		auto new_row_mapB_end = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(1), b_row_cnt + 1));
   		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::view_alloc(Kokkos::WithoutInitializing, "origianal row flops"), a_row_cnt);
@@ -993,7 +993,7 @@ bool KokkosSPGEMM
   {
 	  nnz_lno_t compressed_maxNumRoughZeros = 0;
 	  size_t compressedoverall_flops = 0;
-	  Kokkos::Impl::Timer timer1_t;
+	  Kokkos::Timer timer1_t;
 	  auto new_row_mapB_begin = in_row_map;
 	  auto new_row_mapB_end = out_row_map;
 	  row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::view_alloc(Kokkos::WithoutInitializing, "origianal row flops"), a_row_cnt);

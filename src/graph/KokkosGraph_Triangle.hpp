@@ -236,7 +236,7 @@ void triangle_generic(
   using namespace KokkosSparse;
 
   spgemmHandleType *sh = handle->get_spgemm_handle();
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
 
   //////SORT BASE ON THE SIZE OF ROWS/////
   int sort_lower_triangle = sh->get_sort_lower_triangular();

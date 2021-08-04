@@ -249,7 +249,7 @@ namespace KokkosKernels{
 	entriesC = lno_nnz_view_t("entriesC (empty)", 0);
 	valuesC = scalar_view_t("valuesC (empty)", 0);
 
-	Kokkos::Impl::Timer timer1;
+	Kokkos::Timer timer1;
 	spgemm_symbolic(&kh, m, n, k,
 			crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST,
 			crsMat2.graph.row_map, crsMat2.graph.entries, TRANSPOSESECOND,
@@ -258,7 +258,7 @@ namespace KokkosKernels{
 	ExecSpace().fence();
 	double symbolic_time = timer1.seconds();
 
-	Kokkos::Impl::Timer timer2;
+	Kokkos::Timer timer2;
 	size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
 	if (verbose)  
 	  std::cout << "C SIZE:" << c_nnz_size << std::endl;

@@ -1430,7 +1430,7 @@ void KokkosSPGEMM
         " chunksize:" << accumulator_chunksize << std::endl;
   }
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   pool_memory_space m_space(num_chunks, accumulator_chunksize, pool_init_val,  my_pool_type);
   MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
@@ -1681,7 +1681,7 @@ void KokkosSPGEMM
   size_type const *p_rowmapB_begins = row_mapB.data();
   size_type const *p_rowmapB_ends = row_mapB.data() + 1;
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   if (apply_compression){
     //compressed b
     row_lno_temp_work_view_t new_row_mapB(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new row map"), n+1);
