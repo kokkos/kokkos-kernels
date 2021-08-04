@@ -50,7 +50,7 @@ struct testData {
   // A function with no return type whose name is the name of the class is a
   // constructor or a destructor;
   // Constructor -- create function:
-  testData(int m) {
+  testData(int m):m(m) {
           x = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("x"), m);
           y = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("y"), m);
           
@@ -81,7 +81,6 @@ testData<ExecSpace, Layout> setup_test(int m,
                                        bool layoutLeft
                                        );
 
-test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
                                 
 #endif //KOKKOSKERNELS_KOKKOSBLAS_DOT_TEST_HPP
 

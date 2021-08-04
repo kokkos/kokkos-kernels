@@ -143,7 +143,7 @@ int parse_inputs(Params& params, int argc, char** argv) {
 
 //DANGER DANGER DANGER!! POTENTIAL MERGE ISSUES 
 
-/*
+
 template <class ExecSpace, class Layout>
 void run(int m, int repeat) {
   // Declare type aliases
@@ -194,7 +194,6 @@ void run(int m, int repeat) {
   printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
 }
 
-*/
 
 
 int main(int argc, char** argv) {

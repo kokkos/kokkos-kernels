@@ -26,6 +26,10 @@ struct testData_rps_team_dot {
   int numberOfTeams = 1; // This will be passed to the TeamPolicy
   // Test Matrices x and y, View declaration
 
+  int m = 1;
+  int repeat;
+  
+
     // Declaring 1D view w/ MemSpace as the ExecSpace; this is an input vector
     // DO NOT INITIALIZE
   Kokkos::View<Scalar*, MemSpace> x;
@@ -33,7 +37,7 @@ struct testData_rps_team_dot {
   // Create 1D view w/ Device as the ExecSpace; this is the output vector
   Kokkos::View<Scalar*, MemSpace> y;
 
-  testData_rps_team_dot(int m) {
+  testData_rps_team_dot(int m):m(m) {
 
 
   x = Kokkos::View<Scalar* , MemSpace>(Kokkos::ViewAllocateWithoutInitializing("x"), m);
@@ -43,7 +47,7 @@ struct testData_rps_team_dot {
   Kokkos::deep_copy(y, 2.0);
 
   }
-}
+};
 
 /* Taking in by reference avoids making a copy of the data in memory, whereas
  * taking in by value would make a copy in memory.  Copying operations do not
@@ -55,7 +59,9 @@ struct testData_rps_team_dot {
  */
 // Declaring the machinery needed to run as an RPS test
 
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 test_list construct_team_dot_kernel_base(const rajaperf::RunParams& params);
+#endif
 
 // Templated function 
 template<typename ExecSpace, typename Layout>
@@ -87,10 +93,11 @@ void run(int m, int repeat) {
 
 
 
-  // do a warm up run of dot:
-  Kokkos::parallel_for("TeamDotUsage_RPS",
+  // do a warm up run of team dot:
+  Kokkos::parallel_for("TeamDotUsage_RPS_Warm_Up",
                        policy(testMatrices.numberOfTeams, Kokkos::AUTO),
                        KOKKOS_LAMBDA(const typename testData_rps_team_dot<ExecSpace,Layout>::member_type& team) {
+                       KokkosBlas::Experimental::dot(team, testMatrices.x, testMatrices.y);
                        });
 
 
@@ -99,10 +106,17 @@ void run(int m, int repeat) {
   Kokkos::Timer timer;
 
     for (int i = 0; i < testMatrices.repeat; i++) {
-    double result = KokkosBlas::dot(testMatrices.x, testMatrices.y);
+           
+  Kokkos::parallel_for("TeamDotUsage_RPS",
+                       policy(testMatrices.numberOfTeams, Kokkos::AUTO),
+                       KOKKOS_LAMBDA(const typename testData_rps_team_dot<ExecSpace,Layout>::member_type& team) {
+                       double result = KokkosBlas::Experimental::dot(team, testMatrices.x, testMatrices.y);
+                       });
+
     ExecSpace().fence();
   }
 
+/*
   // Kokkos Timer set up
   double total = timer.seconds();
   double avg   = total / testMatrices.repeat;
@@ -110,7 +124,7 @@ void run(int m, int repeat) {
   size_t flopsPerRun = (size_t)2 * m;
   printf("Avg DOT time: %f s.\n", avg);
   printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-
+*/
 
 }
 
