@@ -178,7 +178,7 @@ namespace KokkosBatched {
 
   struct Timer {
     std::string _label;
-    Kokkos::Impl::Timer _clock;
+    Kokkos::Timer _clock;
     Timer (const std::string label)
       : _label(label), _clock() {};
 

@@ -624,7 +624,7 @@ namespace KokkosSparse{
       {
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         Kokkos::fence();
         tic = timer.seconds ();
 #endif
@@ -786,7 +786,7 @@ namespace KokkosSparse{
       {
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         Kokkos::fence();
         timer.reset();
 #endif
@@ -875,7 +875,7 @@ namespace KokkosSparse{
         const_scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero ();
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         Kokkos::fence();
         tic = timer.seconds ();
 #endif

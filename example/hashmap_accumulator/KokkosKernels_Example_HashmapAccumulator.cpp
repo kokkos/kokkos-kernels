@@ -257,7 +257,7 @@ namespace Experiment {
             std::cout << std::endl;
         }
 
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 
         // Deep copy initialized values to device memory.
         Kokkos::deep_copy(d_data, h_data);

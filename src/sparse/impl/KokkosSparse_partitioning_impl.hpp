@@ -271,8 +271,8 @@ struct BalloonClustering
     Kokkos::deep_copy(vertClusters, (nnz_lno_t) numClusters);
     Kokkos::deep_copy(distances, numRows);
     BalloonFunctor funct(vertClusters, clusterCounts, distances, rowmap, colinds, pressure, clusterSize, randPool);
-    Kokkos::Impl::Timer globalTimer;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer globalTimer;
+    Kokkos::Timer timer;
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE

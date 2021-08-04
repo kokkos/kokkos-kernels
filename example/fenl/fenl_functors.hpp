@@ -132,7 +132,7 @@ public:
       //--------------------------------
       // Guess at span required for the map:
 
-      Kokkos::Impl::Timer wall_clock ;
+      Kokkos::Timer wall_clock ;
 
       wall_clock.reset();
       phase = FILL_NODE_SET ;

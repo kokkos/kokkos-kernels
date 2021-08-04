@@ -113,8 +113,8 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
     norm_res  = sqrt( old_rdot );
     iteration = 0 ;
 
-    Kokkos::Impl::Timer wall_clock ;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer wall_clock ;
+    Kokkos::Timer timer;
 
     while ( tolerance < norm_res && iteration < maximum_iteration ) {
 

@@ -605,7 +605,7 @@ void KokkosSPGEMM
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , b_row_cnt);
 
   //step-1 tranpose the first matrix.
-  Kokkos::Impl::Timer timer1, timer_all;
+  Kokkos::Timer timer1, timer_all;
   row_lno_temp_work_view_t transpose_col_xadj ("transpose_col_xadj", b_row_cnt + 1);
   nnz_lno_temp_work_view_t transpose_col_adj (Kokkos::view_alloc(Kokkos::WithoutInitializing, "transpose_col_adj"), entriesA.extent(0));
   scalar_temp_work_view_t tranpose_vals (Kokkos::view_alloc(Kokkos::WithoutInitializing, "transpose_col_values"), entriesA.extent(0));

@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
     ///
     /// input arguments parsing

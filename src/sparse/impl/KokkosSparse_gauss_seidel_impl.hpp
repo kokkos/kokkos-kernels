@@ -800,7 +800,7 @@ namespace KokkosSparse{
         size_type nnz = adj.extent(0);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         typename HandleType::GraphColoringHandleType::color_view_t colors;
         color_t numColors;
@@ -1263,7 +1263,7 @@ namespace KokkosSparse{
         }
         //else
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         {
 

@@ -976,7 +976,7 @@ void KokkosSPGEMM
         " chunksize:" << accumulator_chunksize << std::endl;
   }
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   pool_memory_space m_space(num_chunks, accumulator_chunksize, pool_init_val,  my_pool_type);
   MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){

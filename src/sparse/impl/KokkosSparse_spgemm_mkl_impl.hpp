@@ -126,7 +126,7 @@ void mkl_symbolic(
 
       //TODO test this case.
 
-      Kokkos::Impl::Timer copy_time;
+      Kokkos::Timer copy_time;
       const int max_integer = 2147483647;
       if (entriesB.extent(0) > max_integer|| entriesA.extent(0) > max_integer){
         throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
@@ -197,7 +197,7 @@ void mkl_symbolic(
       }
 
 
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Timer timer1;
       bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
       if (verbose)
       std::cout << "Actual FLOAT MKL SPMM Time in symbolic:" << timer1.seconds() << std::endl;
@@ -281,7 +281,7 @@ void mkl_symbolic(
       }
 
 
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Timer timer1;
       bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
       if (verbose)
       std::cout << "Actual DOUBLE MKL SPMM Time Without Free:" << timer1.seconds() << std::endl;
@@ -313,7 +313,7 @@ void mkl_symbolic(
         }
         if (handle->mkl_keep_output)
         {
-          Kokkos::Impl::Timer copy_time;
+          Kokkos::Timer copy_time;
 
           KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
@@ -438,7 +438,7 @@ void mkl_symbolic(
 
         //TODO test this case.
 
-        Kokkos::Impl::Timer copy_time;
+        Kokkos::Timer copy_time;
         const int max_integer = 2147483647;
         if (entriesB.extent(0) > max_integer|| entriesA.extent(0) > max_integer){
           throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
@@ -507,7 +507,7 @@ void mkl_symbolic(
         }
 
 
-        Kokkos::Impl::Timer timer1;
+        Kokkos::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
         if (verbose)
         std::cout << "Actual FLOAT MKL SPMM Time:" << timer1.seconds() << std::endl;
@@ -595,7 +595,7 @@ void mkl_symbolic(
         }
 
 
-        Kokkos::Impl::Timer timer1;
+        Kokkos::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
         if (verbose)
         std::cout << "Actual DOUBLE MKL SPMM Time Without Free:" << timer1.seconds() << std::endl;
@@ -628,7 +628,7 @@ void mkl_symbolic(
           }
           if (handle->mkl_keep_output)
           {
-            Kokkos::Impl::Timer copy_time;
+            Kokkos::Timer copy_time;
 
             //KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
             //idx nnz = row_mapC(m) = rows_end[m - 1];

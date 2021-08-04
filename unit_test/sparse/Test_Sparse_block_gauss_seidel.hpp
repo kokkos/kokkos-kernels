@@ -233,7 +233,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
         for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
-            Kokkos::Impl::Timer timer1;
+            Kokkos::Timer timer1;
             //int res =
             run_block_gauss_seidel_1<crsMat_t, scalar_view_t, typename scalar_view_t::const_type, device>
               (input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, shmem_size, omega);
@@ -356,7 +356,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
         for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
-            Kokkos::Impl::Timer timer1;
+            Kokkos::Timer timer1;
             //int res =
             run_block_gauss_seidel_1<crsMat_t, scalar_view2d_t, typename scalar_view2d_t::const_type, device>
               (input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, shmem_size, omega);

@@ -550,7 +550,7 @@ namespace KokkosSparse{
         using raw_colinds_t = Kokkos::View<const nnz_lno_t*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
         auto gsHandle = get_gs_handle();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         //sym_xadj/sym_adj is only used here for clustering.
         //Create them as non-const, unmanaged views to avoid
@@ -764,7 +764,7 @@ namespace KokkosSparse{
         }
         //Timer for whole numeric
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         size_type nnz = this->entries.extent(0);
 

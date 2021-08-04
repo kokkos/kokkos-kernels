@@ -400,7 +400,7 @@ public:
     double total_time_greedy_phase=0.0;
     double total_time_find_conflicts=0.0;
     double total_time_serial_conflict_resolution=0.0;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     timer.reset();
 
 
@@ -2291,10 +2291,10 @@ public:
 
     bool tictoc = this->cp->get_tictoc();
 
-    Kokkos::Impl::Timer *timer = NULL;
+    Kokkos::Timer *timer = NULL;
 
     if (tictoc){
-      timer = new Kokkos::Impl::Timer();
+      timer = new Kokkos::Timer();
       std::cout << "\tRewriting EB params. num_initial_colors:" << numInitialColors
           << " prefix_sum_shrink_min:"  << ps_min
           << " ps_cutoff:" << pps_cutoff

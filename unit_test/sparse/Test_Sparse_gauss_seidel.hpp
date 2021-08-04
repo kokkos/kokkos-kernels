@@ -195,7 +195,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //*** Point-coloring version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel(input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
     //double gs = timer1.seconds();
@@ -213,7 +213,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
     {
       for(int apply_type = 0; apply_type < apply_count; ++apply_type)
       {
-        Kokkos::Impl::Timer timer1;
+        Kokkos::Timer timer1;
         //Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
         run_gauss_seidel(
@@ -284,7 +284,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //*** Point-coloring version ****
   for(int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     //Zero out X before solving
     Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel(input_mat, GS_DEFAULT, x_vector, y_vector, symmetric, apply_type);
@@ -310,7 +310,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
     {
       for(int apply_type = 0; apply_type < apply_count; ++apply_type)
       {
-        Kokkos::Impl::Timer timer1;
+        Kokkos::Timer timer1;
         //Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
         run_gauss_seidel(

@@ -71,7 +71,7 @@ namespace KokkosBatched {
       //const double tmax = 1.0e15;
 
       const int iter_begin = -10, iter_end = 100;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       
       Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType> yref;
       Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType> 

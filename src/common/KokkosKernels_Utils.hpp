@@ -1495,7 +1495,7 @@ void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row
   typedef typename InitScalar_t::team_policy_t tcp_t;
   int vector_size = 1;
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   Kokkos::parallel_for( "KokkosKernels::Common::InitViewWithScalar",  tcp_t(num_elements / chunk_size + 1 , team_size, vector_size), tm);
   MyExecSpace().fence();
 }
