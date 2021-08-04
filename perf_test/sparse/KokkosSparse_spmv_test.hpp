@@ -5,7 +5,6 @@
 #ifndef KOKKOSKERNELS_KOKKOSSPARSE_SPMV_TEST_HPP
 #define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_TEST_HPP
 
-//#include <common/KernelBase.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
@@ -13,8 +12,6 @@
 #include "KokkosKernels_default_types.hpp"
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
-//#include <common/RunParams.hpp>
-//#include <common/QuickKernelBase.hpp>
 
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
@@ -118,7 +115,6 @@ struct SPMVTestData {
 SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int loop);
-
 
 
 template <typename AType, typename XType, typename YType>

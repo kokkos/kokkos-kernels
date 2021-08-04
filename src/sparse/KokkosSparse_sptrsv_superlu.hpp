@@ -52,7 +52,9 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
+    defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "slu_ddefs.h"
 
 #include "KokkosSparse_sptrsv_supernode.hpp"
@@ -345,9 +347,9 @@ crsmat_t read_superlu_valuesL(KernelHandle *kernelHandle, SuperMatrix *L, graph_
   int * rowind = Lstore->rowind;
 
   bool ptr_by_column = true;
-  return read_supernodal_valuesL<crsmat_t> (kernelHandle, n, nsuper, 
-                                            ptr_by_column, mb, nb,
-                                            colptr, rowind, Lx, static_graph);
+  return read_supernodal_values<crsmat_t> (kernelHandle, n, nsuper, 
+                                           ptr_by_column, mb, nb,
+                                           colptr, rowind, Lx, static_graph);
 }
 
 
@@ -674,6 +676,6 @@ void sptrsv_compute(
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+#endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU && KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 #endif // KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 

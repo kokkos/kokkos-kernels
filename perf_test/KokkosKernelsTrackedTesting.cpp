@@ -59,6 +59,7 @@ if (argc == 1) {
     
     // All BLAS tests (Dot, Team Dot)
     test::blas::build_blas_executor(exec, argc, argv, run_params);
+    
 
     exec.setupSuite();
 	

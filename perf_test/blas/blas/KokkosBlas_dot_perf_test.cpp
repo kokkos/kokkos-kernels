@@ -46,9 +46,8 @@
 #include <blas/KokkosBlas1_dot.hpp>
 #include <Kokkos_Random.hpp>
 
-// SHOULD THIS EVEN BE HERE?  This is KK standard perf test implementation
-//  For RPS implementation
-// #include <KokkosBlas_dot_perf_test.hpp>
+// For RPS implementation
+#include "KokkosBlas_dot_perf_test.hpp"
 
 
 struct Params {
@@ -141,6 +140,10 @@ int parse_inputs(Params& params, int argc, char** argv) {
 // "m" is used here, because code from another test was adapted for this test.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+//DANGER DANGER DANGER!! POTENTIAL MERGE ISSUES 
+
+/*
 template <class ExecSpace, class Layout>
 void run(int m, int repeat) {
   // Declare type aliases
@@ -191,6 +194,7 @@ void run(int m, int repeat) {
   printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
 }
 
+*/
 
 
 int main(int argc, char** argv) {

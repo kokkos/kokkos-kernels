@@ -99,9 +99,9 @@ template<class AMatrix,
         >
 struct GESV{
   static void
-  gesv (AMatrix& A,
-        BXMV& B,
-        IPIVV& IPIV);
+  gesv (const AMatrix& A,
+        const BXMV& B,
+        const IPIVV& IPIV);
 };
 
 
