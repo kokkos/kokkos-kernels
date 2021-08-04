@@ -1,6 +1,6 @@
 /// Kokkos headers
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
 #if  defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)

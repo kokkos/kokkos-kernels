@@ -54,7 +54,7 @@
 #include <Kokkos_MV.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <Kokkos_CrsMatrix.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 typedef Kokkos::DefaultExecutionSpace execution_space;
 

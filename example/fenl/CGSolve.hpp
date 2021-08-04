@@ -50,7 +50,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas.hpp>
 #include <KokkosSparse_spmv.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <WrapMPI.hpp>
 

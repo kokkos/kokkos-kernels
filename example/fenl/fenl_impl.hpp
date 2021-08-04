@@ -53,7 +53,7 @@
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 // Examples headers:
 

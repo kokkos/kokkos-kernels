@@ -59,7 +59,7 @@
 // Kokkos Includes
 #include <Kokkos_Core.hpp>
 #include <Kokkos_UniqueToken.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 // Kokkos Kernels Includes
 #include <KokkosKernels_HashmapAccumulator.hpp>

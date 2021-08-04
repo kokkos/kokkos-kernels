@@ -48,7 +48,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_MemoryTraits.hpp>

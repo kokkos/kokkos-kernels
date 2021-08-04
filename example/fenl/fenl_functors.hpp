@@ -57,7 +57,7 @@
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>

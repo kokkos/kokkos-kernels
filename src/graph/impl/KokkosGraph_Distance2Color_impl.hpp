@@ -60,7 +60,7 @@
 #include <KokkosSparse_spgemm.hpp>
 #include <KokkosKernels_BitUtils.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosGraph_Distance1ColorHandle.hpp"      // todo: remove this  (SCAFFOLDING - WCMCLEN)
