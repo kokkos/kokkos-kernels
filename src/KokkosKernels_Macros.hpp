@@ -62,11 +62,15 @@
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     defined(KOKKOS_ENABLE_OPENMP)
-#if defined(KOKKOS_COMPILER_GNU)
+// For clang OpenMP support, see
+// https://clang.llvm.org/docs/OpenMPSupport.html#id1
+#if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
 // GCC 4.8.5 and older do not support #pragma omp simd
-#if (KOKKOS_COMPILER_GNU > 485)
+// Do not enable when using GCC 7.2.0 + C++17 due to a bug in gcc
+#if (KOKKOS_COMPILER_GNU > 485) && !(KOKKOS_COMPILER_GNU == 720 && defined(KOKKOS_ENABLE_CXX17))
 #define KOKKOSKERNELS_ENABLE_OMP_SIMD
 #endif
+// TODO: Check for a clang version that supports #pragma omp simd
 #else
 // All other Kokkos-supported compilers support it.
 #define KOKKOSKERNELS_ENABLE_OMP_SIMD

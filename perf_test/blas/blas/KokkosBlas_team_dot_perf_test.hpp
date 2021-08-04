@@ -1,8 +1,5 @@
 
 
-// Created by David Poliakoff and Amy Powell on 7/19/2021
-
-
 #ifndef KOKKOSKERNELS_KOKKOSBLAS_TEAM_DOT_TEST_RPS_HPP
 #define KOKKOSKERNELS_KOKKOSBLAS_TEAM_DOT_TEST_RPS_HPP
 
@@ -10,15 +7,9 @@
 #include "KokkosBlas1_team_dot.hpp"
 #include <Kokkos_Random.hpp>
 
-// These headers are required for RPS perf test implementation
-//#include <common/KernelBase.hpp>
-//#include <common/RunParams.hpp>
-//#include <common/QuickKernelBase.hpp>
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
 #endif
-
-
 //  Team Dot documenation
 //  https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1%3A%3Ateam-dot 
 
@@ -32,19 +23,9 @@ struct testData_rps_team_dot {
 
   using policy = Kokkos::TeamPolicy<>;
   using member_type = typename policy::member_type;
-
-  
-  // To implement TeamPolicy 
-
-
-  // m is vector length                            
-  int m           = 100000;         
-  int repeat      = 1;              
-  bool layoutLeft = true;
-
   int numberOfTeams = 1; // This will be passed to the TeamPolicy
   // Test Matrices x and y, View declaration
-  
+
     // Declaring 1D view w/ MemSpace as the ExecSpace; this is an input vector
     // DO NOT INITIALIZE
   Kokkos::View<Scalar*, MemSpace> x;
@@ -62,26 +43,7 @@ struct testData_rps_team_dot {
   Kokkos::deep_copy(y, 2.0);
 
   }
-
-
-  // A function with no return type whose name is the name of the class is a
-  // constructor or a destructor;
-  // Constructor -- create function:
-  /*
-  testData(int m) {
-          x = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("x"), m);
-          y = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("y"), m);
-          
-          Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
-
-          Kokkos::fill_random(x, pool, 10.0);
-          Kokkos::fill_random(y, pool, 10.0);
-  }
-  */
-};
-
-
-////////////////////////////////////////////////////////////////////////////
+}
 
 /* Taking in by reference avoids making a copy of the data in memory, whereas
  * taking in by value would make a copy in memory.  Copying operations do not
@@ -103,16 +65,15 @@ testData_rps_team_dot<ExecSpace, Layout> setup_test(int m,
                                        const int numberOfTeams
                                        );
 
-test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params);
                                 
 
 // Must have the full function body, as templated functions are recipes for
 // functions
 //
 template <class ExecSpace, class Layout>
-void run(int m, int repeat)
-{
-  std::cout << "Running BLAS Level 1 DOT performance experiment ("
+void run(int m, int repeat) {
+
+  std::cout << "Running BLAS Level 1 TEAMPOLICY-BASED DOT performance experiment ("
             << ExecSpace::name() << ")\n";
 
   std::cout << "Each test input vector has a length of " << m << std::endl;
@@ -132,11 +93,8 @@ void run(int m, int repeat)
                        KOKKOS_LAMBDA(const typename testData_rps_team_dot<ExecSpace,Layout>::member_type& team) {
                        });
 
-}
 
-
-  // The live test of dot:
-/*
+  // The livepo/git_submodules_rps_PR
   Kokkos::fence();
   Kokkos::Timer timer;
 
@@ -152,7 +110,9 @@ void run(int m, int repeat)
   size_t flopsPerRun = (size_t)2 * m;
   printf("Avg DOT time: %f s.\n", avg);
   printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-  */
 
+
+}
 
 #endif //KOKKOSKERNELS_KOKKOSBLAS_TEAM_DOT_TEST_RPS_HPP
+

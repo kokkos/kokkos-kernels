@@ -7,11 +7,8 @@
 #include <common/RAJAPerfSuite.hpp>
 #include <common/Executor.hpp>
 
-
-//#include "KokkosSparse_spmv_test.hpp"
 #include "KokkosBlas_dot_perf_test.hpp"
 #include "KokkosBlas_team_dot_perf_test.hpp"
-
 
 namespace test {
 namespace blas {
@@ -49,4 +46,5 @@ void build_blas_executor(rajaperf::Executor& exec,
 
 } // namespace blas
 } // namespace test
+
 #endif  // KOKKOSKERNELS_TRACKED_TESTING_HPP

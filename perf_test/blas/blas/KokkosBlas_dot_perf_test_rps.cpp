@@ -42,9 +42,6 @@
 //@HEADER
 */
 
-
-
-
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_dot.hpp>
 #include <Kokkos_Random.hpp>
@@ -54,8 +51,6 @@
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
 #endif
-
-
 
 // Recall -- testData is a tempated class, 
 // setup_test is a templated function

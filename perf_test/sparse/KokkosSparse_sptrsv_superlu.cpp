@@ -55,10 +55,20 @@
 #if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
     defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 
-#include "slu_ddefs.h"
-#include "slu_sdefs.h"
-#include "slu_zdefs.h"
-#include "slu_cdefs.h"
+namespace SLU {
+ namespace D {
+  #include "slu_ddefs.h"
+ }
+ namespace S {
+  #include "slu_sdefs.h"
+ }
+ namespace C {
+  #include "slu_cdefs.h"
+ }
+ namespace Z {
+  #include "slu_zdefs.h"
+ }
+}
 // auxiliary functions from perf_test (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
 
@@ -73,6 +83,10 @@ using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
 using namespace KokkosSparse::PerfTest::Experimental;
+using namespace SLU::D;
+using namespace SLU::S;
+using namespace SLU::C;
+using namespace SLU::Z;
 
 enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_SPMV, SUPERNODAL_SPMV_DAG};
 
@@ -220,21 +234,39 @@ void factor_superlu (bool symm_mode, bool metis,
   printf( "  + calling SuperLU dgstrf with panel_size=%d, relax_size=%d..\n",panel_size,relax_size );
   printf( "   * Dimension %dx%d; # nonzeros %d\n", A.nrow, A.ncol, Astore->nnz);
 
+  #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
   GlobalLU_t Glu;
+  #endif
   int lwork = 0;
   if (std::is_same<scalar_type, double>::value == true) {
     dgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   } else if (std::is_same<scalar_type, float>::value == true) {
     sgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   } else if (std::is_same<scalar_type, std::complex<float>>::value == true ||
              std::is_same<scalar_type, Kokkos::complex<float>>::value == true) {
     cgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   } else {
     zgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   }
   if (info != 0) printf( " SuperLU failed with info=%d\n",info );
   StatFree(&stat);
