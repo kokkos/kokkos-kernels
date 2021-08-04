@@ -1069,10 +1069,15 @@ int read_mtx (
   if(fline.find("real") != std::string::npos || 
      fline.find("double") != std::string::npos)
   {
-    if(!std::is_floating_point<scalar_t>::value)
-      throw std::runtime_error("scalar_t in read_mtx() incompatible with float or double typed MatrixMarket file.");
-    else
+    if (std::is_same<scalar_t,Kokkos::Experimental::half_t>::value)
       mtx_field = REAL;
+    else {
+      if (!std::is_floating_point<scalar_t>::value)
+        throw std::runtime_error(
+            "scalar_t in read_mtx() incompatible with float or double typed MatrixMarket file.");
+      else
+        mtx_field = REAL;
+    }
   }
   else if (fline.find("complex") != std::string::npos){
     if(!(std::is_same<scalar_t, Kokkos::complex<float>>::value ||
