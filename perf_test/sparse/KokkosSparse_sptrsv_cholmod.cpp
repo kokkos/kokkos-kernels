@@ -75,11 +75,14 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
   // Start Cholmod
   cholmod_common *cm = Comm;
   if (std::is_same<cholmod_int_type, long>::value == true) {
+    std::cout << " > calling with long " << std::endl;
     cholmod_l_start (cm);
   } else if (std::is_same<cholmod_int_type, int>::value == true) {
+    std::cout << " > calling with int " << std::endl;
     cholmod_start (cm);
   }
   cm->supernodal = CHOLMOD_SUPERNODAL;
+  cm->print = 5;
 
   // Manually, initialize the matrix
   cholmod_sparse A;
@@ -115,6 +118,7 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
 
   // Symbolic factorization
   cholmod_factor *L;
+  printf( " ** calling cholmod_analyze **\n" );
   if (std::is_same<cholmod_int_type, long>::value == true) {
     L = cholmod_l_analyze (&A, cm);
   } else if (std::is_same<cholmod_int_type, int>::value == true) {
@@ -126,6 +130,7 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
 
   // Numerical factorization
   int cholmod_stat = 0;
+  printf( " ** calling cholmod_factorize **\n" );
   if (std::is_same<cholmod_int_type, long>::value == true) {
     cholmod_stat = cholmod_l_factorize (&A, L, cm);
   } else if (std::is_same<cholmod_int_type, int>::value == true) {
@@ -166,8 +171,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
   using STS = Kokkos::Details::ArithTraits<scalar_type>;
   using mag_type = typename STS::mag_type;
 
-  using cholmod_int_type = long;
-  //using cholmod_int_type = int;
+  //using cholmod_int_type = long;
+  using cholmod_int_type = int;
 
   // using int (for CuSparse on GPU)
   using ordinal_type = int;
@@ -598,7 +603,7 @@ int main(int argc, char **argv)
 int main()
 {
   std::cout << std::endl << "** CHOLMOD NOT ENABLED **" << std::endl << std::endl;
-  return 0;
+  return 1;
 }
 #endif
 
@@ -617,6 +622,6 @@ int main() {
   #endif
   std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
 #endif
-  return 0;
+  return 1;
 }
 #endif

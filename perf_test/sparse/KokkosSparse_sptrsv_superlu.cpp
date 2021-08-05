@@ -868,17 +868,14 @@ int main() {
   std::cout << " ** SUPERNODAL SPTRSV NOT ENABLED **" << std::endl;
   #endif
   std::cout << std::endl;
-  exit(0);
-  return 0;
+
+  return 1;
 }
 #endif
 
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
 int main() {
-#if !defined(KOKKOSKERNELS_INST_DOUBLE)
-  std::cout << " Only supported with double precision" << std::endl;
-#endif
 #if !defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )
   std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
@@ -889,6 +886,6 @@ int main() {
   #endif
   std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
 #endif
-  return 0;
+  return 1;
 }
 #endif
