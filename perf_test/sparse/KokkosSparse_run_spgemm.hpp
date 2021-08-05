@@ -242,16 +242,27 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2,
     ExecSpace().fence();
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-    entriesC_ref         = lno_nnz_view_t(
-        Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC_ref = scalar_view_t(
-        Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    entriesC_ref = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC_ref =  scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
-    spgemm_numeric(&sequential_kh, m, n, k, crsMat.graph.row_map,
-                   crsMat.graph.entries, crsMat.values, TRANPOSEFIRST,
+    spgemm_numeric(
+        &sequential_kh,
+        m,
+        n,
+        k,
+        crsMat.graph.row_map,
+        crsMat.graph.entries,
+        crsMat.values,
+        TRANPOSEFIRST,
 
-                   crsMat2.graph.row_map, crsMat2.graph.entries, crsMat2.values,
-                   TRANPOSESECOND, row_mapC_ref, entriesC_ref, valuesC_ref);
+        crsMat2.graph.row_map,
+        crsMat2.graph.entries,
+        crsMat2.values,
+        TRANPOSESECOND,
+        row_mapC_ref,
+        entriesC_ref,
+        valuesC_ref
+    );
     ExecSpace().fence();
 
     Ccrsmat_ref = crsMat_t3("CorrectC", m, k, valuesC_ref.extent(0),
@@ -298,22 +309,30 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2,
     entriesC = lno_nnz_view_t("entriesC (empty)", 0);
     valuesC  = scalar_view_t("valuesC (empty)", 0);
 
-    Kokkos::Impl::Timer timer1;
-    spgemm_symbolic(&kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries,
-                    TRANPOSEFIRST, crsMat2.graph.row_map, crsMat2.graph.entries,
-                    TRANPOSESECOND, row_mapC);
+    Kokkos::Timer timer1;
+    spgemm_symbolic (
+        &kh,
+        m,
+        n,
+        k,
+        crsMat.graph.row_map,
+        crsMat.graph.entries,
+        TRANPOSEFIRST,
+        crsMat2.graph.row_map,
+        crsMat2.graph.entries,
+        TRANPOSESECOND,
+        row_mapC
+        );
 
     ExecSpace().fence();
     double symbolic_time = timer1.seconds();
 
-    Kokkos::Impl::Timer timer3;
+    Kokkos::Timer timer3;
     size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (verbose) std::cout << "C SIZE:" << c_nnz_size << std::endl;
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC = scalar_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    if (verbose)  std::cout << "C SIZE:" << c_nnz_size << std::endl;
+    if (c_nnz_size){
+      entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
     }
     spgemm_numeric(&kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries,
                    crsMat.values, TRANPOSEFIRST,

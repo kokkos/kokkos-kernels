@@ -408,7 +408,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, const D2Parameters& param
     // ------------------------------------------
     std::cout << "Compute Distance-2 Degree " << std::endl;
 
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
     double total_time                   = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time();
     double total_time_color_greedy      = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase1();

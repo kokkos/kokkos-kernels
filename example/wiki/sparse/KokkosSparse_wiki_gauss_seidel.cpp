@@ -48,9 +48,9 @@ int main()
     //Another matrix with the same sparsity pattern could re-use the handle and symbolic phase, and only call numeric.
     KokkosSparse::Experimental::gauss_seidel_numeric(&handle, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, false);
     //Now, preconditioner is ready to use. Set up an unknown vector (uninitialized) and randomized right-hand-side vector.
-    Vector x(Kokkos::ViewAllocateWithoutInitializing("x"), numRows);
-    Vector b(Kokkos::ViewAllocateWithoutInitializing("b"), numRows);
-    Vector res(Kokkos::ViewAllocateWithoutInitializing("res"), numRows);
+    Vector x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), numRows);
+    Vector b(Kokkos::view_alloc(Kokkos::WithoutInitializing, "b"), numRows);
+    Vector res(Kokkos::view_alloc(Kokkos::WithoutInitializing, "res"), numRows);
     auto bHost = Kokkos::create_mirror_view(b);
     for(Ordinal i = 0; i < numRows; i++)
       bHost(i) = 3 * ((one * rand()) / RAND_MAX);

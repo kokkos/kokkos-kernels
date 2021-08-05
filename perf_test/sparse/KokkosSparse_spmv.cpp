@@ -57,6 +57,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
+#include <spmv/KokkosKernels_spmv_data.hpp>
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
@@ -74,15 +75,12 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-// crs = compressed row storage
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#include <spmv/ArmPL_SPMV.hpp>
+#endif
 
-int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
-                              const char* filename, Ordinal rows_per_thread,
-                              int team_size, int vector_length, int schedule,
-                              int loop) {
-  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal,
-                                  Kokkos::DefaultExecutionSpace, void, Offset>
-      matrix_type;
+int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const char* filename, Ordinal rows_per_thread, int team_size, int vector_length, int schedule, int loop) {
+  typedef KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset> matrix_type;
   typedef typename Kokkos::View<Scalar*, Layout> mv_type;
   typedef typename mv_type::HostMirror h_mv_type;
 
@@ -99,6 +97,18 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
   SPMVTestData test_data = setup_test(test, A, rows_per_thread, team_size,
                                  vector_length, schedule, loop);
   for (int i = 0; i < loop; i++) {
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  if(test == ARMPL) {
+    if(std::is_same<Scalar, double>::value || std::is_same<Scalar, float>::value) {
+      data.set_armpl_spmat(test_data.numRows, test_data.numCols,
+			   test_data.A.graph.row_map.data(), test_data.A.graph.entries.data(),
+			   test_data.A.values.data());
+    } else {
+      throw std::runtime_error("Can't use ArmPL mat-vec for scalar types other than double and float.");
+    }
+  }
+#endif
     run_benchmark(test_data);
   }
 
@@ -150,13 +160,9 @@ void print_help() {
       "                      omp-insp               (OpenMP Structure "
       "Inspection)\n");
 #endif
-  printf("                      mkl,cusparse           (Vendor Libraries)\n\n");
-  printf(
-      "  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ "
-      "default ]).\n");
-  printf(
-      "  -f [file]       : Read in Matrix Market formatted text file "
-      "'file'.\n");
+  printf("                      mkl, armpl,cusparse    (Vendor Libraries)\n\n");
+  printf("  --schedule [SCH]: Set schedule for kk variant (static,dynamic,auto [ default ]).\n");
+  printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
   printf("  -fb [file]      : Read in binary Matrix files 'file'.\n");
   printf(
       "  --write-binary  : In combination with -f, generate binary files.\n");
@@ -196,19 +202,20 @@ int main(int argc, char** argv) {
       size = atoi(argv[++i]);
       continue;
     }
-    // if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
-    if ((strcmp(argv[i], "--test") == 0)) {
-      i++;
-      if (i == argc) {
-        std::cerr << "Must pass algorithm name after '--test'";
-        exit(1);
-      }
-      if ((strcmp(argv[i], "mkl") == 0)) test = MKL;
-      if ((strcmp(argv[i], "kk") == 0)) test = KOKKOS;
-      if ((strcmp(argv[i], "cusparse") == 0)) test = CUSPARSE;
-      if ((strcmp(argv[i], "kk-kernels") == 0)) test = KK_KERNELS;
-      if ((strcmp(argv[i], "kk-kernels-insp") == 0)) test = KK_KERNELS_INSP;
-      if ((strcmp(argv[i], "kk-insp") == 0)) test = KK_INSP;
+    if((strcmp(argv[i],"mkl")==0))
+      test = MKL;
+    if((strcmp(argv[i],"armpl")==0))
+      test = ARMPL;
+    if((strcmp(argv[i],"kk")==0))
+      test = KOKKOS;
+    if((strcmp(argv[i],"cusparse")==0))
+      test = CUSPARSE;
+    if((strcmp(argv[i],"kk-kernels")==0))
+      test = KK_KERNELS;
+    if((strcmp(argv[i],"kk-kernels-insp")==0))
+      test = KK_KERNELS_INSP;
+    if((strcmp(argv[i],"kk-insp")==0))
+      test = KK_INSP;
 #ifdef KOKKOS_ENABLE_OPENMP
       if ((strcmp(argv[i], "omp-static") == 0)) test = OMP_STATIC;
       if ((strcmp(argv[i], "omp-dynamic") == 0)) test = OMP_DYNAMIC;

@@ -208,7 +208,7 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
   HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
   Kokkos::deep_copy(level_list, dlevel_list);
 
-  HostSignedEntriesType previous_level_list( Kokkos::ViewAllocateWithoutInitializing("previous_level_list"), nrows );
+  HostSignedEntriesType previous_level_list( Kokkos::view_alloc(Kokkos::WithoutInitializing, "previous_level_list"), nrows );
   Kokkos::deep_copy( previous_level_list, signed_integral_t(-1) );
 
   const bool stored_diagonal = thandle.is_stored_diagonal();
@@ -656,7 +656,7 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
   Kokkos::deep_copy(level_list, dlevel_list);
 
-  HostSignedEntriesType previous_level_list( Kokkos::ViewAllocateWithoutInitializing("previous_level_list"), nrows);
+  HostSignedEntriesType previous_level_list( Kokkos::view_alloc(Kokkos::WithoutInitializing, "previous_level_list"), nrows);
   Kokkos::deep_copy( previous_level_list, signed_integral_t(-1) );
 
   const bool stored_diagonal = thandle.is_stored_diagonal();

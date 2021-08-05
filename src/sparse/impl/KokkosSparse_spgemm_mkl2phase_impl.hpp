@@ -148,7 +148,7 @@ void mkl2phase_symbolic(
     KokkosKernels::Impl::print_1Dview(handle->persistent_b_xadj);
     KokkosKernels::Impl::print_1Dview(b_plus_one);
     */
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
 
     mkl_dcsrmultcsr(&trans, &request, &sort, &mklm, &mkln, &mklk,
         mynullptr, a_adj, a_xadj,
@@ -213,7 +213,7 @@ void mkl2phase_symbolic(
     common_mtx_props.mode = SPARSE_FILL_MODE_FULL;
     common_mtx_props.diag = SPARSE_DIAG_NON_UNIT;
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     // options: SPARSE_STAGE_FULL_MULT vs SPARSE_STAGE_NNZ_COUNT then SPARSE_STAGE_FINALIZE_MULT
     bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_sp2m (operation, common_mtx_props, A, operation, common_mtx_props, B, SPARSE_STAGE_NNZ_COUNT, &C); // success is "true" if mkl_sparse_spmm does not return success
 
@@ -375,7 +375,7 @@ void mkl2phase_symbolic(
       std::cout << "c:" << "entriesC:" << entriesC.extent(0) << std::endl;
       KokkosKernels::Impl::print_1Dview(row_mapC);
 */
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Timer timer1;
 
       if (std::is_same<value_type, float>::value){
 
@@ -487,7 +487,7 @@ void mkl2phase_symbolic(
       common_mtx_props.mode = SPARSE_FILL_MODE_FULL;
       common_mtx_props.diag = SPARSE_DIAG_NON_UNIT;
 
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Timer timer1;
       // options: SPARSE_STAGE_FULL_MULT vs SPARSE_STAGE_NNZ_COUNT then SPARSE_STAGE_FINALIZE_MULT
       bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_sp2m (operation, common_mtx_props, A, operation, common_mtx_props, B, SPARSE_STAGE_FINALIZE_MULT, &C); // success is "true" if mkl_sparse_spmm does not return success
 

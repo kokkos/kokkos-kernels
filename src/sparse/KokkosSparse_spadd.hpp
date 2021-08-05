@@ -576,7 +576,6 @@ void spadd_symbolic(
   }
   ordinal_type nrows = a_rowmap.extent(0) - 1;
   typedef Kokkos::RangePolicy<execution_space, ordinal_type> range_type;
-  using NoInitialize = Kokkos::ViewAllocateWithoutInitializing;
   if (addHandle->is_input_sorted()) {
     runSortedCountEntries
       <KernelHandle, alno_row_view_t_, alno_nnz_view_t_,
@@ -590,7 +589,9 @@ void spadd_symbolic(
     // minimizing peak memory usage run the unsorted c_rowmap upper bound
     // functor (just adds together A and B entry counts row by row)
     clno_row_view_t_ c_rowmap_upperbound(
-        NoInitialize("C row counts upper bound"), nrows + 1);
+        Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                           "C row counts upper bound"),
+        nrows + 1);
     size_type c_nnz_upperbound = 0;
     {
       UnsortedEntriesUpperBound<size_type, ordinal_type, alno_row_view_t_,
@@ -606,9 +607,13 @@ void spadd_symbolic(
                         Kokkos::subview(c_rowmap_upperbound, nrows));
     }
     clno_nnz_view_t_ c_entries_uncompressed(
-        NoInitialize("C entries uncompressed"), c_nnz_upperbound);
-    clno_nnz_view_t_ ab_perm(NoInitialize("A and B permuted entry indices"),
-                             c_nnz_upperbound);
+        Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                           "C entries uncompressed"),
+        c_nnz_upperbound);
+    clno_nnz_view_t_ ab_perm(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                           "A and B permuted entry indices"),
+        c_nnz_upperbound);
     // compute the unmerged sum
     UnmergedSumFunctor<size_type, ordinal_type, alno_row_view_t_,
                        blno_row_view_t_, clno_row_view_t_, alno_nnz_view_t_,
@@ -622,10 +627,12 @@ void spadd_symbolic(
     KokkosKernels::sort_crs_matrix<execution_space, clno_row_view_t_,
                                          clno_nnz_view_t_, clno_nnz_view_t_>(
         c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
-    clno_nnz_view_t_ a_pos(NoInitialize("A entry positions"),
-                           a_entries.extent(0));
-    clno_nnz_view_t_ b_pos(NoInitialize("B entry positions"),
-                           b_entries.extent(0));
+    clno_nnz_view_t_ a_pos(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "A entry positions"),
+        a_entries.extent(0));
+    clno_nnz_view_t_ b_pos(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "B entry positions"),
+        b_entries.extent(0));
     // merge the entries and compute Apos/Bpos, as well as Crowcounts
     {
       MergeEntriesFunctor<size_type, ordinal_type, alno_row_view_t_,
@@ -911,7 +918,7 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   using values_type  = typename CMatrix::values_type::non_const_type;
 
   // Create the row_map of C, no need to initialize it
-  row_map_type row_mapC(Kokkos::ViewAllocateWithoutInitializing("row map"),
+  row_map_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row map"),
                         A.numRows() + 1);
   KokkosSparse::Experimental::spadd_symbolic<
       KernelHandle, typename AMatrix::row_map_type::const_type,
@@ -925,14 +932,14 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   // views so we can build a graph and then matrix C
   // and subsequently construct C.
   auto addHandle = handle->get_spadd_handle();
-  entries_type entriesC(Kokkos::ViewAllocateWithoutInitializing("entries"),
+  entries_type entriesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"),
                         addHandle->get_c_nnz());
   graph_type graphC(entriesC, row_mapC);
   C = CMatrix("matrix", graphC);
 
   // Finally since we already have the number of nnz handy
   // we can go ahead and allocate C's values and set them.
-  values_type valuesC(Kokkos::ViewAllocateWithoutInitializing("values"),
+  values_type valuesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"),
                       addHandle->get_c_nnz());
 
   C.values = valuesC;
