@@ -20,7 +20,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Complex.hpp"
 #include "Kokkos_ArithTraits.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 #include "KokkosKernels_config.h"
 
@@ -178,7 +178,7 @@ namespace KokkosBatched {
 
   struct Timer {
     std::string _label;
-    Kokkos::Impl::Timer _clock;
+    Kokkos::Timer _clock;
     Timer (const std::string label)
       : _label(label), _clock() {};
 

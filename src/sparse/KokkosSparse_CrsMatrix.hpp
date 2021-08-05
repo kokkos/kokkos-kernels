@@ -485,9 +485,9 @@ public:
   CrsMatrix (const std::string&,
       const CrsMatrix<InScalar, InOrdinal, InDevice, InMemTraits, InSizeType>& mat_)
   {
-    typename row_map_type::non_const_type rowmap(Kokkos::ViewAllocateWithoutInitializing("rowmap"), mat_.graph.row_map.extent(0));
-    index_type cols(Kokkos::ViewAllocateWithoutInitializing("cols"), mat_.nnz());
-    values = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), mat_.nnz());
+    typename row_map_type::non_const_type rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap"), mat_.graph.row_map.extent(0));
+    index_type cols(Kokkos::view_alloc(Kokkos::WithoutInitializing, "cols"), mat_.nnz());
+    values = values_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), mat_.nnz());
     Kokkos::deep_copy(rowmap, mat_.graph.row_map);
     Kokkos::deep_copy(cols, mat_.graph.entries);
     Kokkos::deep_copy(values, mat_.values);
@@ -546,14 +546,14 @@ public:
     using UnmanagedEntries = Kokkos::View<const OrdinalType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
     using UnmanagedValues = Kokkos::View<const ScalarType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
     //Allocate device rowmap, entries, values views
-    typename row_map_type::non_const_type rowmapDevice(Kokkos::ViewAllocateWithoutInitializing("rowmap"), nrows + 1);
-    index_type entriesDevice(Kokkos::ViewAllocateWithoutInitializing("entries"), annz);
+    typename row_map_type::non_const_type rowmapDevice(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap"), nrows + 1);
+    index_type entriesDevice(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"), annz);
     //given rowmap in ordinal_type, so may need to convert to size_type explicitly
     HostRowmap rowmapConverted;
     UnmanagedRowmap rowmapRaw;
     if(!std::is_same<OrdinalType, SizeType>::value)
     {
-      rowmapConverted = HostRowmap(Kokkos::ViewAllocateWithoutInitializing("rowmap raw"), nrows + 1);
+      rowmapConverted = HostRowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap raw"), nrows + 1);
       for(OrdinalType i = 0; i <= nrows; i++)
         rowmapConverted(i) = rowmap[i];
       rowmapRaw = rowmapConverted;
@@ -568,7 +568,7 @@ public:
     //Construct graph and populate all members
     this->numCols_ = ncols;
     this->graph = StaticCrsGraphType(entriesDevice, rowmapDevice);
-    this->values = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), annz);
+    this->values = values_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), annz);
     UnmanagedValues valuesRaw(val, annz);
     Kokkos::deep_copy(this->values, valuesRaw);
 

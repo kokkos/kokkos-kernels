@@ -213,8 +213,8 @@ namespace KokkosKernels{
       	ExecSpace().fence();
 
       	size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-      	entriesC_ref = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      	valuesC_ref = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+      	entriesC_ref = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      	valuesC_ref = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
       	spgemm_jacobi(&sequential_kh, m, n, k,
 		      crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, TRANSPOSEFIRST,
@@ -249,7 +249,7 @@ namespace KokkosKernels{
 	entriesC = lno_nnz_view_t("entriesC (empty)", 0);
 	valuesC = scalar_view_t("valuesC (empty)", 0);
 
-	Kokkos::Impl::Timer timer1;
+	Kokkos::Timer timer1;
 	spgemm_symbolic(&kh, m, n, k,
 			crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST,
 			crsMat2.graph.row_map, crsMat2.graph.entries, TRANSPOSESECOND,
@@ -258,13 +258,13 @@ namespace KokkosKernels{
 	ExecSpace().fence();
 	double symbolic_time = timer1.seconds();
 
-	Kokkos::Impl::Timer timer2;
+	Kokkos::Timer timer2;
 	size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
 	if (verbose)  
 	  std::cout << "C SIZE:" << c_nnz_size << std::endl;
 	if (c_nnz_size){
-	  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-	  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+	  entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+	  valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 	}
 
 	spgemm_jacobi(&kh, m, n, k,

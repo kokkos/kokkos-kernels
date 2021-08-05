@@ -48,7 +48,7 @@
 #include <cmath>
 #include <limits>
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <Kokkos_Atomic.hpp>
 #include <Kokkos_MemoryTraits.hpp>
@@ -107,8 +107,8 @@ void block_pcgsolve(
   double precond_time = 0;
   double precond_init_time = 0;
 
-  Kokkos::Impl::Timer wall_clock ;
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer wall_clock ;
+  Kokkos::Timer timer;
 
   // Need input vector to matvec to be owned + received
   y_vector_t pAll ( "cg::p" , count_total );
@@ -327,8 +327,8 @@ void pcgsolve(
   double precond_time = 0;
   double precond_init_time = 0;
 
-  Kokkos::Impl::Timer wall_clock ;
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer wall_clock ;
+  Kokkos::Timer timer;
 
   // Need input vector to matvec to be owned + received
   y_vector_t pAll ( "cg::p" , count_total );

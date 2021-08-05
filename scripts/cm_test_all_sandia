@@ -618,6 +618,7 @@ elif [ "$MACHINE" = "weaver" ]; then
   CUDA10_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,ibm/xl/16.1.1,gcc/7.4.0"
 
   GCC72_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0"
+  GCC74_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0,gcc/7.4.0"
   CUDA_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
   CUDA10_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,openblas/0.2.20/gcc/7.2.0"
     # Issues finding CUBLAS with cuda/10.1.243 module at configure
@@ -638,8 +639,10 @@ elif [ "$MACHINE" = "weaver" ]; then
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "cuda/9.2.88 $CUDA_MODULE_TPL_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST "Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
+               "gcc/7.4.0 $GCC74_MODULE_TPL_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
+               "cuda/9.2.88 $CUDA_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/10.1.243 $CUDA10_MODULE_TPL_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
@@ -972,7 +975,7 @@ if [ "$COMPILERS_TO_TEST" == "" ]; then
    echo "   !!!! Invalid Compiler provided  '$ARGS' !!!!"
    echo "-----------------------------------------------"
    print_help
-   exit 0
+   exit 1
 fi
 
 #

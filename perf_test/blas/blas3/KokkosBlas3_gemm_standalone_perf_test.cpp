@@ -114,9 +114,9 @@ void runImpl(int m, int n, int k, int repeat)
   using Scalar = double;
   using MemSpace = typename ExecSpace::memory_space;
   using Device = Kokkos::Device<ExecSpace, MemSpace>;
-  Kokkos::View<Scalar**, ALayout, Device> A(Kokkos::ViewAllocateWithoutInitializing("A"), m, n);
-  Kokkos::View<Scalar**, BLayout, Device> B(Kokkos::ViewAllocateWithoutInitializing("B"), n, k);
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> C(Kokkos::ViewAllocateWithoutInitializing("C"), m, k);
+  Kokkos::View<Scalar**, ALayout, Device> A(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
+  Kokkos::View<Scalar**, BLayout, Device> B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"), n, k);
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> C(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C"), m, k);
   Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(B, pool, 10.0);

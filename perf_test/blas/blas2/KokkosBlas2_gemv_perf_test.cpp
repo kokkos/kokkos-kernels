@@ -123,9 +123,9 @@ void run(int m, int n, int repeat)
   using MemSpace = typename ExecSpace::memory_space;
   using Device = Kokkos::Device<ExecSpace, MemSpace>;
   std::cout << "Running GEMV experiment (" << ExecSpace::name() << ")\n";
-  Kokkos::View<Scalar**, Layout, Device> A(Kokkos::ViewAllocateWithoutInitializing("A"), m, n);
-  Kokkos::View<Scalar*, Device> x(Kokkos::ViewAllocateWithoutInitializing("x"), n);
-  Kokkos::View<Scalar*, Device> y(Kokkos::ViewAllocateWithoutInitializing("y"), m);
+  Kokkos::View<Scalar**, Layout, Device> A(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
+  Kokkos::View<Scalar*, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), n);
+  Kokkos::View<Scalar*, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
   Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(x, pool, 10.0);

@@ -234,8 +234,8 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
 
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-    entriesC_ref = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC_ref =  scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    entriesC_ref = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC_ref =  scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
     spgemm_numeric(
         &sequential_kh,
@@ -290,7 +290,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
     entriesC = lno_nnz_view_t ("entriesC (empty)", 0);
     valuesC = scalar_view_t ("valuesC (empty)", 0);
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     spgemm_symbolic (
         &kh,
         m,
@@ -308,12 +308,12 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
     ExecSpace().fence();
     double symbolic_time = timer1.seconds();
 
-    Kokkos::Impl::Timer timer3;
+    Kokkos::Timer timer3;
     size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (verbose)  std::cout << "C SIZE:" << c_nnz_size << std::endl;
     if (c_nnz_size){
-      entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+      entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
     }
     spgemm_numeric(
         &kh,

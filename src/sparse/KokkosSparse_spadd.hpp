@@ -918,7 +918,7 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   using values_type  = typename CMatrix::values_type::non_const_type;
 
   // Create the row_map of C, no need to initialize it
-  row_map_type row_mapC(Kokkos::ViewAllocateWithoutInitializing("row map"),
+  row_map_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row map"),
                         A.numRows() + 1);
   KokkosSparse::Experimental::spadd_symbolic<
       KernelHandle, typename AMatrix::row_map_type::const_type,
@@ -932,14 +932,14 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   // views so we can build a graph and then matrix C
   // and subsequently construct C.
   auto addHandle = handle->get_spadd_handle();
-  entries_type entriesC(Kokkos::ViewAllocateWithoutInitializing("entries"),
+  entries_type entriesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"),
                         addHandle->get_c_nnz());
   graph_type graphC(entriesC, row_mapC);
   C = CMatrix("matrix", graphC);
 
   // Finally since we already have the number of nnz handy
   // we can go ahead and allocate C's values and set them.
-  values_type valuesC(Kokkos::ViewAllocateWithoutInitializing("values"),
+  values_type valuesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"),
                       addHandle->get_c_nnz());
 
   C.values = valuesC;
