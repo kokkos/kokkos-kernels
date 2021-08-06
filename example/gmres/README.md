@@ -54,12 +54,12 @@ The real-valued test uses a matrix generated directly by Kokkos Kernels.
 These measurements were taken on 7/23/21, running on an NVIDIA V100 GPU on Weaver7.  
 (Timings based upon the GMRES::TotalTime profiling region.)
 
-**ex\_real\_A:** Converges in 2270 iterations and 0.9629 seconds.
+**ex\_real\_A:** Converges in 2271 iterations and 0.9629 seconds.
 
 (The two following timings total the time for the CGS2 and MGS tests.)   
-**test\_real\_A:** Converges in 29 iterations (with a restart size of 15) and 0.2536 seconds.
+**test\_real\_A:** Converges in 30 iterations (with a restart size of 15) and 0.2536 seconds.
 
-**test\_cmplx\_A:** Converges in 651 iterations (to a tolerance of 1e-5) in 2.822 seconds.  
+**test\_cmplx\_A:** Converges in 652 iterations (to a tolerance of 1e-5) in 2.822 seconds.  
 
 ### Concerns, enhancements, or bug reporting:
 If you wish to suggest an enhancement or make a bug report for this solver code, please post an issue at https://github.com/kokkos/kokkos-kernels/issues or email jloe@sandia.gov.
