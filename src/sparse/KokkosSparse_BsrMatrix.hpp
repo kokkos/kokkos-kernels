@@ -52,15 +52,7 @@
 #ifndef KOKKOS_SPARSE_BSRMATRIX_HPP_
 #define KOKKOS_SPARSE_BSRMATRIX_HPP_
 
-#include <set>
-#include <sstream>
-#include <stdexcept>
-#include <type_traits>
-
-#include "Kokkos_Core.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
-#include "Kokkos_ArithTraits.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
+#include "impl/KokkosSparse_BsrMatrix_impl.hpp"
 
 namespace KokkosSparse {
 
@@ -995,13 +987,12 @@ class BsrMatrix {
 
  private:
   ordinal_type numCols_;
-  ordinal_type blockDim_;  // TODO Assuming square blocks for now - add
-                           // blockRowDim, blockColDim
+  ordinal_type blockDim_;  // TODO Assuming square blocks for now
 };
 
 //----------------------------------------------------------------------------
 /// \class is_bsr_matrix
-/// \brief is_bsr_matrix<T>::value is true if T is a BsrMatrix<...>, false oterhwise
+/// \brief is_bsr_matrix<T>::value is true if T is a BsrMatrix<...>, false otherwise
 template <typename>
 struct is_bsr_matrix : public std::false_type {};
 template <typename... P>
