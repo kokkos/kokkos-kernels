@@ -36,7 +36,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+// Questions? Contact Luc Berger-Vergiat (lberge@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
