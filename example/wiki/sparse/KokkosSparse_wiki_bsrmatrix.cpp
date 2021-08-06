@@ -76,6 +76,19 @@ int main() {
 
   Ordinal numRows = 10;
 
+  //
+  // This code will generate a tri-diagonal matrix
+  //
+  // [ 1  -1  0 ....... 0 ]
+  // [ -1  2  -1  0 ... 0 ]
+  // [        ...         ]
+  // [ 0 ... 0  -1  2  -1 ]
+  // [ 0  .....  0  -1  1 ]
+  //
+  // The matrix will be stored as `KokkosSparse_CrsMatrix` (10 x 10 matrix).
+  // Then we will construct a `KokkosSparse_BsrMatrix` with block size 2.
+  //
+
   {
     const Offset numNNZ = 2 + (numRows - 2) * 3 + 2;
     typename row_map_type::non_const_type row_map("row pointers", numRows + 1);
