@@ -16,3 +16,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES test_cmplx_A.cpp
   )
 
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+  gmres_test_prec
+  SOURCES test_prec.cpp
+  )
+

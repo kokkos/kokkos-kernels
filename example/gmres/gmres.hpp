@@ -49,6 +49,7 @@
 #include<KokkosBlas.hpp>
 #include<KokkosBlas3_trsm.hpp>
 #include<KokkosSparse_spmv.hpp>
+#include<KokkosKernels_Preconditioner.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // libstdc++ half_t overloads
@@ -93,6 +94,7 @@ struct GmresOpts
     int m;
     int maxRestart;
     std::string ortho;
+    std::string precSide;
 
   GmresOpts<ScalarType>():
     tol(1e-8),
@@ -105,7 +107,8 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   GmresStats gmres( const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP> &A, 
                     const Kokkos::View<ScalarType*, Layout, EXSP> &B,
                     Kokkos::View<ScalarType*, Layout, EXSP> &X, 
-                    const GmresOpts<ScalarType> &opts ){
+                    const GmresOpts<ScalarType> &opts,
+                    const KokkosKernels::Preconditioner<ScalarType, Layout, EXSP, OrdinalType> * const M = NULL){
   Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
   typedef Kokkos::Details::ArithTraits<ScalarType> AT;
   typedef typename AT::val_type ST; // So this code will run with ScalarType = std::complex<T>.
@@ -157,6 +160,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   ViewVectorType Xiter("Xiter",n); //Intermediate solution at iterations before restart.
   ViewVectorType Res(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Res"),n); //Residual vector
   ViewVectorType Wj(Kokkos::view_alloc(Kokkos::WithoutInitializing, "W_j"),n); //Tmp work vector 1
+  ViewVectorType Wj2(Kokkos::view_alloc(Kokkos::WithoutInitializing, "W_j2"),n); //Tmp work vector 2
   ViewHostVectorType GVec_h(Kokkos::view_alloc(Kokkos::WithoutInitializing, "GVec"),m+1);
   ViewMatrixType GLsSoln("GLsSoln",m,1);//LS solution vec for Givens Rotation. Must be 2-D for trsm.
   typename ViewMatrixType::HostMirror GLsSoln_h = Kokkos::create_mirror_view(GLsSoln); //This one is needed for triangular solve.
@@ -173,6 +177,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   nrmB = KokkosBlas::nrm2(B);
   Kokkos::deep_copy(Res,B);
 
+  //This is initial true residual, so don't need prec here. 
   KokkosSparse::spmv("N", one, A, X, zero, Wj); // wj = Ax
   KokkosBlas::axpy(-one, Wj, Res); // res = res-Wj = b-Ax.
   trueRes = KokkosBlas::nrm2(Res);
@@ -187,6 +192,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
     relRes = 0;
   }
   shortRelRes = relRes;
+  std::cout << "Initial relative residual is: " << relRes << std::endl;
   if( relRes < opts.tol ){
     converged = true;
   }
@@ -200,7 +206,13 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
     KokkosBlas::scal(Vj,one/trueRes,Vj); //V0 = V0/norm(V0)
 
     for (int j = 0; j < m; j++){
-      KokkosSparse::spmv("N", one, A, Vj, zero, Wj); //wj = A*Vj
+      if( M != NULL){ //Apply Right prec
+        M->apply(Vj, Wj2); // wj2 = M*Vj
+        KokkosSparse::spmv("N", one, A, Wj2, zero, Wj); //wj = A*MVj = A*Wj2
+      }
+      else{
+        KokkosSparse::spmv("N", one, A, Vj, zero, Wj); //wj = A*Vj
+      }
       Kokkos::Profiling::pushRegion("GMRES::Orthog:");
       if( opts.ortho == "MGS"){
         for (int i = 0; i <= j; i++){
@@ -285,6 +297,10 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         Kokkos::deep_copy(Xiter,X); //Can't overwrite X with intermediate solution.
         auto GLsSolnSub3 = Kokkos::subview(GLsSoln,Kokkos::make_pair(0,j+1),0);
         KokkosBlas::gemv ("N", one, VSub, GLsSolnSub3, one, Xiter); //x_iter = x + V(1:j+1)*lsSoln
+        if(M != NULL){ //Apply right prec to correct soln.
+          M->apply(Xiter, Wj); // wj = M*Vj
+          Kokkos::deep_copy(Xiter, Wj);// now Vj = M*Vj
+        }
         KokkosSparse::spmv("N", one, A, Xiter, zero, Wj); // wj = Ax
         Kokkos::deep_copy(Res,B); // Reset r=b.
         KokkosBlas::axpy(-one, Wj, Res); // r = b-Ax.
