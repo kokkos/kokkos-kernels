@@ -48,7 +48,6 @@
 #include<Kokkos_Random.hpp>
 #include<KokkosBlas.hpp>
 #include<KokkosSparse_spmv.hpp>
-#include<Create_Diag_Matrix.cpp>
 
 int main(int argc, char *argv[]) {
 
@@ -96,10 +95,11 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
   {
   // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
-  KokkosSparse::CrsMatrix<ST, OT, EXSP> A = kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(1000);
+  KokkosSparse::CrsMatrix<ST, OT, EXSP> A = 
+                        KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(1000);
   KokkosKernels::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>  * myPrec = 
-                                new KokkosKernels::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>(
-                                      kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(1000, true));
+                    new KokkosKernels::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>(
+                    KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(1000, true));
 
   int n = A.numRows();
   ViewVectorType X("X",n); //Solution and initial guess
