@@ -5,7 +5,6 @@
 #ifndef KOKKOSKERNELS_KOKKOSSPARSE_SPMV_TEST_HPP
 #define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_TEST_HPP
 
-#include <common/KernelBase.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
@@ -13,9 +12,12 @@
 #include "KokkosKernels_default_types.hpp"
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
-#include <common/RunParams.hpp>
-#include <common/QuickKernelBase.hpp>
+
+#include <spmv/KokkosKernels_spmv_data.hpp>
+
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
+#endif
 
 enum {
   KOKKOS,
@@ -36,8 +38,17 @@ using Ordinal = default_lno_t;
 using Offset  = default_size_type;
 using Layout  = default_layout;
 
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
     const rajaperf::RunParams& params);
+
+
+test_list construct_kernel_base(const rajaperf::RunParams& run_params,
+                                Ordinal numRows, Ordinal numCols, spmv_additional_data* data,
+                                Ordinal rows_per_thread, int team_size,
+                                int vector_length, int schedule, int loop);
+
+#endif
 
 struct SPMVTestData {
   using matrix_type =
@@ -60,7 +71,8 @@ struct SPMVTestData {
   h_mv_type h_y_compare;
   h_mv_type h_x;
   h_mv_type h_y;
-  int test;
+  //int test;
+  spmv_additional_data* data;
   int schedule;
   int num_errors;
   int num_error_checks;
@@ -104,37 +116,33 @@ struct SPMVTestData {
   }
 };
 
-SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
+SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int loop);
 
 
-test_list construct_kernel_base(const rajaperf::RunParams& run_params,
-                                Ordinal numRows, Ordinal numCols, int test,
-                                Ordinal rows_per_thread, int team_size,
-                                int vector_length, int schedule, int loop);
-
-template<typename AType, typename XType, typename YType>
-void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size, int vector_length, spmv_additional_data* data, int schedule) {
-
-        switch(data->test) {
-
-        case KOKKOS:
-                if(schedule == AUTO)
-                  schedule = A.nnz()>10000000?DYNAMIC:STATIC;
-                if(schedule == STATIC)
-                  kokkos_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, rows_per_thread, team_size, vector_length);
-                if(schedule == DYNAMIC)
-                  kokkos_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, rows_per_thread, team_size, vector_length);
-                break;
-        case KK_INSP:
-                if(schedule == AUTO)
-                  schedule = A.nnz()>10000000?DYNAMIC:STATIC;
-                if(schedule == STATIC)
-                  kk_inspector_matvec<AType,XType,YType,Kokkos::Static>(A, x, y, team_size, vector_length);
-                if(schedule == DYNAMIC)
-                  kk_inspector_matvec<AType,XType,YType,Kokkos::Dynamic>(A, x, y, team_size, vector_length);
-                break;
+template <typename AType, typename XType, typename YType>
+void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
+            int vector_length, spmv_additional_data* data, int schedule) {
+  switch (data->test) {
+    case KOKKOS:
+      if (schedule == AUTO) schedule = A.nnz() > 10000000 ? DYNAMIC : STATIC;
+      if (schedule == STATIC)
+        kokkos_matvec<AType, XType, YType, Kokkos::Static>(
+            A, x, y, rows_per_thread, team_size, vector_length);
+      if (schedule == DYNAMIC)
+        kokkos_matvec<AType, XType, YType, Kokkos::Dynamic>(
+            A, x, y, rows_per_thread, team_size, vector_length);
+      break;
+    case KK_INSP:
+      if (schedule == AUTO) schedule = A.nnz() > 10000000 ? DYNAMIC : STATIC;
+      if (schedule == STATIC)
+        kk_inspector_matvec<AType, XType, YType, Kokkos::Static>(
+            A, x, y, team_size, vector_length);
+      if (schedule == DYNAMIC)
+        kk_inspector_matvec<AType, XType, YType, Kokkos::Dynamic>(
+            A, x, y, team_size, vector_length);
+      break;
 
 #ifdef KOKKOS_ENABLE_OPENMP
         case OMP_STATIC:

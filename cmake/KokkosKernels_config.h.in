@@ -22,6 +22,9 @@
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
 
+
+#cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+
 /* Define this macro if experimental features of Kokkoskernels are enabled */
 #cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
 

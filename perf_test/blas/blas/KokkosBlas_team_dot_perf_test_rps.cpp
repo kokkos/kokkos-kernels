@@ -42,58 +42,84 @@
 //@HEADER
 */
 
-#include <Kokkos_Core.hpp>
-#include <KokkosBlas1_dot.hpp>
-#include <Kokkos_Random.hpp>
 
+
+#include <Kokkos_Core.hpp>
+#include <KokkosBlas1_team_dot.hpp>
+#include <Kokkos_Random.hpp>
 // For RPS implementation
-#include "KokkosBlas_dot_perf_test.hpp"
+#include "KokkosBlas_team_dot_perf_test.hpp"
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
-#endif
+#endif // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+
+
+
 
 // Recall -- testData is a tempated class, 
 // setup_test is a templated function
 template<class ExecSpace, class Layout>
-testData<ExecSpace, Layout> setup_test(int m,
-                    int repeat
-                    )
+testData_rps_team_dot<ExecSpace, Layout> setup_test(int m,
+                                       int repeat,
+                                       bool layoutLeft,
+                                       const int numberOfTeams
+                                       )
 {
-        // use constructor to generate test data
-        testData<ExecSpace, Layout> testData_obj(m);
+        // use constructor to generate testData_object
+        testData_rps_team_dot<ExecSpace, Layout> testData_rps_team_dot_obj(m);
 
         // set a field in the struct
-        testData_obj.m = m;
-        testData_obj.repeat = repeat;
+        testData_rps_team_dot_obj.m = m;
+        testData_rps_team_dot_obj.repeat = repeat;
+        testData_rps_team_dot_obj.numberOfTeams = numberOfTeams;
 
-        return testData_obj;
+        return testData_rps_team_dot_obj;
 }
 
 
-test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params)
+test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
 
 {
-        // instantiate test_list as kernel_base_vector
+        // instantiate test_list (the type) as kernel_base_vector
         test_list kernel_base_vector;
 
+/////////////////////////////////////////////////////////////////////////////
+// First capture clause (by value) is for the setUp / run parameters
+// Second capture clause (by reference) is the for the run characteristics
+// https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1::team-dot
+/////////////////////////////////////////////////////////////////////////////
+
+// setup lambda is pass by value
+// Stuff returned in the setup lambda is used by the run lambda
+// run lambda is pass by reference
+
+
+using test_data_type = decltype(setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(1, 1, true, 1));
 
 kernel_base_vector.push_back(rajaperf::make_kernel_base(
-        "BLAS_DOT ",
+        "BLAS_TEAM_DOT ",
         run_params,
-        [=](const int repeat, const int m) {
+        [=](const int m, const int repeat) {
           // returns a tuple of testData_obj
           return std::make_tuple(
-                          setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(m, repeat));
+                          // TODO: Discuss decltype
+                          // TODO: Ask KK what values they want tested?
+                          setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(m, repeat, true, 1));
           },
-        [&](const int iteration, const int runsize, auto& data) {
-        KokkosBlas::dot(data.x, data.y);
+        [&](const int iteration, const int runsize, test_data_type& data) {
+        Kokkos::parallel_for("TeamDotUsage_RPS",
+                        test_data_type::policy(data.numberOfTeams, Kokkos::AUTO),
+                        KOKKOS_LAMBDA(const test_data_type::member_type& team){
+                        // body
+                            double result = KokkosBlas::Experimental::dot(team, data.x, data.y);
+
+                        });
         }));
 
 
-        // return a vector of kernel base objects
+        // Overall return - a vector of kernel base objects containing data for
+        // set up and run lambdas
         // of type test_list
         return kernel_base_vector;
 }
-
-
 

@@ -6,23 +6,45 @@
 
 #include <common/RAJAPerfSuite.hpp>
 #include <common/Executor.hpp>
-//#include "KokkosSparse_spmv_test.hpp"
-#include "KokkosBlas_dot_perf_test.hpp"
 
+#include "KokkosBlas_dot_perf_test.hpp"
+#include "KokkosBlas_team_dot_perf_test.hpp"
 
 namespace test {
 namespace blas {
 
-void build_executor(rajaperf::Executor& exec,
+// Register kernels per test
+
+void build_dot_executor(rajaperf::Executor& exec,
                     int argc,
                     char* argv[],
                     const rajaperf::RunParams& params) {
-        exec.registerGroup("BLAS");
         for(auto* kernel : construct_dot_kernel_base(params)) {
                 exec.registerKernel("BLAS", kernel);
         }
 }
+//Team Dot build_executor
 
+void build_team_dot_executor(rajaperf::Executor& exec,
+                    int argc,
+                    char* argv[],
+                    const rajaperf::RunParams& params) {
+        for(auto* kernel : construct_team_dot_kernel_base(params)) {
+                exec.registerKernel("BLAS", kernel);
+        }
 }
-}  // namespace test
+
+void build_blas_executor(rajaperf::Executor& exec,
+                int argc,
+                char* argv[],
+                const rajaperf::RunParams& params){
+        exec.registerGroup("BLAS");
+        build_dot_executor(exec, argc, argv, params);
+        build_team_dot_executor(exec, argc, argv, params);
+}
+
+
+} // namespace blas
+} // namespace test
+
 #endif  // KOKKOSKERNELS_TRACKED_TESTING_HPP

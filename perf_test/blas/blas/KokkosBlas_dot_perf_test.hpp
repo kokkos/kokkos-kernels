@@ -11,10 +11,15 @@
 #include <Kokkos_Random.hpp>
 
 // These headers are required for RPS perf test implementation
-#include <common/KernelBase.hpp>
-#include <common/RunParams.hpp>
-#include <common/QuickKernelBase.hpp>
+//
+#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
+
+test_list make_dot_kernel_base(const rajaperf::RunParams& params);
+test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
+
+#endif //KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+
 
 template <class ExecSpace, class Layout>
 struct testData {
@@ -45,7 +50,7 @@ struct testData {
   // A function with no return type whose name is the name of the class is a
   // constructor or a destructor;
   // Constructor -- create function:
-  testData(int m) {
+  testData(int m):m(m) {
           x = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("x"), m);
           y = Kokkos::View<Scalar*, Device>(Kokkos::ViewAllocateWithoutInitializing("y"), m);
           
@@ -55,6 +60,10 @@ struct testData {
           Kokkos::fill_random(y, pool, 10.0);
   }
 };
+
+// DANGER - POTENTIAL MERGE ISSUES!!
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 /* Taking in by reference avoids making a copy of the data in memory, whereas
  * taking in by value would make a copy in memory.  Copying operations do not
  * enhance performance.
@@ -63,9 +72,7 @@ struct testData {
  *  things, such as 8 test datasets
  *
  */
-// Creating the machinery needed to run as an RPS test
-
-test_list make_dot_kernel_base(const rajaperf::RunParams& params);
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Templated function 
 template<typename ExecSpace, typename Layout>
@@ -74,50 +81,6 @@ testData<ExecSpace, Layout> setup_test(int m,
                                        bool layoutLeft
                                        );
 
-test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
                                 
-
-// Must have the full function body, as templated functions are recipes for
-// functions
-//
-template <class ExecSpace, class Layout>
-void run(int m, int repeat) {
-
-
-  std::cout << "Running BLAS Level 1 DOT performance experiment ("
-            << ExecSpace::name() << ")\n";
-
-  std::cout << "Each test input vector has a length of " << m << std::endl;
-
-  // Declaring variable pool w/ a seeded random number;
-  // a parallel random number generator, so you
-  // won't get the same number with a given seed each time
-
-  // We're constructing an instance of testData, which takes m as a param
-  testData<ExecSpace,Layout> testMatrices(m);
-
-  // do a warm up run of dot:
-  KokkosBlas::dot(testMatrices.x, testMatrices.y);
-
-  // The live test of dot:
-
-  Kokkos::fence();
-  Kokkos::Timer timer;
-
-    for (int i = 0; i < testMatrices.repeat; i++) {
-    double result = KokkosBlas::dot(testMatrices.x, testMatrices.y);
-    ExecSpace().fence();
-  }
-
-  // Kokkos Timer set up
-  double total = timer.seconds();
-  double avg   = total / testMatrices.repeat;
-  // Flops calculation for a 1D matrix dot product per test run;
-  size_t flopsPerRun = (size_t)2 * m;
-  printf("Avg DOT time: %f s.\n", avg);
-  printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-}
-
 #endif //KOKKOSKERNELS_KOKKOSBLAS_DOT_TEST_HPP
-
 
