@@ -194,8 +194,9 @@ test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
     test_cases.push_back(rajaperf::make_kernel_base(
         "Sparse_SPMV:" + test_case.filename, run_params,
         [=](const int iterations, const int runsize) {
+          spmv_additional_data data(config.test);
           return std::make_tuple(
-              setup_test(config.test, std::get<0>(test_case.test_data),
+              setup_test(&data, std::get<0>(test_case.test_data),
                          config.rows_per_thread, config.team_size,
                          config.vector_length, config.schedule, config.loop));
         },
