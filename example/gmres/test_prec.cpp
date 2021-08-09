@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   using ViewVectorType = Kokkos::View<ST*,Kokkos::LayoutLeft, EXSP>;
 
   std::string ortho("CGS2"); //orthog type
+  int n = 1000; //Matrix size
   int m = 50; //Max subspace size before restarting.
   double convTol = 1e-10; //Relative residual convergence tolerance.
   int cycLim = 50; //Maximum number of times to restart the solver. 
@@ -66,6 +67,7 @@ int main(int argc, char *argv[]) {
 
   for (int i=1;i<argc;++i) {
     const std::string& token = argv[i];
+    if (token == std::string("--mat-size")) n = std::atoi(argv[++i]);
     if (token == std::string("--max-subsp")) m = std::atoi(argv[++i]);
     if (token == std::string("--max-restarts")) cycLim = std::atoi(argv[++i]);
     if (token == std::string("--tol")) convTol = std::stod(argv[++i]);
@@ -73,6 +75,7 @@ int main(int argc, char *argv[]) {
     if (token == std::string("--rand_rhs")) rand_rhs = true;
     if (token == std::string("--help") || token == std::string("-h")) {
       std::cout << "Kokkos GMRES solver options:" << std::endl
+        << "--mat-size    :  The size of the nxn test matrix. (Default: n=1000.)" << std::endl
         << "--max-subsp   :  The maximum size of the Kyrlov subspace before restarting (Default 50)." << std::endl
         << "--max-restarts:  Maximum number of GMRES restarts (Default 50)." << std::endl
         << "--tol         :  Convergence tolerance.  (Default 1e-10)." << std::endl
@@ -96,12 +99,11 @@ int main(int argc, char *argv[]) {
   {
   // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
   KokkosSparse::CrsMatrix<ST, OT, EXSP> A = 
-                        KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(1000);
+                        KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n);
   KokkosKernels::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>  * myPrec = 
                     new KokkosKernels::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>(
-                    KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(1000, true));
+                    KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n, true));
 
-  int n = A.numRows();
   ViewVectorType X("X",n); //Solution and initial guess
   ViewVectorType Wj("Wj",n); //For checking residuals at end.
   ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),n);//right-hand side vec
