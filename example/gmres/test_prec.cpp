@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
   solverOpts.m = m;
   solverOpts.maxRestart = cycLim;
   solverOpts.ortho = ortho;
-  solverOpts.precSide = precside;
 
   //Initialize Kokkos AFTER parsing parameters:
   Kokkos::initialize();
