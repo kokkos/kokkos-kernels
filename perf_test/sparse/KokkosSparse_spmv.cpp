@@ -84,6 +84,10 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   typedef typename Kokkos::View<Scalar*, Layout> mv_type;
   typedef typename mv_type::HostMirror h_mv_type;
 
+  spmv_additional_data data(test);
+
+  std::cout << "running CRS matrix single vec" << std::endl;
+
   srand(17312837);
   matrix_type A;
   if (filename)
@@ -91,10 +95,11 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   else {
     Offset nnz = 10 * numRows;
     // note: the help text says the bandwidth is fixed at 0.01 * numRows
+    // CAVEAT:  small problem sizes are problematic, b/c of 0.01*numRows
     A = KokkosKernels::Impl::kk_generate_sparse_matrix<matrix_type>(
         numRows, numCols, nnz, 0, 0.01 * numRows);
   }
-  SPMVTestData test_data = setup_test(test, A, rows_per_thread, team_size,
+  SPMVTestData test_data = setup_test(&data, A, rows_per_thread, team_size,
                                  vector_length, schedule, loop);
   for (int i = 0; i < loop; i++) {
 
@@ -202,6 +207,17 @@ int main(int argc, char** argv) {
       size = atoi(argv[++i]);
       continue;
     }
+
+
+  if((strcmp(argv[i],"--test")==0)) {
+    i++;
+    if(i == argc)
+    {
+      std::cerr << "Must pass algorithm name after '--test'";
+      exit(1);
+    }
+
+
     if((strcmp(argv[i],"mkl")==0))
       test = MKL;
     if((strcmp(argv[i],"armpl")==0))

@@ -60,6 +60,8 @@
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
+#include <spmv/KokkosKernels_spmv_data.hpp>
+
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
 #endif
@@ -81,7 +83,7 @@
 //    rows_per_thread, team_size, vector_length,
 //    test, schedule, ave_time, max_time, min_time);
 
-SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
+SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int loop) {
   SPMVTestData test_data;
@@ -124,7 +126,7 @@ SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
 
   // int nnz_per_row = A.nnz()/A.numRows(); // TODO: relocate
   matvec(A, test_data.x1, test_data.y1, rows_per_thread, team_size,
-         vector_length, test, schedule);
+         vector_length, data, schedule);
 
   // Error Check
   Kokkos::deep_copy(test_data.h_y, test_data.y1);
@@ -139,7 +141,7 @@ SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
   test_data.rows_per_thread = rows_per_thread;
   test_data.team_size       = team_size;
   test_data.vector_length   = vector_length;
-  test_data.test            = test;
+  test_data.data            = data;
   test_data.schedule        = schedule;
 
   return test_data;
@@ -147,7 +149,7 @@ SPMVTestData setup_test(int test, SPMVTestData::matrix_type A,
 void run_benchmark(SPMVTestData& data) {
   Kokkos::Timer timer;
   matvec(data.A, data.x1, data.y1, data.rows_per_thread, data.team_size,
-         data.vector_length, data.test, data.schedule);
+         data.vector_length, data.data, data.schedule);
   Kokkos::fence();
   double time = timer.seconds();
   data.ave_time += time;
