@@ -4,6 +4,7 @@
 #include "Test_Sparse_block_gauss_seidel.hpp"
 #include "Test_Sparse_CrsMatrix.hpp"
 #include "Test_Sparse_BlockCrsMatrix.hpp"
+#include "Test_Sparse_BsrMatrix.hpp"
 #include "Test_Sparse_findRelOffset.hpp"
 #include "Test_Sparse_gauss_seidel.hpp"
 #include "Test_Sparse_replaceSumInto.hpp"
