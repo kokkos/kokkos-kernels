@@ -50,7 +50,9 @@
 #include<KokkosKernels_Controls.hpp>
 #include<Kokkos_ArithTraits.hpp>
 
-namespace KokkosKernels{
+namespace KokkosSparse{
+
+namespace Experimental{
 
 /// \class Preconditioner
 /// \brief Interface for KokkosKernels preconditioners
@@ -100,7 +102,7 @@ public:
   ///// \param beta [in] Input coefficient of Y
   /////
   ///// If the result of applying this preconditioner to a vector X is
-  ///// \f$M \cdot X\f$, then this method computes \f$\beta Y + \alpha M \cdot X\f$.
+  ///// \f$M \cdot X\f$, then this method computes \f$Y = \beta Y + \alpha M \cdot X\f$.
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
   virtual void
@@ -146,6 +148,8 @@ public:
   virtual bool hasTransposeApply() const { return false; } 
 
 };
-} //End namespace KokkosKernels
+
+} // End Experimental
+} //End namespace KokkosSparse
 
 #endif

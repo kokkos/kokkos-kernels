@@ -42,7 +42,7 @@
 //@HEADER
 */
 
-#include<KokkosKernels_MatrixPrec.hpp>
+#include<KokkosSparse_MatrixPrec.hpp>
 #include<Kokkos_Core.hpp>
 #include<gmres.hpp>
 #include<Kokkos_Random.hpp>
@@ -100,8 +100,8 @@ int main(int argc, char *argv[]) {
   // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
   KokkosSparse::CrsMatrix<ST, OT, EXSP> A = 
                         KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n);
-  KokkosKernels::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>  * myPrec = 
-                    new KokkosKernels::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>(
+  KokkosSparse::Experimental::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>  * myPrec = 
+                    new KokkosSparse::Experimental::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>(
                     KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n, true));
 
   ViewVectorType X("X",n); //Solution and initial guess

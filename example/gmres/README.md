@@ -27,7 +27,7 @@ The gmres function takes the following input paramters:
 **B:** A Kokkos::View that is the system right-hand side. Must have B.extent(1)=1. (Currently only one right-hand side is supported.)   
 **X:** A Kokkos::View that is used as both the initial vector for the GMRES iteration and the output for the solution vector.  (Must have X.extent(1)=1.)   
 **opts:** A 'GmresOpts' struct as described below.   
-**M:** A pointer to a KokkosKernels::Preconditioner. Only right preconditioning is supported at this time.  
+**M:** A pointer to a KokkosSparse::Experimental::Preconditioner. Only right preconditioning is supported at this time.  
 
 The solver has a 'GmresOpts' struct to pass in solver options.  Available options are:   
 **tol:** The convergence tolerance for GMRES.  Based upon the relative residual. The solver will terminate when norm(b-Ax)/norm(b) <= tol. (Default: 1e-8)   

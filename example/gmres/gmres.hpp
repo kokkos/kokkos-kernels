@@ -49,7 +49,7 @@
 #include<KokkosBlas.hpp>
 #include<KokkosBlas3_trsm.hpp>
 #include<KokkosSparse_spmv.hpp>
-#include<KokkosKernels_Preconditioner.hpp>
+#include<KokkosSparse_Preconditioner.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // libstdc++ half_t overloads
@@ -108,7 +108,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
                     const Kokkos::View<ScalarType*, Layout, EXSP> &B,
                     Kokkos::View<ScalarType*, Layout, EXSP> &X, 
                     const GmresOpts<ScalarType> &opts,
-                    const KokkosKernels::Preconditioner<ScalarType, Layout, EXSP, OrdinalType> * const M = NULL){
+                    const KokkosSparse::Experimental::Preconditioner<ScalarType, Layout, EXSP, OrdinalType> * const M = NULL){
   Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
   typedef Kokkos::Details::ArithTraits<ScalarType> AT;
   typedef typename AT::val_type ST; // So this code will run with ScalarType = std::complex<T>.

@@ -46,12 +46,14 @@
 #ifndef KK_MATRIX_PREC_HPP
 #define KK_MATRIX_PREC_HPP
 
-#include<KokkosKernels_Preconditioner.hpp>
+#include<KokkosSparse_Preconditioner.hpp>
 #include<Kokkos_Core.hpp>
 #include<KokkosBlas.hpp>
 #include<KokkosSparse_spmv.hpp>
 
-namespace KokkosKernels{
+namespace KokkosSparse{
+
+namespace Experimental{
 
 /// \class MatrixPrec
 /// \brief  This is a simple class to use if one 
@@ -71,7 +73,7 @@ namespace KokkosKernels{
 ///   - isComputed() returns true 
 ///
 template< class ScalarType, class Layout, class EXSP, class OrdinalType = int > 
-class MatrixPrec : virtual public KokkosKernels::Preconditioner<ScalarType, Layout, EXSP, OrdinalType>
+class MatrixPrec : virtual public KokkosSparse::Experimental::Preconditioner<ScalarType, Layout, EXSP, OrdinalType>
 { 
 private:
     using crsMat_t = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP>;
@@ -130,6 +132,7 @@ public:
   bool hasTransposeApply() const { return true; } 
 
 };
-} //End namespace KokkosKernels
+} //End Experimental
+} //End namespace KokkosSparse
 
 #endif
