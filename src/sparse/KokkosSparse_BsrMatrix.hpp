@@ -485,6 +485,8 @@ class BsrMatrix {
             size_type annz, ScalarType* val, OrdinalType* rows,
             OrdinalType* cols, OrdinalType blockdim, bool pad = false)
   {
+    (void)label;
+    (void)pad;
     blockDim_ = blockdim;
 
     if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
