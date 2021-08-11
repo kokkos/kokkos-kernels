@@ -19,6 +19,21 @@
 #include <PerfTestUtilities.hpp>
 #endif
 
+#ifdef KOKKOS_ENABLE_OPENMP
+#include <spmv/OpenMPStatic_SPMV.hpp>
+#include <spmv/OpenMPDynamic_SPMV.hpp>
+#include <spmv/OpenMPSmartStatic_SPMV.hpp>
+#endif
+
+
+#ifdef HAVE_CUSPARSE
+#include <spmv/CuSparse_SPMV.hpp>
+#endif
+
+#ifdef HAVE_MKL
+#include <spmv/MKL_SPMV.hpp>
+#endif
+
 enum {
   KOKKOS,
   MKL,

@@ -33,6 +33,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse/KokkosSparse_spmv_test.cpp
         blas/blas/KokkosBlas_dot_perf_test_rps.cpp
         blas/blas/KokkosBlas_team_dot_perf_test_rps.cpp
+        blas/blas2/KokkosBlas2_gemv_perf_test_rps.cpp
         PerfTestUtilities.cpp
         #sparse/KokkosSparse_spgemm_test.cpp
 )
@@ -46,4 +47,3 @@ ADD_COMPONENT_SUBDIRECTORY(sparse)
 ADD_COMPONENT_SUBDIRECTORY(blas)
 ADD_SUBDIRECTORY(performance)
 #ADD_SUBDIRECTORY(common)
-

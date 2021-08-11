@@ -9,7 +9,7 @@
 // For RPS implementation of BLAS Level-1 Tests
 #include "blas/blas/tracked_testing.hpp"
 
-
+#include "blas/blas2/tracked_testing.hpp"
 
 
 int main(int argc, char* argv[]) {
@@ -59,7 +59,8 @@ if (argc == 1) {
     
     // All BLAS tests (Dot, Team Dot)
     test::blas::build_blas_executor(exec, argc, argv, run_params);
-    
+
+    test::blas2::build_blas2_executor(exec, argc, argv, run_params);
 
     exec.setupSuite();
 	

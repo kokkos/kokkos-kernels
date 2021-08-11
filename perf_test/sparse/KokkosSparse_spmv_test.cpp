@@ -65,19 +65,7 @@
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
 #endif
-#ifdef HAVE_CUSPARSE
-#include <CuSparse_SPMV.hpp>
-#endif
 
-#ifdef HAVE_MKL
-#include <MKL_SPMV.hpp>
-#endif
-
-#ifdef KOKKOS_ENABLE_OPENMP
-// #include <OpenMPStatic_SPMV.hpp>
-// #include <OpenMPDynamic_SPMV.hpp>
-// #include <OpenMPSmartStatic_SPMV.hpp>
-#endif
 
 // return std::make_tuple(newnumRows, newnumCols, A, x1, y1,
 //    rows_per_thread, team_size, vector_length,
