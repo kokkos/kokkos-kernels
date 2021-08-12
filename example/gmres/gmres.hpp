@@ -296,10 +296,12 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         VSub = Kokkos::subview(V,Kokkos::ALL,Kokkos::make_pair(0,j+1));
         Kokkos::deep_copy(Xiter,X); //Can't overwrite X with intermediate solution.
         auto GLsSolnSub3 = Kokkos::subview(GLsSoln,Kokkos::make_pair(0,j+1),0);
-        KokkosBlas::gemv ("N", one, VSub, GLsSolnSub3, one, Xiter); //x_iter = x + V(1:j+1)*lsSoln
-        if(M != NULL){ //Apply right prec to correct soln.
-          M->apply(Xiter, Wj); // wj = M*Vj
-          Kokkos::deep_copy(Xiter, Wj);// now Vj = M*Vj
+        if(M != NULL){ //Apply right prec to correct soln. 
+          KokkosBlas::gemv ("N", one, VSub, GLsSolnSub3, zero, Wj); //wj = V(1:j+1)*lsSoln
+          M->apply(Wj, Xiter, "N", one, one); //Xiter = M*wj + X
+        }
+        else{
+          KokkosBlas::gemv ("N", one, VSub, GLsSolnSub3, one, Xiter); //x_iter = x + V(1:j+1)*lsSoln
         }
         KokkosSparse::spmv("N", one, A, Xiter, zero, Wj); // wj = Ax
         Kokkos::deep_copy(Res,B); // Reset r=b.

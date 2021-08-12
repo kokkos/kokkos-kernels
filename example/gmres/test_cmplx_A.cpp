@@ -143,6 +143,13 @@ int main(int /*argc*/, char ** /*argv[]*/) {
   }
   Kokkos::finalize();
 
+  if(pass2){ 
+    std::cout << "Both tests have passed!!" << std::endl; 
+  }
+  else{
+    std::cout << "One or more tests has failed." << std::endl;
+  }
+
   return ( pass2 ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 

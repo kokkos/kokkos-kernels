@@ -104,13 +104,13 @@ int main(int argc, char *argv[]) {
                     new KokkosSparse::Experimental::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>(
                     KokkosKernels::Impl::kk_generate_diag_matrix<KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n, true));
 
-  ViewVectorType X("X",n); //Solution and initial guess
+  ViewVectorType X(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"),n); //Solution and initial guess
   ViewVectorType Wj("Wj",n); //For checking residuals at end.
   ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),n);//right-hand side vec
+  int rand_seed = 123;
+  Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
+  Kokkos::fill_random(X, pool, -1,1); //Use non-zero initial guess to test GMRES properties. 
   if(rand_rhs){
-    // Make rhs random.
-    int rand_seed = 123;
-    Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
     Kokkos::fill_random(B, pool, -1,1);
   }
   else{
@@ -137,6 +137,12 @@ int main(int argc, char *argv[]) {
   }
   Kokkos::finalize();
 
+  if( pass ){
+    std::cout << "Test passed!" << std::endl;
+  }
+  else{
+    std::cout << "Test Failed!" << std::endl;
+  }
   return ( pass ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
