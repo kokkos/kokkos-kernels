@@ -54,13 +54,13 @@
 
 // Recall -- testData is a tempated class, 
 // setup_test is a templated function
-template<class ExecSpace, class Layout>
-testData<ExecSpace, Layout> setup_test(int m,
+template<class ExecSpace>
+testData<ExecSpace> setup_test(int m,
                     int repeat
                     )
 {
         // use constructor to generate test data
-        testData<ExecSpace, Layout> testData_obj(m);
+        testData<ExecSpace> testData_obj(m);
 
         // set a field in the struct
         testData_obj.m = m;
@@ -83,7 +83,7 @@ kernel_base_vector.push_back(rajaperf::make_kernel_base(
         [=](const int repeat, const int m) {
           // returns a tuple of testData_obj
           return std::make_tuple(
-                          setup_test<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::array_layout>(m, repeat));
+                          setup_test<Kokkos::DefaultExecutionSpace>(m, repeat));
           },
         [&](const int iteration, const int runsize, auto& data) {
         KokkosBlas::dot(data.x, data.y);
@@ -94,6 +94,3 @@ kernel_base_vector.push_back(rajaperf::make_kernel_base(
         // of type test_list
         return kernel_base_vector;
 }
-
-
-

@@ -74,9 +74,9 @@
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-#include <OpenMPStatic_SPMV.hpp>
-#include <OpenMPDynamic_SPMV.hpp>
-#include <OpenMPSmartStatic_SPMV.hpp>
+#include <spmv/OpenMPStatic_SPMV.hpp>
+#include <spmv/OpenMPDynamic_SPMV.hpp>
+#include <spmv/OpenMPSmartStatic_SPMV.hpp>
 #endif
 
 // return std::make_tuple(newnumRows, newnumCols, A, x1, y1,

@@ -14,9 +14,9 @@
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
 // For OpenMP
-#include <OpenMPStatic_SPMV.hpp>
-#include <OpenMPDynamic_SPMV.hpp>
-#include <OpenMPSmartStatic_SPMV.hpp>
+#include <spmv/OpenMPStatic_SPMV.hpp>
+#include <spmv/OpenMPDynamic_SPMV.hpp>
+#include <spmv/OpenMPSmartStatic_SPMV.hpp>
 
 
 

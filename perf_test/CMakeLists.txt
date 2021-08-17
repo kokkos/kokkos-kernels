@@ -31,9 +31,10 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         tracked_testing
         SOURCES KokkosKernelsTrackedTesting.cpp
         sparse/KokkosSparse_spmv_test.cpp
-        blas/blas/KokkosBlas_dot_perf_test_rps.cpp
-        blas/blas/KokkosBlas_team_dot_perf_test_rps.cpp
+        blas/blas1/KokkosBlas_dot_perf_test_rps.cpp
+        blas/blas1/KokkosBlas_team_dot_perf_test_rps.cpp
         PerfTestUtilities.cpp
+        sparse/spmv/OpenMPSmartStatic_SPMV.cpp
         #sparse/KokkosSparse_spgemm_test.cpp
 )
 endif()

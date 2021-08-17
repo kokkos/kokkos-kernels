@@ -43,4 +43,3 @@
 */
 
 int* __restrict__ threadStarts;
-
