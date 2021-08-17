@@ -47,7 +47,7 @@ ENDIF()
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
-  SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp
+  SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp spmv/OpenMPSmartStatic_SPMV.cpp
   ${utilities_list}
   )
 
