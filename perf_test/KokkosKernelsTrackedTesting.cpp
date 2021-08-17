@@ -15,18 +15,14 @@
 int main(int argc, char* argv[]) {
   {
 
-std::cout << "Is Kokkos initialized? " << Kokkos::is_initialized() << '\n';
-
-
-
     // argument parsing for setting input data at runtime
    
-std::string inputDataPath;
-if (argc == 1) {
-//    print_help();
-	std::cout << "Please provide input data directory: --input-data /PATH/TO/KOKKOS-KERNELS/INPUT/DATA" << std::endl; 
-    return 0;
-  }
+ 	std::string inputDataPath;
+		if (argc == 1) {
+		//    print_help();
+			std::cout << "Please provide input data directory: --input-data /PATH/TO/KOKKOS-KERNELS/INPUT/DATA" << std::endl; 
+			return 0;
+		  }
 
   for (int i = 0; i < argc; i++) {
     // if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
@@ -74,6 +70,5 @@ if (argc == 1) {
     exec.outputRunData();
   }
   Kokkos::finalize();
-  std::cout << "\n\nDONE!!!...." << std::endl;
 return 0;
 }

@@ -116,17 +116,7 @@ int parse_inputs (Params& params, int argc, char **argv){
   return 0;
 }
 
-/* Templated function on ExecSpace and Layout
- * The run function takes three arguments:
- * m = number of rows in a matrix
- * n = number of columns
- * repeat = number of replicates in a run
- *
- */
 
-
-// These types 
-//
 template<typename ExecSpace, typename Layout>
 void run(int m, int n, int repeat)
 {
@@ -138,13 +128,11 @@ void run(int m, int n, int repeat)
   std::cout << "Running GEMV experiment (" << ExecSpace::name() << ")\n";
   
   // Create a View containing a 2D matrix; allocate KokkosView with template args of Scalar**, a layout, and
-  // device, and create the "A" matrix with m rows, n columns as an
-  // uninitialized view   
-  Kokkos::View<Scalar**, Layout, Device> A(Kokkos::ViewAllocateWithoutInitializing("A"), m, n);
+  Kokkos::View<Scalar**, Layout, Device> A(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
   // Create Views containing 1D matrix; allocate (without) matrix "x" of size n
-  Kokkos::View<Scalar*, Device> x(Kokkos::ViewAllocateWithoutInitializing("x"), n);
+  Kokkos::View<Scalar*, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), n);
   // Create Views containing 1D matrix; allocate (without) matrix "y" of size m   
-  Kokkos::View<Scalar*, Device> y(Kokkos::ViewAllocateWithoutInitializing("y"), m);
+  Kokkos::View<Scalar*, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
   
   // Declaring variable pool w/ a number seed; 
   // a parallel random number generator, so you
@@ -157,12 +145,6 @@ void run(int m, int n, int repeat)
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(x, pool, 10.0);
   
-
-  // https://github.com/kokkos/kokkos-kernels/wiki/BLAS-2%3A%3Agemv
-  // Header File: KokkosBlas2_gemv.hpp
-  // Usage: KokkosBlas::gemv (mode, alpha, A, x, beta, y);
-  // Matrix Vector Multiplication y[i] = beta * y[i] + alpha * SUM_j(A[i,j] * x[j])
- 
   // Do a warm-up run
   KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
 
@@ -197,8 +179,6 @@ int main (int argc, char ** argv){
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
   const int device_id = params.use_cuda - 1;
-
-
 
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
   
@@ -267,4 +247,3 @@ int main (int argc, char ** argv){
   Kokkos::finalize(); 
   return 0;
 }
-

@@ -11,10 +11,10 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_block_pcg.cpp
   )
 
-#KOKKOSKERNELS_ADD_EXECUTABLE(
-#  sparse_spgemm
-#  SOURCES KokkosSparse_spgemm.cpp
-#  )
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spgemm
+  SOURCES KokkosSparse_spgemm.cpp
+  )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spgemm_jacobi

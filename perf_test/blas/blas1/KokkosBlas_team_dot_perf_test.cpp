@@ -42,74 +42,6 @@
 //@HEADER
 */
 
-#include <Kokkos_Core.hpp>
-#include <KokkosBlas1_team_dot.hpp>
-#include <Kokkos_Random.hpp>
-
-struct Params {
-  int use_cuda    = 0;
-  int use_openmp  = 0;
-  int use_threads = 0;
-  // m is vector length, or number of rows
-  int m           = 100000;
-  int repeat      = 1;
-  bool layoutLeft = true;
-};
-
-void print_options() {
-  std::cerr << "Options:\n" << std::endl;
-
-  std::cerr << "\tBACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | "
-               "'--cuda [cudaDeviceIndex]'"
-            << std::endl;
-  std::cerr << "\tIf no BACKEND selected, serial is the default." << std::endl;
-  std::cerr << "\t[Optional] --repeat :: how many times to repeat overall "
-               "dot (symbolic + repeated numeric)"
-            << std::endl;
-  std::cerr << "\t[Optional] --layout :: matrix layout ('left' or 'right', "
-               "default 'left')"
-            << std::endl;
-  std::cerr << "\t[Optional] --m      :: desired length of test vectors; test "
-               "vectors will have the same length"
-            << std::endl;
-}
-
-int parse_inputs(Params& params, int argc, char** argv) {
-  for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--help") || 0 == strcasecmp(argv[i], "-h")) {
-      print_options();
-      exit(0);  // note: this is before Kokkos::initialize
-    } else if (0 == strcasecmp(argv[i], "--threads")) {
-      params.use_threads = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
-      params.use_openmp = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
-      params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == strcasecmp(argv[i], "--layout")) {
-      i++;
-      if (0 == strcasecmp(argv[i], "left"))
-        params.layoutLeft = true;
-      else if (0 == strcasecmp(argv[i], "right"))
-        params.layoutLeft = false;
-      else {
-        std::cerr << "Invalid layout: must be 'left' or 'right'.\n";
-        exit(1);
-      }
-    } else if (0 == strcasecmp(argv[i], "--m")) {
-      params.m = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
-      // if provided, C will be written to given file.
-      // has to have ".bin", or ".crs" extension.
-      params.repeat = atoi(argv[++i]);
-    } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
-      print_options();
-      return 1;
-    }
-  }
-  return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // The Level 1 BLAS perform scalar, vector and vector-vector operations;
@@ -128,9 +60,7 @@ int parse_inputs(Params& params, int argc, char** argv) {
     TeamType: A Kokkos::TeamPolicy<...>::member_type
     VectorX: A rank-1 Kokkos::View
     VectorY: A rank-1 Kokkos::View
-
 */
-
 // REQUIREMENTS:
 // Y.rank == 1 or X.rank == 1
 // Y.extent(0) == X.extent(0)
@@ -168,7 +98,60 @@ ThreadVectorRange 	Used inside of a TeamPolicy kernel to perform nested parallel
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <class ExecSpace, class Layout>
+#include <Kokkos_Core.hpp>
+#include <KokkosBlas1_team_dot.hpp>
+#include <Kokkos_Random.hpp>
+
+struct Params {
+  int use_cuda    = 0;
+  int use_openmp  = 0;
+  int use_threads = 0;
+  // m is vector length, or number of rows
+  int m           = 100000;
+  int repeat      = 1;
+};
+
+void print_options() {
+  std::cerr << "Options:\n" << std::endl;
+
+  std::cerr << "\tBACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | "
+               "'--cuda [cudaDeviceIndex]'"
+            << std::endl;
+  std::cerr << "\tIf no BACKEND selected, serial is the default." << std::endl;
+  std::cerr << "\t[Optional] --repeat :: how many times to repeat overall "
+               "dot (symbolic + repeated numeric)"
+            << std::endl;
+}
+
+int parse_inputs(Params& params, int argc, char** argv) {
+  for (int i = 1; i < argc; ++i) {
+    if (0 == strcasecmp(argv[i], "--help") || 0 == strcasecmp(argv[i], "-h")) {
+      print_options();
+      exit(0);  // note: this is before Kokkos::initialize
+    } else if (0 == strcasecmp(argv[i], "--threads")) {
+      params.use_threads = atoi(argv[++i]);
+    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+      params.use_openmp = atoi(argv[++i]);
+    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+      params.use_cuda = atoi(argv[++i]) + 1;
+    } else if (0 == strcasecmp(argv[i], "--m")) {
+      params.m = atoi(argv[++i]);
+    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+      // if provided, C will be written to given file.
+      // has to have ".bin", or ".crs" extension.
+      params.repeat = atoi(argv[++i]);
+    } else {
+      std::cerr << "Unrecognized command line argument #" << i << ": "
+                << argv[i] << std::endl;
+      print_options();
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+template <class ExecSpace>
 void run(int m, int repeat) {
   // Declare type aliases
     using Scalar   = double;
@@ -263,10 +246,7 @@ int main(int argc, char** argv) {
 
     if (useOMP) {
 #if defined(KOKKOS_ENABLE_OPENMP)
-      if (params.layoutLeft)
-        run<Kokkos::OpenMP, Kokkos::LayoutLeft>(params.m, params.repeat);
-      else
-        run<Kokkos::OpenMP, Kokkos::LayoutRight>(params.m, params.repeat);
+        run<Kokkos::OpenMP>(params.m, params.repeat);
 #else
   std::cout << "ERROR: OpenMP requested, but not available.\n";
   return 1;
@@ -275,10 +255,7 @@ int main(int argc, char** argv) {
 
     if (useCUDA) {
 #if defined(KOKKOS_ENABLE_CUDA)
-      if (params.layoutLeft)
-        run<Kokkos::Cuda, Kokkos::LayoutLeft>(params.m, params.repeat);
-      else
-        run<Kokkos::Cuda, Kokkos::LayoutRight>(params.m, params.repeat);
+        run<Kokkos::Cuda>(params.m, params.repeat);
 #else
   std::cout << "ERROR: CUDA requested, but not available.\n";
   return 1;
@@ -286,10 +263,7 @@ int main(int argc, char** argv) {
     }
     if (useSerial) {
 #if defined(KOKKOS_ENABLE_SERIAL)
-      if (params.layoutLeft)
-        run<Kokkos::Serial, Kokkos::LayoutLeft>(params.m, params.repeat);
-      else
-        run<Kokkos::Serial, Kokkos::LayoutRight>(params.m, params.repeat);
+        run<Kokkos::Serial>(params.m, params.repeat);
 #else
   std::cout << "ERROR: Serial device requested, but not available; here, implementation of dot is explicitly parallel.\n";
   return 1;

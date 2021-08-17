@@ -6,8 +6,6 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
     SOURCES KokkosBlas_perf_test.cpp
   )
 
-
-
 KOKKOSKERNELS_ADD_EXECUTABLE(
         KokkosBlas_dot_perf_test
         SOURCES KokkosBlas_dot_perf_test.cpp

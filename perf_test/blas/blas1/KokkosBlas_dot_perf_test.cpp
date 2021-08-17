@@ -57,7 +57,6 @@ struct Params {
   // m is vector length
   int m           = 100000;
   int repeat      = 1;
-  bool layoutLeft = true;
 };
 
 void print_options() {
@@ -69,9 +68,6 @@ void print_options() {
   std::cerr << "\tIf no BACKEND selected, serial is the default." << std::endl;
   std::cerr << "\t[Optional] --repeat :: how many times to repeat overall "
                "dot (symbolic + repeated numeric)"
-            << std::endl;
-  std::cerr << "\t[Optional] --layout :: matrix layout ('left' or 'right', "
-               "default 'left')"
             << std::endl;
   std::cerr << "\t[Optional] --m      :: desired length of test vectors; test "
                "vectors will have the same length"
@@ -89,16 +85,6 @@ int parse_inputs(Params& params, int argc, char** argv) {
       params.use_openmp = atoi(argv[++i]);
     } else if (0 == strcasecmp(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == strcasecmp(argv[i], "--layout")) {
-      i++;
-      if (0 == strcasecmp(argv[i], "left"))
-        params.layoutLeft = true;
-      else if (0 == strcasecmp(argv[i], "right"))
-        params.layoutLeft = false;
-      else {
-        std::cerr << "Invalid layout: must be 'left' or 'right'.\n";
-        exit(1);
-      }
     } else if (0 == strcasecmp(argv[i], "--m")) {
       params.m = atoi(argv[++i]);
     } else if (0 == strcasecmp(argv[i], "--repeat")) {
@@ -140,11 +126,7 @@ int parse_inputs(Params& params, int argc, char** argv) {
 // "m" is used here, because code from another test was adapted for this test.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-//DANGER DANGER DANGER!! POTENTIAL MERGE ISSUES 
-
-
-template <class ExecSpace, class Layout>
+template <class ExecSpace>
 void run(int m, int repeat) {
   // Declare type aliases
   using Scalar   = double;
@@ -157,12 +139,12 @@ void run(int m, int repeat) {
   std::cout << "Each test input vector has a length of " << m << std::endl;
 
   // Create 1D view w/ Device as the ExecSpace; this is an input vector
-  Kokkos::View<Scalar*, Device> x(Kokkos::ViewAllocateWithoutInitializing("x"),
-                                  m);
+  // A(view_alloc(WithoutInitializing, "label"), m, n);
+  Kokkos::View<Scalar*, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
 
   // Create 1D view w/ Device as the ExecSpace; this is the output vector
-  Kokkos::View<Scalar*, Device> y(Kokkos::ViewAllocateWithoutInitializing("y"),
-                                  m);
+  Kokkos::View<Scalar*, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
+ 
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you
@@ -197,6 +179,7 @@ void run(int m, int repeat) {
 
 
 int main(int argc, char** argv) {
+
   Params params;
 
   if (parse_inputs(params, argc, argv)) {
@@ -209,7 +192,6 @@ int main(int argc, char** argv) {
 
   Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 
-  // TODO from BMK:  Set up pthreads
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;
   bool useCUDA    = params.use_cuda != 0;
@@ -217,13 +199,9 @@ int main(int argc, char** argv) {
   bool useSerial = !useOMP && !useCUDA;
 
 
-  if (useThreads)
-  {
+  if (useThreads){
 #if defined(KOKKOS_ENABLE_THREADS)
-    if (params.use_threads)
-      run<Kokkos::Threads, Kokkos::LayoutLeft>(params.m, params.repeat);
-    else
-      run<Kokkos::Threads, Kokkos::LayoutRight>(params.m, params.repeat);
+      run<Kokkos::Threads>(params.m, params.repeat);
 #else
     std::cout << "ERROR:  PThreads requested, but not available.\n";
   return 1;
@@ -232,10 +210,7 @@ int main(int argc, char** argv) {
 
     if (useOMP) {
 #if defined(KOKKOS_ENABLE_OPENMP)
-      if (params.layoutLeft)
-        run<Kokkos::OpenMP, Kokkos::LayoutLeft>(params.m, params.repeat);
-      else
-        run<Kokkos::OpenMP, Kokkos::LayoutRight>(params.m, params.repeat);
+        run<Kokkos::OpenMP>(params.m, params.repeat);
 #else
   std::cout << "ERROR: OpenMP requested, but not available.\n";
   return 1;
@@ -244,10 +219,7 @@ int main(int argc, char** argv) {
 
     if (useCUDA) {
 #if defined(KOKKOS_ENABLE_CUDA)
-      if (params.layoutLeft)
-        run<Kokkos::Cuda, Kokkos::LayoutLeft>(params.m, params.repeat);
-      else
-        run<Kokkos::Cuda, Kokkos::LayoutRight>(params.m, params.repeat);
+        run<Kokkos::Cuda>(params.m, params.repeat);
 #else
   std::cout << "ERROR: CUDA requested, but not available.\n";
   return 1;
@@ -255,10 +227,7 @@ int main(int argc, char** argv) {
     }
     if (useSerial) {
 #if defined(KOKKOS_ENABLE_SERIAL)
-      if (params.layoutLeft)
-        run<Kokkos::Serial, Kokkos::LayoutLeft>(params.m, params.repeat);
-      else
-        run<Kokkos::Serial, Kokkos::LayoutRight>(params.m, params.repeat);
+        run<Kokkos::Serial>(params.m, params.repeat);
 #else
   std::cout << "ERROR: Serial device requested, but not available.\n";
   return 1;

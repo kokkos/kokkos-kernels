@@ -13,6 +13,13 @@
 #include <spmv/Kokkos_SPMV.hpp>
 #include <spmv/Kokkos_SPMV_Inspector.hpp>
 
+// For OpenMP
+#include <OpenMPStatic_SPMV.hpp>
+#include <OpenMPDynamic_SPMV.hpp>
+#include <OpenMPSmartStatic_SPMV.hpp>
+
+
+
 #include <spmv/KokkosKernels_spmv_data.hpp>
 
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE

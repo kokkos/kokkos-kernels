@@ -499,7 +499,6 @@ do
       KOKKOSKERNELS_DO_TESTS=ON
       ;;
     --enable-perfsuite)
-      # This is the default
       KOKKOSKERNELS_DO_PERFSUITE=ON
       ;;
     --disable-perfsuite)

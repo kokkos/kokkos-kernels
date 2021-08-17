@@ -46,8 +46,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_multimem_spgemm.hpp"
-#include <common/RunParams.hpp>
-#include <common/QuickKernelBase.hpp>
+
 void print_options(){
   std::cerr << "Options\n" << std::endl;
 
@@ -281,25 +280,24 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
   return 0;
 }
 
-test_list make_spgemm_kernel_base(int argc, char ** argv, const rajaperf::RunParams& run_params){
+int main (int argc, char ** argv){
   using size_type = default_size_type;
   using lno_t = default_lno_t;
   using scalar_t = default_scalar;
+
   KokkosKernels::Experiment::Parameters params;
 
   if (parse_inputs (params, argc, argv) ){
-    //return 1;
-    exit(0);
+    return 1;
   }
-  //if (params.a_mtx_bin_file == NULL){
-  //  std::cerr << "Provide a and b matrix files" << std::endl ;
-  //  print_options();
-  //  //return 0;
-  //  exit(0);
-  //}
-  //if (params.b_mtx_bin_file == NULL){
-  //  std::cout << "B is not provided. Multiplying AxA." << std::endl;
-  //}
+  if (params.a_mtx_bin_file == NULL){
+    std::cerr << "Provide a and b matrix files" << std::endl ;
+    print_options();
+    return 0;
+  }
+  if (params.b_mtx_bin_file == NULL){
+    std::cout << "B is not provided. Multiplying AxA." << std::endl;
+  }
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
   const int device_id = params.use_cuda ? params.use_cuda - 1 : params.use_hip - 1;
@@ -364,10 +362,13 @@ test_list make_spgemm_kernel_base(int argc, char ** argv, const rajaperf::RunPar
   //If only serial is enabled (or no other device was specified), run with serial
   if (!params.use_openmp && !params.use_cuda && !params.use_threads)
   {
-    return KokkosKernels::Experiment::run_multi_mem_spgemm
-    <size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace>(run_params, params);
+    KokkosKernels::Experiment::run_multi_mem_spgemm
+    <size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace>(params);
   }
 #endif
 
+  Kokkos::finalize(); 
+
+  return 0;
 }
 
