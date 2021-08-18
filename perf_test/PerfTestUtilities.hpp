@@ -10,8 +10,6 @@
 #include <common/RunParams.hpp>
 #include <common/QuickKernelBase.hpp>
 #include <common/KernelBase.hpp>
-#include <common/QuickKernelBase.hpp>
-#include <common/KernelBase.hpp>
 #include <dirent.h>
 
 

@@ -49,15 +49,7 @@ struct testData_rps_team_dot {
   }
 };
 
-/* Taking in by reference avoids making a copy of the data in memory, whereas
- * taking in by value would make a copy in memory.  Copying operations do not
- * enhance performance.
- *  
- *  A function takes data as a pointer when you're dealing with a collection of
- *  things, such as 8 test datasets
- *
- */
-// Declaring the machinery needed to run as an RPS test
+// Instantiate the machinery needed to run as an RPS test
 
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 test_list construct_team_dot_kernel_base(const rajaperf::RunParams& params);
@@ -115,16 +107,6 @@ void run(int m, int repeat) {
 
     ExecSpace().fence();
   }
-
-/*
-  // Kokkos Timer set up
-  double total = timer.seconds();
-  double avg   = total / testMatrices.repeat;
-  // Flops calculation for a 1D matrix dot product per test run;
-  size_t flopsPerRun = (size_t)2 * m;
-  printf("Avg DOT time: %f s.\n", avg);
-  printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-*/
 
 }
 

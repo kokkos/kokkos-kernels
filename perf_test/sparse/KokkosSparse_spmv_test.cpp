@@ -66,6 +66,11 @@
 #include <PerfTestUtilities.hpp>
 #endif
 
+#ifdef KOKKOS_ENABLE_OPENMP
+#include <spmv/OpenMPStatic_SPMV.hpp>
+#include <spmv/OpenMPDynamic_SPMV.hpp>
+#include <spmv/OpenMPSmartStatic_SPMV.hpp>
+#endif
 
 // return std::make_tuple(newnumRows, newnumCols, A, x1, y1,
 //    rows_per_thread, team_size, vector_length,

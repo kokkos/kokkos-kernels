@@ -11,10 +11,10 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_block_pcg.cpp
   )
 
-#KOKKOSKERNELS_ADD_EXECUTABLE(
-#  sparse_spgemm
-#  SOURCES KokkosSparse_spgemm.cpp
-#  )
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_spgemm
+  SOURCES KokkosSparse_spgemm.cpp
+  )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spgemm_jacobi
@@ -47,7 +47,7 @@ ENDIF()
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
-  SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp
+  SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp spmv/OpenMPSmartStatic_SPMV.cpp
   ${utilities_list}
   )
 
