@@ -296,28 +296,7 @@ class epsilon<Kokkos::Experimental::half_t> {
 };
 #endif  // KOKKOS_HALF_T_IS_FLOAT
 
-// Get the interval for Kokkos::fill_random
-// For real, interval is (-mag, mag)
-// For complex, both real and imaginary parts will have interval (-mag, mag)
-template <typename Scalar>
-inline void getRandomBounds(double mag, Scalar& start, Scalar& end) {
-  start = -mag * Kokkos::ArithTraits<Scalar>::one();
-  end   = mag * Kokkos::ArithTraits<Scalar>::one();
-}
-
-template <>
-inline void getRandomBounds(double mag, Kokkos::complex<float>& start,
-                            Kokkos::complex<float>& end) {
-  start = Kokkos::complex<float>(-mag, -mag);
-  end   = Kokkos::complex<float>(mag, mag);
-}
-
-  template<>
-  inline void getRandomBounds(double mag, Kokkos::complex<double>& start, Kokkos::complex<double>& end)
-  {
-    start = Kokkos::complex<double>(-mag, -mag);
-    end = Kokkos::complex<double>(mag, mag);
-  }
+using KokkosKernels::Impl::getRandomBounds;
 
   template<typename scalar_t, typename lno_t, typename size_type, typename device, typename crsMat_t>
   crsMat_t symmetrize(crsMat_t A)
