@@ -226,6 +226,55 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   }
 }
 
+
+// This function creates a diagonal sparse matrix for testing matrix operations.
+// The elements on the diagonal are 1, 2, ..., n-1, n.
+// If "invert" is true, it will return the inverse of the above diagonal matrix.
+template <typename crsMat_t>
+crsMat_t kk_generate_diag_matrix(typename crsMat_t::const_ordinal_type n,
+                                 const bool invert = false){
+  typedef typename crsMat_t::ordinal_type ot;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+  typedef typename row_map_view_t::non_const_value_type size_type;
+  typedef typename cols_view_t::non_const_value_type lno_t;
+  typedef typename values_view_t::non_const_value_type scalar_t;
+
+  row_map_view_t rowmap_view("rowmap_view", n+1);
+  cols_view_t columns_view("colsmap_view", n);
+  values_view_t values_view("values_view", n);
+
+  {
+    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+    typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+    typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+    for (lno_t i = 0; i <= n; ++i){
+      hr(i) = size_type(i);
+    }
+
+    for (ot i = 0; i < n; ++i){
+      hc(i) = lno_t(i);
+      if(invert){
+        hv(i) = scalar_t(1.0)/(scalar_t(i + 1));
+      }
+      else{
+        hv(i) = scalar_t(i + 1);
+      }
+    }
+    Kokkos::deep_copy (rowmap_view , hr);
+    Kokkos::deep_copy (columns_view , hc);
+    Kokkos::deep_copy (values_view , hv);
+  }
+
+  graph_t static_graph (columns_view, rowmap_view);
+  crsMat_t crsmat("CrsMatrix", n, values_view, static_graph);
+  return crsmat;
+}
+
 template <typename crsMat_t>
 crsMat_t kk_generate_diagonally_dominant_sparse_matrix(
     typename crsMat_t::const_ordinal_type nrows,

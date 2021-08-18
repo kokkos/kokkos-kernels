@@ -49,7 +49,7 @@
 #include<KokkosBlas.hpp>
 #include<KokkosBlas3_trsm.hpp>
 #include<KokkosSparse_spmv.hpp>
-
+#include<KokkosSparse_Preconditioner.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // libstdc++ half_t overloads
@@ -94,6 +94,7 @@ struct GmresOpts
     int m;
     int maxRestart;
     std::string ortho;
+    std::string precSide;
 
   GmresOpts<ScalarType>():
     tol(1e-8),
@@ -106,7 +107,8 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   GmresStats gmres( const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP> &A, 
                     const Kokkos::View<ScalarType*, Layout, EXSP> &B,
                     Kokkos::View<ScalarType*, Layout, EXSP> &X, 
-                    const GmresOpts<ScalarType> &opts ){
+                    const GmresOpts<ScalarType> &opts,
+                    const KokkosSparse::Experimental::Preconditioner<ScalarType, Layout, EXSP, OrdinalType> * const M = NULL){
   Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
   typedef Kokkos::Details::ArithTraits<ScalarType> AT;
   typedef typename AT::val_type ST; // So this code will run with ScalarType = std::complex<T>.
@@ -141,7 +143,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   }
   //Check parameter validity:
   if(m <= 0){
-    throw std::invalid_argument("gmres: please choose restart size m greater than zero.");
+    throw std::invalid_argument("gmres: Please choose restart size m greater than zero.");
   }
   if(opts.maxRestart < 0){
     throw std::invalid_argument("gmres: Please choose maxRestart greater than zero.");
@@ -158,6 +160,7 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   ViewVectorType Xiter("Xiter",n); //Intermediate solution at iterations before restart.
   ViewVectorType Res(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Res"),n); //Residual vector
   ViewVectorType Wj(Kokkos::view_alloc(Kokkos::WithoutInitializing, "W_j"),n); //Tmp work vector 1
+  ViewVectorType Wj2(Kokkos::view_alloc(Kokkos::WithoutInitializing, "W_j2"),n); //Tmp work vector 2
   ViewHostVectorType GVec_h(Kokkos::view_alloc(Kokkos::WithoutInitializing, "GVec"),m+1);
   ViewMatrixType GLsSoln("GLsSoln",m,1);//LS solution vec for Givens Rotation. Must be 2-D for trsm.
   typename ViewMatrixType::HostMirror GLsSoln_h = Kokkos::create_mirror_view(GLsSoln); //This one is needed for triangular solve.
@@ -173,13 +176,28 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
   //Compute initial residuals:
   nrmB = KokkosBlas::nrm2(B);
   Kokkos::deep_copy(Res,B);
+
+  //This is initial true residual, so don't need prec here. 
   KokkosSparse::spmv("N", one, A, X, zero, Wj); // wj = Ax
   KokkosBlas::axpy(-one, Wj, Res); // res = res-Wj = b-Ax.
   trueRes = KokkosBlas::nrm2(Res);
-  relRes = trueRes/nrmB;
+  if( nrmB != 0 ){
+    relRes = trueRes/nrmB;
+  }
+  else if( trueRes == 0 ){
+    relRes = trueRes;
+  }
+  else{ //B is zero, but X has wrong initial guess. 
+    Kokkos::deep_copy(X,0.0);
+    relRes = 0;
+  }
   shortRelRes = relRes;
+  std::cout << "Initial relative residual is: " << relRes << std::endl;
+  if( relRes < opts.tol ){
+    converged = true;
+  }
 
-  while( !converged && cycle <= opts.maxRestart){
+  while( !converged && cycle <= opts.maxRestart && shortRelRes >= 1e-14){
     GVec_h(0) = trueRes;
 
     // Run Arnoldi iteration:
@@ -188,7 +206,13 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
     KokkosBlas::scal(Vj,one/trueRes,Vj); //V0 = V0/norm(V0)
 
     for (int j = 0; j < m; j++){
-      KokkosSparse::spmv("N", one, A, Vj, zero, Wj); //wj = A*Vj
+      if( M != NULL){ //Apply Right prec
+        M->apply(Vj, Wj2); // wj2 = M*Vj
+        KokkosSparse::spmv("N", one, A, Wj2, zero, Wj); //wj = A*MVj = A*Wj2
+      }
+      else{
+        KokkosSparse::spmv("N", one, A, Vj, zero, Wj); //wj = A*Vj
+      }
       Kokkos::Profiling::pushRegion("GMRES::Orthog:");
       if( opts.ortho == "MGS"){
         for (int i = 0; i <= j; i++){
@@ -218,12 +242,10 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
 
       MT tmpNrm = KokkosBlas::nrm2(Wj);
       H_h(j+1,j) = tmpNrm;
-      if(tmpNrm < 1e-14){
-        throw std::runtime_error("GMRES lucky breakdown. Solver terminated without convergence.");
+      if(tmpNrm > 1e-14){
+        Vj = Kokkos::subview(V,Kokkos::ALL,j+1);
+        KokkosBlas::scal(Vj,one/H_h(j+1,j),Wj); // Vj = Wj/H(j+1,j)
       }
-
-      Vj = Kokkos::subview(V,Kokkos::ALL,j+1);
-      KokkosBlas::scal(Vj,one/H_h(j+1,j),Wj); // Wj = Vj/H(j+1,j)
       Kokkos::Profiling::popRegion();
 
       // Givens for real and complex (See Alg 3 in "On computing Givens rotations reliably and efficiently"
@@ -251,6 +273,13 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
       shortRelRes = abs(GVec_h(j+1))/nrmB; // this abs is in libstdc++
 
       std::cout << "Shortcut relative residual for iteration " << j+(cycle*m) << " is: " << shortRelRes << std::endl;
+      if(tmpNrm <= 1e-14 && shortRelRes >= opts.tol){
+        throw std::runtime_error("GMRES has experienced lucky breakdown, but the residual has not converged.\n\
+                                  Solver terminated without convergence.");
+      }
+      if( AT::isNan(ST(shortRelRes)) ){
+        throw std::runtime_error("gmres: Relative residual is nan. Terminating solver.");
+      }
 
       //If short residual converged, or time to restart, check true residual
       if( shortRelRes < opts.tol || j == m-1 ) {
@@ -267,19 +296,31 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
         VSub = Kokkos::subview(V,Kokkos::ALL,Kokkos::make_pair(0,j+1));
         Kokkos::deep_copy(Xiter,X); //Can't overwrite X with intermediate solution.
         auto GLsSolnSub3 = Kokkos::subview(GLsSoln,Kokkos::make_pair(0,j+1),0);
-        KokkosBlas::gemv ("N", one, VSub, GLsSolnSub3, one, Xiter); //x_iter = x + V(1:j+1)*lsSoln
+        if(M != NULL){ //Apply right prec to correct soln. 
+          KokkosBlas::gemv ("N", one, VSub, GLsSolnSub3, zero, Wj); //wj = V(1:j+1)*lsSoln
+          M->apply(Wj, Xiter, "N", one, one); //Xiter = M*wj + X
+        }
+        else{
+          KokkosBlas::gemv ("N", one, VSub, GLsSolnSub3, one, Xiter); //x_iter = x + V(1:j+1)*lsSoln
+        }
         KokkosSparse::spmv("N", one, A, Xiter, zero, Wj); // wj = Ax
         Kokkos::deep_copy(Res,B); // Reset r=b.
         KokkosBlas::axpy(-one, Wj, Res); // r = b-Ax.
         trueRes = KokkosBlas::nrm2(Res);
         relRes = trueRes/nrmB;
         std::cout << "True relative residual for iteration " << j+(cycle*m) << " is : " << relRes << std::endl;
-        numIters = j;
+        numIters = j+1;
 
         if(relRes < opts.tol){
           converged = true;
           Kokkos::deep_copy(X, Xiter); //Final solution is the iteration solution.
           break; //End Arnoldi iteration.
+        }
+        else if(shortRelRes < 1e-30){
+          std::cout << "Short residual has converged to machine zero, but true residual is not converged.\n"
+                    << "You may have given GMRES a singular matrix. Ending the GMRES iteration."
+                    << std::endl;
+                    break; //End Arnoldi iteration; we can't make any more progress.
         }
       }
 
@@ -305,7 +346,12 @@ template< class ScalarType, class Layout, class EXSP, class OrdinalType = int >
     std::cout << "Solver did not converge. :( " << std::endl;
     myStats.convFlagVal = GmresStats::FLAG::NoConv;
   }
-  myStats.numIters = (cycle-1)*m + numIters;
+  if(cycle > 0){
+    myStats.numIters = (cycle-1)*m + numIters;
+  }
+  else{
+    myStats.numIters = 0;
+  }
   std::cout << "The solver completed " << myStats.numIters << " iterations." << std::endl;
 
   Kokkos::Profiling::popRegion();
