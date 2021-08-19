@@ -418,7 +418,7 @@ int main(int argc, char **argv) {
 int main() {
   std::cout << std::endl << " ** SUPERNODAL NOT ENABLED **" << std::endl << std::endl;
   exit(0);
-  return 0;
+  return 1;
 }
 #endif
 
@@ -438,6 +438,6 @@ int main() {
   #endif
   std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
 #endif
-  return 0;
+  return 1;
 }
 #endif

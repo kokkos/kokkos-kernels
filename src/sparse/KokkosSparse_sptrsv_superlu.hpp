@@ -134,6 +134,14 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMa
   auto hr = Kokkos::create_mirror_view (rowmap_view);
   Kokkos::deep_copy (hr, 0);
 
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  Kokkos::Timer timer;
+  double time1 = 0.0;
+  double time2 = 0.0;
+  double time3 = 0.0;
+  timer.reset();
+  #endif
+
   integer_view_host_t sup ("sup", nsuper);
   integer_view_host_t check ("check", nsuper);
   Kokkos::deep_copy (check, 0);
@@ -180,6 +188,9 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMa
   for (int i = 1; i <= n; i++) {
     hr (i) += hr (i-1);
   }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_count = timer.seconds ();
+  #endif
 
   /* Upper-triangular matrix */
   auto nnzA = hr (n);
@@ -189,6 +200,9 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMa
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    timer.reset();
+    #endif
 
     /* the diagonal "dense" block */
     for (int i = 0; i < nscol; i++) {
@@ -197,6 +211,10 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMa
       }
       hr (j1 + i) += nscol;
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time1 += timer.seconds ();
+    timer.reset();
+    #endif
 
     /* the off-diagonal "sparse" blocks */
     int nsup = 0;
@@ -211,6 +229,10 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMa
         }
       }
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time2 += timer.seconds ();
+    timer.reset();
+    #endif
     if (u_in_csc) {
       for (int jcol = j1; jcol < j1 + nscol; jcol++) {
         // move up all the row pointers for all the supernodal blocks
@@ -239,6 +261,10 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMa
     for (int i = 0; i < nsup; i++) {
       check (sup (i)) = 0;
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time3 += timer.seconds ();
+    timer.reset();
+    #endif
   }
 
   // fix hr
@@ -250,6 +276,7 @@ graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMa
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+  std::cout << "    * time        = " << time_count << " + " << time1 << " + " << time2 << " + " << time3 << std::endl;
   #endif
 
   // deepcopy
@@ -294,10 +321,17 @@ void sptrsv_symbolic(
 
   tic.reset();
   graphL_host = read_superlu_graphL<host_graph_t> (kernelHandleL, &L);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_read_L = tic.seconds ();
+  tic.reset();
+  #endif
   graphU_host = read_superlu_graphU<host_graph_t> (kernelHandleU, &L, &U);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-  double time_seconds = tic.seconds ();
-  std::cout << "   Conversion Time (from SuperLU to CSR): " << time_seconds << std::endl;
+  double time_read_U = tic.seconds ();
+  int nrows (graphL_host.row_map.extent(0));
+  std::cout << "   Conversion Time (from SuperLU to CSR): " << time_read_L << " + " << time_read_U
+            << ", nnz = " << graphL_host.row_map(nrows) << " + " << graphU_host.row_map(nrows)
+            << std::endl;
   tic.reset();
   #endif
 
@@ -317,7 +351,7 @@ void sptrsv_symbolic(
                               graphL_host, kernelHandleL,
                               graphU_host, kernelHandleU);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-  time_seconds = tic.seconds ();
+  double time_seconds = tic.seconds ();
   std::cout << "   SpTRSV Supernodal Symbolic Time      : " << time_seconds << std::endl;
   #endif
 }
