@@ -81,48 +81,38 @@
 #include <iostream>
 #include "KokkosBlas1_dot.hpp"
 #include "KokkosKernels_Utils.hpp"
-// in test_common
-//#include "KokkosKernels_TestUtils.hpp"
 
-
-  //FUNCTION THAT IS PART OF KK for generating test matrices
-  //create_random_x_vector and create_random_y_vector can be used together to generate a random 
-  //linear system Ax = y.
-  template<typename vec_t>
-  vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
-    typedef typename vec_t::value_type scalar_t;
-    auto h_x = Kokkos::create_mirror_view (kok_x);
-    for (size_t j = 0; j < h_x.extent(1); ++j){
-      for (size_t i = 0; i < h_x.extent(0); ++i){
-        scalar_t r =
-            static_cast <scalar_t> (rand()) /
-            static_cast <scalar_t> (RAND_MAX / max_value);
-        h_x.access(i, j) = r;
-      }
+// FUNCTION THAT IS PART OF KK for generating test matrices
+// create_random_x_vector and create_random_y_vector can be used together to
+// generate a random linear system Ax = y.
+template <typename vec_t>
+vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
+  typedef typename vec_t::value_type scalar_t;
+  auto h_x = Kokkos::create_mirror_view(kok_x);
+  for (size_t j = 0; j < h_x.extent(1); ++j) {
+    for (size_t i = 0; i < h_x.extent(0); ++i) {
+      scalar_t r = static_cast<scalar_t>(rand()) /
+                   static_cast<scalar_t>(RAND_MAX / max_value);
+      h_x.access(i, j) = r;
     }
-    Kokkos::deep_copy (kok_x, h_x);
-    return kok_x;
   }
-
-
-DotTestData setup_test(DotTestData::matrix_type A_matrix, DotTestData::matrix_type B_matrix) {
-          DotTestData test_data;
-          using matrix_type   = DotTestData::matrix_type;
-          test_data.A_matrix = create_random_x_vector(A_matrix);
-          // rm line 113 if build is good
-          //test.B_matrix = create_random_x_vector(B_matrix);
-          test_data.B_matrix = create_random_x_vector(B_matrix);
-
-        return test_data;
+  Kokkos::deep_copy(kok_x, h_x);
+  return kok_x;
 }
 
-
+DotTestData setup_test(DotTestData::matrix_type A_matrix,
+                       DotTestData::matrix_type B_matrix) {
+  DotTestData test_data;
+  using matrix_type  = DotTestData::matrix_type;
+  test_data.A_matrix = create_random_x_vector(A_matrix);
+  test_data.B_matrix = create_random_x_vector(B_matrix);
+  return test_data;
+}
 
 void run_benchmark(DotTestData& test_data) {
-
-        Kokkos::Timer timer;
-        Kokkos::fence();
-        timer.reset();
-        double result_1D = KokkosBlas::dot(test_data.A_matrix, test_data.B_matrix);
-        double elapsed = timer.seconds();
+  Kokkos::Timer timer;
+  Kokkos::fence();
+  timer.reset();
+  double result_1D = KokkosBlas::dot(test_data.A_matrix, test_data.B_matrix);
+  double elapsed   = timer.seconds();
 }
