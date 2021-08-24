@@ -182,6 +182,12 @@ template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim,
           class ArgResultsPerThread, class ScalarType, class AViewType,
           class BViewType, class CViewType>
 class BatchedSerialGemm;
+
+// TODO: docs
+template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
+          class ScalarType, class AViewType, class BViewType, class CViewType,
+          class ArgBoundsCheck, int tile_m, int tile_n, int tile_k>
+class BatchedDblBufGemm;
 /********************* END forward declarations *********************/
 
 // clang-format off
@@ -243,7 +249,8 @@ template <typename ArgTransA, typename ArgTransB, typename ArgBatchSzDim,
 int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                 const AViewType &A, const BViewType &B, const ScalarType beta,
                 const CViewType &C) {
-  int ret             = 0;
+  int ret = 0;
+  size_t c_m, c_n, c_b;
   using ViewValueType = typename CViewType::value_type;
   // Check for valid input views
   static_assert(Kokkos::Impl::is_view<AViewType>::value,
@@ -308,6 +315,16 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
         "Error: LayoutRight views require BatchLayout::Left");
   }
 
+  if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
+    c_b = C.extent(0);
+    c_m = C.extent(1);
+    c_n = C.extent(2);
+  } else {
+    c_b = C.extent(2);
+    c_m = C.extent(0);
+    c_n = C.extent(1);
+  }
+
   // Begin checking conditions for optimal BatchedGemm invocation.
   using view_scalar_type   = typename CViewType::value_type;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
@@ -331,6 +348,13 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
   }
 
   switch (handle->get_kernel_algo_type()) {
+    case GemmKokkosBatchedAlgos::KK_DBLBUF:
+      ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim, ScalarType,
+                              AViewType, BViewType, CViewType, BoundsCheck::Yes,
+                              32, 32, 8>(handle, alpha, A, B, beta, C)
+                .invoke();
+      break;
+
     case BaseKokkosBatchedAlgos::KK_SERIAL:
       ret = BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
                               ArgBatchSzDim, ResultsPerThread::Rank2,
@@ -341,6 +365,7 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 
     ////////////// HEURISTIC ALGOS //////////////
     case BaseHeuristicAlgos::SQUARE:
+      // TODO: return __gemmSquareHeuristic()
       // Select optimal resultsPerThread param for BatchedSerialGemm
       using bsgResultsPerThread =
           typename std::conditional<!is_vector && on_gpu,
@@ -358,13 +383,32 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                                         Algo::Gemm::Blocked>::type>::type>::
           type;
 
-      // TODO: Add additional heuristic conditionals that look at M,N to
-      // determine
-      //       whether to invoke BatchedSerialGemm, BatchedDblBuf, etc.
-      ret = BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType, ArgBatchSzDim,
+      //      if (on_gpu && c_m >= 20 &&
+      //          (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
+      //        // TODO: invoke TeamShmem
+      //      } else
+      if (on_gpu && ((c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
+        handle->teamSz = handle->vecLen = 8;
+        constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
+        if (c_m % 32 == 0)  // No bounds checking
+          ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                  ScalarType, AViewType, BViewType, CViewType,
+                                  BoundsCheck::No, tile_m, tile_n, tile_k>(
+                    handle, alpha, A, B, beta, C)
+                    .invoke();
+        else
+          ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                  ScalarType, AViewType, BViewType, CViewType,
+                                  BoundsCheck::Yes, tile_m, tile_n, tile_k>(
+                    handle, alpha, A, B, beta, C)
+                    .invoke();
+      } else {
+        ret =
+            BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType, ArgBatchSzDim,
                               bsgResultsPerThread, ScalarType, AViewType,
                               BViewType, CViewType>(alpha, A, B, beta, C)
                 .invoke();
+      }
       break;
 
     case BaseHeuristicAlgos::TALL:
@@ -393,8 +437,6 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
     case GemmKokkosBatchedAlgos::KK_SERIAL_RANK0:
 
     case GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM:
-
-    case GemmKokkosBatchedAlgos::KK_DBLBUF:
 
     default:
       std::ostringstream os;

@@ -395,46 +395,6 @@ class BatchedSerialGemm {
   ArgTransA transA_tag;
   ArgTransB transB_tag;
 
-  // subview_wrapper overloads for handling 3-rank BatchLayout::Left views
-  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
-  KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
-                                              IdxType2 i2, IdxType3 i3,
-                                              const BatchLayout::Left &) const {
-    return Kokkos::subview(v, i1, i2, i3);
-  }
-  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
-  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
-      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
-      const BatchLayout::Left &layout_tag, const Trans::NoTranspose) const {
-    return subview_wrapper(v, i1, i2, i3, layout_tag);
-  }
-  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
-  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
-      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
-      const BatchLayout::Left &layout_tag, const Trans::Transpose) const {
-    return subview_wrapper(v, i1, i3, i2, layout_tag);
-  }
-
-  // subview_wrapper overloads for handling 3-rank BatchLayout::Right views
-  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
-  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
-      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
-      const BatchLayout::Right &) const {
-    return Kokkos::subview(v, i2, i3, i1);
-  }
-  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
-  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
-      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
-      const BatchLayout::Right &layout_tag, const Trans::NoTranspose &) const {
-    return subview_wrapper(v, i1, i2, i3, layout_tag);
-  }
-  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
-  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
-      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
-      const BatchLayout::Right &layout_tag, const Trans::Transpose &) const {
-    return subview_wrapper(v, i1, i3, i2, layout_tag);
-  }
-
   void run() {
     using execution_space = typename CViewType::device_type::execution_space;
     using policy_type =
