@@ -56,6 +56,7 @@
 
 #include "Kokkos_ArithTraits.hpp"
 #include <Kokkos_Core.hpp>
+#include "Kokkos_Random.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include <sys/stat.h>
 
@@ -64,6 +65,27 @@ namespace KokkosKernels{
 
 namespace Impl{
 
+// Get the interval for Kokkos::fill_random
+// For real, interval is (-mag, mag)
+// For complex, both real and imaginary parts will have interval (-mag, mag)
+template <typename Scalar>
+inline void getRandomBounds(double mag, Scalar& start, Scalar& end) {
+  start = -mag * Kokkos::ArithTraits<Scalar>::one();
+  end   = mag * Kokkos::ArithTraits<Scalar>::one();
+}
+
+template <>
+inline void getRandomBounds(double mag, Kokkos::complex<float>& start, Kokkos::complex<float>& end) {
+  start = Kokkos::complex<float>(-mag, -mag);
+  end   = Kokkos::complex<float>(mag, mag);
+}
+
+template<>
+inline void getRandomBounds(double mag, Kokkos::complex<double>& start, Kokkos::complex<double>& end)
+{
+  start = Kokkos::complex<double>(-mag, -mag);
+  end = Kokkos::complex<double>(mag, mag);
+}
 
 //MD: Bases on Christian's sparseMatrix_generate function in test_crsmatrix.cpp file.
 template< typename ScalarType , typename OrdinalType, typename SizeType>
@@ -112,12 +134,17 @@ void kk_sparseMatrix_generate(
         if (!is_already_in_the_row) {
 
           colInd[k]= pos;
-          values[k] = 100.0*rand()/RAND_MAX-50.0;
           break;
         }
       }
     }
   }
+  //Sample each value from uniform (-50, 50) for real types, or (-50 - 50i, 50 + 50i) for complex types.
+  Kokkos::View<ScalarType*, Kokkos::HostSpace> valuesView(values, nnz);
+  ScalarType randStart, randEnd;
+  getRandomBounds(50.0, randStart, randEnd);
+  Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> pool(13718);
+  Kokkos::fill_random(valuesView, pool, randStart, randEnd);
 }
 
 template< typename ScalarType , typename OrdinalType, typename SizeType>
