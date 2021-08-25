@@ -185,8 +185,9 @@ class BatchedSerialGemm;
 
 // TODO: docs
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
-          class ScalarType, class AViewType, class BViewType, class CViewType,
-          class ArgBoundsCheck, int tile_m, int tile_n, int tile_k>
+          class HandleType, class ScalarType, class AViewType, class BViewType,
+          class CViewType, class ArgBoundsCheck, int tile_m, int tile_n,
+          int tile_k>
 class BatchedDblBufGemm;
 /********************* END forward declarations *********************/
 
@@ -246,7 +247,7 @@ class BatchedDblBufGemm;
 template <typename ArgTransA, typename ArgTransB, typename ArgBatchSzDim,
           typename BatchedGemmHandleType, typename ScalarType,
           typename AViewType, typename BViewType, typename CViewType>
-int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
+int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                 const AViewType &A, const BViewType &B, const ScalarType beta,
                 const CViewType &C) {
   int ret = 0;
@@ -349,11 +350,14 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 
   switch (handle->get_kernel_algo_type()) {
     case GemmKokkosBatchedAlgos::KK_DBLBUF:
-      ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim, ScalarType,
-                              AViewType, BViewType, CViewType, BoundsCheck::Yes,
-                              32, 32, 8>(handle, alpha, A, B, beta, C)
-                .invoke();
-      break;
+
+      ret =
+          BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                            BatchedGemmHandleType, ScalarType, AViewType,
+                            BViewType, CViewType, BoundsCheck::Yes, 32, 32, 8>(
+              handle, alpha, A, B, beta, C)
+              .invoke();
+      // TODO: break;
 
     case BaseKokkosBatchedAlgos::KK_SERIAL:
       ret = BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
@@ -392,16 +396,17 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
         if (c_m % 32 == 0)  // No bounds checking
           ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                  ScalarType, AViewType, BViewType, CViewType,
-                                  BoundsCheck::No, tile_m, tile_n, tile_k>(
-                    handle, alpha, A, B, beta, C)
+                                  BatchedGemmHandleType, ScalarType, AViewType,
+                                  BViewType, CViewType, BoundsCheck::No, tile_m,
+                                  tile_n, tile_k>(handle, alpha, A, B, beta, C)
                     .invoke();
         else
-          ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                  ScalarType, AViewType, BViewType, CViewType,
-                                  BoundsCheck::Yes, tile_m, tile_n, tile_k>(
-                    handle, alpha, A, B, beta, C)
-                    .invoke();
+          ret =
+              BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                BatchedGemmHandleType, ScalarType, AViewType,
+                                BViewType, CViewType, BoundsCheck::Yes, tile_m,
+                                tile_n, tile_k>(handle, alpha, A, B, beta, C)
+                  .invoke();
       } else {
         ret =
             BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType, ArgBatchSzDim,
@@ -453,5 +458,6 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
 #include "KokkosBatched_Gemm_Team_Impl.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
+#include "KokkosBatched_Gemm_DblBuf_Impl.hpp"
 
 #endif

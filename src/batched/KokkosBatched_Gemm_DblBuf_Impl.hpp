@@ -43,7 +43,7 @@
 #define __KOKKOSBATCHED_GEMM_DBLBUF_IMPL_HPP__
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Gemm_DblBuf_Internal.hpp"
+// TODO: #include "KokkosBatched_Gemm_DblBuf_Internal.hpp"
 
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
@@ -60,102 +60,121 @@ namespace KokkosBatched {
 ///
 
 /********************* BEGIN functor-level routines *********************/
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType, typename BoundsCheckType>
-KOKKOS_INLINE_FUNCTION int
-DblBufGemm<Trans::NoTranspose, Trans::NoTranspose>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
-  //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-  //      C.extent(0), C.extent(1), A.extent(0), alpha,
-  //      A.data(), A.stride_0(), A.stride_1(),
-  //      B.data(), B.stride_0(), B.stride_1(), beta,
-  //      C.data(), C.stride_0(), C.stride_1());
-  return 0;
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType, typename BoundsCheckType>
-KOKKOS_INLINE_FUNCTION int
-DblBufGemm<Trans::NoTranspose, Trans::Transpose>::invoke(const ScalarType alpha,
-                                                         const AViewType &A,
-                                                         const BViewType &B,
-                                                         const ScalarType beta,
-                                                         const CViewType &C) {
-  //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-  //      C.extent(0), C.extent(1), A.extent(0), alpha,
-  //      A.data(), A.stride_0(), A.stride_1(),
-  //      B.data(), B.stride_1(), B.stride_0(), beta,
-  //      C.data(), C.stride_0(), C.stride_1());
-  return 0;
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType, typename BoundsCheckType>
-KOKKOS_INLINE_FUNCTION int
-DblBufGemm<Trans::Transpose, Trans::NoTranspose>::invoke(const ScalarType alpha,
-                                                         const AViewType &A,
-                                                         const BViewType &B,
-                                                         const ScalarType beta,
-                                                         const CViewType &C) {
-  //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-  //      C.extent(0), C.extent(1), A.extent(1), alpha,
-  //      A.data(), A.stride_1(), A.stride_0(),
-  //      B.data(), B.stride_0(), B.stride_1(), beta,
-  //      C.data(), C.stride_0(), C.stride_1());
-  return 0;
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType, typename BoundsCheckType>
-KOKKOS_INLINE_FUNCTION int
-DblBufGemm<Trans::Transpose, Trans::Transpose>::invoke(const ScalarType alpha,
-                                                       const AViewType &A,
-                                                       const BViewType &B,
-                                                       const ScalarType beta,
-                                                       const CViewType &C) {
-  //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-  //      C.extent(0), C.extent(1), A.extent(1), alpha,
-  //      A.data(), A.stride_1(), A.stride_0(),
-  //      B.data(), B.stride_1(), B.stride_0(), beta,
-  //      C.data(), C.stride_0(), C.stride_1());
-  return 0;
-}
+// template <>
+// template <typename ScalarType, typename AViewType, typename BViewType,
+//           typename CViewType, typename BoundsCheckType>
+// KOKKOS_INLINE_FUNCTION int
+// DblBufGemm<Trans::NoTranspose, Trans::NoTranspose>::invoke(
+//     const ScalarType alpha, const AViewType &A, const BViewType &B,
+//     const ScalarType beta, const CViewType &C) {
+//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
+//   //      C.extent(0), C.extent(1), A.extent(0), alpha,
+//   //      A.data(), A.stride_0(), A.stride_1(),
+//   //      B.data(), B.stride_0(), B.stride_1(), beta,
+//   //      C.data(), C.stride_0(), C.stride_1());
+//   return 0;
+// }
+//
+// template <>
+// template <typename ScalarType, typename AViewType, typename BViewType,
+//           typename CViewType, typename BoundsCheckType>
+// KOKKOS_INLINE_FUNCTION int
+// DblBufGemm<Trans::NoTranspose, Trans::Transpose>::invoke(const ScalarType
+// alpha,
+//                                                          const AViewType &A,
+//                                                          const BViewType &B,
+//                                                          const ScalarType
+//                                                          beta, const
+//                                                          CViewType &C) {
+//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
+//   //      C.extent(0), C.extent(1), A.extent(0), alpha,
+//   //      A.data(), A.stride_0(), A.stride_1(),
+//   //      B.data(), B.stride_1(), B.stride_0(), beta,
+//   //      C.data(), C.stride_0(), C.stride_1());
+//   return 0;
+// }
+//
+// template <>
+// template <typename ScalarType, typename AViewType, typename BViewType,
+//           typename CViewType, typename BoundsCheckType>
+// KOKKOS_INLINE_FUNCTION int
+// DblBufGemm<Trans::Transpose, Trans::NoTranspose>::invoke(const ScalarType
+// alpha,
+//                                                          const AViewType &A,
+//                                                          const BViewType &B,
+//                                                          const ScalarType
+//                                                          beta, const
+//                                                          CViewType &C) {
+//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
+//   //      C.extent(0), C.extent(1), A.extent(1), alpha,
+//   //      A.data(), A.stride_1(), A.stride_0(),
+//   //      B.data(), B.stride_0(), B.stride_1(), beta,
+//   //      C.data(), C.stride_0(), C.stride_1());
+//   return 0;
+// }
+//
+// template <>
+// template <typename ScalarType, typename AViewType, typename BViewType,
+//           typename CViewType, typename BoundsCheckType>
+// KOKKOS_INLINE_FUNCTION int
+// DblBufGemm<Trans::Transpose, Trans::Transpose>::invoke(const ScalarType
+// alpha,
+//                                                        const AViewType &A,
+//                                                        const BViewType &B,
+//                                                        const ScalarType beta,
+//                                                        const CViewType &C) {
+//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
+//   //      C.extent(0), C.extent(1), A.extent(1), alpha,
+//   //      A.data(), A.stride_1(), A.stride_0(),
+//   //      B.data(), B.stride_1(), B.stride_0(), beta,
+//   //      C.data(), C.stride_0(), C.stride_1());
+//   return 0;
+// }
 /********************* END functor-level routines *********************/
 
 /********************* BEGIN non-functor-level routines *********************/
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
-          class ScalarType, class AViewType, class BViewType, class CViewType,
-          class ArgBoundsCheck, int tile_m, int tile_n, int tile_k>
+          class HandleType, class ScalarType, class AViewType, class BViewType,
+          class CViewType, class ArgBoundsCheck, int tile_m, int tile_n,
+          int tile_k>
 class BatchedDblBufGemm {
  private:
+  ArgTransA transA_tag;
+  ArgTransB transB_tag;
+  ArgBatchSzDim batch_layout_tag;
+  HandleType *const handle;
   AViewType A;
   BViewType B;
   CViewType C;
   ScalarType alpha, beta;
-  size_t divisor, c_cols, batch_size;
-  ArgBatchSzDim batch_layout_tag;
-  ArgTransA transA_tag;
-  ArgTransB transB_tag;
   ArgBoundsCheck bounds_check_tag;
+  size_t league_size, team_size, vector_len, shmem_size;
 
   void run() {
     using execution_space = typename CViewType::device_type::execution_space;
-    using policy_type     = Kokkos::RangePolicy<execution_space>;
-    Kokkos::parallel_for("BatchedDblBufGemm", policy_type(0, batch_size),
-                         *this);
+    using policy_type     = Kokkos::TeamPolicy<execution_space>;
+    // TODO: create functor_type
+
+    policy_type team_policy(league_size, team_size, vector_len);
+    team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+
+    Kokkos::parallel_for("BatchedDblBufGemm", *this);
   }
 
  public:
-  int invoke() { return 0; }
+  int invoke() {
+    // constexpr int reg_m = tile_m / tile_k;
+    // constexpr int reg_n = tile_n / tile_k + 2*!!(tile_n % tile_k);
+    // constexpr int stride_m = tile_m / reg_m;
+    // constexpr int stride_n = tile_n / reg_n;
+    //  TODO: set league, team, vector, and shmem
+    // run();
+    return 0;
+  }
 
-  BatchedDblBufGemm(ScalarType _alpha, AViewType _A, BViewType _B,
-                    ScalarType _beta, CViewType _C)
-      : A(_A), B(_B), C(_C), alpha(_alpha), beta(_beta) {}
+  BatchedDblBufGemm(HandleType *const _handle, ScalarType _alpha, AViewType _A,
+                    BViewType _B, ScalarType _beta, CViewType _C)
+      : handle(_handle), A(_A), B(_B), C(_C), alpha(_alpha), beta(_beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int &i) const { return; }
