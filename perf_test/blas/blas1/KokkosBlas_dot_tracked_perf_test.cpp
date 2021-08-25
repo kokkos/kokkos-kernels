@@ -52,8 +52,6 @@
 #include <PerfTestUtilities.hpp>
 #endif
 
-// Recall -- testData is a tempated class,
-// setup_test is a templated function
 template <class ExecSpace>
 testData<ExecSpace> setup_test(int m, int repeat) {
   // use constructor to generate test data

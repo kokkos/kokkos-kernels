@@ -42,7 +42,7 @@
 //@HEADER
 */
 #include "KokkosBlas_common.hpp"
-#include "KokkosBlas_trtri_perf_test.hpp"
+#include "blas/blas3/KokkosBlas_trtri_perf_test.hpp"
 
 #include <cstdlib>
 #include <unistd.h>

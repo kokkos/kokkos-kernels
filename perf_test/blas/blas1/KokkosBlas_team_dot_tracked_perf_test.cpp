@@ -51,8 +51,7 @@
 #include <PerfTestUtilities.hpp>
 #endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 
-// Recall -- testData is a tempated class,
-// setup_test is a templated function
+
 template <class ExecSpace, class Layout>
 testData_rps_team_dot<ExecSpace, Layout> setup_test(int m, int repeat,
                                                     bool layoutLeft,

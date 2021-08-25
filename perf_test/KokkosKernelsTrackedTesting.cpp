@@ -8,13 +8,11 @@
 #include <Kokkos_Core.hpp>
 // For RPS version of BLAS Level-1 Tests
 #include "blas/blas1/tracked_testing.hpp"
-
 #include "blas/blas2/tracked_testing.hpp"
 
 int main(int argc, char* argv[]) {
   {
     // argument parsing for setting input data at runtime
-
     std::string inputDataPath;
     if (argc == 1) {
       //    print_help();
