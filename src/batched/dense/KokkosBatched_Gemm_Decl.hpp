@@ -349,16 +349,6 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
   }
 
   switch (handle->get_kernel_algo_type()) {
-    case GemmKokkosBatchedAlgos::KK_DBLBUF:
-
-      ret =
-          BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
-                            BatchedGemmHandleType, ScalarType, AViewType,
-                            BViewType, CViewType, BoundsCheck::Yes, 32, 32, 8>(
-              handle, alpha, A, B, beta, C)
-              .invoke();
-      // TODO: break;
-
     case BaseKokkosBatchedAlgos::KK_SERIAL:
       ret = BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
                               ArgBatchSzDim, ResultsPerThread::Rank2,
@@ -415,6 +405,15 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                 .invoke();
       }
       break;
+
+    case GemmKokkosBatchedAlgos::KK_DBLBUF:
+      ret =
+          BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                            BatchedGemmHandleType, ScalarType, AViewType,
+                            BViewType, CViewType, BoundsCheck::Yes, 32, 32, 8>(
+              handle, alpha, A, B, beta, C)
+              .invoke();
+      // TODO: break;
 
     case BaseHeuristicAlgos::TALL:
 
