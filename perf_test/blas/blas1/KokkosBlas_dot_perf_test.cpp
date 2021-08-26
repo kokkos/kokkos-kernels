@@ -46,17 +46,13 @@
 #include <blas/KokkosBlas1_dot.hpp>
 #include <Kokkos_Random.hpp>
 
-// For RPS implementation
-#include "KokkosBlas_dot_perf_test.hpp"
-
-
 struct Params {
   int use_cuda    = 0;
   int use_openmp  = 0;
   int use_threads = 0;
   // m is vector length
-  int m           = 100000;
-  int repeat      = 1;
+  int m      = 100000;
+  int repeat = 1;
 };
 
 void print_options() {
@@ -140,11 +136,12 @@ void run(int m, int repeat) {
 
   // Create 1D view w/ Device as the ExecSpace; this is an input vector
   // A(view_alloc(WithoutInitializing, "label"), m, n);
-  Kokkos::View<Scalar*, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
+  Kokkos::View<Scalar*, Device> x(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
 
   // Create 1D view w/ Device as the ExecSpace; this is the output vector
-  Kokkos::View<Scalar*, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
- 
+  Kokkos::View<Scalar*, Device> y(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you
@@ -162,8 +159,9 @@ void run(int m, int repeat) {
   Kokkos::fence();
   Kokkos::Timer timer;
 
+  double result;
   for (int i = 0; i < repeat; i++) {
-    double result = KokkosBlas::dot(x, y);
+    result = KokkosBlas::dot(x, y);
     ExecSpace().fence();
   }
 
@@ -176,17 +174,13 @@ void run(int m, int repeat) {
   printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
 }
 
-
-
 int main(int argc, char** argv) {
-
   Params params;
 
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
   const int device_id = params.use_cuda - 1;
-
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
@@ -198,41 +192,40 @@ int main(int argc, char** argv) {
 
   bool useSerial = !useOMP && !useCUDA;
 
-
-  if (useThreads){
+  if (useThreads) {
 #if defined(KOKKOS_ENABLE_THREADS)
-      run<Kokkos::Threads>(params.m, params.repeat);
+    run<Kokkos::Threads>(params.m, params.repeat);
 #else
     std::cout << "ERROR:  PThreads requested, but not available.\n";
-  return 1;
+    return 1;
 #endif
-}
-
-    if (useOMP) {
-#if defined(KOKKOS_ENABLE_OPENMP)
-        run<Kokkos::OpenMP>(params.m, params.repeat);
-#else
-  std::cout << "ERROR: OpenMP requested, but not available.\n";
-  return 1;
-#endif
-    }
-
-    if (useCUDA) {
-#if defined(KOKKOS_ENABLE_CUDA)
-        run<Kokkos::Cuda>(params.m, params.repeat);
-#else
-  std::cout << "ERROR: CUDA requested, but not available.\n";
-  return 1;
-#endif
-    }
-    if (useSerial) {
-#if defined(KOKKOS_ENABLE_SERIAL)
-        run<Kokkos::Serial>(params.m, params.repeat);
-#else
-  std::cout << "ERROR: Serial device requested, but not available.\n";
-  return 1;
-#endif
-    }
-    Kokkos::finalize();
-    return 0;
   }
+
+  if (useOMP) {
+#if defined(KOKKOS_ENABLE_OPENMP)
+    run<Kokkos::OpenMP>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: OpenMP requested, but not available.\n";
+    return 1;
+#endif
+  }
+
+  if (useCUDA) {
+#if defined(KOKKOS_ENABLE_CUDA)
+    run<Kokkos::Cuda>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: CUDA requested, but not available.\n";
+    return 1;
+#endif
+  }
+  if (useSerial) {
+#if defined(KOKKOS_ENABLE_SERIAL)
+    run<Kokkos::Serial>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: Serial device requested, but not available.\n";
+    return 1;
+#endif
+  }
+  Kokkos::finalize();
+  return 0;
+}

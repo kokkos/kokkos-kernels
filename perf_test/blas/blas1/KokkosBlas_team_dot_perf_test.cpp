@@ -42,62 +42,6 @@
 //@HEADER
 */
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// The Level 1 BLAS perform scalar, vector and vector-vector operations;
-
-// https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1%3A%3Ateam-dot
-//
-// Usage: result = KokkosBlas::Experimental::dot(team,x,y);
-// 
-// Multiplies each value of x(i) with y(i), and computes the total within 
-// a parallel kernel using a TeamPolicy execution policy
-
-// Interface Single Vector only
-//
-// Parameters:
-/*
-    TeamType: A Kokkos::TeamPolicy<...>::member_type
-    VectorX: A rank-1 Kokkos::View
-    VectorY: A rank-1 Kokkos::View
-*/
-// REQUIREMENTS:
-// Y.rank == 1 or X.rank == 1
-// Y.extent(0) == X.extent(0)
-
-// Dot Test WITH TEAM POLICY design:
-// 1) create 1D View containing 1D matrix, aka a vector; this will be your X
-// input matrix; 2) create 1D View containing 1D matrix, aka a vector; this will
-// be your Y input matrix; 3) perform the dot operation on the two inputs, and
-// capture result in "result"
-
-// Here, m represents the desired length for each 1D matrix / vector;
-// "m" is used here, because code from another test was adapted for this test.
-//  
-//  Top Level Execution Policies:
-//  https://github.com/kokkos/kokkos/wiki/Execution-Policies
-//
-//  TeamPolicy
-//  https://github.com/kokkos/kokkos/wiki/Kokkos%3A%3ATeamPolicy
-//
-/*
-Policy 	        Description
-RangePolicy 	Each iterate is an integer in a contiguous range
-MDRangePolicy 	Each iterate for each rank is an integer in a contiguous range
-TeamPolicy      Assigns to each iterate in a contiguous range a team of threads
-*/
-
-/// Nested Execution Policies are used to dispatch parallel work inside of an already executing parallel region,
-//  either dispatched with a TeamPolicy or a task policy.
-/*
- * Policy 	            Description
-TeamThreadRange 	Used inside of a TeamPolicy kernel to perform nested parallel loops split over threads of a team.
-TeamVectorRange 	Used inside of a TeamPolicy kernel to perform nested parallel loops split over threads of a team and their vector lanes.
-ThreadVectorRange 	Used inside of a TeamPolicy kernel to perform nested parallel loops with vector lanes of a thread.
-*/
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_team_dot.hpp>
 #include <Kokkos_Random.hpp>
@@ -107,8 +51,8 @@ struct Params {
   int use_openmp  = 0;
   int use_threads = 0;
   // m is vector length, or number of rows
-  int m           = 100000;
-  int repeat      = 1;
+  int m      = 100000;
+  int repeat = 1;
 };
 
 void print_options() {
@@ -150,56 +94,75 @@ int parse_inputs(Params& params, int argc, char** argv) {
   return 0;
 }
 
+template <class Vector>
+struct teamDotFunctor {
+  // Compile - time check to see if your data type is a Kokkos::View:
+  static_assert(Kokkos::Impl::is_view<Vector>::value,
+                "Vector is not a "
+                "Kokkos::View.");
+
+  using Scalar          = typename Vector::non_const_value_type;
+  using execution_space = typename Vector::execution_space;
+  typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+  typedef typename team_policy::member_type team_member;
+
+  // Declare Kokkos::View Vectors, x and y
+  Vector x;
+  Vector y;
+
+  KOKKOS_INLINE_FUNCTION void operator()(const team_member& team) const {
+    KokkosBlas::Experimental::dot(team, x, y);
+  }
+  // Constructor
+  teamDotFunctor<Vector>(Vector X_, Vector Y_) {
+    x = X_;
+    y = Y_;
+  }
+};
 
 template <class ExecSpace>
 void run(int m, int repeat) {
   // Declare type aliases
-    using Scalar   = double;
-    using MemSpace = typename ExecSpace::memory_space;
-    using Device   = Kokkos::Device<ExecSpace, MemSpace>;
+  using Scalar   = double;
+  using MemSpace = typename ExecSpace::memory_space;
+  using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-     // For the Team implementation of dot; ExecSpace is implicit;
-     using policy = Kokkos::TeamPolicy<ExecSpace>;
-     using member_type = typename policy::member_type;
+  // For the Team implementation of dot; ExecSpace is implicit;
+  using policy      = Kokkos::TeamPolicy<ExecSpace>;
+  using member_type = typename policy::member_type;
 
   // Create 1D view w/ Device as the ExecSpace; this is an input vector
   Kokkos::View<Scalar*, MemSpace> x("X", m);
-
   // Create 1D view w/ Device as the ExecSpace; this is the output vector
   Kokkos::View<Scalar*, MemSpace> y("Y", m);
 
-  //
   // Here, deep_copy is filling / copying values into Host memory from Views X
   // and Y
   Kokkos::deep_copy(x, 3.0);
   Kokkos::deep_copy(y, 2.0);
 
-  std::cout << "Running BLAS Level 1 Kokkos Teams-based implementation DOT performance experiment ("
+  std::cout << "Running BLAS Level 1 Kokkos Teams-based implementation DOT "
+               "performance experiment ("
             << ExecSpace::name() << ")\n";
 
   std::cout << "Each test input vector has a length of " << m << std::endl;
 
   // Warm up run of dot:
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>> teamDotFunctorWarmUpInstance(
+      x, y);
 
-  Kokkos::parallel_for("TeamDotDemoUsage",
-                  policy(1, Kokkos::AUTO),
-                  KOKKOS_LAMBDA(const member_type& team){
-                       });
-
-  // To guarantee a kernel has finished, a developer should call the fence of the execution space on which the kernel is being executed. 
-  // Otherwise, it depends on the execution space where the loop executes, and whether this execution space implements a barrier.
+  Kokkos::parallel_for("TeamDotDemoUsage -- Warm Up Run",
+                       policy(1, Kokkos::AUTO), teamDotFunctorWarmUpInstance);
 
   Kokkos::fence();
   Kokkos::Timer timer;
 
   // Live test of dot:
-  Kokkos::parallel_for("TeamDotDemoUsage",
-                       policy(1, Kokkos::AUTO),
-                       KOKKOS_LAMBDA (const member_type& team)
-                       {
-                       double result = KokkosBlas::Experimental::dot(team, x, y);
-                       }
-                       );
+
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>>
+      teamDotFunctorLiveTestInstance(x, y);
+  Kokkos::parallel_for("TeamDotDemoUsage -- Live Test", policy(1, Kokkos::AUTO),
+                       teamDotFunctorLiveTestInstance);
 
   ExecSpace().fence();
 
@@ -231,44 +194,41 @@ int main(int argc, char** argv) {
 
   bool useSerial = !useOMP && !useCUDA;
 
-  if (useThreads)
-  {
+  if (useThreads) {
 #if defined(KOKKOS_ENABLE_THREADS)
-    if (params.use_threads)
-      run<Kokkos::Threads, Kokkos::LayoutLeft>(params.m, params.repeat);
-    else
-      run<Kokkos::Threads, Kokkos::LayoutRight>(params.m, params.repeat);
+    run<Kokkos::Threads>(params.m, params.repeat);
 #else
     std::cout << "ERROR:  PThreads requested, but not available.\n";
-  return 1;
+    return 1;
 #endif
-}
-
-    if (useOMP) {
-#if defined(KOKKOS_ENABLE_OPENMP)
-        run<Kokkos::OpenMP>(params.m, params.repeat);
-#else
-  std::cout << "ERROR: OpenMP requested, but not available.\n";
-  return 1;
-#endif
-    }
-
-    if (useCUDA) {
-#if defined(KOKKOS_ENABLE_CUDA)
-        run<Kokkos::Cuda>(params.m, params.repeat);
-#else
-  std::cout << "ERROR: CUDA requested, but not available.\n";
-  return 1;
-#endif
-    }
-    if (useSerial) {
-#if defined(KOKKOS_ENABLE_SERIAL)
-        run<Kokkos::Serial>(params.m, params.repeat);
-#else
-  std::cout << "ERROR: Serial device requested, but not available; here, implementation of dot is explicitly parallel.\n";
-  return 1;
-#endif
-    }
-    Kokkos::finalize();
-    return 0;
   }
+
+  if (useOMP) {
+#if defined(KOKKOS_ENABLE_OPENMP)
+    run<Kokkos::OpenMP>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: OpenMP requested, but not available.\n";
+    return 1;
+#endif
+  }
+
+  if (useCUDA) {
+#if defined(KOKKOS_ENABLE_CUDA)
+    run<Kokkos::Cuda>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: CUDA requested, but not available.\n";
+    return 1;
+#endif
+  }
+  if (useSerial) {
+#if defined(KOKKOS_ENABLE_SERIAL)
+    run<Kokkos::Serial>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: Serial device requested, but not available; here, "
+                 "implementation of dot is explicitly parallel.\n";
+    return 1;
+#endif
+  }
+  Kokkos::finalize();
+  return 0;
+}

@@ -12,14 +12,12 @@
 #include <common/KernelBase.hpp>
 #include <dirent.h>
 
-
 namespace test {
-  void set_input_data_path(const std::string& path_to_data);
+void set_input_data_path(const std::string &path_to_data);
 
-  std::string get_input_data_path();
+std::string get_input_data_path();
 
-
-}
+}  // namespace test
 
 namespace KokkosSparse {
 
@@ -27,6 +25,16 @@ template <class Scalar, class Ordinal, class ExecutionSpace, class,
           class Offset>
 class CrsMatrix;
 }
+
+inline bool isDirectory(std::string path) {
+  DIR *dirp;  // Pointer to a directory
+  dirp = opendir(path.c_str());
+  // bool var indicating that dirp is not NULL, i.e., a true statement
+  bool isDir = dirp != NULL;
+  if (dirp != NULL) closedir(dirp);
+  return isDir;
+}
+
 /** TODO: fix in C++17 */
 inline std::vector<std::string> get_directories(std::string path) {
   DIR *d;
@@ -36,10 +44,10 @@ inline std::vector<std::string> get_directories(std::string path) {
   if (d) {
     while ((dir = readdir(d)) != NULL) {
       std::string nname = std::string(dir->d_name);
-      if (nname.find(".") != std::string::npos) {
-        continue;
-      }
-      paths.emplace_back(dir->d_name);
+      // Check to see if item is a directory
+      if (isDirectory(path + '/' + nname))
+        // std::vector::emplace_back: insert a new element to the end of vector
+        paths.emplace_back(dir->d_name + nname);
     }
     closedir(d);
   }
@@ -67,7 +75,7 @@ struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
 };  // namespace readers
 template <class... SubComponents>
 struct data_retriever {
-  std::string root_path; 
+  std::string root_path;
   std::string sub_path;
   struct test_case {
     std::string filename;
@@ -84,8 +92,8 @@ struct data_retriever {
   template <class... Locations>
   data_retriever(std::string path_to_data, Locations... locations)
       : sub_path(path_to_data) {
-     root_path = test::get_input_data_path();
-  
+    root_path = test::get_input_data_path();
+
     // TODO: way to list the directories in the root path
     std::vector<std::string> data_repos = get_directories(root_path + "/");
     // TODO: list directories in subpaths
