@@ -183,6 +183,8 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
             &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
             matCdim1, matCdim2, 1.5, 3.0);
       } else {
+        // TODO: Check for DblBuf runtime errors related to team_size and
+        // vector_len limits
         try {
           // Allocate these views to invoke BatchedGemm with an unsupported algo
           // type

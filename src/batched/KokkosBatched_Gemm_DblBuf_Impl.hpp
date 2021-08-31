@@ -180,9 +180,9 @@ class BatchedDblBufGemm {
 
     // Compile-time expressions required for functor-level register allocations:
     //   Each team uses a shmem buffer and statically allocated register buffer.
-    //   Below, we need a 1-1 mapping between device threads and register
-    //   allocations to ensure that each device thread does not step on another
-    //   device threads registers. In short, we must map register allocations
+    //   Below, we need a 1-1 mapping between GPU threads and register
+    //   allocations to ensure that each GPU thread does not step on another
+    //   GPU threads' registers. In short, we must map register allocations
     //   to parallel_for loop bounds.
     constexpr int reg_m    = TILE_M / TILE_K;
     constexpr int reg_n    = TILE_N / TILE_K + 2 * !!(TILE_N % TILE_K);
@@ -196,33 +196,53 @@ class BatchedDblBufGemm {
     // Each team solves a single tile. Within each tile, the team solves
     // all __n_tile_k_tiles one at a time.
     size_t league_size = __c_batch_size * functor.n_sub_tiles;
-    size_t team_size   = stride_m;
-    size_t vector_len  = stride_n;
+    int team_size      = stride_m;
+    int vector_len     = stride_n;
 
     const int max_team_size =
         policy_type(league_size, Kokkos::AUTO, vector_len)
             .team_size_max(functor, Kokkos::ParallelForTag());
+    if (team_size > max_team_size) {
+      if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space_type>()) {
+        std::ostringstream os;
+        os << "KokkosBatched::BatchedGemm with kernelAlgoType = "
+           << std::to_string(__handle->get_kernel_algo_type())
+           << " does not support team_size > " << std::to_string(max_team_size)
+           << "." << std::endl
+           << " The tile dimensions must be adjusted." << std::endl;
+        Kokkos::Impl::throw_runtime_exception(os.str());
+      } else {
+        team_size = max_team_size;
+      }
+    }
+
     const int max_vector_len =
         policy_type(league_size, team_size, Kokkos::AUTO).vector_length_max();
-
-    if (team_size > max_team_size) {
-      // TODO: check for GPU execution spaces and error noting tile size must be
-      // changed
-    }
-
     if (vector_len > max_vector_len) {
-      // TODO: check for GPU execution spaces and error noting tile size must be
-      // changed
+      if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space_type>()) {
+        std::ostringstream os;
+        os << "KokkosBatched::BatchedGemm with kernelAlgoType = "
+           << std::to_string(__handle->get_kernel_algo_type())
+           << " does not support vector_len > "
+           << std::to_string(max_vector_len) << "." << std::endl
+           << " The tile dimensions must be adjusted." << std::endl;
+        Kokkos::Impl::throw_runtime_exception(os.str());
+      } else {
+        vector_len = max_vector_len;
+      }
     }
 
-    printf(
-        "max_team_size=%d, team_size=%lu\n"
-        "max_vector_len=%d, vector_len=%lu\n"
-        "TILE_M=%u, TILE_N=%u, TILE_K=%u\n",
-        max_team_size, team_size, max_vector_len, vector_len, TILE_M, TILE_N,
-        TILE_K);
+    if (__handle->enableDebug) {
+      std::cout << "max_team_size:" << max_team_size
+                << " team_size:" << team_size << std::endl
+                << "max_vector_len:" << max_vector_len
+                << " vector_len:" << vector_len << std::endl
+                << "TILE_M:" << TILE_M << std::endl
+                << "TILE_N:" << TILE_N << std::endl
+                << "TILE_K:" << TILE_K << std::endl;
+    }
 
-    // TODO: Use statically allocated shmem here
+    // TODO: Use statically allocated shmem
     int shmem_size = view_type_2d_scratch::shmem_size(TILE_M, TILE_K) +
                      view_type_2d_scratch::shmem_size(TILE_K, TILE_N);
 
