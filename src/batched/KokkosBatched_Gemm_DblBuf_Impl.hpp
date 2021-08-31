@@ -148,15 +148,16 @@ class BatchedDblBufGemm {
   ArgTransB __transB_tag;
   ArgBatchSzDim __batch_layout_tag;
   ArgBoundsCheck __bounds_check_tag;
-  int __c_batch_size, __c_m, __c_n;
+  int __c_batch_size, __c_m, __c_n, __k;
 
+  using view_value_type      = typename CViewType::value_type;
   using layout_type          = typename CViewType::array_layout;
   using device_type          = typename CViewType::device_type;
   using execution_space_type = typename device_type::execution_space;
   using scratch_space_type =
       typename execution_space_type::scratch_memory_space;
   using view_type_2d_scratch =
-      Kokkos::View<ScalarType **, layout_type, scratch_space_type>;
+      Kokkos::View<view_value_type **, layout_type, scratch_space_type>;
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A,
@@ -256,44 +257,305 @@ class BatchedDblBufGemm {
   template <class MemberType, int REG_M, int REG_N, int STRIDE_M, int STRIDE_N>
   class __Functor {
    private:
+    BatchedDblBufGemm &__ei;
     size_t __n_tile_k_tiles;
-    unsigned __tile_m, __tile_n, __tile_k;
+    unsigned __tile_m, __tile_n, __tile_k, __tiles_per_col, __tiles_per_row;
 
    public:
     size_t n_sub_tiles;
 
     __Functor(BatchedDblBufGemm &ei, unsigned tile_m = 1, unsigned tile_n = 1,
               unsigned tile_k = 1)
-        : __tile_m(tile_m), __tile_n(tile_n), __tile_k(tile_k) {
-      unsigned k;
+        : __ei(ei), __tile_m(tile_m), __tile_n(tile_n), __tile_k(tile_k) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
         ei.__c_batch_size = ei.__C.extent_int(0);
         ei.__c_m          = ei.__C.extent_int(1);
         ei.__c_n          = ei.__C.extent_int(2);
-        k                 = ei.__A.extent_int(2);
+        ei.__k            = ei.__A.extent_int(2);
       } else {
         ei.__c_batch_size = ei.__C.extent_int(2);
         ei.__c_m          = ei.__C.extent_int(0);
         ei.__c_n          = ei.__C.extent_int(1);
-        k                 = ei.__A.extent_int(1);
+        ei.__k            = ei.__A.extent_int(1);
       }
       // To handle truncation of tiles per row/col, round up to one extra tile
       // with '!!'. This extra tile will hang off the edge of the 2-rank matrix.
       // For cases where tiles hang off the edge, we over-compute 0s within
       // registers and shmem via a conditional bounds check (selected at
       // compile-time).
-      unsigned tiles_per_row =
-          ei.__c_m / __tile_m + !!((unsigned)ei.__c_m % __tile_m);
-      unsigned tiles_per_col =
-          ei.__c_n / __tile_n + !!((unsigned)ei.__c_n % __tile_n);
+      __tiles_per_row = ei.__c_m / __tile_m + !!((unsigned)ei.__c_m % __tile_m);
+      __tiles_per_col = ei.__c_n / __tile_n + !!((unsigned)ei.__c_n % __tile_n);
 
       // To handle truncation of __n_tile_k_tile, we have logic within the
       // operator for handling a partial __tile_k tile.
-      __n_tile_k_tiles = k / __tile_k;
-      n_sub_tiles      = tiles_per_row * tiles_per_col;
+      __n_tile_k_tiles = ei.__k / __tile_k;
+      n_sub_tiles      = __tiles_per_row * __tiles_per_col;
     }
 
-    void operator()(const MemberType &member) const { return; }
+    void operator()(const MemberType &member) const {
+      // Allocate registers used for prefetching
+      view_value_type prefetch_reg_a[REG_M], prefetch_reg_b[REG_N];
+
+      // Allocate registers used for FMAs
+      view_value_type reg_a[REG_M], reg_b[REG_N], reg_c[REG_M][REG_N] = {{0}};
+
+      unsigned batch_idx = member.league_rank() / n_sub_tiles;
+
+      // Fetch entire 2-rank sub-matrix
+      auto svA =
+          subview_wrapper(__ei.__A, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
+                          __ei.__batch_layout_tag, __ei.__transA_tag);
+      auto svB =
+          subview_wrapper(__ei.__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
+                          __ei.__batch_layout_tag, __ei.__transB_tag);
+      auto svC = subview_wrapper(__ei.__C, batch_idx, Kokkos::ALL(),
+                                 Kokkos::ALL(), __ei.__batch_layout_tag);
+
+      // Compute starting tile offsets for each team into svA, svB, svC
+      unsigned local_team_idx = member.league_rank() % n_sub_tiles;
+      unsigned start_m        = (local_team_idx / __tiles_per_col) * __tile_m;
+      unsigned start_n        = (local_team_idx % __tiles_per_col) * __tile_n;
+
+      // Allocate scratch memory buffers used for prefetching
+      view_type_2d_scratch svA_scr(member.team_scratch(0), __tile_k, __tile_m);
+      view_type_2d_scratch svB_scr(member.team_scratch(0), __tile_k, __tile_n);
+
+      // Here we populate scratch memory with one or more __tile_k for every
+      // thread of the team!
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
+          [&](const int &thread_id) {  // 8
+            auto thread_offset = thread_id + start_n;
+            Kokkos::parallel_for(
+                Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                [&](const int &vlane_id) {
+#pragma unroll
+                  for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
+                    svB_scr(vlane_id, thread_id + i) =
+                        access_view_bounds_check<view_value_type>(
+                            svB, vlane_id, thread_offset + i,
+                            __ei.__bounds_check_tag);
+                });
+          });
+
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
+          [&](const int &thread_id) {  // 16
+            auto thread_offset = thread_id + start_m;
+            Kokkos::parallel_for(
+                Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                [&](const int &vlane_id) {
+#pragma unroll
+                  for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
+                    svA_scr(vlane_id, thread_id + i) =
+                        access_view_bounds_check<view_value_type>(
+                            svA, thread_offset + i, vlane_id,
+                            __ei.__bounds_check_tag);
+                });
+          });
+
+      // Check whether we have a partial tile
+      unsigned partial_tile_k = __ei.__k - (__n_tile_k_tiles * __tile_k);
+      int partial_tile        = !!(partial_tile_k);
+
+      // Wait for A, B to reside in scratch memory
+      member.team_barrier();
+
+      // Each thread calculates a single dot product in chunks of size __tile_k
+#pragma unroll
+      for (unsigned k = 1; k < __n_tile_k_tiles + partial_tile; ++k) {
+        auto k_tile_offset = k * __tile_k;
+
+        // Get this threads next __tile_k entries from global memory
+        // Each thread has its own copy of prefetch_reg_b. TeamThreadRange runs
+        // over all threads in the team.
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
+            [&](const int &thread_id) {
+              auto thread_offset = thread_id + start_n;
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                  [&](const int &vlane_id) {
+#pragma unroll
+                    for (int i = 0; i < REG_N; ++i)
+                      prefetch_reg_b[i] =
+                          access_view_bounds_check<view_value_type>(
+                              svB, vlane_id + k_tile_offset,
+                              thread_offset + i * STRIDE_N,
+                              __ei.__bounds_check_tag);
+                  });
+            });
+
+        // Get this threads next __tile_k entries from global memory
+        // Each thread has its own copy of prefetch_reg_b. TeamThreadRange runs
+        // over all threads in the team.
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
+            [&](const int &thread_id) {
+              auto thread_offset = thread_id + start_m;
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                  [&](const int &vlane_id) {
+#pragma unroll
+                    for (int i = 0; i < REG_M; ++i)
+                      prefetch_reg_a[i] =
+                          access_view_bounds_check<view_value_type>(
+                              svA, thread_offset + i * STRIDE_M,
+                              vlane_id + k_tile_offset,
+                              __ei.__bounds_check_tag);
+                  });
+            });
+
+        // Multiply
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
+            [&](const int &thread_id) {
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
+                  [&](const int &vlane_id) {
+#pragma unroll
+                    for (unsigned k = 0; k < __tile_k; ++k) {
+#pragma unroll
+                      for (int m = 0; m < REG_M; ++m) {
+                        reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
+                      }
+
+#pragma unroll
+                      for (int n = 0; n < REG_N; ++n) {
+                        reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
+                      }
+
+#pragma unroll
+                      for (int m = 0; m < REG_M; ++m) {
+#pragma unroll
+                        for (int n = 0; n < REG_N; ++n) {
+                          reg_c[m][n] += reg_a[m] * reg_b[n] * __ei.__alpha;
+                        }
+                      }
+                    }
+                  });
+            });
+        // Wait for:
+        //   1. prefetch_regs to be populated
+        //   2. for shmem to no longer be read from
+        member.team_barrier();
+
+        // populate shmem from prefetch registers. Each thread has its own copy
+        // of prefetch_reg_a.
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
+            [&](const int &thread_id) {
+              auto thread_offset = thread_id;
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                  [&](const int &vlane_id) {
+#pragma unroll
+                    for (int i = 0; i < REG_N; ++i) {
+                      svB_scr(vlane_id, thread_offset + i * STRIDE_N) =
+                          prefetch_reg_b[i];
+                    }
+                  });
+            });
+
+        // populate shmem from prefetch registers. Each thread has its own copy
+        // of prefetch_reg_b.
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
+            [&](const int &thread_id) {
+              auto thread_offset = thread_id;
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                  [&](const int &vlane_id) {
+#pragma unroll
+                    for (int i = 0; i < REG_M; ++i)
+                      svA_scr(vlane_id, thread_offset + i * STRIDE_M) =
+                          prefetch_reg_a[i];
+                  });
+            });
+
+        // Wait for shmem stores to land before performing next __tile_k
+        // multiply
+        member.team_barrier();
+
+      }  // end n_tile_k_tiles loop
+
+      // Multiply last tile, may be a partial tile
+      partial_tile_k = partial_tile ? partial_tile_k : __tile_k;
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
+          [&](const int &thread_id) {
+            Kokkos::parallel_for(
+                Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
+                [&](const int &vlane_id) {
+#pragma unroll
+                  for (unsigned k = 0; k < partial_tile_k; ++k) {
+#pragma unroll
+                    for (int m = 0; m < REG_M; ++m) {
+                      reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
+                    }
+
+#pragma unroll
+                    for (int n = 0; n < REG_N; ++n) {
+                      reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
+                    }
+
+#pragma unroll
+                    for (int m = 0; m < REG_M; ++m) {
+#pragma unroll
+                      for (int n = 0; n < REG_N; ++n) {
+                        reg_c[m][n] += reg_a[m] * reg_b[n] * __ei.__alpha;
+                      }
+                    }
+                  }
+                });
+          });
+
+      if (__ei.__beta == 0.0F) {
+        // store results back to global memory
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
+            [&](const int &thread_id) {
+              auto thread_m_offset = thread_id + start_m;
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
+                  [&](const int &vlane_id) {
+                    auto thread_n_offset = vlane_id + start_n;
+#pragma unroll
+                    for (int m = 0; m < REG_M; ++m) {
+                      int cm = thread_m_offset + m * STRIDE_M;
+#pragma unroll
+                      for (int n = 0; n < REG_N; ++n) {
+                        int cn = thread_n_offset + n * STRIDE_N;
+                        fma_bounds_check(svC, cm, cn, reg_c[m][n],
+                                         __ei.__bounds_check_tag);
+                      }
+                    }
+                  });
+            });
+      } else {
+        // store results back to global memory
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
+            [&](const int &thread_id) {
+              auto thread_m_offset = thread_id + start_m;
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
+                  [&](const int &vlane_id) {
+                    auto thread_n_offset = vlane_id + start_n;
+#pragma unroll
+                    for (int m = 0; m < REG_M; ++m) {
+                      int cm = thread_m_offset + m * STRIDE_M;
+#pragma unroll
+                      for (int n = 0; n < REG_N; ++n) {
+                        int cn = thread_n_offset + n * STRIDE_N;
+                        fma_bounds_check(svC, cm, cn, reg_c[m][n], __ei.__beta,
+                                         __ei.__bounds_check_tag);
+                      }
+                    }
+                  });
+            });
+      }
+    }
   };
 };
 /********************* END non-functor-level routines *********************/

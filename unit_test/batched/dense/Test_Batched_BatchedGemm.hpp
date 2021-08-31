@@ -163,8 +163,10 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
       ASSERT_EQ(batchedGemmHandle.get_kernel_algo_type(), algo_type);
 
+      // TODO: SQUARE coverage
       if (algo_type == BaseKokkosBatchedAlgos::KK_SERIAL ||
-          algo_type == BaseHeuristicAlgos::SQUARE) {
+          algo_type == BaseHeuristicAlgos::SQUARE ||
+          algo_type == GemmKokkosBatchedAlgos::KK_DBLBUF) {
         // Invoke 4 times to ensure we cover all paths for alpha and beta
         impl_test_batched_gemm_with_handle<DeviceType, ViewType, ScalarType,
                                            ParamTagType>(
@@ -184,7 +186,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
             matCdim1, matCdim2, 1.5, 3.0);
       } else {
         // TODO: Check for DblBuf runtime errors related to team_size and
-        // vector_len limits
+        //       vector_len limits
         try {
           // Allocate these views to invoke BatchedGemm with an unsupported algo
           // type

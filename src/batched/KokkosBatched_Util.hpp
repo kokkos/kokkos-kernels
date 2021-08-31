@@ -706,6 +706,52 @@ namespace KokkosBatched {
     return subview_wrapper(v, i1, i3, i2, layout_tag);
   }
 
+  template <class ViewValueType, class ViewType>
+  KOKKOS_INLINE_FUNCTION ViewValueType
+  access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
+    if (m < v.extent_int(0) && n < v.extent_int(1)) return v(m, n);
+    return (ViewValueType)0.0F;
+  }
+
+  template <class ViewValueType, class ViewType>
+  KOKKOS_INLINE_FUNCTION ViewValueType
+  access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::No &) {
+    return v(m, n);
+  }
+
+  template <class ViewType, class SizeType, class ViewValueType,
+            class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ViewValueType reg_c,
+                                               ScalarType beta,
+                                               const BoundsCheck::Yes &) {
+    if (m < v.extent_int(0) && n < v.extent_int(1))
+      v(m, n) = reg_c + v(m, n) * beta;
+  }
+
+  template <class ViewType, class SizeType, class ViewValueType,
+            class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ViewValueType reg_c,
+                                               ScalarType beta,
+                                               const BoundsCheck::No &) {
+    v(m, n) = reg_c + v(m, n) * beta;
+  }
+
+  template <class ViewType, class SizeType, class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ScalarType reg_c,
+                                               const BoundsCheck::Yes &) {
+    if (m < v.extent_int(0) && n < v.extent_int(1)) v(m, n) = reg_c;
+  }
+
+  template <class ViewType, class SizeType, class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ScalarType reg_c,
+                                               const BoundsCheck::No &) {
+    v(m, n) = reg_c;
+  }
+
   }  // namespace KokkosBatched
 
 #endif
