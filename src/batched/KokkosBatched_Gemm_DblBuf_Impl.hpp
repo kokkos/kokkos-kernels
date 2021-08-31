@@ -231,15 +231,13 @@ class BatchedDblBufGemm {
       auto svC = subview_wrapper(__ei.__C, batch_idx, Kokkos::ALL(),
                                  Kokkos::ALL(), __ei.__batch_layout_tag);
 
-      // clang-format: off
-      //  TODO: handle transpose. Set svA, svB, and svC strides within subview
-      //  wrapper
-      //        if both I2 and I3 are Kokkos::ALL().
-      //      std::cout << "sA0:" << svA.stride(0) << " sA1:" << svA.stride(1)
-      //      << std::endl; std::cout << "sB0:" << svB.stride(0) << " sB1:" <<
-      //      svB.stride(1) << std::endl; std::cout << "sC0:" << svC.stride(0)
-      //      << " sC1:" << svC.stride(1) << std::endl;
-      // clang-format: on
+      // clang-format off
+      // TODO: handle transpose. Set svA, svB, and svC strides within subview wrapper
+      //       if both I2 and I3 are Kokkos::ALL().
+//      std::cout << "sA0:" << svA.stride(0) << " sA1:" << svA.stride(1) << std::endl;
+//      std::cout << "sB0:" << svB.stride(0) << " sB1:" << svB.stride(1) << std::endl;
+//      std::cout << "sC0:" << svC.stride(0) << " sC1:" << svC.stride(1) << std::endl;
+      // clang-format on
 
       // Compute starting tile offsets for each team into svA, svB, svC
       unsigned local_team_idx = member.league_rank() % n_sub_tiles;
