@@ -60,77 +60,7 @@ namespace KokkosBatched {
 ///
 
 /********************* BEGIN functor-level routines *********************/
-// template <>
-// template <typename ScalarType, typename AViewType, typename BViewType,
-//           typename CViewType, typename BoundsCheckType>
-// KOKKOS_INLINE_FUNCTION int
-// DblBufGemm<Trans::NoTranspose, Trans::NoTranspose>::invoke(
-//     const ScalarType alpha, const AViewType &A, const BViewType &B,
-//     const ScalarType beta, const CViewType &C) {
-//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-//   //      C.extent(0), C.extent(1), A.extent(0), alpha,
-//   //      A.data(), A.stride_0(), A.stride_1(),
-//   //      B.data(), B.stride_0(), B.stride_1(), beta,
-//   //      C.data(), C.stride_0(), C.stride_1());
-//   return 0;
-// }
-//
-// template <>
-// template <typename ScalarType, typename AViewType, typename BViewType,
-//           typename CViewType, typename BoundsCheckType>
-// KOKKOS_INLINE_FUNCTION int
-// DblBufGemm<Trans::NoTranspose, Trans::Transpose>::invoke(const ScalarType
-// alpha,
-//                                                          const AViewType &A,
-//                                                          const BViewType &B,
-//                                                          const ScalarType
-//                                                          beta, const
-//                                                          CViewType &C) {
-//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-//   //      C.extent(0), C.extent(1), A.extent(0), alpha,
-//   //      A.data(), A.stride_0(), A.stride_1(),
-//   //      B.data(), B.stride_1(), B.stride_0(), beta,
-//   //      C.data(), C.stride_0(), C.stride_1());
-//   return 0;
-// }
-//
-// template <>
-// template <typename ScalarType, typename AViewType, typename BViewType,
-//           typename CViewType, typename BoundsCheckType>
-// KOKKOS_INLINE_FUNCTION int
-// DblBufGemm<Trans::Transpose, Trans::NoTranspose>::invoke(const ScalarType
-// alpha,
-//                                                          const AViewType &A,
-//                                                          const BViewType &B,
-//                                                          const ScalarType
-//                                                          beta, const
-//                                                          CViewType &C) {
-//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-//   //      C.extent(0), C.extent(1), A.extent(1), alpha,
-//   //      A.data(), A.stride_1(), A.stride_0(),
-//   //      B.data(), B.stride_0(), B.stride_1(), beta,
-//   //      C.data(), C.stride_0(), C.stride_1());
-//   return 0;
-// }
-//
-// template <>
-// template <typename ScalarType, typename AViewType, typename BViewType,
-//           typename CViewType, typename BoundsCheckType>
-// KOKKOS_INLINE_FUNCTION int
-// DblBufGemm<Trans::Transpose, Trans::Transpose>::invoke(const ScalarType
-// alpha,
-//                                                        const AViewType &A,
-//                                                        const BViewType &B,
-//                                                        const ScalarType beta,
-//                                                        const CViewType &C) {
-//   //  return DblBufGemmInternal<BoundsCheckType>::invoke(
-//   //      C.extent(0), C.extent(1), A.extent(1), alpha,
-//   //      A.data(), A.stride_1(), A.stride_0(),
-//   //      B.data(), B.stride_1(), B.stride_0(), beta,
-//   //      C.data(), C.stride_0(), C.stride_1());
-//   return 0;
-// }
-/********************* END functor-level routines *********************/
+/********************* END   functor-level routines *********************/
 
 /********************* BEGIN non-functor-level routines *********************/
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
@@ -204,33 +134,25 @@ class BatchedDblBufGemm {
         policy_type(league_size, Kokkos::AUTO, vector_len)
             .team_size_max(functor, Kokkos::ParallelForTag());
     if (team_size > max_team_size) {
-      if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space_type>()) {
-        std::ostringstream os;
-        os << "KokkosBatched::BatchedGemm with kernelAlgoType = "
-           << std::to_string(__handle->get_kernel_algo_type())
-           << " does not support team_size > " << std::to_string(max_team_size)
-           << "." << std::endl
-           << " The tile dimensions must be adjusted." << std::endl;
-        Kokkos::Impl::throw_runtime_exception(os.str());
-      } else {
-        team_size = max_team_size;
-      }
+      std::ostringstream os;
+      os << "KokkosBatched::BatchedGemm with kernelAlgoType = "
+         << std::to_string(__handle->get_kernel_algo_type())
+         << " does not support team_size > " << std::to_string(max_team_size)
+         << "." << std::endl
+         << " The tile dimensions must be adjusted." << std::endl;
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
 
     const int max_vector_len =
         policy_type(league_size, team_size, Kokkos::AUTO).vector_length_max();
     if (vector_len > max_vector_len) {
-      if (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space_type>()) {
-        std::ostringstream os;
-        os << "KokkosBatched::BatchedGemm with kernelAlgoType = "
-           << std::to_string(__handle->get_kernel_algo_type())
-           << " does not support vector_len > "
-           << std::to_string(max_vector_len) << "." << std::endl
-           << " The tile dimensions must be adjusted." << std::endl;
-        Kokkos::Impl::throw_runtime_exception(os.str());
-      } else {
-        vector_len = max_vector_len;
-      }
+      std::ostringstream os;
+      os << "KokkosBatched::BatchedGemm with kernelAlgoType = "
+         << std::to_string(__handle->get_kernel_algo_type())
+         << " does not support vector_len > " << std::to_string(max_vector_len)
+         << "." << std::endl
+         << " The tile dimensions must be adjusted." << std::endl;
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
 
     if (__handle->enableDebug) {
@@ -302,14 +224,20 @@ class BatchedDblBufGemm {
       unsigned batch_idx = member.league_rank() / n_sub_tiles;
 
       // Fetch entire 2-rank sub-matrix
-      auto svA =
-          subview_wrapper(__ei.__A, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
-                          __ei.__batch_layout_tag, __ei.__transA_tag);
-      auto svB =
-          subview_wrapper(__ei.__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
-                          __ei.__batch_layout_tag, __ei.__transB_tag);
+      auto svA = subview_wrapper(__ei.__A, batch_idx, Kokkos::ALL(),
+                                 Kokkos::ALL(), __ei.__batch_layout_tag);
+      auto svB = subview_wrapper(__ei.__B, batch_idx, Kokkos::ALL(),
+                                 Kokkos::ALL(), __ei.__batch_layout_tag);
       auto svC = subview_wrapper(__ei.__C, batch_idx, Kokkos::ALL(),
                                  Kokkos::ALL(), __ei.__batch_layout_tag);
+
+      // TODO: handle transpose. Set svA, svB, and svC strides within subview
+      // wrapper
+      //      if both I2 and I3 are Kokkos::ALL().
+      //      std::cout << "sA0:" << svA.stride(0) << " sA1:" << svA.stride(1)
+      //      << std::endl; std::cout << "sB0:" << svB.stride(0) << " sB1:" <<
+      //      svB.stride(1) << std::endl; std::cout << "sC0:" << svC.stride(0)
+      //      << " sC1:" << svC.stride(1) << std::endl;
 
       // Compute starting tile offsets for each team into svA, svB, svC
       unsigned local_team_idx = member.league_rank() % n_sub_tiles;

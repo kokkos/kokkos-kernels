@@ -61,6 +61,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
         batchedGemmHandle, alpha, a_actual, b_actual, beta,
         c_actual);  // Compute c_actual
   } catch (const std::runtime_error& error) {
+    // std::cout << "Caught expected runtime error" << std::endl;
     if (!((std::is_same<view_layout, Kokkos::LayoutLeft>::value &&
            !std::is_same<batchLayout, BatchLayout::Right>::value) ||
           (std::is_same<view_layout, Kokkos::LayoutRight>::value &&
@@ -159,6 +160,9 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   for (int algo_type = BaseHeuristicAlgos::SQUARE;
        algo_type < GemmKokkosBatchedAlgos::N; ++algo_type) {
     {
+      // std::cout << "Testing algo_type = " << algo_type << "/" <<
+      // GemmKokkosBatchedAlgos::N << std::endl;
+
       BatchedGemmHandle batchedGemmHandle(algo_type);
 
       ASSERT_EQ(batchedGemmHandle.get_kernel_algo_type(), algo_type);

@@ -185,7 +185,9 @@ class BatchedSerialGemm;
 
 // clang-format off
 /// \brief Non-blocking solve of general matrix multiply on a batch of
-/// uniform matrices.
+/// uniform matrices with an algorithm based on:
+///   B. P. D. J. Kunkel, Julian, “Performance, design, and autotuning of batched gemm for GPUs,”
+///   in Lecture Notes in Computer Science, ser. ISC High Performance Computing ’16, vol. 9697, 06 2016.
 ///
 ///
 ///        C = alpha * op(A) * op(B) + beta * C
@@ -469,12 +471,17 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       break;
 
     case GemmKokkosBatchedAlgos::KK_DBLBUF:
-      ret =
-          BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
-                            BatchedGemmHandleType, ScalarType, AViewType,
-                            BViewType, CViewType, BoundsCheck::Yes, 32, 32, 8>(
-              handle, alpha, A, B, beta, C)
-              .invoke();
+      // Note: The tile sizes of 1x1x1 here will not perform well but must be
+      // selected in order to function on all devices since the serial execution
+      // space has a max team size of 1. KokkosKernels API users will need to
+      // follow an approach similar to KK_SQUARE above for best performance.
+
+      // TODO: Add auto-selection of tile size based on inputs and device type
+      ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                              BatchedGemmHandleType, ScalarType, AViewType,
+                              BViewType, CViewType, BoundsCheck::Yes, 1, 1, 1>(
+                handle, alpha, A, B, beta, C)
+                .invoke();
       break;
 
     case BaseHeuristicAlgos::TALL:
