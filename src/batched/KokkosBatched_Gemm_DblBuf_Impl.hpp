@@ -135,49 +135,146 @@ namespace KokkosBatched {
 /********************* BEGIN non-functor-level routines *********************/
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
-          class CViewType, class ArgBoundsCheck, int tile_m, int tile_n,
-          int tile_k>
+          class CViewType, class ArgBoundsCheck, int TILE_M, int TILE_N,
+          int TILE_K>
 class BatchedDblBufGemm {
  private:
-  ArgTransA transA_tag;
-  ArgTransB transB_tag;
-  ArgBatchSzDim batch_layout_tag;
-  HandleType *const handle;
-  AViewType A;
-  BViewType B;
-  CViewType C;
-  ScalarType alpha, beta;
-  ArgBoundsCheck bounds_check_tag;
-  size_t league_size, team_size, vector_len, shmem_size;
+  HandleType *const __handle;
+  AViewType __A;
+  BViewType __B;
+  CViewType __C;
+  ScalarType __alpha, __beta;
+  ArgTransA __transA_tag;
+  ArgTransB __transB_tag;
+  ArgBatchSzDim __batch_layout_tag;
+  ArgBoundsCheck __bounds_check_tag;
+  int __c_batch_size, __c_m, __c_n;
 
-  void run() {
-    using execution_space = typename CViewType::device_type::execution_space;
-    using policy_type     = Kokkos::TeamPolicy<execution_space>;
-    // TODO: create functor_type
-
-    policy_type team_policy(league_size, team_size, vector_len);
-    team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
-
-    Kokkos::parallel_for("BatchedDblBufGemm", *this);
-  }
+  using layout_type          = typename CViewType::array_layout;
+  using device_type          = typename CViewType::device_type;
+  using execution_space_type = typename device_type::execution_space;
+  using scratch_space_type =
+      typename execution_space_type::scratch_memory_space;
+  using view_type_2d_scratch =
+      Kokkos::View<ScalarType **, layout_type, scratch_space_type>;
 
  public:
+  BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A,
+                    BViewType B, ScalarType beta, CViewType C)
+      : __handle(handle),
+        __A(A),
+        __B(B),
+        __C(C),
+        __alpha(alpha),
+        __beta(beta) {}
+
   int invoke() {
-    // constexpr int reg_m = tile_m / tile_k;
-    // constexpr int reg_n = tile_n / tile_k + 2*!!(tile_n % tile_k);
-    // constexpr int stride_m = tile_m / reg_m;
-    // constexpr int stride_n = tile_n / reg_n;
-    //  TODO: set league, team, vector, and shmem
-    // run();
+    __run();
     return 0;
   }
 
-  BatchedDblBufGemm(HandleType *const _handle, ScalarType _alpha, AViewType _A,
-                    BViewType _B, ScalarType _beta, CViewType _C)
-      : handle(_handle), A(_A), B(_B), C(_C), alpha(_alpha), beta(_beta) {}
+ private:
+  void __run() {
+    using policy_type = Kokkos::TeamPolicy<execution_space_type>;
+    using member_type = typename policy_type::member_type;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const int &i) const { return; }
+    // Compile-time expressions required for functor-level register allocations:
+    //   Each team uses a shmem buffer and statically allocated register buffer.
+    //   Below, we need a 1-1 mapping between device threads and register
+    //   allocations to ensure that each device thread does not step on another
+    //   device threads registers. In short, we must map register allocations
+    //   to parallel_for loop bounds.
+    constexpr int reg_m    = TILE_M / TILE_K;
+    constexpr int reg_n    = TILE_N / TILE_K + 2 * !!(TILE_N % TILE_K);
+    constexpr int stride_m = TILE_M / reg_m;
+    constexpr int stride_n = TILE_N / reg_n;
+    using functor_type =
+        __Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
+
+    functor_type functor(*this, TILE_M, TILE_N, TILE_K);
+
+    // Each team solves a single tile. Within each tile, the team solves
+    // all __n_tile_k_tiles one at a time.
+    size_t league_size = __c_batch_size * functor.n_sub_tiles;
+    size_t team_size   = stride_m;
+    size_t vector_len  = stride_n;
+
+    const int max_team_size =
+        policy_type(league_size, Kokkos::AUTO, vector_len)
+            .team_size_max(functor, Kokkos::ParallelForTag());
+    const int max_vector_len =
+        policy_type(league_size, team_size, Kokkos::AUTO).vector_length_max();
+
+    if (team_size > max_team_size) {
+      // TODO: check for GPU execution spaces and error noting tile size must be
+      // changed
+    }
+
+    if (vector_len > max_vector_len) {
+      // TODO: check for GPU execution spaces and error noting tile size must be
+      // changed
+    }
+
+    printf(
+        "max_team_size=%d, team_size=%lu\n"
+        "max_vector_len=%d, vector_len=%lu\n"
+        "TILE_M=%u, TILE_N=%u, TILE_K=%u\n",
+        max_team_size, team_size, max_vector_len, vector_len, TILE_M, TILE_N,
+        TILE_K);
+
+    // TODO: Use statically allocated shmem here
+    int shmem_size = view_type_2d_scratch::shmem_size(TILE_M, TILE_K) +
+                     view_type_2d_scratch::shmem_size(TILE_K, TILE_N);
+
+    // Each member solves a portion of TILE_K in parallel with other members
+    policy_type team_policy(league_size, team_size, vector_len);
+    team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+
+    Kokkos::parallel_for("BatchedDblBufGemm", team_policy, functor);
+  }
+
+  template <class MemberType, int REG_M, int REG_N, int STRIDE_M, int STRIDE_N>
+  class __Functor {
+   private:
+    size_t __n_tile_k_tiles;
+    unsigned __tile_m, __tile_n, __tile_k;
+
+   public:
+    size_t n_sub_tiles;
+
+    __Functor(BatchedDblBufGemm &ei, unsigned tile_m = 1, unsigned tile_n = 1,
+              unsigned tile_k = 1)
+        : __tile_m(tile_m), __tile_n(tile_n), __tile_k(tile_k) {
+      unsigned k;
+      if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
+        ei.__c_batch_size = ei.__C.extent_int(0);
+        ei.__c_m          = ei.__C.extent_int(1);
+        ei.__c_n          = ei.__C.extent_int(2);
+        k                 = ei.__A.extent_int(2);
+      } else {
+        ei.__c_batch_size = ei.__C.extent_int(2);
+        ei.__c_m          = ei.__C.extent_int(0);
+        ei.__c_n          = ei.__C.extent_int(1);
+        k                 = ei.__A.extent_int(1);
+      }
+      // To handle truncation of tiles per row/col, round up to one extra tile
+      // with '!!'. This extra tile will hang off the edge of the 2-rank matrix.
+      // For cases where tiles hang off the edge, we over-compute 0s within
+      // registers and shmem via a conditional bounds check (selected at
+      // compile-time).
+      unsigned tiles_per_row =
+          ei.__c_m / __tile_m + !!((unsigned)ei.__c_m % __tile_m);
+      unsigned tiles_per_col =
+          ei.__c_n / __tile_n + !!((unsigned)ei.__c_n % __tile_n);
+
+      // To handle truncation of __n_tile_k_tile, we have logic within the
+      // operator for handling a partial __tile_k tile.
+      __n_tile_k_tiles = k / __tile_k;
+      n_sub_tiles      = tiles_per_row * tiles_per_col;
+    }
+
+    void operator()(const MemberType &member) const { return; }
+  };
 };
 /********************* END non-functor-level routines *********************/
 }  // namespace KokkosBatched
