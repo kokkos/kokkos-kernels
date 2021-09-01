@@ -12,14 +12,12 @@
 #include <common/KernelBase.hpp>
 #include <dirent.h>
 
-
 namespace test {
-  void set_input_data_path(const std::string& path_to_data);
+void set_input_data_path(const std::string &path_to_data);
 
-  std::string get_input_data_path();
+std::string get_input_data_path();
 
-
-}
+}  // namespace test
 
 namespace KokkosSparse {
 
@@ -67,7 +65,7 @@ struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
 };  // namespace readers
 template <class... SubComponents>
 struct data_retriever {
-  std::string root_path; 
+  std::string root_path;
   std::string sub_path;
   struct test_case {
     std::string filename;
@@ -84,8 +82,8 @@ struct data_retriever {
   template <class... Locations>
   data_retriever(std::string path_to_data, Locations... locations)
       : sub_path(path_to_data) {
-     root_path = test::get_input_data_path();
-  
+    root_path = test::get_input_data_path();
+
     // TODO: way to list the directories in the root path
     std::vector<std::string> data_repos = get_directories(root_path + "/");
     // TODO: list directories in subpaths

@@ -9,56 +9,52 @@
 // For RPS implementation of BLAS Level-1 Tests
 #include "blas/blas1/tracked_testing.hpp"
 
-
-
-
 int main(int argc, char* argv[]) {
   {
-
     // argument parsing for setting input data at runtime
-   
- 	std::string inputDataPath;
-		if (argc == 1) {
-		//    print_help();
-			std::cout << "Please provide input data directory: --input-data /PATH/TO/KOKKOS-KERNELS/INPUT/DATA" << std::endl; 
-			return 0;
-		  }
 
-  for (int i = 0; i < argc; i++) {
-    // if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
-    if ((strcmp(argv[i], "--input-data") == 0)) {
-      i++;
-
-      if (i == argc) {
-        std::cerr << "Must pass desired input data after '--input-data'";
-        exit(1);
-      }
-      inputDataPath = std::string(argv[i]);
-      continue;
+    std::string inputDataPath;
+    if (argc == 1) {
+      //    print_help();
+      std::cout << "Please provide input data directory: --input-data "
+                   "/PATH/TO/KOKKOS-KERNELS/INPUT/DATA"
+                << std::endl;
+      return 0;
     }
-}
 
-    
-     test::set_input_data_path(inputDataPath);
+    for (int i = 0; i < argc; i++) {
+      // if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
+      if ((strcmp(argv[i], "--input-data") == 0)) {
+        i++;
+
+        if (i == argc) {
+          std::cerr << "Must pass desired input data after '--input-data'";
+          exit(1);
+        }
+        inputDataPath = std::string(argv[i]);
+        continue;
+      }
+    }
+
+    test::set_input_data_path(inputDataPath);
 
     // set up Executor
     rajaperf::Executor exec(0, argv);
-    //rajaperf::Executor exec(argc, argv);
+    // rajaperf::Executor exec(argc, argv);
     rajaperf::RunParams run_params(0, argv);
     // Initialize Kokkos
     Kokkos::initialize(argc, argv);
 
     Kokkos::print_configuration(std::cout);
-    
-     // sparse , spmv
+
+    // sparse , spmv
     test::sparse::build_executor(exec, argc, argv, run_params);
-    
+
     // All BLAS tests (Dot, Team Dot)
     test::blas::build_blas_executor(exec, argc, argv, run_params);
-    
 
     exec.setupSuite();
-	
+
     // STEP 3: Report suite run summary
     //         (enable users to catch errors before entire suite is run)
     exec.reportRunSummary(std::cout);
@@ -70,5 +66,5 @@ int main(int argc, char* argv[]) {
     exec.outputRunData();
   }
   Kokkos::finalize();
-return 0;
+  return 0;
 }
