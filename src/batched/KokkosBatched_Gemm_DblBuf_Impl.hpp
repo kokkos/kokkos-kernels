@@ -115,6 +115,7 @@ class BatchedDblBufGemm {
     //   allocations to ensure that each GPU thread does not step on another
     //   GPU threads' registers. In short, we must map register allocations
     //   to parallel_for loop bounds.
+    // TODO: check these expressions for all tile_m, tile_n, tile_k in Z+.
     constexpr int reg_m    = TILE_M / TILE_K;
     constexpr int reg_n    = TILE_N / TILE_K + 2 * !!(TILE_N % TILE_K);
     constexpr int stride_m = TILE_M / reg_m;
