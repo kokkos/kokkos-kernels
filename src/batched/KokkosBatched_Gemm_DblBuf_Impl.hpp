@@ -193,12 +193,18 @@ class BatchedDblBufGemm {
         ei.__c_batch_size = ei.__C.extent_int(0);
         ei.__c_m          = ei.__C.extent_int(1);
         ei.__c_n          = ei.__C.extent_int(2);
-        ei.__k            = ei.__A.extent_int(2);
+        if (std::is_same<ArgTransA, Trans::Transpose>::value)
+          ei.__k = ei.__A.extent_int(1);
+        else
+          ei.__k = ei.__A.extent_int(2);
       } else {
         ei.__c_batch_size = ei.__C.extent_int(2);
         ei.__c_m          = ei.__C.extent_int(0);
         ei.__c_n          = ei.__C.extent_int(1);
-        ei.__k            = ei.__A.extent_int(1);
+        if (std::is_same<ArgTransA, Trans::Transpose>::value)
+          ei.__k = ei.__A.extent_int(0);
+        else
+          ei.__k = ei.__A.extent_int(1);
       }
       // To handle truncation of tiles per row/col, round up to one extra tile
       // with '!!'. This extra tile will hang off the edge of the 2-rank matrix.
@@ -224,20 +230,14 @@ class BatchedDblBufGemm {
       unsigned batch_idx = member.league_rank() / n_sub_tiles;
 
       // Fetch entire 2-rank sub-matrix
-      auto svA = subview_wrapper(__ei.__A, batch_idx, Kokkos::ALL(),
-                                 Kokkos::ALL(), __ei.__batch_layout_tag);
-      auto svB = subview_wrapper(__ei.__B, batch_idx, Kokkos::ALL(),
-                                 Kokkos::ALL(), __ei.__batch_layout_tag);
+      auto svA =
+          subview_wrapper(__ei.__A, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
+                          __ei.__batch_layout_tag, __ei.__transA_tag);
+      auto svB =
+          subview_wrapper(__ei.__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
+                          __ei.__batch_layout_tag, __ei.__transB_tag);
       auto svC = subview_wrapper(__ei.__C, batch_idx, Kokkos::ALL(),
                                  Kokkos::ALL(), __ei.__batch_layout_tag);
-
-      // clang-format off
-      // TODO: handle transpose. Set svA, svB, and svC strides within subview wrapper
-      //       if both I2 and I3 are Kokkos::ALL().
-//      std::cout << "sA0:" << svA.stride(0) << " sA1:" << svA.stride(1) << std::endl;
-//      std::cout << "sB0:" << svB.stride(0) << " sB1:" << svB.stride(1) << std::endl;
-//      std::cout << "sC0:" << svC.stride(0) << " sC1:" << svC.stride(1) << std::endl;
-      // clang-format on
 
       // Compute starting tile offsets for each team into svA, svB, svC
       unsigned local_team_idx = member.league_rank() % n_sub_tiles;
@@ -252,7 +252,7 @@ class BatchedDblBufGemm {
       // thread of the team!
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
-          [&](const int &thread_id) {  // 8
+          [&](const int &thread_id) {
             auto thread_offset = thread_id + start_n;
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
@@ -268,7 +268,7 @@ class BatchedDblBufGemm {
 
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
-          [&](const int &thread_id) {  // 16
+          [&](const int &thread_id) {
             auto thread_offset = thread_id + start_m;
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),

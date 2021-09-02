@@ -422,7 +422,15 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
 
     ////////////// HEURISTIC ALGOS //////////////
     case BaseHeuristicAlgos::SQUARE:
-      // TODO: return __gemmSquareHeuristic()
+      if (c_m != c_n) {
+        std::ostringstream os;
+        os << "KokkosBatched::BatchedGemm does not support kernelAlgoType = "
+           << std::to_string(handle->get_kernel_algo_type()) << " when c_m("
+           << std::to_string(c_m) << ") != c_n(" << std::to_string(c_n) << ")"
+           << std::endl;
+        Kokkos::Impl::throw_runtime_exception(os.str());
+      }
+
       // Select optimal resultsPerThread param for BatchedSerialGemm
       using bsgResultsPerThread =
           typename std::conditional<!is_vector && on_gpu,
@@ -440,10 +448,10 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                                         Algo::Gemm::Blocked>::type>::type>::
           type;
 
-      //      if (on_gpu && c_m >= 20 &&
-      //          (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
-      //        // TODO: invoke TeamShmem
-      //      } else
+      // if (on_gpu && c_m >= 20 &&
+      //     (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
+      //   // TODO: invoke TeamShmem
+      // } else
       if (on_gpu && ((c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
         handle->teamSz = handle->vecLen = 8;
         // constexpr int tile_m = 32, tile_n = 32, tile_k = 8;

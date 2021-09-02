@@ -24,7 +24,8 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
   using view_layout     = typename ViewType::array_layout;
   using ats             = Kokkos::Details::ArithTraits<ScalarType>;
 
-  int ret = 0;
+  int ret        = 0;
+  auto algo_type = batchedGemmHandle->get_kernel_algo_type();
 
   ViewType a_expected, a_actual, b_expected, b_actual, c_expected, c_actual;
   if (std::is_same<batchLayout, BatchLayout::Left>::value) {
@@ -62,10 +63,12 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
         c_actual);  // Compute c_actual
   } catch (const std::runtime_error& error) {
     // std::cout << "Caught expected runtime error" << std::endl;
-    if (!((std::is_same<view_layout, Kokkos::LayoutLeft>::value &&
-           !std::is_same<batchLayout, BatchLayout::Right>::value) ||
-          (std::is_same<view_layout, Kokkos::LayoutRight>::value &&
-           !std::is_same<batchLayout, BatchLayout::Left>::value))) {
+    if (algo_type == BaseHeuristicAlgos::SQUARE && matCdim1 != matCdim2)
+      ;
+    else if (!((std::is_same<view_layout, Kokkos::LayoutLeft>::value &&
+                !std::is_same<batchLayout, BatchLayout::Right>::value) ||
+               (std::is_same<view_layout, Kokkos::LayoutRight>::value &&
+                !std::is_same<batchLayout, BatchLayout::Left>::value))) {
       FAIL();
     }
     return;
@@ -167,7 +170,6 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
       ASSERT_EQ(batchedGemmHandle.get_kernel_algo_type(), algo_type);
 
-      // TODO: SQUARE coverage
       if (algo_type == BaseKokkosBatchedAlgos::KK_SERIAL ||
           algo_type == BaseHeuristicAlgos::SQUARE ||
           algo_type == GemmKokkosBatchedAlgos::KK_DBLBUF) {
@@ -211,110 +213,83 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   }
 }
 }  // namespace Test
+
+template <typename ViewType, typename DeviceType, typename ValueType,
+          typename ScalarType, typename ParamTagType>
+void test_batched_gemm_with_layout() {
+  // Square cases
+  for (int i = 0; i < 5; ++i) {
+    Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                 ParamTagType>(4, i, i, i, i, i, i);
+  }
+
+  {
+    int i = 10;
+    Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                 ParamTagType>(0, i, i, i, i, i, i);
+
+    i = 25;
+    Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                 ParamTagType>(8, i, i, i, i, i, i);
+
+    i = 32;
+    Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                 ParamTagType>(8, i, i, i, i, i, i);
+  }
+
+  // Non-square cases
+  for (int i = 0; i < 5; ++i) {
+    int dimM = 1 * i;
+    int dimN = 2 * i;
+    int dimK = 3 * i;
+    if ((std::is_same<typename ParamTagType::transA,
+                      KokkosBatched::Trans::NoTranspose>::value) &&
+        (std::is_same<typename ParamTagType::transB,
+                      KokkosBatched::Trans::NoTranspose>::value)) {
+      Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                   ParamTagType>(16, dimM, dimK, dimK, dimN,
+                                                 dimM, dimN);
+    }
+    if ((std::is_same<typename ParamTagType::transA,
+                      KokkosBatched::Trans::NoTranspose>::value) &&
+        (std::is_same<typename ParamTagType::transB,
+                      KokkosBatched::Trans::Transpose>::value)) {
+      Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                   ParamTagType>(16, dimM, dimK, dimN, dimK,
+                                                 dimM, dimN);
+    }
+    if ((std::is_same<typename ParamTagType::transA,
+                      KokkosBatched::Trans::Transpose>::value) &&
+        (std::is_same<typename ParamTagType::transB,
+                      KokkosBatched::Trans::NoTranspose>::value)) {
+      Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                   ParamTagType>(16, dimK, dimM, dimK, dimN,
+                                                 dimM, dimN);
+    }
+    if ((std::is_same<typename ParamTagType::transA,
+                      KokkosBatched::Trans::Transpose>::value) &&
+        (std::is_same<typename ParamTagType::transB,
+                      KokkosBatched::Trans::Transpose>::value)) {
+      Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
+                                   ParamTagType>(16, dimK, dimM, dimN, dimK,
+                                                 dimM, dimN);
+    }
+  }
+}
+
 template <typename DeviceType, typename ValueType, typename ScalarType,
           typename ParamTagType>
 int test_batched_gemm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
-  {
-    typedef Kokkos::View<ValueType***, Kokkos::LayoutLeft, DeviceType> ViewType;
-    Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                 ParamTagType>(0, 10, 10, 10, 10, 10, 10);
-    for (int i = 0; i < 5; ++i) {
-      // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                   ParamTagType>(128, i, i, i, i, i, i);
-    }
-    for (int i = 0; i < 5; ++i) {
-      // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      int dimM = i;
-      int dimN = 2 * i;
-      int dimK = 3 * i;
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::NoTranspose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimM, dimK, dimK, dimN,
-                                                   dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::Transpose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimM, dimK, dimN, dimK,
-                                                   dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::NoTranspose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimK, dimM, dimK, dimN,
-                                                   dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::Transpose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimK, dimM, dimN, dimK,
-                                                   dimM, dimN);
-      }
-    }
-  }
-#endif
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-  {
-    typedef Kokkos::View<ValueType***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                 ParamTagType>(0, 10, 10, 10, 10, 10, 10);
-    for (int i = 0; i < 5; ++i) {
-      // printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                   ParamTagType>(1024, i, i, i, i, i, i);
-    }
-    for (int i = 0; i < 5; ++i) {
-      // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      int dimM = i;
-      int dimN = 2 * i;
-      int dimK = 3 * i;
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::NoTranspose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimM, dimK, dimK, dimN,
-                                                   dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::Transpose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimM, dimK, dimN, dimK,
-                                                   dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::NoTranspose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimK, dimM, dimK, dimN,
-                                                   dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        KokkosBatched::Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        KokkosBatched::Trans::Transpose>::value)) {
-        Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
-                                     ParamTagType>(128, dimK, dimM, dimN, dimK,
-                                                   dimM, dimN);
-      }
-    }
-  }
-#endif
+  typedef Kokkos::View<ValueType***, Kokkos::LayoutLeft, DeviceType> llVt;
+  test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
+                                ParamTagType>();
+#endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+  typedef Kokkos::View<ValueType***, Kokkos::LayoutRight, DeviceType> lrVt;
+  test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
+                                ParamTagType>();
+#endif  // KOKKOSKERNELS_INST_LAYOUTRIGHT
   return 0;
 }
